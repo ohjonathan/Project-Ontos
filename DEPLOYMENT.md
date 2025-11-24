@@ -2,7 +2,18 @@
 
 This guide explains how to integrate the Ontos "Context Protocol" into an existing project to supercharge your AI Agents.
 
-## 1. Installation
+## 1. Prerequisites (Critical)
+
+**Ontos requires an Agentic CLI.**
+Because Ontos relies on the agent autonomously reading files from your local disk, it **will not work** with standard web-based chat interfaces (like the basic ChatGPT website).
+
+You must use an Agentic CLI tool that has file system access, such as:
+-   **Google Antigravity**
+-   **Claude Code**
+-   **ChatGPT Codex / Advanced Data Analysis**
+-   **Cursor**
+
+## 2. Installation
 
 ### A. Copy Files
 Copy the following files from the Ontos repository to your project root:
@@ -22,7 +33,7 @@ Ensure you have Python 3 installed. You will need the `PyYAML` library:
 pip install pyyaml
 ```
 
-## 2. Configuration (The Migration)
+## 3. Configuration (The Migration)
 
 The core of Ontos is the **YAML Frontmatter**. You need to add this to your existing documentation.
 
@@ -45,7 +56,7 @@ depends_on: []               # e.g., ['system_architecture']
 - **IDs** must be unique across the project.
 - **depends_on** is where the magic happens. Link "Feature Specs" to "Product Requirements".
 
-## 3. Usage Workflow
+## 4. Usage Workflow
 
 ### A. Generate the Map
 Run the script to index your knowledge base:
@@ -69,7 +80,7 @@ When you assign a task to an Agent (Claude Code, Cursor, Antigravity):
 - **New File**: Add frontmatter, then run `python3 scripts/generate_context_map.py`.
 - **Changed Logic**: Update the doc, then run `python3 scripts/generate_context_map.py`.
 
-## 4. Enforcing the Protocol
+## 5. Enforcing the Protocol
 
 To ensure your Agents actually follow these rules, you should "install" the instructions into their system prompt.
 
@@ -77,9 +88,12 @@ To ensure your Agents actually follow these rules, you should "install" the inst
 If you use Cursor, simply copy `.cursorrules` to your project root. Cursor will automatically read this file and follow the Ontos protocol.
 
 ### Option B: General Agents (Manual)
-For other agents (Claude Code, ChatGPT, etc.), copy the content of `AGENT_INSTRUCTIONS.md` and paste it into their "Custom Instructions" or "System Prompt" settings.
+For other agents (Claude Code, ChatGPT, etc.), you need to "install" the protocol into their context.
 
-## 5. CI/CD Integration (Optional)
+**Best Practice:** Copy and paste the content of **this file (`DEPLOYMENT.md`)** directly into the chat. This teaches the Agent the full context of the Ontos system.
+> **Tip:** For best results, paste the guide section-by-section (e.g., "Here is Section 4: Usage Workflow...") to ensure the Agent fully processes each rule.
+
+## 6. CI/CD Integration (Optional)
 You can add a GitHub Action to ensure `CONTEXT_MAP.md` is always up to date:
 
 ```yaml
