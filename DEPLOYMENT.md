@@ -67,13 +67,16 @@ python3 scripts/generate_context_map.py --dir ./knowledge
 ```
 This creates `CONTEXT_MAP.md`. **Commit this file.** It serves as the "Sitemap" for the LLM.
 
+> **Note:** The script will output a "Dependency Audit". Fix any **Cycles**, **Broken Links**, or **Architectural Violations** immediately.
+
 ### B. The Agentic Workflow
 When you assign a task to an Agent (Claude Code, Cursor, Antigravity):
 
-1.  **Activation**: Tell the Agent: **"Activate Ontos"**. (It should read `AGENT_INSTRUCTIONS.md` or `.cursorrules`).
-2.  **Discovery**: The Agent reads the map to understand the project structure and dependencies.
-3.  **Targeted Reading**: Based on the map, the Agent reads *only* the relevant documentation files.
-4.  **Execution**: The Agent writes code with full awareness of your architectural decisions.
+1.  **Activation**: Tell the Agent: **"Activate Ontos"** (or "Ontos Activate", "Ontos").
+2.  **Discovery**: The Agent checks/generates `CONTEXT_MAP.md` and reads it.
+3.  **Targeting**: It identifies relevant IDs and reads *only* those files.
+4.  **Confirmation**: It responds with "Loaded: [doc IDs]".
+5.  **Execution**: The Agent writes code with full awareness of your architectural decisions.
 5.  **Archival**: At the end, ask the Agent to "archive decisions". It should run `scripts/end_session.py` to create a log, then fill it with a summary of changes.
 
 ### C. Maintenance

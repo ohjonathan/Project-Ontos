@@ -75,18 +75,106 @@ def generate_tree(files_data):
     return "\n".join(tree)
 
 def validate_dependencies(files_data):
-    """Checks for broken links."""
-    broken_links = []
+    """Checks for broken links, cycles, orphans, depth, and type violations."""
+    issues = []
     existing_ids = set(files_data.keys())
+    
+    # 1. Build Adjacency List & Reverse Graph
+    adj = {doc_id: [] for doc_id in existing_ids}
+    rev_adj = {doc_id: [] for doc_id in existing_ids}
     
     for doc_id, data in files_data.items():
         deps = data['depends_on']
         if deps:
             for dep in deps:
                 if dep not in existing_ids:
-                    broken_links.append(f"- **{doc_id}** links to missing ID: `{dep}`")
-                    
-    return broken_links
+                    issues.append(f"- [BROKEN LINK] **{doc_id}** links to missing ID: `{dep}`")
+                else:
+                    adj[doc_id].append(dep)
+                    rev_adj[dep].append(doc_id)
+
+    # 2. Cycle Detection (DFS)
+    visited = set()
+    recursion_stack = set()
+    
+    def detect_cycle(node, path):
+        visited.add(node)
+        recursion_stack.add(node)
+        path.append(node)
+        
+        for neighbor in adj[node]:
+            if neighbor not in visited:
+                if detect_cycle(neighbor, path):
+                    return True
+            elif neighbor in recursion_stack:
+                cycle_path = " -> ".join(path[path.index(neighbor):] + [neighbor])
+                issues.append(f"- [CYCLE] Circular dependency detected: {cycle_path}")
+                return True
+        
+        recursion_stack.remove(node)
+        path.pop()
+        return False
+
+    for doc_id in existing_ids:
+        if doc_id not in visited:
+            detect_cycle(doc_id, [])
+
+    # 3. Orphan Detection (No incoming edges)
+    # Note: We exclude 'product' and 'strategy' from being orphans as they are often top-level.
+    # Adjust this logic based on your specific needs.
+    for doc_id in existing_ids:
+        if not rev_adj[doc_id]:
+            # Optional: Filter out types that are expected to be roots
+            doc_type = files_data[doc_id]['type']
+            if doc_type not in ['product', 'strategy', 'kernel']: 
+                 issues.append(f"- [ORPHAN] **{doc_id}** is not depended on by any other document.")
+
+    # 4. Dependency Depth
+    # Calculate max depth for each node
+    memo_depth = {}
+    def get_depth(node):
+        if node in memo_depth: return memo_depth[node]
+        if not adj[node]: return 0
+        
+        # Avoid infinite recursion in cycles by temporarily setting a value
+        # (Cycles are already reported, so we just need to terminate)
+        memo_depth[node] = 0 
+        
+        max_d = 0
+        for neighbor in adj[node]:
+            max_d = max(max_d, get_depth(neighbor))
+        
+        memo_depth[node] = 1 + max_d
+        return memo_depth[node]
+
+    for doc_id in existing_ids:
+        depth = get_depth(doc_id)
+        if depth > 5:
+            issues.append(f"- [DEPTH] **{doc_id}** has a dependency depth of {depth} (max recommended: 5).")
+
+    # 5. Type Hierarchy Violations
+    # Hierarchy: Kernel (0) < Strategy (1) < Product (2) < Atom (3)
+    type_rank = {'kernel': 0, 'strategy': 1, 'product': 2, 'atom': 3, 'unknown': 4}
+    
+    for doc_id, data in files_data.items():
+        my_type = data['type']
+        if isinstance(my_type, list): my_type = my_type[0]
+        my_rank = type_rank.get(my_type, 4)
+        
+        for dep in data['depends_on']:
+            if dep in files_data:
+                dep_type = files_data[dep]['type']
+                if isinstance(dep_type, list): dep_type = dep_type[0]
+                dep_rank = type_rank.get(dep_type, 4)
+                
+                # Rule: Depend on things 'higher' or 'equal' in the stack (Atom is fundamental).
+                # Violation: If I (higher) depend on something (lower).
+                # Example: Atom (3) depends on Kernel (0). 3 > 0. Violation.
+                # Example: Kernel (0) depends on Atom (3). 0 > 3. False. OK.
+                if my_rank > dep_rank:
+                     issues.append(f"- [ARCHITECTURE] **{doc_id}** ({my_type}) depends on lower-layer **{dep}** ({dep_type}).")
+
+    return issues
 
 def generate_context_map(target_dir):
     """Main function to generate the CONTEXT_MAP.md file."""
@@ -97,7 +185,7 @@ def generate_context_map(target_dir):
     tree_view = generate_tree(files_data)
     
     print("Validating dependencies...")
-    broken_links = validate_dependencies(files_data)
+    issues = validate_dependencies(files_data)
     
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -109,7 +197,7 @@ Scanned Directory: `{target_dir}`
 {tree_view}
 
 ## 2. Dependency Audit
-{'No broken links found.' if not broken_links else chr(10).join(broken_links)}
+{'No issues found.' if not issues else chr(10).join(issues)}
 
 ## 3. Index
 | ID | Filename | Type |

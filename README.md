@@ -19,7 +19,15 @@ The Agent then autonomously reads *only* those files, getting perfect context ev
 
 ## ⚡️ Session Activation
 To start a session, simply tell your Agent:
-> **"Activate Ontos."**
+> **"Activate Ontos."** (or "Ontos Activate", "Ontos")
+
+This triggers the standard protocol:
+1.  **Check Map**: The Agent looks for `CONTEXT_MAP.md`.
+2.  **Generate**: If missing, it runs `scripts/generate_context_map.py`.
+3.  **Read**: It reads the map to understand the project structure.
+4.  **Identify**: It identifies relevant documentation IDs for your request.
+5.  **Load**: It reads *only* the specific files needed.
+6.  **Confirm**: It confirms with "Loaded: [list of doc IDs]".
 
 (If the Agent asks "What is Ontos?", tell it: **"Read `AGENT_INSTRUCTIONS.md`"**)
 
@@ -52,6 +60,14 @@ python3 scripts/generate_context_map.py --dir ./my-docs
 
 This generates `CONTEXT_MAP.md`. **Commit this file.**
 
+### Automated Audits
+The script performs 5 integrity checks on your documentation graph:
+1.  **Broken Links**: IDs that don't exist.
+2.  **Circular Dependencies**: Infinite loops (A -> B -> A).
+3.  **Orphaned Nodes**: Files disconnected from the graph.
+4.  **Dependency Depth**: Chains deeper than 5 layers.
+5.  **Architectural Violations**: Higher-layer docs (Atoms) depending on Lower-layer docs (Kernel).
+
 ## 📖 The Agentic Workflow
 
 ### Phase 1: Context Discovery
@@ -79,7 +95,7 @@ If the Agent makes a decision (e.g., "We will use TOTP for 2FA"), it should upda
 ### Phase 3: Session Commit (Archival)
 At the end of a session, ask the Agent to archive its decisions.
 
-**User:** "We are done. Archive our decisions."
+**User:** "We are done. Archive our decisions." (or "Ontos archive", "Archive our session")
 
 **Agent:**
 1.  *Runs `python3 scripts/end_session.py "auth-update"` to scaffold the log file.*
