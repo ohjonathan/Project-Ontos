@@ -1,6 +1,6 @@
 # Deploying Ontos to Your Repository
 
-This guide explains how to integrate the Ontos "Manual MVP" workflow into an existing project.
+This guide explains how to integrate the Ontos "Context Protocol" into an existing project to supercharge your AI Agents.
 
 ## 1. Installation
 
@@ -51,22 +51,35 @@ depends_on: []               # e.g., ['system_architecture']
 Run the script to index your knowledge base:
 ```bash
 python3 scripts/generate_context_map.py
+# Or for a custom directory:
+python3 scripts/generate_context_map.py --dir ./knowledge
 ```
 This creates `CONTEXT_MAP.md`. **Commit this file.** It serves as the "Sitemap" for the LLM.
 
-### B. "Vibe Coding" (The AI Workflow)
-When you start a chat with Claude/ChatGPT/Gemini:
+### B. The Agentic Workflow
+When you assign a task to an Agent (Claude Code, Cursor, Antigravity):
 
-1.  **Copy the Context Map**: Paste the content of `CONTEXT_MAP.md` into the chat first.
-2.  **Ask for Context**:
-    > "I'm working on the `auth_flow`. Check the Context Map, tell me which files I need to read, and I will paste them."
-3.  **Paste Files**: The AI will say "I need `docs/auth/login.md`". You copy/paste that file.
+1.  **Activation**: Tell the Agent: **"Activate Ontos"**. (It should read `AGENT_INSTRUCTIONS.md` or `.cursorrules`).
+2.  **Discovery**: The Agent reads the map to understand the project structure and dependencies.
+3.  **Targeted Reading**: Based on the map, the Agent reads *only* the relevant documentation files.
+4.  **Execution**: The Agent writes code with full awareness of your architectural decisions.
+5.  **Archival**: At the end, ask the Agent to "archive decisions". It should run `scripts/end_session.py` to create a log, then fill it with a summary of changes.
 
 ### C. Maintenance
-- **New File**: Add frontmatter, run script.
-- **Changed Logic**: Update the doc, run script.
+- **New File**: Add frontmatter, then run `python3 scripts/generate_context_map.py`.
+- **Changed Logic**: Update the doc, then run `python3 scripts/generate_context_map.py`.
 
-## 4. CI/CD Integration (Optional)
+## 4. Enforcing the Protocol
+
+To ensure your Agents actually follow these rules, you should "install" the instructions into their system prompt.
+
+### Option A: Cursor (Automatic)
+If you use Cursor, simply copy `.cursorrules` to your project root. Cursor will automatically read this file and follow the Ontos protocol.
+
+### Option B: General Agents (Manual)
+For other agents (Claude Code, ChatGPT, etc.), copy the content of `AGENT_INSTRUCTIONS.md` and paste it into their "Custom Instructions" or "System Prompt" settings.
+
+## 5. CI/CD Integration (Optional)
 You can add a GitHub Action to ensure `CONTEXT_MAP.md` is always up to date:
 
 ```yaml

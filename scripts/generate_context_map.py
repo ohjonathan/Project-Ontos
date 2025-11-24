@@ -1,8 +1,9 @@
 import os
 import yaml
 import datetime
+import argparse
 
-DOCS_DIR = 'docs'
+DEFAULT_DOCS_DIR = 'docs'
 OUTPUT_FILE = 'CONTEXT_MAP.md'
 
 def parse_frontmatter(filepath):
@@ -87,10 +88,10 @@ def validate_dependencies(files_data):
                     
     return broken_links
 
-def generate_context_map():
+def generate_context_map(target_dir):
     """Main function to generate the CONTEXT_MAP.md file."""
-    print(f"Scanning {DOCS_DIR}...")
-    files_data = scan_docs(DOCS_DIR)
+    print(f"Scanning {target_dir}...")
+    files_data = scan_docs(target_dir)
     
     print("Generating tree...")
     tree_view = generate_tree(files_data)
@@ -102,6 +103,7 @@ def generate_context_map():
     
     content = f"""# Ontos Context Map
 Generated on: {timestamp}
+Scanned Directory: `{target_dir}`
 
 ## 1. Hierarchy Tree
 {tree_view}
@@ -123,4 +125,8 @@ Generated on: {timestamp}
     print(f"Successfully generated {OUTPUT_FILE}")
 
 if __name__ == "__main__":
-    generate_context_map()
+    parser = argparse.ArgumentParser(description='Generate Ontos Context Map')
+    parser.add_argument('--dir', type=str, default=DEFAULT_DOCS_DIR, help='Directory to scan for documentation (default: docs)')
+    args = parser.parse_args()
+    
+    generate_context_map(args.dir)

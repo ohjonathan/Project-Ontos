@@ -1,6 +1,9 @@
 # Auto-Tagging Migration Guide
 
-This guide explains how to use the `scripts/migrate_frontmatter.py` script to automatically add YAML frontmatter to your documentation using an LLM (Claude, ChatGPT, or Gemini).
+This guide explains how to use the `scripts/migrate_frontmatter.py` script to automatically add YAML frontmatter to your documentation using an LLM.
+
+## Why Migrate?
+Autonomous Agents (like Claude Code or Cursor) need structured metadata to navigate your codebase. This script adds that structure to your existing docs.
 
 ## Overview
 
@@ -14,6 +17,8 @@ Run the script to scan your documentation:
 
 ```bash
 python3 scripts/migrate_frontmatter.py
+# Or specify a custom directory:
+python3 scripts/migrate_frontmatter.py --dir ./my-docs
 ```
 
 **Output:**

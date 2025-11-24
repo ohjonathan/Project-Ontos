@@ -1,8 +1,9 @@
 import os
 import json
 import sys
+import argparse
 
-DOCS_DIR = 'docs'
+DEFAULT_DOCS_DIR = 'docs'
 PROMPT_FILE = 'migration_prompt.txt'
 RESPONSE_FILE = 'migration_response.json'
 
@@ -103,12 +104,18 @@ def apply_frontmatter(response_file):
     print(f"\n🎉 Successfully updated {success_count} files!")
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == '--apply':
+    parser = argparse.ArgumentParser(description='Ontos Frontmatter Migration Tool')
+    parser.add_argument('--dir', type=str, default=DEFAULT_DOCS_DIR, help='Directory to scan for documentation (default: docs)')
+    parser.add_argument('--apply', action='store_true', help='Apply changes from migration_response.json')
+    
+    args = parser.parse_args()
+
+    if args.apply:
         apply_frontmatter(RESPONSE_FILE)
     else:
-        files = scan_for_untagged_files(DOCS_DIR)
+        files = scan_for_untagged_files(args.dir)
         if not files:
-            print("No untagged files found!")
+            print(f"No untagged files found in {args.dir}!")
         else:
-            print(f"Found {len(files)} untagged files.")
+            print(f"Found {len(files)} untagged files in {args.dir}.")
             generate_prompt(files)

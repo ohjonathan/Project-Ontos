@@ -1,92 +1,93 @@
-# Ontos: The Manual MVP Playbook
+# Ontos: The Context Protocol for Agents
 
-**Turn your documentation into a queryable database for LLMs.**
+**Give your AI Agents a map, not just files.**
 
-Ontos is a "Manual MVP" framework for managing project context. It structures your documentation with YAML frontmatter, allowing you to treat your `docs/` folder like a database. This enables LLMs to understand the relationships between your files (Strategy -> Product -> Features) and generate accurate context maps.
+Ontos is a lightweight framework for managing project context in the age of Agentic AI. It structures your documentation with YAML frontmatter, allowing autonomous agents (like Claude Code, Cursor, or Google Antigravity) to "discover" the right context before they start coding.
+
+## 🤖 The Problem: Agents are Blind
+When you ask an agent to "fix the login bug", it has two bad options:
+1.  **Guessing**: It searches for "login" and misses the `auth_provider.ts` file.
+2.  **Overloading**: It reads *everything*, wasting tokens and confusing itself.
+
+## 💡 The Solution: A Context Map
+Ontos generates a `CONTEXT_MAP.md` that serves as a **Sitemap for Agents**.
+
+Instead of guessing, the Agent reads the map first. It sees:
+> "Feature: Login Flow (ID: `feature_login`) depends on `auth_architecture` and `user_model`."
+
+The Agent then autonomously reads *only* those files, getting perfect context every time.
+
+## ⚡️ Session Activation
+To start a session, simply tell your Agent:
+> **"Activate Ontos."**
+
+(If the Agent asks "What is Ontos?", tell it: **"Read `AGENT_INSTRUCTIONS.md`"**)
 
 ## 🚀 Getting Started
 
-This repository serves as a template and guide. To use this approach in your own project, follow these steps.
+> **Tip:** See [DEPLOYMENT.md](DEPLOYMENT.md) for a step-by-step guide on adding Ontos to your repository.
 
-> **Tip:** See [DEPLOYMENT.md](DEPLOYMENT.md) for a step-by-step guide on adding Ontos to an existing repository.
-
-### 1. Setup Directory Structure
-
-Create a `docs/` directory with the following hierarchy to organize your "knowledge atoms":
-
-```bash
-mkdir -p docs/kernel docs/strategy docs/product docs/atom
-```
-
-- **Kernel**: Core principles, mission, values.
-- **Strategy**: High-level goals, monetization, target audience.
-- **Product**: User journeys, feature sets.
-- **Atom**: Specific implementation details, specs, individual features.
-
-### 2. The "Database" Record (YAML Frontmatter)
-
-Every markdown file in `docs/` **MUST** start with this standard YAML header. This is what allows the system to link everything together.
+### 1. The "Database" Record (YAML Frontmatter)
+Every markdown file in `docs/` starts with a standard header. This links your knowledge atoms together.
 
 ```yaml
 ---
-id: unique_slug_name  # REQUIRED. Stable ID. Never change this even if filename changes.
+id: unique_slug_name  # e.g. 'auth_flow'
 type: atom            # Options: [kernel, strategy, product, atom]
-status: active        # Options: [draft, active, deprecated]
-owner: role           # Optional. Who is responsible?
-depends_on: []        # List of IDs this document depends on (e.g. [strategy_monetization])
+status: active
+depends_on: []        # e.g. ['strategy_monetization']
 ---
 ```
 
-*See `docs/template.md` for a copy-pasteable version.*
-
 > **Automation:** Use [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) and `scripts/migrate_frontmatter.py` to automatically tag your existing docs using an LLM.
 
-### 3. Automation (The Context Map)
-
-Instead of manually maintaining a table of contents, use the included script to generate a `CONTEXT_MAP.md`. This file visualizes your project's knowledge graph and validates links.
-
-1.  Copy `scripts/generate_context_map.py` to your project.
-2.  Run it whenever you add or move files:
+### 2. The Context Map
+Run the script to generate the map:
 
 ```bash
 python3 scripts/generate_context_map.py
+# Or specify a custom directory:
+python3 scripts/generate_context_map.py --dir ./my-docs
 ```
 
-This will generate `CONTEXT_MAP.md` in your root directory.
+This generates `CONTEXT_MAP.md`. **Commit this file.**
 
-## 📖 The Workflow
+## 📖 The Agentic Workflow
 
-### Phase 1: Vibe Coding (Usage)
-When you need to work on a feature, use the Context Map to find the relevant IDs.
+### Phase 1: Context Discovery
+When you assign a task to your Agent:
 
-**Prompt to LLM:**
-> "@CONTEXT_MAP.md
-> I want to update the Login flow.
-> 1. Check the Context Map to find the ID `feature_login`.
-> 2. Look at its `depends_on` list.
-> 3. Retrieve the content for those specific Parent IDs.
-> 4. Use that context to write the code."
+**User:** "Update the Login flow to support 2FA."
+
+**Agent (Internal Monologue):**
+1.  "I need to understand the Login flow."
+2.  *Reads `CONTEXT_MAP.md`*
+3.  "I see `feature_login` depends on `auth_architecture`."
+4.  *Reads `docs/auth/login.md` and `docs/arch/auth.md`*
+5.  "I now have the full context. Starting work."
 
 ### Phase 2: The Update Loop (Write-Back)
-If you make a decision during a chat (e.g., changing pricing), update the corresponding documentation file immediately.
+If the Agent makes a decision (e.g., "We will use TOTP for 2FA"), it should update the documentation.
 
-**Prompt to LLM:**
-> "We just decided to change the pricing to $30/month.
-> 1. Find the file with id: `strategy_monetization`.
-> 2. Update the markdown content."
+**User:** "Make sure to update the docs."
+
+**Agent:**
+1.  *Finds `feature_login` in the map.*
+2.  *Updates `docs/auth/login.md` with the new 2FA details.*
+3.  *Re-runs `scripts/generate_context_map.py` to verify links.*
 
 ### Phase 3: Session Commit (Archival)
-At the end of a session, archive your decisions.
+At the end of a session, ask the Agent to archive its decisions.
 
-**Prompt to LLM:**
-> "We are finishing this session.
-> 1. Summarize our decisions and files modified.
-> 2. Create a log entry in `docs/logs/YYYY-MM-DD_topic.md`.
-> 3. Generate git commands to commit."
+**User:** "We are done. Archive our decisions."
+
+**Agent:**
+1.  *Runs `python3 scripts/end_session.py "auth-update"` to scaffold the log file.*
+2.  *Fills in the "Decisions" and "Summary" sections in the newly created file.*
+3.  *Commits the log file to git.*
 
 ## 📂 Repository Structure
 
 - `docs/`: Your knowledge base.
 - `scripts/`: Automation tools.
-- `CONTEXT_MAP.md`: The auto-generated map of your project (Do not edit manually).
-- `20251123_Project Ontos The Manual MVP Playbook.md`: The original manifesto/playbook for this approach.
+- `CONTEXT_MAP.md`: The map for your Agent.
