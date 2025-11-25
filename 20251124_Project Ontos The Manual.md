@@ -46,7 +46,7 @@ This generates `CONTEXT_MAP.md`, which visualizes the graph and performs **5 Int
 2.  **Circular Dependencies**: Infinite loops (A -> B -> A).
 3.  **Orphaned Nodes**: Files disconnected from the graph.
 4.  **Dependency Depth**: Chains deeper than 5 layers.
-5.  **Architectural Violations**: Higher-layer docs (Atoms) depending on Lower-layer docs (Kernel).
+5.  **Architectural Violations**: Lower-layer docs (Kernel) depending on Higher-layer docs (Atoms).
 
 ## **Phase 2: The "Weekly Ritual" (Automated Maintenance)**
 

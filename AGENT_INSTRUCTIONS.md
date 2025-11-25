@@ -31,7 +31,7 @@ When defining dependencies in `depends_on`, you MUST adhere to these rules:
 1.  **No Cycles**: Circular dependencies (A -> B -> A) are strictly forbidden.
 2.  **Hierarchy Flow**: Dependencies should generally flow "down" the stack or stay within the same layer.
     *   **Kernel** (0) < **Strategy** (1) < **Product** (2) < **Atom** (3).
-    *   **Violation**: An **Atom** (3) cannot depend on a **Kernel** (0). This implies a fundamental architectural flaw.
+    *   **Violation**: A **Kernel** (0) cannot depend on an **Atom** (3). Dependencies must flow DOWN the stack.
 3.  **No Orphans**: Every document (unless it is a root Strategy or Product doc) should be connected to the graph.
 
 ### 4. Session Archival (End of Task)

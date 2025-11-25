@@ -167,12 +167,12 @@ def validate_dependencies(files_data):
                 if isinstance(dep_type, list): dep_type = dep_type[0]
                 dep_rank = type_rank.get(dep_type, 4)
                 
-                # Rule: Depend on things 'higher' or 'equal' in the stack (Atom is fundamental).
-                # Violation: If I (higher) depend on something (lower).
-                # Example: Atom (3) depends on Kernel (0). 3 > 0. Violation.
-                # Example: Kernel (0) depends on Atom (3). 0 > 3. False. OK.
-                if my_rank > dep_rank:
-                     issues.append(f"- [ARCHITECTURE] **{doc_id}** ({my_type}) depends on lower-layer **{dep}** ({dep_type}).")
+                # Rule: Depend on things 'lower' or 'equal' in the stack.
+                # Violation: If I (lower) depend on something (higher).
+                # Example: Kernel (0) depends on Atom (3). 0 < 3. Violation.
+                # Example: Atom (3) depends on Kernel (0). 3 > 0. False. OK.
+                if my_rank < dep_rank:
+                     issues.append(f"- [ARCHITECTURE] **{doc_id}** ({my_type}) depends on higher-layer **{dep}** ({dep_type}).")
 
     return issues
 
