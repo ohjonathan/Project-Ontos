@@ -230,7 +230,7 @@ Scanned Directory: `{target_dir}`
     for doc_id, data in files_data.items():
         content += f"| {doc_id} | [{data['filename']}]({data['filepath']}) | {data['type']} |\n"
         
-    with open(OUTPUT_FILE, 'w') as f:
+    with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
         f.write(content)
         
     print(f"Successfully generated {OUTPUT_FILE}")

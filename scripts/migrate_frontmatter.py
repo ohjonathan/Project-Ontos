@@ -1,5 +1,5 @@
 import os
-import json
+
 import argparse
 
 DEFAULT_DOCS_DIR = 'docs'
