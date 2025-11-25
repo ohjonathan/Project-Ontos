@@ -1,24 +1,20 @@
-# Ontos Protocol Rules for Cursor
+# Ontos Protocol for Cursor
 
-You are an intelligent agent operating within the Ontos framework. Your goal is to maintain perfect context awareness.
+You are operating within the Ontos framework.
 
-## Rule 1: Always Read the Map First
-At the start of ANY new task or session, you MUST read `CONTEXT_MAP.md`.
-- This file contains the project structure and dependencies.
-- Do NOT guess file locations. Use the map.
+## Activation
+When the user says **"Ontos"** (or "Activate Ontos"):
+1.  Check/Run `python3 scripts/generate_context_map.py`.
+2.  Read `CONTEXT_MAP.md`.
+3.  Load only relevant context IDs.
+4.  Confirm: "Loaded: [IDs]".
 
-## Rule 2: Targeted Context Loading
-After reading the map:
-1. Identify the specific "Knowledge Atoms" (files) relevant to the user's request.
-2. Read ONLY those files.
-3. Do NOT read unrelated files to save tokens and reduce noise.
+## Maintenance
+Always update YAML frontmatter when creating files.
+Run `python3 scripts/generate_context_map.py` after structural changes.
 
-## Rule 3: Maintain the Map
-If you create, move, or delete a markdown file in `docs/`:
-1. Add/Update the YAML frontmatter in the file.
-2. Run `python3 scripts/generate_context_map.py` to update the map.
-
-## Rule 4: Session Archival
-When the user says "Archive this session" or "We are done":
-1. Run `python3 scripts/end_session.py "topic-slug"`.
-2. Fill in the created log file with a summary of decisions.
+## Archival
+When the user says **"Archive Ontos"** (or "Ontos archive"):
+1.  Run `python3 scripts/end_session.py "slug"`.
+2.  Fill the log.
+3.  Commit.

@@ -1,5 +1,7 @@
-# **Ontos: The Manual (v0.2 - Automated Edition)**
+# **Ontos: The Manual (v0.3 - Foundation Edition)**
 *Updated: 2025-11-24*
+
+This document is the **Single Source of Truth** for the Ontos Protocol.
 
 ## **Phase 0: The "Future-Proof" Setup**
 
@@ -9,25 +11,12 @@ To ensure we can automate this later, every document **MUST** start with this YA
 
 ```yaml
 ---
-id: unique_slug_name  # REQUIRED. Stable ID. Never change this even if filename changes.
-type: [kernel | strategy | product | atom] # REQUIRED. Defines the hierarchy level.
-status: [draft | active | deprecated] # Optional. Helps LLM ignore old files.
-owner: [role] # Optional. Who is responsible?
-depends_on: [id_of_parent_doc, id_of_other_doc] # The Logic Links.
+id: unique_slug_name  # REQUIRED. Stable ID. Never change this.
+type: atom            # REQUIRED. Options: kernel, strategy, product, atom
+status: draft         # Optional. Options: draft, active, deprecated
+owner: null           # Optional. Role responsible for this doc.
+depends_on: []        # List of dependency IDs. Example: [auth_flow, user_model]
 ---
-```
-
-### **Example: docs/features/stripe_checkout.md**
-
-```yaml
----
-id: feature_stripe_checkout
-type: atom
-status: active
-depends_on: [strategy_monetization, journey_user_checkout]
----
-# Stripe Checkout Specification
-...
 ```
 
 > **Automation:** Use `scripts/migrate_frontmatter.py` to automatically tag existing documents.
@@ -64,7 +53,7 @@ Whenever you add a file or change a dependency:
 
 **The Protocol:**
 Simply tell your Agent:
-> **"Activate Ontos."** (or "Ontos Activate", "Ontos")
+> **"Ontos"** (or "Activate Ontos")
 
 The Agent will follow this strict 6-step protocol:
 1.  **Check Map**: Look for `CONTEXT_MAP.md`.
@@ -92,7 +81,7 @@ The Agent will follow this strict 6-step protocol:
 
 **The Protocol:**
 Tell your Agent:
-> **"Archive Ontos."** (or "Ontos archive", "Archive our session")
+> **"Archive Ontos"** (or "Ontos archive")
 
 **The Agent will:**
 1.  Run `python3 scripts/end_session.py "topic-slug"`.
