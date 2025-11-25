@@ -48,4 +48,4 @@ You can add a step in your GitHub Actions to verify graph integrity:
   run: python3 scripts/generate_context_map.py --strict
 ```
 
-If the script encounters "Cycles" or "Architectural Violations", it will output them to the map (and you can modify the script to exit with error code 1 if strictness is desired).
+If the script encounters "Cycles" or "Architectural Violations", it will output them to the map. The `--strict` flag causes the script to exit with error code 1 if any issues are found, failing the pipeline.

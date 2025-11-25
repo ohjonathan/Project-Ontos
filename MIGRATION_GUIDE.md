@@ -1,74 +1,84 @@
-# Auto-Tagging Migration Guide
+# Migration Guide
 
-This guide explains how to use the `scripts/migrate_frontmatter.py` script to automatically add YAML frontmatter to your documentation using an LLM.
-
-## Why Migrate?
-Autonomous Agents (like Claude Code or Cursor) need structured metadata to navigate your codebase. This script adds that structure to your existing docs.
+This guide explains how to tag existing documentation with Ontos frontmatter.
 
 ## Overview
 
-The script works in two steps:
-1.  **Export**: Scans your `docs/` folder for untagged files and generates a prompt.
-2.  **Import**: Takes the JSON response from the LLM and updates your files.
+The migration script scans your `docs/` folder and identifies files missing YAML frontmatter. Your AI agent then tags each file based on its content.
 
-## Step 1: Generate the Prompt
+## Step 1: Scan for Untagged Files
 
-Run the script to scan your documentation:
+Run the migration script:
 
 ```bash
 python3 scripts/migrate_frontmatter.py
-# Or specify a custom directory:
-python3 scripts/migrate_frontmatter.py --dir ./my-docs
 ```
 
-**Output:**
-- It will find all markdown files missing the `---` frontmatter.
-- It generates a file named `migration_prompt.txt`.
+Output:
+```
+📋 Found 3 untagged files:
 
-## Step 2: Ask the LLM
+   - docs/architecture/auth.md
+   - docs/api/endpoints.md
+   - docs/roadmap.md
 
-1.  Open `migration_prompt.txt` and copy the entire content.
-2.  Paste it into a smart LLM (Claude 3.5 Sonnet or GPT-4o are recommended).
-3.  **Important:** The LLM should reply with a raw JSON block.
-
-## Step 3: Save the Response
-
-1.  Copy the JSON response from the LLM.
-2.  Create a new file named `migration_response.json` in the root of your project.
-3.  Paste the JSON into this file.
-
-**Example `migration_response.json`:**
-```json
-{
-  "docs/architecture/auth.md": {
-    "id": "auth_architecture",
-    "type": "atom",
-    "status": "active",
-    "depends_on": ["system_overview"]
-  },
-  "docs/roadmap.md": {
-    "id": "product_roadmap",
-    "type": "strategy",
-    "status": "active",
-    "depends_on": []
-  }
-}
+📄 Migration prompt saved to 'migration_prompt.txt'
 ```
 
-## Step 4: Apply Changes
+## Step 2: Tag the Files
 
-Run the script with the `--apply` flag:
+Your agent will:
+1. Read each untagged file
+2. Determine the appropriate metadata:
+   - `id`: Unique snake_case identifier
+   - `type`: kernel, strategy, product, or atom
+   - `status`: draft, active, or deprecated
+   - `depends_on`: List of related document IDs
+3. Add YAML frontmatter to each file
+
+### Type Selection Guide
+
+| Type | Use When... |
+|------|-------------|
+| kernel | Document defines core principles that rarely change |
+| strategy | Document describes business goals or high-level decisions |
+| product | Document specifies user-facing features or requirements |
+| atom | Document contains technical implementation details |
+
+**Heuristic:** "If this document changes, what else breaks?"
+
+## Step 3: Validate
+
+After tagging, regenerate the context map:
 
 ```bash
-python3 scripts/migrate_frontmatter.py --apply
+python3 scripts/generate_context_map.py
 ```
 
-**Result:**
-- The script reads `migration_response.json`.
-- It prepends the correct YAML frontmatter to each file.
-- Your docs are now ready for Ontos!
+Check the output for:
+- ✅ No issues found
+- ⚠️ Broken links (fix the `depends_on` references)
+- ⚠️ Architectural violations (check type hierarchy)
 
-## Troubleshooting
+## Example
 
--   **Invalid JSON**: If the script complains about invalid JSON, check `migration_response.json`. Ensure the LLM didn't wrap it in markdown code blocks (```json ... ```). If it did, remove the backticks.
--   **File Not Found**: Ensure the file paths in the JSON match your actual directory structure.
+**Before:**
+```markdown
+# Authentication Flow
+
+This document describes how users log in...
+```
+
+**After:**
+```markdown
+---
+id: auth_flow
+type: product
+status: active
+depends_on: [auth_architecture]
+---
+
+# Authentication Flow
+
+This document describes how users log in...
+```

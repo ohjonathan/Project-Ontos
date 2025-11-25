@@ -19,7 +19,7 @@ depends_on: []        # List of dependency IDs. Example: [auth_flow, user_model]
 ---
 ```
 
-> **Automation:** Use `scripts/migrate_frontmatter.py --auto` to automatically tag existing documents using an LLM.
+> **Automation:** Use `scripts/migrate_frontmatter.py` to scan for untagged files, then tag them using your AI agent.
 
 ## **Document Type Taxonomy**
 
