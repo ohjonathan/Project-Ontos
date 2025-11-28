@@ -23,9 +23,8 @@ Once installed and initiated, simply tell your Agent:
 
 > **"Ontos"** (or "Activate Ontos")
 
-Follow [Ontos_Agent_Instructions.md](Ontos_Agent_Instructions.md) for Ontos task.
-
 The Agent will:
+0.  Follow [Ontos_Agent_Instructions.md](Ontos_Agent_Instructions.md).
 1.  Read the Context Map.
 2.  Load *only* the relevant files for your task.
 3.  Confirm what context it has loaded.
@@ -37,3 +36,11 @@ When you are done with a session:
 > **"Archive Ontos"** (or "Ontos archive")
 
 The Agent will save a log of all decisions made, ensuring no context is lost for the next session.
+
+## 🛠️ Maintenance
+
+To keep your graph healthy:
+
+> **"Maintain Ontos"**
+
+The Agent will scan for new files, rebuild the context map, and fix any integrity issues (broken links, circular dependencies).

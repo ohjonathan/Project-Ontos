@@ -66,13 +66,17 @@ This generates `CONTEXT_MAP.md`, which visualizes the graph and performs **5 Int
 
 ## **Phase 2: The "Weekly Ritual" (Automated Maintenance)**
 
-**Do not manually edit CONTEXT_MAP.md.** It is a disposable artifact.
+**The Protocol:**
+Tell your Agent:
+> **"Maintain Ontos"**
 
-Whenever you add a file or change a dependency:
-1.  Update the YAML frontmatter.
-2.  Run `python3 scripts/generate_context_map.py`.
-3.  Fix any errors reported in the "Dependency Audit".
+**The Agent will:**
+1.  Run `scripts/migrate_frontmatter.py` to catch untagged files.
+2.  Run `scripts/generate_context_map.py` to rebuild the graph.
+3.  Fix any errors reported (Broken Links, Cycles, etc.).
 4.  Commit the updated map.
+
+**Do not manually edit CONTEXT_MAP.md.** It is a disposable artifact.
 
 ### Strict Mode (CI/CD)
 

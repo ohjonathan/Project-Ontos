@@ -40,3 +40,10 @@ When the user says **"Ontos archive"** (or "Archive our session"):
 3.  **READ** the generated log file.
 4.  **OVERWRITE** the placeholders in the file with a high-quality summary of the session (Goal, Decisions, Changes, Next Steps).
 5.  Commit the changes.
+
+### 4. Maintenance (Weekly Ritual)
+When the user says **"Maintain Ontos"** (or "Ontos maintenance"):
+1.  **Frontmatter Check**: Run `python3 scripts/migrate_frontmatter.py` to tag any new files.
+2.  **Graph Integrity**: Run `python3 scripts/generate_context_map.py`.
+3.  **Fix Issues**: If the script reports errors (Broken Links, Cycles, Orphans), fix them immediately.
+4.  **Commit**: Commit the updated `CONTEXT_MAP.md` and any fixed files.
