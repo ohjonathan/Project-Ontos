@@ -5,16 +5,16 @@ import datetime
 import argparse
 
 from config import (
-    DEFAULT_DOCS_DIR, 
-    CONTEXT_MAP_FILE, 
-    TYPE_HIERARCHY, 
+    __version__,
+    DEFAULT_DOCS_DIR,
+    CONTEXT_MAP_FILE,
+    TYPE_HIERARCHY,
     MAX_DEPENDENCY_DEPTH,
     ALLOWED_ORPHAN_TYPES,
     SKIP_PATTERNS
 )
 
 OUTPUT_FILE = CONTEXT_MAP_FILE
-__version__ = '0.3.2'
 
 def parse_frontmatter(filepath):
     """Parses YAML frontmatter from a markdown file."""
@@ -41,7 +41,11 @@ def scan_docs(root_dir):
                 filepath = os.path.join(subdir, file)
                 frontmatter = parse_frontmatter(filepath)
                 if frontmatter and 'id' in frontmatter:
-                    files_data[frontmatter['id']] = {
+                    doc_id = frontmatter['id']
+                    # Skip internal/template documents (IDs starting with underscore)
+                    if doc_id.startswith('_'):
+                        continue
+                    files_data[doc_id] = {
                         'filepath': filepath,
                         'filename': file,
                         'type': frontmatter.get('type', 'unknown'),
@@ -137,23 +141,20 @@ def validate_dependencies(files_data):
         if not rev_adj[doc_id]:
             doc_type = files_data[doc_id]['type']
             filename = files_data[doc_id]['filename']
-            
-            # Skip expected root types and templates
+            filepath = files_data[doc_id]['filepath']
+
+            # Skip expected root types (they are naturally at the top of the hierarchy)
             if doc_type in ALLOWED_ORPHAN_TYPES:
                 continue
-            
-            # Check skip patterns
-            should_skip = False
-            for pattern in SKIP_PATTERNS:
-                if pattern in filename:
-                    should_skip = True
-                    break
-            if should_skip:
+
+            # Skip files matching skip patterns (e.g., templates)
+            if any(pattern in filename for pattern in SKIP_PATTERNS):
                 continue
 
-            if filename.startswith('session_log_'):
+            # Skip log files - they are intentionally standalone historical records
+            if '/logs/' in filepath or '\\logs\\' in filepath:
                 continue
-                
+
             issues.append(f"- [ORPHAN] **{doc_id}** is not depended on by any other document.")
 
     # 4. Dependency Depth
@@ -181,40 +182,31 @@ def validate_dependencies(files_data):
 
     # 5. Type Hierarchy Violations
     # Hierarchy: Kernel (0) < Strategy (1) < Product (2) < Atom (3)
+    # Rule: Dependencies flow DOWN the hierarchy (higher rank can depend on lower rank)
+    # Violation: Lower rank depending on higher rank (e.g., Kernel depending on Atom)
     type_rank = TYPE_HIERARCHY
-    
+
     for doc_id, data in files_data.items():
         my_type = data['type']
-        if isinstance(my_type, list): my_type = my_type[0]
+        if isinstance(my_type, list):
+            my_type = my_type[0]
         my_rank = type_rank.get(my_type, 4)
-        
-        for dep in data['depends_on']:
-            # Handle case where user wrote string instead of list
-            if isinstance(dep, str) and dep not in files_data: 
-                 # This check is slightly redundant with loop above but safe. 
-                 # Actually, data['depends_on'] is the list. 
-                 # We need to handle if data['depends_on'] is a string before iterating?
-                 # Wait, the previous fix handles 'deps' variable. 
-                 # Here we iterate data['depends_on'] directly.
-                 pass
 
-        # Let's fix the iteration logic properly.
+        # Normalize depends_on to list (handle string case)
         deps = data['depends_on']
         if isinstance(deps, str):
             deps = [deps]
-            
+
         for dep in deps:
             if dep in files_data:
                 dep_type = files_data[dep]['type']
-                if isinstance(dep_type, list): dep_type = dep_type[0]
+                if isinstance(dep_type, list):
+                    dep_type = dep_type[0]
                 dep_rank = type_rank.get(dep_type, 4)
-                
-                # Rule: Depend on things 'lower' or 'equal' in the stack.
-                # Violation: If I (lower) depend on something (higher).
-                # Example: Kernel (0) depends on Atom (3). 0 < 3. Violation.
-                # Example: Atom (3) depends on Kernel (0). 3 > 0. False. OK.
+
+                # Violation: Lower rank (e.g., Kernel=0) depending on higher rank (e.g., Atom=3)
                 if my_rank < dep_rank:
-                     issues.append(f"- [ARCHITECTURE] **{doc_id}** ({my_type}) depends on higher-layer **{dep}** ({dep_type}).")
+                    issues.append(f"- [ARCHITECTURE] **{doc_id}** ({my_type}) depends on higher-layer **{dep}** ({dep_type}).")
 
     return issues
 
@@ -264,9 +256,10 @@ Scanned Directory: `{target_dir}`
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate Ontos Context Map')
+    parser.add_argument('--version', '-V', action='version', version=f'%(prog)s {__version__}')
     parser.add_argument('--dir', type=str, default=DEFAULT_DOCS_DIR, help='Directory to scan (default: docs)')
     parser.add_argument('--strict', action='store_true', help='Exit with error code 1 if issues found')
-    parser.add_argument('--quiet', action='store_true', help='Suppress non-error output')
+    parser.add_argument('--quiet', '-q', action='store_true', help='Suppress non-error output')
     args = parser.parse_args()
     
     issue_count = generate_context_map(args.dir, args.quiet)

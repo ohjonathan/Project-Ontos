@@ -1,5 +1,8 @@
 """Ontos configuration constants."""
 
+# Version
+__version__ = '0.4.0'
+
 # Directory settings
 DEFAULT_DOCS_DIR = 'docs'
 LOGS_DIR = 'docs/logs'

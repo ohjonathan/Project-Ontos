@@ -4,7 +4,7 @@ import subprocess
 import argparse
 import sys
 
-from config import LOGS_DIR
+from config import __version__, LOGS_DIR
 
 def get_daily_git_log():
     """Gets the git log for the current day."""
@@ -84,12 +84,13 @@ Date: {today}
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Scaffold a new session log file.')
-    parser.add_argument('topic', type=str, help='Short slug describing the session (e.g. auth-refactor)')
-    parser.add_argument('--quiet', action='store_true', help='Suppress non-error output')
-    
-    if len(sys.argv) < 2:
+    parser.add_argument('--version', '-V', action='version', version=f'%(prog)s {__version__}')
+    parser.add_argument('topic', type=str, nargs='?', help='Short slug describing the session (e.g. auth-refactor)')
+    parser.add_argument('--quiet', '-q', action='store_true', help='Suppress non-error output')
+    args = parser.parse_args()
+
+    if not args.topic:
         parser.print_help()
         sys.exit(1)
 
-    args = parser.parse_args()
     create_log_file(args.topic, args.quiet)

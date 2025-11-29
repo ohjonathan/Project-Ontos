@@ -1,9 +1,9 @@
 import os
-
 import argparse
 import sys
 
-from config import DEFAULT_DOCS_DIR, MIGRATION_PROMPT_FILE
+from config import __version__, DEFAULT_DOCS_DIR, MIGRATION_PROMPT_FILE
+
 PROMPT_FILE = MIGRATION_PROMPT_FILE
 
 def has_frontmatter(filepath):
@@ -66,10 +66,11 @@ For each file below:
 
 def main():
     parser = argparse.ArgumentParser(description='Scan for untagged Ontos documentation files.')
+    parser.add_argument('--version', '-V', action='version', version=f'%(prog)s {__version__}')
     parser.add_argument('--dir', type=str, default=DEFAULT_DOCS_DIR,
                         help='Directory to scan (default: docs)')
     parser.add_argument('--strict', action='store_true', help='Exit with error if untagged files found')
-    parser.add_argument('--quiet', action='store_true', help='Suppress non-error output')
+    parser.add_argument('--quiet', '-q', action='store_true', help='Suppress non-error output')
     args = parser.parse_args()
 
     untagged = scan_for_untagged_files(args.dir)
