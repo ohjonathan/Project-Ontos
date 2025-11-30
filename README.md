@@ -1,5 +1,9 @@
 # Project Ontos
 
+[![CI](https://github.com/ohjona/Project-Ontos/actions/workflows/ci.yml/badge.svg)](https://github.com/ohjona/Project-Ontos/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+
 **Context-Aware Documentation for the Agentic Era.**
 
 Ontos is a lightweight protocol that turns your documentation folder into a structured **Knowledge Graph**. It allows AI Agents (Cursor, Claude, Gemini) to navigate your project intelligently, understanding dependencies and architectural decisions without hallucinating.
@@ -89,3 +93,11 @@ python3 scripts/end_session.py "session-name"
 # Create session log with changelog entry
 python3 scripts/end_session.py "session-name" --changelog
 ```
+
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## License
+
+This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.

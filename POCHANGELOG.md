@@ -26,9 +26,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Changelog integration in `end_session.py` (prompts for changelog entries)
 - `POCHANGELOG.md` for Project Ontos tooling changes (distinct from project changelogs)
+- MIT License (`LICENSE`)
+- `CONTRIBUTING.md` with contribution guidelines
+- `CODE_OF_CONDUCT.md` for community standards
+- `SECURITY.md` for vulnerability reporting
+- GitHub Actions CI workflow (`.github/workflows/ci.yml`)
+- GitHub issue and PR templates
 
 ### Changed
 - Renamed `CHANGELOG.md` to `POCHANGELOG.md` with YAML frontmatter for agent clarity
+- README now includes badges (CI, License, Python version)
+
+### Removed
+- Internal development files (`archive/`, review documents)
 
 ## [0.4.0] - 2025-11-29
 
