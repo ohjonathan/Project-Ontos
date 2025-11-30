@@ -22,7 +22,7 @@ Ontos is a lightweight protocol that turns your documentation folder into a stru
 - **[Agent Instructions](docs/reference/Ontos_Agent_Instructions.md)**: The system prompt for your AI agents.
 
 ### Meta
-- **[Changelog](CHANGELOG.md)**: Version history and changes.
+- **[Project Ontos Changelog](POCHANGELOG.md)**: Version history for Ontos tooling itself.
 
 ## Quick Start
 
@@ -85,4 +85,7 @@ python3 scripts/migrate_frontmatter.py
 
 # Create session log
 python3 scripts/end_session.py "session-name"
+
+# Create session log with changelog entry
+python3 scripts/end_session.py "session-name" --changelog
 ```

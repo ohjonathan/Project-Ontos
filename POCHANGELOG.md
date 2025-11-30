@@ -1,11 +1,34 @@
-# Changelog
+---
+id: po-changelog
+title: Project Ontos Changelog
+type: kernel
+scope: ontos-tooling-only
+update_policy: |
+  IMPORTANT: Only update this file when making changes to Project Ontos ITSELF
+  (scripts/, protocol schema, agent instructions, Ontos documentation).
 
-All notable changes to Project Ontos will be documented in this file.
+  Do NOT update this file when working on projects that USE Ontos as their
+  documentation system. Those projects should have their own CHANGELOG.md.
+depends_on: []
+---
+
+# Project Ontos Changelog
+
+All notable changes to **Project Ontos itself** (the protocol and tooling) will be documented in this file.
+
+> **For AI Agents**: This changelog is for the Ontos tooling only. If you're working on a project that *uses* Ontos, update that project's `CHANGELOG.md` instead (via `end_session.py --changelog`).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Added
+- Changelog integration in `end_session.py` (prompts for changelog entries)
+- `POCHANGELOG.md` for Project Ontos tooling changes (distinct from project changelogs)
+
+### Changed
+- Renamed `CHANGELOG.md` to `POCHANGELOG.md` with YAML frontmatter for agent clarity
 
 ## [0.4.0] - 2025-11-29
 
