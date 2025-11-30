@@ -1,4 +1,12 @@
-# 🚀 Ontos Initiation Guide
+---
+id: ontos_initiation_guide
+title: Ontos Initiation Guide
+type: product
+status: active
+depends_on: [ontos_installation_guide]
+---
+
+# Ontos Initiation Guide
 
 **Welcome to Day 1.** You have installed the scripts, but your documentation is still "dumb" text files. This guide covers how to turn them into a **Knowledge Graph**.
 

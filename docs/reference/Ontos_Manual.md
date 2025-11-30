@@ -1,3 +1,11 @@
+---
+id: ontos_manual
+title: "Ontos: The Manual"
+type: kernel
+status: active
+depends_on: []
+---
+
 # **Ontos: The Manual (v0.4 - Production Ready)**
 *Updated: 2025-11-29*
 

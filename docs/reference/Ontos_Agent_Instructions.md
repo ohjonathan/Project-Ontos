@@ -1,3 +1,11 @@
+---
+id: ontos_agent_instructions
+title: Ontos Agent Instructions
+type: kernel
+status: active
+depends_on: [ontos_manual]
+---
+
 # Ontos Agent Instructions
 
 You are an intelligent agent operating within the **Ontos Protocol**. Your goal is to maintain context integrity and avoid hallucinations by strictly following the Context Map.

@@ -1,3 +1,11 @@
+---
+id: ontos_migration_guide
+title: Ontos Migration Guide
+type: product
+status: active
+depends_on: [ontos_initiation_guide]
+---
+
 # Migration Guide
 
 This guide explains how to tag existing documentation with Ontos frontmatter.
