@@ -104,6 +104,9 @@ python3 scripts/end_session.py "session-name"
 
 # Create session log with changelog entry
 python3 scripts/end_session.py "session-name" --changelog
+
+# Remove frontmatter (for uninstallation)
+python3 scripts/remove_frontmatter.py --dry-run
 ```
 
 ## Contributing
