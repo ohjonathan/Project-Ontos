@@ -14,7 +14,7 @@ I didn't want to be the orchestrator agent. Using multiple AI tools (Claude, Cha
 
 ## The Solution
 
-I built a library with disciplined librarians, and I am telling LLMs to do their homework over there. Ontos creates a shared context layer where all your agents can cooperate. Tag your docs with simple YAML headers, declare dependencies, and a generated CONTEXT_MAP.md becomes your project's memory. When you tell any AI "Activate Ontos," it reads the map, loads only relevant documents, and sees decisions from previous sessions—regardless of which AI made them. Your context becomes portable across platforms through a git-based protocol.
+I built a library with disciplined librarians, and now I tell my LLMs to do their homework there. Ontos creates this shared context layer so all your agents can cooperate. Tag your docs with simple YAML headers, declare dependencies, and a generated CONTEXT_MAP.md becomes your project's memory. When you tell any AI "Activate Ontos," it reads the map, loads only relevant documents, and sees decisions from previous sessions—regardless of which AI made them. Your context becomes portable across platforms through a git-based protocol.
 
 ## Why "Ontos"?
 
