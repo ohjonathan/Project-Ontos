@@ -6,9 +6,21 @@
 
 **Context-Aware Documentation for the Agentic Era.**
 
-Ontos is a lightweight protocol that turns your documentation folder into a structured **Knowledge Graph**. It allows AI Agents (Cursor, Claude, Gemini) to navigate your project intelligently, understanding dependencies and architectural decisions without hallucinating.
+*Never explain twice. Own your context.*
 
-## Why Ontos?
+## The Problem
+
+I didn't want to be the orchestrator agent. Using multiple AI tools (Claude, ChatGPT, Gemini) means uploading the same documents repeatedly, each AI starting from zero and giving conflicting advice. Building several vibe coding projects, I was spending 10+ hours weekly re-establishing context across different LLMs. Each tool had its own interpretation of my intentions and owned fragments of the conversation. It felt like working with teammates who never talk to each other.
+
+## The Solution
+
+I built a library with disciplined librarians, and I am telling LLMs to do their homework over there. Ontos creates a shared context layer where all your agents can cooperate. Tag your docs with simple YAML headers, declare dependencies, and a generated CONTEXT_MAP.md becomes your project's memory. When you tell any AI "Activate Ontos," it reads the map, loads only relevant documents, and sees decisions from previous sessions—regardless of which AI made them. Your context becomes portable across platforms through a git-based protocol.
+
+## Why "Ontos"?
+
+From Greek ὄντος (ontos), meaning "being"—the root of ontology. Your documentation gains existence as a persistent knowledge graph that lives across all AI platforms, not trapped in separate chat histories.
+
+## Key Benefits
 
 - **Stop Hallucinations**: Agents read a map, not just random files.
 - **Zero Overhead**: Just markdown files with simple YAML headers.
