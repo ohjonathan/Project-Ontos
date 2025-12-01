@@ -79,7 +79,10 @@ def normalize_type(value) -> str:
     if value is None:
         return 'unknown'
     if isinstance(value, str):
-        return value.strip() if value.strip() else 'unknown'
+        stripped = value.strip()
+        if not stripped or '|' in stripped:
+            return 'unknown'
+        return stripped
     if isinstance(value, list):
         if value and value[0] is not None:
             first = str(value[0]).strip()
@@ -183,8 +186,9 @@ def validate_dependencies(files_data: dict[str, dict]) -> list[str]:
     rev_adj: dict[str, list[str]] = {doc_id: [] for doc_id in existing_ids}
 
     for doc_id, data in files_data.items():
-        # depends_on is already normalized to list[str] by scan_docs
-        for dep in data['depends_on']:
+        # Normalize depends_on in case it wasn't processed by scan_docs
+        deps = normalize_depends_on(data.get('depends_on'))
+        for dep in deps:
             if dep not in existing_ids:
                 issues.append(
                     f"- [BROKEN LINK] **{doc_id}** ({data['filepath']}) references missing ID: `{dep}`\n"
@@ -269,14 +273,15 @@ def validate_dependencies(files_data: dict[str, dict]) -> list[str]:
             )
 
     # 5. Type Hierarchy Violations
-    # Data is already normalized by scan_docs (type is str, depends_on is list[str])
     type_rank = TYPE_HIERARCHY
 
     for doc_id, data in files_data.items():
-        my_type = data['type']
+        my_type = normalize_type(data.get('type'))
         my_rank = type_rank.get(my_type, 4)
 
-        for dep in data['depends_on']:
+        # Normalize depends_on in case it wasn't processed by scan_docs
+        deps = normalize_depends_on(data.get('depends_on'))
+        for dep in deps:
             if dep in files_data:
                 dep_type = files_data[dep]['type']
                 dep_rank = type_rank.get(dep_type, 4)
