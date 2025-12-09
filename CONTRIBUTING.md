@@ -61,7 +61,7 @@ Add --json output flag to generate_context_map.py
 2. **Create a branch** for your feature: `git checkout -b feature/my-feature`
 3. **Make your changes** and commit them
 4. **Run tests**: `pytest tests/ -v`
-5. **Run validation**: `python3 scripts/generate_context_map.py --strict`
+5. **Run validation**: `python3 .ontos/scripts/ontos_generate_context_map.py --strict`
 6. **Push** to your fork and open a PR
 
 ### PR Checklist
@@ -69,7 +69,7 @@ Add --json output flag to generate_context_map.py
 - [ ] Tests pass locally
 - [ ] Code follows project style
 - [ ] Documentation updated (if applicable)
-- [ ] POCHANGELOG.md updated under `[Unreleased]`
+- [ ] Ontos_CHANGELOG.md updated under `[Unreleased]`
 
 ## Testing
 
@@ -80,7 +80,7 @@ Run the test suite:
 pytest tests/ -v
 
 # Run with coverage
-pytest tests/ -v --cov=scripts
+pytest tests/ -v --cov=.ontos/scripts
 
 # Run specific test file
 pytest tests/test_yaml_edge_cases.py -v

@@ -8,7 +8,7 @@ DEFAULT_DOCS_DIR = 'docs'
 LOGS_DIR = 'docs/logs'
 
 # Output files
-CONTEXT_MAP_FILE = 'CONTEXT_MAP.md'
+CONTEXT_MAP_FILE = 'Ontos_Context_Map.md'
 MIGRATION_PROMPT_FILE = 'migration_prompt.txt'
 
 # Validation thresholds

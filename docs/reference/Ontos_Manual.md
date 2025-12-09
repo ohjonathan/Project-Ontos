@@ -19,7 +19,7 @@ depends_on: []        # List of dependency IDs. Example: [auth_flow, user_model]
 ---
 ```
 
-> **Automation:** Use `scripts/migrate_frontmatter.py` to scan for untagged files, then tag them using your AI agent.
+> **Automation:** Use `.ontos/scripts/ontos_migrate_frontmatter.py` to scan for untagged files, then tag them using your AI agent.
 
 ## **Document Type Taxonomy**
 
@@ -54,10 +54,10 @@ Instead of prompting the LLM to hallucinate a map, we now use a deterministic sc
 
 **Run:**
 ```bash
-python3 scripts/generate_context_map.py
+python3 .ontos/scripts/ontos_generate_context_map.py
 ```
 
-This generates `CONTEXT_MAP.md`, which visualizes the graph and performs **5 Integrity Checks**:
+This generates `Ontos_Context_Map.md`, which visualizes the graph and performs **5 Integrity Checks**:
 1.  **Broken Links**: IDs that don't exist.
 2.  **Circular Dependencies**: Infinite loops (A -> B -> A).
 3.  **Orphaned Nodes**: Files disconnected from the graph.
@@ -71,18 +71,18 @@ Tell your Agent:
 > **"Maintain Ontos"**
 
 **The Agent will:**
-1.  Run `scripts/migrate_frontmatter.py` to catch untagged files.
-2.  Run `scripts/generate_context_map.py` to rebuild the graph.
+1.  Run `.ontos/scripts/ontos_migrate_frontmatter.py` to catch untagged files.
+2.  Run `.ontos/scripts/ontos_generate_context_map.py` to rebuild the graph.
 3.  Fix any errors reported (Broken Links, Cycles, etc.).
 4.  Commit the updated map.
 
-**Do not manually edit CONTEXT_MAP.md.** It is a disposable artifact.
+**Do not manually edit `Ontos_Context_Map.md`.** It is a disposable artifact.
 
 ### Strict Mode (CI/CD)
 
 To enforce graph integrity in pipelines, use the `--strict` flag:
 ```bash
-python3 scripts/generate_context_map.py --strict
+python3 .ontos/scripts/ontos_generate_context_map.py --strict
 ```
 This will exit with an error code if any issues are found.
 
@@ -95,7 +95,7 @@ Simply tell your Agent:
 > **"Ontos"** (or "Activate Ontos")
 
 The Agent will follow this strict 6-step protocol:
-1.  **Check Map**: Look for `CONTEXT_MAP.md`.
+1.  **Check Map**: Look for `Ontos_Context_Map.md`.
 2.  **Generate**: Run the script if missing.
 3.  **Read**: Read the map to understand the project structure.
 4.  **Identify**: Identify relevant documentation IDs for your request.
@@ -112,7 +112,7 @@ The Agent will follow this strict 6-step protocol:
 
 1. Find the file with id: `strategy_monetization`.
 2. Update the markdown content.
-3. Run `scripts/generate_context_map.py` to verify integrity."
+3. Run `.ontos/scripts/ontos_generate_context_map.py` to verify integrity."
 
 ## **Phase 5: The "Session Commit" (Archival)**
 
@@ -123,7 +123,7 @@ Tell your Agent:
 > **"Archive Ontos"** (or "Ontos archive")
 
 **The Agent will:**
-1.  Run `python3 scripts/end_session.py "topic-slug"`.
+1.  Run `python3 .ontos/scripts/ontos_end_session.py "topic-slug"`.
 2.  Fill in the generated log file with **Decisions Made**, **Alternatives Rejected**, and **Files Modified**.
 3.  Commit the log file to git.
 
@@ -134,7 +134,7 @@ Tell your Agent:
 **Cause:** File is missing YAML frontmatter or the `id` field.
 
 **Solution:**
-1. Run `python3 scripts/migrate_frontmatter.py` to identify untagged files
+1. Run `python3 .ontos/scripts/ontos_migrate_frontmatter.py` to identify untagged files
 2. Add frontmatter to the file:
    ```yaml
    ---
@@ -142,7 +142,7 @@ Tell your Agent:
    type: atom
    ---
    ```
-3. Regenerate the map: `python3 scripts/generate_context_map.py`
+3. Regenerate the map: `python3 .ontos/scripts/ontos_generate_context_map.py`
 
 ### "How do I fix a circular dependency?"
 

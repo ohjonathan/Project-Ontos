@@ -11,7 +11,7 @@ The migration script scans your `docs/` folder and identifies files missing YAML
 Run the migration script:
 
 ```bash
-python3 scripts/migrate_frontmatter.py
+python3 .ontos/scripts/ontos_migrate_frontmatter.py
 ```
 
 Output:
@@ -52,7 +52,7 @@ Your agent will:
 After tagging, regenerate the context map:
 
 ```bash
-python3 scripts/generate_context_map.py
+python3 .ontos/scripts/ontos_generate_context_map.py
 ```
 
 Check the output for:

@@ -8,7 +8,7 @@ import datetime
 import argparse
 from typing import Optional
 
-from config import (
+from ontos_config import (
     __version__,
     DEFAULT_DOCS_DIR,
     CONTEXT_MAP_FILE,

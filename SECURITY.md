@@ -46,16 +46,16 @@ Project Ontos processes local markdown files. Key security considerations:
 ### Best Practices for Users
 
 1. **Don't run scripts on untrusted directories** - Only use Ontos on your own projects
-2. **Review generated files** - Always review `CONTEXT_MAP.md` before committing
+2. **Review generated files** - Always review `Ontos_Context_Map.md` before committing
 3. **Keep dependencies updated** - Run `pip install --upgrade pyyaml`
 
 ## Scope
 
 This security policy applies to:
 
-- `scripts/generate_context_map.py`
-- `scripts/migrate_frontmatter.py`
-- `scripts/end_session.py`
+- `.ontos/scripts/ontos_generate_context_map.py`
+- `.ontos/scripts/ontos_migrate_frontmatter.py`
+- `.ontos/scripts/ontos_end_session.py`
 - Related configuration files
 
 Third-party dependencies (PyYAML, watchdog, etc.) have their own security policies.

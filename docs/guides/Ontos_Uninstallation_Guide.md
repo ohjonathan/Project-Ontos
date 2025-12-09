@@ -7,15 +7,11 @@ If you decide to stop using Ontos, here's how to cleanly remove it from your pro
 Delete the Ontos-specific files:
 
 ```bash
-rm -rf scripts/generate_context_map.py
-rm -rf scripts/migrate_frontmatter.py
-rm -rf scripts/end_session.py
-rm -rf scripts/remove_frontmatter.py
-rm -rf scripts/config.py
-rm -f CONTEXT_MAP.md
+rm -rf .ontos/                # Remove all Ontos scripts
+rm -f Ontos_Context_Map.md
 rm -f Ontos_Agent_Instructions.md
 rm -f docs/_template.md
-rm -rf docs/logs/           # Optional: remove session logs
+rm -rf docs/logs/             # Optional: remove session logs
 ```
 
 ## 2. Remove YAML Frontmatter (Optional)
@@ -24,17 +20,17 @@ Your markdown files will still have YAML frontmatter headers. This is valid mark
 
 **If you want to keep the frontmatter:** Do nothing. It's harmless metadata.
 
-**If you want to remove it:** Use the removal script before deleting the scripts folder:
+**If you want to remove it:** Use the removal script before deleting the `.ontos/` folder:
 
 ```bash
 # Preview what will be changed
-python3 scripts/remove_frontmatter.py --dry-run
+python3 .ontos/scripts/ontos_remove_frontmatter.py --dry-run
 
 # Remove frontmatter from all docs
-python3 scripts/remove_frontmatter.py --yes
+python3 .ontos/scripts/ontos_remove_frontmatter.py --yes
 
 # Or remove from a single file
-python3 scripts/remove_frontmatter.py --file docs/my-file.md
+python3 .ontos/scripts/ontos_remove_frontmatter.py --file docs/my-file.md
 ```
 
 **Alternative (one-liner for Unix systems):**
@@ -60,4 +56,4 @@ A: No. Ontos only adds metadata to your files. Your documentation content remain
 A: No. YAML frontmatter is valid markdown. GitHub, GitLab, and most documentation tools render it correctly or ignore it. Removing it is purely cosmetic.
 
 **Q: Can I re-install Ontos later?**
-A: Yes. If you kept the frontmatter, your files are already tagged and ready. Just re-add the scripts and run `generate_context_map.py`.
+A: Yes. If you kept the frontmatter, your files are already tagged and ready. Just re-add the `.ontos/` folder and run `ontos_generate_context_map.py`.

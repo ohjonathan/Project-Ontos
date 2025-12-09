@@ -1,7 +1,7 @@
 """Tests for cycle detection functionality."""
 
 import pytest
-from generate_context_map import validate_dependencies
+from ontos_generate_context_map import validate_dependencies
 
 
 class TestCycleDetection:

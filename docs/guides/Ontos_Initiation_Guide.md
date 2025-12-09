@@ -53,7 +53,7 @@ Once files have headers, ask the Agent to infer relationships.
 Run the script to generate your first map.
 
 ```bash
-python3 scripts/generate_context_map.py
+python3 .ontos/scripts/ontos_generate_context_map.py
 ```
 
 ## Step 5: Troubleshooting
@@ -68,7 +68,7 @@ You will likely see errors on the first run. This is normal.
 
 ## Success
 When the script prints:
-> `Successfully generated CONTEXT_MAP.md`
+> `Successfully generated Ontos_Context_Map.md`
 > `No issues found.`
 
 You are ready to start **Vibe Coding**.

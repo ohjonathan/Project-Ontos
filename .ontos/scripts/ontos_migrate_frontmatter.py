@@ -4,7 +4,7 @@ import os
 import argparse
 import sys
 
-from config import __version__, DEFAULT_DOCS_DIR, MIGRATION_PROMPT_FILE, TYPE_DEFINITIONS
+from ontos_config import __version__, DEFAULT_DOCS_DIR, MIGRATION_PROMPT_FILE, TYPE_DEFINITIONS
 
 PROMPT_FILE = MIGRATION_PROMPT_FILE
 
@@ -98,7 +98,7 @@ For each file below:
 1. Read the file content
 2. Determine the appropriate type, id, and dependencies
 3. Add YAML frontmatter to the beginning of the file
-4. After all files are tagged, run `python3 scripts/generate_context_map.py` to validate
+4. After all files are tagged, run `python3 .ontos/scripts/ontos_generate_context_map.py` to validate
 
 ## Files to Tag:
 
@@ -163,7 +163,7 @@ Examples:
         print("\n💡 Next steps:")
         print("   1. Read each file listed above")
         print("   2. Add appropriate YAML frontmatter")
-        print("   3. Run: python3 scripts/generate_context_map.py")
+        print("   3. Run: python3 .ontos/scripts/ontos_generate_context_map.py")
 
 
 if __name__ == "__main__":

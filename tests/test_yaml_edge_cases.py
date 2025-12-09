@@ -1,7 +1,7 @@
 """Tests for YAML edge cases and null value handling."""
 
 import pytest
-from generate_context_map import (
+from ontos_generate_context_map import (
     normalize_depends_on,
     normalize_type,
     scan_docs,

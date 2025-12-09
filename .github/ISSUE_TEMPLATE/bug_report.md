@@ -12,7 +12,7 @@ A clear description of what the bug is.
 
 ## Steps to Reproduce
 
-1. Run `python3 scripts/...`
+1. Run `python3 .ontos/scripts/ontos_...`
 2. With this input: ...
 3. See error
 
@@ -28,7 +28,7 @@ What actually happened.
 
 - OS: [e.g., macOS 14, Ubuntu 22.04, Windows 11]
 - Python version: [e.g., 3.11.5]
-- Ontos version: [run `python3 scripts/generate_context_map.py --version`]
+- Ontos version: [run `python3 .ontos/scripts/ontos_generate_context_map.py --version`]
 
 ## Additional Context
 

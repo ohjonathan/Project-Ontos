@@ -1,7 +1,7 @@
 """Tests for migrate_frontmatter functionality."""
 
 import pytest
-from migrate_frontmatter import has_frontmatter, scan_for_untagged_files, generate_prompt
+from ontos_migrate_frontmatter import has_frontmatter, scan_for_untagged_files, generate_prompt
 
 
 class TestHasFrontmatter:

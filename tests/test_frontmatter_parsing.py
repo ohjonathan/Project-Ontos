@@ -1,7 +1,7 @@
 """Tests for frontmatter parsing functionality."""
 
 import pytest
-from generate_context_map import parse_frontmatter
+from ontos_generate_context_map import parse_frontmatter
 
 
 class TestParseFrontmatter:
@@ -45,7 +45,7 @@ class TestScanDocs:
 
     def test_scan_valid_docs(self, temp_docs_dir, valid_kernel_doc, valid_atom_doc):
         """Test scanning directory with valid docs."""
-        from generate_context_map import scan_docs
+        from ontos_generate_context_map import scan_docs
 
         result = scan_docs([str(temp_docs_dir)])
         assert len(result) == 2
@@ -54,21 +54,21 @@ class TestScanDocs:
 
     def test_skip_underscore_prefix(self, temp_docs_dir, template_doc):
         """Test that IDs starting with underscore are skipped."""
-        from generate_context_map import scan_docs
+        from ontos_generate_context_map import scan_docs
 
         result = scan_docs([str(temp_docs_dir)])
         assert '_template' not in result
 
     def test_skip_missing_frontmatter(self, temp_docs_dir, doc_without_frontmatter):
         """Test that files without frontmatter are skipped."""
-        from generate_context_map import scan_docs
+        from ontos_generate_context_map import scan_docs
 
         result = scan_docs([str(temp_docs_dir)])
         assert len(result) == 0
 
     def test_scan_multiple_directories(self, tmp_path):
         """Test scanning multiple directories."""
-        from generate_context_map import scan_docs
+        from ontos_generate_context_map import scan_docs
 
         dir1 = tmp_path / "docs1"
         dir1.mkdir()
@@ -93,7 +93,7 @@ type: atom
 
     def test_scan_nonexistent_directory(self, tmp_path, capsys):
         """Test scanning nonexistent directory shows warning."""
-        from generate_context_map import scan_docs
+        from ontos_generate_context_map import scan_docs
 
         result = scan_docs([str(tmp_path / "nonexistent")])
         captured = capsys.readouterr()

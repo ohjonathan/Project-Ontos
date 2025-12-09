@@ -4,7 +4,7 @@ import os
 import argparse
 import sys
 
-from config import __version__, DEFAULT_DOCS_DIR
+from ontos_config import __version__, DEFAULT_DOCS_DIR
 
 
 def has_frontmatter(filepath: str) -> bool:

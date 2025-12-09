@@ -7,7 +7,7 @@ import subprocess
 import argparse
 import sys
 
-from config import __version__, LOGS_DIR
+from ontos_config import __version__, LOGS_DIR
 
 # Valid slug pattern: lowercase letters, numbers, and hyphens
 VALID_SLUG_PATTERN = re.compile(r'^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$')

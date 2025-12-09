@@ -14,9 +14,9 @@ Fixes #(issue number)
 ## Checklist
 
 - [ ] Tests pass (`pytest tests/ -v`)
-- [ ] Validation passes (`python3 scripts/generate_context_map.py --strict`)
+- [ ] Validation passes (`python3 .ontos/scripts/ontos_generate_context_map.py --strict`)
 - [ ] Documentation updated (if applicable)
-- [ ] POCHANGELOG.md updated under `[Unreleased]`
+- [ ] Ontos_CHANGELOG.md updated under `[Unreleased]`
 
 ## Testing
 

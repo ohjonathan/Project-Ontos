@@ -14,7 +14,7 @@ I didn't want to be the orchestrator agent. Using multiple AI tools (Claude, Cha
 
 ## The Solution
 
-I built a library with disciplined librarians, and now I tell my LLMs to do their homework there. Ontos creates this shared context layer so all your agents can cooperate. Tag your docs with simple YAML headers, declare dependencies, and a generated CONTEXT_MAP.md becomes your project's memory. When you tell any AI "Activate Ontos," it reads the map, loads only relevant documents, and sees decisions from previous sessions—regardless of which AI made them. Your context becomes portable across platforms through a git-based protocol.
+I built a library with disciplined librarians, and now I tell my LLMs to do their homework there. Ontos creates this shared context layer so all your agents can cooperate. Tag your docs with simple YAML headers, declare dependencies, and a generated `Ontos_Context_Map.md` becomes your project's memory. When you tell any AI "Activate Ontos," it reads the map, loads only relevant documents, and sees decisions from previous sessions—regardless of which AI made them. Your context becomes portable across platforms through a git-based protocol.
 
 ## Why "Ontos"?
 
@@ -39,7 +39,7 @@ From Greek ὄντος (ontos), meaning "being"—the root of ontology. Your doc
 - **[Agent Instructions](docs/reference/Ontos_Agent_Instructions.md)**: The system prompt for your AI agents.
 
 ### Meta
-- **[Project Ontos Changelog](POCHANGELOG.md)**: Version history for Ontos tooling itself.
+- **[Project Ontos Changelog](Ontos_CHANGELOG.md)**: Version history for Ontos tooling itself.
 
 ## Quick Start
 
@@ -89,25 +89,25 @@ pre-commit install
 
 ```bash
 # Generate context map
-python3 scripts/generate_context_map.py
+python3 .ontos/scripts/ontos_generate_context_map.py
 
 # Watch for changes
-python3 scripts/generate_context_map.py --watch
+python3 .ontos/scripts/ontos_generate_context_map.py --watch
 
 # Scan multiple directories
-python3 scripts/generate_context_map.py --dir docs --dir specs
+python3 .ontos/scripts/ontos_generate_context_map.py --dir docs --dir specs
 
 # Check for untagged files
-python3 scripts/migrate_frontmatter.py
+python3 .ontos/scripts/ontos_migrate_frontmatter.py
 
 # Create session log
-python3 scripts/end_session.py "session-name"
+python3 .ontos/scripts/ontos_end_session.py "session-name"
 
 # Create session log with changelog entry
-python3 scripts/end_session.py "session-name" --changelog
+python3 .ontos/scripts/ontos_end_session.py "session-name" --changelog
 
 # Remove frontmatter (for uninstallation)
-python3 scripts/remove_frontmatter.py --dry-run
+python3 .ontos/scripts/ontos_remove_frontmatter.py --dry-run
 ```
 
 ## Contributing

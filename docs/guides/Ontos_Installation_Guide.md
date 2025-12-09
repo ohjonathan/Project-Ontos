@@ -16,17 +16,17 @@ Pull the Project-Ontos repository (https://github.com/ohjona/Project-Ontos/tree/
 
 ## 1. Installation
 
-Copy the `scripts/` folder into your project root:
+Copy the `.ontos/` folder into your project root:
 
 ```bash
-mkdir scripts
-cp /path/to/ontos/scripts/*.py scripts/
+mkdir -p .ontos/scripts
+cp /path/to/ontos/.ontos/scripts/*.py .ontos/scripts/
 ```
 
 ## 2. Configuration
 
 ### A. The Context Map Script
-Ensure `scripts/generate_context_map.py` is executable (optional, usually python3 command is enough).
+Ensure `.ontos/scripts/ontos_generate_context_map.py` is executable (optional, usually python3 command is enough).
 
 ### B. The System Prompt
 1.  Copy `Ontos_Agent_Instructions.md` to your project root.
@@ -40,10 +40,10 @@ Copy `docs/template.md` to `docs/_template.md` (or similar) to use as a starting
 Run the generation script to ensure it works:
 
 ```bash
-python3 scripts/generate_context_map.py
+python3 .ontos/scripts/ontos_generate_context_map.py
 ```
 
-It should generate a `CONTEXT_MAP.md` file in your root directory.
+It should generate an `Ontos_Context_Map.md` file in your root directory.
 
 ## 4. CI/CD Integration (Optional)
 
@@ -51,7 +51,7 @@ You can add a step in your GitHub Actions to verify graph integrity:
 
 ```yaml
 - name: Verify Ontos Graph
-  run: python3 scripts/generate_context_map.py --strict
+  run: python3 .ontos/scripts/ontos_generate_context_map.py --strict
 ```
 
 If the script encounters "Cycles" or "Architectural Violations", it will output them to the map. The `--strict` flag causes the script to exit with error code 1 if any issues are found, failing the pipeline.
