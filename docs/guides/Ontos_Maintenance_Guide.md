@@ -281,6 +281,33 @@ Validate before every commit:
 python3 .ontos/scripts/ontos_generate_context_map.py --strict --quiet
 ```
 
+### Pre-push Hook (Session Log Reminder)
+
+Ontos includes a pre-push hook that reminds you to archive your session before pushing:
+
+```bash
+# Install the hook
+cp .ontos/hooks/pre-push .git/hooks/pre-push
+chmod +x .git/hooks/pre-push
+```
+
+When you push without creating a session log that day, you'll see:
+
+```
+╔════════════════════════════════════════════════════════════╗
+║           SESSION LOG REMINDER                             ║
+╠════════════════════════════════════════════════════════════╣
+║  💡 No session log created today.                          ║
+║                                                            ║
+║  Consider running "Archive Ontos" to capture your          ║
+║  decisions and changes before pushing.                     ║
+╚════════════════════════════════════════════════════════════╝
+
+Continue with push anyway? [y/n]:
+```
+
+This helps ensure your decision history is captured before code leaves your machine.
+
 ---
 
 ## Troubleshooting
@@ -328,7 +355,8 @@ Never edit `Ontos_Context_Map.md` directly — your changes will be overwritten.
 | Apply update | `python3 .ontos/scripts/ontos_update.py` |
 | Validate strictly | `python3 .ontos/scripts/ontos_generate_context_map.py --strict` |
 | Tag new files | `python3 .ontos/scripts/ontos_migrate_frontmatter.py` |
-| Archive session | `python3 .ontos/scripts/ontos_end_session.py "session-slug"` |
+| Archive session | `python3 .ontos/scripts/ontos_end_session.py "session-slug" --source "LLM Name"` |
+| Install pre-push hook | `cp .ontos/hooks/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push` |
 
 ---
 

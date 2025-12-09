@@ -67,3 +67,17 @@ When the user says **"Update Ontos"**:
 2.  Run `python3 .ontos/scripts/ontos_update.py` to apply the update.
 3.  Backups are saved to `.ontos/backups/` automatically.
 4.  The user's `ontos_config.py` is never overwritten.
+
+### 6. Version Bumping (Project Ontos Development Only)
+**IMPORTANT**: When working on Project Ontos itself (not projects that *use* Ontos), you MUST ask the user about version bumps before pushing to git.
+
+**When to ask**: Before any `git push` that includes changes to files in `.ontos/scripts/`, `.ontos/` config files, or Ontos documentation.
+
+**How to ask**: "Should I bump the Ontos version before pushing? Current version is X.Y.Z. Options:
+- **Patch (X.Y.Z+1)**: Bug fixes only
+- **Minor (X.Y+1.0)**: New features, backward compatible
+- **No change**: Skip version bump"
+
+**Where to update**: `.ontos/scripts/ontos_config_defaults.py` → `ONTOS_VERSION`
+
+**Note**: This only applies when developing Ontos itself. Projects *using* Ontos should manage their own versioning separately.

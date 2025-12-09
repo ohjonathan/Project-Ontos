@@ -1,0 +1,57 @@
+#!/bin/bash
+# Ontos pre-push hook - reminds user to archive session if no log exists today
+
+# Get today's date
+TODAY=$(date +%Y-%m-%d)
+
+# Find logs directory (check common locations)
+LOGS_DIR=""
+if [ -d "docs/logs" ]; then
+    LOGS_DIR="docs/logs"
+elif [ -d "Docs/logs" ]; then
+    LOGS_DIR="Docs/logs"
+fi
+
+# If no logs directory found, skip check
+if [ -z "$LOGS_DIR" ]; then
+    exit 0
+fi
+
+# Check if a log file exists for today
+TODAY_LOG=$(ls "$LOGS_DIR"/${TODAY}_*.md 2>/dev/null | head -1)
+
+if [ -n "$TODAY_LOG" ]; then
+    # Log exists for today, proceed with push
+    exit 0
+fi
+
+# No log for today - show reminder
+echo ""
+echo "╔════════════════════════════════════════════════════════════╗"
+echo "║           SESSION LOG REMINDER                             ║"
+echo "╠════════════════════════════════════════════════════════════╣"
+echo "║  💡 No session log created today.                          ║"
+echo "║                                                            ║"
+echo "║  Consider running \"Archive Ontos\" to capture your          ║"
+echo "║  decisions and changes before pushing.                     ║"
+echo "╚════════════════════════════════════════════════════════════╝"
+echo ""
+
+# Check if we're in an interactive terminal
+if [ -t 0 ]; then
+    read -p "Continue with push anyway? [y/n]: " choice
+    case "$choice" in
+        y|Y|yes|Yes|YES)
+            echo "Proceeding with push..."
+            exit 0
+            ;;
+        *)
+            echo "Push aborted. Run \"Archive Ontos\" to create a session log."
+            exit 1
+            ;;
+    esac
+else
+    # Non-interactive, just warn and proceed
+    echo "Proceeding with push (non-interactive terminal)..."
+    exit 0
+fi
