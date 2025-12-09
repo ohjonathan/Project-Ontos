@@ -4,7 +4,7 @@ import os
 import argparse
 import sys
 
-from ontos_config import __version__, DEFAULT_DOCS_DIR, MIGRATION_PROMPT_FILE, TYPE_DEFINITIONS
+from ontos_config import __version__, DOCS_DIR, MIGRATION_PROMPT_FILE, TYPE_DEFINITIONS
 
 PROMPT_FILE = MIGRATION_PROMPT_FILE
 
@@ -123,7 +123,7 @@ Examples:
 """
     )
     parser.add_argument('--version', '-V', action='version', version=f'%(prog)s {__version__}')
-    parser.add_argument('--dir', type=str, default=DEFAULT_DOCS_DIR,
+    parser.add_argument('--dir', type=str, default=DOCS_DIR,
                         help='Directory to scan (default: docs)')
     parser.add_argument('--strict', action='store_true', help='Exit with error if untagged files found')
     parser.add_argument('--quiet', '-q', action='store_true', help='Suppress non-error output')

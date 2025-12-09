@@ -25,8 +25,24 @@ cp /path/to/ontos/.ontos/scripts/*.py .ontos/scripts/
 
 ## 2. Configuration
 
-### A. The Context Map Script
-Ensure `.ontos/scripts/ontos_generate_context_map.py` is executable (optional, usually python3 command is enough).
+### A. Understanding the Config Files
+
+Ontos uses a two-file configuration system:
+
+| File | Purpose | Updated by `ontos_update.py`? |
+|------|---------|-------------------------------|
+| `ontos_config_defaults.py` | Default settings shipped with Ontos | Yes |
+| `ontos_config.py` | Your project-specific overrides | **Never** |
+
+To customize Ontos for your project, edit `ontos_config.py`:
+
+```python
+# Example: Change docs directory
+DOCS_DIR = 'documentation'  # Instead of default 'docs'
+
+# Example: Add skip patterns
+SKIP_PATTERNS = DEFAULT_SKIP_PATTERNS + ['drafts/', 'archive/']
+```
 
 ### B. The System Prompt
 1.  Copy `Ontos_Agent_Instructions.md` to your project root.

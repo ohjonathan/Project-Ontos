@@ -23,7 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2025-12-10
+
 ### Added
+- **Update script** (`ontos_update.py`) — Pull latest Ontos from GitHub with one command
+- **Split configuration** — `ontos_config_defaults.py` (updatable) + `ontos_config.py` (user overrides, never touched)
+- **Maintenance Guide** (`Ontos_Maintenance_Guide.md`) — Comprehensive guide for context hygiene, error remediation, and updates
+- **Version constant** (`ONTOS_VERSION`) in config for update checking
+- **Backup system** — Updates create backups in `.ontos/backups/` before overwriting
 - Changelog integration in `ontos_end_session.py` (prompts for changelog entries)
 - `Ontos_CHANGELOG.md` for Project Ontos tooling changes (distinct from project changelogs)
 - MIT License (`LICENSE`)
@@ -34,6 +41,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub issue and PR templates
 
 ### Changed
+- **Version bump to 1.0.0** — First stable release
+- Config variable renamed: `DEFAULT_DOCS_DIR` → `DOCS_DIR` (backward compatible)
+- Installation Guide now documents the two-file config pattern
 - Renamed `CHANGELOG.md` to `Ontos_CHANGELOG.md` with YAML frontmatter for agent clarity
 - README now includes badges (CI, License, Python version)
 

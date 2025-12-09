@@ -4,7 +4,7 @@ import os
 import argparse
 import sys
 
-from ontos_config import __version__, DEFAULT_DOCS_DIR
+from ontos_config import __version__, DOCS_DIR
 
 
 def has_frontmatter(filepath: str) -> bool:
@@ -89,7 +89,7 @@ Examples:
 """
     )
     parser.add_argument('--version', '-V', action='version', version=f'%(prog)s {__version__}')
-    parser.add_argument('--dir', type=str, default=DEFAULT_DOCS_DIR,
+    parser.add_argument('--dir', type=str, default=DOCS_DIR,
                         help='Directory to scan (default: docs)')
     parser.add_argument('--file', type=str,
                         help='Process a single file instead of scanning directory')

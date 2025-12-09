@@ -10,7 +10,7 @@ from typing import Optional
 
 from ontos_config import (
     __version__,
-    DEFAULT_DOCS_DIR,
+    DOCS_DIR,
     CONTEXT_MAP_FILE,
     TYPE_HIERARCHY,
     MAX_DEPENDENCY_DEPTH,
@@ -424,7 +424,7 @@ Examples:
     args = parser.parse_args()
 
     # Default to docs directory if none specified
-    target_dirs = args.dirs if args.dirs else [DEFAULT_DOCS_DIR]
+    target_dirs = args.dirs if args.dirs else [DOCS_DIR]
 
     if args.watch:
         watch_mode(target_dirs, args.quiet)

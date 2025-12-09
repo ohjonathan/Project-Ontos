@@ -58,3 +58,12 @@ When the user says **"Maintain Ontos"** (or "Ontos maintenance"):
 2.  **Graph Integrity**: Run `python3 .ontos/scripts/ontos_generate_context_map.py`.
 3.  **Fix Issues**: If the script reports errors (Broken Links, Cycles, Orphans), fix them immediately.
 4.  **Commit**: Commit the updated `Ontos_Context_Map.md` and any fixed files.
+
+For detailed error remediation guidance, see the [Maintenance Guide](../guides/Ontos_Maintenance_Guide.md).
+
+### 5. Updating Ontos
+When the user says **"Update Ontos"**:
+1.  Run `python3 .ontos/scripts/ontos_update.py --check` to see if updates are available.
+2.  Run `python3 .ontos/scripts/ontos_update.py` to apply the update.
+3.  Backups are saved to `.ontos/backups/` automatically.
+4.  The user's `ontos_config.py` is never overwritten.

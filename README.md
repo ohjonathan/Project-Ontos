@@ -32,6 +32,7 @@ From Greek ὄντος (ontos), meaning "being"—the root of ontology. Your doc
 - **[Installation Guide](docs/guides/Ontos_Installation_Guide.md)**: How to set up Ontos in your project.
 - **[Initiation Guide](docs/guides/Ontos_Initiation_Guide.md)**: How to tag your files and build your first graph.
 - **[Migration Guide](docs/guides/Ontos_Migration_Guide.md)**: How to migrate existing documentation.
+- **[Maintenance Guide](docs/guides/Ontos_Maintenance_Guide.md)**: How to keep your graph healthy and update Ontos.
 - **[Uninstallation Guide](docs/guides/Ontos_Uninstallation_Guide.md)**: How to remove Ontos from your project.
 
 ### Reference
@@ -68,6 +69,22 @@ To keep your graph healthy:
 > **"Maintain Ontos"**
 
 The Agent will scan for new files, rebuild the context map, and fix any integrity issues (broken links, circular dependencies).
+
+See the [Maintenance Guide](docs/guides/Ontos_Maintenance_Guide.md) for detailed error remediation.
+
+## Updating
+
+To update Ontos to the latest version:
+
+> **"Update Ontos"**
+
+Or manually:
+
+```bash
+python3 .ontos/scripts/ontos_update.py
+```
+
+Your `ontos_config.py` customizations are never overwritten.
 
 ## Development
 
@@ -108,6 +125,12 @@ python3 .ontos/scripts/ontos_end_session.py "session-name" --changelog
 
 # Remove frontmatter (for uninstallation)
 python3 .ontos/scripts/ontos_remove_frontmatter.py --dry-run
+
+# Check for updates
+python3 .ontos/scripts/ontos_update.py --check
+
+# Update to latest version
+python3 .ontos/scripts/ontos_update.py
 ```
 
 ## Contributing
