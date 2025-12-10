@@ -23,6 +23,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2025-12-10
+
+### Added
+- **Git hooks installation** (`ontos_install_hooks.py`) — Automatically install pre-push hook to remind about session archiving
+- **Hook updates via `ontos_update.py`** — Hooks are now updated alongside scripts and docs
+- Pre-push hook reminds users to run "Archive Ontos" before pushing
+
+### Changed
+- Quick Install instructions now include hook installation step
+- Installation Guide updated with hook setup details
+
+## [1.3.0] - 2025-12-10
+
 ### Fixed
 - Ontos tooling files (`Ontos_*.md`) are now excluded from project context maps
 - Migration script no longer prompts to tag Ontos tooling files
