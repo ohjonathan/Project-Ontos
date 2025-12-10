@@ -86,7 +86,8 @@ MIGRATION_PROMPT_FILE = os.path.join(PROJECT_ROOT, DEFAULT_MIGRATION_PROMPT_FILE
 MAX_DEPENDENCY_DEPTH = DEFAULT_MAX_DEPENDENCY_DEPTH
 
 # Document types that are allowed to have no dependents
-ALLOWED_ORPHAN_TYPES = DEFAULT_ALLOWED_ORPHAN_TYPES
+# Include 'atom' since technical specs are often leaf nodes in documentation trees
+ALLOWED_ORPHAN_TYPES = DEFAULT_ALLOWED_ORPHAN_TYPES + ['atom']
 
 # File patterns to skip during scanning (add your own patterns here)
 SKIP_PATTERNS = DEFAULT_SKIP_PATTERNS
