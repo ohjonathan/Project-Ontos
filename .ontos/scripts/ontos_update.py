@@ -20,6 +20,12 @@ UPDATABLE_SCRIPTS = [
     'ontos_end_session.py',
     'ontos_remove_frontmatter.py',
     'ontos_update.py',  # Self-update
+    'ontos_install_hooks.py',
+]
+
+# Hooks to update (relative to .ontos/hooks/)
+UPDATABLE_HOOKS = [
+    'pre-push',
 ]
 
 # Files that should NEVER be overwritten (user customizations)
@@ -261,6 +267,62 @@ def update_docs(temp_dir: str, backup_dir: str, quiet: bool = False, dry_run: bo
     return updated
 
 
+def update_hooks(temp_dir: str, backup_dir: str, quiet: bool = False, dry_run: bool = False) -> int:
+    """Update Ontos hooks from the cloned repository.
+
+    Args:
+        temp_dir: Directory containing cloned repo.
+        backup_dir: Directory for backups.
+        quiet: Suppress output if True.
+        dry_run: Preview changes without applying.
+
+    Returns:
+        Number of hooks updated.
+    """
+    import stat
+
+    updated = 0
+    hooks_src = os.path.join(temp_dir, '.ontos', 'hooks')
+    hooks_dist = '.ontos/hooks'
+    hooks_installed = '.git/hooks'
+
+    for hook in UPDATABLE_HOOKS:
+        src_path = os.path.join(hooks_src, hook)
+        dist_path = os.path.join(hooks_dist, hook)
+        installed_path = os.path.join(hooks_installed, hook)
+
+        if not os.path.exists(src_path):
+            if not quiet:
+                print(f"  Skipped (not in source): {hook}")
+            continue
+
+        if dry_run:
+            print(f"  Would update: {dist_path}")
+            if os.path.exists('.git'):
+                print(f"  Would update: {installed_path}")
+            updated += 1
+            continue
+
+        # Backup and update distribution copy
+        if os.path.exists(dist_path):
+            backup_file(dist_path, backup_dir)
+
+        if update_file(src_path, dist_path, quiet):
+            # Make executable
+            os.chmod(dist_path, os.stat(dist_path).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+            updated += 1
+
+        # Also update installed hook if .git exists
+        if os.path.exists('.git'):
+            os.makedirs(hooks_installed, exist_ok=True)
+            if os.path.exists(installed_path):
+                backup_file(installed_path, backup_dir)
+            if update_file(src_path, installed_path, quiet):
+                os.chmod(installed_path, os.stat(installed_path).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+    return updated
+
+
 def main() -> None:
     """Main entry point."""
     parser = argparse.ArgumentParser(
@@ -361,6 +423,12 @@ Backups are created in .ontos/backups/ before updating.
             if not args.quiet:
                 print("\nDocumentation:")
             total_updated += update_docs(temp_dir, backup_dir, args.quiet, args.dry_run)
+
+        # Update hooks
+        if not args.docs_only:
+            if not args.quiet:
+                print("\nHooks:")
+            total_updated += update_hooks(temp_dir, backup_dir, args.quiet, args.dry_run)
 
         if not args.quiet:
             print()

@@ -12,8 +12,9 @@ Install Project Ontos in this repository.
 1. Clone or download the Ontos scripts from: https://github.com/ohjona/Project-Ontos
 2. Copy the `.ontos/` folder into my project root
 3. Copy `docs/reference/Ontos_Agent_Instructions.md` to my project root
-4. Run `python3 .ontos/scripts/ontos_generate_context_map.py` to verify installation
-5. If successful, show me the contents of Ontos_Context_Map.md
+4. Run `python3 .ontos/scripts/ontos_install_hooks.py` to install git hooks
+5. Run `python3 .ontos/scripts/ontos_generate_context_map.py` to verify installation
+6. If successful, show me the contents of Ontos_Context_Map.md
 
 Reference the full installation guide if needed:
 https://github.com/ohjona/Project-Ontos/blob/main/docs/guides/Ontos_Installation_Guide.md
@@ -40,9 +41,18 @@ Pull the Project-Ontos repository (https://github.com/ohjona/Project-Ontos/tree/
 Copy the `.ontos/` folder into your project root:
 
 ```bash
-mkdir -p .ontos/scripts
+mkdir -p .ontos/scripts .ontos/hooks
 cp /path/to/ontos/.ontos/scripts/*.py .ontos/scripts/
+cp /path/to/ontos/.ontos/hooks/* .ontos/hooks/
 ```
+
+Install the git hooks:
+
+```bash
+python3 .ontos/scripts/ontos_install_hooks.py
+```
+
+This installs the pre-push hook, which reminds you to archive your session before pushing.
 
 ### 2. Configuration
 
