@@ -80,7 +80,21 @@ Or simpler: **your project's memory that works everywhere.**
 
 ## Quick Start
 
-Once installed and initiated, simply tell your Agent:
+**Install** (paste into Claude Code, Cursor, or any agentic CLI):
+
+```
+Install Project Ontos in this repository.
+
+1. Clone or download the Ontos scripts from: https://github.com/ohjona/Project-Ontos
+2. Copy the `.ontos/` folder into my project root
+3. Copy `docs/reference/Ontos_Agent_Instructions.md` to my project root
+4. Run `python3 .ontos/scripts/ontos_generate_context_map.py` to verify installation
+5. If successful, show me the contents of Ontos_Context_Map.md
+```
+
+> See the full [Installation Guide](docs/guides/Ontos_Installation_Guide.md) for manual setup and configuration options.
+
+**Use it** - once installed, tell your Agent:
 
 > **"Ontos"** (or "Activate Ontos")
 
