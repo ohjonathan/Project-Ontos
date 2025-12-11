@@ -7,7 +7,7 @@ To customize settings, override them in ontos_config.py instead.
 """
 
 # Version - used by update script to check for newer versions
-ONTOS_VERSION = '1.4.1'
+ONTOS_VERSION = '1.4.0'
 
 # GitHub repository for updates
 ONTOS_REPO_URL = 'https://github.com/ohjona/project-ontos'
