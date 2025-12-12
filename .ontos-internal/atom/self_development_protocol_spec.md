@@ -1,10 +1,17 @@
+---
+id: self_dev_protocol_spec
+type: atom
+status: active
+depends_on: [self_dev_protocol]
+---
+
 # Project Ontos: Self-Development Protocol Implementation Plan
 
-**Document Type:** Implementation Specification  
-**Status:** Pending Review  
-**Target Reviewers:** Gemini CLI, Claude Code, Codex  
-**Author:** Claude (Anthropic) + Johnny  
-**Date:** 2025-12-11  
+**Document Type:** Implementation Specification
+**Status:** Active
+**Target Reviewers:** Gemini CLI, Claude Code, Codex
+**Author:** Claude (Anthropic) + Gemini (Google) + Johnny
+**Date:** 2025-12-11
 **Revision:** 1.4 (adds map provenance check and release packaging hygiene)
 
 ---

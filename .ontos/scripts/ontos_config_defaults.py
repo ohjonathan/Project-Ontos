@@ -46,8 +46,13 @@ TYPE_DEFINITIONS = {
         'definition': 'Technical implementation details and specifications',
         'signals': ['API', 'schema', 'config', 'implementation', 'technical spec']
     },
-    'unknown': {
+    'log': {
         'rank': 4,
+        'definition': 'Session logs capturing timeline/history of development',
+        'signals': ['session', 'log', 'timeline', 'event', 'archive']
+    },
+    'unknown': {
+        'rank': 5,
         'definition': 'Unclassified document type',
         'signals': []
     }
