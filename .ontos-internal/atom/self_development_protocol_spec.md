@@ -38,7 +38,7 @@ Project Ontos is a documentation system that creates structured knowledge graphs
 
 - **YAML frontmatter** on markdown files to define metadata (id, type, dependencies)
 - **Python scripts** to generate context maps and validate the graph
-- **A type hierarchy:** `kernel` → `strategy` → `product` → `atom`
+- **A type hierarchy:** `kernel` → `strategy` → `product` → `atom` → `log`
 - **Activation phrases** ("Ontos" to start, "Archive Ontos" to end sessions)
 
 The output is a portable, git-tracked knowledge base that any AI agent can navigate.

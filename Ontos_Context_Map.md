@@ -1,5 +1,5 @@
 # Ontos Context Map
-Generated on: 2025-12-12 10:40:20
+Generated on: 2025-12-12 11:00:46
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 
 ## 1. Hierarchy Tree

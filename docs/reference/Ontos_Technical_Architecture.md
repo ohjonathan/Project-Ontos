@@ -110,7 +110,7 @@ Every Ontos-tracked document begins with YAML frontmatter:
 ```yaml
 ---
 id: unique_snake_case_id    # REQUIRED. Stable identifier. Never change.
-type: atom                   # REQUIRED. One of: kernel, strategy, product, atom
+type: atom                   # REQUIRED. One of: kernel, strategy, product, atom, log
 status: active               # OPTIONAL. One of: draft, active, deprecated
 owner: null                  # OPTIONAL. Role responsible for this document
 depends_on:                  # OPTIONAL. List of dependency IDs
@@ -142,10 +142,15 @@ Types form a ranked hierarchy. Dependencies must flow **down** (toward stability
         ┌────▼────┐
         │  atom   │  Rank 3 - Implementation details (API, schemas, configs)
         │         │
-        └─────────┘
+        └────┬────┘
              │
         ┌────▼────┐
-        │ unknown │  Rank 4 - Unclassified (normalized from null/invalid)
+        │   log   │  Rank 4 - Session logs (timeline, history, decisions)
+        │         │
+        └────┬────┘
+             │
+        ┌────▼────┐
+        │ unknown │  Rank 5 - Unclassified (normalized from null/invalid)
         └─────────┘
 ```
 
@@ -180,8 +185,13 @@ TYPE_DEFINITIONS = {
         'definition': 'Technical implementation details and specifications',
         'signals': ['API', 'schema', 'config', 'implementation', 'technical spec']
     },
-    'unknown': {
+    'log': {
         'rank': 4,
+        'definition': 'Session logs capturing timeline/history of development',
+        'signals': ['session', 'log', 'timeline', 'event', 'archive']
+    },
+    'unknown': {
+        'rank': 5,
         'definition': 'Unclassified document type',
         'signals': []
     }
