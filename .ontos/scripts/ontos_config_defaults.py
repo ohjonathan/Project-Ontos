@@ -7,7 +7,7 @@ To customize settings, override them in ontos_config.py instead.
 """
 
 # Version - used by update script to check for newer versions
-ONTOS_VERSION = '1.4.0'
+ONTOS_VERSION = '1.5.0'
 
 # GitHub repository for updates
 ONTOS_REPO_URL = 'https://github.com/ohjona/project-ontos'
@@ -46,8 +46,13 @@ TYPE_DEFINITIONS = {
         'definition': 'Technical implementation details and specifications',
         'signals': ['API', 'schema', 'config', 'implementation', 'technical spec']
     },
-    'unknown': {
+    'log': {
         'rank': 4,
+        'definition': 'Session logs capturing timeline/history of development',
+        'signals': ['session', 'log', 'timeline', 'event', 'archive']
+    },
+    'unknown': {
+        'rank': 5,
         'definition': 'Unclassified document type',
         'signals': []
     }
@@ -62,4 +67,4 @@ DEFAULT_ALLOWED_ORPHAN_TYPES = ['product', 'strategy', 'kernel']
 # Files/patterns to skip during scanning (defaults)
 # - _template.md: Template files
 # - Ontos_: Ontos tooling files (Agent Instructions, Manual, Guides, etc.)
-DEFAULT_SKIP_PATTERNS = ['_template.md', 'Ontos_']
+DEFAULT_SKIP_PATTERNS = ['_template.md', 'Ontos_', '.ontos-internal/']

@@ -23,6 +23,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2025-12-12
+
+### Added
+- **Self-Development Protocol** — Ontos can now manage its own development ("dogfooding")
+- **Smart Configuration** — Auto-detects Contributor Mode vs User Mode based on `.ontos-internal/kernel/mission.md` marker file
+- **`log` document type** — New type for timeline/session history tracking (rank 4)
+- **LOG section in context map** — Session logs now appear in their own hierarchy section
+- **`.ontos-internal/` directory** — Hidden project documentation for building Ontos (separate from user docs in `docs/`)
+- Project documentation: mission, v2 strategy, roadmap, architecture, schema, and self-development protocol specs
+
+### Changed
+- Default skip patterns now exclude `.ontos-internal/` to prevent accidental scanning in user projects
+- `unknown` type moved from rank 4 to rank 5 to accommodate `log` type
+- Type hierarchy documentation updated across all docs
+
 ## [1.4.0] - 2025-12-10
 
 ### Added

@@ -148,7 +148,7 @@ def generate_tree(files_data: dict[str, dict]) -> str:
     tree = []
 
     # Group by type (data is already normalized by scan_docs)
-    by_type = {'kernel': [], 'strategy': [], 'product': [], 'atom': [], 'unknown': []}
+    by_type = {'kernel': [], 'strategy': [], 'product': [], 'atom': [], 'log': [], 'unknown': []}
     for doc_id, data in files_data.items():
         doc_type = data['type']
         if doc_type in by_type:
@@ -156,7 +156,7 @@ def generate_tree(files_data: dict[str, dict]) -> str:
         else:
             by_type['unknown'].append(doc_id)
 
-    order = ['kernel', 'strategy', 'product', 'atom', 'unknown']
+    order = ['kernel', 'strategy', 'product', 'atom', 'log', 'unknown']
 
     for doc_type in order:
         if by_type[doc_type]:

@@ -1,20 +1,38 @@
 # Ontos Context Map
-Generated on: 2025-12-10 18:15:34
-Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/docs`
+Generated on: 2025-12-12 15:10:40
+Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 
 ## 1. Hierarchy Tree
+### KERNEL
+- **mission** (mission.md)
+  - Status: active
+  - Depends On: None
+
+### STRATEGY
+- **v2_strategy** (v2_strategy.md)
+  - Status: active
+  - Depends On: mission
+
 ### ATOM
-- **log_20251125_deployment_guide_update** (2025-11-25_deployment-guide-update.md)
+- **schema** (schema.md)
+  - Status: draft
+  - Depends On: v2_architecture
+- **self_dev_protocol** (self_development_protocol.md)
+  - Status: draft
+  - Depends On: v2_architecture
+- **self_dev_protocol_spec** (self_development_protocol_spec.md)
   - Status: active
+  - Depends On: self_dev_protocol
+- **v2_architecture** (architecture.md)
+  - Status: draft
+  - Depends On: v2_strategy
+
+### LOG
+- **log_20251212_pr10_review_and_fixes** (2025-12-12_pr10-review-and-fixes.md)
+  - Status: archived
   - Depends On: None
-- **log_20251125_iteration_3_complete** (2025-11-25_iteration-3-complete.md)
-  - Status: active
-  - Depends On: None
-- **log_20251125_refining_documentation** (2025-11-25_refining-documentation.md)
-  - Status: active
-  - Depends On: None
-- **log_20251130_production_ready_fixes** (2025-11-30_production-ready-fixes.md)
-  - Status: active
+- **log_20251212_v2_planning** (2025-12-12_v2-planning.md)
+  - Status: archived
   - Depends On: None
 
 
@@ -24,7 +42,11 @@ No issues found.
 ## 3. Index
 | ID | Filename | Type |
 |---|---|---|
-| log_20251125_deployment_guide_update | [2025-11-25_deployment-guide-update.md](/Users/jonathanoh/Dev/Project-Ontos/docs/logs/2025-11-25_deployment-guide-update.md) | atom |
-| log_20251125_iteration_3_complete | [2025-11-25_iteration-3-complete.md](/Users/jonathanoh/Dev/Project-Ontos/docs/logs/2025-11-25_iteration-3-complete.md) | atom |
-| log_20251125_refining_documentation | [2025-11-25_refining-documentation.md](/Users/jonathanoh/Dev/Project-Ontos/docs/logs/2025-11-25_refining-documentation.md) | atom |
-| log_20251130_production_ready_fixes | [2025-11-30_production-ready-fixes.md](/Users/jonathanoh/Dev/Project-Ontos/docs/logs/2025-11-30_production-ready-fixes.md) | atom |
+| log_20251212_pr10_review_and_fixes | [2025-12-12_pr10-review-and-fixes.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-12_pr10-review-and-fixes.md) | log |
+| log_20251212_v2_planning | [2025-12-12_v2-planning.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-12_v2-planning.md) | log |
+| mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |
+| schema | [schema.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/atom/schema.md) | atom |
+| self_dev_protocol | [self_development_protocol.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/atom/self_development_protocol.md) | atom |
+| self_dev_protocol_spec | [self_development_protocol_spec.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/atom/self_development_protocol_spec.md) | atom |
+| v2_architecture | [architecture.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/atom/architecture.md) | atom |
+| v2_strategy | [v2_strategy.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2_strategy.md) | strategy |

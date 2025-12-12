@@ -44,6 +44,22 @@ def find_project_root() -> str:
 # Project root - auto-detected
 PROJECT_ROOT = find_project_root()
 
+# Define the internal directory path and marker file
+INTERNAL_DIR = os.path.join(PROJECT_ROOT, '.ontos-internal')
+ONTOS_REPO_MARKER = os.path.join(INTERNAL_DIR, 'kernel', 'mission.md')
+
+
+def is_ontos_repo() -> bool:
+    """Check if we're in the actual Ontos repository.
+    
+    Requires BOTH:
+    1. .ontos-internal/ directory exists
+    2. The expected structure exists (kernel/mission.md as marker)
+    
+    This prevents false positives if a user accidentally copies .ontos-internal/
+    """
+    return os.path.isdir(INTERNAL_DIR) and os.path.isfile(ONTOS_REPO_MARKER)
+
 
 from ontos_config_defaults import (
     # Version info (re-exported for backward compatibility)
@@ -70,11 +86,42 @@ __version__ = ONTOS_VERSION
 # USER CONFIGURATION - Override defaults below as needed
 # =============================================================================
 
-# Directory where your documentation lives (resolved to absolute path)
-DOCS_DIR = os.path.join(PROJECT_ROOT, DEFAULT_DOCS_DIR)
+# =============================================================================
+# SMART CONFIGURATION
+# Adapts to environment: Contributor Mode vs User Mode
+# =============================================================================
 
-# Directory for session logs (resolved to absolute path)
-LOGS_DIR = os.path.join(PROJECT_ROOT, DEFAULT_LOGS_DIR)
+if is_ontos_repo():
+    # -------------------------------------------------------------------------
+    # CONTRIBUTOR MODE: Developing Project Ontos itself
+    # -------------------------------------------------------------------------
+    # Confirmed Ontos repo (marker file exists)
+    DOCS_DIR = INTERNAL_DIR
+    LOGS_DIR = os.path.join(INTERNAL_DIR, 'logs')
+    # Override defaults to allow scanning the internal dir
+    SKIP_PATTERNS = ['_template.md', 'Ontos_']
+    # Allow atoms to be leaves (orphans) in the graph
+    ALLOWED_ORPHAN_TYPES = ['product', 'strategy', 'kernel', 'atom']
+else:
+    # -------------------------------------------------------------------------
+    # USER MODE: Using Project Ontos in another project
+    # -------------------------------------------------------------------------
+    # Either no .ontos-internal/, or it exists but lacks expected structure
+    DOCS_DIR = os.path.join(PROJECT_ROOT, DEFAULT_DOCS_DIR)
+    LOGS_DIR = os.path.join(PROJECT_ROOT, DEFAULT_LOGS_DIR)
+    # Use defaults (which safely skip .ontos-internal if it appears by accident)
+    SKIP_PATTERNS = DEFAULT_SKIP_PATTERNS
+    ALLOWED_ORPHAN_TYPES = DEFAULT_ALLOWED_ORPHAN_TYPES
+    
+    # Warn if .ontos-internal/ exists but doesn't look like Ontos repo
+    if os.path.isdir(INTERNAL_DIR) and not os.path.isfile(ONTOS_REPO_MARKER):
+        import warnings
+        warnings.warn(
+            f"Found .ontos-internal/ directory but it doesn't appear to be the Ontos repo "
+            f"(missing {ONTOS_REPO_MARKER}). Using default docs/ directory. "
+            f"If this is intentional, you can ignore this warning.",
+            stacklevel=2
+        )
 
 # Output file for the context map (resolved to absolute path)
 CONTEXT_MAP_FILE = os.path.join(PROJECT_ROOT, DEFAULT_CONTEXT_MAP_FILE)
@@ -85,11 +132,7 @@ MIGRATION_PROMPT_FILE = os.path.join(PROJECT_ROOT, DEFAULT_MIGRATION_PROMPT_FILE
 # Maximum allowed dependency chain depth
 MAX_DEPENDENCY_DEPTH = DEFAULT_MAX_DEPENDENCY_DEPTH
 
-# Document types that are allowed to have no dependents
-ALLOWED_ORPHAN_TYPES = DEFAULT_ALLOWED_ORPHAN_TYPES
 
-# File patterns to skip during scanning (add your own patterns here)
-SKIP_PATTERNS = DEFAULT_SKIP_PATTERNS
 
 # =============================================================================
 # EXAMPLE CUSTOMIZATIONS (uncomment and modify as needed)

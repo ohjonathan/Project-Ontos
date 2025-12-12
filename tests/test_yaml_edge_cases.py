@@ -1,12 +1,16 @@
 """Tests for YAML edge cases and null value handling."""
 
 import pytest
+from unittest.mock import patch
 from ontos_generate_context_map import (
     normalize_depends_on,
     normalize_type,
     scan_docs,
     validate_dependencies
 )
+
+# Default orphan types (User Mode) - atoms should be flagged as orphans
+DEFAULT_ALLOWED_ORPHAN_TYPES = ['product', 'strategy', 'kernel']
 
 
 class TestNormalizeDependsOn:
@@ -168,8 +172,9 @@ type: atom
 class TestValidateDependenciesWithNullValues:
     """Tests for validate_dependencies with edge case data."""
 
+    @patch('ontos_generate_context_map.ALLOWED_ORPHAN_TYPES', DEFAULT_ALLOWED_ORPHAN_TYPES)
     def test_empty_depends_on_no_crash(self):
-        """Test that empty depends_on doesn't cause crash."""
+        """Test that empty depends_on doesn't cause crash in User Mode."""
         files_data = {
             'test_doc': {
                 'filepath': 'docs/test.md',
@@ -181,7 +186,7 @@ class TestValidateDependenciesWithNullValues:
         }
         # Should not raise any exception
         issues = validate_dependencies(files_data)
-        # Should report as orphan since no dependents
+        # Should report as orphan since no dependents (in User Mode)
         assert any('[ORPHAN]' in issue for issue in issues)
 
     def test_normalized_string_dep_works(self):

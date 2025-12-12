@@ -1,14 +1,19 @@
 """Tests for orphan detection functionality."""
 
 import pytest
+from unittest.mock import patch
 from ontos_generate_context_map import validate_dependencies
+
+# Default orphan types (User Mode) - atoms should be flagged as orphans
+DEFAULT_ALLOWED_ORPHAN_TYPES = ['product', 'strategy', 'kernel']
 
 
 class TestOrphanDetection:
     """Tests for orphan document detection."""
 
+    @patch('ontos_generate_context_map.ALLOWED_ORPHAN_TYPES', DEFAULT_ALLOWED_ORPHAN_TYPES)
     def test_detect_orphan_atom(self):
-        """Test that orphan atoms are detected."""
+        """Test that orphan atoms are detected in User Mode."""
         files_data = {
             'orphan_atom': {
                 'filepath': 'docs/orphan.md',
@@ -104,8 +109,9 @@ class TestOrphanDetection:
         orphan_issues = [i for i in issues if '[ORPHAN]' in i]
         assert len(orphan_issues) == 0
 
+    @patch('ontos_generate_context_map.ALLOWED_ORPHAN_TYPES', DEFAULT_ALLOWED_ORPHAN_TYPES)
     def test_non_orphan_with_dependent(self):
-        """Test that documents with dependents are not flagged as orphans."""
+        """Test that documents with dependents are not flagged as orphans in User Mode."""
         files_data = {
             'parent': {
                 'filepath': 'docs/parent.md',
