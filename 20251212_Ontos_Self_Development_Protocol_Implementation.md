@@ -5,7 +5,7 @@
 **Target Reviewers:** Gemini CLI, Claude Code, Codex  
 **Author:** Claude (Anthropic) + Johnny  
 **Date:** 2025-12-11  
-**Revision:** 1.2 (fixes "Poisoned Config" bug identified by Gemini)
+**Revision:** 1.3 (incorporates Codex review: context-map ownership, cross-project safety, testing cadence)
 
 ---
 
@@ -188,7 +188,7 @@ The config file detects its environment and adapts:
 """Ontos configuration - User customizations.
 
 This file imports defaults and adapts to its environment:
-- If .ontos-internal/ exists, we're developing Project Ontos (Contributor Mode)
+- If .ontos-internal/ exists WITH expected structure, we're developing Project Ontos (Contributor Mode)
 - If not, we're using Project Ontos in another project (User Mode)
 """
 
@@ -206,19 +206,31 @@ def find_project_root() -> str:
 
 PROJECT_ROOT = find_project_root()
 
-# Define the internal directory path
+# Define the internal directory path and a marker file to confirm it's the real Ontos repo
 INTERNAL_DIR = os.path.join(PROJECT_ROOT, '.ontos-internal')
+ONTOS_REPO_MARKER = os.path.join(INTERNAL_DIR, 'kernel', 'mission.md')
 
 # =============================================================================
 # SMART CONFIGURATION
 # Adapts to environment: Contributor Mode vs User Mode
 # =============================================================================
 
-if os.path.isdir(INTERNAL_DIR):
+def is_ontos_repo() -> bool:
+    """Check if we're in the actual Ontos repository.
+    
+    Requires BOTH:
+    1. .ontos-internal/ directory exists
+    2. The expected structure exists (kernel/mission.md as marker)
+    
+    This prevents false positives if a user accidentally copies .ontos-internal/
+    """
+    return os.path.isdir(INTERNAL_DIR) and os.path.isfile(ONTOS_REPO_MARKER)
+
+if is_ontos_repo():
     # -------------------------------------------------------------------------
     # CONTRIBUTOR MODE: Developing Project Ontos itself
     # -------------------------------------------------------------------------
-    # .ontos-internal/ exists, so we're in the Ontos repo
+    # Confirmed Ontos repo (marker file exists)
     DOCS_DIR = INTERNAL_DIR
     LOGS_DIR = os.path.join(INTERNAL_DIR, 'logs')
     # Override defaults to allow scanning the internal dir
@@ -227,11 +239,21 @@ else:
     # -------------------------------------------------------------------------
     # USER MODE: Using Project Ontos in another project
     # -------------------------------------------------------------------------
-    # No .ontos-internal/, so we're in a user's project
+    # Either no .ontos-internal/, or it exists but lacks expected structure
     DOCS_DIR = os.path.join(PROJECT_ROOT, DEFAULT_DOCS_DIR)
     LOGS_DIR = os.path.join(PROJECT_ROOT, DEFAULT_LOGS_DIR)
     # Use defaults (which safely skip .ontos-internal if it appears by accident)
     SKIP_PATTERNS = DEFAULT_SKIP_PATTERNS
+    
+    # Warn if .ontos-internal/ exists but doesn't look like Ontos repo
+    if os.path.isdir(INTERNAL_DIR) and not os.path.isfile(ONTOS_REPO_MARKER):
+        import warnings
+        warnings.warn(
+            f"Found .ontos-internal/ directory but it doesn't appear to be the Ontos repo "
+            f"(missing {ONTOS_REPO_MARKER}). Using default docs/ directory. "
+            f"If this is intentional, you can ignore this warning.",
+            stacklevel=2
+        )
 
 # =============================================================================
 # USER OVERRIDES (optional)
@@ -243,20 +265,16 @@ else:
 # SKIP_PATTERNS = DEFAULT_SKIP_PATTERNS + ['drafts/', 'archive/']
 ```
 
-**Why this works:**
+**Why this is more defensive (Codex refinement):**
 
-| Scenario | `.ontos-internal/` exists? | Result |
-|----------|---------------------------|--------|
-| Contributor clones Ontos repo | ✅ Yes | Scans `.ontos-internal/`, full project context |
-| User copies `.ontos/` to their project | ❌ No | Falls back to `docs/`, standard behavior |
-| User accidentally has `.ontos-internal/` | ✅ Yes | Would scan it, but skip pattern in defaults ignores it anyway |
+The original check `if os.path.isdir(INTERNAL_DIR)` would trigger Contributor Mode if a user accidentally copied `.ontos-internal/` to their project. The improved check requires:
 
-**Benefits:**
+1. `.ontos-internal/` directory exists, AND
+2. `kernel/mission.md` marker file exists (confirms it's the real Ontos repo)
 
-- **Portable:** Config adapts to its environment automatically
-- **Safe to commit:** Works correctly in both contexts
-- **Zero friction:** No git skip-worktree, no manual edits
-- **Self-documenting:** The if/else makes the logic explicit
+If someone copies `.ontos-internal/` but without the full structure, they get:
+- User Mode (correct behavior)
+- A warning explaining what happened
 
 ### 2.3 Core Documents to Create
 
@@ -752,7 +770,137 @@ Scan          Scan docs/
 
 ---
 
-## Part 6: Review Questions for AI Agents
+## Part 6: Context-Map Ownership Protocol
+
+**Gap identified by Codex:** Who regenerates the context map? When should it be committed?
+
+### 6.1 Ownership Rules
+
+| Scenario | Who Regenerates | When to Commit |
+|----------|-----------------|----------------|
+| Document created/modified | The contributor who made the change | Same commit as the document change |
+| Session archived | The archiving agent | Same commit as the log file |
+| Schema/config change | The contributor who changed schema | After verifying no breakage |
+| CI/CD validation | Automated (read-only check) | Never (validation only) |
+
+### 6.2 The "Stale Map" Problem
+
+**Risk:** Contributor A modifies `architecture.md`, regenerates map, but forgets to commit the updated map. Contributor B pulls, sees stale map.
+
+**Mitigations:**
+
+1. **Pre-commit hook (recommended):** Automatically regenerate and stage map before commit
+   ```bash
+   # .git/hooks/pre-commit
+   python3 .ontos/scripts/ontos_generate_context_map.py
+   git add Ontos_Context_Map.md
+   ```
+
+2. **CI check:** Fail if committed map differs from regenerated map
+   ```yaml
+   # .github/workflows/ontos.yml
+   - name: Verify context map is current
+     run: |
+       python3 .ontos/scripts/ontos_generate_context_map.py
+       git diff --exit-code Ontos_Context_Map.md
+   ```
+
+3. **Convention:** "If you touch docs, regenerate the map" (weakest, relies on memory)
+
+### 6.3 Recommended Workflow
+
+```
+1. Make document changes
+2. Run: python3 .ontos/scripts/ontos_generate_context_map.py
+3. Review the diff (sanity check)
+4. Commit both: git add docs/changed_file.md Ontos_Context_Map.md
+5. Push
+```
+
+For v2.0, consider adding `--check` flag that exits non-zero if map is stale (for CI integration).
+
+---
+
+## Part 7: Testing Cadence
+
+**Gap identified by Codex:** Need explicit testing for both Contributor and User modes.
+
+### 7.1 Dual-Mode Test Matrix
+
+| Test Scenario | Mode | Setup | Expected Behavior |
+|---------------|------|-------|-------------------|
+| Clone Ontos repo, run scripts | Contributor | `.ontos-internal/` exists with marker | Scans `.ontos-internal/`, generates project context |
+| Copy `.ontos/` to new project | User | No `.ontos-internal/` | Falls back to `docs/`, standard behavior |
+| User has empty `.ontos-internal/` | User | Dir exists, no marker file | Falls back to `docs/` + warning |
+| User copies partial structure | User | Dir exists, missing `kernel/mission.md` | Falls back to `docs/` + warning |
+
+### 7.2 Test Commands
+
+```bash
+# Test Contributor Mode (run from Ontos repo root)
+python3 .ontos/scripts/ontos_generate_context_map.py
+# Expected: Scans .ontos-internal/, lists project docs
+
+# Test User Mode (run from a project without .ontos-internal/)
+cd /tmp && mkdir test-project && cd test-project
+cp -r /path/to/ontos/.ontos .
+mkdir -p docs && echo "---\nid: test\ntype: atom\n---\n# Test" > docs/test.md
+python3 .ontos/scripts/ontos_generate_context_map.py
+# Expected: Scans docs/, lists test.md
+
+# Test False Positive Protection (empty .ontos-internal/)
+mkdir .ontos-internal
+python3 .ontos/scripts/ontos_generate_context_map.py
+# Expected: Warning about missing marker, falls back to docs/
+
+# Test Partial Structure Protection
+mkdir -p .ontos-internal/kernel
+python3 .ontos/scripts/ontos_generate_context_map.py
+# Expected: Warning (no mission.md), falls back to docs/
+```
+
+### 7.3 CI Integration
+
+```yaml
+# .github/workflows/test-modes.yml
+jobs:
+  test-contributor-mode:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test Contributor Mode
+        run: |
+          python3 .ontos/scripts/ontos_generate_context_map.py
+          grep -q "mission" Ontos_Context_Map.md  # Should find project docs
+
+  test-user-mode:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Simulate User Installation
+        run: |
+          mkdir /tmp/user-project
+          cp -r .ontos /tmp/user-project/
+          cd /tmp/user-project
+          mkdir -p docs
+          echo -e "---\nid: user_doc\ntype: atom\nstatus: active\n---\n# User Doc" > docs/user_doc.md
+          python3 .ontos/scripts/ontos_generate_context_map.py
+          grep -q "user_doc" Ontos_Context_Map.md  # Should find user docs
+          ! grep -q "mission" Ontos_Context_Map.md  # Should NOT find project docs
+```
+
+### 7.4 When to Run Tests
+
+| Event | Contributor Mode Test | User Mode Test |
+|-------|----------------------|----------------|
+| PR to main | ✅ | ✅ |
+| Config file changed | ✅ | ✅ |
+| New release tag | ✅ | ✅ |
+| Daily CI | ✅ | ✅ |
+
+---
+
+## Part 8: Review Questions for AI Agents
 
 Please review this implementation plan and consider:
 
@@ -796,18 +944,24 @@ Please review this implementation plan and consider:
 + DEFAULT_SKIP_PATTERNS = ['_template.md', 'Ontos_', '.ontos-internal/']
 ```
 
-### B.2 ontos_config.py (Smart Configuration)
+### B.2 ontos_config.py (Smart Configuration with Marker File)
 
 ```diff
 # .ontos/scripts/ontos_config.py
 
-+ # Define the internal directory path
++ # Define the internal directory path and marker file
 + INTERNAL_DIR = os.path.join(PROJECT_ROOT, '.ontos-internal')
++ ONTOS_REPO_MARKER = os.path.join(INTERNAL_DIR, 'kernel', 'mission.md')
++ 
++ def is_ontos_repo() -> bool:
++     """Check if we're in the actual Ontos repository.
++     Requires BOTH .ontos-internal/ AND the marker file."""
++     return os.path.isdir(INTERNAL_DIR) and os.path.isfile(ONTOS_REPO_MARKER)
 + 
 + # SMART CONFIGURATION:
-+ # If .ontos-internal exists, we are developing Project Ontos (Contributor Mode).
++ # If marker file exists, we are developing Project Ontos (Contributor Mode).
 + # If not, we are using Project Ontos (User Mode).
-+ if os.path.isdir(INTERNAL_DIR):
++ if is_ontos_repo():
 +     # Contributor Mode
 +     DOCS_DIR = INTERNAL_DIR
 +     LOGS_DIR = os.path.join(INTERNAL_DIR, 'logs')
@@ -817,6 +971,14 @@ Please review this implementation plan and consider:
 +     DOCS_DIR = os.path.join(PROJECT_ROOT, DEFAULT_DOCS_DIR)
 +     LOGS_DIR = os.path.join(PROJECT_ROOT, DEFAULT_LOGS_DIR)
 +     SKIP_PATTERNS = DEFAULT_SKIP_PATTERNS
++     
++     # Warn if .ontos-internal/ exists but lacks marker
++     if os.path.isdir(INTERNAL_DIR) and not os.path.isfile(ONTOS_REPO_MARKER):
++         import warnings
++         warnings.warn(
++             f"Found .ontos-internal/ but missing marker file. Using docs/.",
++             stacklevel=2
++         )
 
 - DOCS_DIR = os.path.join(PROJECT_ROOT, DEFAULT_DOCS_DIR)
 - LOGS_DIR = os.path.join(PROJECT_ROOT, DEFAULT_LOGS_DIR)
@@ -872,7 +1034,7 @@ git commit --no-verify -m "message"
 - Not hidden by default
 - Mixes concerns in the same directory tree
 
-## Appendix E: Design Evolution (Claude + Gemini Collaboration)
+## Appendix E: Design Evolution (Claude + Gemini + Codex Collaboration)
 
 This implementation plan evolved through collaboration:
 
@@ -894,10 +1056,17 @@ This implementation plan evolved through collaboration:
   - If `.ontos-internal/` exists → Contributor Mode
   - If not → User Mode (default behavior)
 
+**Codex's refinements (Revision 1.3):**
+- **Context-map ownership gap:** Who regenerates the map? When to commit? Added Part 6 with ownership rules, pre-commit hook recommendation, and CI check pattern.
+- **Cross-project safety edge case:** What if user accidentally copies `.ontos-internal/` without full structure? Strengthened smart config to require marker file (`kernel/mission.md`), not just directory existence. Added warning for partial structures.
+- **Testing cadence:** Need explicit dual-mode testing. Added Part 7 with test matrix, commands, CI integration, and test triggers.
+
 **Final synthesis:**
 - `.ontos-internal/` naming adopted (Gemini's recommendation)
 - Skip pattern safety net adopted (Gemini's recommendation)
-- Smart conditional config adopted (Gemini's bug fix)
-- Physical separation over logical separation (both agreed)
+- Smart conditional config with marker file adopted (Gemini's bug fix + Codex's hardening)
+- Context-map ownership protocol adopted (Codex's gap identification)
+- Dual-mode testing cadence adopted (Codex's gap identification)
+- Physical separation over logical separation (all agreed)
 
-This collaboration demonstrates Ontos's value proposition: decisions are captured, attributed, and traceable. The bug was caught BEFORE implementation because we documented the plan first.
+This collaboration demonstrates Ontos's value proposition: decisions are captured, attributed, and traceable. Multiple bugs and gaps were caught BEFORE implementation because we documented the plan first and had multiple reviewers.
