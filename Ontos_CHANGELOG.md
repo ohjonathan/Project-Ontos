@@ -23,6 +23,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `log` document type for timeline/session history tracking in the Ontos type system
+- LOG section in context map generation to surface session logs alongside other document types
+
+### Changed
+- Default skip patterns now exclude `.ontos-internal/` to prevent accidental scanning in user projects
+
 ## [1.4.0] - 2025-12-10
 
 ### Added
