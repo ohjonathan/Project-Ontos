@@ -1,5 +1,5 @@
 # Ontos Context Map
-Generated on: 2025-12-12 13:54:55
+Generated on: 2025-12-12 15:10:40
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 
 ## 1. Hierarchy Tree
@@ -13,11 +13,6 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
   - Status: active
   - Depends On: mission
 
-### PRODUCT
-- **v2_roadmap** (v2_roadmap.md)
-  - Status: draft
-  - Depends On: v2_strategy
-
 ### ATOM
 - **schema** (schema.md)
   - Status: draft
@@ -30,7 +25,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
   - Depends On: self_dev_protocol
 - **v2_architecture** (architecture.md)
   - Status: draft
-  - Depends On: v2_roadmap
+  - Depends On: v2_strategy
 
 ### LOG
 - **log_20251212_pr10_review_and_fixes** (2025-12-12_pr10-review-and-fixes.md)
@@ -54,5 +49,4 @@ No issues found.
 | self_dev_protocol | [self_development_protocol.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/atom/self_development_protocol.md) | atom |
 | self_dev_protocol_spec | [self_development_protocol_spec.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/atom/self_development_protocol_spec.md) | atom |
 | v2_architecture | [architecture.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/atom/architecture.md) | atom |
-| v2_roadmap | [v2_roadmap.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/product/v2_roadmap.md) | product |
 | v2_strategy | [v2_strategy.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2_strategy.md) | strategy |
