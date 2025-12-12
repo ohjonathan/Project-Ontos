@@ -1,11 +1,11 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-12 11:24:20 UTC
+Generated: 2025-12-12 11:30:27 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
 # Ontos Context Map
-Generated on: 2025-12-12 20:24:20
+Generated on: 2025-12-12 20:30:27
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 
 ## 1. Hierarchy Tree
@@ -43,6 +43,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 - **log_20251212_pr10_review_and_fixes** (2025-12-12_pr10-review-and-fixes.md) ~472 tokens
   - Status: archived
   - Impacts: schema, v2_architecture, self_dev_protocol
+- **log_20251212_pr11_review_fixes** (2025-12-12_pr11-review-fixes.md) ~427 tokens
+  - Status: active
+  - Impacts: v2_architecture, schema
 - **log_20251212_v2_implementation_complete** (2025-12-12_v2-implementation-complete.md) ~529 tokens
   - Status: active
   - Impacts: v2_implementation_plan, v2_architecture, schema, self_dev_protocol, mission, v2_strategy
@@ -64,6 +67,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 - **2025-12-12** [feature] **V2 Implementation Complete** (`log_20251212_v2_implementation_complete`)
   - Impacted: `v2_implementation_plan`, `v2_architecture`, `schema`, `self_dev_protocol`, `mission`, `v2_strategy`
   - Concepts: v2-implementation, dual-ontology, visibility, intelligence
+- **2025-12-12** [fix] **Pr11 Review Fixes** (`log_20251212_pr11_review_fixes`)
+  - Impacted: `v2_architecture`, `schema`
+  - Concepts: pr-review, validation, source-required, strict-mode
 - **2025-12-12** [chore] **Pr10 Review And Fixes** (`log_20251212_pr10_review_and_fixes`)
   - Impacted: `schema`, `v2_architecture`, `self_dev_protocol`
   - Concepts: pr-review, log-type, type-hierarchy, version-bump, self-development
@@ -79,6 +85,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 |---|---|---|
 | log_20251212_maintenance_v2_release | [2025-12-12_maintenance-v2-release.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-12_maintenance-v2-release.md) | log |
 | log_20251212_pr10_review_and_fixes | [2025-12-12_pr10-review-and-fixes.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-12_pr10-review-and-fixes.md) | log |
+| log_20251212_pr11_review_fixes | [2025-12-12_pr11-review-fixes.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-12_pr11-review-fixes.md) | log |
 | log_20251212_v2_implementation_complete | [2025-12-12_v2-implementation-complete.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-12_v2-implementation-complete.md) | log |
 | log_20251212_v2_planning | [2025-12-12_v2-planning.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-12_v2-planning.md) | log |
 | log_20251212_v2_strategy_architecture_rewrite | [2025-12-12_v2-strategy-architecture-rewrite.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-12_v2-strategy-architecture-rewrite.md) | log |
