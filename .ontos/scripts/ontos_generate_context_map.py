@@ -93,6 +93,40 @@ def normalize_type(value) -> str:
     return 'unknown'
 
 
+def estimate_tokens(content: str) -> int:
+    """Estimate token count using character-based heuristic.
+    
+    Formula: tokens ≈ characters / 4
+    
+    This is a rough approximation that works well for English text.
+    More accurate than word count, simpler than actual tokenization.
+    
+    Args:
+        content: File content as string.
+        
+    Returns:
+        Estimated token count.
+    """
+    return len(content) // 4
+
+
+def format_token_count(tokens: int) -> str:
+    """Format token count for display.
+    
+    Args:
+        tokens: Token count.
+        
+    Returns:
+        Formatted string (e.g., "~450 tokens" or "~2,100 tokens").
+    """
+    if tokens < 1000:
+        return f"~{tokens} tokens"
+    else:
+        # Round to nearest 100 for larger counts
+        rounded = (tokens // 100) * 100
+        return f"~{rounded:,} tokens"
+
+
 def scan_docs(root_dirs: list[str]) -> dict[str, dict]:
     """Scans directories for markdown files and parses their metadata.
 
@@ -114,6 +148,14 @@ def scan_docs(root_dirs: list[str]) -> dict[str, dict]:
                     if any(pattern in file for pattern in SKIP_PATTERNS):
                         continue
                     filepath = os.path.join(subdir, file)
+                    
+                    # Read full content for token estimation
+                    try:
+                        with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
+                            full_content = f.read()
+                    except Exception:
+                        full_content = ""
+
                     frontmatter = parse_frontmatter(filepath)
                     if frontmatter and 'id' in frontmatter:
                         doc_id = frontmatter['id']
@@ -126,12 +168,24 @@ def scan_docs(root_dirs: list[str]) -> dict[str, dict]:
                             continue
 
                         # Normalize fields to handle YAML null/empty values
+                        doc_type = normalize_type(frontmatter.get('type'))
+                        
+                        # Deliverable 5: Auto-Normalization of v1.x Logs
+                        # Treat legacy logs (type: atom, id: log_*) as v2.0 logs (type: log)
+                        if doc_id.startswith('log_') and doc_type == 'atom':
+                            doc_type = 'log'
+                        
                         files_data[doc_id] = {
                             'filepath': filepath,
                             'filename': file,
-                            'type': normalize_type(frontmatter.get('type')),
+                            'type': doc_type,
                             'depends_on': normalize_depends_on(frontmatter.get('depends_on')),
-                            'status': str(frontmatter.get('status') or 'unknown').strip() or 'unknown'
+                'status': str(frontmatter.get('status') or 'unknown').strip() or 'unknown',
+                            # NEW v2.0 fields for logs
+                            'event_type': frontmatter.get('event_type'),
+                            'concepts': frontmatter.get('concepts', []),
+                            'impacts': frontmatter.get('impacts', []),
+                            'tokens': estimate_tokens(full_content),  # NEW v2.1
                         }
     return files_data
 
@@ -164,12 +218,106 @@ def generate_tree(files_data: dict[str, dict]) -> str:
             for doc_id in sorted(by_type[doc_type]):
                 data = files_data[doc_id]
                 deps = ", ".join(data['depends_on']) if data['depends_on'] else "None"
-                tree.append(f"- **{doc_id}** ({data['filename']})")
+                tokens = format_token_count(data.get('tokens', 0))
+                
+                tree.append(f"- **{doc_id}** ({data['filename']}) {tokens}")
                 tree.append(f"  - Status: {data['status']}")
-                tree.append(f"  - Depends On: {deps}")
+                if data['type'] != 'log':
+                    tree.append(f"  - Depends On: {deps}")
+                else:
+                    impacts = ", ".join(data.get('impacts', [])) or "None"
+                    tree.append(f"  - Impacts: {impacts}")
             tree.append("")
 
     return "\n".join(tree)
+
+
+def generate_timeline(files_data: dict[str, dict], max_entries: int = 10) -> str:
+    """Generate the Recent Timeline section from log documents.
+    
+    Args:
+        files_data: Dictionary of document metadata.
+        max_entries: Maximum number of timeline entries to show.
+        
+    Returns:
+        Formatted timeline string.
+    """
+    # Extract log documents
+    logs = [
+        (doc_id, data) for doc_id, data in files_data.items()
+        if data['type'] == 'log'
+    ]
+    
+    if not logs:
+        return "No session logs found."
+    
+    # Sort by filename (which starts with date) in reverse order
+    logs.sort(key=lambda x: x[1]['filename'], reverse=True)
+    
+    # Take most recent entries
+    recent_logs = logs[:max_entries]
+    
+    lines = []
+    for doc_id, data in recent_logs:
+        filename = data['filename']
+        event_type = data.get('event_type', 'chore')
+        impacts = data.get('impacts', [])
+        concepts = data.get('concepts', [])
+        
+        # Extract date from filename (format: YYYY-MM-DD_slug.md)
+        date_part = filename[:10] if len(filename) >= 10 else filename
+        
+        # Extract title from slug
+        slug = filename[11:-3] if len(filename) > 14 else filename[:-3]
+        title = slug.replace('-', ' ').replace('_', ' ').title()
+        
+        # Format line
+        line = f"- **{date_part}** [{event_type}] **{title}** (`{doc_id}`)"
+        
+        if impacts:
+            line += f"\n  - Impacted: {', '.join(f'`{i}`' for i in impacts)}"
+        
+        if concepts:
+            line += f"\n  - Concepts: {', '.join(concepts)}"
+        
+        lines.append(line)
+    
+    if len(logs) > max_entries:
+        lines.append(f"\n*Showing {max_entries} of {len(logs)} sessions*")
+    
+    return "\n".join(lines)
+
+
+def generate_provenance_header() -> str:
+    """Generate metadata header for the context map.
+    
+    The provenance header provides audit information:
+    - Mode: Contributor or User
+    - Root: Which directory was scanned
+    - Timestamp: When the map was generated (UTC)
+    
+    Returns:
+        HTML comment string with provenance info.
+    """
+    from ontos_config import DOCS_DIR, PROJECT_ROOT, is_ontos_repo
+    
+    mode = "Contributor" if is_ontos_repo() else "User"
+    
+    # Make root path relative
+    try:
+        scanned_dir = os.path.relpath(DOCS_DIR, PROJECT_ROOT)
+    except ValueError:
+        scanned_dir = DOCS_DIR
+        
+    timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    
+    return f"""<!--
+Ontos Context Map
+Generated: {timestamp}
+Mode: {mode}
+Scanned: {scanned_dir}
+-->"""
+
 
 
 def validate_dependencies(files_data: dict[str, dict]) -> list[str]:
@@ -298,7 +446,139 @@ def validate_dependencies(files_data: dict[str, dict]) -> list[str]:
     return issues
 
 
-def generate_context_map(target_dirs: list[str], quiet: bool = False) -> int:
+
+def validate_log_schema(files_data: dict[str, dict]) -> list[str]:
+    """Validate log-type documents have required v2.0 fields.
+    
+    Rules:
+    1. Logs MUST have event_type field
+    2. event_type MUST be one of: feature, fix, refactor, exploration, chore
+    3. Logs MUST have impacts field (can be empty list)
+    4. Logs SHOULD NOT have depends_on (warning, not error)
+    
+    Args:
+        files_data: Dictionary of document metadata.
+        
+    Returns:
+        List of issue strings.
+    """
+    from ontos_config import VALID_EVENT_TYPES, TYPE_DEFINITIONS
+    
+    issues = []
+    
+    for doc_id, data in files_data.items():
+        if data['type'] != 'log':
+            continue
+            
+        filepath = data['filepath']
+        
+        # Rule 1: event_type is required
+        event_type = data.get('event_type')
+        if event_type is None:
+            issues.append(
+                f"- [MISSING FIELD] **{doc_id}** ({filepath}) is type 'log' but missing required field: event_type\n"
+                f"  Fix: Add `event_type: feature|fix|refactor|exploration|chore` to frontmatter"
+            )
+        # Rule 2: event_type must be valid
+        elif event_type not in VALID_EVENT_TYPES:
+            issues.append(
+                f"- [INVALID VALUE] **{doc_id}** ({filepath}) has invalid event_type: '{event_type}'\n"
+                f"  Fix: Use one of: {', '.join(sorted(VALID_EVENT_TYPES))}"
+            )
+        
+        # Rule 3: impacts is required (empty list is OK)
+        if 'impacts' not in data:
+            issues.append(
+                f"- [MISSING FIELD] **{doc_id}** ({filepath}) is type 'log' but missing required field: impacts\n"
+                f"  Fix: Add `impacts: []` or `impacts: [doc_id1, doc_id2]` to frontmatter"
+            )
+        
+        # Rule 4: depends_on should not be used (check config for allows_depends_on)
+        type_config = TYPE_DEFINITIONS.get('log', {})
+        if not type_config.get('allows_depends_on', True):
+            if data.get('depends_on') and len(data['depends_on']) > 0:
+                issues.append(
+                    f"- [WARNING] **{doc_id}** ({filepath}) is type 'log' but has depends_on field\n"
+                    f"  Fix: Logs should use `impacts` instead of `depends_on`. Remove depends_on."
+                )
+    
+    return issues
+
+
+def validate_impacts(files_data: dict[str, dict], strict: bool = False) -> list[str]:
+    """Validate that impacts[] references exist in Space Ontology.
+    
+    The impacts field connects History (logs) to Truth (space documents).
+    
+    Validation Rules:
+    - Active logs: impacts MUST reference existing Space documents (ERROR)
+    - Archived logs: broken references are noted but not errors (INFO)
+    
+    Rationale: History is immutable. If a Space document is deleted,
+    historical logs that referenced it shouldn't turn red. The log
+    recorded what was true at that moment.
+    
+    Args:
+        files_data: Dictionary of document metadata.
+        strict: If True, treat archived log broken links as errors too.
+        
+    Returns:
+        List of issue strings.
+    """
+    issues = []
+    
+    # Build set of Space document IDs (everything except logs)
+    space_ids = {
+        doc_id for doc_id, data in files_data.items()
+        if data['type'] != 'log'
+    }
+    
+    for doc_id, data in files_data.items():
+        if data['type'] != 'log':
+            continue
+        
+        # Check if this log is archived (historical)
+        is_archived = data.get('status') == 'archived'
+        
+        impacts = data.get('impacts', [])
+        if not isinstance(impacts, list):
+            impacts = [impacts] if impacts else []
+        
+        for impact_id in impacts:
+            # Check if impact references another log (not allowed)
+            if impact_id.startswith('log_'):
+                issues.append(
+                    f"- [INVALID REFERENCE] **{doc_id}** ({data['filepath']}) "
+                    f"impacts references another log: `{impact_id}`\n"
+                    f"  Fix: impacts should reference Space documents, not other logs"
+                )
+                continue
+            
+            if impact_id not in space_ids:
+                if is_archived and not strict:
+                    # =========================================================
+                    # ARCHIVED LOGS: Informational only
+                    # History is immutable—don't error on deleted references
+                    # =========================================================
+                    issues.append(
+                        f"- [INFO] **{doc_id}** references deleted document `{impact_id}` "
+                        f"(archived log, no action needed)"
+                    )
+                else:
+                    # =========================================================
+                    # ACTIVE LOGS: This is a real problem
+                    # Either the reference is wrong or the doc needs to exist
+                    # =========================================================
+                    issues.append(
+                        f"- [BROKEN LINK] **{doc_id}** ({data['filepath']}) "
+                        f"impacts non-existent document: `{impact_id}`\n"
+                        f"  Fix: Create `{impact_id}`, correct the reference, or archive this log"
+                    )
+    
+    return issues
+
+
+def generate_context_map(target_dirs: list[str], quiet: bool = False, strict: bool = False) -> int:
     """Main function to generate the Ontos_Context_Map.md file.
 
     Args:
@@ -321,19 +601,41 @@ def generate_context_map(target_dirs: list[str], quiet: bool = False) -> int:
         print("Validating dependencies...")
     issues = validate_dependencies(files_data)
 
+    # NEW: Validate log schema
+    if not quiet:
+        print("Validating log schema...")
+    log_issues = validate_log_schema(files_data)
+    issues.extend(log_issues)
+
+    # NEW: Validate impacts references
+    if not quiet:
+        print("Validating impacts references...")
+    impact_issues = validate_impacts(files_data, strict=strict)
+    issues.extend(impact_issues)
+
+    # NEW: Generate Timeline
+    timeline = generate_timeline(files_data)
+    
+    # NEW: Generate Provenance Header
+    provenance = generate_provenance_header()
+
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    content = f"""# Ontos Context Map
+    content = f"""{provenance}
+# Ontos Context Map
 Generated on: {timestamp}
 Scanned Directory: `{dirs_str}`
 
 ## 1. Hierarchy Tree
 {tree_view}
 
-## 2. Dependency Audit
+## 2. Recent Timeline
+{timeline}
+
+## 3. Dependency Audit
 {'No issues found.' if not issues else chr(10).join(issues)}
 
-## 3. Index
+## 4. Index
 | ID | Filename | Type |
 |---|---|---|
 """
@@ -430,9 +732,10 @@ Examples:
     target_dirs = args.dirs if args.dirs else [DOCS_DIR]
 
     if args.watch:
+        # Note: Watch mode doesn't support strict flag in this implementation yet
         watch_mode(target_dirs, args.quiet)
     else:
-        issue_count = generate_context_map(target_dirs, args.quiet)
+        issue_count = generate_context_map(target_dirs, args.quiet, args.strict)
 
         if args.strict and issue_count > 0:
             print(f"\n❌ Strict mode: {issue_count} issues detected. Exiting with error.")

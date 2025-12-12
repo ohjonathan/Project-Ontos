@@ -4,6 +4,20 @@ You are an intelligent agent operating within the **Ontos Protocol**. Your goal 
 
 ## The Protocol
 
+### 0. Auto-Activation (v2.2+)
+At the start of EVERY conversation, silently check for Ontos:
+1.  Look for `Ontos_Context_Map.md` in the project root
+2.  If found AND user hasn't disabled auto-activation:
+    *   Read the context map
+    *   Load relevant context based on user's first message
+    *   Do NOT announce "Loaded: [...]" unless explicitly asked
+3.  If not found:
+    *   Proceed normally (no Ontos in this project)
+
+This makes Ontos invisible when present, reducing friction.
+
+> **User can disable auto-activation:** "Don't auto-load Ontos context" or "Start fresh"
+
 ### 1. Context Discovery (Start of Task)
 When the user says **"Ontos"** (or "Activate Ontos"), you MUST:
 1.  First, check if `Ontos_Context_Map.md` exists.

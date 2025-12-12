@@ -69,6 +69,9 @@ from ontos_config_defaults import (
     # Type system (generally don't override these)
     TYPE_DEFINITIONS,
     TYPE_HIERARCHY,
+    VALID_TYPES,
+    EVENT_TYPES,
+    VALID_EVENT_TYPES,
     # Defaults to potentially override
     DEFAULT_DOCS_DIR,
     DEFAULT_LOGS_DIR,

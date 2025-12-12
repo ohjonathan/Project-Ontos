@@ -26,40 +26,75 @@ DEFAULT_MAX_DEPENDENCY_DEPTH = 5
 
 # Document type definitions (single source of truth)
 TYPE_DEFINITIONS = {
+    # --- SPACE ONTOLOGY (Truth) ---
+    # These document what IS true about the project
     'kernel': {
         'rank': 0,
-        'definition': 'Immutable foundational principles that rarely change',
-        'signals': ['mission', 'values', 'philosophy', 'principles']
+        'description': 'Core identity documents (mission, principles)',
+        'allows_depends_on': True,
     },
     'strategy': {
         'rank': 1,
-        'definition': 'High-level decisions about goals, audiences, approaches',
-        'signals': ['goals', 'roadmap', 'monetization', 'target market']
+        'description': 'High-level direction and decisions',
+        'allows_depends_on': True,
     },
     'product': {
         'rank': 2,
-        'definition': 'User-facing features, journeys, requirements',
-        'signals': ['user flow', 'feature spec', 'requirements', 'user story']
+        'description': 'Feature specifications and requirements',
+        'allows_depends_on': True,
     },
     'atom': {
         'rank': 3,
-        'definition': 'Technical implementation details and specifications',
-        'signals': ['API', 'schema', 'config', 'implementation', 'technical spec']
+        'description': 'Implementation details and technical specs',
+        'allows_depends_on': True,
     },
+    # --- TIME ONTOLOGY (History) ---
+    # These document what HAPPENED during development
     'log': {
         'rank': 4,
-        'definition': 'Session logs capturing timeline/history of development',
-        'signals': ['session', 'log', 'timeline', 'event', 'archive']
+        'description': 'Session history (what happened, not what is)',
+        'allows_depends_on': False,  # Logs use 'impacts' instead
     },
-    'unknown': {
-        'rank': 5,
-        'definition': 'Unclassified document type',
-        'signals': []
-    }
 }
+
+# Valid types for early validation
+VALID_TYPES = set(TYPE_DEFINITIONS.keys())
 
 # Derived hierarchy for backward compatibility
 TYPE_HIERARCHY = {k: v['rank'] for k, v in TYPE_DEFINITIONS.items()}
+
+
+# =============================================================================
+# EVENT TYPES (v2.0+)
+# =============================================================================
+# Captures the PRIMARY intent of a development session
+# Used in log documents to categorize work
+
+EVENT_TYPES = {
+    'feature': {
+        'definition': 'Adding new capability to the system',
+        'examples': ['Implemented OAuth login', 'Added search functionality'],
+    },
+    'fix': {
+        'definition': 'Correcting broken or incorrect behavior',
+        'examples': ['Fixed refresh token bug', 'Resolved race condition'],
+    },
+    'refactor': {
+        'definition': 'Restructuring code without changing behavior',
+        'examples': ['Split auth module', 'Migrated to TypeScript'],
+    },
+    'exploration': {
+        'definition': 'Research, spikes, or prototypes',
+        'examples': ['Evaluated database options', 'Tested new library'],
+    },
+    'chore': {
+        'definition': 'Maintenance, dependencies, configuration',
+        'examples': ['Updated dependencies', 'Fixed CI pipeline'],
+    },
+}
+
+# Valid event type values (for validation)
+VALID_EVENT_TYPES = set(EVENT_TYPES.keys())
 
 # Types that are allowed to be orphans (no dependents)
 DEFAULT_ALLOWED_ORPHAN_TYPES = ['product', 'strategy', 'kernel']

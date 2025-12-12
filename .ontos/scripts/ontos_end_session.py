@@ -7,7 +7,7 @@ import subprocess
 import argparse
 import sys
 
-from ontos_config import __version__, LOGS_DIR
+from ontos_config import __version__, LOGS_DIR, CONTEXT_MAP_FILE
 
 # Valid slug pattern: lowercase letters, numbers, and hyphens
 VALID_SLUG_PATTERN = re.compile(r'^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$')
@@ -291,24 +291,202 @@ def add_changelog_entry(category: str, description: str, quiet: bool = False) ->
             print(f"Added to {changelog_path}: [{category_title}] {description}")
         return True
     except (IOError, OSError, PermissionError) as e:
+        return True
+    except (IOError, OSError, PermissionError) as e:
         print(f"Error: Failed to write {changelog_path}: {e}")
         return False
 
 
-def create_log_file(topic_slug: str, quiet: bool = False, source: str = "") -> str:
-    """Creates a new session log file with a template.
+def load_document_index() -> dict[str, str]:
+    """Load mapping of filepaths to document IDs from context map.
+    
+    Returns:
+        Dictionary mapping relative filepath to doc_id.
+    """
+    if not os.path.exists(CONTEXT_MAP_FILE):
+        return {}
+    
+    index = {}
+    
+    # Parse the Index section of the context map
+    with open(CONTEXT_MAP_FILE, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    # Find the Index table
+    in_index = False
+    for line in content.split('\n'):
+        if '## ' in line and 'Index' in line:
+            in_index = True
+            continue
+        if in_index and line.startswith('|') and '|' in line[1:]:
+            parts = [p.strip() for p in line.split('|')]
+            if len(parts) >= 4 and parts[1] and parts[2]:
+                doc_id = parts[1]
+                # Extract filepath from markdown link if present
+                filename_part = parts[2]
+                if '(' in filename_part and ')' in filename_part:
+                    filepath = filename_part.split('(')[1].split(')')[0]
+                else:
+                    filepath = filename_part
+                if doc_id and doc_id != 'ID' and filepath:
+                    index[filepath] = doc_id
+        if in_index and line.startswith('#') and not line.startswith('|'):
+            break
+    
+    return index
 
+
+def suggest_impacts(quiet: bool = False) -> list[str]:
+    """Suggest document IDs that may have been impacted by recent changes.
+    
+    Algorithm:
+    1. Check uncommitted changes (git status)
+    2. If clean, check commits made today (git log --since)
+    3. Match changed files to known document paths
+    4. Return matching IDs as suggestions
+    
+    This handles both the "work in progress" and "commit then archive" workflows.
+    
+    Returns:
+        List of suggested document IDs.
+    """
+    try:
+        changed_files = set()
+        
+        # =====================================================
+        # STEP 1: Check uncommitted changes (staged + unstaged)
+        # =====================================================
+        result = subprocess.run(
+            ['git', 'status', '--porcelain'],
+            capture_output=True, text=True, timeout=10
+        )
+        if result.returncode == 0:
+            for line in result.stdout.strip().split('\n'):
+                if line:
+                    # Format: "XY filename" or "XY original -> renamed"
+                    parts = line[3:].split(' -> ')
+                    changed_files.add(parts[-1])
+        
+        # =====================================================
+        # STEP 2: If nothing uncommitted, check today's commits
+        # This handles the "commit then archive" workflow
+        # =====================================================
+        if not changed_files:
+            today = datetime.date.today().isoformat()
+            result = subprocess.run(
+                ['git', 'log', '--since', today, '--name-only', '--pretty=format:'],
+                capture_output=True, text=True, timeout=10
+            )
+            if result.returncode == 0:
+                for line in result.stdout.strip().split('\n'):
+                    if line:
+                        changed_files.add(line)
+            
+            if not quiet and changed_files:
+                print(f"ℹ️  No uncommitted changes; using today's commits instead")
+        
+        if not changed_files:
+            return []
+        
+        # =====================================================
+        # STEP 3: Match changed files to document IDs
+        # =====================================================
+        doc_index = load_document_index()
+        if not doc_index:
+            return []
+        
+        suggestions = set()
+        for changed_file in changed_files:
+            # Direct match
+            if changed_file in doc_index:
+                suggestions.add(doc_index[changed_file])
+            
+            # Directory-based match
+            changed_dir = os.path.dirname(changed_file)
+            if changed_dir:
+                for doc_path, doc_id in doc_index.items():
+                    doc_dir = os.path.dirname(doc_path)
+                    if doc_dir and (doc_dir == changed_dir or changed_dir.startswith(doc_dir)):
+                        suggestions.add(doc_id)
+        
+        # Filter out log documents (impacts should reference Space, not Time)
+        final_suggestions = [s for s in suggestions if not s.startswith('log_')]
+        
+        if not quiet and final_suggestions:
+            print(f"\n💡 Suggested impacts based on changes: {', '.join(final_suggestions)}")
+        
+        return final_suggestions
+        
+    except Exception as e:
+        if not quiet:
+            print(f"Warning: Could not suggest impacts: {e}")
+        return []
+
+
+def prompt_for_impacts(suggestions: list[str], quiet: bool = False) -> list[str]:
+    """Interactive prompt for impact confirmation.
+    
+    Args:
+        suggestions: Pre-computed suggestions from git analysis.
+        quiet: If True, skip prompts and return suggestions as-is.
+        
+    Returns:
+        Final list of impact IDs.
+    """
+    if quiet:
+        return suggestions
+    
+    if suggestions:
+        print(f"\nSuggested impacts: {', '.join(suggestions)}")
+        try:
+            response = input("Accept suggestions? [Y/n/edit]: ").strip().lower()
+            
+            if response in ('', 'y', 'yes'):
+                return suggestions
+            elif response in ('n', 'no'):
+                manual = input("Enter impacts (comma-separated, or empty): ").strip()
+                return [i.strip() for i in manual.split(',') if i.strip()] if manual else []
+            else:
+                # Edit mode - start with suggestions
+                manual = input(f"Edit impacts (starting with {', '.join(suggestions)}): ").strip()
+                return [i.strip() for i in manual.split(',') if i.strip()] if manual else suggestions
+        except (EOFError, KeyboardInterrupt):
+            print("\nUsing suggestions.")
+            return suggestions
+    else:
+        try:
+            manual = input("Enter impacts (comma-separated doc IDs, or empty): ").strip()
+            return [i.strip() for i in manual.split(',') if i.strip()] if manual else []
+        except (EOFError, KeyboardInterrupt):
+            return []
+
+
+def create_log_file(
+    topic_slug: str, 
+    quiet: bool = False, 
+    source: str = "",
+    event_type: str = "chore",
+    concepts: list[str] = None,
+    impacts: list[str] = None
+) -> str:
+    """Creates a new session log file with v2.0 schema.
+    
     Args:
         topic_slug: Short slug describing the session.
         quiet: Suppress output if True.
-        source: LLM/program that generated this log (e.g., "Claude Code", "Gemini").
-
+        source: LLM/program that generated this log.
+        event_type: Type of work (feature/fix/refactor/exploration/chore).
+        concepts: List of concept tags for searchability.
+        impacts: List of document IDs affected by this session.
+        
     Returns:
         Path to the created log file, or empty string on error.
     """
-    # Normalize slug to lowercase
+    # Normalize inputs
     topic_slug = topic_slug.lower()
-
+    concepts = concepts or []
+    impacts = impacts or []
+    
     try:
         if not os.path.exists(LOGS_DIR):
             os.makedirs(LOGS_DIR)
@@ -331,16 +509,24 @@ def create_log_file(topic_slug: str, quiet: bool = False, source: str = "") -> s
 
     daily_log = get_session_git_log()
     source_line = f"\nSource: {source}" if source else ""
+    
+    # Format concepts and impacts for YAML
+    concepts_yaml = f"[{', '.join(concepts)}]" if concepts else "[]"
+    impacts_yaml = f"[{', '.join(impacts)}]" if impacts else "[]"
 
+    # v2.0 SCHEMA
     content = f"""---
 id: log_{today_date.replace('-', '')}_{topic_slug.replace('-', '_')}
-type: atom
+type: log
 status: active
-depends_on: []
+event_type: {event_type}
+concepts: {concepts_yaml}
+impacts: {impacts_yaml}
 ---
 
 # Session Log: {topic_slug.replace('-', ' ').title()}
 Date: {today_datetime}{source_line}
+Event Type: {event_type}
 
 ## 1. Goal
 <!-- [AGENT: Fill this in. What was the primary objective of this session?] -->
@@ -384,9 +570,9 @@ def main() -> None:
         epilog="""
 Examples:
   python3 ontos_end_session.py auth-refactor                     # Create log for auth refactor session
-  python3 ontos_end_session.py bug-fix --source "Claude Code"    # Create log with LLM source
-  python3 ontos_end_session.py bug-fix --changelog               # Create log and prompt for changelog entry
-  python3 ontos_end_session.py feature-x -c -s "Gemini"          # With changelog and source
+  python3 ontos_end_session.py bug-fix -e fix                    # Create log with 'fix' event type
+  python3 ontos_end_session.py feature-x -e feature --suggest-impacts # Auto-detect impacts
+  python3 ontos_end_session.py api-refactor --impacts "api_spec,user_model" # Manual impacts
   python3 ontos_end_session.py hotfix --quiet                    # Create log without output
 
 Changelog Integration:
@@ -411,6 +597,18 @@ Slug format:
                         help='Changelog description - skips prompt')
     parser.add_argument('--source', '-s', type=str, metavar='NAME',
                         help='LLM/program that generated this log (e.g., "Claude Code", "Gemini")')
+    
+    # NEW v2.0 arguments
+    parser.add_argument('--event-type', '-e', type=str, metavar='TYPE',
+                        choices=['feature', 'fix', 'refactor', 'exploration', 'chore'],
+                        help='Type of work performed (feature/fix/refactor/exploration/chore)')
+    parser.add_argument('--concepts', type=str, metavar='TAGS',
+                        help='Comma-separated concept tags (e.g., "auth,oauth,security")')
+    parser.add_argument('--impacts', type=str, metavar='IDS',
+                        help='Comma-separated doc IDs impacted (e.g., "auth_flow,api_spec")')
+    parser.add_argument('--suggest-impacts', action='store_true',
+                        help='Auto-suggest impacts based on git changes')
+
     args = parser.parse_args()
 
     if not args.topic:
@@ -424,9 +622,35 @@ Slug format:
     if not is_valid:
         print(f"Error: {error_msg}")
         sys.exit(1)
+        
+    # Process event_type
+    event_type = args.event_type or 'chore'
+    
+    # Process concepts
+    concepts = []
+    if args.concepts:
+        concepts = [c.strip() for c in args.concepts.split(',') if c.strip()]
+        
+    # Process impacts
+    impacts = []
+    if args.impacts:
+        impacts = [i.strip() for i in args.impacts.split(',') if i.strip()]
+        
+    # Auto-suggest impacts if requested
+    if args.suggest_impacts:
+        suggestions = suggest_impacts(args.quiet)
+        if suggestions:
+            impacts = prompt_for_impacts(suggestions, args.quiet)
 
     # Create session log
-    result = create_log_file(args.topic, args.quiet, args.source or "")
+    result = create_log_file(
+        args.topic, 
+        args.quiet, 
+        args.source or "",
+        event_type,
+        concepts,
+        impacts
+    )
     if not result:
         sys.exit(1)
 

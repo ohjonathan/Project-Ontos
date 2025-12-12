@@ -21,6 +21,12 @@ UPDATABLE_SCRIPTS = [
     'ontos_remove_frontmatter.py',
     'ontos_update.py',  # Self-update
     'ontos_install_hooks.py',
+    'ontos_migrate_v2.py',
+]
+
+# Files that should be updated in the project root
+UPDATABLE_ROOT_FILES = [
+    'ontos_init.py',
 ]
 
 # Hooks to update (relative to .ontos/hooks/)
@@ -323,6 +329,47 @@ def update_hooks(temp_dir: str, backup_dir: str, quiet: bool = False, dry_run: b
     return updated
 
 
+def update_root_files(temp_dir: str, backup_dir: str, quiet: bool = False, dry_run: bool = False) -> int:
+    """Update root-level files from the cloned repository.
+
+    Args:
+        temp_dir: Directory containing cloned repo.
+        backup_dir: Directory for backups.
+        quiet: Suppress output if True.
+        dry_run: Preview changes without applying.
+
+    Returns:
+        Number of files updated.
+    """
+    updated = 0
+    
+    for filename in UPDATABLE_ROOT_FILES:
+        src_path = os.path.join(temp_dir, filename)
+        dest_path = filename
+
+        if not os.path.exists(src_path):
+            if not quiet:
+                print(f"  Skipped (not in source): {filename}")
+            continue
+
+        if dry_run:
+            if os.path.exists(dest_path):
+                print(f"  Would update: {dest_path}")
+            else:
+                print(f"  Would create: {dest_path}")
+            updated += 1
+            continue
+
+        # Backup existing file
+        if os.path.exists(dest_path):
+            backup_file(dest_path, backup_dir)
+
+        if update_file(src_path, dest_path, quiet):
+            updated += 1
+
+    return updated
+
+
 def main() -> None:
     """Main entry point."""
     parser = argparse.ArgumentParser(
@@ -420,9 +467,15 @@ Backups are created in .ontos/backups/ before updating.
 
         # Update docs
         if not args.scripts_only:
-            if not args.quiet:
+            if not quiet:
                 print("\nDocumentation:")
             total_updated += update_docs(temp_dir, backup_dir, args.quiet, args.dry_run)
+
+        # Update root files
+        if not args.docs_only:
+            if not quiet:
+                print("\nRoot Files:")
+            total_updated += update_root_files(temp_dir, backup_dir, args.quiet, args.dry_run)
 
         # Update hooks
         if not args.docs_only:
