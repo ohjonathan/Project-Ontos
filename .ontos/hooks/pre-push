@@ -1,16 +1,32 @@
 #!/bin/bash
 # Ontos pre-push hook - enforces session archiving before push
 #
-# This hook BLOCKS push if no session has been archived since the last push.
-# To bypass in emergencies: git push --no-verify
+# Behavior controlled by ENFORCE_ARCHIVE_BEFORE_PUSH in ontos_config.py:
+# - True (default): BLOCK push until session is archived
+# - False: Advisory only - show reminder but allow push
 #
-# How it works:
-# 1. ontos_end_session.py creates .ontos/session_archived marker
-# 2. This hook checks for the marker
-# 3. If marker exists: allow push, delete marker (one archive = one push)
-# 4. If no marker: block push with instructions
+# To bypass in emergencies: git push --no-verify
 
 MARKER_FILE=".ontos/session_archived"
+SCRIPTS_DIR=".ontos/scripts"
+
+# Check if Ontos is installed
+if [ ! -d "$SCRIPTS_DIR" ]; then
+    # No Ontos installation, skip check
+    exit 0
+fi
+
+# Check config: is blocking enabled?
+# We call Python to read the config (keeps logic centralized)
+ENFORCE_BLOCKING=$(python3 -c "
+import sys
+sys.path.insert(0, '$SCRIPTS_DIR')
+try:
+    from ontos_config import ENFORCE_ARCHIVE_BEFORE_PUSH
+    print('true' if ENFORCE_ARCHIVE_BEFORE_PUSH else 'false')
+except:
+    print('true')  # Default to blocking if config can't be read
+" 2>/dev/null)
 
 # Check if marker file exists
 if [ -f "$MARKER_FILE" ]; then
@@ -24,23 +40,44 @@ if [ -f "$MARKER_FILE" ]; then
     exit 0
 fi
 
-# No marker - block push
-echo ""
-echo "╔════════════════════════════════════════════════════════════╗"
-echo "║           ❌ PUSH BLOCKED - NO SESSION ARCHIVED            ║"
-echo "╠════════════════════════════════════════════════════════════╣"
-echo "║                                                            ║"
-echo "║  You must archive your session before pushing.             ║"
-echo "║                                                            ║"
-echo "║  Run: \"Archive Ontos\" (or ontos_end_session.py)           ║"
-echo "║                                                            ║"
-echo "║  This ensures your decisions and context are captured      ║"
-echo "║  before code leaves your machine.                          ║"
-echo "║                                                            ║"
-echo "║  Emergency bypass: git push --no-verify                    ║"
-echo "║  (Use sparingly - you'll lose context!)                    ║"
-echo "║                                                            ║"
-echo "╚════════════════════════════════════════════════════════════╝"
-echo ""
-
-exit 1
+# No marker - behavior depends on config
+if [ "$ENFORCE_BLOCKING" = "true" ]; then
+    # BLOCKING MODE: Reject the push
+    echo ""
+    echo "╔════════════════════════════════════════════════════════════╗"
+    echo "║           ❌ PUSH BLOCKED - NO SESSION ARCHIVED            ║"
+    echo "╠════════════════════════════════════════════════════════════╣"
+    echo "║                                                            ║"
+    echo "║  You must archive your session before pushing.             ║"
+    echo "║                                                            ║"
+    echo "║  Run: \"Archive Ontos\" (or ontos_end_session.py)           ║"
+    echo "║                                                            ║"
+    echo "║  This ensures your decisions and context are captured      ║"
+    echo "║  before code leaves your machine.                          ║"
+    echo "║                                                            ║"
+    echo "║  Emergency bypass: git push --no-verify                    ║"
+    echo "║  (Use sparingly - you'll lose context!)                    ║"
+    echo "║                                                            ║"
+    echo "║  To disable blocking: set ENFORCE_ARCHIVE_BEFORE_PUSH      ║"
+    echo "║  to False in .ontos/scripts/ontos_config.py                ║"
+    echo "║                                                            ║"
+    echo "╚════════════════════════════════════════════════════════════╝"
+    echo ""
+    exit 1
+else
+    # ADVISORY MODE: Show reminder but allow push
+    echo ""
+    echo "╔════════════════════════════════════════════════════════════╗"
+    echo "║           💡 SESSION LOG REMINDER                          ║"
+    echo "╠════════════════════════════════════════════════════════════╣"
+    echo "║                                                            ║"
+    echo "║  No session log created for this work.                     ║"
+    echo "║                                                            ║"
+    echo "║  Consider running \"Archive Ontos\" to capture your          ║"
+    echo "║  decisions and changes.                                    ║"
+    echo "║                                                            ║"
+    echo "╚════════════════════════════════════════════════════════════╝"
+    echo ""
+    echo "Proceeding with push (advisory mode)..."
+    exit 0
+fi

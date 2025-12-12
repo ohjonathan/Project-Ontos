@@ -80,6 +80,9 @@ from ontos_config_defaults import (
     DEFAULT_MAX_DEPENDENCY_DEPTH,
     DEFAULT_ALLOWED_ORPHAN_TYPES,
     DEFAULT_SKIP_PATTERNS,
+    # Workflow enforcement (override to customize strictness)
+    ENFORCE_ARCHIVE_BEFORE_PUSH,
+    REQUIRE_SOURCE_IN_LOGS,
 )
 
 # Backward compatibility alias
@@ -141,6 +144,11 @@ MAX_DEPENDENCY_DEPTH = DEFAULT_MAX_DEPENDENCY_DEPTH
 # EXAMPLE CUSTOMIZATIONS (uncomment and modify as needed)
 # =============================================================================
 
+# Directory customization:
 # DOCS_DIR = os.path.join(PROJECT_ROOT, 'documentation')
 # LOGS_DIR = os.path.join(PROJECT_ROOT, 'documentation/session-logs')
 # SKIP_PATTERNS = DEFAULT_SKIP_PATTERNS + ['drafts/', 'archive/']
+
+# Workflow enforcement (set to False for relaxed mode):
+# ENFORCE_ARCHIVE_BEFORE_PUSH = False  # Advisory-only pre-push hook
+# REQUIRE_SOURCE_IN_LOGS = False       # --source becomes optional

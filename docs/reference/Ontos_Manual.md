@@ -174,3 +174,65 @@ Tell your Agent:
    - Maybe `kernel_mission` should be `strategy`
    - Or `api_spec` should be elevated to `product`
 3. Remove the dependency if it's not essential
+
+## **Configuration**
+
+Ontos behavior can be customized via `.ontos/scripts/ontos_config.py`. This file is never overwritten by `ontos_update.py`, so your customizations are safe.
+
+### Workflow Enforcement Settings
+
+These settings control how strictly Ontos enforces workflow rules:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `ENFORCE_ARCHIVE_BEFORE_PUSH` | `True` | **Pre-push hook behavior.** When `True`, push is blocked until session is archived. When `False`, shows advisory reminder only. |
+| `REQUIRE_SOURCE_IN_LOGS` | `True` | **Session log authorship.** When `True`, `--source` flag is required in `ontos_end_session.py`. When `False`, source is optional. |
+
+### Customization Examples
+
+**Relaxed mode** (for solo developers or rapid prototyping):
+
+```python
+# .ontos/scripts/ontos_config.py
+
+# Allow push without archiving (advisory only)
+ENFORCE_ARCHIVE_BEFORE_PUSH = False
+
+# Make --source optional in session logs
+REQUIRE_SOURCE_IN_LOGS = False
+```
+
+**Strict mode** (default, recommended for teams):
+
+```python
+# .ontos/scripts/ontos_config.py
+
+# Block push until session is archived
+ENFORCE_ARCHIVE_BEFORE_PUSH = True
+
+# Require source attribution in all logs
+REQUIRE_SOURCE_IN_LOGS = True
+```
+
+### Directory Settings
+
+```python
+# Custom documentation directory
+DOCS_DIR = os.path.join(PROJECT_ROOT, 'documentation')
+
+# Custom session logs directory
+LOGS_DIR = os.path.join(PROJECT_ROOT, 'documentation/session-logs')
+
+# Additional patterns to skip during scanning
+SKIP_PATTERNS = DEFAULT_SKIP_PATTERNS + ['drafts/', 'archive/']
+```
+
+### Emergency Bypass
+
+Even with `ENFORCE_ARCHIVE_BEFORE_PUSH = True`, you can bypass the hook in emergencies:
+
+```bash
+git push --no-verify
+```
+
+Use sparingly — you'll lose context!

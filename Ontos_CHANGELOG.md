@@ -27,9 +27,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Blocking pre-push hook** — Push is blocked until session is archived (prevents context loss)
 - **Marker file system** — `ontos_end_session.py` creates `.ontos/session_archived` marker
 - **Pre-Push Protocol** — Added to Agent Instructions (section 3.1) with CRITICAL enforcement
+- **Workflow configuration options** — `ENFORCE_ARCHIVE_BEFORE_PUSH` and `REQUIRE_SOURCE_IN_LOGS` in ontos_config.py
+- **Configuration documentation** — Added Configuration section to Manual with examples for relaxed/strict modes
 
 ### Changed
 - Pre-push hook now blocks by default (was advisory only)
+- Pre-push hook respects `ENFORCE_ARCHIVE_BEFORE_PUSH` config (blocking vs advisory mode)
+- `--source` requirement in `ontos_end_session.py` respects `REQUIRE_SOURCE_IN_LOGS` config
 - One archive enables one push (marker deleted after successful check)
 
 ## [2.0.0] - 2025-12-12

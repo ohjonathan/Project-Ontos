@@ -7,7 +7,7 @@ import subprocess
 import argparse
 import sys
 
-from ontos_config import __version__, LOGS_DIR, CONTEXT_MAP_FILE, PROJECT_ROOT
+from ontos_config import __version__, LOGS_DIR, CONTEXT_MAP_FILE, PROJECT_ROOT, REQUIRE_SOURCE_IN_LOGS
 
 # Marker file for pre-push hook integration
 ARCHIVE_MARKER_FILE = os.path.join(PROJECT_ROOT, '.ontos', 'session_archived')
@@ -623,8 +623,12 @@ Slug format:
                         help='Changelog category (added/changed/fixed/etc.) - skips prompt')
     parser.add_argument('--changelog-message', type=str, metavar='MSG',
                         help='Changelog description - skips prompt')
-    parser.add_argument('--source', '-s', type=str, metavar='NAME', required=True,
-                        help='LLM/program that generated this log (e.g., "Claude Code", "Antigravity")')
+    source_required = REQUIRE_SOURCE_IN_LOGS
+    source_help = 'LLM/program that generated this log (e.g., "Claude Code", "Antigravity")'
+    if source_required:
+        source_help += ' [REQUIRED]'
+    parser.add_argument('--source', '-s', type=str, metavar='NAME', required=source_required,
+                        help=source_help)
     
     # NEW v2.0 arguments
     parser.add_argument('--event-type', '-e', type=str, metavar='TYPE',
@@ -674,7 +678,7 @@ Slug format:
     result = create_log_file(
         args.topic,
         args.quiet,
-        args.source,
+        args.source or "",  # Empty string if not provided (when optional)
         event_type,
         concepts,
         impacts

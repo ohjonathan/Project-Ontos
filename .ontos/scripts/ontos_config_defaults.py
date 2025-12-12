@@ -103,3 +103,23 @@ DEFAULT_ALLOWED_ORPHAN_TYPES = ['product', 'strategy', 'kernel']
 # - _template.md: Template files
 # - Ontos_: Ontos tooling files (Agent Instructions, Manual, Guides, etc.)
 DEFAULT_SKIP_PATTERNS = ['_template.md', 'Ontos_', '.ontos-internal/']
+
+
+# =============================================================================
+# WORKFLOW ENFORCEMENT (v2.0+)
+# =============================================================================
+# These settings control how strictly Ontos enforces workflow rules.
+# Override in ontos_config.py to customize for your project.
+#
+# Strict mode (defaults): Best for teams, ensures context is always captured
+# Relaxed mode: Better for solo devs, rapid prototyping, or learning Ontos
+
+# Pre-push hook behavior
+# - True (default): BLOCK push until session is archived (recommended for teams)
+# - False: Advisory only - show reminder but allow push
+ENFORCE_ARCHIVE_BEFORE_PUSH = True
+
+# Session log authorship tracking
+# - True (default): --source flag is REQUIRED in ontos_end_session.py
+# - False: --source is optional (logs may lack attribution)
+REQUIRE_SOURCE_IN_LOGS = True

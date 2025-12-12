@@ -1,11 +1,11 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-12 12:09:33 UTC
+Generated: 2025-12-12 12:16:58 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
 # Ontos Context Map
-Generated on: 2025-12-12 21:09:33
+Generated on: 2025-12-12 21:16:58
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 
 ## 1. Hierarchy Tree
@@ -38,6 +38,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 
 ### LOG
 - **log_20251212_blocking_hook_implementation** (2025-12-12_blocking-hook-implementation.md) ~444 tokens
+  - Status: active
+  - Impacts: v2_architecture, self_dev_protocol
+- **log_20251212_configurable_workflow** (2025-12-12_configurable-workflow.md) ~440 tokens
   - Status: active
   - Impacts: v2_architecture, self_dev_protocol
 - **log_20251212_maintenance_v2_release** (2025-12-12_maintenance-v2-release.md) ~329 tokens
@@ -79,6 +82,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 - **2025-12-12** [chore] **Maintenance V2 Release** (`log_20251212_maintenance_v2_release`)
   - Impacted: `v2_architecture`, `schema`
   - Concepts: maintenance, version-bump, v2-release
+- **2025-12-12** [feature] **Configurable Workflow** (`log_20251212_configurable_workflow`)
+  - Impacted: `v2_architecture`, `self_dev_protocol`
+  - Concepts: configuration, workflow-enforcement, opt-out, relaxed-mode
 - **2025-12-12** [feature] **Blocking Hook Implementation** (`log_20251212_blocking_hook_implementation`)
   - Impacted: `v2_architecture`, `self_dev_protocol`
   - Concepts: pre-push-hook, blocking, marker-file, context-enforcement
@@ -90,6 +96,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 | ID | Filename | Type |
 |---|---|---|
 | log_20251212_blocking_hook_implementation | [2025-12-12_blocking-hook-implementation.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-12_blocking-hook-implementation.md) | log |
+| log_20251212_configurable_workflow | [2025-12-12_configurable-workflow.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-12_configurable-workflow.md) | log |
 | log_20251212_maintenance_v2_release | [2025-12-12_maintenance-v2-release.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-12_maintenance-v2-release.md) | log |
 | log_20251212_pr10_review_and_fixes | [2025-12-12_pr10-review-and-fixes.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-12_pr10-review-and-fixes.md) | log |
 | log_20251212_pr11_review_fixes | [2025-12-12_pr11-review-fixes.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-12_pr11-review-fixes.md) | log |
