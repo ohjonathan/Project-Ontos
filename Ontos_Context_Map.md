@@ -1,5 +1,5 @@
 # Ontos Context Map
-Generated on: 2025-12-12 11:00:46
+Generated on: 2025-12-12 13:54:55
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 
 ## 1. Hierarchy Tree
@@ -33,6 +33,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
   - Depends On: v2_roadmap
 
 ### LOG
+- **log_20251212_pr10_review_and_fixes** (2025-12-12_pr10-review-and-fixes.md)
+  - Status: archived
+  - Depends On: None
 - **log_20251212_v2_planning** (2025-12-12_v2-planning.md)
   - Status: archived
   - Depends On: None
@@ -44,6 +47,7 @@ No issues found.
 ## 3. Index
 | ID | Filename | Type |
 |---|---|---|
+| log_20251212_pr10_review_and_fixes | [2025-12-12_pr10-review-and-fixes.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-12_pr10-review-and-fixes.md) | log |
 | log_20251212_v2_planning | [2025-12-12_v2-planning.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-12_v2-planning.md) | log |
 | mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |
 | schema | [schema.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/atom/schema.md) | atom |

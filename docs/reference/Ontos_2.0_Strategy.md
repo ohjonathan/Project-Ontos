@@ -1,15 +1,13 @@
 ---
-id: ontos_strategy
+id: ontos_2_0_strategy
 type: strategy
 status: active
 depends_on: []
 ---
 
-# Project Ontos: Strategy Document
+# Project Ontos: 2.0 Strategy Document
 
 *Documented: December 2025*
-
-<!-- NOTE: When releasing Ontos 2.0, archive this file as Ontos_1.0_Strategy.md and create a fresh Ontos_Strategy.md -->
 
 ---
 
