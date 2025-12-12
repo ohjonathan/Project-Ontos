@@ -1,11 +1,11 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-12 11:09:12 UTC
+Generated: 2025-12-12 11:24:20 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
 # Ontos Context Map
-Generated on: 2025-12-12 20:09:12
+Generated on: 2025-12-12 20:24:20
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 
 ## 1. Hierarchy Tree
@@ -37,13 +37,13 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
   - Depends On: v2_architecture
 
 ### LOG
-- **log_20251212_maintenance_v2_release** (2025-12-12_maintenance-v2-release.md) ~324 tokens
+- **log_20251212_maintenance_v2_release** (2025-12-12_maintenance-v2-release.md) ~329 tokens
   - Status: active
   - Impacts: v2_architecture, schema
 - **log_20251212_pr10_review_and_fixes** (2025-12-12_pr10-review-and-fixes.md) ~472 tokens
   - Status: archived
   - Impacts: schema, v2_architecture, self_dev_protocol
-- **log_20251212_v2_implementation_complete** (2025-12-12_v2-implementation-complete.md) ~524 tokens
+- **log_20251212_v2_implementation_complete** (2025-12-12_v2-implementation-complete.md) ~529 tokens
   - Status: active
   - Impacts: v2_implementation_plan, v2_architecture, schema, self_dev_protocol, mission, v2_strategy
 - **log_20251212_v2_planning** (2025-12-12_v2-planning.md) ~485 tokens

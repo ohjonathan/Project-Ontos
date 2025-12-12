@@ -505,23 +505,22 @@ def validate_log_schema(files_data: dict[str, dict]) -> list[str]:
     return issues
 
 
-def validate_impacts(files_data: dict[str, dict], strict: bool = False) -> list[str]:
+def validate_impacts(files_data: dict[str, dict]) -> list[str]:
     """Validate that impacts[] references exist in Space Ontology.
-    
+
     The impacts field connects History (logs) to Truth (space documents).
-    
+
     Validation Rules:
     - Active logs: impacts MUST reference existing Space documents (ERROR)
     - Archived logs: broken references are noted but not errors (INFO)
-    
+
     Rationale: History is immutable. If a Space document is deleted,
     historical logs that referenced it shouldn't turn red. The log
     recorded what was true at that moment.
-    
+
     Args:
         files_data: Dictionary of document metadata.
-        strict: If True, treat archived log broken links as errors too.
-        
+
     Returns:
         List of issue strings.
     """
@@ -555,10 +554,11 @@ def validate_impacts(files_data: dict[str, dict], strict: bool = False) -> list[
                 continue
             
             if impact_id not in space_ids:
-                if is_archived and not strict:
+                if is_archived:
                     # =========================================================
-                    # ARCHIVED LOGS: Informational only
+                    # ARCHIVED LOGS: Informational only (even in strict mode)
                     # History is immutable—don't error on deleted references
+                    # The log recorded what was true at that moment.
                     # =========================================================
                     issues.append(
                         f"- [INFO] **{doc_id}** references deleted document `{impact_id}` "
@@ -610,7 +610,7 @@ def generate_context_map(target_dirs: list[str], quiet: bool = False, strict: bo
     # NEW: Validate impacts references
     if not quiet:
         print("Validating impacts references...")
-    impact_issues = validate_impacts(files_data, strict=strict)
+    impact_issues = validate_impacts(files_data)
     issues.extend(impact_issues)
 
     # NEW: Generate Timeline
@@ -650,11 +650,15 @@ Scanned Directory: `{dirs_str}`
         print(f"Error: Failed to write {OUTPUT_FILE}: {e}")
         sys.exit(1)
 
+    # Count error-level issues (exclude INFO for strict mode purposes)
+    error_issues = [i for i in issues if '[INFO]' not in i]
+
     if not quiet:
         print(f"Successfully generated {OUTPUT_FILE}")
         print(f"Scanned {len(files_data)} documents, found {len(issues)} issues.")
 
-    return len(issues)
+    # Return only error-level issues for strict mode
+    return len(error_issues)
 
 
 def watch_mode(target_dirs: list[str], quiet: bool = False) -> None:

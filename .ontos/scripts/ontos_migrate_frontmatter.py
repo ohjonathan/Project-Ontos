@@ -53,17 +53,20 @@ def generate_taxonomy_table() -> str:
     Returns:
         Formatted markdown table string.
     """
-    lines = ["| Type | Definition | Signal Words |", "|------|------------|--------------|"]
+    lines = ["| Type | Rank | Description |", "|------|------|-------------|"]
 
-    # Sort by rank to maintain hierarchy order, exclude 'unknown'
+    # Sort by rank to maintain hierarchy order, exclude 'unknown' and 'log'
+    # (log is Time ontology, not relevant for document classification)
     sorted_types = sorted(
-        [(k, v) for k, v in TYPE_DEFINITIONS.items() if k != 'unknown'],
+        [(k, v) for k, v in TYPE_DEFINITIONS.items()
+         if k not in ('unknown', 'log') and v.get('rank') is not None],
         key=lambda x: x[1]['rank']
     )
 
     for type_name, type_info in sorted_types:
-        signals = ', '.join(type_info['signals'])
-        lines.append(f"| {type_name} | {type_info['definition']} | {signals} |")
+        description = type_info.get('description', '')
+        rank = type_info.get('rank', '?')
+        lines.append(f"| {type_name} | {rank} | {description} |")
 
     return '\n'.join(lines)
 

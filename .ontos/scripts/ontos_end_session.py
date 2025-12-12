@@ -595,8 +595,8 @@ Slug format:
                         help='Changelog category (added/changed/fixed/etc.) - skips prompt')
     parser.add_argument('--changelog-message', type=str, metavar='MSG',
                         help='Changelog description - skips prompt')
-    parser.add_argument('--source', '-s', type=str, metavar='NAME',
-                        help='LLM/program that generated this log (e.g., "Claude Code", "Gemini")')
+    parser.add_argument('--source', '-s', type=str, metavar='NAME', required=True,
+                        help='LLM/program that generated this log (e.g., "Claude Code", "Antigravity")')
     
     # NEW v2.0 arguments
     parser.add_argument('--event-type', '-e', type=str, metavar='TYPE',
@@ -613,7 +613,7 @@ Slug format:
 
     if not args.topic:
         print("Error: Missing required argument 'topic'. Provide a short slug describing the session.")
-        print("Example: python3 ontos_end_session.py auth-refactor --source \"Claude Code\"\n")
+        print("Example: python3 ontos_end_session.py auth-refactor -s \"Claude Code\" -e feature\n")
         parser.print_help()
         sys.exit(1)
 
@@ -644,9 +644,9 @@ Slug format:
 
     # Create session log
     result = create_log_file(
-        args.topic, 
-        args.quiet, 
-        args.source or "",
+        args.topic,
+        args.quiet,
+        args.source,
         event_type,
         concepts,
         impacts

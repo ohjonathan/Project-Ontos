@@ -9,6 +9,7 @@ impacts: [v2_architecture, schema]
 
 # Session Log: Maintenance V2 Release
 Date: 2025-12-12 20:08 KST
+Source: Claude Code
 Event Type: chore
 
 ## 1. Goal
