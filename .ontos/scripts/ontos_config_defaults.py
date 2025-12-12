@@ -62,4 +62,4 @@ DEFAULT_ALLOWED_ORPHAN_TYPES = ['product', 'strategy', 'kernel']
 # Files/patterns to skip during scanning (defaults)
 # - _template.md: Template files
 # - Ontos_: Ontos tooling files (Agent Instructions, Manual, Guides, etc.)
-DEFAULT_SKIP_PATTERNS = ['_template.md', 'Ontos_']
+DEFAULT_SKIP_PATTERNS = ['_template.md', 'Ontos_', '.ontos-internal/']
