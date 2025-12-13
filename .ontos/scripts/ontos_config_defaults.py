@@ -123,3 +123,14 @@ ENFORCE_ARCHIVE_BEFORE_PUSH = True
 # - True (default): --source flag is REQUIRED in ontos_end_session.py
 # - False: --source is optional (logs may lack attribution)
 REQUIRE_SOURCE_IN_LOGS = True
+
+# =============================================================================
+# MEMORY MANAGEMENT (v2.1+)
+# =============================================================================
+# Controls the "Working Memory" size - how many logs stay in active scanning.
+# Logs beyond this threshold should be consolidated and archived.
+
+# Recommended threshold for active logs before consolidation
+# - Lower = smaller context maps, more frequent consolidation
+# - Higher = more history in context, less consolidation overhead
+LOG_RETENTION_COUNT = 15

@@ -21,7 +21,15 @@ All notable changes to **Project Ontos itself** (the protocol and tooling) will 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
 ## [Unreleased]
+
+### Added (v2.1 - Smart Memory)
+- **Decision History Index** (`docs/strategy/decision_history.md`) — Permanent ledger for archived session decisions
+- **Consolidation Ritual** — Monthly maintenance process documented in Manual (section 3)
+- **Absorption Pattern** — Documented pattern for capturing decisions in Space documents with constraints and citations
+- **Historical Recall** — Agents can read archived logs referenced in decision_history.md (Agent Instructions update)
+- **LOG_RETENTION_COUNT** — Configurable threshold for active logs before consolidation (default: 15)
 
 ### Added
 - **Blocking pre-push hook** — Push is blocked until session is archived (prevents context loss)

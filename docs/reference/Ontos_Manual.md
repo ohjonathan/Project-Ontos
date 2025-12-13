@@ -86,7 +86,70 @@ python3 .ontos/scripts/ontos_generate_context_map.py  # Rebuild map
 
 ---
 
-## 3. Installation
+
+## 3. Monthly Consolidation
+
+When `logs/` exceeds ~15 files, perform consolidation to keep context lean.
+
+### The Ritual
+
+1. **Review** — Scan the oldest 5-10 logs in `logs/`
+
+2. **Verify Absorption** — For each log, check: have the key decisions been captured in Space documents?
+   - If NO: Update the relevant `strategy` or `atom` doc first
+   - If YES: Proceed to record
+
+3. **Record** — Add an entry to `docs/strategy/decision_history.md`:
+   - Date, slug, event type
+   - One-line decision summary (what was decided, what was rejected)
+   - Impacted documents
+   - Archive path
+
+4. **Cite** — Update impacted Space documents with a breadcrumb:
+   ```markdown
+   **Decision (2025-12-10):** Chose OAuth2 over session-based auth. See `decision_history.md`.
+   ```
+
+5. **Archive** — Move the log file:
+   ```bash
+   mv .ontos-internal/logs/2025-12-10_auth.md .ontos-internal/archive/logs/
+   ```
+
+6. **Commit** — Single commit: "chore: consolidate sessions from [date range]"
+
+### Absorption Pattern
+
+Good absorption captures outcome + constraints + citation.
+
+**Before (Space doc says):**
+```markdown
+## Authentication
+Uses OAuth2 with JWT tokens.
+```
+
+**After (Space doc says):**
+```markdown
+## Authentication
+Uses OAuth2 with JWT tokens.
+
+**Constraints:**
+- Session-based auth rejected (statelessness requirement)
+- Firebase Auth rejected (vendor lock-in)
+
+**Decision (2025-12-10):** See `decision_history.md`.
+```
+
+### When to Consolidate
+
+| Trigger | Action |
+|---------|--------|
+| `logs/` has >15 files | Consolidate oldest 5-10 |
+| Quarterly review | Consolidate all logs >30 days old |
+| Before major release | Consolidate all active logs |
+
+---
+
+## 4. Installation
 
 ### Prerequisites
 - Python 3.9+
@@ -129,7 +192,7 @@ python3 .ontos/scripts/ontos_remove_frontmatter.py --yes
 
 ---
 
-## 4. Migrating Existing Docs
+## 5. Migrating Existing Docs
 
 ### Auto-detect untagged files
 ```bash
@@ -150,7 +213,7 @@ python3 .ontos/scripts/ontos_generate_context_map.py --strict
 
 ---
 
-## 5. Error Reference
+## 6. Error Reference
 
 | Error | Cause | Fix |
 |-------|-------|-----|
@@ -162,7 +225,7 @@ python3 .ontos/scripts/ontos_generate_context_map.py --strict
 
 ---
 
-## 6. CI/CD Integration
+## 7. CI/CD Integration
 
 ### Strict validation
 ```yaml
@@ -185,7 +248,7 @@ repos:
 
 ---
 
-## 7. Updating Ontos
+## 8. Updating Ontos
 
 ```bash
 # Check for updates
@@ -199,7 +262,7 @@ python3 .ontos/scripts/ontos_update.py
 
 ---
 
-## 8. Scripts Reference
+## 9. Scripts Reference
 
 | Script | Purpose |
 |--------|---------|
