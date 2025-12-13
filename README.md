@@ -170,19 +170,10 @@ CI/CD validation catches broken links, circular dependencies, and architectural 
 
 ## Documentation
 
-### Guides
-- **[Installation Guide](docs/guides/Ontos_Installation_Guide.md)**: Set up Ontos in your project.
-- **[Initiation Guide](docs/guides/Ontos_Initiation_Guide.md)**: Tag your files and build your first graph.
-- **[Migration Guide](docs/guides/Ontos_Migration_Guide.md)**: Retrofit existing documentation.
-- **[Maintenance Guide](docs/guides/Ontos_Maintenance_Guide.md)**: Keep your graph healthy and update Ontos.
-- **[Uninstallation Guide](docs/guides/Ontos_Uninstallation_Guide.md)**: Remove Ontos from your project.
-
-### Reference
-- **[The Ontos Manual](docs/reference/Ontos_Manual.md)**: The complete protocol reference.
-- **[Agent Instructions](docs/reference/Ontos_Agent_Instructions.md)**: System prompt for your AI agents.
-
-### Meta
-- **[Changelog](Ontos_CHANGELOG.md)**: Version history for Ontos tooling.
+- **[Ontos Manual](docs/reference/Ontos_Manual.md)**: Complete reference — installation, workflow, configuration, errors
+- **[Agent Instructions](docs/reference/Ontos_Agent_Instructions.md)**: Commands for AI agents
+- **[Minimal Example](examples/minimal/README.md)**: 3-file quick start
+- **[Changelog](Ontos_CHANGELOG.md)**: Version history
 
 ---
 

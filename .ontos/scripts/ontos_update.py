@@ -43,11 +43,6 @@ PROTECTED_FILES = [
 UPDATABLE_DOCS = [
     'docs/reference/Ontos_Manual.md',
     'docs/reference/Ontos_Agent_Instructions.md',
-    'docs/guides/Ontos_Installation_Guide.md',
-    'docs/guides/Ontos_Initiation_Guide.md',
-    'docs/guides/Ontos_Migration_Guide.md',
-    'docs/guides/Ontos_Uninstallation_Guide.md',
-    'docs/guides/Ontos_Maintenance_Guide.md',
 ]
 
 

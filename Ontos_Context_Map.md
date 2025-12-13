@@ -1,11 +1,11 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-13 07:01:17 UTC
+Generated: 2025-12-13 07:17:39 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
 # Ontos Context Map
-Generated on: 2025-12-13 16:01:17
+Generated on: 2025-12-13 16:17:39
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 
 ## 1. Hierarchy Tree
