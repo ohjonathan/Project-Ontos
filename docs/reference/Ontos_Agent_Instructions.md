@@ -17,7 +17,9 @@
 
 Event types: `feature`, `fix`, `refactor`, `exploration`, `chore`
 
-**Pre-push blocking:** Push fails without archived session. Run Archive Ontos first. Emergency: `git push --no-verify`
+**Pre-push blocking:** Push fails without archived session. Run Archive Ontos first.
+
+**RULE:** Never use `git push --no-verify` without explicit user approval. If the hook blocks you, archive the session — don't bypass.
 
 ### "Maintain Ontos" (Weekly)
 1. `python3 .ontos/scripts/ontos_migrate_frontmatter.py`

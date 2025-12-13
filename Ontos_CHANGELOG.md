@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Context map notice for contributors** — When generated in Project Ontos repo, context map shows a notice explaining it will be overwritten when users initialize Ontos in their projects
+- **Agent `--no-verify` rule** — Agents must ask before using `git push --no-verify` (behavioral expectation, not technical restriction)
 - **Blocking pre-push hook** — Push is blocked until session is archived (prevents context loss)
 - **Marker file system** — `ontos_end_session.py` creates `.ontos/session_archived` marker
 - **Pre-Push Protocol** — Added to Agent Instructions (section 3.1) with CRITICAL enforcement
