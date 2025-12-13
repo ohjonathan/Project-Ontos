@@ -12,12 +12,12 @@ git clone https://github.com/ohjona/Project-Ontos.git /tmp/ontos
 
 # 2. Copy to your project
 cp -r /tmp/ontos/.ontos your-project/
+cp /tmp/ontos/ontos_init.py your-project/
 cp /tmp/ontos/docs/reference/Ontos_Agent_Instructions.md your-project/
 
-# 3. Install hooks & generate map
+# 3. Initialize (installs hooks, generates context map)
 cd your-project
-python3 .ontos/scripts/ontos_install_hooks.py
-python3 .ontos/scripts/ontos_generate_context_map.py
+python3 ontos_init.py
 
 # 4. Activate
 # Tell your AI: "Ontos"
@@ -94,17 +94,16 @@ python3 .ontos/scripts/ontos_generate_context_map.py  # Rebuild map
 
 ### Standard Install
 ```bash
-# Copy scripts
+# Copy scripts and init file
 cp -r /path/to/ontos/.ontos your-project/
+cp /path/to/ontos/ontos_init.py your-project/
 
 # Copy agent instructions
 cp /path/to/ontos/docs/reference/Ontos_Agent_Instructions.md your-project/
 
-# Install git hooks
-python3 .ontos/scripts/ontos_install_hooks.py
-
-# Verify
-python3 .ontos/scripts/ontos_generate_context_map.py
+# Initialize (installs hooks, generates context map)
+cd your-project
+python3 ontos_init.py
 ```
 
 ### Configuration

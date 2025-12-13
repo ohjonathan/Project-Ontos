@@ -1,9 +1,12 @@
 """Unified initialization script for Project Ontos.
 
-Run this script to set up Ontos in your project.
-It will:
-1. Create essential directories (.ontos-internal, docs)
-2. Create configuration files (ontos_config.py)
+Prerequisites:
+- Copy the `.ontos/` folder to your project root BEFORE running this script
+- Copy this file (ontos_init.py) to your project root
+
+This script will:
+1. Verify .ontos/ exists (required)
+2. Create optional directories (.ontos-internal, docs)
 3. Install git hooks
 4. Generate the initial context map
 """
