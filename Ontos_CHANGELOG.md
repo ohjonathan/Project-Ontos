@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **LOG_RETENTION_COUNT** — Configurable threshold for active logs before consolidation (default: 15)
 
 ### Added
+- **Context map notice for contributors** — When generated in Project Ontos repo, context map shows a notice explaining it will be overwritten when users initialize Ontos in their projects
 - **Blocking pre-push hook** — Push is blocked until session is archived (prevents context loss)
 - **Marker file system** — `ontos_end_session.py` creates `.ontos/session_archived` marker
 - **Pre-Push Protocol** — Added to Agent Instructions (section 3.1) with CRITICAL enforcement

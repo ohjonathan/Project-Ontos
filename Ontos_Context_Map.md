@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-13 13:54:37 UTC
+Generated: 2025-12-13 13:56:37 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2025-12-13 22:54:37
+Generated on: 2025-12-13 22:56:37
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 
 ## 1. Hierarchy Tree
@@ -33,6 +33,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 
 ### LOG
 - **log_20251213_cleanup_broken_links** (2025-12-13_cleanup-broken-links.md) ~417 tokens
+  - Status: active
+  - Impacts: schema
+- **log_20251213_context_map_notice** (2025-12-13_context-map-notice.md) ~296 tokens
   - Status: active
   - Impacts: schema
 - **log_20251213_documentation_compaction** (2025-12-13_documentation-compaction.md) ~902 tokens
@@ -61,6 +64,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 - **2025-12-13** [chore] **Documentation Compaction** (`log_20251213_documentation_compaction`)
   - Impacted: `schema`, `v2_strategy`, `mission`
   - Concepts: documentation-compaction, archive, token-reduction, minimal-example
+- **2025-12-13** [feature] **Context Map Notice** (`log_20251213_context_map_notice`)
+  - Impacted: `schema`
+  - Concepts: context-map, documentation, contributor-mode
 - **2025-12-13** [chore] **Cleanup Broken Links** (`log_20251213_cleanup_broken_links`)
   - Impacted: `schema`
   - Concepts: cleanup, broken-links, legacy-removal, documentation
@@ -73,6 +79,7 @@ No issues found.
 |---|---|---|
 | decision_history | [decision_history.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/decision_history.md) | strategy |
 | log_20251213_cleanup_broken_links | [2025-12-13_cleanup-broken-links.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_cleanup-broken-links.md) | log |
+| log_20251213_context_map_notice | [2025-12-13_context-map-notice.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_context-map-notice.md) | log |
 | log_20251213_documentation_compaction | [2025-12-13_documentation-compaction.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_documentation-compaction.md) | log |
 | log_20251213_gemini_feedback_fixes | [2025-12-13_gemini-feedback-fixes.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_gemini-feedback-fixes.md) | log |
 | log_20251213_pr_12_fixes | [2025-12-13_pr-12-fixes.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_pr-12-fixes.md) | log |
