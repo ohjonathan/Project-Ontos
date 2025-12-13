@@ -1,11 +1,11 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-13 08:09:15 UTC
+Generated: 2025-12-13 12:38:46 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
 # Ontos Context Map
-Generated on: 2025-12-13 17:09:15
+Generated on: 2025-12-13 21:38:46
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 
 ## 1. Hierarchy Tree
@@ -15,6 +15,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
   - Depends On: None
 
 ### STRATEGY
+- **decision_history** (decision_history.md) ~424 tokens
+  - Status: active
+  - Depends On: mission
 - **v2_strategy** (v2_strategy.md) ~2,600 tokens
   - Status: active
   - Depends On: mission
@@ -53,6 +56,7 @@ No issues found.
 ## 4. Index
 | ID | Filename | Type |
 |---|---|---|
+| decision_history | [decision_history.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/decision_history.md) | strategy |
 | log_20251213_cleanup_broken_links | [2025-12-13_cleanup-broken-links.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_cleanup-broken-links.md) | log |
 | log_20251213_documentation_compaction | [2025-12-13_documentation-compaction.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_documentation-compaction.md) | log |
 | log_20251213_gemini_feedback_fixes | [2025-12-13_gemini-feedback-fixes.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_gemini-feedback-fixes.md) | log |

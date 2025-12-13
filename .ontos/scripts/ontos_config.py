@@ -83,6 +83,7 @@ from ontos_config_defaults import (
     # Workflow enforcement (override to customize strictness)
     ENFORCE_ARCHIVE_BEFORE_PUSH,
     REQUIRE_SOURCE_IN_LOGS,
+    LOG_RETENTION_COUNT,
 )
 
 # Backward compatibility alias
@@ -152,3 +153,6 @@ MAX_DEPENDENCY_DEPTH = DEFAULT_MAX_DEPENDENCY_DEPTH
 # Workflow enforcement (set to False for relaxed mode):
 # ENFORCE_ARCHIVE_BEFORE_PUSH = False  # Advisory-only pre-push hook
 # REQUIRE_SOURCE_IN_LOGS = False       # --source becomes optional
+
+# Memory management (set lower for token-constrained workflows):
+# LOG_RETENTION_COUNT = 10

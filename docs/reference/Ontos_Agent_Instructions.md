@@ -48,6 +48,30 @@ Rule: Dependencies flow DOWN (atom → product → strategy → kernel).
 | `[ORPHAN]` | Add to another doc's depends_on |
 | `[ARCHITECTURE]` | Lower-rank can't depend on higher-rank |
 
+
+## Historical Recall
+
+The `archive/` directory is excluded from the Context Map to save tokens.
+
+To understand rationale behind past decisions:
+
+1. **Read** `docs/strategy/decision_history.md`
+2. **Locate** the relevant entry by date, slug, or impacted document
+3. **Retrieve** — You are authorized to read the file at the Archive Path, even though it's not in the Context Map
+
+**Example:**
+```
+User: "Why did we choose OAuth2?"
+
+Agent:
+1. Reads decision_history.md
+2. Finds: "2025-12-10 | auth-migration | Chose OAuth2..."
+3. Reads .ontos-internal/archive/logs/2025-12-10_auth-migration.md
+4. Responds with sourced explanation
+```
+
+**Rule:** Only read archived files explicitly listed in `decision_history.md` or requested by the user.
+
 ## Changelogs
 
 - `Ontos_CHANGELOG.md` — Only for Ontos tooling changes
