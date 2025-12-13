@@ -29,12 +29,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Pre-Push Protocol** — Added to Agent Instructions (section 3.1) with CRITICAL enforcement
 - **Workflow configuration options** — `ENFORCE_ARCHIVE_BEFORE_PUSH` and `REQUIRE_SOURCE_IN_LOGS` in ontos_config.py
 - **Configuration documentation** — Added Configuration section to Manual with examples for relaxed/strict modes
+- **Archive directory** — `.ontos-internal/archive/` for historical docs that should be preserved but not scanned
+- **Directory-level skip patterns** — `ontos_generate_context_map.py` now prunes entire directories matching skip patterns (e.g., `archive/`)
+- **Minimal example** — `examples/minimal/` with single-file quick-start example
 
 ### Changed
 - Pre-push hook now blocks by default (was advisory only)
 - Pre-push hook respects `ENFORCE_ARCHIVE_BEFORE_PUSH` config (blocking vs advisory mode)
 - `--source` requirement in `ontos_end_session.py` respects `REQUIRE_SOURCE_IN_LOGS` config
 - One archive enables one push (marker deleted after successful check)
+- **Documentation compaction** — 5 guide files consolidated into single `Ontos_Manual.md` (-80%)
+- **Agent Instructions trimmed** — Reduced to essential commands only
+- **Example simplified** — 8-file task-tracker replaced with 1-file minimal example (-88%)
+- **Total line reduction** — 13,100 → 7,000 lines (-47%), markdown specifically -68%
+
+### Removed
+- `docs/guides/` directory (consolidated into `Ontos_Manual.md`)
+- `examples/task-tracker/` (replaced with `examples/minimal/`)
+- `v2_implementation_plan.md`, `self_development_protocol_spec.md` (completed, no longer needed)
+- `Ontos_Technical_Architecture.md` (consolidated)
 
 ## [2.0.0] - 2025-12-12
 
