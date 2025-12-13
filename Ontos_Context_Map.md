@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-13 14:19:56 UTC
+Generated: 2025-12-13 16:04:02 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,8 +9,8 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2025-12-13 23:19:56
-Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
+Generated on: 2025-12-14 01:04:02
+Scanned Directory: `.ontos-internal, docs/reference`
 
 ## 1. Hierarchy Tree
 ### KERNEL
@@ -30,6 +30,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
   - Depends On: mission
 
 ### ATOM
+- **common_concepts** (Common_Concepts.md) ~654 tokens
+  - Status: active
+  - Depends On: None
 - **schema** (schema.md) ~314 tokens
   - Status: active
   - Depends On: v2_strategy
@@ -96,17 +99,18 @@ No issues found.
 ## 4. Index
 | ID | Filename | Type |
 |---|---|---|
-| decision_history | [decision_history.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/decision_history.md) | strategy |
-| log_20251213_agent_no_verify_rule | [2025-12-13_agent-no-verify-rule.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_agent-no-verify-rule.md) | log |
-| log_20251213_cleanup_broken_links | [2025-12-13_cleanup-broken-links.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_cleanup-broken-links.md) | log |
-| log_20251213_context_map_notice | [2025-12-13_context-map-notice.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_context-map-notice.md) | log |
-| log_20251213_documentation_compaction | [2025-12-13_documentation-compaction.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_documentation-compaction.md) | log |
-| log_20251213_gemini_feedback_fixes | [2025-12-13_gemini-feedback-fixes.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_gemini-feedback-fixes.md) | log |
-| log_20251213_pr_12_fixes | [2025-12-13_pr-12-fixes.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_pr-12-fixes.md) | log |
-| log_20251213_smart_memory_implementation | [2025-12-13_smart-memory-implementation.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_smart-memory-implementation.md) | log |
-| log_20251213_v22_ux_planning | [2025-12-13_v22-ux-planning.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_v22-ux-planning.md) | log |
-| log_20251213_version_fix | [2025-12-13_version-fix.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_version-fix.md) | log |
-| mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |
-| schema | [schema.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/atom/schema.md) | atom |
-| v2_3_ux_improvements | [2.3_ux_improvement_ideas.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/2.3_ux_improvement_ideas.md) | strategy |
-| v2_strategy | [v2_strategy.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2_strategy.md) | strategy |
+| common_concepts | [Common_Concepts.md](docs/reference/Common_Concepts.md) | atom |
+| decision_history | [decision_history.md](.ontos-internal/strategy/decision_history.md) | strategy |
+| log_20251213_agent_no_verify_rule | [2025-12-13_agent-no-verify-rule.md](.ontos-internal/logs/2025-12-13_agent-no-verify-rule.md) | log |
+| log_20251213_cleanup_broken_links | [2025-12-13_cleanup-broken-links.md](.ontos-internal/logs/2025-12-13_cleanup-broken-links.md) | log |
+| log_20251213_context_map_notice | [2025-12-13_context-map-notice.md](.ontos-internal/logs/2025-12-13_context-map-notice.md) | log |
+| log_20251213_documentation_compaction | [2025-12-13_documentation-compaction.md](.ontos-internal/logs/2025-12-13_documentation-compaction.md) | log |
+| log_20251213_gemini_feedback_fixes | [2025-12-13_gemini-feedback-fixes.md](.ontos-internal/logs/2025-12-13_gemini-feedback-fixes.md) | log |
+| log_20251213_pr_12_fixes | [2025-12-13_pr-12-fixes.md](.ontos-internal/logs/2025-12-13_pr-12-fixes.md) | log |
+| log_20251213_smart_memory_implementation | [2025-12-13_smart-memory-implementation.md](.ontos-internal/logs/2025-12-13_smart-memory-implementation.md) | log |
+| log_20251213_v22_ux_planning | [2025-12-13_v22-ux-planning.md](.ontos-internal/logs/2025-12-13_v22-ux-planning.md) | log |
+| log_20251213_version_fix | [2025-12-13_version-fix.md](.ontos-internal/logs/2025-12-13_version-fix.md) | log |
+| mission | [mission.md](.ontos-internal/kernel/mission.md) | kernel |
+| schema | [schema.md](.ontos-internal/atom/schema.md) | atom |
+| v2_3_ux_improvements | [2.3_ux_improvement_ideas.md](.ontos-internal/strategy/2.3_ux_improvement_ideas.md) | strategy |
+| v2_strategy | [v2_strategy.md](.ontos-internal/strategy/v2_strategy.md) | strategy |
