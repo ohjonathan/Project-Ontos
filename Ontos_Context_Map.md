@@ -1,11 +1,15 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-13 13:43:14 UTC
+Generated: 2025-12-13 13:54:37 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
+> **Note for users:** This context map documents Project Ontos's own development.
+> When you run `python3 ontos_init.py` or `python3 .ontos/scripts/ontos_generate_context_map.py`
+> in your project, this file will be overwritten with your project's context.
+
 # Ontos Context Map
-Generated on: 2025-12-13 22:43:14
+Generated on: 2025-12-13 22:54:37
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 
 ## 1. Hierarchy Tree

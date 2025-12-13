@@ -313,13 +313,23 @@ def generate_provenance_header() -> str:
         scanned_dir = DOCS_DIR
         
     timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-    
-    return f"""<!--
+
+    header = f"""<!--
 Ontos Context Map
 Generated: {timestamp}
 Mode: {mode}
 Scanned: {scanned_dir}
 -->"""
+
+    # Add notice for Project Ontos repo (serves as example for users)
+    if is_ontos_repo():
+        header += """
+> **Note for users:** This context map documents Project Ontos's own development.
+> When you run `python3 ontos_init.py` or `python3 .ontos/scripts/ontos_generate_context_map.py`
+> in your project, this file will be overwritten with your project's context.
+"""
+
+    return header
 
 
 
