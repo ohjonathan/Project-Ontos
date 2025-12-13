@@ -33,6 +33,10 @@ jobs:
       - name: Validate context map
         run: python .ontos/scripts/ontos_generate_context_map.py --strict --quiet
 
+      - name: Run data quality lint
+        run: python .ontos/scripts/ontos_generate_context_map.py --lint --quiet
+        continue-on-error: true  # Soft warnings don't fail CI
+
   lint:
     runs-on: ubuntu-latest
     steps:

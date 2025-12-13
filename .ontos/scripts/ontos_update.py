@@ -40,9 +40,11 @@ PROTECTED_FILES = [
 ]
 
 # Documentation files to update (relative to project root)
+# Can be string (src=dest) or tuple (src, dest)
 UPDATABLE_DOCS = [
     'docs/reference/Ontos_Manual.md',
     'docs/reference/Ontos_Agent_Instructions.md',
+    ('.ontos-internal/reference/Common_Concepts.md', 'docs/reference/Common_Concepts.md'),
 ]
 
 
@@ -242,8 +244,13 @@ def update_docs(temp_dir: str, backup_dir: str, quiet: bool = False, dry_run: bo
     updated = 0
 
     for doc in UPDATABLE_DOCS:
-        src_path = os.path.join(temp_dir, doc)
-        dest_path = doc
+        if isinstance(doc, tuple):
+            src_rel, dest_rel = doc
+        else:
+            src_rel = dest_rel = doc
+            
+        src_path = os.path.join(temp_dir, src_rel)
+        dest_path = dest_rel
 
         if not os.path.exists(src_path):
             if not quiet:

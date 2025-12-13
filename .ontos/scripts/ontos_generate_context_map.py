@@ -3,6 +3,7 @@
 import os
 import sys
 import time
+import re
 import yaml
 import datetime
 import argparse
@@ -125,6 +126,128 @@ def format_token_count(tokens: int) -> str:
         # Round to nearest 100 for larger counts
         rounded = (tokens // 100) * 100
         return f"~{rounded:,} tokens"
+
+
+
+def load_common_concepts() -> set[str]:
+    """Load known concepts from Common_Concepts.md if it exists.
+    
+    Returns:
+        Set of known concept strings.
+    """
+    possible_paths = [
+        os.path.join(DOCS_DIR, 'reference', 'Common_Concepts.md'),
+        os.path.join(DOCS_DIR, 'Common_Concepts.md'),
+        'docs/reference/Common_Concepts.md',
+    ]
+    
+    concepts_file = None
+    for path in possible_paths:
+        if os.path.exists(path):
+            concepts_file = path
+            break
+            
+    if not concepts_file:
+        return set()
+    
+    concepts = set()
+    try:
+        with open(concepts_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+        matches = re.findall(r'\|\s*`([a-z][a-z0-9-]*)`\s*\|', content)
+        concepts.update(matches)
+    except (IOError, OSError):
+        pass
+    
+    return concepts
+
+
+def lint_data_quality(files_data: dict[str, dict], common_concepts: set[str]) -> list[str]:
+    """Check for data quality issues that don't break validation but hurt v3.0.
+    
+    Checks:
+    1. Empty impacts on active logs
+    2. Unknown concepts not in vocabulary
+    3. Excessive concepts per log (>6)
+    4. Stale logs (>30 days)
+    5. Too many active logs (exceeds LOG_RETENTION_COUNT)
+    """
+    from datetime import datetime
+    
+    try:
+        from ontos_config import LOG_RETENTION_COUNT
+    except ImportError:
+        LOG_RETENTION_COUNT = 15
+    
+    warnings = []
+    active_logs = []
+    
+    for doc_id, data in files_data.items():
+        if data['type'] != 'log':
+            continue
+        
+        filepath = data['filepath']
+        is_active = data.get('status') != 'archived'
+        
+        if is_active:
+            active_logs.append((doc_id, data))
+        
+        # Check 1: Empty impacts on active logs
+        if is_active:
+            impacts = data.get('impacts', [])
+            if not impacts:
+                warnings.append(
+                    f"- [LINT] **{doc_id}** ({filepath}): Empty impacts\n"
+                    f"  → Creates dead end in knowledge graph. Add impacted document IDs."
+                )
+        
+        # Check 2: Unknown concepts
+        if common_concepts:
+            concepts = data.get('concepts', [])
+            for concept in concepts:
+                if concept and concept not in common_concepts:
+                    warnings.append(
+                        f"- [LINT] **{doc_id}**: Unknown concept `{concept}`\n"
+                        f"  → Check `Common_Concepts.md`. Did you mean a standard term?"
+                    )
+        
+        # Check 3: Too many concepts
+        concepts = data.get('concepts', [])
+        if len(concepts) > 6:
+            warnings.append(
+                f"- [LINT] **{doc_id}**: {len(concepts)} concepts (recommended: 2-4)\n"
+                f"  → Too many concepts dilutes graph connectivity. Be specific."
+            )
+    
+    # Check 4: Stale logs
+    threshold_days = 30
+    today = datetime.now()
+    
+    for doc_id, data in active_logs:
+        filename = data['filename']
+        if len(filename) >= 10:
+            try:
+                log_date = datetime.strptime(filename[:10], '%Y-%m-%d')
+                age_days = (today - log_date).days
+                if age_days > threshold_days:
+                    warnings.append(
+                        f"- [LINT] **{doc_id}**: {age_days} days old (threshold: {threshold_days})\n"
+                        f"  → Consider consolidating and archiving. See Manual section 3."
+                    )
+            except ValueError:
+                pass
+    
+    # Check 5: Too many active logs
+    active_count = len(active_logs)
+    if active_count > LOG_RETENTION_COUNT:
+        excess = active_count - LOG_RETENTION_COUNT
+        warnings.insert(0,
+            f"- [LINT] **Active log count ({active_count}) exceeds threshold ({LOG_RETENTION_COUNT})**\n"
+            f"  → {excess} logs over limit. Run consolidation ritual to archive oldest logs.\n"
+            f"  → This directly impacts context window size. See Manual section 3."
+        )
+    
+    return warnings
 
 
 def scan_docs(root_dirs: list[str]) -> dict[str, dict]:
@@ -591,7 +714,7 @@ def validate_impacts(files_data: dict[str, dict]) -> list[str]:
     return issues
 
 
-def generate_context_map(target_dirs: list[str], quiet: bool = False, strict: bool = False) -> int:
+def generate_context_map(target_dirs: list[str], quiet: bool = False, strict: bool = False, lint: bool = False) -> int:
     """Main function to generate the Ontos_Context_Map.md file.
 
     Args:
@@ -625,6 +748,14 @@ def generate_context_map(target_dirs: list[str], quiet: bool = False, strict: bo
         print("Validating impacts references...")
     impact_issues = validate_impacts(files_data)
     issues.extend(impact_issues)
+
+    # Lint mode
+    lint_warnings = []
+    if lint:
+        if not quiet:
+            print("Running data quality lint...")
+        common_concepts = load_common_concepts()
+        lint_warnings = lint_data_quality(files_data, common_concepts)
 
     # NEW: Generate Timeline
     timeline = generate_timeline(files_data)
@@ -665,6 +796,17 @@ Scanned Directory: `{dirs_str}`
 
     # Count error-level issues (exclude INFO for strict mode purposes)
     error_issues = [i for i in issues if '[INFO]' not in i]
+
+    # Display lint warnings
+    if lint_warnings and not quiet:
+        print(f"\n📋 Data Quality Warnings ({len(lint_warnings)} issues):")
+        for warning in lint_warnings:
+            print(warning)
+        print()
+        print("These are soft warnings — they don't fail validation but hurt v3.0 readiness.")
+    elif lint and not quiet:
+        print("\n📋 Data Quality Warnings (0 issues):")
+        print("No data quality warnings. Nice work!")
 
     if not quiet:
         print(f"Successfully generated {OUTPUT_FILE}")
@@ -743,6 +885,7 @@ Examples:
     parser.add_argument('--strict', action='store_true', help='Exit with error code 1 if issues found')
     parser.add_argument('--quiet', '-q', action='store_true', help='Suppress non-error output')
     parser.add_argument('--watch', '-w', action='store_true', help='Watch for file changes and regenerate')
+    parser.add_argument('--lint', action='store_true', help='Show warnings for data quality issues (empty impacts, unknown concepts)')
     args = parser.parse_args()
 
     # Default to docs directory if none specified
@@ -752,7 +895,7 @@ Examples:
         # Note: Watch mode doesn't support strict flag in this implementation yet
         watch_mode(target_dirs, args.quiet)
     else:
-        issue_count = generate_context_map(target_dirs, args.quiet, args.strict)
+        issue_count = generate_context_map(target_dirs, args.quiet, args.strict, args.lint)
 
         if args.strict and issue_count > 0:
             print(f"\n❌ Strict mode: {issue_count} issues detected. Exiting with error.")

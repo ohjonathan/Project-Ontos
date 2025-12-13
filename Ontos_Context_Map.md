@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-13 14:19:56 UTC
+Generated: 2025-12-13 17:27:10 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2025-12-13 23:19:56
+Generated on: 2025-12-14 02:27:10
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 
 ## 1. Hierarchy Tree
@@ -30,6 +30,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
   - Depends On: mission
 
 ### ATOM
+- **common_concepts** (Common_Concepts.md) ~654 tokens
+  - Status: active
+  - Depends On: None
 - **schema** (schema.md) ~314 tokens
   - Status: active
   - Depends On: v2_strategy
@@ -62,9 +65,15 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 - **log_20251213_version_fix** (2025-12-13_version-fix.md) ~217 tokens
   - Status: active
   - Impacts: None
+- **log_20251214_v2_2_implementation** (2025-12-14_v2-2-implementation.md) ~973 tokens
+  - Status: active
+  - Impacts: common_concepts
 
 
 ## 2. Recent Timeline
+- **2025-12-14** [feature] **V2 2 Implementation** (`log_20251214_v2_2_implementation`)
+  - Impacted: `common_concepts`
+  - Concepts: data-quality, lint, workflow
 - **2025-12-13** [fix] **Version Fix** (`log_20251213_version_fix`)
   - Concepts: versioning, release
 - **2025-12-13** [exploration] **V22 Ux Planning** (`log_20251213_v22_ux_planning`)
@@ -96,6 +105,7 @@ No issues found.
 ## 4. Index
 | ID | Filename | Type |
 |---|---|---|
+| common_concepts | [Common_Concepts.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/reference/Common_Concepts.md) | atom |
 | decision_history | [decision_history.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/decision_history.md) | strategy |
 | log_20251213_agent_no_verify_rule | [2025-12-13_agent-no-verify-rule.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_agent-no-verify-rule.md) | log |
 | log_20251213_cleanup_broken_links | [2025-12-13_cleanup-broken-links.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_cleanup-broken-links.md) | log |
@@ -106,6 +116,7 @@ No issues found.
 | log_20251213_smart_memory_implementation | [2025-12-13_smart-memory-implementation.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_smart-memory-implementation.md) | log |
 | log_20251213_v22_ux_planning | [2025-12-13_v22-ux-planning.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_v22-ux-planning.md) | log |
 | log_20251213_version_fix | [2025-12-13_version-fix.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_version-fix.md) | log |
+| log_20251214_v2_2_implementation | [2025-12-14_v2-2-implementation.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-14_v2-2-implementation.md) | log |
 | mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |
 | schema | [schema.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/atom/schema.md) | atom |
 | v2_3_ux_improvements | [2.3_ux_improvement_ideas.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/2.3_ux_improvement_ideas.md) | strategy |

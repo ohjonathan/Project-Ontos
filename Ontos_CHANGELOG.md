@@ -24,6 +24,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (v2.2 - Data Quality)
+- **Common Concepts Reference** (`docs/reference/Common_Concepts.md`) — Controlled vocabulary for consistent tagging
+- **Alternatives Considered section** — New section in log template for documenting rejected options
+- **Impacts nudging** — Interactive prompt when creating logs with empty impacts
+- **Tagging Discipline** — Agent Instructions for v3.0-ready data capture (concepts, impacts, alternatives)
+- **`--lint` flag** — Soft warnings for data quality issues in `ontos_generate_context_map.py`
+  - Empty impacts on active logs
+  - Unknown concepts not in vocabulary
+  - Excessive concepts (>6 per log)
+  - Stale logs (>30 days without consolidation)
+  - Active log count exceeds LOG_RETENTION_COUNT (v2.1 integration)
+- **Lint test suite** (`tests/test_lint.py`) — Unit tests for data quality checks
+
+
 ## [2.1.0] - 2025-12-13
 
 ### Added (Smart Memory)

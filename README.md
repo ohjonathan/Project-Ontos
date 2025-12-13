@@ -87,7 +87,7 @@ Install Project Ontos in this repository.
 
 1. Clone or download the Ontos scripts from: https://github.com/ohjona/Project-Ontos
 2. Copy the `.ontos/` folder and `ontos_init.py` into my project root
-3. Copy `docs/reference/Ontos_Agent_Instructions.md` to my project root
+3. Create `docs/reference` and copy `docs/reference/Ontos_Agent_Instructions.md` and `.ontos-internal/reference/Common_Concepts.md` into it
 4. Run `python3 ontos_init.py` to initialize (installs hooks, generates context map)
 5. If successful, show me the contents of Ontos_Context_Map.md
 ```

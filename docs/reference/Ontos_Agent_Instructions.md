@@ -74,6 +74,59 @@ Agent:
 
 **Rule:** Only read archived files explicitly listed in `decision_history.md` or requested by the user.
 
+---
+
+## Tagging Discipline (v3.0 Readiness)
+
+Quality tagging now enables intelligent querying later.
+
+### Concepts
+
+1. **Check first:** Read `docs/reference/Common_Concepts.md`
+2. **Prefer existing:** Use standard vocabulary over synonyms
+3. **Be specific:** 2-4 concepts per log, not 10 vague ones
+4. **Be consistent:** If you used `auth` before, don't switch to `authentication`
+
+**Example:**
+```yaml
+# Good
+concepts: [auth, api]
+
+# Bad - too many, inconsistent vocabulary
+concepts: [authentication, login, oauth, jwt, security, backend, api-design]
+```
+
+### Impacts
+
+1. **Never empty:** Every session impacts *something* — find it
+2. **Use suggestions:** Run `ontos_end_session.py --suggest-impacts`
+3. **Include indirect:** If you modified code that `api_spec.md` documents, include `api_spec`
+4. **Think broadly:** Design discussions impact strategy docs, not just atoms
+
+**Example:**
+```yaml
+# Good - specific and complete
+impacts: [auth_flow, api_spec, user_model]
+
+# Bad - lazy or incomplete
+impacts: []
+```
+
+### Alternatives Considered
+
+1. **Always fill:** Document what you *didn't* do
+2. **Include rationale:** "Rejected X because Y"
+3. **Name names:** "Considered Firebase, PostgreSQL, SQLite" not "considered options"
+4. **Be honest:** If you didn't consider alternatives, say "No alternatives evaluated"
+
+**Example:**
+```markdown
+## 3. Alternatives Considered
+- Considered Firebase Auth — rejected due to vendor lock-in concerns
+- Considered session-based auth — rejected, need stateless for horizontal scaling
+- Evaluated Auth0 — too expensive for current stage
+```
+
 ## Changelogs
 
 - `Ontos_CHANGELOG.md` — Only for Ontos tooling changes

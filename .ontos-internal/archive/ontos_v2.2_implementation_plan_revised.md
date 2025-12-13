@@ -830,7 +830,11 @@ class TestLoadCommonConcepts:
 
 **File:** `Ontos_CHANGELOG.md`
 
-**Action:** Add to [Unreleased] section (after v2.1 entries)
+**Action:** Add to `[Unreleased]` section (after v2.1 entries)
+
+> **Release Workflow Note:** Keep entries under `[Unreleased]` until cutting a release. 
+> When releasing, rename to `[2.x.0] - YYYY-MM-DD` per [Keep a Changelog](https://keepachangelog.com/) spec.
+> v2.1 and v2.2 can be released together (as `[2.2.0]`) or separately.
 
 **Content to Add:**
 

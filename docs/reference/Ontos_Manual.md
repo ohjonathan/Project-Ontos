@@ -161,8 +161,14 @@ Uses OAuth2 with JWT tokens.
 cp -r /path/to/ontos/.ontos your-project/
 cp /path/to/ontos/ontos_init.py your-project/
 
+# Create docs directory
+mkdir -p docs/reference
+
 # Copy agent instructions
-cp /path/to/ontos/docs/reference/Ontos_Agent_Instructions.md your-project/
+cp /path/to/ontos/docs/reference/Ontos_Agent_Instructions.md your-project/docs/reference/
+
+# Copy common concepts (v2.2+)
+cp /path/to/ontos/.ontos-internal/reference/Common_Concepts.md your-project/docs/reference/
 
 # Initialize (installs hooks, generates context map)
 cd your-project

@@ -508,6 +508,7 @@ def create_log_file(
     if os.path.exists(filepath):
         if not quiet:
             print(f"Log file already exists: {filepath}")
+        _create_archive_marker(filepath)
         return filepath
 
     daily_log = get_session_git_log()
@@ -532,19 +533,24 @@ Date: {today_datetime}{source_line}
 Event Type: {event_type}
 
 ## 1. Goal
-<!-- [AGENT: Fill this in. What was the primary objective of this session?] -->
+<!-- What was the primary objective of this session? -->
 
 ## 2. Key Decisions
-<!-- [AGENT: Fill this in. What architectural or design choices were made?] -->
--
+<!-- What architectural or design choices were made? -->
+- 
 
-## 3. Changes Made
-<!-- [AGENT: Fill this in. Summary of file changes.] -->
--
+## 3. Alternatives Considered
+<!-- What options were evaluated? Why were they rejected? -->
+<!-- Format: "Considered X, rejected because Y" -->
+- 
 
-## 4. Next Steps
-<!-- [AGENT: Fill this in. What should the next agent work on?] -->
--
+## 4. Changes Made
+<!-- Summary of file changes, new features, fixes. -->
+- 
+
+## 5. Next Steps
+<!-- What should the next session work on? -->
+- 
 
 ---
 ## Raw Session History
@@ -673,6 +679,21 @@ Slug format:
         suggestions = suggest_impacts(args.quiet)
         if suggestions:
             impacts = prompt_for_impacts(suggestions, args.quiet)
+
+    # Nudge if impacts is still empty
+    if not impacts and not args.quiet:
+        print("\n⚠️  No impacts specified.")
+        print("Logs without impacts create dead ends in the knowledge graph.")
+        print("Every session should impact at least one Space document.")
+        try:
+            confirm = input("\nDid this session really change no documents? [y/N]: ").strip().lower()
+            if confirm not in ('y', 'yes'):
+                manual = input("Enter impacts (comma-separated doc IDs): ").strip()
+                if manual:
+                    impacts = [i.strip() for i in manual.split(',') if i.strip()]
+                    print(f"✓ Impacts set to: {impacts}")
+        except (EOFError, KeyboardInterrupt):
+            print("\nProceeding with empty impacts.")
 
     # Create session log
     result = create_log_file(

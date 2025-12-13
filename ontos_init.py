@@ -40,6 +40,7 @@ def main():
         '.ontos-internal/strategy',
         '.ontos-internal/atom',
         'docs',
+        'docs/reference',
         'docs/logs'
     ]
     
