@@ -33,6 +33,11 @@ Design a two-tier configuration system for Ontos v2.4 that reduces friction for 
 - **`--enhance` flag:** Agent workflow for enriching auto-generated logs
 - **Hook timeout:** Graceful degradation for slow hooks
 
+**v1.3 additions (from third review round):**
+- **🔴 Git lifecycle honesty:** Auto-created logs NOT in current push (Gemini v3 "Left Behind" paradox)
+- **Robust append parsing:** Line-by-line instead of fragile regex
+- **Comprehensive non-decisions:** Section 8 documents WHY we reject certain features
+
 ## 3. Alternatives Considered
 - Single-tier config only — rejected, too technical for new users
 - Removing config options entirely — rejected, power users need flexibility
@@ -50,11 +55,14 @@ Design a two-tier configuration system for Ontos v2.4 that reduces friction for 
 - Received second architectural review (v2) from Claude, Codex, Gemini
 - Critically analyzed v2 feedback (adopted 10 items, rejected same as v1, deferred 1)
 - Revised proposal to v1.2 addressing all critical issues
+- Received third architectural review (v3) from Codex, Gemini (Claude empty)
+- Critically analyzed v3 feedback (adopted 2 items from Gemini, rejected Codex repeats)
+- Revised proposal to v1.3 with Git lifecycle honesty and comprehensive non-decisions
 
 ## 5. Next Steps
-- Final review of v1.2 proposal
-- Implement v2.4.0 with revised design
-- Key implementations: session appending, branch validation, --enhance flag
+- ✅ Final review of v1.3 proposal complete
+- Implement v2.4.0 with finalized design
+- Key implementations: session appending, branch validation, --enhance flag, honest auto-mode messaging
 
 ---
 ## Raw Session History
@@ -75,4 +83,10 @@ Design a two-tier configuration system for Ontos v2.4 that reduces friction for 
 - Adopted: --enhance flag, hook timeout, visible skip warnings
 - Deferred: mode orthogonality refactor (valid but complex for v2.4)
 - Revised proposal to v1.2 - all critical issues addressed
+- Received Codex/Gemini feedback (v3) - Claude empty
+- Critical analysis v3: Gemini "Left Behind" paradox (Git lifecycle limitation)
+- Adopted: honest auto-mode framing, robust append parsing
+- Rejected: ontos push wrapper (scope creep), Codex repeats (personas x3, telemetry x3, checksum x3)
+- Created comprehensive non-decisions section (Section 8) for future reviewers
+- Revised proposal to v1.3 - FINAL, ready for implementation
 ```

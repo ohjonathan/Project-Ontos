@@ -1,0 +1,65 @@
+# Review: Ontos v2.4 Configuration Automation & UX Proposal (Latest)
+
+## Overall Impression
+
+The proposal substantially strengthens the two-tier configuration concept with concrete presets, a clearer installation flow, and a defined auto-archive experience. It moves in the right direction for "zero-friction" adopters while keeping overrides intact. To land safely, the plan still needs more rigor around safety nets (dirty-tree handling, rollbacks), user trust (visibility into auto actions), and operational guardrails (performance limits, telemetry, and drift detection).
+
+## Strengths
+
+- **Two-tier model with presets:** ONTOS_MODE, per-setting overrides, and the sample template make the mental model clear for both newcomers and power users.
+- **Guided install:** The installer now collects intent (mode, consolidation, attribution) up front, reducing immediate config edits.
+- **Auto-archive path:** Converting the pre-push block into an automated archive should cut `--no-verify` usage if reliability and transparency are high.
+- **Backward-compatible rollout:** Existing configs still work; migration is opt-in via `--reconfig`.
+
+## Key Risks & Recommendations
+
+1. **Automation safety & failure handling**
+   - The pre-push automation will mutate the working tree and depend on git state. Define preflight checks (e.g., clean status or explicit allowlist), temporary writes with atomic moves, and a rollback path if the hook aborts mid-run.
+   - When auto-archive fails, the hook should downgrade to advisory, surface a clear message, and log the failure for later inspection.
+
+2. **Mode drift and reconciliation**
+   - Once users edit individual settings, re-running `--reconfig` needs to explain how current values relate to the chosen mode. Persist the selected mode plus a checksum of derived values; show a diff and offer "reapply preset" vs. "keep overrides".
+   - Provide an "effective config" command (e.g., `ontos_config_resolver.py --show`) that reports resolved values and highlights deviations from the selected preset.
+
+3. **Persona-aligned defaults**
+   - The automation spectrum (automated/prompted/advisory) maps friction but not collaboration style. Consider persona overlays (solo prototype, team baseline, regulated) that tune `REQUIRE_SOURCE_IN_LOGS`, retention limits, and consolidation thresholds.
+   - Advisory mode disabling consolidation is risky; default to silent consolidation with notifications, or warn loudly about unbounded growth during install.
+
+4. **Auto-archive quality and trust**
+   - Auto-generated logs omit concepts and may infer coarse event types. After auto-archive, print a succinct summary plus a one-command edit hint. Offer a daily/weekly digest that lists auto-generated entries needing enrichment.
+   - Allow repos to require a minimal field set (e.g., source + event + impacts) even in automated mode to avoid silently low-quality history.
+
+5. **Hook UX and bypass pressure**
+   - Even with automation, long-running hooks will push users to `--no-verify`. Set a maximum hook duration and advertise fast paths (`--auto`, `--quick`) in the prompt text. Count and report bypasses so success metrics are measurable.
+
+6. **Performance and scale**
+   - Consolidation on large repos needs batching, progress reporting, and resumable markers. Consider gating auto-consolidation when the estimated runtime exceeds a threshold, and add `--dry-run` for CI/smoke checks.
+
+7. **Attribution and identity**
+   - `DEFAULT_SOURCE` should support environment-based defaults, a "recent sources" shortlist, and warnings when git user/email diverges from the configured source. Pair/mob programming should be fast to record (e.g., `--source pair:alice+bob`).
+
+8. **Observability and metrics**
+   - Success metrics (bypass rate, consolidation frequency, auto-archive failures) need collection. Provide opt-in local telemetry or periodic `Maintain Ontos` summaries so teams can tune defaults without external services.
+
+## Feedback on Open Questions
+
+- **Mode naming:** "Automated / Prompted / Advisory" are fine; in the installer, prepend short intent labels ("Fast & Automatic", "Guided", "Remind Me") to set expectations.
+- **Default mode:** Default to "Prompted" until automation reliability and rollback stories are proven. If "Automated" is default, require clean working trees and emit immediate post-push summaries to build trust.
+- **Auto-archive quality:** Minimal auto-logs are better than none, but pair with post-action surfacing (summary + edit hint) and periodic digests. Consider a configurable minimal field set.
+- **Reconfig UX:** Back up the existing config, show a diff, and merge rather than overwrite. Preserve unknown/custom settings; warn when presets are updated upstream.
+- **Consolidation in advisory mode:** Keep consolidation enabled but silent by default; if disabled, warn during install and provide an easy toggle to re-enable later.
+
+## Additional Opportunities
+
+- **Template-driven config generation** to keep comments and defaults synced as new settings are added.
+- **Context-aware defaults** (CI detection, existing hook detection) to avoid clashes and unnecessary prompts.
+- **Pluggable retention policies** (by tag/age) for teams with heterogeneous compliance needs.
+- **Validation for archived logs** (frontmatter completeness) before accepting them, to prevent broken history.
+- **Troubleshooting docs** covering auto-archive failures, recovery steps, and how to interpret the effective-config report.
+
+## Success Criteria (Refined)
+
+- New users finish setup in <2 minutes with a mode/persona that matches intent.
+- Hook bypass rate drops because remediation is fast, visible, and trustworthy.
+- Consolidation runs predictably with guardrails for large histories and clear failure recovery.
+- Effective configuration is transparent: resolved values are inspectable, drift is detectable, and users can revert to presets safely.

@@ -1,0 +1,88 @@
+This is a strong strategic pivot. The move toward "Silent Partner" automation is exactly what Ontos needs for mass adoption. The **Session Appending** model (v1.1) is a brilliant solution to the "Ghost Log" problem and drastically improves the signal-to-noise ratio.
+
+However, there is a **Catastrophic Architectural Flaw (P0)** in the proposed "Automated Mode" implementation. It fundamentally misunderstands the Git hook lifecycle and will result in data desynchronization.
+
+Here is my honest and thorough review.
+
+### 1\. The Critical Flaw: The "Left Behind" Paradox
+
+**The Proposal (Section 4.1):**
+
+> 1.  Pre-push hook intercepts push...
+> 2.  Creates log silently...
+> 3.  Allows push to proceed
+
+**The Reality:**
+Git hooks like `pre-push` run **after** the commits have been finalized.
+
+1.  You create a commit (Hash A).
+2.  You run `git push`.
+3.  The hook triggers and creates/modifies `log_today.md`.
+4.  The hook passes.
+5.  Git pushes **Commit A** to the server.
+6.  **The Fail:** `log_today.md` is **NOT** in Commit A. It is sitting in your local working directory as an *untracked* or *modified* file.
+
+**The Consequence:**
+
+  * **Data Loss (Remote):** The server (and your teammates) **never see the log** you just created. It stays on your machine until you remember to manually add/commit/push it later.
+  * **Dirty State:** Every time an "Automated" user pushes, their terminal immediately shows a dirty working tree. They have to run a "cleanup commit" after every push, which defeats the entire purpose of "Zero Friction."
+
+**The Same Applies to Consolidation (Section 3.4):**
+If you auto-consolidate (move files) in `pre-push`, the file moves happen locally, but the remote repo still has the files in the old location. You have broken the sync between local and remote.
+
+### 2\. How to Fix It
+
+You cannot solve this inside a standard `pre-push` hook without breaking Git mechanics (e.g., amending commits during a push is dangerous). You have two architectural options:
+
+**Option A: The Wrapper (Recommended)**
+Don't use `git push`. Ship an `ontos sync` command (or alias).
+
+  * **Command:** `ontos sync`
+  * **Logic:**
+    1.  `ontos_end_session.py --auto` (Create/Append log)
+    2.  `ontos_consolidate.py --auto` (Cleanup)
+    3.  `git add .` (Stage the logs)
+    4.  `git commit -m "chore(ontos): capture session context"`
+    5.  `git push`
+
+**Option B: The "Lagging" Log (Acceptable but confusing)**
+Accept that the log is created *after* the push (using `post-push` or `pre-push`) and just sits there. It will be picked up in the *next* commit.
+
+  * *Risk:* The log for "Feature A" will appear in the commit history for "Feature B" (the next task). This makes historical analysis messy.
+
+**Recommendation:**
+Update the proposal to acknowledge that **Automated Mode cannot rely solely on Git hooks**. It likely requires a CLI wrapper or an explicit "cleanup" step. Downgrade `AUTO_ARCHIVE` and `AUTO_CONSOLIDATE` in hooks to **Advisory/Blocking only**, or pivot to **Option A**.
+
+### 3\. High Risk: Appendix B Implementation Details
+
+**The Fragile Regex:**
+
+````python
+marker = "## Raw Session History"
+if marker in content:
+    content = content.replace("```\n\n---", ...)
+````
+
+  * **The Flaw:** This relies on the specific formatting of the end of the code block. If a user (or a linter/formatter like Prettier) changes the whitespace, adds a newline, or removes the `---`, the append will fail silently.
+  * **The Fix:** Don't rely on string replacement of the footer.
+    1.  Parse the file line-by-line.
+    2.  Find the `## Raw Session History` header.
+    3.  Append the new text *immediately after* that header (prepending to the existing history), or find the *next* section header and insert before it.
+
+### 4\. Strategic Wins (Approved)
+
+  * **`status: auto-generated`:** This effectively solves the quality control issue. It turns the context map into a "ToDo" list for documentation, which is a healthy workflow.
+  * **Environment Variables:** The `ONTOS_SOURCE` fallback chain is robust and CI-friendly.
+  * **Template Config:** Switching to `.template` files instead of string concatenation in `ontos_init.py` is the correct engineering choice.
+
+### 5\. Final Verdict
+
+**Status: BLOCKED on Item \#1.**
+
+You cannot ship v2.4 with the "Auto-Archive on Push" feature as described. It promises automation but delivers a desynchronized repo state.
+
+**Action Required:**
+
+1.  **Rewrite Section 4.1:** Acknowledge the Git lifecycle limitation.
+2.  **Pivot Strategy:** Either introduce an `ontos push` wrapper command OR change "Automated Mode" to simply be "Very Loud Advisory Mode" (e.g., "Push Blocked: Running auto-archive... Done. Please commit the log and push again.").
+3.  **Refine Appendix B:** Make the append logic robust against whitespace changes.
