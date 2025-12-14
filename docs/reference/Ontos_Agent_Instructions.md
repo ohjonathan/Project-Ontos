@@ -1,3 +1,10 @@
+---
+id: ontos_agent_instructions
+type: kernel
+status: active
+depends_on: [ontos_manual]
+---
+
 # Ontos Agent Instructions
 
 ## Commands
@@ -7,24 +14,29 @@
 2. If missing: `python3 .ontos/scripts/ontos_generate_context_map.py`
 3. Read map, identify relevant IDs for user's request
 4. Read ONLY those files
-5. Respond: "Loaded: [id1, id2]"
+5.    print("Loaded: [id1, id2]")
+
+### "Query Ontos"
+1. `python3 .ontos/scripts/ontos_query.py --depends-on [id]` (Check dependencies)
+2. `python3 .ontos/scripts/ontos_query.py --concept [tag]` (Find by concept)
+3. `python3 .ontos/scripts/ontos_query.py --stale 30` (Find stale docs)
 
 ### "Archive Ontos" (End Session)
-1. Run: `python3 .ontos/scripts/ontos_generate_context_map.py`
-2. Run: `python3 .ontos/scripts/ontos_end_session.py "slug" -s "Your Name" -e <type>`
-3. Read generated log, fill placeholders (Goal, Decisions, Changes, Next Steps)
-4. Commit
+2. Run: `python3 .ontos/scripts/ontos_end_session.py -e <type> -s "Agent Name"`
+3. Read generated log. If template is adaptive, fill only the sections present.
+4. If prompted for missing impacts/concepts, provide them.
+5. Commit.
 
-Event types: `feature`, `fix`, `refactor`, `exploration`, `chore`
+Event types: `feature`, `fix`, `refactor`, `exploration`, `chore`, `decision`
 
 **Pre-push blocking:** Push fails without archived session. Run Archive Ontos first.
 
 **RULE:** Never use `git push --no-verify` without explicit user approval. If the hook blocks you, archive the session — don't bypass.
 
 ### "Maintain Ontos" (Weekly)
-1. `python3 .ontos/scripts/ontos_migrate_frontmatter.py`
-2. `python3 .ontos/scripts/ontos_generate_context_map.py`
-3. Fix any errors, commit map
+1. `python3 .ontos/scripts/ontos_maintain.py`
+2. Fix any errors reported by the script.
+3. Commit context map if changed.
 
 ### "Update Ontos"
 1. `python3 .ontos/scripts/ontos_update.py`

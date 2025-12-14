@@ -6,8 +6,82 @@ import datetime
 import subprocess
 import argparse
 import sys
+from typing import Optional
 
 from ontos_config import __version__, LOGS_DIR, CONTEXT_MAP_FILE, PROJECT_ROOT, REQUIRE_SOURCE_IN_LOGS
+
+from ontos_lib import (
+    BLOCKED_BRANCH_NAMES,
+    find_last_session_date,
+    load_common_concepts,
+)
+
+
+# Try to import DEFAULT_SOURCE
+try:
+    from ontos_config import DEFAULT_SOURCE
+except ImportError:
+    DEFAULT_SOURCE = None
+
+# =============================================================================
+# TEMPLATES (v2.3)
+# =============================================================================
+
+TEMPLATES = {
+    'chore': {
+        'sections': ['Goal', 'Changes Made'],
+        'description': 'Maintenance, dependencies, configuration'
+    },
+    'fix': {
+        'sections': ['Goal', 'Changes Made', 'Next Steps'],
+        'description': 'Bug fixes, corrections'
+    },
+    'feature': {
+        'sections': ['Goal', 'Key Decisions', 'Changes Made', 'Next Steps'],
+        'description': 'New capabilities'
+    },
+    'refactor': {
+        'sections': ['Goal', 'Key Decisions', 'Alternatives Considered', 'Changes Made'],
+        'description': 'Restructuring without behavior change'
+    },
+    'exploration': {
+        'sections': ['Goal', 'Key Decisions', 'Alternatives Considered', 'Next Steps'],
+        'description': 'Research, spikes, prototypes'
+    },
+    'decision': {
+        'sections': ['Goal', 'Key Decisions', 'Alternatives Considered', 'Changes Made', 'Next Steps'],
+        'description': 'Architectural or design decisions'
+    }
+}
+
+SECTION_TEMPLATES = {
+    'Goal': '## {n}. Goal\n<!-- What was the primary objective? -->\n\n',
+    'Key Decisions': '## {n}. Key Decisions\n<!-- What choices were made? -->\n- \n\n',
+    'Alternatives Considered': '## {n}. Alternatives Considered\n<!-- What was rejected and why? -->\n- \n\n',
+    'Changes Made': '## {n}. Changes Made\n<!-- Summary of changes -->\n- \n\n',
+    'Next Steps': '## {n}. Next Steps\n<!-- What should happen next? -->\n- \n\n',
+}
+
+
+def generate_template_sections(event_type: str) -> str:
+    """Generate template sections based on event type.
+    
+    Args:
+        event_type: Type of event (chore, fix, feature, etc.)
+        
+    Returns:
+        Formatted markdown sections.
+    """
+    template = TEMPLATES.get(event_type, TEMPLATES['chore'])
+    sections = template['sections']
+    
+    content = ""
+    for i, section in enumerate(sections, 1):
+        section_template = SECTION_TEMPLATES[section]
+        content += section_template.format(n=i)
+    
+    content += "---\n## Raw Session History\n```text\n{daily_log}\n```\n"
+    return content
 
 # Marker file for pre-push hook integration
 ARCHIVE_MARKER_FILE = os.path.join(PROJECT_ROOT, '.ontos', 'session_archived')
@@ -55,29 +129,52 @@ def validate_topic_slug(slug: str) -> tuple[bool, str]:
     return True, ""
 
 
-def find_last_session_date() -> str:
-    """Find the date of the most recent session log.
-
+def generate_auto_slug(quiet: bool = False) -> Optional[str]:
+    """Generate slug from git branch name or recent commit.
+    
     Returns:
-        Date string in YYYY-MM-DD format, or empty string if no logs found.
+        Generated slug, or None if user input required.
     """
-    if not os.path.exists(LOGS_DIR):
-        return ""
-
-    log_files = []
-    for filename in os.listdir(LOGS_DIR):
-        if filename.endswith('.md') and len(filename) >= 10:
-            # Extract date from filename (format: YYYY-MM-DD_topic.md)
-            date_part = filename[:10]
-            # Validate it looks like a date
-            if date_part.count('-') == 2:
-                log_files.append(date_part)
-
-    if not log_files:
-        return ""
-
-    # Return the most recent date
-    return sorted(log_files)[-1]
+    # Try branch name first
+    try:
+        result = subprocess.run(
+            ['git', 'branch', '--show-current'],
+            capture_output=True, text=True, timeout=5
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            branch = result.stdout.strip()
+            
+            # Block common branch names (from Gemini feedback)
+            if branch.lower() in BLOCKED_BRANCH_NAMES:
+                if not quiet:
+                    print(f"ℹ️  Branch '{branch}' not suitable for slug, trying commit message...")
+            else:
+                # Clean branch name: feature/auth-flow -> auth-flow
+                if '/' in branch:
+                    branch = branch.split('/')[-1]
+                slug = branch.lower().replace('_', '-').replace('.', '-')[:50]
+                if VALID_SLUG_PATTERN.match(slug):
+                    return slug
+    except:
+        pass
+    
+    # Fall back to recent commit subject
+    try:
+        result = subprocess.run(
+            ['git', 'log', '-1', '--pretty=format:%s'],
+            capture_output=True, text=True, timeout=5
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            subject = result.stdout.strip()[:50]
+            # Convert to slug: "Fix auth bug" -> "fix-auth-bug"
+            slug = re.sub(r'[^a-z0-9]+', '-', subject.lower()).strip('-')
+            if slug and len(slug) >= 3 and VALID_SLUG_PATTERN.match(slug):
+                return slug
+    except:
+        pass
+    
+    # No automatic fallback - prompt user (from Claude feedback)
+    return None
 
 
 def get_session_git_log() -> str:
@@ -294,8 +391,6 @@ def add_changelog_entry(category: str, description: str, quiet: bool = False) ->
             print(f"Added to {changelog_path}: [{category_title}] {description}")
         return True
     except (IOError, OSError, PermissionError) as e:
-        return True
-    except (IOError, OSError, PermissionError) as e:
         print(f"Error: Failed to write {changelog_path}: {e}")
         return False
 
@@ -375,9 +470,13 @@ def suggest_impacts(quiet: bool = False) -> list[str]:
         # This handles the "commit then archive" workflow
         # =====================================================
         if not changed_files:
-            today = datetime.date.today().isoformat()
+            # Use last session date instead of just today (v2.3)
+            since_date = find_last_session_date()
+            if not since_date:
+                since_date = datetime.date.today().isoformat()
+                
             result = subprocess.run(
-                ['git', 'log', '--since', today, '--name-only', '--pretty=format:'],
+                ['git', 'log', '--since', since_date, '--name-only', '--pretty=format:'],
                 capture_output=True, text=True, timeout=10
             )
             if result.returncode == 0:
@@ -464,6 +563,36 @@ def prompt_for_impacts(suggestions: list[str], quiet: bool = False) -> list[str]
             return []
 
 
+def validate_concepts(concepts: list[str], quiet: bool = False) -> list[str]:
+    """Validate concepts against Common_Concepts.md vocabulary.
+    
+    Returns:
+        List of validated concepts (with warnings for unknown).
+    """
+    known = load_common_concepts()
+    if not known:
+        return concepts  # No vocabulary file, skip validation
+    
+    validated = []
+    for concept in concepts:
+        if concept in known:
+            validated.append(concept)
+        else:
+            # Find similar concepts for suggestions
+            similar = [k for k in known if concept[:3] in k or k[:3] in concept]
+            
+            if not quiet:
+                print(f"⚠️  Unknown concept '{concept}'")
+                if similar:
+                    print(f"   Did you mean: {', '.join(similar[:3])}?")
+                print(f"   See: docs/reference/Common_Concepts.md")
+            
+            # Still include it (warning, not error)
+            validated.append(concept)
+    
+    return validated
+
+
 def create_log_file(
     topic_slug: str, 
     quiet: bool = False, 
@@ -518,7 +647,9 @@ def create_log_file(
     concepts_yaml = f"[{', '.join(concepts)}]" if concepts else "[]"
     impacts_yaml = f"[{', '.join(impacts)}]" if impacts else "[]"
 
-    # v2.0 SCHEMA
+    # v2.0 SCHEMA + v2.3 ADAPTIVE TEMPLATE
+    template_content = generate_template_sections(event_type)
+    
     content = f"""---
 id: log_{today_date.replace('-', '')}_{topic_slug.replace('-', '_')}
 type: log
@@ -532,32 +663,9 @@ impacts: {impacts_yaml}
 Date: {today_datetime}{source_line}
 Event Type: {event_type}
 
-## 1. Goal
-<!-- What was the primary objective of this session? -->
-
-## 2. Key Decisions
-<!-- What architectural or design choices were made? -->
-- 
-
-## 3. Alternatives Considered
-<!-- What options were evaluated? Why were they rejected? -->
-<!-- Format: "Considered X, rejected because Y" -->
-- 
-
-## 4. Changes Made
-<!-- Summary of file changes, new features, fixes. -->
-- 
-
-## 5. Next Steps
-<!-- What should the next session work on? -->
-- 
-
----
-## Raw Session History
-```text
-{daily_log}
-```
 """
+    # Append the adaptive template (filling {daily_log})
+    content += template_content.format(daily_log=daily_log)
 
     try:
         with open(filepath, 'w', encoding='utf-8') as f:
@@ -621,7 +729,9 @@ Slug format:
 """
     )
     parser.add_argument('--version', '-V', action='version', version=f'%(prog)s {__version__}')
-    parser.add_argument('topic', type=str, nargs='?', help='Short slug describing the session (e.g. auth-refactor)')
+    parser.add_argument('topic', type=str, nargs='?', help='Short slug describing the session (optional, auto-generated if omitted)')
+    parser.add_argument('--dry-run', '-n', action='store_true', help='Preview log file without creating it')
+    parser.add_argument('--list-concepts', action='store_true', help='Print available concepts and exit')
     parser.add_argument('--quiet', '-q', action='store_true', help='Suppress non-error output')
     parser.add_argument('--changelog', '-c', action='store_true',
                         help='Prompt for a changelog entry to add to CHANGELOG.md')
@@ -629,17 +739,25 @@ Slug format:
                         help='Changelog category (added/changed/fixed/etc.) - skips prompt')
     parser.add_argument('--changelog-message', type=str, metavar='MSG',
                         help='Changelog description - skips prompt')
-    source_required = REQUIRE_SOURCE_IN_LOGS
-    source_help = 'LLM/program that generated this log (e.g., "Claude Code", "Antigravity")'
-    if source_required:
+    source_default = DEFAULT_SOURCE
+    source_required = REQUIRE_SOURCE_IN_LOGS and not DEFAULT_SOURCE
+    source_help = 'LLM/program that generated this log'
+    if source_default:
+        source_help += f' (default: {source_default})'
+    elif source_required:
         source_help += ' [REQUIRED]'
-    parser.add_argument('--source', '-s', type=str, metavar='NAME', required=source_required,
+        
+    # v2.3 UX: Make source optional in argparse to allow other commands (list-concepts) to run
+    # We will enforce source requirement manually later if needed.
+    parser.add_argument('--source', '-s', type=str, metavar='NAME',
+                        default=source_default,
+                        required=False,
                         help=source_help)
     
     # NEW v2.0 arguments
     parser.add_argument('--event-type', '-e', type=str, metavar='TYPE',
-                        choices=['feature', 'fix', 'refactor', 'exploration', 'chore'],
-                        help='Type of work performed (feature/fix/refactor/exploration/chore)')
+                        choices=['feature', 'fix', 'refactor', 'exploration', 'chore', 'decision'],
+                        help='Type of work performed (feature/fix/refactor/exploration/chore/decision)')
     parser.add_argument('--concepts', type=str, metavar='TAGS',
                         help='Comma-separated concept tags (e.g., "auth,oauth,security")')
     parser.add_argument('--impacts', type=str, metavar='IDS',
@@ -649,11 +767,42 @@ Slug format:
 
     args = parser.parse_args()
 
+
+    # Handle list-concepts early exit
+    if args.list_concepts:
+        concepts = load_common_concepts()
+        if concepts:
+            print("Available concepts:")
+            for c in sorted(concepts):
+                print(f"  {c}")
+        else:
+            print("No Common_Concepts.md found.")
+        sys.exit(0)
+
+    # Auto-generate slug if missing
     if not args.topic:
-        print("Error: Missing required argument 'topic'. Provide a short slug describing the session.")
-        print("Example: python3 ontos_end_session.py auth-refactor -s \"Claude Code\" -e feature\n")
-        parser.print_help()
-        sys.exit(1)
+        auto_slug = generate_auto_slug(args.quiet)
+        if auto_slug:
+            args.topic = auto_slug
+            if not args.quiet:
+                print(f"Auto-generated slug: {args.topic}")
+        else:
+            if not args.quiet:
+                print("Could not auto-generate slug from branch or recent commits.")
+            try:
+                args.topic = input("Enter session slug: ").strip()
+                if not args.topic:
+                    print("Error: Slug is required.")
+                    sys.exit(1)
+            except (EOFError, KeyboardInterrupt):
+                print("\nAborted.")
+                sys.exit(1)
+
+    # Validate source manually if required (and not just listing concepts)
+    if source_required and not args.source:
+         print("Error: argument --source/-s is required")
+         print(f"Usage: {sys.argv[0]} {args.topic or 'slug'} -s SOURCE ...")
+         sys.exit(1)
 
     # Validate topic slug
     is_valid, error_msg = validate_topic_slug(args.topic)
@@ -669,6 +818,10 @@ Slug format:
     if args.concepts:
         concepts = [c.strip() for c in args.concepts.split(',') if c.strip()]
         
+    # Validate concepts (NEW in v2.3)
+    if concepts:
+        concepts = validate_concepts(concepts, args.quiet)
+
     # Process impacts
     impacts = []
     if args.impacts:
@@ -695,11 +848,42 @@ Slug format:
         except (EOFError, KeyboardInterrupt):
             print("\nProceeding with empty impacts.")
 
+    # Handle Dry Run
+    if args.dry_run:
+        # Generate content preview
+        template_sections = generate_template_sections(event_type)
+        # Mock daily log for dry run
+        daily_log = get_session_git_log()
+        preview_content = template_sections.format(daily_log=daily_log)
+        
+        print("\n" + "=" * 60)
+        print("DRY RUN - Would create the following log:")
+        print("=" * 60 + "\n")
+        
+        print(f"File: {LOGS_DIR}/{datetime.datetime.now().strftime('%Y-%m-%d')}_{args.topic}.md")
+        print(f"Event Type: {event_type}")
+        print(f"Source: {args.source or DEFAULT_SOURCE or '(none)'}")
+        print(f"Concepts: {concepts}")
+        print(f"Impacts: {impacts}")
+        print()
+        print("Template Content:")
+        # Show first few lines of template content
+        lines = preview_content.split('\n')
+        for line in lines[:15]:
+            print(f"  {line}")
+        if len(lines) > 15:
+            print("  ... (rest of content)")
+        
+        print("\n" + "=" * 60)
+        print("END DRY RUN - No file created")
+        print("=" * 60)
+        sys.exit(0)
+
     # Create session log
     result = create_log_file(
         args.topic,
         args.quiet,
-        args.source or "",  # Empty string if not provided (when optional)
+        args.source or "",
         event_type,
         concepts,
         impacts

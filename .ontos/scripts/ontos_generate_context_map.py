@@ -16,82 +16,19 @@ from ontos_config import (
     TYPE_HIERARCHY,
     MAX_DEPENDENCY_DEPTH,
     ALLOWED_ORPHAN_TYPES,
-    SKIP_PATTERNS
+    ALLOWED_ORPHAN_TYPES,
+    SKIP_PATTERNS,
+    is_ontos_repo
+)
+
+from ontos_lib import (
+    parse_frontmatter,
+    normalize_depends_on,
+    normalize_type,
+    load_common_concepts,
 )
 
 OUTPUT_FILE = CONTEXT_MAP_FILE
-
-
-def parse_frontmatter(filepath: str) -> Optional[dict]:
-    """Parses YAML frontmatter from a markdown file.
-
-    Args:
-        filepath: Path to the markdown file.
-
-    Returns:
-        Dictionary of frontmatter fields, or None if no valid frontmatter.
-    """
-    with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
-        content = f.read()
-
-    if content.startswith('---'):
-        try:
-            parts = content.split('---', 2)
-            if len(parts) >= 3:
-                frontmatter = yaml.safe_load(parts[1])
-                return frontmatter
-        except yaml.YAMLError as e:
-            print(f"Error parsing YAML in {filepath}: {e}")
-    return None
-
-
-def normalize_depends_on(value) -> list[str]:
-    """Normalize depends_on field to a list of strings.
-
-    Handles YAML edge cases: null, empty, string, or list.
-
-    Args:
-        value: Raw value from YAML frontmatter.
-
-    Returns:
-        List of dependency IDs (empty list if none).
-    """
-    if value is None:
-        return []
-    if isinstance(value, str):
-        return [value] if value.strip() else []
-    if isinstance(value, list):
-        # Filter out None/empty values in list
-        return [str(v) for v in value if v is not None and str(v).strip()]
-    return []
-
-
-def normalize_type(value) -> str:
-    """Normalize type field to a string.
-
-    Handles YAML edge cases: null, empty, string, or list.
-
-    Args:
-        value: Raw value from YAML frontmatter.
-
-    Returns:
-        Type string ('unknown' if invalid).
-    """
-    if value is None:
-        return 'unknown'
-    if isinstance(value, str):
-        stripped = value.strip()
-        if not stripped or '|' in stripped:
-            return 'unknown'
-        return stripped
-    if isinstance(value, list):
-        if value and value[0] is not None:
-            first = str(value[0]).strip()
-            # Clean up if it looks like "[option1 | option2]"
-            if '|' in first:
-                return 'unknown'
-            return first if first else 'unknown'
-    return 'unknown'
 
 
 def estimate_tokens(content: str) -> int:
@@ -127,39 +64,6 @@ def format_token_count(tokens: int) -> str:
         rounded = (tokens // 100) * 100
         return f"~{rounded:,} tokens"
 
-
-
-def load_common_concepts() -> set[str]:
-    """Load known concepts from Common_Concepts.md if it exists.
-    
-    Returns:
-        Set of known concept strings.
-    """
-    possible_paths = [
-        os.path.join(DOCS_DIR, 'reference', 'Common_Concepts.md'),
-        os.path.join(DOCS_DIR, 'Common_Concepts.md'),
-        'docs/reference/Common_Concepts.md',
-    ]
-    
-    concepts_file = None
-    for path in possible_paths:
-        if os.path.exists(path):
-            concepts_file = path
-            break
-            
-    if not concepts_file:
-        return set()
-    
-    concepts = set()
-    try:
-        with open(concepts_file, 'r', encoding='utf-8') as f:
-            content = f.read()
-        matches = re.findall(r'\|\s*`([a-z][a-z0-9-]*)`\s*\|', content)
-        concepts.update(matches)
-    except (IOError, OSError):
-        pass
-    
-    return concepts
 
 
 def lint_data_quality(files_data: dict[str, dict], common_concepts: set[str]) -> list[str]:
@@ -811,6 +715,11 @@ Scanned Directory: `{dirs_str}`
     if not quiet:
         print(f"Successfully generated {OUTPUT_FILE}")
         print(f"Scanned {len(files_data)} documents, found {len(issues)} issues.")
+        
+        if error_issues:
+            print(f"\n❌ Validation Errors ({len(error_issues)} issues):")
+            for issue in error_issues:
+                print(issue)
 
     # Return only error-level issues for strict mode
     return len(error_issues)
@@ -889,7 +798,14 @@ Examples:
     args = parser.parse_args()
 
     # Default to docs directory if none specified
-    target_dirs = args.dirs if args.dirs else [DOCS_DIR]
+    # Default to docs directory if none specified
+    if args.dirs:
+        target_dirs = args.dirs
+    elif is_ontos_repo():
+        # In contributor mode, scan both internal "brain" and public docs
+        target_dirs = [DOCS_DIR, 'docs']
+    else:
+        target_dirs = [DOCS_DIR]
 
     if args.watch:
         # Note: Watch mode doesn't support strict flag in this implementation yet

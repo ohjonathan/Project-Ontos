@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-13 17:27:10 UTC
+Generated: 2025-12-14 07:11:50 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,12 +9,18 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2025-12-14 02:27:10
-Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
+Generated on: 2025-12-14 16:11:50
+Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
 ### KERNEL
 - **mission** (mission.md) ~377 tokens
+  - Status: active
+  - Depends On: None
+- **ontos_agent_instructions** (Ontos_Agent_Instructions.md) ~1,100 tokens
+  - Status: active
+  - Depends On: ontos_manual
+- **ontos_manual** (Ontos_Manual.md) ~1,700 tokens
   - Status: active
   - Depends On: None
 
@@ -65,12 +71,18 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 - **log_20251213_version_fix** (2025-12-13_version-fix.md) ~217 tokens
   - Status: active
   - Impacts: None
-- **log_20251214_v2_2_implementation** (2025-12-14_v2-2-implementation.md) ~973 tokens
+- **log_20251214_v2_2_implementation** (2025-12-14_v2-2-implementation.md) ~984 tokens
   - Status: active
   - Impacts: common_concepts
+- **log_20251214_v2_3_curation_not_ceremony** (2025-12-14_v2-3-curation-not-ceremony.md) ~461 tokens
+  - Status: active
+  - Impacts: ontos_manual, ontos_agent_instructions
 
 
 ## 2. Recent Timeline
+- **2025-12-14** [feature] **V2 3 Curation Not Ceremony** (`log_20251214_v2_3_curation_not_ceremony`)
+  - Impacted: `ontos_manual`, `ontos_agent_instructions`
+  - Concepts: v2.3, ux, tooling, testing
 - **2025-12-14** [feature] **V2 2 Implementation** (`log_20251214_v2_2_implementation`)
   - Impacted: `common_concepts`
   - Concepts: data-quality, lint, workflow
@@ -96,8 +108,8 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal`
 - **2025-12-13** [chore] **Cleanup Broken Links** (`log_20251213_cleanup_broken_links`)
   - Impacted: `schema`
   - Concepts: cleanup, broken-links, legacy-removal, documentation
-- **2025-12-13** [chore] **Agent No Verify Rule** (`log_20251213_agent_no_verify_rule`)
-  - Concepts: workflow, agent-behavior, git-hooks
+
+*Showing 10 of 11 sessions*
 
 ## 3. Dependency Audit
 No issues found.
@@ -117,7 +129,10 @@ No issues found.
 | log_20251213_v22_ux_planning | [2025-12-13_v22-ux-planning.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_v22-ux-planning.md) | log |
 | log_20251213_version_fix | [2025-12-13_version-fix.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-13_version-fix.md) | log |
 | log_20251214_v2_2_implementation | [2025-12-14_v2-2-implementation.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-14_v2-2-implementation.md) | log |
+| log_20251214_v2_3_curation_not_ceremony | [2025-12-14_v2-3-curation-not-ceremony.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-14_v2-3-curation-not-ceremony.md) | log |
 | mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |
+| ontos_agent_instructions | [Ontos_Agent_Instructions.md](docs/reference/Ontos_Agent_Instructions.md) | kernel |
+| ontos_manual | [Ontos_Manual.md](docs/reference/Ontos_Manual.md) | kernel |
 | schema | [schema.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/atom/schema.md) | atom |
 | v2_3_ux_improvements | [2.3_ux_improvement_ideas.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/2.3_ux_improvement_ideas.md) | strategy |
 | v2_strategy | [v2_strategy.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2_strategy.md) | strategy |

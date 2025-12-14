@@ -67,12 +67,35 @@ def main():
         print("  ontos_config.py already exists")
 
     print("\n3. Installing git hooks...")
-    try:
-        subprocess.run([sys.executable, '.ontos/scripts/ontos_install_hooks.py'], check=True)
-    except subprocess.CalledProcessError:
-        print("  Warning: Failed to install hooks. You can try manually running .ontos/scripts/ontos_install_hooks.py")
-        
-    print("\n4. Generating initial Context Map...")
+    
+    # Ensure hooks directory exists
+    if not os.path.exists(HOOKS_DIR):
+        try:
+            os.makedirs(HOOKS_DIR)
+        except OSError:
+            pass # Git hooks dir might be missing if not a git repo yet, that's okay
+            
+    # Install pre-push hook
+    # v2.3: Hook logic is now in scripts/, bash hook just delegates
+    bash_hook_src = os.path.join(PROJECT_ROOT, '.ontos', 'hooks', 'pre-push')
+    bash_hook_dst = os.path.join(HOOKS_DIR, 'pre-push')
+    
+    if os.path.exists(bash_hook_src):
+        try:
+            shutil.copy2(bash_hook_src, bash_hook_dst)
+            # Make executable
+            st = os.stat(bash_hook_dst)
+            os.chmod(bash_hook_dst, st.st_mode | 0o111)
+            print("  Installed pre-push hook.")
+        except Exception as e:
+            print(f"  Warning: Failed to install pre-push hook: {e}")
+    else:
+         print("  Warning: Pre-push hook source not found.")
+
+    print("\n4. Creating starter documentation...")
+    scaffold_starter_docs()
+    
+    print("\n5. Generating initial Context Map...")
     try:
         subprocess.run([sys.executable, '.ontos/scripts/ontos_generate_context_map.py'], check=True)
     except subprocess.CalledProcessError:
@@ -80,7 +103,6 @@ def main():
         
     print("\n✅ Ontos initialized successfully!")
     print("Next steps:")
-    print("1. Edit .ontos-internal/kernel/mission.md to define your project")
     print("2. Run 'python3 .ontos/scripts/ontos_end_session.py init' to log this setup")
 
 if __name__ == "__main__":

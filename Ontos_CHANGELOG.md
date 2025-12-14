@@ -22,6 +22,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.3.0] - 2025-12-14
+
+### Added (Tooling & Maintenance)
+- **New Scripts:**
+  - `ontos_query.py` — Query dependencies, find stale docs, check graph health
+  - `ontos_consolidate.py` — Automate monthly log consolidation into `decision_history.md`
+  - `ontos_maintain.py` — Single command for migration and regeneration
+  - `ontos_pre_push_check.py` — Validation logic moved from bash to Python
+- **UX Improvements:**
+  - **Adaptive Templates** — `ontos_end_session.py` adapts log sections based on `event_type` (e.g., `chore` is shorter)
+  - **Auto-slug** — Automatically generates log slug from branch name or last commit
+  - **Archive Ceremony Reduction** — `DEFAULT_SOURCE` and optional source arg reduce typing
+  - **Starter Scaffolding** — `ontos_init.py` creates `mission.md`, `roadmap.md`, `decision_history.md`
+- **Data Quality:**
+  - **Creation-time Validation** — Checks concepts against vocabulary when creating logs
+  - **Extended Impact Suggestions** — Looks back to last session log for changes
+
+### Changed
+- **Pre-push hook** — Now delegates to Python script for better testability and "Small Change" heuristics
+- **Consolidation** — `decision_history.md` now explicitly supported with correct table targeting
+- `ontos_init.py` — Now includes scaffolding and hook installation (removed `ontos_install_hooks.py`)
+- Version bump to 2.3.0
+
 ## [Unreleased]
 
 ### Added (v2.2 - Data Quality)

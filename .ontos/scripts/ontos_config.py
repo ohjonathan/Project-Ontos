@@ -106,7 +106,7 @@ if is_ontos_repo():
     DOCS_DIR = INTERNAL_DIR
     LOGS_DIR = os.path.join(INTERNAL_DIR, 'logs')
     # Override defaults to allow scanning the internal dir
-    SKIP_PATTERNS = ['_template.md', 'Ontos_', 'archive/']
+    SKIP_PATTERNS = ['_template.md', 'Ontos_Context_Map.md', 'archive/']
     # Allow atoms to be leaves (orphans) in the graph
     ALLOWED_ORPHAN_TYPES = ['product', 'strategy', 'kernel', 'atom']
 else:
