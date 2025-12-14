@@ -22,6 +22,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.3.1] - 2025-12-14
+
+### Fixed
+- `ontos_migrate_frontmatter.py` now skips `archive/` directories when scanning for untagged files
+
+### Changed
+- Archived v2.3 planning documents to `.ontos-internal/archive/planning/`
+- Cleaned up root directory (removed temp files)
+
 ## [2.3.0] - 2025-12-14
 
 ### Added (Tooling & Maintenance)
