@@ -1,0 +1,363 @@
+# Ontos v2.4 Proposal (Revised) — Review
+
+**Reviewer:** Claude Opus  
+**Date:** 2025-12-15  
+**Document Reviewed:** `.ontos-internal/strategy/v2.4_config_automation_proposal.md` (v1.1)  
+**Previous Review:** v1.0 review on 2025-12-14
+
+---
+
+## Executive Summary
+
+The revised proposal is **substantially improved**. Session appending elegantly solves the ghost log problem. Most critical feedback from v1.0 review was addressed. However, new edge cases and implementation risks have emerged that need attention before implementation.
+
+**Verdict:** Almost ready. Fix must-fix items first.
+
+---
+
+## What's Fixed Well
+
+| Issue from v1.0 | Resolution | Assessment |
+|-----------------|------------|------------|
+| Ghost log pollution | Session appending model | ✅ Excellent solution |
+| Quality signal for auto-logs | `status: auto-generated` + lint | ✅ Exactly what I asked for |
+| Silent failure modes | Documented fallback chain | ✅ Clear and complete |
+| CI environment support | `ONTOS_SOURCE` env var | ✅ Practical |
+| Default mode choice | Changed to `prompted` | ✅ Right call |
+| Non-interactive setup | `--non-interactive` flag | ✅ Essential for CI |
+| Config debugging | `--show` command | ✅ Helpful |
+
+**Session appending is the key insight.** One log per branch per day with append semantics solves the noise problem without losing commit history. Credit to Gemini for this.
+
+---
+
+## New Concerns
+
+### 1. Session Appending Has Edge Cases
+
+The append logic assumes a clean mapping: branch → slug → filename. This breaks in several scenarios.
+
+**Problem A: Branch rename mid-day**
+```
+9am:  Push on feat/login       → creates 2025-12-14_login.md
+11am: Rename branch to feat/auth-login
+2pm:  Push on feat/auth-login  → creates 2025-12-14_auth-login.md (NEW file!)
+```
+
+Now you have two logs for the same work session. The "one log per branch per day" promise is broken.
+
+**Problem B: Multiple branches, same slug**
+```
+feat/login → slug "login"
+fix/login  → slug "login"
+```
+
+Both map to `2025-12-14_login.md`. Second branch appends to first branch's log — wrong context mixed together.
+
+**Recommendation:** Include branch prefix in slug derivation:
+- `feat/login` → `feat-login`
+- `fix/login` → `fix-login`
+
+Or store full branch name in frontmatter and validate on append:
+```yaml
+---
+id: log_20251214_login
+branch: feat/login  # NEW: validates append is to correct log
+---
+```
+
+**Severity:** 🔴 Must fix — data integrity issue
+
+---
+
+### 2. Append Detection Glob is Too Greedy
+
+```python
+pattern = f"{today}_{branch_slug}*.md"
+matches = glob.glob(os.path.join(LOGS_DIR, pattern))
+```
+
+This glob matches more than intended:
+- `2025-12-14_login.md` ✓ correct
+- `2025-12-14_login-2.md` ✓ correct (collision variant)
+- `2025-12-14_login-flow.md` ✗ wrong! (different feature)
+
+If I have logs for `login` and `login-flow`, the glob will incorrectly match both.
+
+**Recommendation:** Use exact match first, fall back to glob only for collision variants:
+
+```python
+def find_existing_log_for_today(branch_slug: str) -> Optional[str]:
+    today = datetime.now().strftime('%Y-%m-%d')
+    
+    # Try exact match first
+    exact = os.path.join(LOGS_DIR, f"{today}_{branch_slug}.md")
+    if os.path.exists(exact):
+        return exact
+    
+    # Only then check for collision variants (-2, -3, etc.)
+    for i in range(2, 10):
+        variant = os.path.join(LOGS_DIR, f"{today}_{branch_slug}-{i}.md")
+        if os.path.exists(variant):
+            return variant
+    
+    return None
+```
+
+**Severity:** 🔴 Must fix — wrong log could be appended to
+
+---
+
+### 3. Consolidation in Pre-Push is Risky
+
+The proposal adds consolidation to the pre-push hook:
+
+```python
+if AUTO_CONSOLIDATE and count_active_logs() > LOG_RETENTION_COUNT:
+    run_consolidation(auto=True)
+```
+
+**Problem:** Consolidation modifies `decision_history.md` and moves files. If this runs during push and fails mid-way:
+- `decision_history.md` could be partially updated
+- Some logs moved to archive, others not
+- Push might still proceed with inconsistent state
+- Or push fails, but files are already moved
+
+Pre-push hooks should be read-only or at most create new files. Mutating existing files during push is dangerous.
+
+**Recommendation:** Don't consolidate during push. Options:
+
+| Option | Pros | Cons |
+|--------|------|------|
+| Warn only in pre-push | Safe, no mutations | User must run `Maintain Ontos` manually |
+| Post-push hook | Runs after successful push | More complex hook setup |
+| Periodic cron / scheduled | Fully decoupled | Requires external setup |
+
+I recommend **warn only**:
+```python
+if count_active_logs() > LOG_RETENTION_COUNT:
+    print(f"⚠️  {count} logs exceed threshold. Run 'Maintain Ontos' to consolidate.")
+```
+
+**Severity:** 🔴 Must fix — data corruption risk
+
+---
+
+### 4. Dirty Git Check Skips Silently
+
+> In automated mode, if `git status` shows uncommitted changes... skip gracefully
+
+The doc says this:
+> In automated mode, prompting contradicts the "zero friction" promise. Better to skip gracefully.
+
+**Problem:** This contradicts the earlier principle "never silently fail." If I have uncommitted changes and push, I expect *something* to happen. Silent skip means I don't know my session wasn't logged.
+
+**Recommendation:** At minimum, print a visible warning:
+
+```
+⚠️  Skipping auto-archive: uncommitted changes detected.
+    Run 'Archive Ontos' manually after committing.
+```
+
+This is still "zero friction" (doesn't block), but the user knows what happened.
+
+**Severity:** 🟡 Should fix — user confusion
+
+---
+
+### 5. Template Syntax Error
+
+```python
+DEFAULT_SOURCE = {{SOURCE}}
+```
+
+If `SOURCE` is a string like "Claude Code", this generates:
+
+```python
+DEFAULT_SOURCE = Claude Code  # SyntaxError!
+```
+
+**Fix:** Handle quoting properly:
+
+```python
+# In template
+DEFAULT_SOURCE = {{SOURCE_QUOTED}}
+
+# In generator
+if source:
+    source_quoted = f'"{source}"'
+else:
+    source_quoted = 'None'
+```
+
+**Severity:** 🔴 Must fix — broken config file generation
+
+---
+
+### 6. No Commit Deduplication on Append
+
+If the same commits are already in the log (e.g., amend + force push, then regular push), they'll be appended again:
+
+```markdown
+## Raw Session History
+abc123 - Initial commit
+def456 - Add feature
+abc123 - Initial commit  ← duplicate!
+```
+
+**Recommendation:** Parse existing commits, skip duplicates:
+
+```python
+def append_to_log(log_path: str, new_commits: list):
+    content = read_file(log_path)
+    
+    # Extract existing commit hashes
+    existing_hashes = set(re.findall(r'^([a-f0-9]{7,40}) -', content, re.MULTILINE))
+    
+    # Filter out duplicates
+    unique_commits = [c for c in new_commits if c.hash not in existing_hashes]
+    
+    if not unique_commits:
+        print("No new commits to append.")
+        return
+    
+    # ... append logic
+```
+
+**Severity:** 🟡 Should fix — log noise
+
+---
+
+### 7. Agent Workflow Not Updated
+
+The proposal doesn't address how AI agents interact with auto-generated logs.
+
+**Current flow (manual mode):**
+```
+Agent runs ontos_end_session.py → creates log → fills in content
+```
+
+**New flow (automated mode):**
+```
+Pre-push creates auto-generated log → Agent... does what?
+```
+
+If agent runs `Archive Ontos` and a log already exists, what happens? The current `ontos_end_session.py` will say "Log file already exists" and exit.
+
+**Recommendation:** 
+
+1. Add `--enhance` flag to `ontos_end_session.py`:
+```bash
+python3 ontos_end_session.py --enhance
+# Opens most recent auto-generated log for editing
+```
+
+2. Update Agent Instructions:
+
+```markdown
+### "Archive Ontos" (Automated Mode)
+
+If a log already exists with `status: auto-generated`:
+1. Read the existing log
+2. Fill in Goal, Key Decisions, Alternatives Considered
+3. Add concepts and verify impacts
+4. Change status from `auto-generated` to `active`
+5. Commit
+
+Use: `python3 .ontos/scripts/ontos_end_session.py --enhance`
+```
+
+**Severity:** 🟡 Should fix — breaks agent workflow
+
+---
+
+## Pushback on "What We're NOT Doing"
+
+### Mode Renaming
+
+> **Rejected reason:** "Original names are clear. 'Autopilot' sounds passive."
+
+I disagree that "autopilot" sounds passive — autopilot literally flies planes. But this is subjective. Keeping original names is fine.
+
+### `BRANCH_PREFIX_MAP` Config
+
+> **Rejected reason:** "95% use conventional prefixes. Edge case doesn't justify complexity."
+
+Where does 95% come from? This feels like a guess. I've seen:
+- `feature/`, `feat/`, `f/`
+- `bugfix/`, `fix/`, `hotfix/`, `hf/`
+- `jira/PROJ-123` (ticket-based)
+- `username/feature` (GitLab style)
+
+At minimum, **document how users can customize** if their prefix isn't recognized. "Edit the source code" is a bad answer.
+
+### Single-Toggle Alternative
+
+> **Rejected reason:** "Modes are more intuitive than orthogonal settings."
+
+The modes conflate two orthogonal concerns:
+
+| Concern | Options |
+|---------|---------|
+| **When** to archive | On push (auto) vs. manual |
+| **How strict** enforcement is | Block vs. warn vs. silent |
+
+Your mode matrix:
+
+| Mode | Archive When | Strictness |
+|------|--------------|------------|
+| automated | On push | Silent (no enforcement) |
+| prompted | Manual | Block |
+| advisory | Manual | Warn |
+
+Missing combinations:
+- Auto archive + Block (auto-create, but block if it fails)
+- Auto archive + Warn (auto-create, warn if dirty git)
+
+Users will ask for these. You'll either add more modes (complexity) or say "not supported" (frustration).
+
+I still think `PRE_PUSH_BEHAVIOR` + `AUTO_ARCHIVE` as separate settings is cleaner long-term. But modes are workable for v2.4.
+
+---
+
+## Summary of Recommendations
+
+### 🔴 Must Fix Before Implementation
+
+| # | Issue | Fix |
+|---|-------|-----|
+| 1 | Branch rename/collision breaks session appending | Include prefix in slug OR store branch in frontmatter |
+| 2 | Glob pattern matches wrong logs | Exact match first, then collision variants |
+| 3 | Consolidation during push risks corruption | Warn only, don't mutate during push |
+| 4 | Template generates invalid Python | Quote string values properly |
+
+### 🟡 Should Fix
+
+| # | Issue | Fix |
+|---|-------|-----|
+| 5 | Dirty git skip is silent | Print warning message |
+| 6 | Commit deduplication missing | Skip already-present hashes |
+| 7 | Agent workflow undefined | Add `--enhance` flag and update instructions |
+
+### 🟢 Consider
+
+| # | Issue | Suggestion |
+|---|-------|------------|
+| 8 | `BRANCH_PREFIX_MAP` rejection | At least document customization path |
+| 9 | Mode conflation | May need revisiting if users request unsupported combos |
+
+---
+
+## Verdict
+
+**Status:** Almost ready for implementation
+
+**Blocking issues:** 4 (must-fix items)
+
+**Key risk:** The session appending model is the core innovation, but it has edge cases that could cause wrong-log-appended or duplicate-commits problems. These need to be solved before shipping.
+
+**Recommendation:** Fix must-fix items, then proceed. The overall direction is correct and the session appending model is worth the implementation effort.
+
+---
+
+*Review completed 2025-12-15. Happy to discuss any points.*

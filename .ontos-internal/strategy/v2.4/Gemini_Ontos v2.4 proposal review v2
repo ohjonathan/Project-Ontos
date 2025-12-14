@@ -1,0 +1,75 @@
+Here is my honest architectural review of the **v2.4 Configuration Automation Proposal**.
+
+This proposal is a significant maturation of the tool. It moves Ontos from a "strict enforcement" utility towards a "silent partner" model, which is essential for mass adoption. The **Session Appending** model is the standout feature that transforms the developer experience.
+
+However, I have identified one **Critical Architectural Flaw (P0)** in the automation logic that will break the "Zero Friction" promise if implemented as written.
+
+### 1. Critical Flaw: The "Dirty Push" Paradox
+**Feature:** Section 3.4 (Consolidation in Pre-Push Hook)
+**The Plan:** If `AUTO_CONSOLIDATE` is True, the pre-push hook runs `run_consolidation(auto=True)`, which moves files and updates `decision_history.md`.
+
+**The Failure Mode:**
+1.  User runs `git push`.
+2.  Hook triggers. It moves 20 logs to `archive/` and modifies `decision_history.md`.
+3.  The hook passes (exit 0).
+4.  The push succeeds, sending the *original* state of the repo to the remote.
+5.  **The Aftermath:** The user's terminal now shows a **dirty working tree** (deleted logs, modified history file).
+6.  **The Friction:** The user must now run `git add . && git commit -m "Auto consolidate" && git push` **again**.
+
+**Why this fails:**
+You cannot "automate" file maintenance inside a pre-push hook without creating *more* work for the user. It turns a single step (`push`) into a confused multi-step cleanup. It also means the `decision_history.md` on the remote is now out of sync with the archive actions that just happened locally.
+
+**The Fix:**
+Do **not** auto-consolidate in the pre-push hook.
+* **Option A (Advisory):** In Automated mode, if consolidation is needed, print a **non-blocking warning**: "📦 20 logs ready for consolidation. Run `ontos maintain` to clean up."
+* **Option B (Post-Commit - Advanced):** This is too complex for a python script distribution.
+* **Option C (CI/CD):** Handle consolidation on the server? (Breaks local-first).
+
+**Recommendation:** Downgrade Section 3.4 to **Advisory Only**. "Automated Mode" should automate the *capture* (logging), not the *janitorial work* (consolidation), because janitorial work requires a commit.
+
+### 2. High Risk: Session Appending Concurrency
+**Feature:** Section 2.4 (Session Appending)
+**The Plan:** "Check if log exists... If yes → append new commits to 'Raw Session History' section."
+
+**The Risk:**
+You are programmatically modifying a file that the user might currently have open in their editor.
+* *Scenario:* User pushes. `ontos` appends data to `log.md`. User, having the file open, writes a "Key Decision". User saves. **The append is overwritten.** Or, if the editor detects change, the user is interrupted with "File changed on disk."
+
+**The Mitigation:**
+You cannot solve the race condition fully, but you can minimize damage:
+1.  **Check for "Active" Status:** Only append if the log status is still `active` or `auto-generated`.
+2.  **Prepend, don't Replace:** Ensure the append logic uses a localized replace on the `## Raw Session History` block only, rather than rewriting the whole file (which looks like you are doing, but be careful with file handles).
+3.  **Acceptable Risk:** Acknowledge that for `auto-generated` logs, the user likely *isn't* editing them, so this risk is low.
+
+### 3. Strategic Wins (Approved)
+
+* **`status: auto-generated`:** This is brilliant. It creates a clear "ToDo" list for the user (`--lint` showing "3 logs need review") without blocking their flow. It solves the "garbage data" concern I raised in v2.3.
+* **Environment Variables (`ONTOS_SOURCE`):** Essential for CI. The fallback chain is robust.
+* **Template-Based Config:** Moving away from string injection in `ontos_init.py` makes the tool much easier to maintain and upgrade.
+
+### 4. Missing Scope: The "Update" Story
+**Gap:** You are introducing a template-based config (`ontos_config.py.template`).
+**Question:** How do existing v2.3 users get this?
+* The proposal mentions `ontos_init.py --reconfig`.
+* **Requirement:** The `ontos_update.py` script (or `ontos_init.py`) must be able to **migrate** an existing python config file to the new structure, or at least back it up and replace it. If I run `ontos_init` on an existing repo, does it overwrite my custom `EVENTS` dictionary?
+* **Fix:** Ensure `ontos_init.py` checks for existing config and asks to "Back up and regenerate" vs "Keep existing".
+
+### 5. Minor Logic Checks
+
+* **Dirty Git Check (Section 3.6):** "If uncommitted changes... Skipping auto-archive."
+    * *Edge Case:* I modify `README.md` and `ontos_config.py`. I `git add README.md` and `git commit`. I push. `ontos_config.py` is still dirty.
+    * *Result:* Auto-archive is skipped.
+    * *Verdict:* This is **correct behavior**. We want the log to reflect the *exact* state of the repo. Creating a log when the repo is dirty creates a "lie" in the archive. Keep this strict.
+
+### Final Verdict
+
+**Status: CONDITIONALLY APPROVED**
+
+You must address the **Pre-Push Consolidation (Point #1)** issue. "Auto-modifying files in pre-push" is a known anti-pattern that will frustrate users.
+
+**Action Items:**
+1.  **Change Section 3.4:** Make consolidation a **Warning/Prompt** even in Automated mode, OR explicitly state that it will leave the repo in a dirty state that requires a manual "cleanup commit" (which defeats the purpose of automation).
+2.  **Add Migration Test:** Add a test case for a user upgrading from v2.3 to v2.4 config.
+3.  **Implement.**
+
+The rest of the proposal (Session Appending, Modes, Env Vars) is solid.
