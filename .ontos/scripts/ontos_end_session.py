@@ -391,8 +391,6 @@ def add_changelog_entry(category: str, description: str, quiet: bool = False) ->
             print(f"Added to {changelog_path}: [{category_title}] {description}")
         return True
     except (IOError, OSError, PermissionError) as e:
-        return True
-    except (IOError, OSError, PermissionError) as e:
         print(f"Error: Failed to write {changelog_path}: {e}")
         return False
 
@@ -563,6 +561,36 @@ def prompt_for_impacts(suggestions: list[str], quiet: bool = False) -> list[str]
             return [i.strip() for i in manual.split(',') if i.strip()] if manual else []
         except (EOFError, KeyboardInterrupt):
             return []
+
+
+def validate_concepts(concepts: list[str], quiet: bool = False) -> list[str]:
+    """Validate concepts against Common_Concepts.md vocabulary.
+    
+    Returns:
+        List of validated concepts (with warnings for unknown).
+    """
+    known = load_common_concepts()
+    if not known:
+        return concepts  # No vocabulary file, skip validation
+    
+    validated = []
+    for concept in concepts:
+        if concept in known:
+            validated.append(concept)
+        else:
+            # Find similar concepts for suggestions
+            similar = [k for k in known if concept[:3] in k or k[:3] in concept]
+            
+            if not quiet:
+                print(f"⚠️  Unknown concept '{concept}'")
+                if similar:
+                    print(f"   Did you mean: {', '.join(similar[:3])}?")
+                print(f"   See: docs/reference/Common_Concepts.md")
+            
+            # Still include it (warning, not error)
+            validated.append(concept)
+    
+    return validated
 
 
 def create_log_file(
@@ -777,8 +805,6 @@ Slug format:
          sys.exit(1)
 
     # Validate topic slug
-
-    # Validate topic slug
     is_valid, error_msg = validate_topic_slug(args.topic)
     if not is_valid:
         print(f"Error: {error_msg}")
@@ -792,6 +818,10 @@ Slug format:
     if args.concepts:
         concepts = [c.strip() for c in args.concepts.split(',') if c.strip()]
         
+    # Validate concepts (NEW in v2.3)
+    if concepts:
+        concepts = validate_concepts(concepts, args.quiet)
+
     # Process impacts
     impacts = []
     if args.impacts:

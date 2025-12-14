@@ -36,30 +36,47 @@ def get_change_stats() -> Tuple[int, int, List[str]]:
         Tuple of (files_changed, lines_changed, list_of_files)
     """
     try:
-        # Get diff stats
+        # Get diff stats for unpushed commits (local vs upstream)
+        # If no upstream, fallback to origin/main
+        target = "@{u}..HEAD"
         result = subprocess.run(
-            ['git', 'diff', '--stat', 'HEAD~10'],
+            ['git', 'diff', '--stat', target],
             capture_output=True, text=True, timeout=10
         )
         
+        # Fallback if @{u} fails (e.g. new branch with no upstream set yet)
         if result.returncode != 0:
-            return 0, 0, []
-        
+            target = "origin/main..HEAD"
+            result = subprocess.run(
+                ['git', 'diff', '--stat', target],
+                capture_output=True, text=True, timeout=10
+            )
+
+        if result.returncode != 0:
+            # If still fails, maybe no origin/main? Just check HEAD (last commit)
+            result = subprocess.run(
+                ['git', 'diff', '--stat', 'HEAD~1'],
+                capture_output=True, text=True, timeout=10
+            )
+
         lines = result.stdout.strip().split('\n')
         files_changed = 0
         lines_changed = 0
         changed_files = []
         
-        for line in lines[:-1]:  # Skip summary line
+        for line in lines:
             if ' | ' in line:
                 files_changed += 1
-                filename = line.split(' | ')[0].strip()
-                changed_files.append(filename)
-                
-                # Extract line count
-                parts = line.split(' | ')[1].strip().split()
-                if parts and parts[0].isdigit():
-                    lines_changed += int(parts[0])
+                try:
+                    filename = line.split(' | ')[0].strip()
+                    changed_files.append(filename)
+                    
+                    # Extract line count
+                    parts = line.split(' | ')[1].strip().split()
+                    if parts and parts[0].isdigit():
+                        lines_changed += int(parts[0])
+                except IndexError:
+                    continue
         
         return files_changed, lines_changed, changed_files[:10]
         

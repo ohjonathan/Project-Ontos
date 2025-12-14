@@ -9,7 +9,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts')))
 
 import ontos_end_session
-from ontos_end_session import TEMPLATES, generate_auto_slug, validate_topic_slug, create_log_file
+from ontos_end_session import TEMPLATES, generate_auto_slug, validate_topic_slug, create_log_file, validate_concepts
 
 def test_adaptive_template_chore_has_two_sections():
     assert len(TEMPLATES['chore']['sections']) == 2
@@ -80,3 +80,25 @@ def test_create_log_file_creates_file():
         filepath = create_log_file("test-slug", quiet=True, source="test")
         assert filepath.endswith("_test-slug.md")
         mock_file.assert_called() 
+
+def test_concept_validation_warns_unknown():
+    with patch("ontos_end_session.load_common_concepts", return_value={"valid"}), \
+         patch("builtins.print") as mock_print:
+        
+        validated = validate_concepts(["valid", "unknown"], quiet=False)
+        assert "valid" in validated
+        assert "unknown" in validated # Still includes it
+        
+        # Check that warning was printed
+        # We need to check if any of the print calls contained "Unknown concept"
+        warning_printed = any("Unknown concept" in str(arg) for call in mock_print.call_args_list for arg in call[0])
+        assert warning_printed
+
+def test_concept_validation_suggests_similar():
+    with patch("ontos_end_session.load_common_concepts", return_value={"authentication"}), \
+         patch("builtins.print") as mock_print:
+        
+        validate_concepts(["auth"], quiet=False)
+        # Should suggest "authentication"
+        suggestion_printed = any("Did you mean: authentication" in str(arg) for call in mock_print.call_args_list for arg in call[0])
+        assert suggestion_printed
