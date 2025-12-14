@@ -18,34 +18,43 @@ Design a two-tier configuration system for Ontos v2.4 that reduces friction for 
 ## 2. Key Decisions
 - **Three workflow modes:** automated, prompted, advisory (spectrum from zero-friction to full control)
 - **Two-tier config:** High-level mode selection + low-level individual overrides
+- **Session Appending:** One log per branch per day (from Gemini review) - prevents ghost log pollution
 - **Auto-archive on push:** New feature for "automated" mode - creates session log automatically
-- **Installation prompts:** Ask 3 questions during setup (workflow style, consolidation, attribution)
-- **Architectural review required:** Changes are significant enough to warrant multi-agent review before implementation
+- **`status: auto-generated`:** Quality signal for lint warnings (from Claude review)
+- **Default mode = prompted:** Users should learn curation before automating (from Gemini review)
+- **`ONTOS_SOURCE` env var:** CI and shared machine support (from Codex review)
 
 ## 3. Alternatives Considered
 - Single-tier config only — rejected, too technical for new users
 - Removing config options entirely — rejected, power users need flexibility
-- Implementing immediately — rejected, design is significant and needs review
-- Mode names (auto/standard/relaxed vs automated/prompted/advisory) — TBD pending review
+- Mode renaming (autopilot/guided/relaxed) — rejected, original names are clear
+- Personas (solo/team/compliance) — rejected, over-engineering
+- Telemetry — rejected, contradicts local-first philosophy
+- "Minimal log is worse than no log" — rejected, breadcrumb is useful if marked auto-generated
 
 ## 4. Changes Made
-- Created comprehensive design document: `.ontos-internal/strategy/v2.4_config_automation_proposal.md`
-- Rolled back prototype implementation (was v2.3.2) to keep codebase clean pending review
+- Created v2.4 design document (v1.0)
+- Received architectural review from Claude, Codex, Gemini
+- Critically analyzed feedback (adopted 11 ideas, rejected 8)
+- Revised proposal to v1.1 with Session Appending model
+- Rolled back prototype implementation pending final approval
 
 ## 5. Next Steps
-- Review design document with Claude, Codex, and Gemini
-- Address open questions (mode naming, default mode, auto-archive quality)
-- Implement after architectural approval
-- Target version: v2.4.0
+- Final review of v1.1 proposal
+- Implement v2.4.0 with revised design
+- Key implementation: session appending in `ontos_end_session.py`
 
 ---
 ## Raw Session History
 ```text
 - PR #14 review (v2.3)
-- Root directory cleanup
-- Fixed migrate script to skip archive/
-- Designed consolidation automation
+- Root directory cleanup, migrate script fix
+- Designed consolidation automation (v2.3.2 prototype)
 - Expanded to full config automation proposal
-- Wrote v2.4 design document
+- Wrote v2.4 design document (v1.0)
 - Rolled back implementation pending review
+- Received Claude/Codex/Gemini feedback
+- Critical analysis: adopted session appending, status:auto-generated, env var support
+- Rejected: mode renaming, personas, telemetry, checksum drift detection
+- Revised proposal to v1.1
 ```

@@ -1,0 +1,288 @@
+# Ontos v2.4 Configuration Automation Proposal — Review
+
+**Reviewer:** Claude Opus  
+**Date:** 2025-12-14  
+**Document Reviewed:** `.ontos-internal/strategy/v2.4_config_automation_proposal.md`
+
+---
+
+## Overall Assessment
+
+The problem statement is accurate — config friction is real, and `--no-verify` usage signals workflow failure. The two-tier config pattern (modes + overrides) is sound architecture. However, I have concerns about **auto-archive** specifically, and some structural issues with the mode taxonomy.
+
+**Verdict:** Proceed with implementation after addressing critical issues below.
+
+---
+
+## Major Concerns
+
+### 1. Auto-Archive Quality vs. "Curation Over Ceremony"
+
+The proposal acknowledges auto-generated logs will have:
+- Empty concepts
+- Template placeholder Goal section
+- Auto-suggested (unverified) impacts
+
+This creates a tension with Ontos's core philosophy. The v2 strategy states repeatedly that "curation creates signal" and "the moment you remove human judgment from capture, you're building a haystack."
+
+Auto-archive is building haystacks. A log with no Goal, no concepts, and placeholder content isn't context — it's noise that looks like context.
+
+**Counterargument:** "Minimal log > no log" is defensible *if* there's a quality signal.
+
+**Recommendation:** Add a new status value:
+
+```yaml
+status: auto-generated  # New status value
+```
+
+Then `--lint` can warn: "3 auto-generated logs need human review." This preserves the archive while flagging it for curation.
+
+Without this, users in "automated" mode will have context maps full of placeholder garbage — worse than nothing because it creates false confidence.
+
+**Severity:** 🔴 Critical — blocks core value proposition
+
+---
+
+### 2. Mode Naming is Backwards
+
+| Mode | Described As | Intuition Problem |
+|------|--------------|-------------------|
+| `automated` | "Zero friction" | "Does things for me" ✓ |
+| `advisory` | "Minimal friction" | "Gives advice only" — sounds passive |
+
+"Advisory" sounds more passive than "automated" but the doc says advisory has *lower* friction. That's confusing.
+
+**Recommendation:** Rename modes:
+
+| Current | Proposed Option A | Proposed Option B |
+|---------|-------------------|-------------------|
+| `automated` | `autopilot` | `auto` |
+| `prompted` | `guided` | `standard` |
+| `advisory` | `relaxed` | `minimal` |
+
+**Severity:** 🟡 Medium — UX confusion
+
+---
+
+### 3. One Archive ≠ One Session
+
+The auto-archive model ties archiving to git push. But this mapping is leaky:
+
+- Multiple work sessions in one branch
+- Pushes to `main` directly
+- Force pushes / rebases
+- CI pushes from bots
+
+You'll get collisions like:
+```
+2025-12-15_main.md
+2025-12-15_main.md  # Collision!
+```
+
+**Recommendation:** If slug exists for today, append counter: `main`, `main-2`, `main-3`. Or use timestamp suffix: `main-1430`.
+
+**Severity:** 🟡 Medium — data integrity
+
+---
+
+## Missing Pieces
+
+### 1. Failure Modes
+
+What happens when auto-archive fails?
+
+| Scenario | Current Behavior | Recommended |
+|----------|------------------|-------------|
+| Detached HEAD | ? | Fall back to commit subject |
+| Branch name is `HEAD~1` | ? | Block, prompt user |
+| No commits since last archive | ? | Prompt for slug |
+| `DEFAULT_SOURCE` not set | ? | Use `git config user.name` |
+
+The doc is silent on these. In "hands-free" mode, silent failures mean lost context — the exact problem Ontos solves.
+
+**Recommendation:** Add explicit fallback chain:
+1. Branch name → slug
+2. If blocked name → last commit subject
+3. If still fails → **prompt user** (don't silently skip)
+
+Even in "autopilot" mode, a failure should surface, not disappear.
+
+**Severity:** 🔴 Critical — silent failures defeat the purpose
+
+---
+
+### 2. Agent Awareness
+
+How do AI agents know a session was auto-archived?
+
+**Manual flow:**
+```
+Agent runs ontos_end_session.py → reads log → fills placeholders
+```
+
+**Auto flow:**
+```
+Pre-push hook runs silently → log created → agent never sees it
+```
+
+**Recommendation:**
+- `Archive Ontos` command detects existing auto-log and opens it for enhancement
+- `Maintain Ontos` lists auto-generated logs needing review
+- Add to Agent Instructions: "If `status: auto-generated`, offer to enhance"
+
+**Severity:** 🟡 Medium — breaks agent workflow
+
+---
+
+### 3. Migration Path
+
+For users with existing `ontos_config.py` customizations:
+
+| Question | Current Answer | Recommendation |
+|----------|----------------|----------------|
+| Do explicit settings override mode presets? | Yes (per doc) | ✓ Good |
+| How to adopt a mode retroactively? | Unclear | Add `--adopt-mode` flag |
+| Does `--reconfig` preserve overrides? | Unclear | Backup + overwrite (merge is fragile) |
+
+**Severity:** 🟢 Low — documentation gap
+
+---
+
+## Alternative Approach Worth Considering
+
+Instead of 3 discrete modes, consider **progressive inference with fallbacks**:
+
+```python
+# Single flow, no modes
+def create_session_log():
+    slug = infer_from_branch() or infer_from_commit() or prompt()
+    source = config.DEFAULT_SOURCE or git_user_name() or prompt()
+    event_type = infer_from_prefix() or "chore"
+    
+    # Always create log, but mark auto-generated fields
+    log.auto_fields = ["event_type"] if event_type was inferred
+```
+
+This gives you the "smart defaults" UX without the cognitive overhead of modes. Users never ask "which mode am I in?" — they just get inference where possible and prompts where not.
+
+The pre-push behavior becomes a single toggle:
+```python
+PRE_PUSH_BEHAVIOR = "block" | "warn" | "silent"
+```
+
+This separates **workflow strictness** from **archive automation** — two orthogonal concerns currently conflated in the mode system.
+
+---
+
+## Specific Technical Feedback
+
+### Branch Prefix List is Incomplete
+
+Current:
+```python
+prefixes = {
+    'feat/': 'feature',
+    'feature/': 'feature',
+    'fix/': 'fix',
+    'bugfix/': 'fix',
+    'refactor/': 'refactor',
+    'chore/': 'chore',
+    'docs/': 'chore',
+    'explore/': 'exploration',
+}
+```
+
+Missing: `hotfix/`, `release/`, `perf/`, `test/`, `ci/`, `build/`
+
+**Recommendation:** Make this configurable in `ontos_config.py`:
+```python
+BRANCH_PREFIX_MAP = {
+    'feat/': 'feature',
+    'hotfix/': 'fix',
+    # user adds their own
+}
+```
+
+---
+
+### Installation Assumes TTY
+
+The ASCII prompt UI in Section 3.3 won't work for:
+- CI environments
+- Non-interactive terminals
+- AI agents running `ontos_init.py`
+
+**Recommendation:** Add `--non-interactive` flag with sensible defaults (probably "guided" mode).
+
+---
+
+### Config Resolver Complexity
+
+Three-level resolution (explicit → mode preset → default) is reasonable, but:
+
+1. Put resolution logic in `ontos_config.py` itself, not a new file
+2. Add debug output: `python3 ontos_config.py --show-resolved`
+3. **Comprehensive tests** for the resolver — this is load-bearing code
+
+---
+
+## Open Questions — Recommendations
+
+| Question from Doc | My Recommendation | Rationale |
+|-------------------|-------------------|-----------|
+| Mode naming | `autopilot`, `guided`, `relaxed` | Aligns with intuition |
+| Default mode for new installs | `guided` | New users should learn the system before automating |
+| Is minimal auto-generated log acceptable? | Yes, IF marked `status: auto-generated` | Quality signal is non-negotiable |
+| Should `--reconfig` merge or overwrite? | Backup + overwrite | Merging is fragile, leads to weird states |
+| Advisory mode + auto-consolidate? | Yes, keep auto-consolidate on | It's invisible maintenance, not friction |
+
+---
+
+## Summary of Recommendations
+
+### Critical (Must Fix Before Implementation)
+
+| # | Issue | Fix |
+|---|-------|-----|
+| 1 | Auto-generated logs lack quality signal | Add `status: auto-generated` + lint warning |
+| 2 | Failure modes undocumented | Define fallback chain, never silently fail |
+
+### High Priority
+
+| # | Issue | Fix |
+|---|-------|-----|
+| 3 | Mode names confusing | Rename to `autopilot`/`guided`/`relaxed` |
+| 4 | Slug collisions possible | Add counter suffix for same-day duplicates |
+| 5 | Agents unaware of auto-archives | Update Agent Instructions, enhance `Archive Ontos` |
+
+### Medium Priority
+
+| # | Issue | Fix |
+|---|-------|-----|
+| 6 | Branch prefixes hardcoded | Make `BRANCH_PREFIX_MAP` configurable |
+| 7 | Init assumes TTY | Add `--non-interactive` flag |
+| 8 | Resolver opaque | Add `--show-resolved` debug command |
+
+### Consider
+
+| # | Alternative |
+|---|-------------|
+| 9 | Single-toggle approach (`PRE_PUSH_BEHAVIOR`) instead of 3 modes |
+
+---
+
+## Verdict
+
+**Direction:** ✅ Correct  
+**Architecture:** ✅ Two-tier config is good  
+**Ready for Implementation:** ❌ Not yet
+
+Address critical issues first:
+1. Auto-generated quality signals (non-negotiable)
+2. Failure mode handling
+
+Without the quality signal, you're shipping a feature that helps users create low-quality logs faster — the opposite of "curation over ceremony."
+
+---
+
+*Review completed 2025-12-14. Questions or pushback welcome.*

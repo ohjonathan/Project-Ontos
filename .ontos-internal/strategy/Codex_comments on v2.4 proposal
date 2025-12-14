@@ -1,0 +1,69 @@
+# Review: Ontos v2.4 Configuration Automation & UX Proposal
+
+## Overall Impression
+
+The proposal clearly identifies major UX friction points in Ontos configuration and proposes a sensible two-tier model with mode presets. The automation spectrum and installation flow concepts align with the goal of reducing setup friction. However, several areas need clarification or expansion to make the design actionable and resilient in real-world workflows.
+
+## Strengths
+
+- **User-centered framing:** The "How strict? How much work? Who am I?" lens maps directly to the decisions users actually make, which should improve onboarding.
+- **Modes with sensible defaults:** The automated/prompted/advisory modes mirror familiar patterns (e.g., linters with presets) and give teams a consistent baseline while allowing overrides.
+- **Installation prompts:** Capturing intent during `ontos_init.py --reconfig` reduces the need for manual file edits and should increase adoption of consolidation/archiving best practices.
+
+## Risks and Gaps
+
+1. **Mode drift and discoverability**
+   - There is no mention of how mode selections map to the generated config when users later edit manually. Without a clear "last selected mode" marker or warnings about overrides, users may unintentionally drift from the preset and lose alignment with the intended experience.
+   - Recommendation: Persist the chosen mode and a computed checksum of derived settings. On subsequent `--reconfig` runs, detect divergence and offer to reconcile or reapply a preset.
+
+2. **Automation safety and failure modes**
+   - Auto-archiving on push and auto-consolidation both mutate the working tree; failure scenarios (e.g., untracked files, merge conflicts, large repos) are not addressed.
+   - Recommendation: Define safe-guardrails: dry-run previews, explicit prompts when git status is dirty, and rollback on failure. Consider toggling automation to "warn-only" if repeated failures occur.
+
+3. **Performance and scale**
+   - Consolidation of large log histories (especially with >10k files) can be expensive. No mention of batching, progress reporting, or incremental consolidation.
+   - Recommendation: Add size/age-based thresholds, progress output, and resumable consolidation to avoid blocking CI or developer workflows.
+
+4. **Team vs. solo defaults**
+   - The proposal notes friction from "strict team mode" defaults, but mode presets still assume a one-size-fits-all mapping. Teams may want automated archiving but not enforced attribution, while solo users may prefer advisory reminders with strict log retention.
+   - Recommendation: Introduce personas ("solo prototyping", "team baseline", "regulated/compliance") that preconfigure mode + key overrides such as `REQUIRE_SOURCE_IN_LOGS` and `LOG_RETENTION_COUNT`.
+
+5. **Attribution and identity management**
+   - `DEFAULT_SOURCE` is a single value, but shared machines or pair-programming sessions may require per-session identities. No plan for rotation or validation is present.
+   - Recommendation: Allow selecting from recent sources, support environment-variable default (e.g., `ONTOS_SOURCE`), and warn when git user/email differs from the configured source.
+
+6. **Ceremony around blocking hooks**
+   - The advisory/prompted distinction is clear, but the UX for blocked pushes is not. Users may still bypass with `--no-verify` if the remediation path is not quick.
+   - Recommendation: Provide a "fast path" command (e.g., `ontos archive --quick`) surfaced in the hook’s message, and limit hook duration with timeouts plus guidance for off-hours work.
+
+7. **Observability and feedback**
+   - No plan for measuring whether automation is helping (e.g., archive compliance, consolidation frequency, hook bypass rate).
+   - Recommendation: Add lightweight telemetry or log summaries (opt-in) and surface a `Maintain Ontos` report that highlights skipped steps and suggested changes to mode.
+
+8. **Documentation and recovery**
+   - While the inline config docstring is helpful, broader docs should include troubleshooting (e.g., how to unstick a broken archive) and migration guidance from v2.3 configs.
+   - Recommendation: Provide a migration helper that reads existing config, proposes the closest preset, and shows the diff before writing.
+
+## Additional Opportunities
+
+- **Template-based config generation:** Generate `ontos_config.py` from a template to keep comments synchronized with future option additions; reduces drift when new settings appear.
+- **Context-aware defaults:** Detect CI environments and disable interactive prompts; detect git hooks already present and warn about conflicts.
+- **Pluggable retention policies:** Allow specifying retention by tag (e.g., keep all milestone logs) rather than global counts only.
+- **Safety rails for archives:** Validate archive files for required frontmatter before accepting; reject malformed logs early to avoid broken history.
+
+## UX Considerations
+
+- **Progressive disclosure:** Keep the initial prompt minimal (mode selection + name). Only ask for advanced overrides if the user opts in, to avoid overwhelming new users.
+- **Language and framing:** Use task-focused labels ("Fast & Automatic", "Guided", "Remind Me Later") to reduce jargon and clearly convey consequences.
+- **CLI ergonomics:** Provide `ontos config show` and `ontos config explain` commands that render the effective config, highlight overrides, and summarize what automation will do in the current repo state.
+
+## Success Criteria
+
+- New users can complete setup in under 2 minutes with a default that matches their intent.
+- Hook bypass rate (`--no-verify`) drops because remediation is fast and predictable.
+- Consolidation runs regularly (automated or prompted) without surprising side effects or performance regressions.
+- Configuration remains understandable: effective settings are visible, and mode drift is detectable and recoverable.
+
+## Conclusion
+
+The two-tier configuration model is a solid foundation, but the proposal needs deeper treatment of failure modes, scale, and mode drift to ensure reliable UX. Adding personas, observability, and recovery paths will make the automation trustworthy while keeping the setup experience simple.
