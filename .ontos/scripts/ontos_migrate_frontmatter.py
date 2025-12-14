@@ -35,7 +35,14 @@ def scan_for_untagged_files(root_dir: str) -> list[str]:
         List of file paths without frontmatter.
     """
     untagged = []
-    for subdir, _, files in os.walk(root_dir):
+    for subdir, dirs, files in os.walk(root_dir):
+        # Prune directories matching skip patterns (e.g., archive/)
+        dirs[:] = [d for d in dirs if not any(pattern.rstrip('/') == d for pattern in SKIP_PATTERNS)]
+
+        # Skip if current directory matches a skip pattern
+        if any(pattern.rstrip('/') in subdir for pattern in SKIP_PATTERNS):
+            continue
+
         for file in files:
             if file.endswith('.md'):
                 # Skip files matching skip patterns (e.g., Ontos_ tooling files)
