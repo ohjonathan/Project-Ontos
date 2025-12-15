@@ -1,0 +1,205 @@
+Let me read through the full v1.3 proposal carefully.I have the full v1.3 proposal from the document attachment. Let me provide a thorough review.
+
+---
+
+## Ontos v2.4 Proposal v1.3 — Review
+
+**Reviewer:** Claude (Opus)  
+**Date:** 2025-12-15  
+**Verdict:** ✅ **Ready for implementation** with minor clarifications
+
+---
+
+### Executive Assessment
+
+This is a mature proposal. The v1.3 revision addresses the Git lifecycle limitation honestly rather than trying to hide it, and Section 8 represents a significant improvement in documentation discipline. The proposal is now implementation-ready.
+
+---
+
+### Section-by-Section Analysis
+
+#### Section 3.5: Git Lifecycle Limitation — ✅ Excellent
+
+This is the most important addition in v1.3. The honest framing is exactly right:
+
+> "This is a Git architectural constraint, not a bug."
+
+The user-facing message is appropriately transparent:
+
+```
+This log will be included in your NEXT commit.
+To include it now: git add . && git commit --amend
+```
+
+**Why this works:** Users who understand what's happening won't feel betrayed. Users who don't care will just push again. The friction is acknowledged rather than hidden.
+
+**One minor suggestion:** Consider adding a `--amend` convenience flag in a future version that does the `git add . && git commit --amend` automatically. But correctly deferred — not v2.4 scope.
+
+---
+
+#### Section 8: What We're NOT Doing — ✅ Strong
+
+This section is the highlight of v1.3. Let me evaluate each rejection:
+
+| Feature | Rejection Quality | Notes |
+|---------|-------------------|-------|
+| `ontos push` wrapper | ✅ Sound | "Scope creep" and "breaking muscle memory" are valid. Correct deferral. |
+| Personas | ✅ Sound | "Combinatorial explosion" is the right reason. 3×3=9 is maintenance hell. |
+| Telemetry | ✅ Sound | Contradicts local-first philosophy. Clean rejection. |
+| Checksum drift detection | ✅ Sound | "Magic behavior" critique is apt. `--show` is sufficient. |
+| `BRANCH_PREFIX_MAP` | ⚠️ Borderline | See below |
+| Mode renaming | ✅ Sound | Bikeshedding correctly identified. |
+| >10k file optimization | ✅ Sound | "Misuse indicator" is a sharp insight. |
+| Single-toggle alternative | ✅ Sound | Modes are more intuitive for most users. |
+
+**One pushback on `BRANCH_PREFIX_MAP`:**
+
+The rejection says:
+> "95%+ of projects use conventional prefixes (`feat/`, `fix/`, `chore/`)"
+
+This is probably true for *new* projects. But Ontos explicitly targets teams migrating existing codebases and prototype-to-production workflows. Legacy projects often have non-standard conventions (`feature-*`, `bugfix-*`, `hotfix/*`, etc.).
+
+**Recommendation:** Keep the rejection, but soften the justification to:
+> "Users with non-standard conventions can specify `--event-type` manually. If demand emerges, we can add `BRANCH_PREFIX_MAP` in a future version."
+
+This acknowledges the edge case exists without committing to solving it now.
+
+---
+
+#### Section 8.3: Why This Section Exists — ✅ Excellent Meta-Documentation
+
+> "If you're reviewing this document and want to propose one of these features again, please: (1) Acknowledge that we've already considered it, (2) Provide NEW evidence..."
+
+This is exactly the right framing. It prevents circular discussions in future reviews. Well done.
+
+---
+
+#### Appendix B: Session Appending Implementation — ✅ Fixed
+
+The v1.3 line-by-line parsing approach is a significant improvement over regex:
+
+```python
+# Detect code block boundaries within history section
+if in_history_section and line.strip().startswith("```"):
+```
+
+**Why this matters:** This will survive Prettier, linters, and manual edits. The previous regex approach would have broken on whitespace normalization.
+
+**One edge case to document (not block):**
+
+What happens if the user manually deletes the `## Raw Session History` section? The current code would silently fail to append. Consider adding:
+
+```python
+if not inserted:
+    print("⚠️  Could not find Raw Session History section. Creating new log instead.")
+    # Fall back to creating new log file
+```
+
+This is a **should-clarify**, not a must-fix.
+
+---
+
+### Issues Summary
+
+#### 🔴 Must Fix Before Implementation
+
+**None.** The v1.2 hash comparison bug was the last blocker, and the v1.3 code shows it fixed:
+
+```python
+existing_hashes.add(match.group(1)[:7])  # Normalize to short
+# ...
+if c.hash[:7] not in existing_hashes  # Compare short to short ✓
+```
+
+---
+
+#### 🟡 Should Clarify (Non-Blocking)
+
+1. **Missing `## Raw Session History` section handling**
+   - Current: Silent failure if section missing
+   - Suggested: Fall back to new log or warn user
+   - Impact: Low (rare edge case)
+
+2. **`BRANCH_PREFIX_MAP` rejection wording**
+   - Current: "95%+ use conventional prefixes"
+   - Suggested: Acknowledge legacy projects exist, defer to `--event-type`
+   - Impact: Documentation clarity only
+
+3. **`--enhance` deterministic behavior**
+   - Carried over from v1.2 review
+   - What exactly does `--enhance` do? The proposal says "Opens most recent auto-generated log for enrichment" but agents need more specificity:
+     - Does it print the file path?
+     - Does it change the status field?
+     - Does it add any boilerplate?
+   - Impact: Agent workflow clarity
+
+---
+
+#### 🟢 Consider for Future (Not v2.4 Scope)
+
+1. **`--amend` convenience flag** — Auto-commit the log into current commit
+2. **Branch collision counter limit** — What if 10+ branches share the same slug on the same day?
+3. **Hook timeout logging** — Log timeouts for debugging slow environments
+
+---
+
+### Comparison to v1.2 Review
+
+| v1.2 Issue | v1.3 Status |
+|------------|-------------|
+| Hash comparison bug | ✅ Fixed |
+| Git lifecycle honesty | ✅ Addressed in Section 3.5 |
+| Fragile regex parsing | ✅ Fixed with line-by-line |
+| Missing non-decisions documentation | ✅ Comprehensive Section 8 |
+| Collision flow incomplete | ⚠️ Still slightly unclear (see below) |
+| `--enhance` underspecified | ⚠️ Still needs clarification |
+
+---
+
+### Collision Flow Clarification Needed
+
+The proposal says:
+> "With session appending, this is mostly solved (we append instead of create). But if somehow a collision occurs..."
+
+What's the exact collision scenario now? With branch validation in frontmatter, two different branches can't append to the same log. So when would `-2` suffix ever be created?
+
+**Possible scenario:** Same branch renamed mid-day? Or force-deleted and recreated?
+
+This isn't a blocker, but the documentation should be clearer about when collision fallback actually triggers.
+
+---
+
+### Final Verdict
+
+| Criterion | Assessment |
+|-----------|------------|
+| Architecture | ✅ Sound |
+| Edge cases | ✅ Addressed |
+| Implementation clarity | ✅ Sufficient |
+| Non-decisions documentation | ✅ Excellent |
+| Backward compatibility | ✅ Confirmed |
+| Reviewer feedback integration | ✅ Comprehensive |
+
+**Recommendation:** Proceed with implementation.
+
+The remaining clarifications (missing section handling, `--enhance` spec, collision scenario) can be resolved during implementation without architectural changes. They're documentation gaps, not design flaws.
+
+---
+
+### One Final Note on Section 8
+
+The tracking of "Times Proposed" is a nice touch:
+
+| Feature | Times Proposed |
+|---------|----------------|
+| Personas | 3 |
+| Telemetry | 3 |
+| Checksum drift | 3 |
+
+This makes it crystal clear that Codex keeps proposing the same features. The institutional memory here is valuable — it prevents future reviewers from re-litigating settled decisions.
+
+**Suggested addition:** Consider adding a "Last Proposed" date column so future reviewers know how stale these proposals are.
+
+---
+
+Want me to generate the implementation plan document, or would you prefer to address the clarifications first?

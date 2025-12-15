@@ -1,0 +1,96 @@
+Based on a review of the `v2.4_config_automation_proposal.md`, the proposal represents a strong strategic pivot towards "Silent Partner" automation. The **Session Appending** model is a brilliant solution to the "Ghost Log" problem and significantly improves the signal-to-noise ratio.
+
+However, there is a **Catastrophic Architectural Flaw (P0)** in the proposed "Automated Mode" implementation. The proposal fundamentally misunderstands the Git hook lifecycle, which will result in data desynchronization and a frustrating user experience.
+
+Here is the thorough and honest review.
+
+### 1\. The Critical Flaw: The "Left Behind" Paradox
+
+**The Proposal (Section 4.1):**
+
+> 1.  Pre-push hook intercepts push...
+> 2.  Creates log silently...
+> 3.  Allows push to proceed
+
+**The Reality:**
+Git hooks like `pre-push` run **after** the commits have been finalized but **before** the data is sent.
+
+1.  You create a commit (Hash A).
+2.  You run `git push`.
+3.  The hook triggers and creates `log_today.md`.
+4.  The hook passes.
+5.  Git pushes **Commit A** to the server.
+6.  **The Fail:** `log_today.md` is **NOT** in Commit A. It is sitting in your local working directory as an *untracked* file.
+
+**The Consequence:**
+
+  * **Data Loss (Remote):** The server (and teammates) **never see the log** you just created. It stays on your machine until you remember to manually add/commit/push it later.
+  * **Dirty State:** Every time an "Automated" user pushes, their terminal immediately shows a dirty working tree. They have to run a "cleanup commit" after every push, which defeats the purpose of "Zero Friction."
+
+**The Same Applies to Consolidation (Section 3.4):**
+If you auto-consolidate (move files) in `pre-push`, the file moves happen locally, but the remote repo still has the files in the old location. You have broken the sync between local and remote.
+
+### 2\. Section 8 Review (Non-Decisions)
+
+The reasoning in Section 8 is generally sound, with one major exception related to the flaw above.
+
+  * **"Minimal log is worse than no log" (Rejected):**
+      * **Reasoning Given:** "Disagree; breadcrumb is useful."
+      * **Critique:** **INVALID.** Because of the "Left Behind" paradox, the breadcrumb is *not* useful because it isn't shared. It effectively becomes "no log" for the team, but "clutter" for the local user. You must fix the architecture for this reasoning to hold up.
+  * **"Mode renaming" (Rejected):**
+      * **Reasoning Given:** "Autopilot sounds passive."
+      * **Critique:** **VALID.** "Automated" is standard engineering terminology.
+  * **"Telemetry" (Rejected):**
+      * **Reasoning Given:** "Contradicts local-first philosophy."
+      * **Critique:** **VALID.** This builds trust.
+  * **"Performance optimization for \>10k files" (Rejected):**
+      * **Reasoning Given:** "Premature."
+      * **Critique:** **VALID.** Ontos is for active context; if you have 10k logs, you should have archived/deleted them long ago.
+
+### 3\. Implementation Fragility: Appendix B
+
+**The Fragile Regex:**
+
+````python
+marker = "## Raw Session History"
+if marker in content:
+    content = content.replace("```\n\n---", ...)
+````
+
+  * **The Flaw:** This relies on the specific formatting of the footer (backticks followed by newlines and dashes). If a user (or a linter like Prettier) changes the whitespace, creates a trailing newline, or removes the `---`, the append will fail silently.
+  * **The Fix:** Do not rely on string replacement of the footer.
+    1.  Parse the file line-by-line.
+    2.  Find the `## Raw Session History` header.
+    3.  Append the new text *immediately after* that header (prepending to the history stack), rather than trying to find the "end" of the block.
+
+### 4\. How to Fix "Automated Mode"
+
+You cannot solve the "Left Behind" paradox inside a standard `pre-push` hook without breaking Git mechanics. You have two options:
+
+**Option A: The Wrapper (Recommended)**
+Don't use `git push`. Ship an `ontos sync` command.
+
+  * **Command:** `ontos sync`
+  * **Logic:**
+    1.  `ontos_end_session.py --auto` (Create/Append log)
+    2.  `ontos_consolidate.py --auto` (Cleanup)
+    3.  `git add .`
+    4.  `git commit -m "chore(ontos): capture session context"`
+    5.  `git push`
+
+**Option B: The "Lagging" Log (Acceptable but confusing)**
+Accept that the log is created *after* the push (using `post-push` or `pre-push`) and just sits there. It will be picked up in the *next* commit.
+
+  * *Risk:* The log for "Feature A" will appear in the commit history for "Feature B".
+
+### Final Verdict
+
+**Status: BLOCKED on Item \#1.**
+
+You cannot ship v2.4 with the "Auto-Archive on Push" feature as currently described in Section 4.1. It promises automation but delivers a desynchronized repo state.
+
+**Action Required:**
+
+1.  **Rewrite Section 4.1:** Acknowledge the Git lifecycle limitation.
+2.  **Pivot Strategy:** Either introduce an `ontos sync` wrapper command OR change "Automated Mode" to simply be "Very Loud Advisory Mode" (e.g., "Push Blocked: Running auto-archive... Done. Please commit the log and push again.").
+3.  **Refine Appendix B:** Make the append logic robust against whitespace changes.

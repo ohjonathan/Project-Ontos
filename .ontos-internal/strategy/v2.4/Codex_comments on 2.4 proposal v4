@@ -1,0 +1,63 @@
+# Review: Ontos v2.4 Configuration Automation & UX Proposal (Latest)
+
+## Overall Impression
+
+The refreshed proposal delivers clearer presets, a realistic installation flow, and a more detailed auto-archive experience. It still needs sharper safety net design, explicit non-decisions, and proof points around the new success metrics. The two-tier model is strong, but reliability, observability, and reconciliation stories must be tightened before implementation.
+
+## Strengths
+
+- **Presets + overrides** make the mental model approachable while keeping power-user escape hatches.
+- **Installer asks for intent** (mode, consolidation, attribution), trimming immediate config edits.
+- **Auto-archive path** reduces `--no-verify` pressure if it stays fast, robust, and visible.
+- **Backward-compatible rollout** keeps existing configs working and makes migration voluntary.
+
+## Section-by-Section Feedback
+
+1. **Architecture (Sections 3–4)**
+   - The resolver order is sensible; document what happens when mode presets conflict with commented-out overrides so users know why a value won.
+   - Auto-archive assumes clean working trees; specify guardrails (git status cleanliness, stash rules, temp file handling) and a rollback path if the hook aborts after partial writes.
+
+2. **Migration (Section 5)**
+   - `--reconfig` should detect and preserve custom settings (including unknown ones) rather than regenerate from scratch. Back up the prior config and print a diff between current values and mode defaults to build trust.
+
+3. **Open Questions (Section 7)**
+   - Mode names are readable, but prepend intent labels in the installer (e.g., "Fast & Automatic", "Guided", "Remind Me") to set expectations.
+   - Default mode: stay with "Prompted" until auto-archive reliability, speed targets, and recovery are proven; if "Automated" ships as default, require clean trees and emit immediate summaries to avoid silent surprises.
+   - Auto-archive quality: minimal logs beat none, but add post-action surfacing (one-line summary + quick-edit hint) and a digest of entries needing enrichment. Consider a minimal required field set for repos that care about auditability.
+   - Reconfig UX: merge rather than overwrite, preserve comments, and warn when upstream presets change.
+   - Advisory-mode consolidation: keep silent consolidation on by default; if disabled, warn about unbounded growth and provide an easy toggle to re-enable.
+
+4. **Success Metrics (Section 8 – emphasize reasoning behind non-decisions)**
+   - The metrics are outcome-focused but need explicit rationale for what is *not* measured: e.g., no latency target for hooks, no quality bar for auto-generated logs, no adoption metric for the new modes. Call out these exclusions and justify them (e.g., quality handled via sampling/digests rather than hard gates).
+   - For each metric, define the collection path (hook logs, `Maintain Ontos` summaries, optional telemetry), a baseline, and a target. Otherwise improvements may be unprovable.
+   - Add a guardrail metric for harm: auto-archive failure rate, config drift incidence, and time-to-recovery after a failed hook.
+
+5. **Risks & Mitigations (Section 9)**
+   - Expand mitigations to include stale-lock cleanup, performance caps for consolidation, and an "effective config" reporter (`ontos_config_resolver.py --show`) to diagnose drift.
+
+## Additional Recommendations
+
+1. **Drift detection & reconciliation**
+   - Persist the selected mode and a checksum of derived values; on `--reconfig`, show differences and offer "reapply preset" vs. "keep overrides". Provide an "effective config" command to display resolved values and highlight deviations.
+
+2. **Performance & scale guardrails**
+   - Estimate consolidation cost; if it exceeds a threshold, downgrade to advisory with a prompt. Add batching/progress reporting and a resumable marker for large histories.
+
+3. **Attribution & identity hygiene**
+   - Support environment-derived defaults, recent sources, and pair/mob notation (`pair:alice+bob`). Warn when git user/email diverges from `DEFAULT_SOURCE`.
+
+4. **Trust-building UX**
+   - After auto-archive, print a concise summary and a quick-edit command. Offer a periodic digest of auto-generated entries needing enrichment.
+
+5. **Hook UX & bypass pressure**
+   - Set a maximum acceptable hook duration; if exceeded, auto-switch to advisory and record the bypass. Explicitly count `--no-verify` usage to track the top-line success metric.
+
+6. **Template-driven config generation**
+   - Generate `ontos_config.py` from a template so comments, defaults, and new settings stay aligned. Preserve custom blocks when regenerating.
+
+## Refined Success Criteria
+
+- New users complete setup in <2 minutes with a mode/persona that matches intent.
+- Hook bypass rate drops because automated flows are fast, reliable, and visible; time-in-hook meets a documented target.
+- Consolidation runs predictably with guardrails for large histories and clear recovery steps.
+- Effective configuration is transparent: resolved values are inspectable, drift is detectable, and users can revert to presets safely.
