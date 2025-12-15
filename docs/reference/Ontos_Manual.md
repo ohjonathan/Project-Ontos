@@ -5,7 +5,7 @@ status: active
 depends_on: []
 ---
 
-# Ontos Manual v2.3
+# Ontos Manual v2.4
 
 *The complete reference for Project Ontos*
 
@@ -33,6 +33,26 @@ python3 ontos_init.py
 ---
 
 ## 1. Core Concepts
+
+### Configuration Modes (v2.4)
+
+Ontos offers three workflow modes to match your preferences:
+
+| Mode | Behavior | Best For |
+|------|----------|----------|
+| **automated** | Auto-archives on push, no blocking | Solo devs, rapid prototyping |
+| **prompted** | Blocks push until archived | Teams, audit trails |
+| **advisory** | Reminders only, no blocking | Maximum flexibility |
+
+**Choosing Your Mode:** During installation, `ontos_init.py` asks for your preference. Change later with:
+```bash
+python3 ontos_init.py --reconfig
+```
+
+**Environment Variables:** For CI/CD, set `ONTOS_SOURCE` to override the default source:
+```bash
+ONTOS_SOURCE="GitHub Actions" git push
+```
 
 ### Document Types
 
@@ -92,17 +112,30 @@ python3 .ontos/scripts/ontos_end_session.py
 # Advanced (one-liner)
 python3 .ontos/scripts/ontos_end_session.py -e feature -s "Claude"
 ```
-Flags: `--dry-run` (preview), `--list-concepts` (vocabulary).
-Event types: `feature`, `fix`, `refactor`, `exploration`, `chore`, `decision`
 
-**Important:** The pre-push hook blocks push until you archive. This is intentional—no context loss.
+**Automated Mode:** Sessions are auto-archived on push. One log per branch per day—subsequent pushes append to the same log.
+
+**Auto-generated logs:** Logs created by `--auto` are marked `status: auto-generated`. Enrich them with:
+```bash
+python3 .ontos/scripts/ontos_end_session.py --enhance
+```
+
+**The "Left Behind" Paradox:** Auto-generated logs are created during push but aren't included in *that* push (Git limitation). They'll be in your next commit. To include immediately: `git add . && git commit --amend`
+
+Flags: `--auto` (hook mode), `--enhance` (enrich log), `--dry-run` (preview), `--list-concepts` (vocabulary)
+Event types: `feature`, `fix`, `refactor`, `exploration`, `chore`, `decision`
 
 ### Maintain Graph
 Say **"Maintain Ontos"** weekly:
 ```bash
 python3 .ontos/scripts/ontos_maintain.py
 ```
-This runs migration (tagging) and regeneration (validation) in one step.
+This runs three steps:
+1. **Migrate** — Tag untagged files
+2. **Generate** — Validate and regenerate context map  
+3. **Consolidate** — Archive old logs (if `AUTO_CONSOLIDATE=True`)
+
+Use `--lint` to check for data quality issues.
 
 ---
 
@@ -191,16 +224,29 @@ python3 ontos_init.py
 
 ### Configuration
 
-Edit `.ontos/scripts/ontos_config.py` (never auto-updated):
+Edit `ontos_config.py` in your project root:
 
 ```python
-# Custom docs directory
-DOCS_DIR = os.path.join(PROJECT_ROOT, 'documentation')
+# Quick setup: Choose your mode
+ONTOS_MODE = "prompted"  # "automated", "prompted", or "advisory"
 
-# Relaxed mode (solo devs)
-ENFORCE_ARCHIVE_BEFORE_PUSH = False
-REQUIRE_SOURCE_IN_LOGS = False
+# Your name for log attribution
+DEFAULT_SOURCE = "Claude Code"
+
+# Override individual settings if needed (uncomment to use)
+# AUTO_ARCHIVE_ON_PUSH = True
+# ENFORCE_ARCHIVE_BEFORE_PUSH = False
+# AUTO_CONSOLIDATE = True
 ```
+
+**Mode Presets:**
+
+| Setting | automated | prompted | advisory |
+|---------|-----------|----------|----------|
+| AUTO_ARCHIVE_ON_PUSH | True | False | False |
+| ENFORCE_ARCHIVE_BEFORE_PUSH | False | True | False |
+| REQUIRE_SOURCE_IN_LOGS | False | True | False |
+| AUTO_CONSOLIDATE | True | True | False |
 
 ### Uninstall
 ```bash

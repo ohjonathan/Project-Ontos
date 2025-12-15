@@ -22,21 +22,44 @@ depends_on: [ontos_manual]
 3. `python3 .ontos/scripts/ontos_query.py --stale 30` (Find stale docs)
 
 ### "Archive Ontos" (End Session)
-2. Run: `python3 .ontos/scripts/ontos_end_session.py -e <type> -s "Agent Name"`
-3. Read generated log. If template is adaptive, fill only the sections present.
-4. If prompted for missing impacts/concepts, provide them.
-5. Commit.
+
+**Step 1: Check for auto-generated log first (v2.4)**
+```bash
+python3 .ontos/scripts/ontos_end_session.py --enhance
+```
+
+Exit codes:
+- `0` — Auto-generated log found, displayed for enrichment
+- `1` — No auto-generated log found, proceed to Step 2
+- `2` — Log already enriched (status: active), nothing to do
+
+**Step 2a: If --enhance found a log (exit 0)**
+1. Read the displayed log content
+2. Fill in Goal, Key Decisions, Alternatives Considered
+3. Add relevant concepts (check `Common_Concepts.md`)
+4. Verify impacts are correct
+5. Change `status: auto-generated` to `status: active`
+6. Commit the enriched log
+
+**Step 2b: If no auto-generated log (exit 1)**
+1. Run: `python3 .ontos/scripts/ontos_end_session.py -e <type> -s "Agent Name"`
+2. Read generated log and fill in sections
+3. Commit
 
 Event types: `feature`, `fix`, `refactor`, `exploration`, `chore`, `decision`
 
-**Pre-push blocking:** Push fails without archived session. Run Archive Ontos first.
+**Pre-push blocking:** In `prompted` mode, push fails without archived session. In `automated` mode, logs are created automatically.
 
-**RULE:** Never use `git push --no-verify` without explicit user approval. If the hook blocks you, archive the session — don't bypass.
+**RULE:** Never use `git push --no-verify` without explicit user approval.
 
 ### "Maintain Ontos" (Weekly)
 1. `python3 .ontos/scripts/ontos_maintain.py`
-2. Fix any errors reported by the script.
-3. Commit context map if changed.
+2. This runs three steps:
+   - Migrate untagged files
+   - Regenerate context map
+   - Consolidate old logs (if `AUTO_CONSOLIDATE=True`)
+3. Fix any errors reported
+4. Commit context map if changed
 
 ### "Update Ontos"
 1. `python3 .ontos/scripts/ontos_update.py`
@@ -85,6 +108,33 @@ Agent:
 ```
 
 **Rule:** Only read archived files explicitly listed in `decision_history.md` or requested by the user.
+
+---
+
+## Auto-Generated Logs (v2.4)
+
+In `automated` mode, logs are created automatically on push with `status: auto-generated`.
+
+**Identifying auto-generated logs:**
+```yaml
+---
+status: auto-generated  # ← Needs enrichment
+branch: feat/my-feature
+---
+```
+
+**Session Appending:** Multiple pushes on the same branch in one day append to the same log file. This prevents "ghost log" pollution.
+
+**Enrichment workflow:**
+1. Run `--enhance` to find the log
+2. Fill in the human context (Goal, Decisions, Alternatives)
+3. Change status to `active`
+4. Commit
+
+**Lint warnings:** The context map generator flags auto-generated logs:
+```
+[LINT] log_20251215_feature: Auto-generated log needs enrichment
+```
 
 ---
 
