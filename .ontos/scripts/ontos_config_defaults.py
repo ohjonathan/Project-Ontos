@@ -23,7 +23,7 @@ def is_ontos_repo() -> bool:
     return os.path.exists(os.path.join(PROJECT_ROOT, '.ontos-internal'))
 
 # Version - used by update script to check for newer versions
-ONTOS_VERSION = "2.3.1"
+ONTOS_VERSION = "2.4.0"
 
 # GitHub repository for updates
 ONTOS_REPO_URL = 'https://github.com/ohjona/project-ontos'
@@ -176,3 +176,56 @@ SMALL_CHANGE_THRESHOLD = 20
 # Default source for session logs (set in ontos_config.py)
 # Example: DEFAULT_SOURCE = "Claude Code"
 DEFAULT_SOURCE = None
+
+# =============================================================================
+# MODE SYSTEM (v2.4+)
+# =============================================================================
+# Three modes to control workflow friction:
+# - "automated": Zero friction, auto-archives on push, best for solo devs
+# - "prompted": Blocked until archived, you control details (default for new installs)
+# - "advisory": Reminders only, maximum flexibility
+#
+# Set ONTOS_MODE in ontos_config.py. Individual settings can override mode defaults.
+
+# Current mode (set in ontos_config.py, defaults to None = legacy behavior)
+ONTOS_MODE = None
+
+# Mode preset configurations
+MODE_PRESETS = {
+    'automated': {
+        'AUTO_ARCHIVE_ON_PUSH': True,
+        'ENFORCE_ARCHIVE_BEFORE_PUSH': False,
+        'REQUIRE_SOURCE_IN_LOGS': False,
+        'AUTO_CONSOLIDATE': True,
+    },
+    'prompted': {
+        'AUTO_ARCHIVE_ON_PUSH': False,
+        'ENFORCE_ARCHIVE_BEFORE_PUSH': True,
+        'REQUIRE_SOURCE_IN_LOGS': True,
+        'AUTO_CONSOLIDATE': True,
+    },
+    'advisory': {
+        'AUTO_ARCHIVE_ON_PUSH': False,
+        'ENFORCE_ARCHIVE_BEFORE_PUSH': False,
+        'REQUIRE_SOURCE_IN_LOGS': False,
+        'AUTO_CONSOLIDATE': False,
+    },
+}
+
+# Valid mode values (for validation)
+VALID_MODES = set(MODE_PRESETS.keys())
+
+# Auto-archive on push (v2.4+)
+# - True: Auto-create session log on git push (automated mode)
+# - False: Manual archive required (prompted/advisory modes)
+AUTO_ARCHIVE_ON_PUSH = False
+
+# Auto-consolidate in Maintain Ontos (v2.4+)
+# - True: Maintenance automatically consolidates old logs
+# - False: Manual consolidation only
+AUTO_CONSOLIDATE = True
+
+# Hook timeout to prevent slow hooks from frustrating users (v2.4+)
+# Operations in pre-push hook will timeout after this many seconds
+HOOK_TIMEOUT_SECONDS = 10
+

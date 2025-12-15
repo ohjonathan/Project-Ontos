@@ -22,7 +22,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [2.3.1] - 2025-12-14
+## [2.4.0] - 2025-12-15
+
+### Added (Configuration Automation & UX Overhaul)
+- **Mode System** — Three presets (`automated`/`prompted`/`advisory`) control workflow friction
+  - `automated`: Zero friction, auto-archives on push, best for solo devs
+  - `prompted`: Blocked until archived, you control details (DEFAULT for new installs)
+  - `advisory`: Reminders only, maximum flexibility
+- **`ONTOS_MODE`** — Single config value applies sensible defaults
+- **Session Appending** — Multiple pushes on same branch/day append to single log (no ghost logs)
+- **`--auto` flag** — Called by pre-push hook for automatic archive
+- **`--enhance` flag** — Find and display auto-generated log for enrichment
+- **`--reconfig` flag** — Reconfigure mode while preserving custom settings
+- **`--non-interactive` flag** — CI-friendly initialization with `--mode` and `--source`
+- **`ONTOS_SOURCE`** — Environment variable support for source in CI/shared environments
+- **Hook timeout** — Pre-push operations timeout gracefully (10s default)
+- **Context map auto-regeneration** — Pre-push hook regenerates context map
+- **`status: auto-generated`** — Auto-created logs marked for enrichment
+- **Lint warning for auto-generated logs** — `--lint` shows logs needing human review
+- **`branch:` field** — Frontmatter tracks original branch for session appending safety
+- **`resolve_config()` function** — Mode-aware configuration resolution in `ontos_lib.py`
+- **`get_source()` function** — Fallback chain for source (env → config → git user)
+- **Config template** — `.ontos/templates/ontos_config.py.template` for consistent setup
+
+### Changed
+- **Version bump to 2.4.0**
+- `ontos_init.py` — Complete rewrite with interactive mode selection
+- `ontos_pre_push_check.py` — Now supports auto-archive and timeout handling
+- Pre-push hook regenerates context map before checking archive status
 
 ### Fixed
 - `ontos_migrate_frontmatter.py` now skips `archive/` directories when scanning for untagged files

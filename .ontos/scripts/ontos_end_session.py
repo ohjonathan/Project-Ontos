@@ -24,6 +24,392 @@ except ImportError:
     DEFAULT_SOURCE = None
 
 # =============================================================================
+# SESSION APPENDING (v2.4)
+# =============================================================================
+
+
+def get_current_branch() -> Optional[str]:
+    """Get current git branch name.
+    
+    Returns:
+        Branch name or None if not on a branch.
+    """
+    try:
+        result = subprocess.run(
+            ['git', 'branch', '--show-current'],
+            capture_output=True, text=True, timeout=5
+        )
+        if result.returncode == 0:
+            return result.stdout.strip() or None
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+    return None
+
+
+def slugify(text: str) -> str:
+    """Convert text (branch name) to filename-safe slug.
+    
+    Examples:
+        feat/login-flow -> login-flow
+        fix/BUG-123 -> bug-123
+    """
+    # Remove common prefixes
+    if '/' in text:
+        text = text.split('/')[-1]
+    
+    # Convert to lowercase and replace unsafe chars
+    slug = re.sub(r'[^a-z0-9]+', '-', text.lower()).strip('-')
+    
+    # Truncate to MAX_SLUG_LENGTH
+    return slug[:50] if slug else 'session'
+
+
+def find_existing_log_for_today(branch_slug: str, branch_name: str) -> Optional[str]:
+    """Find existing log for this branch created today.
+    
+    v1.2: Exact match first, then collision variants. Validates branch name.
+    
+    Args:
+        branch_slug: Slugified branch name
+        branch_name: Full branch name for validation
+    
+    Returns:
+        Path to existing log or None.
+    """
+    today = datetime.datetime.now().strftime('%Y-%m-%d')
+    
+    # 1. Try exact match first (most common case)
+    exact = os.path.join(LOGS_DIR, f"{today}_{branch_slug}.md")
+    if os.path.exists(exact):
+        if validate_branch_in_log(exact, branch_name):
+            return exact
+        # Log exists but for different branch - collision!
+        print(f"⚠️  Slug collision: {exact} belongs to different branch")
+    
+    # 2. Check collision variants (-2, -3, etc.)
+    for i in range(2, 10):
+        variant = os.path.join(LOGS_DIR, f"{today}_{branch_slug}-{i}.md")
+        if os.path.exists(variant):
+            if validate_branch_in_log(variant, branch_name):
+                return variant
+    
+    return None  # No existing log found
+
+
+def validate_branch_in_log(log_path: str, expected_branch: str) -> bool:
+    """Check if log's frontmatter branch matches expected.
+    
+    v1.2: Prevents wrong-log-appended bugs.
+    
+    Args:
+        log_path: Path to log file
+        expected_branch: Branch name to validate against
+        
+    Returns:
+        True if branch matches or no branch field (legacy).
+    """
+    try:
+        with open(log_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        # Extract branch from frontmatter
+        match = re.search(r'^branch:\s*(.+)$', content, re.MULTILINE)
+        if match:
+            return match.group(1).strip() == expected_branch
+        # Legacy logs without branch field - assume match
+        return True
+    except (IOError, OSError):
+        return False
+
+
+def append_to_log(log_path: str, new_commits: list) -> bool:
+    """Append new commits to existing log's Raw Session History.
+    
+    v1.2: Deduplicates commits to handle amend+push scenarios.
+    v1.3: Robust line-by-line parsing instead of fragile regex.
+    v1.4: Fallback behavior when section is missing.
+    
+    Args:
+        log_path: Path to log file
+        new_commits: List of commit strings (format: "hash - message")
+    
+    Returns:
+        True if append succeeded, False if fallback needed.
+    """
+    try:
+        with open(log_path, 'r', encoding='utf-8') as f:
+            lines = f.read().splitlines()
+    except (IOError, OSError):
+        return False
+    
+    # Extract existing commit hashes to prevent duplicates
+    existing_hashes = set()
+    for line in lines:
+        match = re.match(r'^([a-f0-9]{7,40}) -', line)
+        if match:
+            existing_hashes.add(match.group(1)[:7])
+    
+    # Filter out duplicates
+    unique_commits = [c for c in new_commits if c.split()[0][:7] not in existing_hashes]
+    
+    if not unique_commits:
+        print("ℹ️  No new commits to append (all already present)")
+        return True
+    
+    # Find Raw Session History section using line-by-line parsing
+    output_lines = []
+    in_history_section = False
+    in_code_block = False
+    inserted = False
+    
+    for line in lines:
+        output_lines.append(line)
+        
+        # Detect start of Raw Session History section
+        if line.strip() == "## Raw Session History":
+            in_history_section = True
+            continue
+        
+        # Detect code block boundaries within history section
+        if in_history_section and line.strip().startswith("```"):
+            if not in_code_block:
+                in_code_block = True
+            else:
+                # End of code block - insert new commits BEFORE closing ```
+                if not inserted:
+                    output_lines.pop()  # Remove the closing ```
+                    for commit in unique_commits:
+                        output_lines.append(commit)
+                    output_lines.append(line)  # Re-add closing ```
+                    inserted = True
+                in_code_block = False
+                in_history_section = False
+    
+    # v1.4: Fallback if section was missing
+    if not inserted:
+        print(f"⚠️  Could not find '## Raw Session History' section in {log_path}")
+        print(f"    Creating new log instead of appending.")
+        return False  # Signal caller to create new log
+    
+    try:
+        with open(log_path, 'w', encoding='utf-8') as f:
+            f.write("\n".join(output_lines))
+        print(f"📝 Appended {len(unique_commits)} commits to {log_path}")
+        return True
+    except (IOError, OSError):
+        return False
+
+
+def get_commits_since_push() -> list:
+    """Get commits that will be pushed (not yet on remote).
+    
+    Returns:
+        List of commit strings (format: "hash - message")
+    """
+    try:
+        # Get commits since upstream
+        result = subprocess.run(
+            ['git', 'log', '@{u}..HEAD', '--pretty=format:%h - %s'],
+            capture_output=True, text=True, timeout=10
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip().split('\n')
+        
+        # Fallback to last 5 commits if no upstream
+        result = subprocess.run(
+            ['git', 'log', '-5', '--pretty=format:%h - %s'],
+            capture_output=True, text=True, timeout=10
+        )
+        if result.returncode == 0:
+            return result.stdout.strip().split('\n')
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+    return []
+
+
+def find_enhance_target() -> Optional[str]:
+    """Find most recent auto-generated log for current branch.
+    
+    Returns:
+        Path to auto-generated log or None.
+    """
+    branch = get_current_branch()
+    if not branch:
+        return None
+    
+    branch_slug = slugify(branch)
+    
+    # Look for logs matching branch slug
+    if not os.path.exists(LOGS_DIR):
+        return None
+    
+    matching_logs = []
+    for filename in os.listdir(LOGS_DIR):
+        if filename.endswith('.md') and branch_slug in filename:
+            log_path = os.path.join(LOGS_DIR, filename)
+            # Check if it's auto-generated
+            try:
+                with open(log_path, 'r', encoding='utf-8') as f:
+                    content = f.read(500)  # Only need frontmatter
+                if 'status: auto-generated' in content:
+                    matching_logs.append(log_path)
+            except (IOError, OSError):
+                pass
+    
+    if not matching_logs:
+        return None
+    
+    # Return most recent (sorted by filename which includes date)
+    return sorted(matching_logs, reverse=True)[0]
+
+
+def auto_archive(branch: str, source: str, quiet: bool = False) -> bool:
+    """Auto-archive for pre-push hook.
+    
+    Creates or appends to session log automatically.
+    
+    Args:
+        branch: Current branch name
+        source: Source for log attribution
+        quiet: Suppress output
+    
+    Returns:
+        True if log was created/updated, False on error.
+    """
+    branch_slug = slugify(branch)
+    commits = get_commits_since_push()
+    
+    if not commits:
+        if not quiet:
+            print("ℹ️  No commits to archive")
+        return True
+    
+    # Check for existing log to append to
+    existing_log = find_existing_log_for_today(branch_slug, branch)
+    
+    if existing_log:
+        success = append_to_log(existing_log, commits)
+        if success:
+            _create_archive_marker(existing_log)
+            return True
+        # Fallback: create new log
+        if not quiet:
+            print("    Falling back to new log creation...")
+    
+    # Infer event type from branch prefix
+    event_type = 'chore'
+    if branch.startswith('feat') or branch.startswith('feature'):
+        event_type = 'feature'
+    elif branch.startswith('fix'):
+        event_type = 'fix'
+    elif branch.startswith('refactor'):
+        event_type = 'refactor'
+    
+    # Create new log with auto-generated status
+    return create_auto_log(branch_slug, branch, source, event_type, commits, quiet)
+
+
+def create_auto_log(
+    topic_slug: str,
+    branch: str,
+    source: str,
+    event_type: str,
+    commits: list,
+    quiet: bool = False
+) -> bool:
+    """Create auto-generated log for session appending.
+    
+    Args:
+        topic_slug: Slug for filename
+        branch: Full branch name for frontmatter
+        source: Log source attribution
+        event_type: Type of work
+        commits: List of commit strings
+        quiet: Suppress output
+    
+    Returns:
+        True on success.
+    """
+    try:
+        if not os.path.exists(LOGS_DIR):
+            os.makedirs(LOGS_DIR)
+    except OSError:
+        return False
+    
+    now = datetime.datetime.now().astimezone()
+    today_date = now.strftime("%Y-%m-%d")
+    today_datetime = now.strftime("%Y-%m-%d %H:%M %Z")
+    
+    # Handle collision
+    filename = f"{today_date}_{topic_slug}.md"
+    filepath = os.path.join(LOGS_DIR, filename)
+    counter = 2
+    while os.path.exists(filepath):
+        if validate_branch_in_log(filepath, branch):
+            # Found the right log, append instead
+            return append_to_log(filepath, commits)
+        filename = f"{today_date}_{topic_slug}-{counter}.md"
+        filepath = os.path.join(LOGS_DIR, filename)
+        counter += 1
+    
+    commits_text = '\n'.join(commits) if commits else 'No commits'
+    source_line = f"\nSource: {source}" if source else ""
+    
+    # v2.4: Auto-generated log template
+    content = f"""---
+id: log_{today_date.replace('-', '')}_{topic_slug.replace('-', '_')}
+type: log
+status: auto-generated
+branch: {branch}
+event_type: {event_type}
+concepts: []
+impacts: []
+---
+
+# Session Log: {topic_slug.replace('-', ' ').title()}
+Date: {today_datetime}{source_line}
+Event Type: {event_type}
+
+## 1. Goal
+<!-- Auto-generated log. Run 'Archive Ontos --enhance' to enrich. -->
+
+## 2. Changes Made
+<!-- Commits below; add human summary above. -->
+-
+
+---
+## Raw Session History
+```text
+{commits_text}
+```
+"""
+    
+    try:
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(content)
+    except (IOError, OSError):
+        return False
+    
+    if not quiet:
+        print(f"""
+┌────────────────────────────────────────────────────────────┐
+│             📝 SESSION LOG AUTO-GENERATED                  │
+├────────────────────────────────────────────────────────────┤
+│                                                            │
+│  Created: {filepath:<50}
+│  Status: auto-generated (needs enrichment)                │
+│                                                            │
+│  This log will be included in your NEXT commit.           │
+│  To include it now: git add . && git commit --amend       │
+│                                                            │
+│  Push proceeding with current commits...                   │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
+""")
+    
+    _create_archive_marker(filepath)
+    return True
+
+# =============================================================================
 # TEMPLATES (v2.3)
 # =============================================================================
 
@@ -764,9 +1150,58 @@ Slug format:
                         help='Comma-separated doc IDs impacted (e.g., "auth_flow,api_spec")')
     parser.add_argument('--suggest-impacts', action='store_true',
                         help='Auto-suggest impacts based on git changes')
+    
+    # v2.4 arguments
+    parser.add_argument('--auto', action='store_true',
+                        help='Auto-archive mode (called by pre-push hook)')
+    parser.add_argument('--enhance', action='store_true',
+                        help='Find and display auto-generated log for enrichment')
 
     args = parser.parse_args()
 
+
+    # Handle --enhance early exit (v2.4)
+    if args.enhance:
+        target = find_enhance_target()
+        if target:
+            print(f"📝 Enhancing: {target}")
+            print(f"   Status: auto-generated → active (after you fill in details)\n")
+            try:
+                with open(target, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                print(content)
+                print("\n" + "="*60)
+                print("To complete enhancement:")
+                print("1. Edit the file above to fill in Goal, Key Decisions, Alternatives")
+                print("2. Add concepts and verify impacts")
+                print("3. Change 'status: auto-generated' to 'status: active'")
+                print("4. Commit the enriched log")
+                print("="*60)
+            except (IOError, OSError) as e:
+                print(f"Error reading log: {e}")
+            sys.exit(0)
+        else:
+            print("No auto-generated log found for current branch.")
+            print("Run normal 'Archive Ontos' flow to create new log.")
+            sys.exit(1)
+    
+    # Handle --auto mode (v2.4)
+    if args.auto:
+        branch = get_current_branch()
+        if not branch:
+            print("⚠️  Not on a branch, skipping auto-archive")
+            sys.exit(0)
+        
+        if branch.lower() in BLOCKED_BRANCH_NAMES:
+            print(f"⚠️  Branch '{branch}' not suitable for auto-archive")
+            sys.exit(0)
+        
+        # Get source with fallback chain
+        from ontos_lib import get_source
+        source = get_source() or ''
+        
+        success = auto_archive(branch, source, args.quiet)
+        sys.exit(0 if success else 1)
 
     # Handle list-concepts early exit
     if args.list_concepts:

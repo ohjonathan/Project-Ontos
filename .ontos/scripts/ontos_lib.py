@@ -172,5 +172,91 @@ def find_last_session_date(logs_dir: str = None) -> str:
     return sorted(log_files)[-1]
 
 
+def resolve_config(setting_name: str, default=None):
+    """Resolve a config value considering mode presets and overrides.
+    
+    Resolution order:
+    1. Explicit override in ontos_config.py
+    2. Mode preset value (if ONTOS_MODE is set)
+    3. Default from ontos_config_defaults.py
+    4. Provided default parameter
+    
+    Args:
+        setting_name: Name of the setting (e.g., 'AUTO_ARCHIVE_ON_PUSH')
+        default: Fallback value if setting not found anywhere
+    
+    Returns:
+        Resolved configuration value.
+    """
+    import ontos_config_defaults as defaults
+    
+    # 1. Try explicit override in user config
+    try:
+        import ontos_config as user_config
+        if hasattr(user_config, setting_name):
+            return getattr(user_config, setting_name)
+    except ImportError:
+        pass
+    
+    # 2. Try mode preset
+    try:
+        import ontos_config as user_config
+        mode = getattr(user_config, 'ONTOS_MODE', None)
+    except ImportError:
+        mode = getattr(defaults, 'ONTOS_MODE', None)
+    
+    if mode and hasattr(defaults, 'MODE_PRESETS'):
+        presets = defaults.MODE_PRESETS.get(mode, {})
+        if setting_name in presets:
+            return presets[setting_name]
+    
+    # 3. Try default from ontos_config_defaults.py
+    if hasattr(defaults, setting_name):
+        return getattr(defaults, setting_name)
+    
+    # 4. Return provided default
+    return default
+
+
+def get_source() -> Optional[str]:
+    """Get session log source with fallback chain.
+    
+    Resolution order:
+    1. ONTOS_SOURCE environment variable
+    2. DEFAULT_SOURCE in config
+    3. git config user.name
+    4. None (caller should prompt)
+    
+    Returns:
+        Source string or None if caller should prompt.
+    """
+    # 1. Environment variable
+    env_source = os.environ.get('ONTOS_SOURCE')
+    if env_source:
+        return env_source
+    
+    # 2. Config default
+    try:
+        from ontos_config import DEFAULT_SOURCE
+        if DEFAULT_SOURCE:
+            return DEFAULT_SOURCE
+    except (ImportError, AttributeError):
+        pass
+    
+    # 3. Git user name
+    try:
+        result = subprocess.run(
+            ['git', 'config', 'user.name'],
+            capture_output=True, text=True, timeout=5
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+    
+    # 4. Caller should prompt
+    return None
+
+
 # Branch names that should not be used as auto-slugs
 BLOCKED_BRANCH_NAMES = {'main', 'master', 'dev', 'develop', 'HEAD'}

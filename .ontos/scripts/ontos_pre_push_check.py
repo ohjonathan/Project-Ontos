@@ -1,5 +1,7 @@
 """Pre-push hook logic for Ontos.
 
+v2.4: Added auto-archive mode, hook timeout, context map regeneration.
+
 This script is called by the bash pre-push hook. It checks whether
 a session has been archived and provides contextual feedback based
 on the size and nature of changes.
@@ -27,6 +29,23 @@ try:
     from ontos_config import SMALL_CHANGE_THRESHOLD
 except ImportError:
     SMALL_CHANGE_THRESHOLD = 20
+
+# v2.4: Mode-aware imports
+try:
+    from ontos_lib import resolve_config
+    AUTO_ARCHIVE_ON_PUSH = resolve_config('AUTO_ARCHIVE_ON_PUSH', False)
+except ImportError:
+    AUTO_ARCHIVE_ON_PUSH = False
+
+try:
+    from ontos_config_defaults import HOOK_TIMEOUT_SECONDS
+except ImportError:
+    HOOK_TIMEOUT_SECONDS = 10
+
+try:
+    from ontos_config_defaults import LOG_RETENTION_COUNT
+except ImportError:
+    LOG_RETENTION_COUNT = 15
 
 
 def get_change_stats() -> Tuple[int, int, List[str]]:
@@ -98,6 +117,94 @@ def suggest_related_docs(changed_files: List[str]) -> List[str]:
     return suggestions[:3]
 
 
+def count_active_logs() -> int:
+    """Count active log files in the logs directory.
+    
+    Returns:
+        Number of log files.
+    """
+    try:
+        from ontos_config import LOGS_DIR
+    except ImportError:
+        LOGS_DIR = 'docs/logs'
+    
+    if not os.path.exists(LOGS_DIR):
+        return 0
+    
+    count = 0
+    for filename in os.listdir(LOGS_DIR):
+        if filename.endswith('.md') and not filename.startswith('_'):
+            count += 1
+    return count
+
+
+def regenerate_context_map() -> None:
+    """Regenerate context map to ensure it's current.
+    
+    v2.4: Auto-regeneration prevents stale context maps.
+    """
+    try:
+        result = subprocess.run(
+            [sys.executable, '.ontos/scripts/ontos_generate_context_map.py'],
+            capture_output=True, text=True, timeout=HOOK_TIMEOUT_SECONDS,
+            cwd=PROJECT_ROOT
+        )
+        
+        if result.returncode != 0:
+            print("⚠️  Context map generation failed. Proceeding anyway.")
+            return
+        
+        # Check if context map changed
+        diff_result = subprocess.run(
+            ['git', 'diff', '--name-only', 'Ontos_Context_Map.md'],
+            capture_output=True, text=True, cwd=PROJECT_ROOT
+        )
+        
+        if diff_result.stdout.strip():
+            print("📝 Context map updated (will be in next commit)")
+    except subprocess.TimeoutExpired:
+        print("⚠️  Context map generation timed out. Proceeding anyway.")
+    except (FileNotFoundError, OSError):
+        pass
+
+
+def run_auto_archive() -> bool:
+    """Run auto-archive via ontos_end_session.py --auto.
+    
+    Returns:
+        True if auto-archive succeeded, False otherwise.
+    """
+    try:
+        result = subprocess.run(
+            [sys.executable, '.ontos/scripts/ontos_end_session.py', '--auto'],
+            timeout=HOOK_TIMEOUT_SECONDS,
+            cwd=PROJECT_ROOT
+        )
+        return result.returncode == 0
+    except subprocess.TimeoutExpired:
+        print("⚠️  Auto-archive timed out. Proceeding with push.")
+        print("    Run 'Maintain Ontos' to check status.")
+        return True  # Don't block on timeout
+    except (FileNotFoundError, OSError):
+        return False
+
+
+def check_dirty_git() -> bool:
+    """Check if there are uncommitted changes.
+    
+    Returns:
+        True if there are uncommitted changes.
+    """
+    try:
+        result = subprocess.run(
+            ['git', 'status', '--porcelain'],
+            capture_output=True, text=True, timeout=5
+        )
+        return bool(result.stdout.strip())
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return False
+
+
 def print_small_change_message(lines: int, files: List[str]):
     """Print advisory message for small changes."""
     print()
@@ -152,6 +259,14 @@ def main() -> int:
     Returns:
         Exit code (0 = allow push, 1 = block push)
     """
+    # v2.4: Regenerate context map first
+    regenerate_context_map()
+    
+    # v2.4: Check log retention and warn
+    log_count = count_active_logs()
+    if log_count > LOG_RETENTION_COUNT:
+        print(f"⚠️  {log_count} logs exceed threshold ({LOG_RETENTION_COUNT}). Run 'Maintain Ontos' to consolidate.")
+    
     # Check if marker exists (session archived)
     if os.path.exists(MARKER_FILE):
         print()
@@ -164,6 +279,21 @@ def main() -> int:
         except OSError:
             pass
         
+        return 0
+    
+    # v2.4: Auto-archive mode
+    if AUTO_ARCHIVE_ON_PUSH:
+        # Check for dirty git
+        if check_dirty_git():
+            print()
+            print("⚠️  Uncommitted changes detected. Skipping auto-archive.")
+            print("    Commit your changes first, or run 'Archive Ontos' manually.")
+            print()
+            # Still proceed with push in auto mode
+            return 0
+        
+        # Run auto-archive
+        run_auto_archive()
         return 0
     
     # Analyze changes

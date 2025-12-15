@@ -105,6 +105,13 @@ def lint_data_quality(files_data: dict[str, dict], common_concepts: set[str]) ->
                     f"  → Creates dead end in knowledge graph. Add impacted document IDs."
                 )
         
+        # Check 1b (v2.4): Auto-generated logs need enrichment
+        if data.get('status') == 'auto-generated':
+            warnings.append(
+                f"- [LINT] **{doc_id}** ({filepath}): Auto-generated log needs enrichment\n"
+                f"  → Run `python3 .ontos/scripts/ontos_end_session.py --enhance` to add context"
+            )
+        
         # Check 2: Unknown concepts
         if common_concepts:
             concepts = data.get('concepts', [])

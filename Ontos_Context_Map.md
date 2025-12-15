@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-15 02:52:02 UTC
+Generated: 2025-12-15 03:23:29 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2025-12-15 11:52:02
+Generated on: 2025-12-15 12:23:29
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -31,7 +31,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **v2_3_ux_improvements** (2.3_ux_improvement_ideas.md) ~1,900 tokens
   - Status: draft
   - Depends On: v2_strategy
-- **v2_4_config_automation_proposal** (v2.4_config_automation_proposal.md) ~12,200 tokens
+- **v2_4_config_automation_proposal** (v2.4_config_automation_proposal.md) ~12,700 tokens
   - Status: draft
   - Depends On: v2_strategy, mission
 - **v2_strategy** (v2_strategy.md) ~2,600 tokens
@@ -86,7 +86,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **log_20251214_v2_4_config_design** (2025-12-14_v2-4-config-design.md) ~1,100 tokens
   - Status: active
   - Impacts: v2_strategy
-- **log_20251215_v2_4_proposal_v1_4** (2025-12-15_v2-4-proposal-v1-4.md) ~954 tokens
+- **log_20251215_v2_4_proposal_v1_4** (2025-12-15_v2-4-proposal-v1-4.md) ~1,000 tokens
   - Status: active
   - Impacts: v2_4_config_automation_proposal, v2_strategy
 
