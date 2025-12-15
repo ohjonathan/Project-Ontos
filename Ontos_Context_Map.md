@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-15 04:47:37 UTC
+Generated: 2025-12-15 06:21:12 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2025-12-15 13:47:37
+Generated on: 2025-12-15 15:21:12
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -28,12 +28,6 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **decision_history** (decision_history.md) ~424 tokens
   - Status: active
   - Depends On: mission
-- **v2_3_ux_improvements** (2.3_ux_improvement_ideas.md) ~1,900 tokens
-  - Status: draft
-  - Depends On: v2_strategy
-- **v2_4_config_automation_proposal** (v2.4_config_automation_proposal.md) ~12,700 tokens
-  - Status: draft
-  - Depends On: v2_strategy, mission
 - **v2_strategy** (v2_strategy.md) ~2,600 tokens
   - Status: active
   - Depends On: mission
@@ -126,7 +120,10 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 *Showing 10 of 15 sessions*
 
 ## 3. Dependency Audit
-No issues found.
+- [BROKEN LINK] **log_20251215_v2_4_proposal_v1_4** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-15_v2-4-proposal-v1-4.md) impacts non-existent document: `v2_4_config_automation_proposal`
+  Fix: Create `v2_4_config_automation_proposal`, correct the reference, or archive this log
+- [BROKEN LINK] **log_20251215_v2_4_config_automation** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-15_v2-4-config-automation.md) impacts non-existent document: `v2_4_config_automation_proposal`
+  Fix: Create `v2_4_config_automation_proposal`, correct the reference, or archive this log
 
 ## 4. Index
 | ID | Filename | Type |
@@ -152,6 +149,4 @@ No issues found.
 | ontos_agent_instructions | [Ontos_Agent_Instructions.md](docs/reference/Ontos_Agent_Instructions.md) | kernel |
 | ontos_manual | [Ontos_Manual.md](docs/reference/Ontos_Manual.md) | kernel |
 | schema | [schema.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/atom/schema.md) | atom |
-| v2_3_ux_improvements | [2.3_ux_improvement_ideas.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/2.3_ux_improvement_ideas.md) | strategy |
-| v2_4_config_automation_proposal | [v2.4_config_automation_proposal.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2.4/v2.4_config_automation_proposal.md) | strategy |
 | v2_strategy | [v2_strategy.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2_strategy.md) | strategy |
