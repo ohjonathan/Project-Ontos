@@ -117,8 +117,8 @@ def run_consolidation() -> tuple:
     """Run consolidation in quiet, auto mode.
 
     Returns:
-        (success, output, consolidated_files) tuple where consolidated_files
-        is a list of file paths that were modified by consolidation.
+        (success, output) tuple where success is a bool and output is
+        the combined stdout/stderr from the consolidation script.
     """
     script = os.path.join(PROJECT_ROOT, '.ontos', 'scripts', 'ontos_consolidate.py')
     threshold_days = resolve_config('CONSOLIDATION_THRESHOLD_DAYS', 30)
@@ -154,6 +154,25 @@ def get_tracked_modified_files(directory: str) -> list:
     return files
 
 
+def get_untracked_files(directory: str) -> list:
+    """Get list of untracked files in a directory.
+    
+    Used to stage new files created by consolidation (e.g., archived logs).
+    """
+    if not os.path.exists(directory):
+        return []
+    
+    result = subprocess.run(
+        ['git', 'ls-files', '--others', '--exclude-standard', '--', directory],
+        capture_output=True, text=True
+    )
+    if result.returncode != 0:
+        return []
+    
+    files = [f.strip() for f in result.stdout.strip().split('\n') if f.strip()]
+    return files
+
+
 def stage_consolidated_files() -> None:
     """Stage ONLY tracked files modified by consolidation.
 
@@ -175,13 +194,19 @@ def stage_consolidated_files() -> None:
         if result.stdout.strip():
             subprocess.run(['git', 'add', decision_history], capture_output=True)
 
-    # Stage only tracked modified files in archive directory
+    # Stage tracked modified files in archive directory
     modified_archive = get_tracked_modified_files(archive_dir)
     for filepath in modified_archive:
         full_path = os.path.join(PROJECT_ROOT, filepath) if not os.path.isabs(filepath) else filepath
         subprocess.run(['git', 'add', full_path], capture_output=True)
+    
+    # Stage NEW untracked files in archive directory (created by consolidation)
+    new_archive = get_untracked_files(archive_dir)
+    for filepath in new_archive:
+        full_path = os.path.join(PROJECT_ROOT, filepath) if not os.path.isabs(filepath) else filepath
+        subprocess.run(['git', 'add', full_path], capture_output=True)
 
-    # Stage only tracked modified files in logs directory (deleted logs)
+    # Stage tracked modified files in logs directory (deleted logs)
     modified_logs = get_tracked_modified_files(logs_dir)
     for filepath in modified_logs:
         full_path = os.path.join(PROJECT_ROOT, filepath) if not os.path.isabs(filepath) else filepath

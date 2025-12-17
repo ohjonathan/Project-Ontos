@@ -319,42 +319,6 @@ def install_pre_commit_hook() -> bool:
         return False
 
 
-def install_hook(hook_name: str, install_function) -> None:
-    """Generic hook installation logic.
-
-    Args:
-        hook_name: The name of the hook (e.g., 'pre-push', 'pre-commit').
-        install_function: The function to call to perform the installation.
-    """
-    print(f"\n   Installing {hook_name} hook...")
-    if not install_function():
-        print(f"   ✓ {hook_name} hook installed successfully.")
-    else:
-        print(f"   ⚠ Warning: {hook_name} hook installation skipped or failed.")
-
-
-def install_pre_push_hook() -> bool:
-    """Installs the pre-push hook.
-
-    Returns:
-        True if installation was successful, False otherwise.
-    """
-    hook_src = os.path.join(PROJECT_ROOT, '.ontos', 'hooks', 'pre-push')
-    hook_dst = os.path.join(HOOKS_DIR, 'pre-push')
-
-    if not os.path.exists(hook_src):
-        print("   ⚠ Warning: Pre-push hook source not found")
-        return False
-    try:
-        shutil.copy2(hook_src, hook_dst)
-        st = os.stat(hook_dst)
-        os.chmod(hook_dst, st.st_mode | 0o111)
-        return True
-    except Exception as e:
-        print(f"   ⚠ Warning: Failed to install pre-push hook: {e}")
-        return False
-
-
 def main():
     parser = argparse.ArgumentParser(
         description='Initialize or reconfigure Project Ontos'
@@ -394,13 +358,13 @@ def main():
     
     # 1. Ensure .ontos directory exists
     if not os.path.exists('.ontos/scripts'):
-        print("\\n❌ Error: .ontos/scripts not found.")
+        print("\n❌ Error: .ontos/scripts not found.")
         print("   Please ensure you have cloned Project Ontos correctly.")
         print("   If installing into a new project, copy the .ontos directory first.")
         sys.exit(1)
         
     # 2. Configure mode
-    print("\\n1. Configuring Ontos mode...")
+    print("\n1. Configuring Ontos mode...")
     
     if args.non_interactive:
         mode = args.mode
@@ -419,10 +383,10 @@ def main():
     # Generate config if mode was selected
     if mode:
         generate_config(mode, source)
-        print(f"\\n   ✓ Created ontos_config.py (mode: {mode})")
+        print(f"\n   ✓ Created ontos_config.py (mode: {mode})")
     
     # 3. Set up directories
-    print("\\n2. Setting up directories...")
+    print("\n2. Setting up directories...")
     dirs = [
         'docs',
         'docs/reference',
@@ -437,7 +401,7 @@ def main():
             print(f"   {d}/ already exists")
 
     # 4. Install git hooks
-    print("\\n3. Installing git hooks...")
+    print("\n3. Installing git hooks...")
     
     if not os.path.exists(HOOKS_DIR):
         try:
@@ -445,15 +409,30 @@ def main():
         except OSError:
             pass
             
-    install_hook('pre-push', install_pre_push_hook)
-    install_hook('pre-commit', install_pre_commit_hook)
+    # Install pre-push hook
+    bash_hook_src = os.path.join(PROJECT_ROOT, '.ontos', 'hooks', 'pre-push')
+    bash_hook_dst = os.path.join(HOOKS_DIR, 'pre-push')
+    
+    if os.path.exists(bash_hook_src):
+        try:
+            shutil.copy2(bash_hook_src, bash_hook_dst)
+            st = os.stat(bash_hook_dst)
+            os.chmod(bash_hook_dst, st.st_mode | 0o111)
+            print("   ✓ Installed pre-push hook")
+        except Exception as e:
+            print(f"   ⚠ Warning: Failed to install pre-push hook: {e}")
+    else:
+        print("   ⚠ Warning: Pre-push hook source not found")
+    
+    # Install pre-commit hook (v2.5+)
+    install_pre_commit_hook()
 
     # 5. Create starter documentation
-    print("\\n4. Creating starter documentation...")
+    print("\n4. Creating starter documentation...")
     scaffold_starter_docs()
     
     # 6. Generate initial Context Map
-    print("\\n5. Generating initial Context Map...")
+    print("\n5. Generating initial Context Map...")
     try:
         subprocess.run([sys.executable, '.ontos/scripts/ontos_generate_context_map.py'], 
                        check=True, capture_output=True)
@@ -461,10 +440,10 @@ def main():
     except subprocess.CalledProcessError:
         print("   ⚠ Warning: Context map generation failed")
         
-    print("\\n══════════════════════════════════════════════════════════════")
+    print("\n══════════════════════════════════════════════════════════════")
     print("                  ✅ Ontos initialized!")
     print("══════════════════════════════════════════════════════════════")
-    print("\\nNext steps:")
+    print("\nNext steps:")
     print("  1. Review ontos_config.py")
     print("  2. Start working on your project")
     print("  3. Before pushing, run 'Archive Ontos' to log your session")
