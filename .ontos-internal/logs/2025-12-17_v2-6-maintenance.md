@@ -17,7 +17,10 @@ Post-v2.6 merge maintenance - fix untagged files and validation issues.
 
 ## 2. Changes Made
 - Added frontmatter to 4 v2.5 review files (Codex v1/v2, Gemini v1/v2)
-- Regenerated context map (61 documents, 0 issues) 
+- Graduated v2.6 proposal from proposals/ to strategy/ (approved workflow)
+- Updated v2.6 proposal status: draft → active
+- Added v2.6 approval entry to decision_history.md
+- Regenerated context map (62 documents) 
 
 ---
 ## Raw Session History
