@@ -22,6 +22,66 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.5.2] - 2025-12-17
+
+### Theme: "Dual-Mode Remediation"
+
+Fixes critical user-mode gaps discovered during v2.5.1 development.
+
+### Added
+- **Template Loading System** — `.ontos/templates/` directory with `templates.py` loader module
+  - Centralizes starter file content (decision_history.md, Common_Concepts.md)
+  - Prevents duplication between contributor and user modes
+- **Nested Directory Structure** — Organized user docs layout
+  - `docs/strategy/` — Strategic documents and decision history
+  - `docs/strategy/proposals/` — Draft proposals (status: draft)
+  - `docs/archive/logs/` — Archived session logs
+  - `docs/archive/proposals/` — Rejected/completed proposals
+  - `docs/reference/` — Reference documents (Common_Concepts.md)
+- **Backward Compatibility Path Helpers** — `ontos_lib.py` functions with deprecation warnings
+  - `get_decision_history_path()` — Falls back to flat structure
+  - `get_concepts_path()` — Falls back to flat structure
+  - `get_archive_logs_dir()` — Falls back to old archive location
+  - `get_archive_proposals_dir()` — New in v2.5.2
+  - `get_proposals_dir()` — Mode-aware proposals path
+- **Dual-Mode Testing Infrastructure** — `--mode` flag in conftest.py
+  - `pytest --mode=contributor` — Tests against `.ontos-internal/`
+  - `pytest --mode=user` — Tests against `docs/` (simulates fresh install)
+  - `mode_aware_project` fixture creates appropriate structure
+- **Explicit Directory Assertions** — User mode fixture validates all expected directories
+
+### Changed
+- `ontos_init.py` — Now creates 8 directories and copies 2 starter files via template loader
+- Tests now run in both modes in CI (149 tests × 2 modes)
+
+### Fixed
+- User mode silent failures — `ontos_init.py` now creates complete structure
+- Path helper inconsistencies — All helpers now support both nested and flat layouts
+- Missing starter files in user mode — Template loader ensures consistent content
+
+## [2.5.1] - 2025-12-17
+
+### Theme: "Proposals Architecture"
+
+Architectural foundation for `/strategy/proposals/` staging area.
+
+### Added
+- **Proposals Directory** — `/strategy/proposals/` for draft strategy documents
+- **`status: rejected`** — New status value for proposals that were considered but not approved
+- **Rejection Recording** — Rejected proposals tracked in `decision_history.md` alongside approvals
+
+### Changed
+- **Status Field Evolution** — Clarified semantic meaning:
+  - `draft` — Work in progress (potential future)
+  - `active` — Approved, current truth (present)
+  - `deprecated` — Was true, no longer (past truth)
+  - `rejected` — Considered but not approved (never became truth)
+
+### Technical
+- Proposals are Space (Truth) with `status: draft`, not Time (History)
+- Maintains clean dual ontology — proposals are pre-strategy, not a separate category
+- Non-breaking: purely additive, existing workflows unchanged
+
 ## [2.5.0] - 2025-12-17
 
 ### Theme: "The Promises"
