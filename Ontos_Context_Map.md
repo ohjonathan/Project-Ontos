@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-17 12:35:05 UTC
+Generated: 2025-12-17 13:02:33 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2025-12-17 21:35:05
+Generated on: 2025-12-17 22:02:33
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -17,36 +17,36 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **mission** (mission.md) ~377 tokens
   - Status: active
   - Depends On: None
-- **ontos_agent_instructions** (Ontos_Agent_Instructions.md) ~1,500 tokens
+- **ontos_agent_instructions** (Ontos_Agent_Instructions.md) ~1,800 tokens
   - Status: active
   - Depends On: ontos_manual
-- **ontos_manual** (Ontos_Manual.md) ~2,200 tokens
+- **ontos_manual** (Ontos_Manual.md) ~2,500 tokens
   - Status: active
   - Depends On: None
 
 ### STRATEGY
-- **codex_2_6_v1_review** (Codex_2.6_v1.md) ~766 tokens
+- **codex_2_6_v1_review** [draft] (Codex_2.6_v1.md) ~766 tokens
   - Status: draft
   - Depends On: v2_6_proposals_and_tooling
-- **codex_2_6_v2_review** (Codex_2.6_v2.md) ~995 tokens
+- **codex_2_6_v2_review** [draft] (Codex_2.6_v2.md) ~995 tokens
   - Status: draft
   - Depends On: v2_6_proposals_and_tooling
-- **codex_2_6_v3_review** (Codex_2.6_v3.md) ~600 tokens
+- **codex_2_6_v3_review** [draft] (Codex_2.6_v3.md) ~600 tokens
   - Status: draft
   - Depends On: v2_6_proposals_and_tooling
 - **decision_history** (decision_history.md) ~424 tokens
   - Status: active
   - Depends On: mission
-- **s3_archive_analysis** (s3-archive-analysis.md) ~2,600 tokens
+- **s3_archive_analysis** [draft] (s3-archive-analysis.md) ~2,600 tokens
   - Status: draft
   - Depends On: v2_strategy
-- **s3_archive_implementation_plan** (s3-archive-implementation-plan.md) ~8,200 tokens
+- **s3_archive_implementation_plan** [draft] (s3-archive-implementation-plan.md) ~8,200 tokens
   - Status: draft
   - Depends On: s3_archive_analysis
-- **v2_5_promises_implementation_plan** (v2.5_promises_implementation_plan.md) ~9,100 tokens
+- **v2_5_promises_implementation_plan** [draft] (v2.5_promises_implementation_plan.md) ~9,100 tokens
   - Status: draft
   - Depends On: v2_strategy, mission
-- **v2_6_proposals_and_tooling** (v2.6_proposals_and_tooling.md) ~11,100 tokens
+- **v2_6_proposals_and_tooling** [draft] (v2.6_proposals_and_tooling.md) ~11,100 tokens
   - Status: draft
   - Depends On: v2_strategy
 - **v2_strategy** (v2_strategy.md) ~2,600 tokens
@@ -173,6 +173,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **log_20251217_v2_5_promises_implementation_plan** (2025-12-17_v2-5-promises-implementation-plan.md) ~141 tokens
   - Status: active
   - Impacts: None
+- **log_20251217_v2_6_docs** (2025-12-17_v2-6-docs.md) ~105 tokens
+  - Status: active
+  - Impacts: ontos_manual, ontos_agent_instructions
 - **log_20251217_v2_6_implementation** (2025-12-17_v2-6-implementation.md) ~136 tokens
   - Status: active
   - Impacts: v2_6_proposals_and_tooling
@@ -186,6 +189,8 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   - Impacted: `v2_6_proposals_and_tooling`
 - **2025-12-17** [feature] **V2 6 Implementation** (`log_20251217_v2_6_implementation`)
   - Impacted: `v2_6_proposals_and_tooling`
+- **2025-12-17** [chore] **V2 6 Docs** (`log_20251217_v2_6_docs`)
+  - Impacted: `ontos_manual`, `ontos_agent_instructions`
 - **2025-12-17** [feature] **V2 5 Promises Implementation** (`log_20251217_v2_5_promises_implementation`)
   - Impacted: `v2_5_promises_implementation_plan`, `ontos_manual`, `ontos_agent_instructions`
   - Concepts: config, ux, tooling, hooks
@@ -203,9 +208,8 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **2025-12-17** [decision] **V2 5 1 Proposals Architecture** (`log_20251217_v2_5_1_proposals_architecture`)
   - Impacted: `v2_strategy`, `ontos_manual`
   - Concepts: architecture, ontology, proposals, workflow
-- **2025-12-17** [fix] **Pr 19 Review Fixes** (`log_20251217_pr_19_review_fixes`)
 
-*Showing 10 of 30 sessions*
+*Showing 10 of 31 sessions*
 
 ## 3. Dependency Audit
 No issues found.
@@ -253,6 +257,7 @@ No issues found.
 | log_20251217_v2_5_plan_finalization | [2025-12-17_v2-5-plan-finalization.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-17_v2-5-plan-finalization.md) | log |
 | log_20251217_v2_5_promises_implementation | [2025-12-17_v2-5-promises-implementation.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-17_v2-5-promises-implementation.md) | log |
 | log_20251217_v2_5_promises_implementation_plan | [2025-12-17_v2-5-promises-implementation-plan.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-17_v2-5-promises-implementation-plan.md) | log |
+| log_20251217_v2_6_docs | [2025-12-17_v2-6-docs.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-17_v2-6-docs.md) | log |
 | log_20251217_v2_6_implementation | [2025-12-17_v2-6-implementation.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-17_v2-6-implementation.md) | log |
 | log_20251217_v2_6_verification | [2025-12-17_v2-6-verification.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-17_v2-6-verification.md) | log |
 | mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |

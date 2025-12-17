@@ -231,12 +231,17 @@ def scan_docs(root_dirs: list[str]) -> dict[str, dict]:
                             'filename': file,
                             'type': doc_type,
                             'depends_on': normalize_depends_on(frontmatter.get('depends_on')),
-                'status': str(frontmatter.get('status') or 'unknown').strip() or 'unknown',
+                            'status': str(frontmatter.get('status') or 'unknown').strip() or 'unknown',
                             # NEW v2.0 fields for logs
                             'event_type': frontmatter.get('event_type'),
                             'concepts': frontmatter.get('concepts', []),
                             'impacts': frontmatter.get('impacts', []),
                             'tokens': estimate_tokens(full_content),  # NEW v2.1
+                            # NEW v2.6 fields for rejection metadata
+                            'rejected_reason': frontmatter.get('rejected_reason', ''),
+                            'rejected_date': frontmatter.get('rejected_date', ''),
+                            'rejected_by': frontmatter.get('rejected_by', ''),
+                            'revisit_when': frontmatter.get('revisit_when', ''),
                         }
     return files_data
 
@@ -270,8 +275,9 @@ def generate_tree(files_data: dict[str, dict]) -> str:
                 data = files_data[doc_id]
                 deps = ", ".join(data['depends_on']) if data['depends_on'] else "None"
                 tokens = format_token_count(data.get('tokens', 0))
+                status_indicator = get_status_indicator(data.get('status', 'unknown'))
                 
-                tree.append(f"- **{doc_id}** ({data['filename']}) {tokens}")
+                tree.append(f"- **{doc_id}**{status_indicator} ({data['filename']}) {tokens}")
                 tree.append(f"  - Status: {data['status']}")
                 if data['type'] != 'log':
                     tree.append(f"  - Depends On: {deps}")
