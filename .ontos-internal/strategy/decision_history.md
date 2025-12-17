@@ -24,7 +24,7 @@ Before archiving a log, record its key decision here. This ensures institutional
 
 | Date | Slug | Event | Decision / Outcome | Impacted | Archive Path |
 |:-----|:-----|:------|:-------------------|:---------|:-------------|
-| 2025-12-17 | v2-6-proposals | feature | APPROVED: Proposals workflow with type-status matrix, rejection metadata, stale detection. | v2_strategy, schema | `.ontos-internal/strategy/v2.6/v2.6_proposals_and_tooling.md` |
+| 2025-12-17 | v2-6-proposals-and-tooling | feature | APPROVED: Proposals workflow with type-status matrix, rejection metadata, stale detection. | v2_strategy, schema | `.ontos-internal/strategy/v2.6/v2.6_proposals_and_tooling.md` |
 | 2025-12-13 | documentation-compaction | chore | Consolidated 5 guides into single Manual. 68% markdown reduction. | schema, v2_strategy | `.ontos-internal/archive/2025-12-13_documentation-compaction.md` |
 | 2025-12-12 | blocking-hook | feature | Pre-push hook blocks until session archived. Rejected advisory-only. | v2_architecture | `.ontos-internal/archive/2025-12-12_blocking-hook-implementation.md` |
 | 2025-12-12 | configurable-workflow | feature | Added ENFORCE_ARCHIVE_BEFORE_PUSH and REQUIRE_SOURCE_IN_LOGS config options. | v2_architecture | `.ontos-internal/archive/2025-12-12_configurable-workflow.md` |

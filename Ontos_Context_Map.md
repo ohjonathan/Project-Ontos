@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-17 15:11:56 UTC
+Generated: 2025-12-17 15:15:58 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2025-12-18 00:11:56
+Generated on: 2025-12-18 00:15:58
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -34,7 +34,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **codex_2_6_v3_review** [draft] (Codex_2.6_v3.md) ~600 tokens
   - Status: draft
   - Depends On: v2_6_proposals_and_tooling
-- **decision_history** (decision_history.md) ~480 tokens
+- **decision_history** (decision_history.md) ~483 tokens
   - Status: active
   - Depends On: mission
 - **s3_archive_analysis** [draft] (s3-archive-analysis.md) ~2,600 tokens
@@ -206,9 +206,14 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **log_20251217_v2_6_verification** (2025-12-17_v2-6-verification.md) ~135 tokens
   - Status: active
   - Impacts: v2_6_proposals_and_tooling
+- **log_20251218_v2_6_1_graduation** (2025-12-18_v2-6-1-graduation.md) ~961 tokens
+  - Status: active
+  - Impacts: ontos_agent_instructions, ontos_manual
 
 
 ## 2. Recent Timeline
+- **2025-12-18** [feature] **V2 6 1 Graduation** (`log_20251218_v2_6_1_graduation`)
+  - Impacted: `ontos_agent_instructions`, `ontos_manual`
 - **2025-12-17** [feature] **V2 6 Verification** (`log_20251217_v2_6_verification`)
   - Impacted: `v2_6_proposals_and_tooling`
 - **2025-12-17** [chore] **V2 6 Maintenance** (`log_20251217_v2_6_maintenance`)
@@ -225,14 +230,11 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   - Impacted: `v2_5_promises_implementation_plan`, `ontos_manual`, `ontos_agent_instructions`
   - Concepts: config, ux, tooling, hooks
 - **2025-12-17** [refactor] **V2 5 Promises Implementation Plan** (`log_20251217_v2_5_promises_implementation_plan`)
-- **2025-12-17** [decision] **V2 5 Plan Finalization** (`log_20251217_v2_5_plan_finalization`)
-  - Impacted: `v2_5_promises_implementation_plan`
-  - Concepts: architecture, planning
 
-*Showing 10 of 35 sessions*
+*Showing 10 of 36 sessions*
 
 ## 3. Dependency Audit
-- [LINT] **v2_6_proposals_and_tooling**: Graduated proposal may not be in decision_history.md.
+No issues found.
 
 ## 4. Index
 | ID | Filename | Type |
@@ -288,6 +290,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 | log_20251217_v2_6_implementation | [2025-12-17_v2-6-implementation.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-17_v2-6-implementation.md) | log |
 | log_20251217_v2_6_maintenance | [2025-12-17_v2-6-maintenance.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-17_v2-6-maintenance.md) | log |
 | log_20251217_v2_6_verification | [2025-12-17_v2-6-verification.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-17_v2-6-verification.md) | log |
+| log_20251218_v2_6_1_graduation | [2025-12-18_v2-6-1-graduation.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-18_v2-6-1-graduation.md) | log |
 | mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |
 | ontos_agent_instructions | [Ontos_Agent_Instructions.md](docs/reference/Ontos_Agent_Instructions.md) | kernel |
 | ontos_manual | [Ontos_Manual.md](docs/reference/Ontos_Manual.md) | kernel |
