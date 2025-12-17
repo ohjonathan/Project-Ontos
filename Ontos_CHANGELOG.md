@@ -252,9 +252,11 @@ Clear, honest communication about what each mode delivers.
 - `ontos_init.py` — Now includes scaffolding and hook installation (removed `ontos_install_hooks.py`)
 - Version bump to 2.3.0
 
-## [Unreleased]
+## [2.2.0] - 2025-12-14
 
-### Added (v2.2 - Data Quality)
+### Theme: "Data Quality"
+
+### Added
 - **Common Concepts Reference** (`docs/reference/Common_Concepts.md`) — Controlled vocabulary for consistent tagging
 - **Alternatives Considered section** — New section in log template for documenting rejected options
 - **Impacts nudging** — Interactive prompt when creating logs with empty impacts
@@ -267,6 +269,7 @@ Clear, honest communication about what each mode delivers.
   - Active log count exceeds LOG_RETENTION_COUNT (v2.1 integration)
 - **Lint test suite** (`tests/test_lint.py`) — Unit tests for data quality checks
 
+---
 
 ## [2.1.0] - 2025-12-13
 
