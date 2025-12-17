@@ -148,10 +148,25 @@ Proposals live in `strategy/proposals/` until approved or rejected.
 2. Review and iterate
 3. When ready, either **approve** or **reject**
 
-### Approving a Proposal
+### Approving a Proposal (v2.6.1 - Automated)
+
+**Option A: Automatic graduation (recommended)**
+When you implement a proposal and run Archive Ontos, it detects implementation:
+```
+💡 Detected: This session may implement proposal 'v2_6_proposals'
+   Graduate to strategy/? [y/N]: y
+```
+Answering `y` automatically:
+- Moves proposal from `proposals/` to `strategy/`
+- Changes `status: draft` → `status: active`
+- Adds entry to `decision_history.md`
+
+**Option B: Manual graduation**
 1. Change `status: draft` → `status: active`
 2. **Move file** from `proposals/` to `strategy/` (graduate up)
 3. Add entry to `decision_history.md` with APPROVED outcome
+
+**Fallback:** Maintain Ontos prompts for missed graduations when ONTOS_VERSION matches a draft proposal
 
 ### Rejecting a Proposal
 1. Change `status: draft` → `status: rejected`

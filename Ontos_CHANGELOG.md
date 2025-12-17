@@ -22,6 +22,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.6.1] - 2025-12-18
+
+### Theme: "Automated Graduation"
+
+Smarter proposal graduation with detection and prompts—no new commands.
+
+### Added
+- **Archive Ontos graduation detection** — Detects implemented proposals on session end
+  - Branch name matching (e.g., `feat/v2.6-*` matches v2.6 proposal)
+  - Impact-based detection (if session impacts a proposal doc)
+  - Prompts for graduation with automatic status update and ledger entry
+- **Maintain Ontos proposal review** — Step 4 catches missed graduations
+  - Lists draft proposals with version and age
+  - Highlights proposals matching current ONTOS_VERSION
+  - Interactive graduation prompt (skip in non-TTY mode)
+- **`find_draft_proposals()` in ontos_lib** — Reusable proposal scanning
+
+### Changed
+- Updated Agent Instructions with graduation workflow documentation
+- Updated Manual with automated vs manual graduation options
+
+---
+
 ## [2.6.0] - 2025-12-17
 
 ### Theme: "Proposals Workflow & Validation"

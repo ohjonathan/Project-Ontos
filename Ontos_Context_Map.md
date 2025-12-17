@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-17 14:54:32 UTC
+Generated: 2025-12-17 15:11:56 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2025-12-17 23:54:32
+Generated on: 2025-12-18 00:11:56
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -17,10 +17,10 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **mission** (mission.md) ~377 tokens
   - Status: active
   - Depends On: None
-- **ontos_agent_instructions** (Ontos_Agent_Instructions.md) ~1,800 tokens
+- **ontos_agent_instructions** (Ontos_Agent_Instructions.md) ~1,900 tokens
   - Status: active
   - Depends On: ontos_manual
-- **ontos_manual** (Ontos_Manual.md) ~2,500 tokens
+- **ontos_manual** (Ontos_Manual.md) ~2,700 tokens
   - Status: active
   - Depends On: None
 
@@ -200,7 +200,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **log_20251217_v2_6_implementation** (2025-12-17_v2-6-implementation.md) ~136 tokens
   - Status: active
   - Impacts: v2_6_proposals_and_tooling
-- **log_20251217_v2_6_maintenance** (2025-12-17_v2-6-maintenance.md) ~131 tokens
+- **log_20251217_v2_6_maintenance** (2025-12-17_v2-6-maintenance.md) ~172 tokens
   - Status: active
   - Impacts: None
 - **log_20251217_v2_6_verification** (2025-12-17_v2-6-verification.md) ~135 tokens

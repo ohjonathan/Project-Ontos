@@ -15,6 +15,8 @@ from ontos_lib import (
     find_last_session_date,
     load_common_concepts,
     resolve_config,
+    get_proposals_dir,
+    get_decision_history_path,
 )
 
 # v2.4: Use resolve_config for mode-aware settings
@@ -25,6 +27,227 @@ try:
     from ontos_config import DEFAULT_SOURCE
 except ImportError:
     DEFAULT_SOURCE = None
+
+# =============================================================================
+# PROPOSAL GRADUATION DETECTION (v2.6.1)
+# =============================================================================
+
+
+def detect_implemented_proposal(branch: str, impacts: list) -> Optional[dict]:
+    """Detect if current session implements a proposal.
+
+    Detection heuristics:
+    1. Branch name contains proposal slug (e.g., feat/v2.6-* matches v2.6)
+    2. Session impacts a proposal document
+    3. ONTOS_VERSION matches proposal version (for Ontos-internal)
+
+    Args:
+        branch: Current git branch name
+        impacts: List of impacted document IDs
+
+    Returns:
+        Dict with proposal info if detected, None otherwise.
+    """
+    proposals_dir = get_proposals_dir()
+    if not proposals_dir or not os.path.exists(proposals_dir):
+        return None
+
+    # Extract version-like patterns from branch (e.g., v2.6, v2-6)
+    branch_lower = branch.lower()
+    version_patterns = re.findall(r'v?(\d+)[._-](\d+)', branch_lower)
+
+    # Scan proposals directory for draft proposals
+    draft_proposals = []
+    for root, dirs, files in os.walk(proposals_dir):
+        for file in files:
+            if not file.endswith('.md'):
+                continue
+            filepath = os.path.join(root, file)
+            try:
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    content = f.read(1000)  # Just need frontmatter
+
+                # Check if it's a draft
+                if 'status: draft' not in content:
+                    continue
+
+                # Extract ID
+                id_match = re.search(r'^id:\s*(.+)$', content, re.MULTILINE)
+                if not id_match:
+                    continue
+
+                doc_id = id_match.group(1).strip()
+
+                # Check for version match in filepath or ID
+                for major, minor in version_patterns:
+                    version_str = f'{major}.{minor}'
+                    version_str_alt = f'{major}_{minor}'
+                    version_str_alt2 = f'{major}-{minor}'
+
+                    if (version_str in filepath or version_str_alt in filepath or
+                        version_str_alt2 in filepath or version_str in doc_id or
+                        version_str_alt in doc_id):
+                        draft_proposals.append({
+                            'id': doc_id,
+                            'filepath': filepath,
+                            'version': version_str,
+                            'match_type': 'branch_version'
+                        })
+                        break
+
+                # Check if impacted
+                if doc_id in impacts:
+                    draft_proposals.append({
+                        'id': doc_id,
+                        'filepath': filepath,
+                        'version': None,
+                        'match_type': 'impacts'
+                    })
+
+            except (IOError, OSError):
+                continue
+
+    # Return first match (prefer branch_version over impacts)
+    for prop in draft_proposals:
+        if prop['match_type'] == 'branch_version':
+            return prop
+
+    return draft_proposals[0] if draft_proposals else None
+
+
+def graduate_proposal(proposal: dict, quiet: bool = False) -> bool:
+    """Graduate a proposal from proposals/ to strategy/.
+
+    Args:
+        proposal: Dict with 'id', 'filepath', 'version'
+        quiet: Suppress output
+
+    Returns:
+        True if graduation succeeded.
+    """
+    import shutil
+
+    filepath = proposal['filepath']
+    proposals_dir = get_proposals_dir()
+
+    # Determine destination
+    # If proposal is in proposals/v2.6/, move to strategy/v2.6/
+    rel_path = os.path.relpath(filepath, proposals_dir)
+
+    # Get strategy dir (sibling of proposals)
+    strategy_dir = os.path.dirname(proposals_dir)  # Parent of proposals
+    dest_path = os.path.join(strategy_dir, rel_path)
+    dest_dir = os.path.dirname(dest_path)
+
+    try:
+        # Create destination directory if needed
+        os.makedirs(dest_dir, exist_ok=True)
+
+        # Read and update frontmatter
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Update status: draft -> active
+        content = re.sub(
+            r'^(status:\s*)draft\s*$',
+            r'\1active',
+            content,
+            flags=re.MULTILINE
+        )
+
+        # Write to new location
+        with open(dest_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+
+        # Remove original
+        os.remove(filepath)
+
+        # Try to remove empty parent directories
+        try:
+            parent = os.path.dirname(filepath)
+            if os.path.isdir(parent) and not os.listdir(parent):
+                os.rmdir(parent)
+        except OSError:
+            pass
+
+        # Add entry to decision_history.md
+        add_graduation_to_ledger(proposal, dest_path)
+
+        if not quiet:
+            print(f"   ✅ Graduated: {os.path.basename(filepath)}")
+            print(f"      From: proposals/{rel_path}")
+            print(f"      To: strategy/{rel_path}")
+            print(f"      Status: draft → active")
+
+        return True
+
+    except (IOError, OSError, shutil.Error) as e:
+        if not quiet:
+            print(f"   ❌ Graduation failed: {e}")
+        return False
+
+
+def add_graduation_to_ledger(proposal: dict, new_path: str) -> None:
+    """Add APPROVED entry to decision_history.md."""
+    history_path = get_decision_history_path()
+    if not history_path or not os.path.exists(history_path):
+        return
+
+    try:
+        with open(history_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Find the ledger table
+        # Format: | Date | Slug | Event | Decision / Outcome | Impacted | Archive Path |
+        today = datetime.datetime.now().strftime('%Y-%m-%d')
+        slug = proposal['id'].replace('_', '-')
+        version = proposal.get('version', '')
+
+        new_entry = (
+            f"| {today} | {slug} | feature | "
+            f"APPROVED: {version or 'Proposal'} implemented. | "
+            f"v2_strategy, schema | `{new_path}` |\n"
+        )
+
+        # Insert after the header row
+        lines = content.split('\n')
+        for i, line in enumerate(lines):
+            if line.startswith('|:--') or line.startswith('| Date'):
+                continue
+            if line.startswith('|') and '|' in line[1:]:
+                # Found first data row, insert before it
+                lines.insert(i, new_entry.strip())
+                break
+
+        with open(history_path, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(lines))
+
+    except (IOError, OSError):
+        pass  # Non-fatal
+
+
+def prompt_graduation(proposal: dict, quiet: bool = False) -> bool:
+    """Prompt user to graduate a proposal.
+
+    Returns:
+        True if user chose to graduate and it succeeded.
+    """
+    if quiet:
+        return False
+
+    print(f"\n💡 Detected: This session may implement proposal '{proposal['id']}'")
+    if proposal.get('version'):
+        print(f"   (Branch matches version {proposal['version']})")
+
+    try:
+        response = input("   Graduate to strategy/? [y/N]: ").strip().lower()
+        if response in ('y', 'yes'):
+            return graduate_proposal(proposal, quiet)
+    except (EOFError, KeyboardInterrupt):
+        pass
+
+    return False
+
 
 # =============================================================================
 # SESSION APPENDING (v2.4)
@@ -1378,6 +1601,13 @@ Slug format:
     )
     if not result:
         sys.exit(1)
+
+    # v2.6.1: Check for proposal graduation
+    branch = get_current_branch()
+    if branch:
+        proposal = detect_implemented_proposal(branch, impacts)
+        if proposal:
+            prompt_graduation(proposal, args.quiet)
 
     # Handle changelog integration
     if args.changelog or args.changelog_category or args.changelog_message:

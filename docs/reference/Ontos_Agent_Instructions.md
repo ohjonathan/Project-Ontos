@@ -57,10 +57,11 @@ Event types: `feature`, `fix`, `refactor`, `exploration`, `chore`, `decision`
 
 ### "Maintain Ontos" (Weekly)
 1. `python3 .ontos/scripts/ontos_maintain.py`
-2. This runs three steps:
+2. This runs four steps:
    - Migrate untagged files
    - Regenerate context map
    - Consolidate old logs (if `AUTO_CONSOLIDATE=True`)
+   - **Review proposals (v2.6.1)** — prompts to graduate implemented proposals
 3. Fix any errors reported
 4. Commit context map if changed
 
@@ -130,6 +131,26 @@ When user wants to propose something:
 1. Create in `strategy/proposals/` with `status: draft`
 2. Link to relevant strategy docs via `depends_on`
 3. Include clear problem statement and proposed solution
+
+### Graduating Proposals (v2.6.1)
+When a proposal is implemented:
+
+**Automatic detection:** Archive Ontos detects implementation based on:
+- Branch name matches proposal version (e.g., `feat/v2.6-*`)
+- Session impacts a proposal document
+
+**Graduation prompt:**
+```
+💡 Detected: This session may implement proposal 'v2_6_proposals'
+   (Branch matches version 2.6)
+   Graduate to strategy/? [y/N]: y
+
+   ✅ Graduated: v2_6_proposals_and_tooling.md
+      proposals/v2.6/ → strategy/v2.6/
+      Status: draft → active
+```
+
+**Maintain Ontos fallback:** If graduation was missed, Maintain Ontos prompts for any draft proposals where ONTOS_VERSION matches.
 
 **Example:**
 ```
