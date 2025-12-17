@@ -4,7 +4,7 @@ type: log
 status: active
 event_type: feature
 concepts: []
-impacts: [v2_5_2_dual_mode_remediation]
+impacts: []
 ---
 
 # Session Log: V2 5 2 Dual Mode Implementation

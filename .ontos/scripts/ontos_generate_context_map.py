@@ -29,6 +29,17 @@ from ontos_lib import (
     get_logs_dir,
     get_log_count,
     get_logs_older_than,
+    get_git_last_modified,
+    load_decision_history_entries,
+    get_decision_history_path,
+)
+
+from ontos_config_defaults import (
+    VALID_STATUS,
+    VALID_TYPE_STATUS,
+    PROPOSAL_STALE_DAYS,
+    REJECTED_REASON_MIN_LENGTH,
+    PROJECT_ROOT,
 )
 
 OUTPUT_FILE = CONTEXT_MAP_FILE
@@ -434,12 +445,17 @@ def validate_dependencies(files_data: dict[str, dict]) -> list[str]:
             doc_type = files_data[doc_id]['type']
             filename = files_data[doc_id]['filename']
             filepath = files_data[doc_id]['filepath']
+            status = files_data[doc_id].get('status', 'unknown')
 
             if doc_type in ALLOWED_ORPHAN_TYPES:
                 continue
             if any(pattern in filename for pattern in SKIP_PATTERNS):
                 continue
             if '/logs/' in filepath or '\\logs\\' in filepath:
+                continue
+            
+            # v2.6: Skip draft proposals - they're naturally orphans until approved
+            if status == 'draft' and 'proposals/' in filepath:
                 continue
 
             issues.append(
@@ -628,12 +644,130 @@ def validate_impacts(files_data: dict[str, dict]) -> list[str]:
     return issues
 
 
-def generate_context_map(target_dirs: list[str], quiet: bool = False, strict: bool = False, lint: bool = False) -> int:
+def validate_v26_status(files_data: dict[str, dict]) -> tuple[list[str], list[str]]:
+    """Validate v2.6 status rules: type-status matrix, proposals, rejections.
+    
+    Returns:
+        Tuple of (errors, warnings) - errors are blocking, warnings are advisory
+    """
+    from datetime import datetime
+    
+    errors = []  # Hard errors - block context map generation
+    warnings = []  # Advisory warnings
+    
+    # Load decision history for ledger validation
+    ledger = load_decision_history_entries()
+    
+    for doc_id, data in files_data.items():
+        filepath = data['filepath']
+        doc_type = normalize_type(data.get('type'))
+        status = data.get('status', 'unknown')
+        
+        # 1. Basic status validation (unknown status = warning)
+        if status not in VALID_STATUS:
+            warnings.append(
+                f"- [LINT] **{doc_id}**: Invalid status '{status}'. "
+                f"Use one of: {', '.join(sorted(VALID_STATUS))}"
+            )
+        
+        # 2. Type-status matrix validation (HARD ERROR)
+        if doc_type in VALID_TYPE_STATUS:
+            valid_statuses = VALID_TYPE_STATUS[doc_type]
+            if status not in valid_statuses and status in VALID_STATUS:
+                errors.append(
+                    f"- [ERROR] **{doc_id}**: Invalid status '{status}' for type '{doc_type}' "
+                    f"(valid: {', '.join(sorted(valid_statuses))}). "
+                    f"This violates the type-status matrix."
+                )
+        
+        # 3. Stale proposal detection (with mtime fallback)
+        if status == 'draft' and 'proposals/' in filepath:
+            last_modified = get_git_last_modified(filepath)
+            if last_modified is None:
+                try:
+                    mtime = os.path.getmtime(filepath)
+                    last_modified = datetime.fromtimestamp(mtime)
+                except OSError:
+                    last_modified = None
+            
+            if last_modified:
+                age_days = (datetime.now() - last_modified).days
+                if age_days > PROPOSAL_STALE_DAYS:
+                    warnings.append(
+                        f"- [LINT] **{doc_id}**: Draft proposal is {age_days} days old. "
+                        f"Approve (move to strategy/) or reject (move to archive/proposals/)."
+                    )
+        
+        # 4. Rejection metadata and location enforcement
+        if status == 'rejected':
+            rejected_reason = data.get('rejected_reason', '')
+            
+            if not rejected_reason:
+                warnings.append(
+                    f"- [LINT] **{doc_id}**: status: rejected requires 'rejected_reason' field."
+                )
+            elif len(rejected_reason) < REJECTED_REASON_MIN_LENGTH:
+                warnings.append(
+                    f"- [LINT] **{doc_id}**: rejected_reason too short ({len(rejected_reason)} chars, min {REJECTED_REASON_MIN_LENGTH})."
+                )
+            
+            if not data.get('rejected_date'):
+                warnings.append(
+                    f"- [LINT] **{doc_id}**: Consider adding 'rejected_date' for temporal context."
+                )
+            
+            if 'archive/proposals/' not in filepath:
+                warnings.append(
+                    f"- [LINT] **{doc_id}**: Rejected proposals should be in archive/proposals/."
+                )
+            
+            # Ledger validation
+            relative_path = os.path.relpath(filepath, PROJECT_ROOT)
+            path_matched = relative_path in ledger['archive_paths']
+            slug_matched = doc_id.replace('_', '-') in ledger['slugs']
+            
+            if not path_matched and not slug_matched:
+                warnings.append(
+                    f"- [LINT] **{doc_id}**: Rejected proposal not in decision_history.md."
+                )
+        
+        # 5. Approval path enforcement
+        if status == 'active' and 'proposals/' in filepath:
+            warnings.append(
+                f"- [LINT] **{doc_id}**: Active document in proposals/. Graduate to strategy/."
+            )
+        
+        # 6. Approval ledger symmetry (soft warning)
+        if status == 'active' and 'strategy/' in filepath and 'proposals/' not in filepath:
+            if 'proposal' in doc_id.lower():
+                slug_matched = any(
+                    'APPROVED' in ledger['outcomes'].get(slug, '')
+                    for slug in ledger['slugs']
+                    if doc_id.replace('_', '-') in slug or slug in doc_id.replace('_', '-')
+                )
+                if not slug_matched:
+                    warnings.append(
+                        f"- [LINT] **{doc_id}**: Graduated proposal may not be in decision_history.md."
+                    )
+    
+    return errors, warnings
+
+
+def get_status_indicator(status: str) -> str:
+    """Return status indicator for non-active documents."""
+    if status in ('draft', 'rejected', 'deprecated'):
+        return f' [{status}]'
+    return ''
+
+
+def generate_context_map(target_dirs: list[str], quiet: bool = False, strict: bool = False, 
+                         lint: bool = False, include_rejected: bool = False) -> int:
     """Main function to generate the Ontos_Context_Map.md file.
 
     Args:
         target_dirs: List of directories to scan.
         quiet: Suppress output if True.
+        include_rejected: Include rejected proposals in context map.
 
     Returns:
         Number of issues found.
@@ -642,6 +776,13 @@ def generate_context_map(target_dirs: list[str], quiet: bool = False, strict: bo
     if not quiet:
         print(f"Scanning {dirs_str}...")
     files_data = scan_docs(target_dirs)
+    
+    # v2.6: Filter out rejected documents unless --include-rejected
+    if not include_rejected:
+        rejected_count = sum(1 for d in files_data.values() if d.get('status') == 'rejected')
+        files_data = {k: v for k, v in files_data.items() if v.get('status') != 'rejected'}
+        if rejected_count > 0 and not quiet:
+            print(f"  (Excluding {rejected_count} rejected docs. Use --include-rejected to show.)")
 
     if not quiet:
         print("Generating tree...")
@@ -662,6 +803,23 @@ def generate_context_map(target_dirs: list[str], quiet: bool = False, strict: bo
         print("Validating impacts references...")
     impact_issues = validate_impacts(files_data)
     issues.extend(impact_issues)
+
+    # v2.6: Validate status rules (type-status matrix, proposals, rejections)
+    if not quiet:
+        print("Validating status rules...")
+    v26_errors, v26_warnings = validate_v26_status(files_data)
+    
+    # Hard errors block context map generation
+    if v26_errors:
+        if not quiet:
+            print(f"\n## ERRORS (blocking)\n")
+            for e in v26_errors:
+                print(e)
+            print("\n❌ Context map generation failed due to errors above.")
+        sys.exit(1)
+    
+    # Warnings are added to lint output
+    issues.extend(v26_warnings)
 
     # Lint mode
     lint_warnings = []
@@ -837,6 +995,8 @@ Examples:
     parser.add_argument('--quiet', '-q', action='store_true', help='Suppress non-error output')
     parser.add_argument('--watch', '-w', action='store_true', help='Watch for file changes and regenerate')
     parser.add_argument('--lint', action='store_true', help='Show warnings for data quality issues (empty impacts, unknown concepts)')
+    parser.add_argument('--include-rejected', action='store_true', 
+                        help='Include rejected proposals in context map (default: excluded)')
     args = parser.parse_args()
 
     # Default to docs directory if none specified
@@ -852,7 +1012,8 @@ Examples:
         # Note: Watch mode doesn't support strict flag in this implementation yet
         watch_mode(target_dirs, args.quiet)
     else:
-        issue_count = generate_context_map(target_dirs, args.quiet, args.strict, args.lint)
+        issue_count = generate_context_map(target_dirs, args.quiet, args.strict, args.lint, 
+                                           getattr(args, 'include_rejected', False))
         
         # v2.5: Check consolidation status for prompted/advisory modes
         if not args.quiet:

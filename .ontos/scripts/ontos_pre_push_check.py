@@ -254,6 +254,66 @@ def print_advisory_message(lines: int):
     print()
 
 
+def check_version_reminder() -> list:
+    """Remind contributors to update changelog when shipping new versions.
+    
+    v2.6 improvements:
+    - Uses origin tracking ref to catch multi-commit pushes (Codex)
+    - Includes Dual_Mode_Matrix.md reminder (Gemini)
+    
+    Returns:
+        List of reminder strings to print.
+    """
+    from ontos_config_defaults import is_ontos_repo
+    
+    if not is_ontos_repo():
+        return []  # Skip for users
+    
+    # Get current branch
+    branch_result = subprocess.run(
+        ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
+        capture_output=True, text=True
+    )
+    if branch_result.returncode != 0:
+        return []
+    
+    branch = branch_result.stdout.strip()
+    
+    # Get files changed since upstream (catches multi-commit pushes)
+    # Falls back to HEAD~1 if no upstream exists
+    result = subprocess.run(
+        ['git', 'diff', '--name-only', f'origin/{branch}..HEAD'],
+        capture_output=True, text=True
+    )
+    if result.returncode != 0:
+        # Fallback for new branches without upstream
+        result = subprocess.run(
+            ['git', 'diff', '--name-only', 'HEAD~1..HEAD'],
+            capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            return []
+    
+    changed_files = [f for f in result.stdout.strip().split('\n') if f]
+    scripts_changed = any(f.startswith('.ontos/scripts/') for f in changed_files)
+    matrix_changed = '.ontos-internal/reference/Dual_Mode_Matrix.md' in changed_files
+    
+    reminders = []
+    
+    if scripts_changed:
+        reminder = (
+            "⚠️  CONTRIBUTOR REMINDER: .ontos/scripts/ modified\n"
+            "   If shipping a new version, remember to update:\n"
+            "   1. ONTOS_VERSION in ontos_config_defaults.py\n"
+            "   2. Ontos_CHANGELOG.md with release notes\n"
+        )
+        # Also remind about Dual_Mode_Matrix if script behavior changed
+        if not matrix_changed:
+            reminder += "   3. reference/Dual_Mode_Matrix.md if behavior changed\n"
+        reminders.append(reminder)
+    
+    return reminders
+
 def main() -> int:
     """Main hook logic.
     
@@ -267,6 +327,11 @@ def main() -> int:
     log_count = count_active_logs()
     if log_count > LOG_RETENTION_COUNT:
         print(f"⚠️  {log_count} logs exceed threshold ({LOG_RETENTION_COUNT}). Run 'Maintain Ontos' to consolidate.")
+    
+    # v2.6: Version release reminder for contributors
+    version_reminders = check_version_reminder()
+    for reminder in version_reminders:
+        print(reminder)
     
     # Check if marker exists (session archived)
     if os.path.exists(MARKER_FILE):

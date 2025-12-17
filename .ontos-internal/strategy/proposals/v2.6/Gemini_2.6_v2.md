@@ -1,10 +1,10 @@
 ---
 id: gemini_2_6_v2_review
-type: review
+type: atom
 status: complete
+depends_on: [v2_6_proposals_and_tooling]
 author: Gemini Architect
 date: 2025-12-17
-reviews: v2_6_proposals_and_tooling
 concepts: [review, architecture, proposals, validation, v2.6]
 ---
 

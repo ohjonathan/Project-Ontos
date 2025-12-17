@@ -4,7 +4,7 @@ type: log
 status: active
 event_type: fix
 concepts: []
-impacts: [v2_5_2_dual_mode_remediation]
+impacts: []
 ---
 
 # Session Log: Ci Orphan Fix

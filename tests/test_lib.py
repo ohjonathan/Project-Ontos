@@ -72,7 +72,7 @@ def test_load_common_concepts_missing():
 def test_get_git_last_modified_tracked():
     with patch("subprocess.run") as mock_run:
         mock_run.return_value.returncode = 0
-        mock_run.return_value.stdout = "2023-01-01 12:00:00"
+        mock_run.return_value.stdout = "1672574400"  # Unix timestamp for 2023-01-01 12:00:00
         dt = get_git_last_modified("file.md")
         assert dt.year == 2023
 
