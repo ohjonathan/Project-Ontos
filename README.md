@@ -145,7 +145,7 @@ Your `ontos_config.py` customizations are never overwritten.
 ## Use Cases
 
 ### Multi-AI Workflows
-Switch between Claude Code, Cursor, ChatGPT, and Gemini without re-explaining your project. Say "Activate Ontos" and they all read from the same map.
+Switch between Claude Code, Cursor, ChatGPT, and Gemini CLI without re-explaining your project. Say "Activate Ontos" and they all read from the same map.
 
 ### Prototype → Production
 Built a demo in Streamlit? When you rewrite in FastAPI or Next.js, your atoms are disposable but your strategy survives. Three weeks of product decisions don't vanish with the old code.
