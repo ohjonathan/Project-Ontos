@@ -561,14 +561,24 @@ def load_decision_history_entries() -> dict:
     Parses the decision history ledger to enable validation that 
     rejected/approved proposals are properly recorded.
     
+    v2.6.1: Improved parsing for deterministic matching by slug and archive path.
+    
     Returns:
         Dict with:
-          - 'archive_paths': set of archive paths from the ledger
-          - 'slugs': set of slugs (for fallback matching)
-          - 'outcomes': dict mapping slug -> outcome (APPROVED/REJECTED)
+          - 'archive_paths': dict mapping archive_path -> slug
+          - 'slugs': set of all slugs in ledger
+          - 'rejected_slugs': set of slugs with REJECTED in outcome
+          - 'approved_slugs': set of slugs with APPROVED in outcome
+          - 'outcomes': dict mapping slug -> full outcome text
     """
     history_path = get_decision_history_path()
-    entries = {'archive_paths': set(), 'slugs': set(), 'outcomes': {}}
+    entries = {
+        'archive_paths': {},  # Now a dict: path -> slug
+        'slugs': set(),
+        'rejected_slugs': set(),
+        'approved_slugs': set(),
+        'outcomes': {}
+    }
     
     if os.path.exists(history_path):
         with open(history_path, 'r', encoding='utf-8') as f:
@@ -584,7 +594,15 @@ def load_decision_history_entries() -> dict:
                         if slug:
                             entries['slugs'].add(slug)
                             entries['outcomes'][slug] = outcome
+                            
+                            # Deterministic outcome classification
+                            outcome_upper = outcome.upper()
+                            if 'REJECTED' in outcome_upper:
+                                entries['rejected_slugs'].add(slug)
+                            if 'APPROVED' in outcome_upper:
+                                entries['approved_slugs'].add(slug)
+                        
                         if archive_path:
-                            entries['archive_paths'].add(archive_path)
+                            entries['archive_paths'][archive_path] = slug
     return entries
 

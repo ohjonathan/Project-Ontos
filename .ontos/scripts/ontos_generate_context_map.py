@@ -727,10 +727,11 @@ def validate_v26_status(files_data: dict[str, dict]) -> tuple[list[str], list[st
                     f"- [LINT] **{doc_id}**: Rejected proposals should be in archive/proposals/."
                 )
             
-            # Ledger validation
+            # Ledger validation - deterministic matching by path or slug
             relative_path = os.path.relpath(filepath, PROJECT_ROOT)
             path_matched = relative_path in ledger['archive_paths']
-            slug_matched = doc_id.replace('_', '-') in ledger['slugs']
+            doc_slug = doc_id.replace('_', '-')
+            slug_matched = doc_slug in ledger['rejected_slugs']
             
             if not path_matched and not slug_matched:
                 warnings.append(
@@ -743,14 +744,11 @@ def validate_v26_status(files_data: dict[str, dict]) -> tuple[list[str], list[st
                 f"- [LINT] **{doc_id}**: Active document in proposals/. Graduate to strategy/."
             )
         
-        # 6. Approval ledger symmetry (soft warning)
+        # 6. Approval ledger symmetry (soft warning) - deterministic matching
         if status == 'active' and 'strategy/' in filepath and 'proposals/' not in filepath:
             if 'proposal' in doc_id.lower():
-                slug_matched = any(
-                    'APPROVED' in ledger['outcomes'].get(slug, '')
-                    for slug in ledger['slugs']
-                    if doc_id.replace('_', '-') in slug or slug in doc_id.replace('_', '-')
-                )
+                doc_slug = doc_id.replace('_', '-')
+                slug_matched = doc_slug in ledger['approved_slugs']
                 if not slug_matched:
                     warnings.append(
                         f"- [LINT] **{doc_id}**: Graduated proposal may not be in decision_history.md."
@@ -767,13 +765,15 @@ def get_status_indicator(status: str) -> str:
 
 
 def generate_context_map(target_dirs: list[str], quiet: bool = False, strict: bool = False, 
-                         lint: bool = False, include_rejected: bool = False) -> int:
+                         lint: bool = False, include_rejected: bool = False,
+                         include_archived: bool = False) -> int:
     """Main function to generate the Ontos_Context_Map.md file.
 
     Args:
         target_dirs: List of directories to scan.
         quiet: Suppress output if True.
         include_rejected: Include rejected proposals in context map.
+        include_archived: Include archived logs in context map.
 
     Returns:
         Number of issues found.
@@ -789,6 +789,15 @@ def generate_context_map(target_dirs: list[str], quiet: bool = False, strict: bo
         files_data = {k: v for k, v in files_data.items() if v.get('status') != 'rejected'}
         if rejected_count > 0 and not quiet:
             print(f"  (Excluding {rejected_count} rejected docs. Use --include-rejected to show.)")
+    
+    # v2.6.1: Filter out archived logs unless --include-archived
+    if not include_archived:
+        archived_count = sum(1 for v in files_data.values() 
+                           if v.get('status') == 'archived' or 'archive/' in v.get('filepath', ''))
+        files_data = {k: v for k, v in files_data.items() 
+                     if v.get('status') != 'archived' and 'archive/' not in v.get('filepath', '')}
+        if archived_count > 0 and not quiet:
+            print(f"  (Excluding {archived_count} archived docs. Use --include-archived to show.)")
 
     if not quiet:
         print("Generating tree...")
@@ -1003,6 +1012,8 @@ Examples:
     parser.add_argument('--lint', action='store_true', help='Show warnings for data quality issues (empty impacts, unknown concepts)')
     parser.add_argument('--include-rejected', action='store_true', 
                         help='Include rejected proposals in context map (default: excluded)')
+    parser.add_argument('--include-archived', action='store_true',
+                        help='Include archived logs in context map (default: excluded)')
     args = parser.parse_args()
 
     # Default to docs directory if none specified
@@ -1019,7 +1030,8 @@ Examples:
         watch_mode(target_dirs, args.quiet)
     else:
         issue_count = generate_context_map(target_dirs, args.quiet, args.strict, args.lint, 
-                                           getattr(args, 'include_rejected', False))
+                                           getattr(args, 'include_rejected', False),
+                                           getattr(args, 'include_archived', False))
         
         # v2.5: Check consolidation status for prompted/advisory modes
         if not args.quiet:
