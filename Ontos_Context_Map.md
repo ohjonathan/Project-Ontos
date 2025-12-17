@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-17 00:35:40 UTC
+Generated: 2025-12-17 01:16:04 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2025-12-17 09:35:40
+Generated on: 2025-12-17 10:16:04
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -28,7 +28,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **decision_history** (decision_history.md) ~424 tokens
   - Status: active
   - Depends On: mission
-- **v2_5_promises_implementation_plan** (v2.5_promises_implementation_plan.md) ~6,200 tokens
+- **v2_5_promises_implementation_plan** (v2.5_promises_implementation_plan.md) ~9,100 tokens
   - Status: draft
   - Depends On: v2_strategy, mission
 - **v2_strategy** (v2_strategy.md) ~2,600 tokens
@@ -96,6 +96,14 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   - Status: active
   - Impacts: v2_5_promises_implementation_plan
 
+### UNKNOWN
+- **v2_5_architectural_review_claude** (V1_Claude_on_v2.5.md) ~4,600 tokens
+  - Status: complete
+  - Depends On: None
+- **v2_5_architectural_review_claude_v2** (V2_Claude_on_v2.5.md) ~1,900 tokens
+  - Status: complete
+  - Depends On: None
+
 
 ## 2. Recent Timeline
 - **2025-12-17** [decision] **V2 5 Architectural Review** (`log_20251217_v2_5_architectural_review`)
@@ -129,7 +137,10 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 *Showing 10 of 17 sessions*
 
 ## 3. Dependency Audit
-No issues found.
+- [ORPHAN] **v2_5_architectural_review_claude_v2** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2.5/V2_Claude_on_v2.5.md) has no dependents
+  Fix: Add `v2_5_architectural_review_claude_v2` to another document's depends_on, or delete if unused
+- [ORPHAN] **v2_5_architectural_review_claude** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2.5/V1_Claude_on_v2.5.md) has no dependents
+  Fix: Add `v2_5_architectural_review_claude` to another document's depends_on, or delete if unused
 
 ## 4. Index
 | ID | Filename | Type |
@@ -157,5 +168,7 @@ No issues found.
 | ontos_agent_instructions | [Ontos_Agent_Instructions.md](docs/reference/Ontos_Agent_Instructions.md) | kernel |
 | ontos_manual | [Ontos_Manual.md](docs/reference/Ontos_Manual.md) | kernel |
 | schema | [schema.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/atom/schema.md) | atom |
+| v2_5_architectural_review_claude | [V1_Claude_on_v2.5.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2.5/V1_Claude_on_v2.5.md) | review |
+| v2_5_architectural_review_claude_v2 | [V2_Claude_on_v2.5.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2.5/V2_Claude_on_v2.5.md) | review |
 | v2_5_promises_implementation_plan | [v2.5_promises_implementation_plan.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2.5/v2.5_promises_implementation_plan.md) | strategy |
 | v2_strategy | [v2_strategy.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2_strategy.md) | strategy |
