@@ -22,6 +22,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.6.0] - 2025-12-17
+
+### Theme: "Proposals Workflow & Validation"
+
+Comprehensive proposal lifecycle with multi-model reviewed validation rules.
+
+### Added
+- **Status Validation System** — `VALID_STATUS` enum and type-status matrix
+  - `status: rejected` for proposals that weren't approved
+  - `status: complete` for finished reviews
+  - Hard errors for invalid type-status combinations (e.g., `type: log, status: rejected`)
+- **Rejection Metadata Enforcement** — Required fields for rejected proposals
+  - `rejected_reason` (min 10 chars) mandatory for rejected docs
+  - `rejected_date` recommended for temporal context
+  - Location check: rejected proposals must be in `archive/proposals/`
+- **Stale Proposal Detection** — 60-day threshold with mtime fallback
+  - Warns on drafts older than `PROPOSAL_STALE_DAYS`
+  - Uses git commit date or filesystem mtime
+- **Approval Path Enforcement** — Graduate workflow validation
+  - Warns if `status: active` doc is still in `proposals/`
+  - Soft warning for graduated proposals not in decision history
+- **Decision History Ledger Validation** — Deterministic matching
+  - `rejected_slugs` and `approved_slugs` sets for reliable matching
+  - Archive path matching with slug fallback
+- **Inclusion Flags** — Historical recall options
+  - `--include-rejected` shows rejected proposals in context map
+  - `--include-archived` shows archived logs in context map
+- **Status Indicator** — Tree display shows `[draft]`, `[rejected]`, `[deprecated]`
+- **Version Release Reminder** — Contributor-mode changelog prompt
+  - Multi-commit detection using `origin/branch..HEAD`
+  - `Dual_Mode_Matrix.md` reminder when scripts modified
+- **Comprehensive Tests** — 30 new v2.6 tests in `test_v26_validation.py`
+
+### Changed
+- `load_decision_history_entries()` returns deterministic structure with separate slug sets
+- `schema.md` updated with new statuses and rejection metadata fields
+- `event_type` enum in schema fixed to match config
+
+### Fixed
+- Orphan check now skips draft proposals (they're expected to be orphans until approved)
+
 ## [2.5.2] - 2025-12-17
 
 ### Theme: "Dual-Mode Remediation"
