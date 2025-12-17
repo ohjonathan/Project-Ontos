@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-17 00:29:12 UTC
+Generated: 2025-12-17 00:35:40 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2025-12-17 09:29:12
+Generated on: 2025-12-17 09:35:40
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -92,9 +92,15 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **log_20251216_v2_5_promises_implementation_plan** (2025-12-16_v2-5-promises-implementation-plan.md) ~621 tokens
   - Status: active
   - Impacts: v2_strategy
+- **log_20251217_v2_5_architectural_review** (2025-12-17_v2-5-architectural-review.md) ~533 tokens
+  - Status: active
+  - Impacts: v2_5_promises_implementation_plan
 
 
 ## 2. Recent Timeline
+- **2025-12-17** [decision] **V2 5 Architectural Review** (`log_20251217_v2_5_architectural_review`)
+  - Impacted: `v2_5_promises_implementation_plan`
+  - Concepts: architecture, review, ux
 - **2025-12-16** [decision] **V2 5 Promises Implementation Plan** (`log_20251216_v2_5_promises_implementation_plan`)
   - Impacted: `v2_strategy`
   - Concepts: ux, config, consolidation, workflow
@@ -119,11 +125,8 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **2025-12-13** [exploration] **V22 Ux Planning** (`log_20251213_v22_ux_planning`)
   - Impacted: `v2_strategy`
   - Concepts: ux, friction, activation, summaries, workflow
-- **2025-12-13** [feature] **Smart Memory Implementation** (`log_20251213_smart_memory_implementation`)
-  - Impacted: `decision_history`, `v2_strategy`
-  - Concepts: memory, consolidation
 
-*Showing 10 of 16 sessions*
+*Showing 10 of 17 sessions*
 
 ## 3. Dependency Audit
 No issues found.
@@ -149,6 +152,7 @@ No issues found.
 | log_20251215_v2_4_config_automation | [2025-12-15_v2-4-config-automation.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-15_v2-4-config-automation.md) | log |
 | log_20251215_v2_4_proposal_v1_4 | [2025-12-15_v2-4-proposal-v1-4.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-15_v2-4-proposal-v1-4.md) | log |
 | log_20251216_v2_5_promises_implementation_plan | [2025-12-16_v2-5-promises-implementation-plan.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-16_v2-5-promises-implementation-plan.md) | log |
+| log_20251217_v2_5_architectural_review | [2025-12-17_v2-5-architectural-review.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-17_v2-5-architectural-review.md) | log |
 | mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |
 | ontos_agent_instructions | [Ontos_Agent_Instructions.md](docs/reference/Ontos_Agent_Instructions.md) | kernel |
 | ontos_manual | [Ontos_Manual.md](docs/reference/Ontos_Manual.md) | kernel |
