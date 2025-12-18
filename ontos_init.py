@@ -174,28 +174,40 @@ def parse_existing_config() -> dict:
     return config
 
 
-def reconfig() -> None:
-    """Reconfigure Ontos while preserving custom settings."""
+def reconfig(args=None) -> None:
+    """Reconfigure Ontos while preserving custom settings.
+
+    Args:
+        args: Optional argparse namespace with mode/source for non-interactive use.
+    """
     print("══════════════════════════════════════════════════════════════")
     print("                   Ontos Reconfiguration")
     print("══════════════════════════════════════════════════════════════")
-    
+
     current = parse_existing_config()
     current_mode = current.get('ONTOS_MODE', 'none')
     print(f"\nCurrent mode: {current_mode}")
-    
+
     # Identify custom settings
     standard_keys = {'ONTOS_MODE', 'DEFAULT_SOURCE', 'DOCS_DIR', 'LOGS_DIR'}
     custom_settings = {k: v for k, v in current.items() if k not in standard_keys}
-    
+
     if custom_settings:
         print("\nCustom settings detected (will be preserved):")
         for k, v in custom_settings.items():
             print(f"  - {k} = {v}")
-    
-    # Run interactive prompts
-    mode = prompt_for_mode()
-    source = prompt_for_source()
+
+    # Handle non-interactive environments
+    is_interactive = sys.stdin.isatty()
+    if not is_interactive:
+        mode = args.mode if args else 'prompted'
+        source = args.source if args else ''
+        print(f"\n   ⚠ Non-interactive environment detected")
+        print(f"   Using: mode={mode}, source={'(prompt each time)' if not source else source}")
+    else:
+        # Run interactive prompts
+        mode = prompt_for_mode()
+        source = prompt_for_source()
     
     # Generate new config
     generate_config(mode, source)
@@ -419,6 +431,11 @@ def install_pre_commit_hook() -> bool:
                 print("   Add this line to your existing hook:")
                 print("   python3 .ontos/scripts/ontos_pre_commit_check.py")
 
+                # In non-interactive environments, don't overwrite existing hooks
+                if not sys.stdin.isatty():
+                    print("   ℹ Skipping hook overwrite (non-interactive environment)")
+                    return False
+
                 response = input("   Overwrite existing hook? [y/N]: ").strip().lower()
                 if response != 'y':
                     # Create backup and skip
@@ -469,7 +486,7 @@ def main():
     
     # Handle --reconfig
     if args.reconfig:
-        reconfig()
+        reconfig(args)
         return
     
     print("══════════════════════════════════════════════════════════════")
@@ -486,12 +503,20 @@ def main():
     # 2. Configure mode
     print("\n1. Configuring Ontos mode...")
     
-    if args.non_interactive:
+    # Detect non-interactive environment (CI/CD, IDE terminals, piped input)
+    is_interactive = sys.stdin.isatty()
+
+    if args.non_interactive or not is_interactive:
         mode = args.mode
         source = args.source
-        print(f"   Using non-interactive mode: {mode}")
-        if source:
-            print(f"   Using source: {source}")
+        if not is_interactive and not args.non_interactive:
+            print(f"   ⚠ Non-interactive environment detected")
+            print(f"   Using defaults: mode={mode}, source={'(prompt each time)' if not source else source}")
+            print(f"   Tip: Use --mode <mode> --source <name> for explicit control")
+        else:
+            print(f"   Using non-interactive mode: {mode}")
+            if source:
+                print(f"   Using source: {source}")
     elif os.path.exists('ontos_config.py'):
         print("   ontos_config.py already exists (run --reconfig to change)")
         mode = None
