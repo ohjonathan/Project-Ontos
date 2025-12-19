@@ -32,6 +32,17 @@ from ontos_lib import (
     get_git_last_modified,
     load_decision_history_entries,
     get_decision_history_path,
+    get_archive_logs_dir,
+    # v2.7 imports
+    normalize_describes,
+    parse_describes_verified,
+    validate_describes_field,
+    detect_describes_cycles,
+    check_staleness,
+    generate_decision_history,
+    DescribesValidationError,
+    DescribesWarning,
+    StalenessInfo,
 )
 
 from ontos_config_defaults import (
@@ -242,6 +253,9 @@ def scan_docs(root_dirs: list[str]) -> dict[str, dict]:
                             'rejected_date': frontmatter.get('rejected_date', ''),
                             'rejected_by': frontmatter.get('rejected_by', ''),
                             'revisit_when': frontmatter.get('revisit_when', ''),
+                            # NEW v2.7 fields for staleness tracking
+                            'describes': normalize_describes(frontmatter.get('describes')),
+                            'describes_verified': parse_describes_verified(frontmatter.get('describes_verified')),
                         }
     return files_data
 
@@ -430,7 +444,11 @@ def validate_dependencies(files_data: dict[str, dict]) -> list[str]:
                 if detect_cycle(neighbor, path):
                     return True
             elif neighbor in recursion_stack:
-                cycle_path = " -> ".join(path[path.index(neighbor):] + [neighbor])
+                # Neighbor may not be in the current path if reached via different route
+                if neighbor in path:
+                    cycle_path = " -> ".join(path[path.index(neighbor):] + [neighbor])
+                else:
+                    cycle_path = f"{node} -> {neighbor}"
                 issues.append(
                     f"- [CYCLE] Circular dependency: {cycle_path}\n"
                     f"  Fix: Remove one of the depends_on links to break the cycle"
@@ -757,6 +775,122 @@ def validate_v26_status(files_data: dict[str, dict]) -> tuple[list[str], list[st
     return errors, warnings
 
 
+def validate_v27_describes(files_data: dict[str, dict]) -> tuple[list[str], list[str]]:
+    """Validate v2.7 describes field rules.
+    
+    Returns:
+        Tuple of (errors, warnings)
+    """
+    errors = []
+    warnings = []
+    
+    # Build lookup tables
+    all_docs = {doc_id: {'type': data['type'], 'path': data['filepath']} 
+                for doc_id, data in files_data.items()}
+    
+    # Validate each document with describes field
+    for doc_id, data in files_data.items():
+        describes = data.get('describes', [])
+        if not describes:
+            continue
+        
+        desc_errors, desc_warnings = validate_describes_field(
+            doc_id=doc_id,
+            doc_path=data['filepath'],
+            doc_type=data['type'],
+            describes=describes,
+            describes_verified=data.get('describes_verified'),
+            all_docs=all_docs
+        )
+        
+        for err in desc_errors:
+            errors.append(f"- [ERROR] {err.message}\n  File: {err.filepath}")
+        for warn in desc_warnings:
+            warnings.append(f"- [LINT] {warn.message}\n  File: {warn.filepath}")
+    
+    # Check for circular describes
+    docs_with_describes = [
+        (doc_id, data.get('describes', []))
+        for doc_id, data in files_data.items()
+        if data.get('describes')
+    ]
+    cycles = detect_describes_cycles(docs_with_describes)
+    for doc_a, doc_b in cycles:
+        errors.append(
+            f"- [ERROR] Circular describes: {doc_a} ↔ {doc_b}\n"
+            f"  Remove one describes reference to break the cycle."
+        )
+    
+    return errors, warnings
+
+
+def generate_staleness_audit(files_data: dict[str, dict]) -> tuple[str, list['StalenessInfo']]:
+    """Generate Section 5: Documentation Staleness Audit.
+    
+    Returns:
+        Tuple of (section_content, list_of_stale_docs)
+    """
+    # Build ID to path mapping (for staleness checks)
+    id_to_path = {doc_id: data['filepath'] for doc_id, data in files_data.items()}
+    
+    stale_docs = []
+    current_docs = []
+    
+    for doc_id, data in files_data.items():
+        describes = data.get('describes', [])
+        if not describes:
+            continue
+        
+        staleness = check_staleness(
+            doc_id=doc_id,
+            doc_path=data['filepath'],
+            describes=describes,
+            describes_verified=data.get('describes_verified'),
+            id_to_path=id_to_path
+        )
+        
+        if staleness and staleness.is_stale:
+            stale_docs.append(staleness)
+        elif data.get('describes_verified'):
+            current_docs.append({
+                'doc_id': doc_id,
+                'describes': describes,
+                'verified': data.get('describes_verified')
+            })
+    
+    if not stale_docs and not current_docs:
+        return "No documents use the `describes` field.", []
+    
+    # Build table
+    lines = [
+        "| Document | Describes | Verified | Status |",
+        "|----------|-----------|----------|--------|"
+    ]
+    
+    for stale in stale_docs:
+        describes_str = ", ".join(stale.describes[:3])
+        if len(stale.describes) > 3:
+            describes_str += ", ..."
+        stale_atoms = ", ".join([f"{a}@{d}" for a, d in stale.stale_atoms[:2]])
+        lines.append(
+            f"| {stale.doc_id} | {describes_str} | {stale.verified_date} | ⚠️ STALE ({stale_atoms}) |"
+        )
+    
+    for doc in current_docs:
+        describes_str = ", ".join(doc['describes'][:3])
+        if len(doc['describes']) > 3:
+            describes_str += ", ..."
+        lines.append(
+            f"| {doc['doc_id']} | {describes_str} | {doc['verified']} | ✅ Current |"
+        )
+    
+    if stale_docs:
+        lines.append(f"\n*{len(stale_docs)} stale document(s) found. Review and update `describes_verified` when current.*")
+        lines.append("*Run `python3 .ontos/scripts/ontos_verify.py <path>` to mark as verified.*")
+    
+    return "\n".join(lines), stale_docs
+
+
 def get_status_indicator(status: str) -> str:
     """Return status indicator for non-active documents."""
     if status in ('draft', 'rejected', 'deprecated'):
@@ -766,7 +900,7 @@ def get_status_indicator(status: str) -> str:
 
 def generate_context_map(target_dirs: list[str], quiet: bool = False, strict: bool = False, 
                          lint: bool = False, include_rejected: bool = False,
-                         include_archived: bool = False) -> int:
+                         include_archived: bool = False, skip_history: bool = False) -> int:
     """Main function to generate the Ontos_Context_Map.md file.
 
     Args:
@@ -774,6 +908,7 @@ def generate_context_map(target_dirs: list[str], quiet: bool = False, strict: bo
         quiet: Suppress output if True.
         include_rejected: Include rejected proposals in context map.
         include_archived: Include archived logs in context map.
+        skip_history: Skip regenerating decision_history.md.
 
     Returns:
         Number of issues found.
@@ -835,6 +970,27 @@ def generate_context_map(target_dirs: list[str], quiet: bool = False, strict: bo
     
     # Warnings are added to lint output
     issues.extend(v26_warnings)
+    
+    # v2.7: Validate describes field and staleness
+    if not quiet:
+        print("Validating describes field (v2.7)...")
+    v27_errors, v27_warnings = validate_v27_describes(files_data)
+    
+    # Hard errors block generation
+    if v27_errors:
+        if not quiet:
+            print(f"\n## ERRORS (blocking)\n")
+            for e in v27_errors:
+                print(e)
+            print("\n❌ Context map generation failed due to errors above.")
+        sys.exit(1)
+    
+    issues.extend(v27_warnings)
+    
+    # v2.7: Generate staleness audit
+    if not quiet:
+        print("Checking documentation staleness...")
+    staleness_audit, stale_docs = generate_staleness_audit(files_data)
 
     # Lint mode
     lint_warnings = []
@@ -873,6 +1029,13 @@ Scanned Directory: `{dirs_str}`
 
     for doc_id, data in sorted(files_data.items()):
         content += f"| {doc_id} | [{data['filename']}]({data['filepath']}) | {data['type']} |\n"
+    
+    # v2.7: Add Section 5 - Documentation Staleness Audit
+    content += f"""
+
+## 5. Documentation Staleness Audit
+{staleness_audit}
+"""
 
     try:
         with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
@@ -903,6 +1066,20 @@ Scanned Directory: `{dirs_str}`
             print(f"\n❌ Validation Errors ({len(error_issues)} issues):")
             for issue in error_issues:
                 print(issue)
+    
+    # v2.7: Regenerate decision_history.md unless --skip-history
+    if not skip_history:
+        if not quiet:
+            print("Regenerating decision_history.md (v2.7 immutable history)...")
+        logs_dir = get_logs_dir()
+        archive_logs_dir = get_archive_logs_dir()
+        history_path = get_decision_history_path()
+        _, history_warnings = generate_decision_history(
+            [logs_dir, archive_logs_dir],
+            history_path
+        )
+        if not quiet:
+            print(f"  Generated {history_path}")
 
     # Return only error-level issues for strict mode
     return len(error_issues)
@@ -1014,6 +1191,8 @@ Examples:
                         help='Include rejected proposals in context map (default: excluded)')
     parser.add_argument('--include-archived', action='store_true',
                         help='Include archived logs in context map (default: excluded)')
+    parser.add_argument('--skip-history', action='store_true',
+                        help='Skip regenerating decision_history.md (v2.7)')
     args = parser.parse_args()
 
     # Default to docs directory if none specified
@@ -1031,7 +1210,8 @@ Examples:
     else:
         issue_count = generate_context_map(target_dirs, args.quiet, args.strict, args.lint, 
                                            getattr(args, 'include_rejected', False),
-                                           getattr(args, 'include_archived', False))
+                                           getattr(args, 'include_archived', False),
+                                           getattr(args, 'skip_history', False))
         
         # v2.5: Check consolidation status for prompted/advisory modes
         if not args.quiet:

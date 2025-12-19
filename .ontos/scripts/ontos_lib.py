@@ -8,8 +8,622 @@ import os
 import re
 import yaml
 import subprocess
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, date
+from enum import Enum
+from pathlib import Path
+from typing import Optional, Tuple, List, Dict
+
+
+# =============================================================================
+# V2.7 DESCRIBES FIELD TYPES
+# =============================================================================
+
+
+class ModifiedSource(Enum):
+    """Indicates the source and reliability of last-modified date.
+    
+    Used by staleness detection to track how we obtained the date.
+    """
+    GIT = "git"           # From git log (reliable)
+    MTIME = "mtime"       # From filesystem (unreliable, git resets this)
+    UNCOMMITTED = "uncommitted"  # File exists but not in git yet (treat as today)
+    MISSING = "missing"   # File doesn't exist
+
+
+# In-memory cache for git lookups (C1 from v2.7 spec)
+_git_date_cache: Dict[str, Tuple[Optional[date], ModifiedSource]] = {}
+
+
+def clear_git_cache() -> None:
+    """Clear the git date cache. Useful for testing."""
+    global _git_date_cache
+    _git_date_cache = {}
+
+
+def get_git_last_modified_v27(filepath: str) -> Tuple[Optional[date], ModifiedSource]:
+    """Get last modification date for a file with source tracking.
+    
+    v2.7: Enhanced version with ModifiedSource enum and caching.
+    
+    Args:
+        filepath: Path to the file.
+        
+    Returns:
+        (date, source) where source indicates reliability:
+        - GIT: From git log (reliable)
+        - MTIME: From filesystem (unreliable, git resets this)
+        - UNCOMMITTED: File exists but not in git yet (treat as today)
+        - MISSING: File doesn't exist
+    """
+    # Normalize path for cache key
+    cache_key = os.path.abspath(filepath)
+    
+    # Check cache first (C1)
+    if cache_key in _git_date_cache:
+        return _git_date_cache[cache_key]
+    
+    result = _fetch_last_modified(filepath)
+    _git_date_cache[cache_key] = result
+    return result
+
+
+def _fetch_last_modified(filepath: str) -> Tuple[Optional[date], ModifiedSource]:
+    """Internal function to fetch last modified date."""
+    # Handle missing file
+    if not os.path.exists(filepath):
+        return (None, ModifiedSource.MISSING)
+    
+    try:
+        result = subprocess.run(
+            ["git", "log", "-1", "--format=%ci", "--", filepath],
+            capture_output=True, text=True, timeout=5
+        )
+        
+        if result.returncode == 0 and result.stdout.strip():
+            # Git has history for this file
+            # Format: "2025-12-19 14:30:00 -0800" → extract "2025-12-19"
+            date_str = result.stdout.strip().split()[0]
+            return (date.fromisoformat(date_str), ModifiedSource.GIT)
+        else:
+            # File exists but no git history (uncommitted) - treat as today (R2)
+            return (date.today(), ModifiedSource.UNCOMMITTED)
+    
+    except FileNotFoundError:
+        # Git not installed (R3) - fall back to mtime with warning
+        print("WARN: git not found. Falling back to file modification time (less reliable).")
+        mtime = os.path.getmtime(filepath)
+        return (date.fromtimestamp(mtime), ModifiedSource.MTIME)
+    
+    except subprocess.TimeoutExpired:
+        # Git command hung - fall back to mtime
+        print("WARN: git command timed out. Falling back to file modification time.")
+        mtime = os.path.getmtime(filepath)
+        return (date.fromtimestamp(mtime), ModifiedSource.MTIME)
+
+
+def normalize_describes(value) -> List[str]:
+    """Normalize describes field to a list of strings.
+    
+    Args:
+        value: Raw value from YAML frontmatter.
+        
+    Returns:
+        List of described atom IDs (empty list if none).
+    """
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value] if value.strip() else []
+    if isinstance(value, list):
+        return [str(v) for v in value if v is not None and str(v).strip()]
+    return []
+
+
+def parse_describes_verified(value) -> Optional[date]:
+    """Parse describes_verified field to a date.
+    
+    Args:
+        value: Raw value from YAML frontmatter.
+        
+    Returns:
+        date object, or None if not present or invalid.
+    """
+    if value is None:
+        return None
+    try:
+        # Check datetime BEFORE date, since datetime is a subclass of date
+        if isinstance(value, datetime):
+            return value.date()
+        if isinstance(value, date):
+            return value
+        if isinstance(value, str):
+            return date.fromisoformat(value.strip())
+    except ValueError:
+        pass
+    return None
+
+
+class DescribesValidationError:
+    """Represents a validation error for describes field."""
+    
+    def __init__(self, filepath: str, error_type: str, message: str, 
+                 field_value: str = None, suggestion: str = None):
+        self.filepath = filepath
+        self.error_type = error_type
+        self.message = message
+        self.field_value = field_value
+        self.suggestion = suggestion
+    
+    def __str__(self) -> str:
+        parts = [f"ERROR: {self.message}", f"  File: {self.filepath}"]
+        if self.field_value:
+            parts.append(f"  Field: {self.field_value}")
+        if self.suggestion:
+            parts.append(f"  To fix: {self.suggestion}")
+        return "\n".join(parts)
+
+
+class DescribesWarning:
+    """Represents a warning for describes field."""
+    
+    def __init__(self, filepath: str, warning_type: str, message: str):
+        self.filepath = filepath
+        self.warning_type = warning_type
+        self.message = message
+    
+    def __str__(self) -> str:
+        return f"WARN: {self.message}\n  File: {self.filepath}"
+
+
+class StalenessInfo:
+    """Information about a stale document."""
+    
+    def __init__(self, doc_id: str, doc_path: str, describes: List[str],
+                 verified_date: date, stale_atoms: List[Tuple[str, date]]):
+        self.doc_id = doc_id
+        self.doc_path = doc_path
+        self.describes = describes
+        self.verified_date = verified_date
+        self.stale_atoms = stale_atoms  # List of (atom_id, changed_date)
+    
+    @property
+    def is_stale(self) -> bool:
+        return len(self.stale_atoms) > 0
+
+
+def validate_describes_field(
+    doc_id: str,
+    doc_path: str,
+    doc_type: str,
+    describes: List[str],
+    describes_verified: Optional[date],
+    all_docs: Dict[str, dict]  # id -> {type, path}
+) -> Tuple[List[DescribesValidationError], List[DescribesWarning]]:
+    """Validate describes field according to v2.7 rules.
+    
+    Args:
+        doc_id: ID of the document being validated.
+        doc_path: Path to the document.
+        doc_type: Type of the document (atom, strategy, etc).
+        describes: List of IDs this doc describes.
+        describes_verified: Date when doc was last verified.
+        all_docs: Dict mapping id -> {type, path} for all known docs.
+        
+    Returns:
+        (errors, warnings) tuple.
+    """
+    errors = []
+    warnings = []
+    
+    if not describes:
+        return errors, warnings
+    
+    # Rule: Only atoms can use describes
+    if doc_type != 'atom':
+        errors.append(DescribesValidationError(
+            filepath=doc_path,
+            error_type="type_constraint",
+            message="Only atoms can use the 'describes' field",
+            field_value=f"type: {doc_type}",
+            suggestion="Remove the describes field or change the document type to atom."
+        ))
+        return errors, warnings  # Don't continue validation
+    
+    # Rule: describes cannot be empty list (pointless)
+    if len(describes) == 0:
+        warnings.append(DescribesWarning(
+            filepath=doc_path,
+            warning_type="empty_describes",
+            message="Document has empty 'describes' field. Why declare empty describes?"
+        ))
+    
+    # Rule: Self-reference not allowed
+    if doc_id in describes:
+        errors.append(DescribesValidationError(
+            filepath=doc_path,
+            error_type="self_reference",
+            message="Document describes itself",
+            field_value=f"describes: [{doc_id}]",
+            suggestion="Remove the self-reference from the describes list."
+        ))
+    
+    # Rule: All described IDs must exist and be atoms
+    for target_id in describes:
+        if target_id == doc_id:
+            continue  # Already handled above
+        
+        if target_id not in all_docs:
+            errors.append(DescribesValidationError(
+                filepath=doc_path,
+                error_type="unknown_id",
+                message=f"Unknown atom ID '{target_id}' in describes field",
+                field_value=f"describes: [..., {target_id}, ...]",
+                suggestion=f"Create an atom doc with id: {target_id}, or remove it from describes."
+            ))
+        else:
+            target_type = all_docs[target_id].get('type', 'unknown')
+            if target_type != 'atom':
+                errors.append(DescribesValidationError(
+                    filepath=doc_path,
+                    error_type="type_constraint",
+                    message=f"Can only describe atoms. '{target_id}' is type: {target_type}",
+                    field_value=f"describes: [..., {target_id}, ...]",
+                    suggestion="The describes field can only reference atoms."
+                ))
+    
+    # Rule: describes_verified required if describes is present
+    if not describes_verified:
+        warnings.append(DescribesWarning(
+            filepath=doc_path,
+            warning_type="missing_verified",
+            message="Document has 'describes' but no 'describes_verified'. Never been verified as current."
+        ))
+    else:
+        # Rule: describes_verified should not be in the future
+        if describes_verified > date.today():
+            warnings.append(DescribesWarning(
+                filepath=doc_path,
+                warning_type="future_date",
+                message=f"describes_verified date ({describes_verified}) is in the future. Staleness check may never trigger."
+            ))
+    
+    return errors, warnings
+
+
+def detect_describes_cycles(
+    docs_with_describes: List[Tuple[str, List[str]]]  # [(doc_id, describes_list), ...]
+) -> List[Tuple[str, str]]:
+    """Detect circular describes relationships.
+    
+    Args:
+        docs_with_describes: List of (doc_id, describes_list) tuples.
+        
+    Returns:
+        List of (doc_a, doc_b) pairs that form cycles.
+    """
+    # Build describes graph
+    describes_map = {doc_id: describes for doc_id, describes in docs_with_describes}
+    
+    cycles = []
+    for doc_a, targets in describes_map.items():
+        for doc_b in targets:
+            # Check if doc_b describes doc_a (direct cycle)
+            if doc_b in describes_map and doc_a in describes_map[doc_b]:
+                # Add in sorted order to avoid duplicates
+                pair = tuple(sorted([doc_a, doc_b]))
+                if pair not in cycles:
+                    cycles.append(pair)
+    
+    return cycles
+
+
+def check_staleness(
+    doc_id: str,
+    doc_path: str,
+    describes: List[str],
+    describes_verified: Optional[date],
+    id_to_path: Dict[str, str]
+) -> Optional[StalenessInfo]:
+    """Check if a document is stale (described atoms changed after verification).
+    
+    Args:
+        doc_id: ID of the document.
+        doc_path: Path to the document.
+        describes: List of IDs this doc describes.
+        describes_verified: Date when doc was last verified.
+        id_to_path: Dict mapping atom ID -> file path.
+        
+    Returns:
+        StalenessInfo if stale, None otherwise.
+    """
+    if not describes or not describes_verified:
+        return None
+    
+    stale_atoms = []
+    
+    for atom_id in describes:
+        if atom_id not in id_to_path:
+            continue  # Skip unknown (validation error caught elsewhere)
+        
+        atom_path = id_to_path[atom_id]
+        atom_modified, source = get_git_last_modified_v27(atom_path)
+        
+        if atom_modified is None:
+            continue  # Can't determine, skip
+        
+        if atom_modified > describes_verified:
+            stale_atoms.append((atom_id, atom_modified))
+    
+    if stale_atoms:
+        return StalenessInfo(
+            doc_id=doc_id,
+            doc_path=doc_path,
+            describes=describes,
+            verified_date=describes_verified,
+            stale_atoms=stale_atoms
+        )
+    
+    return None
+
+
+# =============================================================================
+# V2.7 IMMUTABLE HISTORY GENERATION
+# =============================================================================
+
+
+def get_log_date(log_path: str, frontmatter: Optional[dict] = None) -> Optional[date]:
+    """Extract date from a log file.
+    
+    Resolution order:
+    1. Frontmatter 'date' field
+    2. Filename prefix (YYYY-MM-DD_slug.md)
+    3. File modification time (least reliable)
+    
+    Args:
+        log_path: Path to the log file.
+        frontmatter: Pre-parsed frontmatter (optional, will parse if not provided).
+        
+    Returns:
+        date object, or None if cannot be determined.
+    """
+    # 1. Try frontmatter date field
+    if frontmatter is None:
+        frontmatter = parse_frontmatter(log_path) or {}
+    
+    if 'date' in frontmatter:
+        try:
+            date_val = frontmatter['date']
+            if isinstance(date_val, date):
+                return date_val
+            if isinstance(date_val, datetime):
+                return date_val.date()
+            if isinstance(date_val, str):
+                return date.fromisoformat(date_val.strip())
+        except ValueError:
+            pass
+    
+    # 2. Try filename prefix (YYYY-MM-DD_slug.md)
+    filename = os.path.basename(log_path)
+    match = re.match(r'^(\d{4}-\d{2}-\d{2})_', filename)
+    if match:
+        try:
+            return date.fromisoformat(match.group(1))
+        except ValueError:
+            pass
+    
+    # 3. Last resort: file mtime (least reliable)
+    try:
+        mtime = os.path.getmtime(log_path)
+        return date.fromtimestamp(mtime)
+    except OSError:
+        return None
+
+
+class ParsedLog:
+    """Represents a parsed session log for history generation."""
+    
+    def __init__(self, log_id: str, log_path: str, log_date: date,
+                 event_type: str, summary: str, impacts: List[str], concepts: List[str]):
+        self.id = log_id
+        self.path = log_path
+        self.date = log_date
+        self.event_type = event_type
+        self.summary = summary
+        self.impacts = impacts
+        self.concepts = concepts
+
+
+def parse_log_for_history(log_path: str) -> Optional[ParsedLog]:
+    """Parse a session log for history generation.
+    
+    Args:
+        log_path: Path to the log file.
+        
+    Returns:
+        ParsedLog object, or None if parsing failed.
+    """
+    try:
+        frontmatter = parse_frontmatter(log_path)
+        if not frontmatter:
+            return None
+        
+        log_id = frontmatter.get('id', os.path.basename(log_path).replace('.md', ''))
+        log_date = get_log_date(log_path, frontmatter)
+        if not log_date:
+            return None
+        
+        # Get event type (default to 'log')
+        event_type = frontmatter.get('event', 'log')
+        if isinstance(event_type, list):
+            event_type = event_type[0] if event_type else 'log'
+        
+        # Get impacts and concepts
+        impacts = normalize_depends_on(frontmatter.get('impacts', []))
+        concepts = normalize_depends_on(frontmatter.get('concepts', []))
+        
+        # Get summary from content (first non-header paragraph after frontmatter)
+        summary = ""
+        try:
+            with open(log_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            # Extract content after frontmatter
+            parts = content.split('---', 2)
+            if len(parts) >= 3:
+                body = parts[2].strip()
+                # Find first paragraph that's not a header
+                for line in body.split('\n'):
+                    line = line.strip()
+                    if line and not line.startswith('#'):
+                        summary = line[:200] + ('...' if len(line) > 200 else '')
+                        break
+        except (IOError, OSError):
+            pass
+        
+        return ParsedLog(
+            log_id=log_id,
+            log_path=log_path,
+            log_date=log_date,
+            event_type=event_type,
+            summary=summary,
+            impacts=impacts,
+            concepts=concepts
+        )
+    except Exception:
+        return None
+
+
+def sort_logs_deterministically(logs: List[ParsedLog]) -> List[ParsedLog]:
+    """Sort logs deterministically for history generation.
+    
+    Sort order:
+    1. Date descending (newest first)
+    2. Event type alphabetically
+    3. Log ID alphabetically
+    
+    Args:
+        logs: List of ParsedLog objects.
+        
+    Returns:
+        Sorted list of logs.
+    """
+    return sorted(logs, key=lambda l: (
+        -l.date.toordinal(),  # Descending date
+        l.event_type,          # Alphabetical type
+        l.id                   # Alphabetical ID
+    ))
+
+
+def generate_decision_history(
+    logs_dirs: List[str],
+    output_path: str = None
+) -> Tuple[str, List[str]]:
+    """Generate decision_history.md from logs.
+    
+    v2.7: Makes history a generated artifact rather than manually maintained.
+    
+    Args:
+        logs_dirs: List of directories containing log files.
+        output_path: Path to write the generated file (optional).
+        
+    Returns:
+        (markdown_content, list_of_warnings)
+    """
+    parsed = []
+    warnings = []
+    active_count = 0
+    archived_count = 0
+    
+    for logs_dir in logs_dirs:
+        if not os.path.exists(logs_dir):
+            continue
+        
+        is_archive = 'archive' in logs_dir.lower()
+        
+        for log_file in os.listdir(logs_dir):
+            if not log_file.endswith('.md'):
+                continue
+            # Only process date-prefixed files (session logs)
+            if not log_file[0].isdigit():
+                continue
+            
+            log_path = os.path.join(logs_dir, log_file)
+            try:
+                log = parse_log_for_history(log_path)
+                if log:
+                    parsed.append(log)
+                    if is_archive:
+                        archived_count += 1
+                    else:
+                        active_count += 1
+                else:
+                    warnings.append(f"Skipping malformed log: {log_file}")
+            except Exception as e:
+                warnings.append(f"Skipping malformed log: {log_file} ({e})")
+    
+    if warnings:
+        for w in warnings:
+            print(f"WARN: {w}")
+    
+    # Sort deterministically
+    sorted_logs = sort_logs_deterministically(parsed)
+    
+    # Generate markdown
+    now = datetime.now().isoformat(timespec='seconds')
+    skipped = len(warnings)
+    
+    header = f"""<!--
+GENERATED FILE - DO NOT EDIT MANUALLY
+Regenerated by: ontos_generate_context_map.py
+Source: {', '.join(logs_dirs)}
+Last generated: {now}
+Log count: {active_count} active, {archived_count} archived, {skipped} skipped
+-->
+
+---
+id: decision_history
+type: strategy
+status: active
+depends_on: [mission]
+---
+
+# Decision History
+
+This file is auto-generated from session logs. Do not edit directly.
+
+To regenerate: `python3 .ontos/scripts/ontos_generate_context_map.py`
+
+"""
+    
+    # Group by date
+    content_parts = [header]
+    current_date = None
+    
+    for log in sorted_logs:
+        if log.date != current_date:
+            current_date = log.date
+            content_parts.append(f"## {current_date.isoformat()}\n\n")
+        
+        # Format entry
+        entry = f"### [{log.event_type}] {log.id.replace('_', ' ').replace('log ', '').title()}\n"
+        entry += f"- **Log:** `{log.id}`\n"
+        if log.impacts:
+            entry += f"- **Impacts:** {', '.join(log.impacts)}\n"
+        if log.concepts:
+            entry += f"- **Concepts:** {', '.join(log.concepts)}\n"
+        if log.summary:
+            entry += f"\n> {log.summary}\n"
+        entry += "\n"
+        content_parts.append(entry)
+    
+    markdown_content = ''.join(content_parts)
+    
+    # Write to file if output_path provided
+    if output_path:
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(markdown_content)
+    
+    return markdown_content, warnings
 
 
 def parse_frontmatter(filepath: str) -> Optional[dict]:
