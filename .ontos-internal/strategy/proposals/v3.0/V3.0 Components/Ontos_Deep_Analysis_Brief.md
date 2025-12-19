@@ -1,3 +1,11 @@
+---
+id: ontos_deep_analysis_brief
+type: atom
+status: draft
+depends_on: [v2_strategy, mission]
+concepts: [analysis, summary, marketing, v3]
+---
+
 # Project Ontos: Deep Analysis Brief
 
 **Purpose:** Comprehensive summary for external AI analysis (marketing fit, V3.0 strategy, collaboration, improvement opportunities)

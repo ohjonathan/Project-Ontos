@@ -1,3 +1,11 @@
+---
+id: gemini_install_ux_review
+type: atom
+status: complete
+depends_on: [installation_ux_proposal]
+concepts: [ux, installation, review, architecture]
+---
+
 # Gemini's Architectural Review: Installation UX Proposal
 
 **Reviewer:** Gemini CLI (powered by Gemini 2.5 Pro)

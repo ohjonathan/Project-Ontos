@@ -2,7 +2,7 @@
 id: architect_synthesis_install_ux
 type: atom
 status: draft
-depends_on: [installation_ux_proposal, claude_install_ux_review]
+depends_on: [installation_ux_proposal, claude_install_ux_review, gemini_install_ux_review, installation_ux_proposal_review]
 concepts: [ux, installation, dx, architecture-review, synthesis]
 ---
 

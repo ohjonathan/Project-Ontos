@@ -1,3 +1,11 @@
+---
+id: gemini_v3_master_plan_review_v2
+type: atom
+status: complete
+depends_on: [master_plan_v4, gemini_v3_master_plan_review_v1]
+concepts: [architecture, review, v3, master-plan]
+---
+
 # Architectural Review of Ontos Master Plan v3.0.0
 
 **Author:** Gemini (as a Virtual Architect)

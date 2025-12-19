@@ -1,3 +1,11 @@
+---
+id: installation_experience_report
+type: atom
+status: complete
+depends_on: [installation_ux_proposal]
+concepts: [ux, installation, friction, testing]
+---
+
 # Ontos Installation Experience Report
 
 **Date:** 2025-12-18

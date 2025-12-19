@@ -1,3 +1,11 @@
+---
+id: ontos_codebase_map
+type: atom
+status: draft
+depends_on: [v2_strategy]
+concepts: [architecture, codebase, reference, technical]
+---
+
 # Project Ontos: Codebase Map
 
 **Purpose:** Technical architecture reference for deep codebase analysis
