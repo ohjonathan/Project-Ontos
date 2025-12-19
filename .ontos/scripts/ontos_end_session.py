@@ -1418,9 +1418,10 @@ def check_stale_docs_warning() -> None:
             if len(stale_docs) > 3:
                 print(f"   ... and {len(stale_docs) - 3} more")
             print("   Run: python3 .ontos/scripts/ontos_verify.py --all")
-    except Exception:
-        # Non-fatal: staleness check failure shouldn't block archive
-        pass
+    except Exception as e:
+        # Non-fatal: log for debugging but don't block archive
+        import logging
+        logging.debug(f"Staleness check skipped: {e}")
 
 
 def main() -> None:

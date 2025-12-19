@@ -22,6 +22,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.7.1] - 2025-12-20
+
+### Theme: "Polish Release"
+
+Bug fixes, documentation, and test organization to elevate v2.7 from A- to A grade.
+
+### Fixed
+- **Root config import** — Fixed broken relative import in `ontos_config.py` (root)
+  - Uses `importlib.util` to load scripts config under different name
+  - Avoids circular import while re-exporting all public symbols
+  - Template updated to match
+
+### Changed
+- **Exception logging** — Staleness check in `ontos_end_session.py` now logs exceptions
+  - Changed from silent `pass` to `logging.debug()`
+  - Improves debugging when staleness checks fail
+
+### Added
+- **v2.7 concepts** — Added `describes`, `staleness`, `immutable-history` to Common_Concepts.md
+- **Cookbook examples** — Added "Documentation Staleness Tracking (v2.7)" section to Manual
+
+### Improved
+- **Test organization** — Renamed `test_v26_validation.py` to `test_validation.py`
+  - Prevents version-suffixed test file accumulation
+- **Legacy test folder** — Moved `test_migrate_frontmatter.py` to `tests/legacy/`
+  - Migration tests are rarely needed but preserved for reuse
+
+### Tests
+- All 225 tests pass
+
+---
+
 ## [2.7.0] - 2025-12-19
 
 ### Theme: "Documentation Staleness Tracking"

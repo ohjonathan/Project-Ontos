@@ -39,7 +39,32 @@ DEFAULT_SOURCE = {{SOURCE_QUOTED}}  # e.g., "Claude Code" or None
 # =============================================================================
 # DO NOT EDIT BELOW - Required by Ontos
 # =============================================================================
-from .ontos.scripts.ontos_config_defaults import *
+# Note: This file re-exports everything from .ontos/scripts/ontos_config.py
+# We use importlib to avoid circular import issues since both files have the
+# same module name. This approach loads the scripts version under a different name.
+import sys as _sys
+import os as _os
+import importlib.util as _importlib_util
+
+_scripts_dir = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '.ontos', 'scripts')
+_scripts_config_path = _os.path.join(_scripts_dir, 'ontos_config.py')
+
+# Add scripts directory to path so ontos_config_defaults can be found
+if _scripts_dir not in _sys.path:
+    _sys.path.insert(0, _scripts_dir)
+
+_spec = _importlib_util.spec_from_file_location("_ontos_scripts_config", _scripts_config_path)
+_scripts_config = _importlib_util.module_from_spec(_spec)
+_spec.loader.exec_module(_scripts_config)
+
+# Copy all public attributes to this module
+for _name in dir(_scripts_config):
+    # Include public names and __version__ (which starts with underscore but is a standard public attr)
+    if not _name.startswith('_') or _name == '__version__':
+        globals()[_name] = getattr(_scripts_config, _name)
+
+# Clean up internal names
+del _importlib_util, _scripts_config_path, _spec, _scripts_config, _name
 
 # Override the DOCS_DIR and LOGS_DIR if needed
 # DOCS_DIR = 'docs'

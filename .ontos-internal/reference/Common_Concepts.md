@@ -54,6 +54,14 @@ concepts: [authentication, endpoints, database-stuff]
 | `config` | Configuration, settings, environment variables |
 | `workflow` | Process changes, rituals, automation |
 
+### Documentation Tracking (v2.7)
+
+| Concept | Covers |
+|:--------|:-------|
+| `describes` | Documentation relationship tracking — marks which atoms a doc describes |
+| `staleness` | Detection of outdated documentation when described atoms change |
+| `immutable-history` | Auto-generated decision_history.md from session logs |
+
 ---
 
 ## Adding New Concepts

@@ -84,6 +84,7 @@ depends_on: [mission, v2_strategy]
 | ***v3.0*** | ***pip install ontos*** | *Distro* | ***Logic:** Logic to PyPI. Repo \= Data/Config only.* | ***Separation.** Enables system deps (boto3).* | ***Claude:** **Config Management.** How does System Binary find Repo Config? (See Sec 3.2).* |
 | ***v3.0*** | ***Local MCP Server*** | ***Proto*** | ***Logic:** Anthropic MCP. ontos serve. get\_context, log\_session.* | ***Inversion of Control.** Agents "pull" context.* | ***Gemini:** **SECURITY RISK.** Must bind to 127.0.0.1 only. Require auto-generated Auth Token. **Concurrency:** File locking needed.* |
 | ***v3.0*** | ***Typed Edges*** | *Ontology* | ***Logic:** implements, tests, deprecates.* | ***Reasoning.** Enables A2A logic chains.* | ***Codex:** Define validation matrix (e.g., Log cannot implement Atom). Prevent "Edge Sprawl."* |
+| ***v3.0*** | ***Test Suite Overhaul*** | *Arch* | ***Logic:** Restructure tests/ into core/, features/, scripts/, hooks/, legacy/. Consolidate hook tests. Add CI exclusion for legacy/.* | ***Maintainability.** Reduces test debt, clarifies mental model.* | ***Chief Architect:** Keep total test count stable. Focus on organization, not deletion. Ensure pytest discovery still works after restructure.* |
 
 ---
 

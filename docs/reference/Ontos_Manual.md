@@ -406,3 +406,59 @@ python3 .ontos/scripts/ontos_update.py
 - `--quiet` / `-q` — Suppress output
 - `--dry-run` — Preview without changes
 - `--version` / `-V` — Show version
+
+---
+
+## 10. Documentation Staleness Tracking (v2.7)
+
+Track when documentation becomes outdated after code changes.
+
+### Adding Staleness Tracking
+
+Add `describes` to your documentation frontmatter:
+
+```yaml
+---
+id: my_readme
+type: atom
+describes:
+  - cli_module
+  - api_handler
+describes_verified: 2025-12-19
+---
+```
+
+### Checking for Stale Docs
+
+Staleness is checked automatically:
+- When generating context map (Section 5: Staleness Audit)
+- When archiving sessions (Archive Ontos warning)
+
+### Marking Documentation Current
+
+After reviewing and updating your docs:
+
+```bash
+# Single file
+python3 .ontos/scripts/ontos_verify.py docs/readme.md
+
+# All stale docs interactively
+python3 .ontos/scripts/ontos_verify.py --all
+```
+
+### Example: Documentation Chain
+
+```yaml
+# Manual describes scripts
+# docs/reference/Ontos_Manual.md
+describes:
+  - ontos_end_session
+  - ontos_verify
+describes_verified: 2025-12-19
+
+# Agent Instructions describes Manual
+# docs/reference/Ontos_Agent_Instructions.md
+describes:
+  - ontos_manual
+describes_verified: 2025-12-19
+```

@@ -23,7 +23,7 @@ def is_ontos_repo() -> bool:
     return os.path.exists(os.path.join(PROJECT_ROOT, '.ontos-internal'))
 
 # Version - used by update script to check for newer versions
-ONTOS_VERSION = "2.7.0"
+ONTOS_VERSION = "2.7.1"
 
 # GitHub repository for updates
 ONTOS_REPO_URL = 'https://github.com/ohjona/project-ontos'
