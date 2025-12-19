@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-19 12:31:12 UTC
+Generated: 2025-12-19 13:00:27 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2025-12-19 21:31:12
+Generated on: 2025-12-19 22:00:27
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -43,7 +43,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **installation_ux_proposal_review** [draft] (Installation_UX_Proposal_Review_Codex.md) ~948 tokens
   - Status: draft
   - Depends On: installation_ux_proposal, v2_strategy, mission, ontos_manual
-- **master_plan_v4** (master_plan.md) ~2,400 tokens
+- **master_plan_v4** (master_plan.md) ~2,500 tokens
   - Status: active
   - Depends On: mission, v2_strategy
 - **s3_archive_analysis** [draft] (s3-archive-analysis.md) ~2,600 tokens
@@ -58,6 +58,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **v2_6_proposals_and_tooling** (v2.6_proposals_and_tooling.md) ~11,100 tokens
   - Status: complete
   - Depends On: v2_strategy
+- **v2_7_1_implementation_plan** [draft] (v2.7.1_implementation_plan.md) ~2,100 tokens
+  - Status: draft
+  - Depends On: v2_7_implementation_plan, v2_7_1_patch_plan
 - **v2_7_1_patch_plan** (v2.7.1_patch_plan.md) ~994 tokens
   - Status: complete
   - Depends On: None
@@ -344,6 +347,7 @@ No issues found.
 | v2_5_architectural_review_claude_v2 | [V2_Claude_on_v2.5.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2.5/V2_Claude_on_v2.5.md) | atom |
 | v2_5_promises_implementation_plan | [v2.5_promises_implementation_plan.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2.5/v2.5_promises_implementation_plan.md) | strategy |
 | v2_6_proposals_and_tooling | [v2.6_proposals_and_tooling.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2.6/v2.6_proposals_and_tooling.md) | strategy |
+| v2_7_1_implementation_plan | [v2.7.1_implementation_plan.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v2.7/v2.7.1_implementation_plan.md) | strategy |
 | v2_7_1_patch_plan | [v2.7.1_patch_plan.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v2.7/v2.7.1_patch_plan.md) | strategy |
 | v2_7_documentation_ontology | [v2.7_documentation_ontology.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v2.7/v2.7_documentation_ontology.md) | strategy |
 | v2_7_implementation_plan | [v2.7_implementation_plan.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v2.7/v2.7_implementation_plan.md) | strategy |
