@@ -4,7 +4,7 @@ type: log
 status: active
 event_type: chore
 concepts: [maintenance, consolidation, frontmatter, type-hierarchy]
-impacts: [decision_history, schema]
+impacts: [schema]
 ---
 
 # Session Log: Maintenance - Consolidate Logs & Add Frontmatter
@@ -16,7 +16,7 @@ Event Type: chore
 Run `Maintain Ontos` to consolidate excess logs and add frontmatter to untagged files, ensuring reviews/synthesis docs are properly typed as `atom`.
 
 ## 2. Changes Made
-- **Log consolidation**: Archived 25 logs to `archive/logs/`, updated `decision_history.md`
+- **Log consolidation**: Archived 25 logs to `archive/logs/`, updated `no_doc_impact.md`
 - **Added frontmatter to 7 files** (all typed as `atom`):
   - `gemini_v2_7_phil_v1` - was missing opening `---`
   - `gemini_v3_master_plan_review_v1`, `gemini_v3_master_plan_review_v2`

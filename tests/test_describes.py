@@ -113,8 +113,8 @@ class TestValidateDescribesField:
         )
         assert len(errors) == 0
     
-    def test_non_atom_cannot_use_describes(self):
-        """Only atoms can use describes field."""
+    def test_non_atom_can_use_describes(self):
+        """Any document type can use describes field (v2.7 decision)."""
         errors, warnings = validate_describes_field(
             doc_id="strategy_x",
             doc_path="docs/strategy_x.md",
@@ -123,9 +123,8 @@ class TestValidateDescribesField:
             describes_verified=date.today(),
             all_docs=self.all_docs
         )
-        assert len(errors) == 1
-        assert errors[0].error_type == "type_constraint"
-        assert "Only atoms can use" in errors[0].message
+        # No error - any doc type can use describes
+        assert len(errors) == 0
     
     def test_self_reference_error(self):
         """Self-reference in describes should error."""

@@ -219,16 +219,8 @@ def validate_describes_field(
     if not describes:
         return errors, warnings
     
-    # Rule: Only atoms can use describes
-    if doc_type != 'atom':
-        errors.append(DescribesValidationError(
-            filepath=doc_path,
-            error_type="type_constraint",
-            message="Only atoms can use the 'describes' field",
-            field_value=f"type: {doc_type}",
-            suggestion="Remove the describes field or change the document type to atom."
-        ))
-        return errors, warnings  # Don't continue validation
+    # Note: The describes targets (atoms) are validated when checking for unknown IDs below.
+    # Any document type can use describes to declare what implementation it documents.
     
     # Rule: describes cannot be empty list (pointless)
     if len(describes) == 0:

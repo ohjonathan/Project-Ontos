@@ -1,8 +1,8 @@
 ---
 id: codex_v2_7_phil_review_v1
 type: strategy
-status: draft
-depends_on: [v2_7_documentation_ontology, v2_strategy, mission]
+status: complete
+depends_on: []
 concepts: [documentation, ontology, bidirectional, verification, triggers]
 ---
 

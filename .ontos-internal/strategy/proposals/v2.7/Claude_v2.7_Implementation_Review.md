@@ -2,7 +2,7 @@
 id: claude_v2_7_implementation_review
 type: atom
 status: complete
-depends_on: [v2_7_implementation_plan, master_plan_v4]
+depends_on: []
 concepts: [review, describes, immutable-history, implementation]
 ---
 

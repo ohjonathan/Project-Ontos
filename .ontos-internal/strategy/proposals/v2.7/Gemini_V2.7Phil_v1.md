@@ -2,7 +2,7 @@
 id: gemini_v2_7_phil_v1
 type: atom
 status: complete
-depends_on: [v2_7_documentation_ontology]
+depends_on: []
 concepts: [documentation, ontology, technical review, workload]
 ---
 

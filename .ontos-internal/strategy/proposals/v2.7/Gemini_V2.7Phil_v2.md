@@ -2,7 +2,7 @@
 id: gemini_v2_7_phil_v2
 type: atom
 status: complete
-depends_on: [architect_v2_7_phil_synthesis]
+depends_on: []
 concepts: [technical review, architectural decision, consensus]
 ---
 

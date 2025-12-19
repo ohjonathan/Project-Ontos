@@ -1,8 +1,8 @@
 ---
 id: pr22_chief_architect_review_v2
 type: atom
-status: active
-depends_on: [pr22_chief_architect_review, v2_7_implementation_plan]
+status: complete
+depends_on: []
 concepts: [review, implementation, describes, immutable-history]
 ---
 

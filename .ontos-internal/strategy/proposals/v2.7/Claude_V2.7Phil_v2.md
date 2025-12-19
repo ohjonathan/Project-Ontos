@@ -2,7 +2,7 @@
 id: claude_2_7_phil_v2_review
 type: atom
 status: complete
-depends_on: [architect_v2_7_phil_synthesis, claude_2_7_phil_v1_review]
+depends_on: []
 concepts: [ontology, documentation, review, synthesis]
 ---
 

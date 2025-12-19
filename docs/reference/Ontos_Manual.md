@@ -3,11 +3,6 @@ id: ontos_manual
 type: kernel
 status: active
 depends_on: []
-describes:
-  - ontos_end_session
-  - ontos_generate_context_map
-  - ontos_verify
-describes_verified: 2025-12-19
 ---
 
 # Ontos Manual v2.5

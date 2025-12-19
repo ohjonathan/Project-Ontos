@@ -1,8 +1,8 @@
 ---
 id: codex_v2_7_phil_review_v2
 type: atom
-status: draft
-depends_on: [architect_v2_7_phil_synthesis, v2_7_documentation_ontology, v2_strategy, mission]
+status: complete
+depends_on: []
 concepts: [documentation, ontology, describes, verification, performance]
 ---
 
