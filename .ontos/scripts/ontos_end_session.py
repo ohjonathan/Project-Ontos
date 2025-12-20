@@ -1266,7 +1266,8 @@ def create_log_file(
     event_type: str = "chore",
     concepts: list[str] = None,
     impacts: list[str] = None,
-    output: OutputHandler = None
+    output: OutputHandler = None,
+    ctx: SessionContext = None
 ) -> str:
     """Creates a new session log file with v2.0 schema.
     
@@ -1278,6 +1279,7 @@ def create_log_file(
         concepts: List of concept tags for searchability.
         impacts: List of document IDs affected by this session.
         output: OutputHandler instance (creates default if None).
+        ctx: SessionContext for transactional writes (creates default if None).
         
     Returns:
         Path to the created log file, or empty string on error.
@@ -1285,6 +1287,10 @@ def create_log_file(
     # v2.8: Use OutputHandler for all messages
     if output is None:
         output = OutputHandler(quiet=quiet)
+    
+    # v2.8: Use SessionContext for transactional writes
+    if ctx is None:
+        ctx = SessionContext.from_repo(Path.cwd())
     
     # Normalize inputs
     topic_slug = topic_slug.lower()
@@ -1337,10 +1343,12 @@ Event Type: {event_type}
     # Append the adaptive template (filling {daily_log})
     content += template_content.format(daily_log=daily_log)
 
+    # v2.8: Use buffer_write for transactional write
     try:
-        with open(filepath, 'w', encoding='utf-8') as f:
-            f.write(content)
-    except (IOError, OSError, PermissionError) as e:
+        ctx.buffer_write(Path(filepath), content)
+        ctx.commit()  # Commit immediately since this function is standalone
+    except Exception as e:
+        ctx.rollback()
         output.error(f"Failed to write log file: {e}")
         return ""
 
