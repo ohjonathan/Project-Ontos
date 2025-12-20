@@ -106,7 +106,7 @@ depends_on:
 ---
 # Test
 """)
-        result = scan_docs([str(docs_dir)])
+        result, warnings = scan_docs([str(docs_dir)])
         assert "test_doc" in result
         assert result["test_doc"]["depends_on"] == []
 
@@ -120,7 +120,7 @@ type:
 ---
 # Test
 """)
-        result = scan_docs([str(docs_dir)])
+        result, warnings = scan_docs([str(docs_dir)])
         assert "test_doc" in result
         assert result["test_doc"]["type"] == "unknown"
 
@@ -136,7 +136,7 @@ status: null
 ---
 # Test
 """)
-        result = scan_docs([str(docs_dir)])
+        result, warnings = scan_docs([str(docs_dir)])
         assert "test_doc" in result
         assert result["test_doc"]["type"] == "unknown"
         assert result["test_doc"]["depends_on"] == []
@@ -152,7 +152,7 @@ type: atom
 ---
 # Test
 """)
-        result = scan_docs([str(docs_dir)])
+        result, warnings = scan_docs([str(docs_dir)])
         assert len(result) == 0
 
     def test_whitespace_id_skipped(self, tmp_path):
@@ -165,7 +165,7 @@ type: atom
 ---
 # Test
 """)
-        result = scan_docs([str(docs_dir)])
+        result, warnings = scan_docs([str(docs_dir)])
         assert len(result) == 0
 
 

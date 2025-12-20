@@ -47,7 +47,7 @@ class TestScanDocs:
         """Test scanning directory with valid docs."""
         from ontos_generate_context_map import scan_docs
 
-        result = scan_docs([str(temp_docs_dir)])
+        result, warnings = scan_docs([str(temp_docs_dir)])
         assert len(result) == 2
         assert 'mission' in result
         assert 'api_spec' in result
@@ -56,14 +56,14 @@ class TestScanDocs:
         """Test that IDs starting with underscore are skipped."""
         from ontos_generate_context_map import scan_docs
 
-        result = scan_docs([str(temp_docs_dir)])
+        result, warnings = scan_docs([str(temp_docs_dir)])
         assert '_template' not in result
 
     def test_skip_missing_frontmatter(self, temp_docs_dir, doc_without_frontmatter):
         """Test that files without frontmatter are skipped."""
         from ontos_generate_context_map import scan_docs
 
-        result = scan_docs([str(temp_docs_dir)])
+        result, warnings = scan_docs([str(temp_docs_dir)])
         assert len(result) == 0
 
     def test_scan_multiple_directories(self, tmp_path):
@@ -86,16 +86,15 @@ type: atom
 ---
 """)
 
-        result = scan_docs([str(dir1), str(dir2)])
+        result, warnings = scan_docs([str(dir1), str(dir2)])
         assert len(result) == 2
         assert 'doc1' in result
         assert 'doc2' in result
 
-    def test_scan_nonexistent_directory(self, tmp_path, capsys):
-        """Test scanning nonexistent directory shows warning."""
+    def test_scan_nonexistent_directory(self, tmp_path):
+        """Test scanning nonexistent directory returns warning."""
         from ontos_generate_context_map import scan_docs
 
-        result = scan_docs([str(tmp_path / "nonexistent")])
-        captured = capsys.readouterr()
-        assert "Warning: Directory not found" in captured.out
+        result, warnings = scan_docs([str(tmp_path / "nonexistent")])
+        assert any("Directory not found" in w for w in warnings)
         assert len(result) == 0

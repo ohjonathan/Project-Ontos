@@ -7,7 +7,12 @@ import re
 import yaml
 import datetime
 import argparse
+from pathlib import Path
 from typing import Optional
+
+# v2.8: Import transactional context and output handler
+from ontos.core.context import SessionContext
+from ontos.ui.output import OutputHandler
 
 from ontos_config import (
     __version__,
@@ -186,19 +191,20 @@ def lint_data_quality(files_data: dict[str, dict], common_concepts: set[str]) ->
     return warnings
 
 
-def scan_docs(root_dirs: list[str]) -> dict[str, dict]:
+def scan_docs(root_dirs: list[str]) -> tuple[dict[str, dict], list[str]]:
     """Scans directories for markdown files and parses their metadata.
 
     Args:
         root_dirs: List of directories to scan.
 
     Returns:
-        Dictionary mapping doc IDs to their metadata.
+        Tuple of (files_data dict, list of warning messages).
     """
     files_data = {}
+    warnings = []
     for root_dir in root_dirs:
         if not os.path.isdir(root_dir):
-            print(f"Warning: Directory not found: {root_dir}")
+            warnings.append(f"Directory not found: {root_dir}")
             continue
         for subdir, dirs, files in os.walk(root_dir):
             # Prune directories matching skip patterns (e.g., 'archive/')
@@ -257,7 +263,7 @@ def scan_docs(root_dirs: list[str]) -> dict[str, dict]:
                             'describes': normalize_describes(frontmatter.get('describes')),
                             'describes_verified': parse_describes_verified(frontmatter.get('describes_verified')),
                         }
-    return files_data
+    return files_data, warnings
 
 
 def generate_tree(files_data: dict[str, dict]) -> str:
@@ -913,17 +919,24 @@ def generate_context_map(target_dirs: list[str], quiet: bool = False, strict: bo
     Returns:
         Number of issues found.
     """
+    # v2.8: Create transactional context and output handler
+    ctx = SessionContext.from_repo(Path.cwd())
+    output = OutputHandler(quiet=quiet)
+    
     dirs_str = ", ".join(target_dirs)
-    if not quiet:
-        print(f"Scanning {dirs_str}...")
-    files_data = scan_docs(target_dirs)
+    output.info(f"Scanning {dirs_str}...")
+    files_data, scan_warnings = scan_docs(target_dirs)
+    
+    # Display any scan warnings via OutputHandler
+    for warning in scan_warnings:
+        output.warning(warning)
     
     # v2.6: Filter out rejected documents unless --include-rejected
     if not include_rejected:
         rejected_count = sum(1 for d in files_data.values() if d.get('status') == 'rejected')
         files_data = {k: v for k, v in files_data.items() if v.get('status') != 'rejected'}
-        if rejected_count > 0 and not quiet:
-            print(f"  (Excluding {rejected_count} rejected docs. Use --include-rejected to show.)")
+        if rejected_count > 0:
+            output.info(f"  (Excluding {rejected_count} rejected docs. Use --include-rejected to show.)")
     
     # v2.6.1: Filter out archived logs unless --include-archived
     if not include_archived:
@@ -931,72 +944,64 @@ def generate_context_map(target_dirs: list[str], quiet: bool = False, strict: bo
                            if v.get('status') == 'archived' or 'archive/' in v.get('filepath', ''))
         files_data = {k: v for k, v in files_data.items() 
                      if v.get('status') != 'archived' and 'archive/' not in v.get('filepath', '')}
-        if archived_count > 0 and not quiet:
-            print(f"  (Excluding {archived_count} archived docs. Use --include-archived to show.)")
+        if archived_count > 0:
+            output.info(f"  (Excluding {archived_count} archived docs. Use --include-archived to show.)")
 
-    if not quiet:
-        print("Generating tree...")
+    output.info("Generating tree...")
     tree_view = generate_tree(files_data)
 
-    if not quiet:
-        print("Validating dependencies...")
+    output.info("Validating dependencies...")
     issues = validate_dependencies(files_data)
 
     # NEW: Validate log schema
-    if not quiet:
-        print("Validating log schema...")
+    output.info("Validating log schema...")
     log_issues = validate_log_schema(files_data)
     issues.extend(log_issues)
 
     # NEW: Validate impacts references
-    if not quiet:
-        print("Validating impacts references...")
+    output.info("Validating impacts references...")
     impact_issues = validate_impacts(files_data)
     issues.extend(impact_issues)
 
     # v2.6: Validate status rules (type-status matrix, proposals, rejections)
-    if not quiet:
-        print("Validating status rules...")
+    output.info("Validating status rules...")
     v26_errors, v26_warnings = validate_v26_status(files_data)
     
     # Hard errors block context map generation
     if v26_errors:
-        if not quiet:
-            print(f"\n## ERRORS (blocking)\n")
-            for e in v26_errors:
-                print(e)
-            print("\n❌ Context map generation failed due to errors above.")
+        output.error("ERRORS (blocking)")
+        for e in v26_errors:
+            output.error(e)
+        output.error("Context map generation failed due to errors above.")
+        ctx.rollback()
         sys.exit(1)
     
     # Warnings are added to lint output
     issues.extend(v26_warnings)
     
     # v2.7: Validate describes field and staleness
-    if not quiet:
-        print("Validating describes field (v2.7)...")
+    output.info("Validating describes field (v2.7)...")
     v27_errors, v27_warnings = validate_v27_describes(files_data)
     
     # Hard errors block generation
     if v27_errors:
-        if not quiet:
-            print(f"\n## ERRORS (blocking)\n")
-            for e in v27_errors:
-                print(e)
-            print("\n❌ Context map generation failed due to errors above.")
+        output.error("ERRORS (blocking)")
+        for e in v27_errors:
+            output.error(e)
+        output.error("Context map generation failed due to errors above.")
+        ctx.rollback()
         sys.exit(1)
     
     issues.extend(v27_warnings)
     
     # v2.7: Generate staleness audit
-    if not quiet:
-        print("Checking documentation staleness...")
+    output.info("Checking documentation staleness...")
     staleness_audit, stale_docs = generate_staleness_audit(files_data)
 
     # Lint mode
     lint_warnings = []
     if lint:
-        if not quiet:
-            print("Running data quality lint...")
+        output.info("Running data quality lint...")
         common_concepts = load_common_concepts()
         lint_warnings = lint_data_quality(files_data, common_concepts)
 
@@ -1037,49 +1042,53 @@ Scanned Directory: `{dirs_str}`
 {staleness_audit}
 """
 
+    # v2.8: Use transactional write
     try:
-        with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
-            f.write(content)
-    except (IOError, OSError, PermissionError) as e:
-        print(f"Error: Failed to write {OUTPUT_FILE}: {e}")
+        ctx.buffer_write(Path(OUTPUT_FILE), content)
+        
+        # v2.7: Buffer decision_history.md unless --skip-history
+        if not skip_history:
+            output.info("Regenerating decision_history.md (v2.7 immutable history)...")
+            logs_dir = get_logs_dir()
+            archive_logs_dir = get_archive_logs_dir()
+            history_path = get_decision_history_path()
+            # Generate content without writing (we buffer it ourselves)
+            history_content, history_warnings = generate_decision_history(
+                [logs_dir, archive_logs_dir],
+                None  # Don't write directly, we'll buffer it
+            )
+            ctx.buffer_write(Path(history_path), history_content)
+        
+        # Commit all writes atomically
+        modified = ctx.commit()
+        
+        output.success(f"Successfully generated {OUTPUT_FILE}")
+        output.info(f"Scanned {len(files_data)} documents, found {len(issues)} issues.")
+        if not skip_history:
+            output.info(f"  Generated {history_path}")
+            
+    except Exception as e:
+        ctx.rollback()
+        output.error(f"Failed to write files: {e}")
         sys.exit(1)
 
     # Count error-level issues (exclude INFO for strict mode purposes)
     error_issues = [i for i in issues if '[INFO]' not in i]
 
     # Display lint warnings
-    if lint_warnings and not quiet:
-        print(f"\n📋 Data Quality Warnings ({len(lint_warnings)} issues):")
+    if lint_warnings:
+        output.warning(f"Data Quality Warnings ({len(lint_warnings)} issues):")
         for warning in lint_warnings:
-            print(warning)
-        print()
-        print("These are soft warnings — they don't fail validation but hurt v3.0 readiness.")
-    elif lint and not quiet:
-        print("\n📋 Data Quality Warnings (0 issues):")
-        print("No data quality warnings. Nice work!")
+            output.warning(warning)
+        output.info("These are soft warnings — they don't fail validation but hurt v3.0 readiness.")
+    elif lint:
+        output.info("Data Quality Warnings (0 issues):")
+        output.info("No data quality warnings. Nice work!")
 
-    if not quiet:
-        print(f"Successfully generated {OUTPUT_FILE}")
-        print(f"Scanned {len(files_data)} documents, found {len(issues)} issues.")
-        
-        if error_issues:
-            print(f"\n❌ Validation Errors ({len(error_issues)} issues):")
-            for issue in error_issues:
-                print(issue)
-    
-    # v2.7: Regenerate decision_history.md unless --skip-history
-    if not skip_history:
-        if not quiet:
-            print("Regenerating decision_history.md (v2.7 immutable history)...")
-        logs_dir = get_logs_dir()
-        archive_logs_dir = get_archive_logs_dir()
-        history_path = get_decision_history_path()
-        _, history_warnings = generate_decision_history(
-            [logs_dir, archive_logs_dir],
-            history_path
-        )
-        if not quiet:
-            print(f"  Generated {history_path}")
+    if error_issues:
+        output.error(f"Validation Errors ({len(error_issues)} issues):")
+        for issue in error_issues:
+            output.error(issue)
 
     # Return only error-level issues for strict mode
     return len(error_issues)
@@ -1092,12 +1101,14 @@ def watch_mode(target_dirs: list[str], quiet: bool = False) -> None:
         target_dirs: List of directories to watch.
         quiet: Suppress output if True.
     """
+    output = OutputHandler(quiet=quiet)
+    
     try:
         from watchdog.observers import Observer
         from watchdog.events import FileSystemEventHandler
     except ImportError:
-        print("Error: watchdog not installed. Install with: pip install watchdog")
-        print("Or add watchdog to requirements.txt")
+        output.error("watchdog not installed. Install with: pip install watchdog")
+        output.error("Or add watchdog to requirements.txt")
         sys.exit(1)
 
     class ChangeHandler(FileSystemEventHandler):
@@ -1110,7 +1121,7 @@ def watch_mode(target_dirs: list[str], quiet: bool = False) -> None:
                 current_time = time.time()
                 if current_time - self.last_run > self.debounce_seconds:
                     self.last_run = current_time
-                    print(f"\n🔄 Change detected: {event.src_path}")
+                    output.info(f"Change detected: {event.src_path}")
                     generate_context_map(target_dirs, quiet)
 
     observer = Observer()
@@ -1122,7 +1133,7 @@ def watch_mode(target_dirs: list[str], quiet: bool = False) -> None:
 
     observer.start()
     dirs_str = ", ".join(target_dirs)
-    print(f"👀 Watching {dirs_str} for changes... (Ctrl+C to stop)")
+    output.info(f"Watching {dirs_str} for changes... (Ctrl+C to stop)")
 
     # Generate initial map
     generate_context_map(target_dirs, quiet)
@@ -1132,11 +1143,11 @@ def watch_mode(target_dirs: list[str], quiet: bool = False) -> None:
             time.sleep(1)
     except KeyboardInterrupt:
         observer.stop()
-        print("\n✅ Watch mode stopped.")
+        output.success("Watch mode stopped.")
     observer.join()
 
 
-def check_consolidation_status() -> None:
+def check_consolidation_status(output: OutputHandler = None) -> None:
     """Print warning if consolidation needed (prompted/advisory modes only).
 
     Called at end of context map generation to honor the "prompted" promise.
@@ -1145,7 +1156,13 @@ def check_consolidation_status() -> None:
     
     v2.5: This implements the "Keep me in the loop" promise for prompted mode.
     Uses shared helpers from ontos_lib for config-agnostic path resolution.
+    
+    Args:
+        output: OutputHandler instance (creates default if None).
     """
+    if output is None:
+        output = OutputHandler(quiet=False)
+    
     mode = resolve_config('ONTOS_MODE', 'prompted')
     if mode == 'automated':
         return  # Auto-consolidation handles this in pre-commit hook
@@ -1162,10 +1179,9 @@ def check_consolidation_status() -> None:
     old_logs = get_logs_older_than(threshold_days)
     
     if len(old_logs) > 0:
-        # Use ASCII text instead of emoji for terminal compatibility
-        print(f"\n[WARNING] {log_count} active logs (threshold: {threshold_count})")
-        print(f"          {len(old_logs)} logs are older than {threshold_days} days")
-        print(f"          Run: python3 .ontos/scripts/ontos_consolidate.py")
+        output.warning(f"{log_count} active logs (threshold: {threshold_count})")
+        output.warning(f"{len(old_logs)} logs are older than {threshold_days} days")
+        output.warning("Run: python3 .ontos/scripts/ontos_consolidate.py")
 
 
 if __name__ == "__main__":

@@ -45,6 +45,23 @@ class OutputHandler:
         for e in errors:
             print(f"❌ Error: {e}")
     
+    def error(self, message: str) -> None:
+        """Display a single error message.
+        
+        Args:
+            message: Error message to display.
+        """
+        print(f"❌ {message}")
+    
+    def warning(self, message: str) -> None:
+        """Display a single warning message.
+        
+        Args:
+            message: Warning message to display.
+        """
+        if not self.quiet:
+            print(f"⚠️  {message}")
+    
     def success(self, message: str) -> None:
         """Display a success message.
         

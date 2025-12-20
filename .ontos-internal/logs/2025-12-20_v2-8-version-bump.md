@@ -4,7 +4,7 @@ type: log
 status: active
 event_type: chore
 concepts: []
-impacts: [ontos_changelog]
+impacts: []
 ---
 
 # Session Log: V2 8 Version Bump
