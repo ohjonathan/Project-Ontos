@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-19 16:23:08 UTC
+Generated: 2025-12-20 10:42:04 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2025-12-20 01:23:08
+Generated on: 2025-12-20 19:42:04
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -73,9 +73,12 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **v2_7_implementation_plan_review_codex** (v2.7_implementation_plan_review_codex.md) ~1,000 tokens
   - Status: complete
   - Depends On: None
-- **v2_8_implementation_plan** [draft] (v2.8_implementation_plan.md) ~6,200 tokens
+- **v2_8_implementation_plan** [draft] (v2.8_implementation_plan.md) ~9,100 tokens
   - Status: draft
   - Depends On: master_plan_v4, v2_7_1_implementation_plan
+- **v2_8_implementation_plan_review_codex** [draft] (v2.8_implementation_plan_review_codex.md) ~789 tokens
+  - Status: draft
+  - Depends On: v2_8_implementation_plan
 - **v2_strategy** (v2_strategy.md) ~2,600 tokens
   - Status: active
   - Depends On: mission
@@ -117,6 +120,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **claude_v2_7_implementation_review** (Claude_v2.7_Implementation_Review.md) ~3,100 tokens
   - Status: complete
   - Depends On: None
+- **claude_v2_8_implementation_review** (Claude_v2.8_Implementation_Review.md) ~3,000 tokens
+  - Status: complete
+  - Depends On: v2_8_implementation_plan, master_plan_v4
 - **claude_v3_master_plan_review** (Claude_v3_Master_Plan_Review.md) ~3,300 tokens
   - Status: complete
   - Depends On: v2_strategy
@@ -257,9 +263,14 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **log_20251220_v2_7_1** (2025-12-20_v2-7-1.md) ~383 tokens
   - Status: active
   - Impacts: None
+- **log_20251220_v2_8_plan_creation** (2025-12-20_v2-8-plan-creation.md) ~346 tokens
+  - Status: active
+  - Impacts: v2_8_implementation_plan
 
 
 ## 2. Recent Timeline
+- **2025-12-20** [decision] **V2 8 Plan Creation** (`log_20251220_v2_8_plan_creation`)
+  - Impacted: `v2_8_implementation_plan`
 - **2025-12-20** [chore] **V2 7 1** (`log_20251220_v2_7_1`)
 - **2025-12-19** [feature] **V2 7** (`log_20251219_v2_7`)
   - Impacted: `v2_7_documentation_ontology`, `master_plan_v4`, `schema`
@@ -283,10 +294,8 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **2025-12-18** [feature] **V2 7 Documentation Ontology** (`log_20251218_v2_7_documentation_ontology`)
   - Impacted: `v2_7_documentation_ontology`
   - Concepts: ontology, documentation, synthesis, architecture
-- **2025-12-18** [feature] **V2 6 1 Graduation** (`log_20251218_v2_6_1_graduation`)
-  - Impacted: `ontos_agent_instructions`, `ontos_manual`
 
-*Showing 10 of 20 sessions*
+*Showing 10 of 21 sessions*
 
 ## 3. Dependency Audit
 No issues found.
@@ -303,6 +312,7 @@ No issues found.
 | claude_2_7_phil_v2_review | [Claude_V2.7Phil_v2.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v2.7/Claude_V2.7Phil_v2.md) | atom |
 | claude_install_ux_review | [Claude_InstallUX_Review.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/Install_experience/Claude_InstallUX_Review.md) | atom |
 | claude_v2_7_implementation_review | [Claude_v2.7_Implementation_Review.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v2.7/Claude_v2.7_Implementation_Review.md) | atom |
+| claude_v2_8_implementation_review | [Claude_v2.8_Implementation_Review.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v2.8/Claude_v2.8_Implementation_Review.md) | atom |
 | claude_v3_master_plan_review | [Claude_v3_Master_Plan_Review.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0/V3.0 Components/Claude_v3_Master_Plan_Review.md) | atom |
 | claude_v3_master_plan_review_v2 | [Claude_v3_Master_Plan_Review_v2.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0/V3.0 Components/Claude_v3_Master_Plan_Review_v2.md) | atom |
 | codex_2_5_v1_review | [V1_Codex on v2.5.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2.5/V1_Codex on v2.5.md) | atom |
@@ -347,6 +357,7 @@ No issues found.
 | log_20251219_v2_7_1 | [2025-12-19_v2-7-1.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-19_v2-7-1.md) | log |
 | log_20251219_v2_7_1_plan | [2025-12-19_v2-7-1-plan.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-19_v2-7-1-plan.md) | log |
 | log_20251220_v2_7_1 | [2025-12-20_v2-7-1.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-20_v2-7-1.md) | log |
+| log_20251220_v2_8_plan_creation | [2025-12-20_v2-8-plan-creation.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-20_v2-8-plan-creation.md) | log |
 | master_plan_v4 | [master_plan.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/master_plan.md) | strategy |
 | mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |
 | ontos_agent_instructions | [Ontos_Agent_Instructions.md](docs/reference/Ontos_Agent_Instructions.md) | kernel |
@@ -369,6 +380,7 @@ No issues found.
 | v2_7_implementation_plan_review_codex | [v2.7_implementation_plan_review_codex.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v2.7/v2.7_implementation_plan_review_codex.md) | strategy |
 | v2_7_implementation_synthesis | [v2.7_implementation_synthesis.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v2.7/v2.7_implementation_synthesis.md) | atom |
 | v2_8_implementation_plan | [v2.8_implementation_plan.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v2.8/v2.8_implementation_plan.md) | strategy |
+| v2_8_implementation_plan_review_codex | [v2.8_implementation_plan_review_codex.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v2.8/v2.8_implementation_plan_review_codex.md) | strategy |
 | v2_strategy | [v2_strategy.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2_strategy.md) | strategy |
 | v3_master_plan_context_kernel_review_codex | [v3_master_plan_context_kernel_review_codex.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0/V3.0 Components/v3_master_plan_context_kernel_review_codex.md) | strategy |
 | v3_master_plan_context_kernel_review_codex_v2 | [v3_master_plan_context_kernel_review_codex_v2.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0/V3.0 Components/v3_master_plan_context_kernel_review_codex_v2.md) | strategy |
