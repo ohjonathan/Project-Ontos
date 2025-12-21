@@ -6,6 +6,7 @@ import sys
 import datetime
 import argparse
 import shutil
+from pathlib import Path
 from typing import Optional, List, Tuple
 
 # Add scripts dir to path
@@ -13,6 +14,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from ontos_lib import parse_frontmatter, find_last_session_date
 from ontos_config import __version__, PROJECT_ROOT, is_ontos_repo
+from ontos.core.context import SessionContext
+from ontos.ui.output import OutputHandler
 
 # Mode-aware paths (from Claude feedback)
 if is_ontos_repo():
@@ -126,15 +129,21 @@ def extract_summary(filepath: str) -> Optional[str]:
     return None
 
 
-def validate_decision_history() -> bool:
+def validate_decision_history(output: OutputHandler = None) -> bool:
     """Validate decision_history.md exists and has expected structure.
+    
+    Args:
+        output: OutputHandler instance (creates default if None).
     
     Returns:
         True if valid, False otherwise.
     """
+    if output is None:
+        output = OutputHandler()
+    
     if not os.path.exists(DECISION_HISTORY_FILE):
-        print(f"Error: {DECISION_HISTORY_FILE} not found.")
-        print("Create it with the standard table header, or run 'ontos init'.")
+        output.error(f"{DECISION_HISTORY_FILE} not found.")
+        output.info("Create it with the standard table header, or run 'ontos init'.")
         return False
     
     with open(DECISION_HISTORY_FILE, 'r', encoding='utf-8') as f:
@@ -142,9 +151,9 @@ def validate_decision_history() -> bool:
     
     # Validate History Ledger header exists (NOT Consolidation Log)
     if HISTORY_LEDGER_HEADER not in content:
-        print(f"Error: decision_history.md missing History Ledger table.")
-        print(f"Expected header containing: {HISTORY_LEDGER_HEADER}")
-        print("Please fix the table structure manually.")
+        output.error("decision_history.md missing History Ledger table.")
+        output.detail(f"Expected header containing: {HISTORY_LEDGER_HEADER}")
+        output.info("Please fix the table structure manually.")
         return False
     
     return True
@@ -156,7 +165,9 @@ def append_to_decision_history(
     event_type: str,
     summary: str,
     impacts: List[str],
-    archive_path: str
+    archive_path: str,
+    output: OutputHandler = None,
+    ctx: SessionContext = None
 ) -> bool:
     """Append entry to the History Ledger table in decision_history.md.
     
@@ -165,8 +176,27 @@ def append_to_decision_history(
     2. Consolidation Log (metadata about consolidation acts) - different columns
     
     We must target the History Ledger specifically, not just "the last table".
+    
+    Args:
+        date: Date string for the entry.
+        slug: Session slug.
+        event_type: Event type (chore, feature, fix, etc.).
+        summary: One-line summary.
+        impacts: List of impacted doc IDs.
+        archive_path: Path where log was archived.
+        output: OutputHandler instance (creates default if None).
+        ctx: SessionContext instance (creates and owns one if None).
+    
+    Returns:
+        True on success, False on failure.
     """
-    if not validate_decision_history():
+    _owns_ctx = ctx is None
+    if _owns_ctx:
+        ctx = SessionContext.from_repo(Path.cwd())
+    if output is None:
+        output = OutputHandler()
+    
+    if not validate_decision_history(output=output):
         return False
     
     # Format new row
@@ -224,25 +254,35 @@ def append_to_decision_history(
                     break
     
     if history_ledger_end == -1:
-        print("Error: Could not find insertion point in History Ledger table")
+        output.error("Could not find insertion point in History Ledger table")
         return False
     
     # Insert new row after the last row of the History Ledger
     lines.insert(history_ledger_end + 1, new_row)
     
-    # Write back
-    with open(DECISION_HISTORY_FILE, 'w', encoding='utf-8') as f:
-        f.write('\n'.join(lines))
+    # Buffer write (v2.8 transactional pattern)
+    ctx.buffer_write(Path(DECISION_HISTORY_FILE), '\n'.join(lines))
+    
+    if _owns_ctx:
+        ctx.commit()
     
     return True
 
 
-def archive_log(filepath: str, dry_run: bool = False) -> Optional[str]:
+def archive_log(filepath: str, dry_run: bool = False, output: OutputHandler = None) -> Optional[str]:
     """Move log to archive directory.
+    
+    Args:
+        filepath: Path to the log file.
+        dry_run: If True, don't actually move.
+        output: OutputHandler instance (creates default if None).
     
     Returns:
         New archive path (relative), or None on failure.
     """
+    if output is None:
+        output = OutputHandler()
+    
     filename = os.path.basename(filepath)
     archive_path = os.path.join(ARCHIVE_DIR, filename)
     rel_archive_path = os.path.relpath(archive_path, PROJECT_ROOT)
@@ -256,14 +296,31 @@ def archive_log(filepath: str, dry_run: bool = False) -> Optional[str]:
         shutil.move(filepath, archive_path)
         return rel_archive_path
     except Exception as e:
-        print(f"Error archiving {filepath}: {e}")
+        output.error(f"Error archiving {filepath}: {e}")
         return None
 
 
 def consolidate_log(filepath: str, doc_id: str, frontmatter: dict, 
                     dry_run: bool = False, quiet: bool = False,
-                    auto: bool = False) -> bool:
-    """Consolidate a single log file."""
+                    auto: bool = False, output: OutputHandler = None,
+                    ctx: SessionContext = None) -> bool:
+    """Consolidate a single log file.
+    
+    Args:
+        filepath: Path to the log file.
+        doc_id: Document ID from frontmatter.
+        frontmatter: Parsed frontmatter dict.
+        dry_run: Preview without making changes.
+        quiet: Suppress output.
+        auto: Process without prompting.
+        output: OutputHandler instance (creates default if None).
+        ctx: SessionContext for transactional writes.
+    
+    Returns:
+        True on success, False on skip/failure.
+    """
+    if output is None:
+        output = OutputHandler(quiet=quiet)
     
     filename = os.path.basename(filepath)
     date = filename[:10]
@@ -275,7 +332,7 @@ def consolidate_log(filepath: str, doc_id: str, frontmatter: dict,
     
     # Interactive summary fallback (from Gemini feedback)
     if not summary and not auto and not quiet:
-        print(f"\n⚠️  Could not auto-extract summary from {doc_id}")
+        output.warning(f"Could not auto-extract summary from {doc_id}")
         try:
             summary = input("   Enter one-line summary: ").strip()
         except (EOFError, KeyboardInterrupt):
@@ -283,15 +340,14 @@ def consolidate_log(filepath: str, doc_id: str, frontmatter: dict,
     
     summary = summary or "(No summary captured)"
     
-    if not quiet:
-        print(f"\n📄 {doc_id}")
-        print(f"   Date: {date}")
-        print(f"   Type: {event_type}")
-        print(f"   Summary: {summary}")
-        print(f"   Impacts: {impacts or '(none)'}")
+    output.plain(f"\n📄 {doc_id}")
+    output.detail(f"Date: {date}")
+    output.detail(f"Type: {event_type}")
+    output.detail(f"Summary: {summary}")
+    output.detail(f"Impacts: {impacts or '(none)'}")
     
     if dry_run:
-        print(f"   [DRY RUN] Would archive to: {ARCHIVE_DIR}/{filename}")
+        output.info(f"[DRY RUN] Would archive to: {ARCHIVE_DIR}/{filename}")
         return True
     
     # Confirm (unless auto mode)
@@ -309,20 +365,20 @@ def consolidate_log(filepath: str, doc_id: str, frontmatter: dict,
             confirm = 'y'
         
         if confirm != 'y':
-            print("   Skipped.")
+            output.info("Skipped.")
             return False
     
     # Archive file first
-    rel_archive_path = archive_log(filepath, dry_run)
+    rel_archive_path = archive_log(filepath, dry_run, output=output)
     if not rel_archive_path:
         return False
     
     # Append to decision history
-    if append_to_decision_history(date, slug, event_type, summary, impacts, rel_archive_path):
-        print(f"   ✅ Archived and recorded in decision_history.md")
+    if append_to_decision_history(date, slug, event_type, summary, impacts, rel_archive_path, output=output, ctx=ctx):
+        output.success("Archived and recorded in decision_history.md")
         return True
     else:
-        print(f"   ⚠️  File archived but failed to update decision_history.md")
+        output.warning("File archived but failed to update decision_history.md")
         return False
 
 
@@ -359,37 +415,37 @@ Example:
                         help='Process all logs without prompting')
 
     args = parser.parse_args()
+    
+    # v2.8.4: Create OutputHandler for all output
+    output = OutputHandler(quiet=args.quiet)
 
     # Validate setup
-    if not args.dry_run and not validate_decision_history():
+    if not args.dry_run and not validate_decision_history(output=output):
         sys.exit(1)
 
     # Find logs to consolidate (count-based by default, age-based with --by-age)
     if args.by_age:
         logs_to_consolidate = find_old_logs(args.days)
         threshold_msg = f"older than {args.days} days"
-        empty_msg = f"✅ No logs older than {args.days} days. Nothing to consolidate."
+        empty_msg = f"No logs older than {args.days} days. Nothing to consolidate."
     else:
         logs_to_consolidate = find_excess_logs(args.count)
         threshold_msg = f"exceeding retention count ({args.count})"
-        empty_msg = f"✅ Log count within threshold ({args.count}). Nothing to consolidate."
+        empty_msg = f"Log count within threshold ({args.count}). Nothing to consolidate."
 
     if not logs_to_consolidate:
-        if not args.quiet:
-            print(empty_msg)
+        output.success(empty_msg)
         return
 
-    if not args.quiet:
-        print(f"Found {len(logs_to_consolidate)} log(s) {threshold_msg}:")
+    output.info(f"Found {len(logs_to_consolidate)} log(s) {threshold_msg}:")
 
     consolidated = 0
     for filepath, doc_id, frontmatter in logs_to_consolidate:
-        if consolidate_log(filepath, doc_id, frontmatter, args.dry_run, args.quiet, args.all):
+        if consolidate_log(filepath, doc_id, frontmatter, args.dry_run, args.quiet, args.all, output=output):
             consolidated += 1
 
-    if not args.quiet:
-        action = 'Would consolidate' if args.dry_run else 'Consolidated'
-        print(f"\n{action} {consolidated} log(s).")
+    action = 'Would consolidate' if args.dry_run else 'Consolidated'
+    output.info(f"{action} {consolidated} log(s).")
 
 
 if __name__ == "__main__":

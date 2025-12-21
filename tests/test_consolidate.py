@@ -36,6 +36,13 @@ def test_validate_decision_history_missing():
         assert validate_decision_history() is False
 
 def test_append_targets_history_ledger_not_consolidation_log():
+    """Test that new rows are inserted into History Ledger, not Consolidation Log.
+    
+    v2.8.4: Updated to mock buffer_write since append_to_decision_history now
+    uses SessionContext transactional writes instead of direct file writes.
+    """
+    from unittest.mock import MagicMock
+    
     # Setup content with both tables
     content = """# Decision History
 
@@ -50,14 +57,21 @@ def test_append_targets_history_ledger_not_consolidation_log():
 | Date | Sessions |
 |:---|:---|
 """
+    mock_ctx = MagicMock()
+    mock_ctx.buffer_write = MagicMock()
+    mock_ctx.commit = MagicMock()
+    
     with patch("ontos_consolidate.validate_decision_history", return_value=True), \
-         patch("builtins.open", mock_open(read_data=content)) as mock_file:
+         patch("builtins.open", mock_open(read_data=content)):
         
-        append_to_decision_history("2025-01-01", "new", "chore", "summary", [], "archive/new.md")
+        # Pass ctx so _owns_ctx is False (no commit called by function)
+        append_to_decision_history("2025-01-01", "new", "chore", "summary", [], "archive/new.md", ctx=mock_ctx)
         
-        # Verify write
-        handle = mock_file()
-        written = handle.write.call_args[0][0]
+        # Verify buffer_write was called
+        mock_ctx.buffer_write.assert_called_once()
+        
+        # Get the written content
+        written = mock_ctx.buffer_write.call_args[0][1]
         
         # New row should be inserted after the last row of History Ledger
         # i.e., before ## Consolidation Log
@@ -68,3 +82,7 @@ def test_append_targets_history_ledger_not_consolidation_log():
         pos_row = written.find(expected_row)
         pos_header = written.find("## Consolidation Log")
         assert pos_row < pos_header
+        
+        # Verify commit was NOT called (we passed ctx, so it's not owned)
+        mock_ctx.commit.assert_not_called()
+

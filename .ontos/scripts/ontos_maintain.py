@@ -11,136 +11,40 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ontos_config import __version__, PROJECT_ROOT
 from ontos_lib import find_draft_proposals, get_proposals_dir, get_decision_history_path
 
+# v2.8.4: Import from ontos_end_session to avoid duplication
+# These functions were refactored with v2.8 transactional pattern in PR #27
+from ontos_end_session import graduate_proposal
+from ontos.ui.output import OutputHandler
+
 SCRIPTS_DIR = os.path.join(PROJECT_ROOT, '.ontos', 'scripts')
 
 
-def graduate_proposal(proposal: dict, quiet: bool = False) -> bool:
-    """Graduate a proposal from proposals/ to strategy/.
-
-    v2.6.1: Moved here for Maintain Ontos integration.
-
-    Args:
-        proposal: Dict with 'id', 'filepath', 'version'
-        quiet: Suppress output
-
-    Returns:
-        True if graduation succeeded.
-    """
-    import shutil
-    import datetime
-
-    filepath = proposal['filepath']
-    proposals_dir = get_proposals_dir()
-
-    # Determine destination
-    rel_path = os.path.relpath(filepath, proposals_dir)
-    strategy_dir = os.path.dirname(proposals_dir)  # Parent of proposals
-    dest_path = os.path.join(strategy_dir, rel_path)
-    dest_dir = os.path.dirname(dest_path)
-
-    try:
-        os.makedirs(dest_dir, exist_ok=True)
-
-        # Read and update frontmatter
-        with open(filepath, 'r', encoding='utf-8') as f:
-            content = f.read()
-
-        # Update status: draft -> active
-        content = re.sub(
-            r'^(status:\s*)draft\s*$',
-            r'\1active',
-            content,
-            flags=re.MULTILINE
-        )
-
-        # Write to new location
-        with open(dest_path, 'w', encoding='utf-8') as f:
-            f.write(content)
-
-        # Remove original
-        os.remove(filepath)
-
-        # Try to remove empty parent directories
-        try:
-            parent = os.path.dirname(filepath)
-            if os.path.isdir(parent) and not os.listdir(parent):
-                os.rmdir(parent)
-        except OSError:
-            pass
-
-        # Add entry to decision_history.md
-        add_graduation_to_ledger(proposal, dest_path)
-
-        if not quiet:
-            print(f"   ✅ Graduated: {proposal['id']}")
-            print(f"      proposals/{rel_path} → strategy/{rel_path}")
-
-        return True
-
-    except (IOError, OSError, shutil.Error) as e:
-        if not quiet:
-            print(f"   ❌ Graduation failed: {e}")
-        return False
-
-
-def add_graduation_to_ledger(proposal: dict, new_path: str) -> None:
-    """Add APPROVED entry to decision_history.md."""
-    import datetime
-
-    history_path = get_decision_history_path()
-    if not history_path or not os.path.exists(history_path):
-        return
-
-    try:
-        with open(history_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-
-        today = datetime.datetime.now().strftime('%Y-%m-%d')
-        slug = proposal['id'].replace('_', '-')
-        version = proposal.get('version', '')
-
-        new_entry = (
-            f"| {today} | {slug} | feature | "
-            f"APPROVED: {version or 'Proposal'} implemented. | "
-            f"v2_strategy, schema | `{new_path}` |\n"
-        )
-
-        # Insert after the header row
-        lines = content.split('\n')
-        for i, line in enumerate(lines):
-            if line.startswith('|:--') or line.startswith('| Date'):
-                continue
-            if line.startswith('|') and '|' in line[1:]:
-                lines.insert(i, new_entry.strip())
-                break
-
-        with open(history_path, 'w', encoding='utf-8') as f:
-            f.write('\n'.join(lines))
-
-    except (IOError, OSError):
-        pass
-
-
-def review_proposals(quiet: bool = False) -> bool:
+def review_proposals(quiet: bool = False, output: OutputHandler = None) -> bool:
     """Review draft proposals and prompt for graduation.
 
     v2.6.1: Step 4 of Maintain Ontos.
+    v2.8.4: Added OutputHandler support.
+
+    Args:
+        quiet: Suppress output.
+        output: OutputHandler instance (creates default if None).
 
     Returns:
         True if any proposals were graduated.
     """
+    if output is None:
+        output = OutputHandler(quiet=quiet)
+    
     drafts = find_draft_proposals()
 
     if not drafts:
-        if not quiet:
-            print("✅ No draft proposals to review.")
+        output.success("No draft proposals to review.")
         return False
 
     # Skip interactive prompts in non-TTY mode (e.g., pytest, CI)
     interactive = sys.stdin.isatty() if hasattr(sys.stdin, 'isatty') else False
 
-    if not quiet:
-        print(f"📋 Found {len(drafts)} draft proposal(s):\n")
+    output.info(f"Found {len(drafts)} draft proposal(s):")
 
     graduated_any = False
 
@@ -151,26 +55,23 @@ def review_proposals(quiet: bool = False) -> bool:
         elif prop.get('version'):
             version_note = f" (v{prop['version']})"
 
-        if not quiet:
-            print(f"   - {prop['id']}{version_note}")
-            print(f"     {prop['age_days']} days old")
+        output.detail(f"{prop['id']}{version_note}")
+        output.detail(f"{prop['age_days']} days old")
 
-            if interactive:
-                try:
-                    response = input("     Graduate to strategy/? [y/N/skip all]: ").strip().lower()
-                    if response == 'skip all':
-                        print("   Skipping remaining proposals.")
-                        break
-                    if response in ('y', 'yes'):
-                        if graduate_proposal(prop, quiet):
-                            graduated_any = True
-                except (EOFError, KeyboardInterrupt):
-                    print("\n   Skipping remaining proposals.")
+        if interactive:
+            try:
+                response = input("     Graduate to strategy/? [y/N/skip all]: ").strip().lower()
+                if response == 'skip all':
+                    output.info("Skipping remaining proposals.")
                     break
-            else:
-                print("     (Run interactively to graduate)")
-
-            print()
+                if response in ('y', 'yes'):
+                    if graduate_proposal(prop, quiet, output=output):
+                        graduated_any = True
+            except (EOFError, KeyboardInterrupt):
+                output.info("Skipping remaining proposals.")
+                break
+        else:
+            output.detail("(Run interactively to graduate)")
 
     return graduated_any
 
@@ -214,27 +115,27 @@ Example:
     
     args = parser.parse_args()
     
-    if not args.quiet:
-        print("🔧 Running Ontos maintenance...\n")
+    # v2.8.4: Create OutputHandler for all output
+    output = OutputHandler(quiet=args.quiet)
+    
+    output.info("Running Ontos maintenance...")
     
     all_success = True
     
     # Step 1: Check for untagged files
-    if not args.quiet:
-        print("Step 1: Checking for untagged files...")
+    output.info("Step 1: Checking for untagged files...")
     
     migrate_args = []
     if args.strict:
         migrate_args.append('--strict')
     
-    success, output = run_script('ontos_migrate_frontmatter.py', migrate_args, args.quiet)
-    if not args.quiet and output.strip():
-        print(output)
+    success, script_output = run_script('ontos_migrate_frontmatter.py', migrate_args, args.quiet)
+    if script_output.strip():
+        output.plain(script_output)
     all_success = all_success and success
     
     # Step 2: Rebuild context map
-    if not args.quiet:
-        print("\nStep 2: Rebuilding context map...")
+    output.info("Step 2: Rebuilding context map...")
     
     generate_args = []
     if args.strict:
@@ -242,9 +143,9 @@ Example:
     if args.lint:
         generate_args.append('--lint')
     
-    success, output = run_script('ontos_generate_context_map.py', generate_args, args.quiet)
-    if not args.quiet and output.strip():
-        print(output)
+    success, script_output = run_script('ontos_generate_context_map.py', generate_args, args.quiet)
+    if script_output.strip():
+        output.plain(script_output)
     all_success = all_success and success
     
     # Step 3: Consolidate logs (v2.4+, count-based since v2.6.2)
@@ -255,41 +156,36 @@ Example:
         auto_consolidate = True
 
     if auto_consolidate:
-        if not args.quiet:
-            print("\nStep 3: Consolidating excess logs...")
+        output.info("Step 3: Consolidating excess logs...")
 
         # Get retention count from config (mode/user-aware)
         retention_count = resolve_config('LOG_RETENTION_COUNT', 15)
 
         consolidate_args = ['--all', '--count', str(retention_count)]
-        success, output = run_script('ontos_consolidate.py', consolidate_args, args.quiet)
-        if not args.quiet and output.strip():
-            print(output)
+        success, script_output = run_script('ontos_consolidate.py', consolidate_args, args.quiet)
+        if script_output.strip():
+            output.plain(script_output)
         # Consolidation failures are non-critical
-        if not success and not args.quiet:
-            print("   ⚠️  Consolidation had issues (non-critical)")
+        if not success:
+            output.warning("Consolidation had issues (non-critical)")
     else:
-        if not args.quiet:
-            print("\nStep 3: Consolidation (skipped, AUTO_CONSOLIDATE is False)")
-            print("   Run `python3 .ontos/scripts/ontos_consolidate.py` manually if needed.")
+        output.info("Step 3: Consolidation (skipped, AUTO_CONSOLIDATE is False)")
+        output.detail("Run `python3 .ontos/scripts/ontos_consolidate.py` manually if needed.")
 
     # Step 4: Review proposals (v2.6.1)
-    if not args.quiet:
-        print("\nStep 4: Reviewing proposals...")
+    output.info("Step 4: Reviewing proposals...")
 
-    graduated = review_proposals(args.quiet)
+    graduated = review_proposals(args.quiet, output=output)
     if graduated:
         # Regenerate context map if proposals were graduated
-        if not args.quiet:
-            print("\n   Regenerating context map after graduation...")
+        output.info("Regenerating context map after graduation...")
         run_script('ontos_generate_context_map.py', [], args.quiet)
 
     # Summary
-    if not args.quiet:
-        if all_success:
-            print("\n✅ Maintenance complete. No issues found.")
-        else:
-            print("\n⚠️  Maintenance complete with issues. Review output above.")
+    if all_success:
+        output.success("Maintenance complete. No issues found.")
+    else:
+        output.warning("Maintenance complete with issues. Review output above.")
     
     sys.exit(0 if all_success else 1)
 

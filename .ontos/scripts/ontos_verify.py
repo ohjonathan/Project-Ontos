@@ -14,6 +14,7 @@ import sys
 import argparse
 import re
 from datetime import date
+from pathlib import Path
 from typing import Optional
 
 # Add scripts directory to path
@@ -36,6 +37,9 @@ from ontos_config_defaults import (
     PROJECT_ROOT,
     is_ontos_repo,
 )
+
+from ontos.core.context import SessionContext
+from ontos.ui.output import OutputHandler
 
 
 def find_stale_documents() -> list[dict]:
@@ -81,31 +85,44 @@ def find_stale_documents() -> list[dict]:
     return stale_docs
 
 
-def update_describes_verified(filepath: str, new_date: date) -> bool:
+def update_describes_verified(
+    filepath: str,
+    new_date: date,
+    output: OutputHandler = None,
+    ctx: SessionContext = None
+) -> bool:
     """Update the describes_verified field in a document.
     
     Args:
         filepath: Path to the markdown file.
         new_date: New date to set.
+        output: OutputHandler instance (creates default if None).
+        ctx: SessionContext for transactional writes.
         
     Returns:
         True if successful, False otherwise.
     """
+    _owns_ctx = ctx is None
+    if _owns_ctx:
+        ctx = SessionContext.from_repo(Path.cwd())
+    if output is None:
+        output = OutputHandler()
+    
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
             content = f.read()
     except IOError as e:
-        print(f"Error reading {filepath}: {e}")
+        output.error(f"Error reading {filepath}: {e}")
         return False
     
     if not content.startswith('---'):
-        print(f"Error: {filepath} has no frontmatter")
+        output.error(f"{filepath} has no frontmatter")
         return False
     
     # Find the frontmatter section
     parts = content.split('---', 2)
     if len(parts) < 3:
-        print(f"Error: Invalid frontmatter in {filepath}")
+        output.error(f"Invalid frontmatter in {filepath}")
         return False
     
     frontmatter = parts[1]
@@ -138,61 +155,82 @@ def update_describes_verified(filepath: str, new_date: date) -> bool:
     new_content = f'---{new_frontmatter}---{body}'
     
     try:
-        with open(filepath, 'w', encoding='utf-8') as f:
-            f.write(new_content)
+        # v2.8.4: Use buffer_write instead of direct write
+        ctx.buffer_write(Path(filepath), new_content)
+        
+        if _owns_ctx:
+            ctx.commit()
         return True
-    except IOError as e:
-        print(f"Error writing {filepath}: {e}")
+    except Exception as e:
+        if _owns_ctx:
+            ctx.rollback()
+        output.error(f"Error writing {filepath}: {e}")
         return False
 
 
-def verify_single(filepath: str, verify_date: Optional[date] = None) -> int:
+def verify_single(
+    filepath: str,
+    verify_date: Optional[date] = None,
+    output: OutputHandler = None,
+    ctx: SessionContext = None
+) -> int:
     """Verify a single document as current.
     
     Args:
         filepath: Path to the document.
         verify_date: Date to set (default: today).
+        output: OutputHandler instance (creates default if None).
+        ctx: SessionContext for transactional writes.
         
     Returns:
         0 on success, 1 on failure.
     """
+    if output is None:
+        output = OutputHandler()
+    
     if not os.path.exists(filepath):
-        print(f"Error: File not found: {filepath}")
+        output.error(f"File not found: {filepath}")
         return 1
     
     # Check if document has describes field
     frontmatter = parse_frontmatter(filepath)
     if not frontmatter:
-        print(f"Error: No frontmatter in {filepath}")
+        output.error(f"No frontmatter in {filepath}")
         return 1
     
     describes = normalize_describes(frontmatter.get('describes'))
     if not describes:
-        print(f"Warning: {filepath} has no describes field, nothing to verify")
+        output.warning(f"{filepath} has no describes field, nothing to verify")
         return 0
     
     target_date = verify_date or date.today()
     
-    if update_describes_verified(filepath, target_date):
-        print(f"✅ Updated describes_verified to {target_date}")
+    if update_describes_verified(filepath, target_date, output=output, ctx=ctx):
+        output.success(f"Updated describes_verified to {target_date}")
         return 0
     else:
         return 1
 
 
-def verify_all_interactive() -> int:
+def verify_all_interactive(output: OutputHandler = None) -> int:
     """Interactively verify all stale documents.
+    
+    Args:
+        output: OutputHandler instance (creates default if None).
     
     Returns:
         0 on success, 1 on failure.
     """
+    if output is None:
+        output = OutputHandler()
+    
     stale_docs = find_stale_documents()
     
     if not stale_docs:
-        print("No stale documents found.")
+        output.success("No stale documents found.")
         return 0
     
-    print(f"Found {len(stale_docs)} stale documents:\n")
+    output.info(f"Found {len(stale_docs)} stale documents:")
     
     updated = 0
     skipped = 0
@@ -201,28 +239,27 @@ def verify_all_interactive() -> int:
         staleness = doc['staleness']
         stale_atoms_str = ", ".join([f"{a} changed {d}" for a, d in staleness.stale_atoms[:3]])
         
-        print(f"[{i}/{len(stale_docs)}] {doc['doc_id']}")
-        print(f"      File: {doc['filepath']}")
-        print(f"      Stale because: {stale_atoms_str}")
+        output.plain(f"\n[{i}/{len(stale_docs)}] {doc['doc_id']}")
+        output.detail(f"File: {doc['filepath']}")
+        output.detail(f"Stale because: {stale_atoms_str}")
         
         try:
             response = input("      Verify as current? [y/N]: ").strip().lower()
         except (EOFError, KeyboardInterrupt):
-            print("\n⏹️  Aborted")
+            output.warning("Aborted")
             return 1
         
         if response == 'y':
-            if update_describes_verified(doc['filepath'], date.today()):
-                print(f"      ✅ Updated describes_verified to {date.today()}")
+            if update_describes_verified(doc['filepath'], date.today(), output=output):
+                output.success(f"Updated describes_verified to {date.today()}")
                 updated += 1
             else:
-                print("      ❌ Failed to update")
+                output.error("Failed to update")
         else:
-            print("      ⏭️  Skipped")
+            output.info("Skipped")
             skipped += 1
-        print()
     
-    print(f"Done. Updated: {updated}, Skipped: {skipped}")
+    output.info(f"Done. Updated: {updated}, Skipped: {skipped}")
     return 0
 
 
@@ -242,17 +279,20 @@ Examples:
     parser.add_argument('--version', '-V', action='version', version=f'%(prog)s {__version__}')
     args = parser.parse_args()
     
+    # v2.8.4: Create OutputHandler at top of main()
+    output = OutputHandler()
+    
     if args.all:
-        return verify_all_interactive()
+        return verify_all_interactive(output=output)
     elif args.filepath:
         verify_date = None
         if args.date:
             try:
                 verify_date = date.fromisoformat(args.date)
             except ValueError:
-                print(f"Error: Invalid date format: {args.date}. Use YYYY-MM-DD.")
+                output.error(f"Invalid date format: {args.date}. Use YYYY-MM-DD.")
                 return 1
-        return verify_single(args.filepath, verify_date)
+        return verify_single(args.filepath, verify_date, output=output)
     else:
         parser.print_help()
         return 1

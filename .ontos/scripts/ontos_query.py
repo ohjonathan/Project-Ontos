@@ -17,6 +17,7 @@ from ontos_lib import (
     get_git_last_modified,
 )
 from ontos_config import __version__, DOCS_DIR, SKIP_PATTERNS
+from ontos.ui.output import OutputHandler
 
 
 def scan_docs_for_query(root_dir: str) -> dict:
@@ -251,58 +252,60 @@ Examples:
     
     args = parser.parse_args()
     
+    # v2.8.4: Add OutputHandler for consistency
+    output = OutputHandler()
+    
     files_data = scan_docs_for_query(args.dir)
     
     if not files_data:
-        print(f"No documents found in {args.dir}")
+        output.error(f"No documents found in {args.dir}")
         sys.exit(1)
     
     if args.depends_on:
         results = query_depends_on(files_data, args.depends_on)
         if results:
-            print(f"{args.depends_on} depends on:")
+            output.info(f"{args.depends_on} depends on:")
             for r in results:
-                print(f"  → {r}")
+                output.detail(f"→ {r}")
         else:
-            print(f"{args.depends_on} has no dependencies (or doesn't exist)")
+            output.warning(f"{args.depends_on} has no dependencies (or doesn't exist)")
     
     elif args.depended_by:
         results = query_depended_by(files_data, args.depended_by)
         if results:
-            print(f"Documents that depend on {args.depended_by}:")
+            output.info(f"Documents that depend on {args.depended_by}:")
             for r in results:
-                print(f"  ← {r}")
+                output.detail(f"← {r}")
         else:
-            print(f"Nothing depends on {args.depended_by}")
+            output.warning(f"Nothing depends on {args.depended_by}")
     
     elif args.concept:
         results = query_concept(files_data, args.concept)
         if results:
-            print(f"Documents with concept '{args.concept}':")
+            output.info(f"Documents with concept '{args.concept}':")
             for r in results:
-                print(f"  • {r}")
+                output.detail(f"• {r}")
         else:
-            print(f"No documents tagged with '{args.concept}'")
+            output.warning(f"No documents tagged with '{args.concept}'")
     
     elif args.stale is not None:
         results = query_stale(files_data, args.stale)
         if results:
-            print(f"Documents not updated in {args.stale}+ days:")
+            output.info(f"Documents not updated in {args.stale}+ days:")
             for doc_id, age in results:
-                print(f"  • {doc_id} ({age} days)")
+                output.detail(f"• {doc_id} ({age} days)")
         else:
-            print(f"All documents updated within {args.stale} days")
+            output.success(f"All documents updated within {args.stale} days")
     
     elif args.health:
         health = query_health(files_data)
-        print(format_health(health))
+        output.plain(format_health(health))
     
     elif args.list_ids:
-        print("Document IDs:")
+        output.info("Document IDs:")
         for doc_id in sorted(files_data.keys()):
             doc_type = files_data[doc_id].get('type', '?')
-            print(f"  {doc_id} ({doc_type})")
-
+            output.detail(f"{doc_id} ({doc_type})")
 
 if __name__ == "__main__":
     main()

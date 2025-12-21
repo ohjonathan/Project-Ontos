@@ -21,6 +21,34 @@ All notable changes to **Project Ontos itself** (the protocol and tooling) will 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.4] - 2025-12-21
+
+### Theme: "Script Consolidation"
+
+Refactored remaining Ontos scripts to v2.8 transactional architecture.
+
+### Added
+- **Deduplication** — Removed duplicate `graduate_proposal()` and `add_graduation_to_ledger()` from `ontos_maintain.py` (102 lines removed)
+  - Now imports from `ontos_end_session.py` (already v2.8 compliant)
+
+### Changed
+- **ontos_consolidate.py** — Full v2.8 refactor
+  - `append_to_decision_history()` uses `buffer_write()` with `_owns_ctx` pattern
+  - `validate_decision_history()`, `consolidate_log()`, `archive_log()` use `OutputHandler`
+  - `main()` creates OutputHandler for all CLI output
+- **ontos_verify.py** — Full v2.8 refactor
+  - `update_describes_verified()` uses `buffer_write()` with `_owns_ctx` pattern
+  - `verify_single()`, `verify_all_interactive()` use `OutputHandler`
+- **ontos_maintain.py** — Deduplicated + OutputHandler
+  - `review_proposals()`, `main()` use `OutputHandler`
+- **ontos_query.py** — OutputHandler consistency (read-only script)
+  - `main()` uses `OutputHandler` for all CLI output
+
+### Tests
+- Updated `test_consolidate.py::test_append_targets_history_ledger_not_consolidation_log`
+  - Now mocks `buffer_write` instead of `builtins.open`
+
+---
 
 ## [2.8.3] - 2025-12-21
 
