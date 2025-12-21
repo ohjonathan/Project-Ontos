@@ -22,6 +22,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.8.3] - 2025-12-21
+
+### Theme: "Transaction Composability"
+
+Full implementation of v2.8 transactional architecture in `ontos_end_session.py`.
+
+### Added
+- **`_owns_ctx` pattern** — Transaction composability for all write functions
+  - Functions only commit when they own the context (created it themselves)
+  - Enables atomic commits across multiple buffered writes
+- **5 transaction tests** — Comprehensive tests for commit/rollback behavior
+  - `test_main_commits_all_files_atomically`
+  - `test_main_rollback_on_commit_failure`
+  - `test_graduate_proposal_uses_buffer_write`
+  - `test_append_to_log_uses_buffer_write`
+  - `test_create_changelog_uses_buffer_write`
+- **`OutputHandler.detail()` method** — For indented context messages
+
+### Changed
+- **6 write functions** converted to `buffer_write()` with `_owns_ctx`:
+  - `graduate_proposal()` (also uses `buffer_delete()`)
+  - `add_graduation_to_ledger()`
+  - `append_to_log()`
+  - `create_auto_log()`
+  - `create_changelog()`
+  - `add_changelog_entry()`
+- **6 functions** converted to use `OutputHandler`:
+  - `find_existing_log_for_today()`
+  - `auto_archive()`
+  - `generate_auto_slug()`
+  - `suggest_impacts()`
+  - `validate_concepts()`
+  - `check_stale_docs_warning()`
+- **`main()` commits once** at end for atomic transaction
+
+### Metrics
+- All 248 tests pass
+- Print statements: 71 → 57 (remaining in interactive prompts only)
+
+---
+
 ## [2.8.0] - 2025-12-20
 
 ### Theme: "Clean Architecture Refactor"
