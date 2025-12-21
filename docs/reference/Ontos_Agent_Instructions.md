@@ -7,11 +7,15 @@ depends_on: [ontos_manual]
 
 # Ontos Agent Instructions
 
+> **v2.8+ Unified CLI:** All commands use `python3 ontos.py <command>`.
+> Old script paths still work but will show deprecation warnings in v2.9.
+> See [Ontos Manual Section 8](Ontos_Manual.md#8-unified-cli-v28) for details.
+
 ## Commands
 
 ### "Ontos" (Activate)
 1. Check for `Ontos_Context_Map.md`
-2. If missing: `python3 .ontos/scripts/ontos_generate_context_map.py`
+2. If missing: `python3 ontos.py map`
 3. Read map, identify relevant IDs for user's request
 4. **Check consolidation status (prompted/advisory modes only):**
    - Context map generation now shows consolidation warning when needed
@@ -20,15 +24,15 @@ depends_on: [ontos_manual]
 6. print("Loaded: [id1, id2]")
 
 ### "Query Ontos"
-1. `python3 .ontos/scripts/ontos_query.py --depends-on [id]` (Check dependencies)
-2. `python3 .ontos/scripts/ontos_query.py --concept [tag]` (Find by concept)
-3. `python3 .ontos/scripts/ontos_query.py --stale 30` (Find stale docs)
+1. `python3 ontos.py query --depends-on [id]` (Check dependencies)
+2. `python3 ontos.py query --concept [tag]` (Find by concept)
+3. `python3 ontos.py query --stale 30` (Find stale docs)
 
 ### "Archive Ontos" (End Session)
 
 **Step 1: Check for auto-generated log first (v2.4)**
 ```bash
-python3 .ontos/scripts/ontos_end_session.py --enhance
+python3 ontos.py log --enhance
 ```
 
 Exit codes:
@@ -45,7 +49,7 @@ Exit codes:
 6. Commit the enriched log
 
 **Step 2b: If no auto-generated log (exit 1)**
-1. Run: `python3 .ontos/scripts/ontos_end_session.py -e <type> -s "Agent Name"`
+1. Run: `python3 ontos.py log -e <type> -s "Agent Name"`
 2. Read generated log and fill in sections
 3. Commit
 
@@ -56,7 +60,7 @@ Event types: `feature`, `fix`, `refactor`, `exploration`, `chore`, `decision`
 **RULE:** Never use `git push --no-verify` without explicit user approval.
 
 ### "Maintain Ontos" (Weekly)
-1. `python3 .ontos/scripts/ontos_maintain.py`
+1. `python3 ontos.py maintain`
 2. This runs four steps:
    - Migrate untagged files
    - Regenerate context map
@@ -66,12 +70,12 @@ Event types: `feature`, `fix`, `refactor`, `exploration`, `chore`, `decision`
 4. Commit context map if changed
 
 ### "Update Ontos"
-1. `python3 .ontos/scripts/ontos_update.py`
+1. `python3 ontos.py update`
 
 ### "Verify Ontos" (v2.7)
 Mark documentation as current after reviewing described atoms:
-1. `python3 .ontos/scripts/ontos_verify.py <path>` — Single file
-2. `python3 .ontos/scripts/ontos_verify.py --all` — Interactive: all stale docs
+1. `python3 ontos.py verify <path>` — Single file
+2. `python3 ontos.py verify --all` — Interactive: all stale docs
 
 **When to verify:**
 - After updating code that a document describes
@@ -129,7 +133,7 @@ When user asks to review a proposal:
 ### Recalling Rejected Ideas
 Rejected proposals are **excluded by default** to save tokens. To recall:
 ```bash
-python3 .ontos/scripts/ontos_generate_context_map.py --include-rejected
+python3 ontos.py map --include-rejected
 ```
 
 **Why rejected proposals matter:**

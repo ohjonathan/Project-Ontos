@@ -21,6 +21,22 @@ All notable changes to **Project Ontos itself** (the protocol and tooling) will 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.6] - 2025-12-22
+
+### Theme: "Documentation Alignment"
+
+Updated Agent Instructions to use unified CLI syntax.
+
+### Changed
+- **Ontos_Agent_Instructions.md** — All 11 command references updated to unified CLI syntax
+  - `python3 .ontos/scripts/ontos_*.py` → `python3 ontos.py <command>`
+- Added unified CLI reference note at top of Agent Instructions
+
+### Note
+Old script paths still work in v2.8. Deprecation warnings will appear in v2.9.
+
+---
+
 ## [2.8.5] - 2025-12-22
 
 ### Theme: "Unified CLI"
