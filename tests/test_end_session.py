@@ -112,3 +112,152 @@ def test_concept_validation_suggests_similar():
         # Should suggest "authentication"
         suggestion_printed = any("Did you mean: authentication" in str(arg) for call in mock_print.call_args_list for arg in call[0])
         assert suggestion_printed
+
+
+# ============================================================================
+# v2.8.3 Transaction Composability Tests (per Chief Architect)
+# ============================================================================
+
+def test_main_commits_all_files_atomically():
+    """main() should create SessionContext and commit all buffered writes atomically."""
+    import ontos_end_session
+    
+    mock_ctx = MagicMock()
+    mock_ctx.buffer_write = MagicMock()
+    mock_ctx.commit = MagicMock()
+    mock_ctx.rollback = MagicMock()
+    
+    with patch("ontos_end_session.SessionContext") as MockSessionContext, \
+         patch("ontos_end_session.OutputHandler") as MockOutput, \
+         patch("os.path.exists", return_value=False), \
+         patch("os.makedirs"), \
+         patch("ontos_end_session.get_session_git_log", return_value="abc123 - test"), \
+         patch("ontos_end_session._create_archive_marker"), \
+         patch.object(sys, 'argv', ['ontos_end_session.py', 'test-topic', '-s', 'test', '-e', 'chore', '-q']):
+        
+        MockSessionContext.from_repo.return_value = mock_ctx
+        mock_output = MagicMock()
+        MockOutput.return_value = mock_output
+        
+        # Should complete without error when commit succeeds
+        try:
+            ontos_end_session.main()
+        except SystemExit:
+            pass  # Expected for normal exit
+        
+        # Should have called commit
+        mock_ctx.commit.assert_called()
+
+
+def test_main_rollback_on_commit_failure():
+    """main() should call rollback when commit fails."""
+    import ontos_end_session
+    
+    mock_ctx = MagicMock()
+    mock_ctx.buffer_write = MagicMock()
+    mock_ctx.commit = MagicMock(side_effect=IOError("Disk full"))
+    mock_ctx.rollback = MagicMock()
+    
+    with patch("ontos_end_session.SessionContext") as MockSessionContext, \
+         patch("ontos_end_session.OutputHandler") as MockOutput, \
+         patch("os.path.exists", return_value=False), \
+         patch("os.makedirs"), \
+         patch("ontos_end_session.get_session_git_log", return_value="abc123 - test"), \
+         patch("ontos_end_session._create_archive_marker"), \
+         patch.object(sys, 'argv', ['ontos_end_session.py', 'test-topic', '-s', 'test', '-e', 'chore', '-q']):
+        
+        MockSessionContext.from_repo.return_value = mock_ctx
+        mock_output = MagicMock()
+        MockOutput.return_value = mock_output
+        
+        with pytest.raises(SystemExit) as exc_info:
+            ontos_end_session.main()
+        
+        # Should exit with error code
+        assert exc_info.value.code == 1
+        # Should have called rollback
+        mock_ctx.rollback.assert_called()
+
+
+def test_graduate_proposal_uses_buffer_write(tmp_path):
+    """graduate_proposal() should use buffer_write and buffer_delete, not direct I/O."""
+    from ontos_end_session import graduate_proposal
+    
+    # Setup mock proposal
+    proposals_dir = tmp_path / "proposals"
+    proposals_dir.mkdir()
+    proposal_file = proposals_dir / "test_proposal.md"
+    proposal_file.write_text("---\nid: test\nstatus: draft\n---\n# Test")
+    
+    mock_ctx = MagicMock()
+    mock_ctx.buffer_write = MagicMock()
+    mock_ctx.buffer_delete = MagicMock()
+    mock_ctx.commit = MagicMock()
+    
+    with patch("ontos_end_session.get_proposals_dir", return_value=str(proposals_dir)), \
+         patch("ontos_end_session.get_decision_history_path", return_value=None):
+        
+        result = graduate_proposal(
+            {'id': 'test', 'filepath': str(proposal_file), 'version': '1.0'},
+            quiet=True,
+            ctx=mock_ctx
+        )
+    
+    assert result is True
+    # Should use buffer_write for new file
+    mock_ctx.buffer_write.assert_called()
+    # Should use buffer_delete for original file
+    mock_ctx.buffer_delete.assert_called_once()
+    # Should NOT commit (ctx was passed, so _owns_ctx is False)
+    mock_ctx.commit.assert_not_called()
+
+
+def test_append_to_log_uses_buffer_write(tmp_path):
+    """append_to_log() should buffer writes, not write directly."""
+    from ontos_end_session import append_to_log
+    from ontos.ui.output import OutputHandler
+    
+    # Create test log file
+    log_file = tmp_path / "test.md"
+    log_file.write_text("""## Raw Session History
+```text
+abc123 - old commit
+```
+""")
+    
+    mock_ctx = MagicMock()
+    mock_ctx.buffer_write = MagicMock()
+    mock_ctx.commit = MagicMock()
+    
+    output = OutputHandler(quiet=True)
+    
+    result = append_to_log(
+        str(log_file),
+        ['def456 - new commit'],
+        output=output,
+        ctx=mock_ctx
+    )
+    
+    assert result is True
+    mock_ctx.buffer_write.assert_called_once()
+    # Should NOT commit when ctx is passed
+    mock_ctx.commit.assert_not_called()
+
+
+def test_create_changelog_uses_buffer_write():
+    """create_changelog() should buffer writes, not write directly."""
+    from ontos_end_session import create_changelog
+    from ontos.ui.output import OutputHandler
+    
+    mock_ctx = MagicMock()
+    mock_ctx.buffer_write = MagicMock()
+    mock_ctx.commit = MagicMock()
+    
+    output = OutputHandler(quiet=True)
+    
+    result = create_changelog(output=output, ctx=mock_ctx)
+    
+    assert result == "CHANGELOG.md"
+    mock_ctx.buffer_write.assert_called_once()
+    # Should NOT commit when ctx is passed
+    mock_ctx.commit.assert_not_called()

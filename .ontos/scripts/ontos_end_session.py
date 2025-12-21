@@ -337,7 +337,7 @@ def slugify(text: str) -> str:
     return slug[:50] if slug else 'session'
 
 
-def find_existing_log_for_today(branch_slug: str, branch_name: str) -> Optional[str]:
+def find_existing_log_for_today(branch_slug: str, branch_name: str, output: OutputHandler = None) -> Optional[str]:
     """Find existing log for this branch created today.
     
     v1.2: Exact match first, then collision variants. Validates branch name.
@@ -345,10 +345,14 @@ def find_existing_log_for_today(branch_slug: str, branch_name: str) -> Optional[
     Args:
         branch_slug: Slugified branch name
         branch_name: Full branch name for validation
+        output: OutputHandler instance (creates default if None).
     
     Returns:
         Path to existing log or None.
     """
+    if output is None:
+        output = OutputHandler()
+    
     today = datetime.datetime.now().strftime('%Y-%m-%d')
     
     # 1. Try exact match first (most common case)
@@ -357,7 +361,7 @@ def find_existing_log_for_today(branch_slug: str, branch_name: str) -> Optional[
         if validate_branch_in_log(exact, branch_name):
             return exact
         # Log exists but for different branch - collision!
-        print(f"⚠️  Slug collision: {exact} belongs to different branch")
+        output.warning(f"Slug collision: {exact} belongs to different branch")
     
     # 2. Check collision variants (-2, -3, etc.)
     for i in range(2, 100):  # v2.4: Extended from 10 to 100 per PR review
@@ -596,7 +600,7 @@ def find_active_log_for_branch() -> Optional[str]:
     return sorted(matching_logs, reverse=True)[0]
 
 
-def auto_archive(branch: str, source: str, quiet: bool = False) -> bool:
+def auto_archive(branch: str, source: str, quiet: bool = False, output: OutputHandler = None) -> bool:
     """Auto-archive for pre-push hook.
     
     Creates or appends to session log automatically.
@@ -605,29 +609,31 @@ def auto_archive(branch: str, source: str, quiet: bool = False) -> bool:
         branch: Current branch name
         source: Source for log attribution
         quiet: Suppress output
+        output: OutputHandler instance (creates default if None).
     
     Returns:
         True if log was created/updated, False on error.
     """
+    if output is None:
+        output = OutputHandler(quiet=quiet)
+    
     branch_slug = slugify(branch)
     commits = get_commits_since_push()
     
     if not commits:
-        if not quiet:
-            print("ℹ️  No commits to archive")
+        output.info("No commits to archive")
         return True
     
     # Check for existing log to append to
-    existing_log = find_existing_log_for_today(branch_slug, branch)
+    existing_log = find_existing_log_for_today(branch_slug, branch, output=output)
     
     if existing_log:
-        success = append_to_log(existing_log, commits)
+        success = append_to_log(existing_log, commits, output=output)
         if success:
             _create_archive_marker(existing_log)
             return True
         # Fallback: create new log
-        if not quiet:
-            print("    Falling back to new log creation...")
+        output.info("Falling back to new log creation...")
     
     # Infer event type from branch prefix
     event_type = 'chore'
@@ -639,7 +645,7 @@ def auto_archive(branch: str, source: str, quiet: bool = False) -> bool:
         event_type = 'refactor'
     
     # Create new log with auto-generated status
-    return create_auto_log(branch_slug, branch, source, event_type, commits, quiet)
+    return create_auto_log(branch_slug, branch, source, event_type, commits, quiet, output=output)
 
 
 def create_auto_log(
@@ -872,12 +878,19 @@ def validate_topic_slug(slug: str) -> tuple[bool, str]:
     return True, ""
 
 
-def generate_auto_slug(quiet: bool = False) -> Optional[str]:
+def generate_auto_slug(quiet: bool = False, output: OutputHandler = None) -> Optional[str]:
     """Generate slug from git branch name or recent commit.
+    
+    Args:
+        quiet: Suppress output
+        output: OutputHandler instance (creates default if None).
     
     Returns:
         Generated slug, or None if user input required.
     """
+    if output is None:
+        output = OutputHandler(quiet=quiet)
+    
     # Try branch name first
     try:
         result = subprocess.run(
@@ -889,8 +902,7 @@ def generate_auto_slug(quiet: bool = False) -> Optional[str]:
             
             # Block common branch names (from Gemini feedback)
             if branch.lower() in BLOCKED_BRANCH_NAMES:
-                if not quiet:
-                    print(f"ℹ️  Branch '{branch}' not suitable for slug, trying commit message...")
+                output.info(f"Branch '{branch}' not suitable for slug, trying commit message...")
             else:
                 # Clean branch name: feature/auth-flow -> auth-flow
                 if '/' in branch:

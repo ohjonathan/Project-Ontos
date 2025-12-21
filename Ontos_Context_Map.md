@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-21 13:40:20 UTC
+Generated: 2025-12-21 13:57:28 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2025-12-21 22:40:20
+Generated on: 2025-12-21 22:57:28
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -290,6 +290,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **log_20251221_v2_8_2_sessioncontext_fix** (2025-12-21_v2-8-2-sessioncontext-fix.md) ~144 tokens
   - Status: active
   - Impacts: v2_8_implementation_plan
+- **log_20251221_v2_8_3_owns_ctx_pattern** (2025-12-21_v2-8-3-owns-ctx-pattern.md) ~143 tokens
+  - Status: active
+  - Impacts: v2_8_implementation_plan
 - **log_20251221_v2_8_3_setup** (2025-12-21_v2-8-3-setup.md) ~103 tokens
   - Status: active
   - Impacts: v2_8_implementation_plan
@@ -297,6 +300,8 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 2. Recent Timeline
 - **2025-12-21** [chore] **V2 8 3 Setup** (`log_20251221_v2_8_3_setup`)
+  - Impacted: `v2_8_implementation_plan`
+- **2025-12-21** [refactor] **V2 8 3 Owns Ctx Pattern** (`log_20251221_v2_8_3_owns_ctx_pattern`)
   - Impacted: `v2_8_implementation_plan`
 - **2025-12-21** [refactor] **V2 8 2 Sessioncontext Fix** (`log_20251221_v2_8_2_sessioncontext_fix`)
   - Impacted: `v2_8_implementation_plan`
@@ -315,10 +320,8 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **2025-12-20** [fix] **V2 8 Pr24 Fixes** (`log_20251220_v2_8_pr24_fixes`)
   - Impacted: `v2_8_implementation_plan`
   - Concepts: architecture, refactor, testing
-- **2025-12-20** [decision] **V2 8 Plan Creation** (`log_20251220_v2_8_plan_creation`)
-  - Impacted: `v2_8_implementation_plan`
 
-*Showing 10 of 30 sessions*
+*Showing 10 of 31 sessions*
 
 ## 3. Dependency Audit
 No issues found.
@@ -389,6 +392,7 @@ No issues found.
 | log_20251221_v2_8_2_end_session_refactor | [2025-12-21_v2-8-2-end-session-refactor.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-21_v2-8-2-end-session-refactor.md) | log |
 | log_20251221_v2_8_2_phase_1_2_complete | [2025-12-21_v2-8-2-phase-1-2-complete.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-21_v2-8-2-phase-1-2-complete.md) | log |
 | log_20251221_v2_8_2_sessioncontext_fix | [2025-12-21_v2-8-2-sessioncontext-fix.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-21_v2-8-2-sessioncontext-fix.md) | log |
+| log_20251221_v2_8_3_owns_ctx_pattern | [2025-12-21_v2-8-3-owns-ctx-pattern.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-21_v2-8-3-owns-ctx-pattern.md) | log |
 | log_20251221_v2_8_3_setup | [2025-12-21_v2-8-3-setup.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-21_v2-8-3-setup.md) | log |
 | master_plan_v4 | [master_plan.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/master_plan.md) | strategy |
 | mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |
