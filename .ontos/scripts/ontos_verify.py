@@ -279,17 +279,20 @@ Examples:
     parser.add_argument('--version', '-V', action='version', version=f'%(prog)s {__version__}')
     args = parser.parse_args()
     
+    # v2.8.4: Create OutputHandler at top of main()
+    output = OutputHandler()
+    
     if args.all:
-        return verify_all_interactive()
+        return verify_all_interactive(output=output)
     elif args.filepath:
         verify_date = None
         if args.date:
             try:
                 verify_date = date.fromisoformat(args.date)
             except ValueError:
-                print(f"Error: Invalid date format: {args.date}. Use YYYY-MM-DD.")
+                output.error(f"Invalid date format: {args.date}. Use YYYY-MM-DD.")
                 return 1
-        return verify_single(args.filepath, verify_date)
+        return verify_single(args.filepath, verify_date, output=output)
     else:
         parser.print_help()
         return 1
