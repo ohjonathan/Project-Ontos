@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-21 14:11:08 UTC
+Generated: 2025-12-21 14:30:48 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2025-12-21 23:11:08
+Generated on: 2025-12-21 23:30:48
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -290,13 +290,16 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **log_20251221_v2_8_2_sessioncontext_fix** (2025-12-21_v2-8-2-sessioncontext-fix.md) ~144 tokens
   - Status: active
   - Impacts: v2_8_implementation_plan
-- **log_20251221_v2_8_3_a_plus_grade** (2025-12-21_v2-8-3-a-plus-grade.md) ~139 tokens
+- **log_20251221_v2_8_3_a_plus_grade** (2025-12-21_v2-8-3-a-plus-grade.md) ~141 tokens
   - Status: active
-  - Impacts: ontos_end_session
-- **log_20251221_v2_8_3_chief_architect_gaps** (2025-12-21_v2-8-3-chief-architect-gaps.md) ~143 tokens
+  - Impacts: v2_8_implementation_plan
+- **log_20251221_v2_8_3_chief_architect_gaps** (2025-12-21_v2-8-3-chief-architect-gaps.md) ~145 tokens
   - Status: active
-  - Impacts: ontos_end_session
+  - Impacts: v2_8_implementation_plan
 - **log_20251221_v2_8_3_owns_ctx_pattern** (2025-12-21_v2-8-3-owns-ctx-pattern.md) ~143 tokens
+  - Status: active
+  - Impacts: v2_8_implementation_plan
+- **log_20251221_v2_8_3_release** (2025-12-21_v2-8-3-release.md) ~138 tokens
   - Status: active
   - Impacts: v2_8_implementation_plan
 - **log_20251221_v2_8_3_setup** (2025-12-21_v2-8-3-setup.md) ~103 tokens
@@ -307,12 +310,14 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 ## 2. Recent Timeline
 - **2025-12-21** [chore] **V2 8 3 Setup** (`log_20251221_v2_8_3_setup`)
   - Impacted: `v2_8_implementation_plan`
+- **2025-12-21** [refactor] **V2 8 3 Release** (`log_20251221_v2_8_3_release`)
+  - Impacted: `v2_8_implementation_plan`
 - **2025-12-21** [refactor] **V2 8 3 Owns Ctx Pattern** (`log_20251221_v2_8_3_owns_ctx_pattern`)
   - Impacted: `v2_8_implementation_plan`
 - **2025-12-21** [refactor] **V2 8 3 Chief Architect Gaps** (`log_20251221_v2_8_3_chief_architect_gaps`)
-  - Impacted: `ontos_end_session`
+  - Impacted: `v2_8_implementation_plan`
 - **2025-12-21** [refactor] **V2 8 3 A Plus Grade** (`log_20251221_v2_8_3_a_plus_grade`)
-  - Impacted: `ontos_end_session`
+  - Impacted: `v2_8_implementation_plan`
 - **2025-12-21** [refactor] **V2 8 2 Sessioncontext Fix** (`log_20251221_v2_8_2_sessioncontext_fix`)
   - Impacted: `v2_8_implementation_plan`
 - **2025-12-21** [refactor] **V2 8 2 Phase 1 2 Complete** (`log_20251221_v2_8_2_phase_1_2_complete`)
@@ -323,17 +328,11 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   - Impacted: `v2_8_implementation_plan`
 - **2025-12-21** [refactor] **V2 8 1 Minor Fixes** (`log_20251221_v2_8_1_minor_fixes`)
   - Impacted: `v2_8_implementation_plan`
-- **2025-12-20** [feature] **V2 8** (`log_20251220_v2_8`)
-  - Impacted: `v2_8_implementation_plan`
-  - Concepts: architecture, refactor, context-object
 
-*Showing 10 of 33 sessions*
+*Showing 10 of 34 sessions*
 
 ## 3. Dependency Audit
-- [BROKEN LINK] **log_20251221_v2_8_3_a_plus_grade** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-21_v2-8-3-a-plus-grade.md) impacts non-existent document: `ontos_end_session`
-  Fix: Create `ontos_end_session`, correct the reference, or archive this log
-- [BROKEN LINK] **log_20251221_v2_8_3_chief_architect_gaps** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-21_v2-8-3-chief-architect-gaps.md) impacts non-existent document: `ontos_end_session`
-  Fix: Create `ontos_end_session`, correct the reference, or archive this log
+No issues found.
 
 ## 4. Index
 | ID | Filename | Type |
@@ -404,6 +403,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 | log_20251221_v2_8_3_a_plus_grade | [2025-12-21_v2-8-3-a-plus-grade.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-21_v2-8-3-a-plus-grade.md) | log |
 | log_20251221_v2_8_3_chief_architect_gaps | [2025-12-21_v2-8-3-chief-architect-gaps.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-21_v2-8-3-chief-architect-gaps.md) | log |
 | log_20251221_v2_8_3_owns_ctx_pattern | [2025-12-21_v2-8-3-owns-ctx-pattern.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-21_v2-8-3-owns-ctx-pattern.md) | log |
+| log_20251221_v2_8_3_release | [2025-12-21_v2-8-3-release.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-21_v2-8-3-release.md) | log |
 | log_20251221_v2_8_3_setup | [2025-12-21_v2-8-3-setup.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-21_v2-8-3-setup.md) | log |
 | master_plan_v4 | [master_plan.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/master_plan.md) | strategy |
 | mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |

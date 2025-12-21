@@ -4,7 +4,7 @@ type: log
 status: active
 event_type: refactor
 concepts: []
-impacts: [ontos_end_session]
+impacts: [v2_8_implementation_plan]
 ---
 
 # Session Log: V2 8 3 Chief Architect Gaps
