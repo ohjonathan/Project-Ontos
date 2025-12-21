@@ -5,7 +5,7 @@ status: active
 depends_on: []
 ---
 
-# Ontos Manual v2.5
+# Ontos Manual v2.8
 
 *The complete reference for Project Ontos*
 
@@ -372,7 +372,62 @@ repos:
 
 ---
 
-## 8. Updating Ontos
+## 8. Unified CLI (v2.8+)
+
+Ontos v2.8 introduces a unified command interface:
+
+```bash
+python3 ontos.py <command> [options]
+```
+
+### Available Commands
+
+| Command     | Description            | Old Syntax                                           |
+|-------------|------------------------|------------------------------------------------------|
+| `log`       | Archive a session      | `python3 .ontos/scripts/ontos_end_session.py`        |
+| `map`       | Generate context map   | `python3 .ontos/scripts/ontos_generate_context_map.py` |
+| `verify`    | Verify describes dates | `python3 .ontos/scripts/ontos_verify.py`             |
+| `maintain`  | Run maintenance tasks  | `python3 .ontos/scripts/ontos_maintain.py`           |
+| `consolidate` | Archive old logs     | `python3 .ontos/scripts/ontos_consolidate.py`        |
+| `query`     | Search documents       | `python3 .ontos/scripts/ontos_query.py`              |
+| `update`    | Update Ontos scripts   | `python3 .ontos/scripts/ontos_update.py`             |
+
+### Command Aliases
+
+For convenience, commands have short aliases:
+
+- `archive`, `session` → `log`
+- `context`, `generate` → `map`  
+- `check` → `verify`
+- `maintenance` → `maintain`
+- `archive-old` → `consolidate`
+- `search`, `find` → `query`
+- `upgrade` → `update`
+
+### Examples
+
+```bash
+# Archive a feature session
+python3 ontos.py log -e feature
+
+# Generate context map with strict validation
+python3 ontos.py map --strict
+
+# Verify all stale documents
+python3 ontos.py verify --all
+
+# Search for a concept
+python3 ontos.py query --concept caching
+
+# Check graph health
+python3 ontos.py query --health
+```
+
+> **Note:** The old script paths still work in v2.8. Direct script usage will show deprecation warnings starting in v2.9 and be removed in v3.0.
+
+---
+
+## 9. Updating Ontos
 
 ```bash
 # Check for updates
@@ -386,7 +441,7 @@ python3 .ontos/scripts/ontos_update.py
 
 ---
 
-## 9. Scripts Reference
+## 10. Scripts Reference
 
 | Script | Purpose |
 |--------|---------|
@@ -409,7 +464,7 @@ python3 .ontos/scripts/ontos_update.py
 
 ---
 
-## 10. Documentation Staleness Tracking (v2.7)
+## 11. Documentation Staleness Tracking (v2.7)
 
 Track when documentation becomes outdated after code changes.
 

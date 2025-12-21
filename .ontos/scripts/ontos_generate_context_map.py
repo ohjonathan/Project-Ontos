@@ -1184,7 +1184,11 @@ def check_consolidation_status(output: OutputHandler = None) -> None:
         output.warning("Run: python3 .ontos/scripts/ontos_consolidate.py")
 
 
-if __name__ == "__main__":
+def main():
+    """Main entry point for CLI.
+    
+    v2.8.5: Wrapped in function for unified CLI dispatcher compatibility.
+    """
     parser = argparse.ArgumentParser(
         description='Generate Ontos Context Map',
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -1223,6 +1227,7 @@ Examples:
     if args.watch:
         # Note: Watch mode doesn't support strict flag in this implementation yet
         watch_mode(target_dirs, args.quiet)
+        return 0
     else:
         issue_count = generate_context_map(target_dirs, args.quiet, args.strict, args.lint, 
                                            getattr(args, 'include_rejected', False),
@@ -1235,5 +1240,10 @@ Examples:
 
         if args.strict and issue_count > 0:
             print(f"\n❌ Strict mode: {issue_count} issues detected. Exiting with error.")
-            sys.exit(1)
+            return 1
+        
+        return 0
 
+
+if __name__ == "__main__":
+    sys.exit(main())

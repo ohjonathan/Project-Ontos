@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-21 15:25:50 UTC
+Generated: 2025-12-21 15:57:59 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2025-12-22 00:25:50
+Generated on: 2025-12-22 00:57:59
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -20,7 +20,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **ontos_agent_instructions** (Ontos_Agent_Instructions.md) ~2,100 tokens
   - Status: active
   - Depends On: ontos_manual
-- **ontos_manual** (Ontos_Manual.md) ~2,900 tokens
+- **ontos_manual** (Ontos_Manual.md) ~3,400 tokens
   - Status: active
   - Depends On: None
 
@@ -73,7 +73,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **v2_7_implementation_plan_review_codex** (v2.7_implementation_plan_review_codex.md) ~1,000 tokens
   - Status: complete
   - Depends On: None
-- **v2_8_implementation_plan** (v2.8_implementation_plan.md) ~11,200 tokens
+- **v2_8_implementation_plan** (v2.8_implementation_plan.md) ~12,600 tokens
   - Status: active
   - Depends On: master_plan_v4, v2_7_1_implementation_plan
 - **v2_8_implementation_plan_review_codex** [draft] (v2.8_implementation_plan_review_codex.md) ~789 tokens
@@ -305,9 +305,14 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **log_20251221_v2_8_3_setup** (2025-12-21_v2-8-3-setup.md) ~103 tokens
   - Status: active
   - Impacts: v2_8_implementation_plan
+- **log_20251222_v285_unified_cli** (2025-12-22_v285-unified-cli.md) ~418 tokens
+  - Status: active
+  - Impacts: ontos_manual
 
 
 ## 2. Recent Timeline
+- **2025-12-22** [feature] **V285 Unified Cli** (`log_20251222_v285_unified_cli`)
+  - Impacted: `ontos_manual`
 - **2025-12-21** [chore] **V2 8 3 Setup** (`log_20251221_v2_8_3_setup`)
   - Impacted: `v2_8_implementation_plan`
 - **2025-12-21** [refactor] **V2 8 3 Release** (`log_20251221_v2_8_3_release`)
@@ -326,10 +331,8 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   - Impacted: `v2_8_implementation_plan`
 - **2025-12-21** [feature] **V2 8 1 Sessioncontext** (`log_20251221_v2_8_1_sessioncontext`)
   - Impacted: `v2_8_implementation_plan`
-- **2025-12-21** [refactor] **V2 8 1 Minor Fixes** (`log_20251221_v2_8_1_minor_fixes`)
-  - Impacted: `v2_8_implementation_plan`
 
-*Showing 10 of 34 sessions*
+*Showing 10 of 35 sessions*
 
 ## 3. Dependency Audit
 No issues found.
@@ -405,6 +408,7 @@ No issues found.
 | log_20251221_v2_8_3_owns_ctx_pattern | [2025-12-21_v2-8-3-owns-ctx-pattern.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-21_v2-8-3-owns-ctx-pattern.md) | log |
 | log_20251221_v2_8_3_release | [2025-12-21_v2-8-3-release.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-21_v2-8-3-release.md) | log |
 | log_20251221_v2_8_3_setup | [2025-12-21_v2-8-3-setup.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-21_v2-8-3-setup.md) | log |
+| log_20251222_v285_unified_cli | [2025-12-22_v285-unified-cli.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-22_v285-unified-cli.md) | log |
 | master_plan_v4 | [master_plan.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/master_plan.md) | strategy |
 | mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |
 | ontos_agent_instructions | [Ontos_Agent_Instructions.md](docs/reference/Ontos_Agent_Instructions.md) | kernel |

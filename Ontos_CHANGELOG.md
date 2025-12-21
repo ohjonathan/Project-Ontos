@@ -21,6 +21,41 @@ All notable changes to **Project Ontos itself** (the protocol and tooling) will 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.5] - 2025-12-22
+
+### Theme: "Unified CLI"
+
+Introduced a unified command interface for all Ontos scripts.
+
+### Added
+- **Unified CLI dispatcher** (`ontos.py` in project root)
+  - 7 commands: `log`, `map`, `verify`, `maintain`, `consolidate`, `query`, `update`
+  - 11 aliases for natural language usage (`archive` → `log`, `context` → `map`, etc.)
+  - Full argument passthrough to underlying scripts
+  - `--help` and `--version` flags
+- **32 CLI tests** in `tests/test_cli.py`
+  - Tests all commands with `--help`
+  - Tests all 11 aliases resolve correctly
+  - Tests argument passthrough
+  - Tests module structure (7 commands, 11 aliases)
+- **`main()` function in `ontos_generate_context_map.py`**
+  - Wrapped CLI logic for unified dispatcher compatibility
+  - Direct script invocation still works
+
+### Changed
+- **Ontos_Manual.md** — Added Section 8: Unified CLI
+  - Command table with old/new syntax
+  - Alias reference
+  - Usage examples
+
+### Deprecated
+- Direct script invocation (e.g., `python3 .ontos/scripts/ontos_end_session.py`)
+  - Still works in v2.8 (no warnings)
+  - Will show deprecation warnings in v2.9
+  - Will be removed in v3.0
+
+---
+
 ## [2.8.4] - 2025-12-21
 
 ### Theme: "Script Consolidation"
