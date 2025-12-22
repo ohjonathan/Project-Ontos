@@ -16,7 +16,59 @@ from ontos_lib import find_draft_proposals, get_proposals_dir, get_decision_hist
 from ontos_end_session import graduate_proposal
 from ontos.ui.output import OutputHandler
 
+# v2.9.1: Import curation for status report
+from ontos.core.curation import (
+    CurationLevel,
+    detect_curation_level,
+    level_marker,
+)
+from ontos.core.frontmatter import parse_frontmatter
+from pathlib import Path
+
 SCRIPTS_DIR = os.path.join(PROJECT_ROOT, '.ontos', 'scripts')
+
+
+def report_curation_status(output: OutputHandler) -> None:
+    """Report curation level breakdown for all documents.
+    
+    v2.9.1: Shows count of L0 (Scaffold), L1 (Stub), L2 (Full) documents.
+    
+    Args:
+        output: OutputHandler for display.
+    """
+    from ontos_generate_context_map import scan_docs
+    from ontos_config import DOCS_DIR
+    
+    # Scan documents
+    target_dirs = [DOCS_DIR]
+    if os.path.exists(os.path.join(PROJECT_ROOT, '.ontos-internal')):
+        target_dirs.append('.ontos-internal')
+    if os.path.exists(os.path.join(PROJECT_ROOT, 'docs')):
+        target_dirs.append('docs')
+    
+    files_data, _ = scan_docs(target_dirs)
+    
+    # Count levels
+    levels = {CurationLevel.SCAFFOLD: 0, CurationLevel.STUB: 0, CurationLevel.FULL: 0}
+    
+    for doc_id, data in files_data.items():
+        fm = {'id': doc_id, 'type': data['type'], 'status': data.get('status', ''),
+              'depends_on': data['depends_on'], 'concepts': data.get('concepts', [])}
+        level = detect_curation_level(fm)
+        levels[level] += 1
+    
+    total = sum(levels.values())
+    
+    output.info("\nCuration Status:")
+    output.plain(f"  Level 0 (Scaffold): {levels[CurationLevel.SCAFFOLD]:3}")
+    output.plain(f"  Level 1 (Stub):     {levels[CurationLevel.STUB]:3}")
+    output.plain(f"  Level 2 (Full):     {levels[CurationLevel.FULL]:3}")
+    output.plain(f"  Total:              {total:3}")
+    
+    # Suggest promotion if L0/L1 docs exist
+    incomplete = levels[CurationLevel.SCAFFOLD] + levels[CurationLevel.STUB]
+    if incomplete > 0:
+        output.info(f"\n  💡 {incomplete} document(s) at L0/L1. Run `python3 ontos.py promote --check` to review.")
 
 
 def review_proposals(quiet: bool = False, output: OutputHandler = None) -> bool:
@@ -181,6 +233,9 @@ Example:
         output.info("Regenerating context map after graduation...")
         run_script('ontos_generate_context_map.py', [], args.quiet)
 
+    # v2.9.1: Report curation status
+    report_curation_status(output)
+    
     # Summary
     if all_success:
         output.success("Maintenance complete. No issues found.")

@@ -237,8 +237,8 @@ class TestCLIModuleStructure:
         scripts_path = PROJECT_ROOT / '.ontos' / 'scripts' / 'ontos.py'
         assert not scripts_path.exists(), "ontos.py should NOT be in .ontos/scripts/"
 
-    def test_all_ten_commands_defined(self):
-        """All 10 commands should be defined in COMMANDS."""
+    def test_all_eleven_commands_defined(self):
+        """All 11 commands should be defined in COMMANDS."""
         # Use importlib to explicitly load ontos.py from project root
         # (avoids conflict with .ontos/scripts/ontos/ package)
         import importlib.util
@@ -251,6 +251,7 @@ class TestCLIModuleStructure:
             'migrate',   # v2.9: schema migration
             'scaffold',  # v2.9.1: L0 scaffolding
             'stub',      # v2.9.1: L1 stub creation
+            'promote',   # v2.9.1: L0/L1 to L2 promotion
         }
         actual_commands = set(ontos_cli.COMMANDS.keys())
         
