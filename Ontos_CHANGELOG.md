@@ -43,18 +43,35 @@ Implements tiered validation with L0 Scaffold → L1 Stub → L2 Full to lower a
   - Interactive mode or `--goal "..." --type product`
   - Creates L1 documents with goal field
 
+- **Promote Script** (`ontos_promote.py`) — *Chief Architect Feedback*
+  - Interactive L0/L1 → L2 promotion with fuzzy ID matching
+  - `--check` mode to preview promotable documents
+  - `--all-ready` for batch promotion of ready docs
+
+- **Context Map Level Markers** — *Chief Architect Feedback*
+  - All documents display `[L0]`/`[L1]`/`[L2]` markers
+  - ⚠️ warnings for incomplete curation
+
+- **`--strict` Curation Mode** — *Chief Architect Feedback*
+  - `python3 ontos.py map --strict` exits 1 if L0/L1 docs present
+
+- **Maintain Curation Stats** — *Chief Architect Feedback*
+  - Shows L0/L1/L2 breakdown at end of maintenance
+  - Suggests `promote --check` for incomplete documents
+
 - **Unified CLI Updates**
   - New `scaffold` command: `python3 ontos.py scaffold --apply`
   - New `stub` command: `python3 ontos.py stub --goal "..." --type atom`
+  - New `promote` command: `python3 ontos.py promote --check`
   - New `curate` alias for `scaffold`
 
 - **New Status Values**
   - `scaffold` - Level 0 auto-generated documents
   - `pending_curation` - Level 1 awaiting full curation
 
-- **48 New Tests** (`tests/test_curation.py`)
-  - Curation level detection, validation, promotion
-  - Scaffold/stub creation, type inference, ontosignore
+- **175 New Tests**
+  - `test_curation.py` (48 tests) - Level detection, validation, scaffolding
+  - `test_promote.py` (16 tests) - Promotion functionality
 
 ### Curation Levels
 | Level | Name | Required Fields | Status |
