@@ -40,7 +40,7 @@ from ontos.core.schema import (
 from ontos.core.context import SessionContext
 from ontos.ui.output import OutputHandler
 
-# Import frontmatter parsing (uses PyYAML from existing code)
+# Import frontmatter parsing (uses yaml module from existing code)
 from ontos.core.frontmatter import parse_frontmatter
 
 

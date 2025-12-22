@@ -70,6 +70,10 @@ SCHEMA_TOOL_REQUIREMENTS: Dict[str, str] = {
     "3.0": "3.0",
 }
 
+# Schema version bounds for documentation and validation
+MIN_READABLE_SCHEMA = "1.0"   # Oldest schema this tool can read
+MAX_READABLE_SCHEMA = "2.2"   # Newest schema this tool fully supports
+
 
 def parse_version(version_str: str) -> Tuple[int, int]:
     """Parse a version string to major.minor tuple.
@@ -372,6 +376,12 @@ def _serialize_field(key: str, value: Any) -> str:
                 lines.append(f"  {line}")
             return '\n'.join(lines)
         return f"{key}: {value}"
+    
+    # Nested dict handling (defensive - rare in Ontos frontmatter)
+    if isinstance(value, dict):
+        # Serialize nested dict as inline JSON-like format
+        import json
+        return f"{key}: {json.dumps(value)}"
     
     # Fallback: convert to string
     return f"{key}: {value}"

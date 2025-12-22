@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-22 13:04:30 UTC
+Generated: 2025-12-22 13:15:30 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2025-12-22 22:04:30
+Generated on: 2025-12-22 22:15:30
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -373,9 +373,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 *Showing 10 of 37 sessions*
 
 ## 3. Dependency Audit
-- [DEPTH] **claude_v2_9_implementation_review_v3** has dependency depth 7 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [DEPTH] **claude_v2_9_implementation_review_v2** has dependency depth 6 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **claude_v2_9_implementation_review_v3** has dependency depth 7 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 
 ## 4. Index
