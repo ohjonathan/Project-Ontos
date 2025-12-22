@@ -21,6 +21,44 @@ All notable changes to **Project Ontos itself** (the protocol and tooling) will 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2025-12-22
+
+### Theme: "Schema Versioning"
+
+Adds explicit schema version support for forward compatibility with V3 migration.
+
+### Added
+- **Schema Versioning Module** (`.ontos/scripts/ontos/core/schema.py`)
+  - `parse_version()` - Parse "2.1" format version strings
+  - `detect_schema_version()` - Infer schema from frontmatter fields
+  - `check_compatibility()` - Check if tool can read document
+  - `serialize_frontmatter()` - YAML serialization using stdlib only
+  - `validate_frontmatter()` - Validate against schema requirements
+
+- **Schema Migration Script** (`ontos_migrate_schema.py`)
+  - `--check` - Check which files need migration
+  - `--dry-run` - Preview changes without applying
+  - `--apply` - Apply schema migrations
+
+- **Unified CLI Updates**
+  - New `migrate` command: `python3 ontos.py migrate --check`
+  - New `schema` alias for `migrate` command
+
+- **42 New Tests** (`tests/test_schema.py`)
+  - Version parsing, schema detection, compatibility checking
+  - Frontmatter validation and serialization
+
+### Schema Version Definitions
+| Schema | Required Fields | Introduced In |
+|--------|-----------------|---------------|
+| 1.0 | `id` | Legacy |
+| 2.0 | `id`, `type` | v2.0 |
+| 2.1 | `id`, `type` | v2.7 (describes) |
+| 2.2 | `id`, `type`, `status` | v2.9 (curation_level) |
+| 3.0 | `id`, `type`, `status`, `ontos_schema` | v3.0 |
+
+---
+
 ## [2.8.6] - 2025-12-22
 
 ### Theme: "Documentation Alignment"

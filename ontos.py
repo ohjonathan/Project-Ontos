@@ -14,11 +14,13 @@ Commands:
     consolidate Archive old logs
     query       Search documents
     update      Update Ontos scripts
+    migrate     Migrate schema versions
 
 Examples:
     python3 ontos.py log -e feature         # Log a feature session
     python3 ontos.py map --strict           # Generate with strict validation
     python3 ontos.py verify --all           # Verify all stale docs
+    python3 ontos.py migrate --check        # Check schema versions
 """
 
 import sys
@@ -36,6 +38,7 @@ COMMANDS = {
     'consolidate': ('ontos_consolidate', 'Archive old logs'),
     'query': ('ontos_query', 'Search documents'),
     'update': ('ontos_update', 'Update Ontos'),
+    'migrate': ('ontos_migrate_schema', 'Migrate schema versions'),
 }
 
 ALIASES = {
@@ -49,6 +52,7 @@ ALIASES = {
     'search': 'query',
     'find': 'query',
     'upgrade': 'update',
+    'schema': 'migrate',
 }
 
 

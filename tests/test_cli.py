@@ -237,8 +237,8 @@ class TestCLIModuleStructure:
         scripts_path = PROJECT_ROOT / '.ontos' / 'scripts' / 'ontos.py'
         assert not scripts_path.exists(), "ontos.py should NOT be in .ontos/scripts/"
 
-    def test_all_seven_commands_defined(self):
-        """All 7 commands should be defined in COMMANDS."""
+    def test_all_eight_commands_defined(self):
+        """All 8 commands should be defined in COMMANDS."""
         # Use importlib to explicitly load ontos.py from project root
         # (avoids conflict with .ontos/scripts/ontos/ package)
         import importlib.util
@@ -246,13 +246,16 @@ class TestCLIModuleStructure:
         ontos_cli = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(ontos_cli)
         
-        expected_commands = {'log', 'map', 'verify', 'maintain', 'consolidate', 'query', 'update'}
+        expected_commands = {
+            'log', 'map', 'verify', 'maintain', 'consolidate', 'query', 'update',
+            'migrate'  # v2.9: schema migration
+        }
         actual_commands = set(ontos_cli.COMMANDS.keys())
         
         assert actual_commands == expected_commands, f"Commands mismatch: {actual_commands} != {expected_commands}"
 
-    def test_all_eleven_aliases_defined(self):
-        """All 11 aliases should be defined in ALIASES."""
+    def test_all_twelve_aliases_defined(self):
+        """All 12 aliases should be defined in ALIASES."""
         # Use importlib to explicitly load ontos.py from project root
         import importlib.util
         spec = importlib.util.spec_from_file_location("ontos_cli", PROJECT_ROOT / "ontos.py")
@@ -267,6 +270,7 @@ class TestCLIModuleStructure:
             'archive-old',              # → consolidate
             'search', 'find',           # → query
             'upgrade',                  # → update
+            'schema',                   # → migrate (v2.9)
         }
         actual_aliases = set(ontos_cli.ALIASES.keys())
         
