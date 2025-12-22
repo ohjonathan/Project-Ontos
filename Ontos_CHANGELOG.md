@@ -21,6 +21,50 @@ All notable changes to **Project Ontos itself** (the protocol and tooling) will 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.1] - 2025-12-22
+
+### Theme: "Curation Levels"
+
+Implements tiered validation with L0 Scaffold → L1 Stub → L2 Full to lower adoption friction.
+
+### Added
+- **Curation Module** (`.ontos/scripts/ontos/core/curation.py`)
+  - `CurationLevel` enum (SCAFFOLD=0, STUB=1, FULL=2)
+  - `detect_curation_level()` - Infer level from frontmatter
+  - `validate_at_level()` - Level-appropriate validation
+  - `create_scaffold()` / `create_stub()` - Generate L0/L1 frontmatter
+  - Type inference from path and content
+
+- **Scaffold Script** (`ontos_scaffold.py`)
+  - `--dry-run` default, `--apply` to execute
+  - Respects `.ontosignore` patterns
+
+- **Stub Script** (`ontos_stub.py`)
+  - Interactive mode or `--goal "..." --type product`
+  - Creates L1 documents with goal field
+
+- **Unified CLI Updates**
+  - New `scaffold` command: `python3 ontos.py scaffold --apply`
+  - New `stub` command: `python3 ontos.py stub --goal "..." --type atom`
+  - New `curate` alias for `scaffold`
+
+- **New Status Values**
+  - `scaffold` - Level 0 auto-generated documents
+  - `pending_curation` - Level 1 awaiting full curation
+
+- **48 New Tests** (`tests/test_curation.py`)
+  - Curation level detection, validation, promotion
+  - Scaffold/stub creation, type inference, ontosignore
+
+### Curation Levels
+| Level | Name | Required Fields | Status |
+|-------|------|-----------------|--------|
+| 0 | Scaffold | `id`, `type` | `scaffold` |
+| 1 | Stub | `id`, `type`, `status` | `pending_curation` |
+| 2 | Full | All + `depends_on`/`concepts` | `draft`, `active`... |
+
+---
+
 ## [2.9.0] - 2025-12-22
 
 ### Theme: "Schema Versioning"

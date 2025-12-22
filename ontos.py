@@ -39,6 +39,8 @@ COMMANDS = {
     'query': ('ontos_query', 'Search documents'),
     'update': ('ontos_update', 'Update Ontos'),
     'migrate': ('ontos_migrate_schema', 'Migrate schema versions'),
+    'scaffold': ('ontos_scaffold', 'Generate L0 scaffolds'),
+    'stub': ('ontos_stub', 'Create L1 stub document'),
 }
 
 ALIASES = {
@@ -53,6 +55,7 @@ ALIASES = {
     'find': 'query',
     'upgrade': 'update',
     'schema': 'migrate',
+    'curate': 'scaffold',  # v2.9: curation alias
 }
 
 

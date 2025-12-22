@@ -375,7 +375,10 @@ class TestConfigConstants:
     
     def test_valid_status_contains_expected_values(self):
         """VALID_STATUS contains all expected values."""
-        expected = {'draft', 'active', 'deprecated', 'archived', 'rejected', 'complete'}
+        expected = {
+            'draft', 'active', 'deprecated', 'archived', 'rejected', 'complete',
+            'scaffold', 'pending_curation',  # v2.9: curation levels
+        }
         assert VALID_STATUS == expected
     
     def test_valid_type_status_matrix_exists(self):

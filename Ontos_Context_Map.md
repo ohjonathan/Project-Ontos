@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-22 13:25:25 UTC
+Generated: 2025-12-22 13:55:06 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2025-12-22 22:25:25
+Generated on: 2025-12-22 22:55:06
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -25,7 +25,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   - Depends On: None
 
 ### STRATEGY
-- **antigravity_v2_9_instructions** (v2.9_antigravity_instructions.md) ~4,600 tokens
+- **antigravity_v2_9_instructions** (v2.9_antigravity_instructions.md) ~4,900 tokens
   - Status: active
   - Depends On: v2_9_implementation_plan, master_plan_v4
 - **codex_2_6_v1_review** [draft] (Codex_2.6_v1.md) ~766 tokens
@@ -82,7 +82,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **v2_8_implementation_plan_review_codex** [draft] (v2.8_implementation_plan_review_codex.md) ~789 tokens
   - Status: draft
   - Depends On: v2_8_implementation_plan
-- **v2_9_implementation_plan** (v2.9_implementation_plan.md) ~26,000 tokens
+- **v2_9_implementation_plan** (v2.9_implementation_plan.md) ~26,900 tokens
   - Status: active
   - Depends On: master_plan_v4, v2_8_implementation_plan
 - **v2_strategy** (v2_strategy.md) ~2,600 tokens
@@ -341,12 +341,17 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **log_20251222_v286_docs_alignment** (2025-12-22_v286-docs-alignment.md) ~264 tokens
   - Status: active
   - Impacts: ontos_agent_instructions
+- **log_20251222_v290_schema_versioning** (2025-12-22_v290-schema-versioning.md) ~141 tokens
+  - Status: active
+  - Impacts: v2_9_implementation_plan, ontos_manual
 - **log_20251222_v2_9_architectural_review** (2025-12-22_v2-9-architectural-review.md) ~132 tokens
   - Status: active
   - Impacts: v2_9_implementation_plan, v2_9_implementation_plan_review_gemini
 
 
 ## 2. Recent Timeline
+- **2025-12-22** [feature] **V290 Schema Versioning** (`log_20251222_v290_schema_versioning`)
+  - Impacted: `v2_9_implementation_plan`, `ontos_manual`
 - **2025-12-22** [chore] **V286 Docs Alignment** (`log_20251222_v286_docs_alignment`)
   - Impacted: `ontos_agent_instructions`
   - Concepts: cli, documentation
@@ -367,10 +372,8 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   - Impacted: `v2_8_implementation_plan`
 - **2025-12-21** [refactor] **V2 8 2 Sessioncontext Fix** (`log_20251221_v2_8_2_sessioncontext_fix`)
   - Impacted: `v2_8_implementation_plan`
-- **2025-12-21** [refactor] **V2 8 2 Phase 1 2 Complete** (`log_20251221_v2_8_2_phase_1_2_complete`)
-  - Impacted: `v2_8_implementation_plan`
 
-*Showing 10 of 37 sessions*
+*Showing 10 of 38 sessions*
 
 ## 3. Dependency Audit
 No issues found.
@@ -453,6 +456,7 @@ No issues found.
 | log_20251221_v2_8_3_setup | [2025-12-21_v2-8-3-setup.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-21_v2-8-3-setup.md) | log |
 | log_20251222_v285_unified_cli | [2025-12-22_v285-unified-cli.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-22_v285-unified-cli.md) | log |
 | log_20251222_v286_docs_alignment | [2025-12-22_v286-docs-alignment.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-22_v286-docs-alignment.md) | log |
+| log_20251222_v290_schema_versioning | [2025-12-22_v290-schema-versioning.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-22_v290-schema-versioning.md) | log |
 | log_20251222_v2_9_architectural_review | [2025-12-22_v2-9-architectural-review.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-22_v2-9-architectural-review.md) | log |
 | master_plan_v4 | [master_plan.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/master_plan.md) | strategy |
 | mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |

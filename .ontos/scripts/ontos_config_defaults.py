@@ -23,7 +23,7 @@ def is_ontos_repo() -> bool:
     return os.path.exists(os.path.join(PROJECT_ROOT, '.ontos-internal'))
 
 # Version - used by update script to check for newer versions
-ONTOS_VERSION = "2.9.0"
+ONTOS_VERSION = "2.9.1"
 
 # GitHub repository for updates
 ONTOS_REPO_URL = 'https://github.com/ohjona/project-ontos'
@@ -122,7 +122,12 @@ VALID_EVENT_TYPES = set(EVENT_TYPES.keys())
 # =============================================================================
 # Valid status values for document frontmatter
 
-VALID_STATUS = {'draft', 'active', 'deprecated', 'archived', 'rejected', 'complete'}
+# Valid status values (v2.9: added scaffold, pending_curation for curation levels)
+VALID_STATUS = {
+    'draft', 'active', 'deprecated', 'archived', 'rejected', 'complete',
+    'scaffold',           # Level 0 auto-generated
+    'pending_curation',   # Level 1 awaiting full curation
+}
 
 # Status descriptions - clarifying archived vs rejected
 STATUS_DEFINITIONS = {
