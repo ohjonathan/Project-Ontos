@@ -21,6 +21,43 @@ All notable changes to **Project Ontos itself** (the protocol and tooling) will 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.3] - 2025-12-23
+
+### Theme: "install.py Bootstrap"
+
+Single-file Python installer with SHA256 verification for curl-bootstrapped installation.
+
+### Added
+- **`install.py`** - Root-level installer (NEW)
+  - Curl-bootstrapped: `curl -sO https://raw.githubusercontent.com/ohjona/Project-Ontos/v2.9.3/install.py && python3 install.py`
+  - SHA256 checksum verification from tag-aligned `checksums.json`
+  - Path traversal and symlink attack protection
+  - Python 3.9+ version check
+  - Existing installation detection
+  - `--upgrade` with config merge and rollback on failure
+  - `--bundle` / `--checksum` for offline/air-gapped installation
+  - `.install_incomplete` sentinel for incomplete installation recovery
+
+- **`checksums.json`** - SHA256 checksums per version (NEW)
+  - Tag-aligned: fetched from same tag as version being installed
+  - No checksum bypass in production (security-critical)
+
+- **`ontos_create_bundle.py`** - Bundle creation script (NEW)
+  - Creates `ontos-bundle.tar.gz` for GitHub Releases
+  - Generates `manifest.json` with file list for verification
+  - Updates `checksums.json` with SHA256
+
+### Security Features
+| Protection | Implementation |
+|------------|----------------|
+| Checksum verification | SHA256 from tag-aligned checksums.json |
+| Path traversal | Rejects `..` and absolute paths in archive |
+| Symlink attacks | Rejects symlinks and hardlinks in archive |
+| HTTPS only | No HTTP fallback |
+| Retry logic | Exponential backoff on download failures |
+
+---
+
 ## [2.9.2] - 2025-12-23
 
 ### Theme: "Deprecation Warnings"
