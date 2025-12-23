@@ -333,17 +333,23 @@ def verify_local_checksum(filepath: Path, expected_checksum: str) -> bool:
 
 
 def is_path_traversal(name: str) -> bool:
-    """Check if a tar member name attempts path traversal (POSIX + Windows)."""
-    # POSIX absolute path
-    if name.startswith('/'):
+    """Check if a tar member name attempts path traversal (POSIX + Windows).
+
+    Normalizes path separators before checking to catch mixed-separator bypasses.
+    """
+    # Normalize: replace backslashes with forward slashes for consistent checking
+    normalized = name.replace('\\', '/')
+
+    # POSIX absolute path or Windows absolute with backslash (after normalization)
+    if normalized.startswith('/'):
         return True
     # Parent directory traversal
-    if '..' in name:
+    if '..' in normalized:
         return True
-    # Windows drive letter (e.g., C:, D:)
+    # Windows drive letter (e.g., C:, D:) - check original name
     if len(name) >= 2 and name[1] == ':' and name[0].isalpha():
         return True
-    # Windows absolute UNC path
+    # Windows UNC path (\\server\share or //server/share) - check original
     if name.startswith('\\\\') or name.startswith('//'):
         return True
     return False
