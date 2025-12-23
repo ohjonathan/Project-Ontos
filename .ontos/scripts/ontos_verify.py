@@ -298,5 +298,19 @@ Examples:
         return 1
 
 
+def emit_deprecation_notice(message: str) -> None:
+    """Always-visible CLI notice for deprecated usage."""
+    print(f"[DEPRECATION] {message}", file=sys.stderr)
+
+
 if __name__ == '__main__':
+    import os
+    from pathlib import Path
+    if not os.environ.get('ONTOS_CLI_DISPATCH'):
+        if not os.environ.get('ONTOS_NO_DEPRECATION_WARNINGS'):
+            emit_deprecation_notice(
+                f"Direct execution of {Path(__file__).name} is deprecated. "
+                "Use 'python3 ontos.py verify' instead. "
+                "Direct script execution will be removed in v3.0."
+            )
     sys.exit(main())

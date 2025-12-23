@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2025-12-23 00:47:28 UTC
+Generated: 2025-12-23 01:12:10 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2025-12-23 09:47:28
+Generated on: 2025-12-23 10:12:10
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -350,9 +350,14 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **log_20251222_v2_9_architectural_review** [L2] (2025-12-22_v2-9-architectural-review.md) ~132 tokens
   - Status: active
   - Impacts: v2_9_implementation_plan, v2_9_implementation_plan_review_gemini
+- **log_20251223_v292_deprecation_warnings** [L1] (2025-12-23_v292-deprecation-warnings.md) ~354 tokens  ⚠️ active
+  - Status: active
+  - Impacts: v2_9_implementation_plan, ontos_manual
 
 
 ## 2. Recent Timeline
+- **2025-12-23** [feature] **V292 Deprecation Warnings** (`log_20251223_v292_deprecation_warnings`)
+  - Impacted: `v2_9_implementation_plan`, `ontos_manual`
 - **2025-12-22** [feature] **V291 Curation Levels** (`log_20251222_v291_curation_levels`)
   - Impacted: `v2_9_implementation_plan`, `ontos_manual`
 - **2025-12-22** [feature] **V290 Schema Versioning** (`log_20251222_v290_schema_versioning`)
@@ -373,10 +378,8 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   - Impacted: `v2_8_implementation_plan`
 - **2025-12-21** [refactor] **V2 8 3 Chief Architect Gaps** (`log_20251221_v2_8_3_chief_architect_gaps`)
   - Impacted: `v2_8_implementation_plan`
-- **2025-12-21** [refactor] **V2 8 3 A Plus Grade** (`log_20251221_v2_8_3_a_plus_grade`)
-  - Impacted: `v2_8_implementation_plan`
 
-*Showing 10 of 39 sessions*
+*Showing 10 of 40 sessions*
 
 ## 3. Dependency Audit
 No issues found.
@@ -462,6 +465,7 @@ No issues found.
 | log_20251222_v290_schema_versioning | [2025-12-22_v290-schema-versioning.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-22_v290-schema-versioning.md) | log |
 | log_20251222_v291_curation_levels | [2025-12-22_v291-curation-levels.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-22_v291-curation-levels.md) | log |
 | log_20251222_v2_9_architectural_review | [2025-12-22_v2-9-architectural-review.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-22_v2-9-architectural-review.md) | log |
+| log_20251223_v292_deprecation_warnings | [2025-12-23_v292-deprecation-warnings.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-23_v292-deprecation-warnings.md) | log |
 | master_plan_v4 | [master_plan.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/master_plan.md) | strategy |
 | mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |
 | ontos_agent_instructions | [Ontos_Agent_Instructions.md](docs/reference/Ontos_Agent_Instructions.md) | kernel |
