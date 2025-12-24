@@ -194,9 +194,8 @@ class TestConfigMerge:
     def test_write_user_config(self, tmp_path, monkeypatch):
         """write_user_config should update values in file."""
         monkeypatch.chdir(tmp_path)
-        config_dir = tmp_path / ".ontos" / "scripts"
-        config_dir.mkdir(parents=True)
-        config_file = config_dir / "ontos_config.py"
+        # Config file is at project root (not .ontos/scripts/)
+        config_file = tmp_path / "ontos_config.py"
 
         # Create initial config
         config_file.write_text(

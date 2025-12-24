@@ -228,6 +228,49 @@ To lower the barrier to adoption, Ontos v2.9 supports tiered validation.
 
 Use strict mode in CI/CD to ensure your knowledge graph is fully curated.
 
+### Schema Versioning (v2.9.0)
+
+Ontos v2.9 introduces explicit schema versioning to track document evolution.
+
+**The Schema Field:**
+```yaml
+---
+id: my_document
+type: product
+ontos_schema: "2.2"  # Indicates v2.2 schema
+---
+```
+
+**Schema Versions:**
+| Version | Features |
+|---------|----------|
+| 1.0 | ID only (legacy) |
+| 2.0 | ID + Type |
+| 2.1 | Staleness tracking (`describes`, `describes_verified`) |
+| 2.2 | Curation levels (`curation_level`, `ontos_schema`) |
+
+**Check Migration Status:**
+```bash
+python3 ontos.py migrate --check
+```
+
+### Deprecation Warnings (v2.9.2)
+
+Direct script execution is deprecated. Use the unified CLI:
+
+```bash
+# Deprecated (will be removed in v3.0)
+python3 .ontos/scripts/ontos_end_session.py
+
+# Preferred
+python3 ontos.py log
+```
+
+**Suppression:** To silence deprecation warnings in scripts:
+```bash
+ONTOS_NO_DEPRECATION_WARNINGS=1 python3 .ontos/scripts/ontos_end_session.py
+```
+
 ---
 
 ## 5. Monthly Consolidation

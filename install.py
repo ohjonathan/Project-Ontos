@@ -235,7 +235,7 @@ def cleanup_backup(backup_path: Path) -> None:
 
 def read_user_config() -> dict:
     """Read user's config values for merge during upgrade."""
-    config_path = Path.cwd() / ".ontos" / "scripts" / "ontos_config.py"
+    config_path = Path.cwd() / "ontos_config.py"
     if not config_path.exists():
         return {}
 
@@ -278,7 +278,7 @@ def write_user_config(config: dict) -> bool:
     Returns:
         True on success, False on failure
     """
-    config_path = Path.cwd() / ".ontos" / "scripts" / "ontos_config.py"
+    config_path = Path.cwd() / "ontos_config.py"
     if not config_path.exists():
         log("Config file not found, skipping config write.", "warning")
         return False
