@@ -7,6 +7,7 @@ IMPURE: Many functions use os.path.exists() and imports from config modules.
 """
 
 import os
+import warnings
 from datetime import datetime
 from typing import Optional
 
@@ -62,13 +63,21 @@ _deprecation_warned = set()
 
 
 def _warn_deprecated(old_path: str, new_path: str) -> None:
-    """Issue deprecation warning (once per path per session)."""
+    """Issue deprecation warning using Python's warnings system.
+
+    Uses stdlib warnings module for proper filtering, deduplication,
+    and CLI suppression. No caller changes required.
+    """
     if old_path in _deprecation_warned:
         return
     _deprecation_warned.add(old_path)
-    print(f"[DEPRECATION WARNING] Using old path '{old_path}'.")
-    print(f"   Expected: '{new_path}'")
-    print("   Run 'python3 ontos_init.py' to update your project structure.")
+    warnings.warn(
+        f"Using deprecated path '{old_path}'. "
+        f"Expected: '{new_path}'. "
+        f"Run 'python3 ontos_init.py' to update.",
+        DeprecationWarning,
+        stacklevel=3  # Point to caller's caller
+    )
 
 
 def get_logs_dir() -> str:

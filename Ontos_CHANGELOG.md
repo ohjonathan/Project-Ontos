@@ -21,6 +21,34 @@ All notable changes to **Project Ontos itself** (the protocol and tooling) will 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.5] - 2025-01-08
+
+### Theme: "Quality & Testing"
+
+Fixes architectural violations and adds test coverage for core transaction system.
+
+### Fixed
+- **Pure/Impure Violation** — `paths._warn_deprecated()` now uses `warnings.warn()`
+  - Standard Python deprecation pattern
+  - No caller changes required
+  - Enables v3.0 MCP Server exposure
+
+- **DRY Violation** — Removed duplicate `normalize_type()` in frontmatter.py
+
+### Added
+- **20 new tests** for SessionContext in `test_context.py`
+  - Buffer operations (4 tests)
+  - Commit behavior (7 tests)
+  - Rollback (2 tests)
+  - Locking behavior (2 tests)
+  - Factory and diagnostics (3 tests)
+  - Commit failure handling (2 tests)
+
+### Tests
+- Total: 132 tests (112 existing + 20 new)
+
+---
+
 ## [2.9.4] - 2025-12-23
 
 ### Theme: "Documentation & Polish"

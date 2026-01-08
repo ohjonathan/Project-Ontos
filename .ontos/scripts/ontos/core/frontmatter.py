@@ -120,28 +120,3 @@ def load_common_concepts(docs_dir: str = None) -> set:
         pass
     
     return concepts
-
-
-def normalize_type(value) -> str:
-    """Normalize type field to a string.
-
-    Args:
-        value: Raw value from YAML frontmatter.
-
-    Returns:
-        Type string ('unknown' if invalid).
-    """
-    if value is None:
-        return 'unknown'
-    if isinstance(value, str):
-        stripped = value.strip()
-        if not stripped or '|' in stripped:
-            return 'unknown'
-        return stripped
-    if isinstance(value, list):
-        if value and value[0] is not None:
-            first = str(value[0]).strip()
-            if '|' in first:
-                return 'unknown'
-            return first if first else 'unknown'
-    return 'unknown'
