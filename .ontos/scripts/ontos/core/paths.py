@@ -75,7 +75,7 @@ def _warn_deprecated(old_path: str, new_path: str) -> None:
         f"Using deprecated path '{old_path}'. "
         f"Expected: '{new_path}'. "
         f"Run 'python3 ontos_init.py' to update.",
-        DeprecationWarning,
+        FutureWarning,
         stacklevel=3  # Point to caller's caller
     )
 

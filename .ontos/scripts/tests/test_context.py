@@ -13,6 +13,7 @@ Per v2.9.5 spec, tests focus on behavior, not internal mechanics.
 
 import os
 import time
+import types
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 import pytest
@@ -158,9 +159,9 @@ class TestCommitFailure:
             with pytest.raises(OSError):
                 ctx.commit()
         
-        # Temp file should be cleaned up
-        temp_file = target.with_suffix(".txt.tmp")
-        assert not temp_file.exists()
+        # No residual files should exist after cleanup
+        remaining = [f for f in tmp_path.iterdir() if f.is_file()]
+        assert len(remaining) == 0, f"Residual files after cleanup: {remaining}"
 
     def test_commit_failure_records_error(self, tmp_path):
         """Commit failure records error in context."""
@@ -246,10 +247,11 @@ class TestFromRepo:
 
     def test_from_repo_creates_context_with_config(self, tmp_path):
         """from_repo creates context with loaded config dict."""
-        # Mock ontos_config module
-        mock_config = MagicMock()
-        mock_config.DOCS_DIR = 'custom_docs'
-        mock_config.ONTOS_MODE = 'prompted'
+        # Mock ontos_config module using SimpleNamespace (not MagicMock)
+        mock_config = types.SimpleNamespace(
+            DOCS_DIR='custom_docs',
+            ONTOS_MODE='prompted'
+        )
         
         with patch.dict('sys.modules', {'ontos_config': mock_config}):
             ctx = SessionContext.from_repo(tmp_path)
