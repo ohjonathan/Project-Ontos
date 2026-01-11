@@ -7,20 +7,6 @@ To customize settings, override them in ontos_config.py instead.
 """
 
 import os
-import sys
-
-# Ensure ontos package is importable when this file is imported directly
-# (v2.9.6: fixes import path fragility per Gemini feedback)
-_scripts_dir = os.path.dirname(os.path.abspath(__file__))
-if _scripts_dir not in sys.path:
-    sys.path.insert(0, _scripts_dir)
-
-from ontos.core.ontology import (
-    TYPE_DEFINITIONS as _TYPE_DEFS,
-    get_type_hierarchy,
-    get_valid_types,
-    get_valid_type_status,
-)
 
 # Project root detection
 # Assumes this file is in .ontos/scripts/ relative to project root
@@ -54,22 +40,44 @@ DEFAULT_MIGRATION_PROMPT_FILE = 'migration_prompt.txt'
 # Validation thresholds
 DEFAULT_MAX_DEPENDENCY_DEPTH = 5
 
-# Document type definitions (v2.9.6: now derived from ontology.py)
-# Backward-compatible dict format for existing code
+# Document type definitions (single source of truth)
 TYPE_DEFINITIONS = {
-    name: {
-        'rank': td.rank,
-        'description': td.description,
-        'allows_depends_on': not td.uses_impacts,
-    }
-    for name, td in _TYPE_DEFS.items()
+    # --- SPACE ONTOLOGY (Truth) ---
+    # These document what IS true about the project
+    'kernel': {
+        'rank': 0,
+        'description': 'Core identity documents (mission, principles)',
+        'allows_depends_on': True,
+    },
+    'strategy': {
+        'rank': 1,
+        'description': 'High-level direction and decisions',
+        'allows_depends_on': True,
+    },
+    'product': {
+        'rank': 2,
+        'description': 'Feature specifications and requirements',
+        'allows_depends_on': True,
+    },
+    'atom': {
+        'rank': 3,
+        'description': 'Implementation details and technical specs',
+        'allows_depends_on': True,
+    },
+    # --- TIME ONTOLOGY (History) ---
+    # These document what HAPPENED during development
+    'log': {
+        'rank': 4,
+        'description': 'Session history (what happened, not what is)',
+        'allows_depends_on': False,  # Logs use 'impacts' instead
+    },
 }
 
 # Valid types for early validation
-VALID_TYPES = get_valid_types()
+VALID_TYPES = set(TYPE_DEFINITIONS.keys())
 
 # Derived hierarchy for backward compatibility
-TYPE_HIERARCHY = get_type_hierarchy()
+TYPE_HIERARCHY = {k: v['rank'] for k, v in TYPE_DEFINITIONS.items()}
 
 
 # =============================================================================
@@ -133,8 +141,13 @@ STATUS_DEFINITIONS = {
 
 # Valid (type, status) combinations - prevents semantic nonsense
 # Example: type: log cannot have status: rejected (logs record what happened)
-# v2.9.6: Now derived from ontology.py (includes scaffold, pending_curation, auto-generated fixes)
-VALID_TYPE_STATUS = get_valid_type_status()
+VALID_TYPE_STATUS = {
+    'kernel': {'active', 'draft', 'deprecated'},
+    'strategy': {'active', 'draft', 'deprecated', 'rejected', 'complete'},  # Reviews can be complete
+    'product': {'active', 'draft', 'deprecated'},
+    'atom': {'active', 'draft', 'deprecated', 'complete'},  # Reviews can be complete
+    'log': {'active', 'archived'},  # Logs cannot be draft or rejected
+}
 
 # Stale proposal detection threshold (days)
 PROPOSAL_STALE_DAYS = 60
