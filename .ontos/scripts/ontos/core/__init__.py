@@ -73,3 +73,14 @@ from ontos.core.proposals import (
     load_decision_history_entries,
     find_draft_proposals,
 )
+
+# Ontology definitions (v2.9.6+)
+from ontos.core.ontology import (
+    TypeDefinition,
+    FieldDefinition,
+    TYPE_DEFINITIONS,
+    FIELD_DEFINITIONS,
+    get_type_hierarchy,
+    get_valid_types,
+    get_valid_type_status,
+)

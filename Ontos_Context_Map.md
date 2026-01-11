@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2026-01-11 20:40:40 UTC
+Generated: 2026-01-11 21:14:55 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2026-01-11 15:40:40
+Generated on: 2026-01-11 16:14:55
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -20,6 +20,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **mission** [L2] (mission.md) ~377 tokens
   - Status: active
   - Depends On: None
+- **ontology_spec** [L2] (ontology_spec.md) ~507 tokens
+  - Status: active
+  - Depends On: mission
 - **ontos_agent_instructions** [L2] (Ontos_Agent_Instructions.md) ~2,500 tokens
   - Status: active
   - Depends On: ontos_manual
@@ -43,6 +46,12 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **technical_architecture** [L2] (technical_architecture.md) ~790 tokens
   - Status: active
   - Depends On: mission, philosophy, constitution
+- **v2_9_6_adversarial_review_codex** [L2] [draft] (Adversarial_Review_Codex.md) ~781 tokens
+  - Status: draft
+  - Depends On: v2_9_6_implementation_specification
+- **v2_9_6_implementation_specification** [L2] [draft] (v2.9.6_Implementation_Specification.md) ~5,500 tokens
+  - Status: draft
+  - Depends On: ontology_architecture_proposal, technical_architecture
 - **v2_strategy** [L2] (v2_strategy.md) ~907 tokens
   - Status: active
   - Depends On: philosophy
@@ -69,6 +78,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **gemini_install_ux_review** [L2] (Gemini_Review_Installation_UX_Proposal.md) ~2,800 tokens
   - Status: complete
   - Depends On: installation_ux_proposal
+- **gemini_review_v2_9_6_spec** [L2] (Gemini_Review_v2.9.6_Implementation_Spec.md) ~908 tokens
+  - Status: active
+  - Depends On: v2_9_6_implementation_specification
 - **installation_experience_report** [L2] (Ontos_Installation_Experience_Report.md) ~2,200 tokens
   - Status: complete
   - Depends On: installation_ux_proposal
@@ -87,6 +99,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **schema** [L2] (schema.md) ~450 tokens
   - Status: active
   - Depends On: philosophy
+- **v2_9_6_critic_review_opus** [L2] (Critic_Review_Claude_Opus_4_5.md) ~2,500 tokens
+  - Status: complete
+  - Depends On: v2_9_6_implementation_specification
 
 ### LOG
 - **log_20251218_v2_6_1_graduation** [L1] (2025-12-18_v2-6-1-graduation.md) ~971 tokens  ⚠️ active
@@ -137,7 +152,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   - Impacted: `ontos_agent_instructions`, `ontos_manual`
 
 ## 3. Dependency Audit
-No issues found.
+- [ARCHITECTURE] **v2_9_6_implementation_specification** (strategy) depends on **ontology_architecture_proposal** (atom)
+  Fix: strategy should not depend on atom. Invert the dependency or change document types
+- [LINT] **gemini_review_v2_9_6_spec**: Active document in proposals/. Graduate to strategy/.
 
 ## 4. Index
 | ID | Filename | Type |
@@ -149,6 +166,7 @@ No issues found.
 | constitution | [constitution.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/constitution.md) | kernel |
 | dual_mode_matrix | [Dual_Mode_Matrix.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/reference/Dual_Mode_Matrix.md) | atom |
 | gemini_install_ux_review | [Gemini_Review_Installation_UX_Proposal.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/Install_experience/Gemini_Review_Installation_UX_Proposal.md) | atom |
+| gemini_review_v2_9_6_spec | [Gemini_Review_v2.9.6_Implementation_Spec.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v2.9.6/Gemini_Review_v2.9.6_Implementation_Spec.md) | atom |
 | installation_experience_report | [Ontos_Installation_Experience_Report.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/Install_experience/Ontos_Installation_Experience_Report.md) | atom |
 | installation_ux_proposal | [Installation_UX_Proposal.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/Install_experience/Installation_UX_Proposal.md) | strategy |
 | installation_ux_proposal_review | [Installation_UX_Proposal_Review_Codex.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/Install_experience/Installation_UX_Proposal_Review_Codex.md) | strategy |
@@ -163,6 +181,7 @@ No issues found.
 | log_20260112_v2_9_6_cleanup | [2026-01-12_chore-v2-9-6-cleanup.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-12_chore-v2-9-6-cleanup.md) | log |
 | mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |
 | ontology_architecture_proposal | [Ontology_Architecture_Proposal.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v2.9.6/Ontology_Architecture_Proposal.md) | atom |
+| ontology_spec | [ontology_spec.md](docs/reference/ontology_spec.md) | kernel |
 | ontos_agent_instructions | [Ontos_Agent_Instructions.md](docs/reference/Ontos_Agent_Instructions.md) | kernel |
 | ontos_codebase_map | [Ontos_Codebase_Map.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0/V3.0-Components/Ontos_Codebase_Map.md) | atom |
 | ontos_deep_analysis_brief | [Ontos_Deep_Analysis_Brief.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0/V3.0-Components/Ontos_Deep_Analysis_Brief.md) | atom |
@@ -171,6 +190,9 @@ No issues found.
 | roadmap | [roadmap.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/roadmap.md) | strategy |
 | schema | [schema.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/atom/schema.md) | atom |
 | technical_architecture | [technical_architecture.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/technical_architecture.md) | strategy |
+| v2_9_6_adversarial_review_codex | [Adversarial_Review_Codex.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v2.9.6/Adversarial_Review_Codex.md) | strategy |
+| v2_9_6_critic_review_opus | [Critic_Review_Claude_Opus_4_5.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v2.9.6/Critic_Review_Claude_Opus_4_5.md) | atom |
+| v2_9_6_implementation_specification | [v2.9.6_Implementation_Specification.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v2.9.6/v2.9.6_Implementation_Specification.md) | strategy |
 | v2_strategy | [v2_strategy.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2_strategy.md) | strategy |
 | v3_0_security_requirements | [v3.0_security_requirements.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0/security/v3.0_security_requirements.md) | strategy |
 
