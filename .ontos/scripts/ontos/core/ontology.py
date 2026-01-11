@@ -6,6 +6,15 @@ This module defines the ontology schema used throughout Ontos:
 
 All other modules should import from here to ensure consistency.
 
+NOTE ON FIELD_DEFINITIONS:
+    The `required` flag indicates whether a field is structurally required
+    at the schema validation level (schema.py SCHEMA_DEFINITIONS).
+    Curation-level requirements (L2 enforcement) are handled separately
+    in curation.py validate_at_level().
+
+    Example: `depends_on` is optional at schema level but required at
+    Level 2 curation for strategy/product/atom documents.
+
 Usage:
     from ontos.core.ontology import TYPE_DEFINITIONS, get_valid_types
 """
@@ -115,8 +124,8 @@ FIELD_DEFINITIONS: Dict[str, FieldDefinition] = {
     "depends_on": FieldDefinition(
         name="depends_on",
         field_type="list",
-        required=True,
-        description="Referenced document IDs",
+        required=False,  # optional at schema level, L2 curation enforces
+        description="Referenced document IDs (required at L2 for strategy/product/atom)",
         applies_to=["strategy", "product", "atom"],  # kernel excluded per curation.py
     ),
     "impacts": FieldDefinition(

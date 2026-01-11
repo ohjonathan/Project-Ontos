@@ -9,7 +9,7 @@ depends_on: [mission]
 
 > **GENERATED FILE - DO NOT EDIT DIRECTLY**
 >
-> Generated: 2026-01-11T23:04:34Z
+> Generated: 2026-01-11T23:14:20Z
 > Source: `.ontos/scripts/ontos/core/ontology.py`
 
 ---
@@ -48,12 +48,12 @@ depends_on: [mission]
 
 | Field | Type | Applies To | Description |
 |-------|------|------------|-------------|
-| `depends_on` | list | strategy, product, atom | Referenced document IDs |
 
 ### Optional Fields
 
 | Field | Type | Applies To | Description |
 |-------|------|------------|-------------|
+| `depends_on` | list | strategy, product, atom | Referenced document IDs (required at L2 for strategy/product/atom) |
 | `impacts` | list | log | Document IDs modified in this session |
 | `event_type` | enum | log | Session type |
 | `concepts` | list | all | Abstract concepts discussed |

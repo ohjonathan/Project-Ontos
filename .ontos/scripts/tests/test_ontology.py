@@ -114,15 +114,42 @@ class TestGeneratorFieldCategorization:
         assert set(universal) == {"id", "type", "status"}
 
     def test_required_type_specific_fields(self):
-        """Fields required for SPECIFIC types: depends_on only."""
+        """No fields are required at type-specific level (L2 enforcement is in curation.py)."""
         type_specific = [n for n, fd in FIELD_DEFINITIONS.items()
                          if fd.required and fd.applies_to is not None]
-        assert set(type_specific) == {"depends_on"}  # event_type is optional
+        assert set(type_specific) == set()  # Empty: L2 requirements in curation.py
 
     def test_optional_fields(self):
-        """Optional fields have required=False."""
+        """All type-specific fields are optional at schema level."""
         optional = [n for n, fd in FIELD_DEFINITIONS.items() if not fd.required]
-        assert set(optional) == {"impacts", "concepts", "ontos_schema", 
+        assert set(optional) == {"depends_on", "impacts", "concepts", "ontos_schema", 
                                   "curation_level", "describes", "event_type"}
 
 
+class TestOntologySchemaAlignment:
+    """Tests to detect drift between ontology.py and schema.py/curation.py."""
+
+    def test_universal_required_matches_schema(self):
+        """Ontology universal required fields must match schema v2.2 required."""
+        from ontos.core.schema import SCHEMA_DEFINITIONS
+
+        schema_required = set(SCHEMA_DEFINITIONS["2.2"]["required"])
+        ontology_required = {
+            name for name, fd in FIELD_DEFINITIONS.items()
+            if fd.required and fd.applies_to is None
+        }
+
+        assert ontology_required == schema_required, (
+            f"Mismatch: ontology={ontology_required}, schema={schema_required}"
+        )
+
+    def test_no_type_specific_required_fields(self):
+        """No type-specific required fields (curation.py handles L2 enforcement)."""
+        type_specific_required = [
+            name for name, fd in FIELD_DEFINITIONS.items()
+            if fd.required and fd.applies_to is not None
+        ]
+        assert type_specific_required == [], (
+            f"Type-specific required fields found: {type_specific_required}. "
+            "L2 requirements should be in curation.py, not ontology.py."
+        )
