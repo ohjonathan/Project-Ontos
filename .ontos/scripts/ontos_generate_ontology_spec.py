@@ -8,17 +8,28 @@ Output:
     docs/reference/ontology_spec.md
 """
 
-import sys
+import importlib.util
 from datetime import datetime, timezone
 from pathlib import Path
 
-# Add scripts to path
-sys.path.insert(0, str(Path(__file__).parent))
 
-from ontos.core.ontology import (
-    TYPE_DEFINITIONS,
-    FIELD_DEFINITIONS,
-)
+def _load_module(module_name: str, rel_path: str):
+    """Load a module dynamically without sys.path mutation."""
+    module_path = Path(__file__).resolve().parent / rel_path
+    spec = importlib.util.spec_from_file_location(module_name, module_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot load {module_name} at {module_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+ontology = _load_module("ontos.core.ontology", "ontos/core/ontology.py")
+schema = _load_module("ontos.core.schema", "ontos/core/schema.py")
+
+TYPE_DEFINITIONS = ontology.TYPE_DEFINITIONS
+FIELD_DEFINITIONS = ontology.FIELD_DEFINITIONS
+SCHEMA_DEFINITIONS = schema.SCHEMA_DEFINITIONS
 
 
 def generate_spec() -> str:
@@ -108,14 +119,33 @@ def generate_spec() -> str:
             applies = ", ".join(fd.applies_to) if fd.applies_to else "all"
             lines.append(f"| `{name}` | {fd.field_type} | {applies} | {fd.description} |")
 
+    # Schema version requirements section
     lines.extend([
         "",
+        "---",
+        "",
+        "## 3. Schema Requirements by Version",
+        "",
+    ])
+
+    for version in sorted(SCHEMA_DEFINITIONS.keys()):
+        schema_def = SCHEMA_DEFINITIONS[version]
+        required = ", ".join(schema_def.get("required", [])) or "(none)"
+        optional = ", ".join(schema_def.get("optional", [])) or "(none)"
+        lines.extend([
+            f"### Schema v{version}",
+            f"- Required: {required}",
+            f"- Optional: {optional}",
+            "",
+        ])
+
+    lines.extend([
         "---",
         "",
         "*End of Specification*",
     ])
 
-    return "\n".join(lines)
+    return "\n".join(lines) + "\n"
 
 
 def main():

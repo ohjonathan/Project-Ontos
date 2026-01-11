@@ -62,12 +62,14 @@ class TestFieldDefinitions:
         fd = FIELD_DEFINITIONS["depends_on"]
         assert "log" not in fd.applies_to
         assert "kernel" not in fd.applies_to  # kernel docs have no dependencies
-        assert fd.applies_to == ["strategy", "product", "atom"]
+        assert fd.applies_to == ("strategy", "product", "atom")
+        assert isinstance(fd.applies_to, tuple)  # verify immutability
 
     def test_impacts_applies_to_log_only(self):
         """impacts applies only to log type."""
         fd = FIELD_DEFINITIONS["impacts"]
-        assert fd.applies_to == ["log"]
+        assert fd.applies_to == ("log",)
+        assert isinstance(fd.applies_to, tuple)  # verify immutability
 
 
 class TestBackwardCompatHelpers:

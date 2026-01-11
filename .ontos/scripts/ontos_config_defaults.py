@@ -7,20 +7,26 @@ To customize settings, override them in ontos_config.py instead.
 """
 
 import os
-import sys
+import importlib.util
+from pathlib import Path
 
-# Ensure ontos package is importable when this file is imported directly
-# (v2.9.6: fixes import path fragility per Gemini feedback)
-_scripts_dir = os.path.dirname(os.path.abspath(__file__))
-if _scripts_dir not in sys.path:
-    sys.path.insert(0, _scripts_dir)
 
-from ontos.core.ontology import (
-    TYPE_DEFINITIONS as _TYPE_DEFS,
-    get_type_hierarchy,
-    get_valid_types,
-    get_valid_type_status,
-)
+def _load_ontology_module():
+    """Load ontology module without modifying sys.path (v2.9.6)."""
+    ontology_path = Path(__file__).resolve().parent / "ontos" / "core" / "ontology.py"
+    spec = importlib.util.spec_from_file_location("ontos.core.ontology", ontology_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot load ontology module at {ontology_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_ontology = _load_ontology_module()
+_TYPE_DEFS = _ontology.TYPE_DEFINITIONS
+get_type_hierarchy = _ontology.get_type_hierarchy
+get_valid_types = _ontology.get_valid_types
+get_valid_type_status = _ontology.get_valid_type_status
 
 # Project root detection
 # Assumes this file is in .ontos/scripts/ relative to project root

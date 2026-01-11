@@ -9,7 +9,7 @@ depends_on: [mission]
 
 > **GENERATED FILE - DO NOT EDIT DIRECTLY**
 >
-> Generated: 2026-01-11T23:26:17Z
+> Generated: 2026-01-11T23:50:22Z
 > Source: `.ontos/scripts/ontos/core/ontology.py`
 > Schema: v2.2+ (see schema.py for version differences)
 
@@ -61,6 +61,30 @@ depends_on: [mission]
 | `ontos_schema` | string | all | Schema version |
 | `curation_level` | enum | all | Level of human curation |
 | `describes` | list | atom | Source files this doc describes |
+
+---
+
+## 3. Schema Requirements by Version
+
+### Schema v1.0
+- Required: id
+- Optional: type, depends_on
+
+### Schema v2.0
+- Required: id, type
+- Optional: status, depends_on, concepts, event_type, impacts
+
+### Schema v2.1
+- Required: id, type
+- Optional: status, depends_on, concepts, describes, describes_verified
+
+### Schema v2.2
+- Required: id, type, status
+- Optional: depends_on, concepts, ontos_schema, curation_level
+
+### Schema v3.0
+- Required: id, type, status, ontos_schema
+- Optional: depends_on, concepts, implements, tests, deprecates
 
 ---
 

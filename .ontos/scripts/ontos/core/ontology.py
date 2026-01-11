@@ -51,8 +51,8 @@ class FieldDefinition:
     field_type: str  # "string", "list", "enum"
     required: bool
     description: str
-    valid_values: Optional[List[str]] = None  # For enums
-    applies_to: Optional[List[str]] = None  # None = all types
+    valid_values: Optional[Tuple[str, ...]] = None  # For enums
+    applies_to: Optional[Tuple[str, ...]] = None  # None = all types
 
 
 # Curation meta-statuses apply to all types during L0/L1 processing
@@ -113,38 +113,38 @@ FIELD_DEFINITIONS: Dict[str, FieldDefinition] = {
         field_type="enum",
         required=True,
         description="Document type in hierarchy",
-        valid_values=["kernel", "strategy", "product", "atom", "log"],
+        valid_values=("kernel", "strategy", "product", "atom", "log"),
     ),
     "status": FieldDefinition(
         name="status",
         field_type="enum",
         required=True,
         description="Document lifecycle state",
-        valid_values=["active", "draft", "deprecated", "archived",
+        valid_values=("active", "draft", "deprecated", "archived",
                       "rejected", "complete", "auto-generated",
-                      "scaffold", "pending_curation"],
+                      "scaffold", "pending_curation"),
     ),
     "depends_on": FieldDefinition(
         name="depends_on",
         field_type="list",
         required=False,  # optional at schema level, L2 curation enforces
         description="Referenced document IDs (required at L2 for strategy/product/atom)",
-        applies_to=["strategy", "product", "atom"],  # kernel excluded per curation.py
+        applies_to=("strategy", "product", "atom"),  # kernel excluded per curation.py
     ),
     "impacts": FieldDefinition(
         name="impacts",
         field_type="list",
         required=False,
         description="Document IDs modified in this session",
-        applies_to=["log"],
+        applies_to=("log",),
     ),
     "event_type": FieldDefinition(
         name="event_type",
         field_type="enum",
         required=False,  # not enforced by schema.py or curation.py
         description="Session type",
-        valid_values=["feature", "fix", "refactor", "exploration", "chore", "decision"],
-        applies_to=["log"],
+        valid_values=("feature", "fix", "refactor", "exploration", "chore", "decision"),
+        applies_to=("log",),
     ),
     "concepts": FieldDefinition(
         name="concepts",
@@ -157,21 +157,21 @@ FIELD_DEFINITIONS: Dict[str, FieldDefinition] = {
         field_type="string",
         required=False,
         description="Schema version",
-        valid_values=["1.0", "2.0", "2.1", "2.2", "3.0"],
+        valid_values=("1.0", "2.0", "2.1", "2.2", "3.0"),
     ),
     "curation_level": FieldDefinition(
         name="curation_level",
         field_type="enum",
         required=False,
         description="Level of human curation",
-        valid_values=["L0", "L1", "L2"],
+        valid_values=("L0", "L1", "L2"),
     ),
     "describes": FieldDefinition(
         name="describes",
         field_type="list",
         required=False,
         description="Source files this doc describes",
-        applies_to=["atom"],
+        applies_to=("atom",),
     ),
 }
 
