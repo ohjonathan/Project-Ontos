@@ -6,7 +6,6 @@ event_type: feature
 impacts:
   - ontology_spec
   - technical_architecture
-  - v2_9_6_implementation_specification
 concepts:
   - ontology
   - single-source-of-truth

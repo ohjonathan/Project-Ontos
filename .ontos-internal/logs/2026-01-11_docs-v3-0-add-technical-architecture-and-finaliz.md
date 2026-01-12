@@ -4,7 +4,7 @@ type: log
 status: active
 event_type: decision
 concepts: [schema, docs, architecture]
-impacts: [ontology_architecture_proposal, constitution, philosophy, technical_architecture, v2_strategy, schema]
+impacts: [constitution, philosophy, technical_architecture, v2_strategy, schema]
 ---
 
 # Session Log: Ontology Architecture Research & Documentation Reorganization

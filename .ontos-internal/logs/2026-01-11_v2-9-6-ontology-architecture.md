@@ -4,7 +4,7 @@ type: log
 status: active
 event_type: feature
 concepts: []
-impacts: [ontology_architecture_proposal, technical_architecture]
+impacts: [technical_architecture]
 ---
 
 # Session Log: V2 9 6 Ontology Architecture

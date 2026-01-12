@@ -4,7 +4,7 @@ type: log
 status: active
 event_type: chore
 concepts: [cleanup, v2.9.6, housekeeping]
-impacts: [ontology_architecture_proposal]
+impacts: []
 ---
 
 # Session Log: v2.9.6 Cleanup
