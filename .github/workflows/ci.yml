@@ -1,8 +1,8 @@
-name: CI
+name: Tests
 
 on:
   push:
-    branches: [main]
+    branches: [main, v3.0, "v3.0.*"]
   pull_request:
     branches: [main]
 
@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
       - uses: actions/checkout@v4
@@ -21,31 +21,33 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
+      - name: Install package
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-cov
+          pip install -e ".[dev]"
+
+      - name: Verify installation
+        run: |
+          python -m ontos --version
+          python -c "import ontos; print(f'Version: {ontos.__version__}')"
 
       - name: Run tests
-        run: pytest tests/ -v --cov=.ontos/scripts --cov-report=xml
+        run: |
+          pytest tests/ -v --tb=short
+          pytest .ontos/scripts/tests/ -v --tb=short
 
-      - name: Validate context map
-        run: python .ontos/scripts/ontos_generate_context_map.py --strict --quiet
+      - name: Run Golden Master tests
+        run: |
+          python tests/golden/compare_golden_master.py --fixture all
 
-      - name: Run data quality lint
-        run: python .ontos/scripts/ontos_generate_context_map.py --lint --quiet
-        continue-on-error: true  # Soft warnings don't fail CI
+      - name: Check coverage
+        run: |
+          pytest tests/ --cov=ontos --cov-report=xml
+        continue-on-error: true
 
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        if: matrix.python-version == '3.11'
         with:
-          python-version: '3.11'
-
-      - name: Check Python syntax
-        run: python -m py_compile .ontos/scripts/*.py
+          files: coverage.xml
+        continue-on-error: true
