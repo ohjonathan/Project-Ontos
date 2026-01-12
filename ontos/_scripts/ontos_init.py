@@ -405,7 +405,7 @@ def install_pre_commit_hook() -> bool:
     if os.path.exists(husky_dir):
         print("\n   ⚠ Husky detected. Manual integration required:")
         print("   Add to .husky/pre-commit:")
-        print("   python3 -m ontos.pre_commit_check")
+        print("   python3 -m ontos._scripts.ontos_pre_commit_check")
         return False
 
     # Detect pre-commit framework
@@ -418,7 +418,7 @@ def install_pre_commit_hook() -> bool:
      hooks:
        - id: ontos-consolidate
          name: Ontos Auto-Consolidation
-         entry: python3 -m ontos.pre_commit_check
+         entry: python3 -m ontos._scripts.ontos_pre_commit_check
          language: system
          always_run: true
          pass_filenames: false
@@ -432,7 +432,7 @@ def install_pre_commit_hook() -> bool:
             if 'ontos' not in content.lower():
                 print("\n   ⚠ Existing pre-commit hook detected")
                 print("   Add this line to your existing hook:")
-                print("   python3 .ontos/scripts/ontos_pre_commit_check.py")
+                print("   python3 -m ontos._scripts.ontos_pre_commit_check")
 
                 # In non-interactive environments, don't overwrite existing hooks
                 if not sys.stdin.isatty():
@@ -564,7 +564,8 @@ def main():
     # 6. Generate initial Context Map
     print("\n5. Generating initial Context Map...")
     try:
-        subprocess.run([sys.executable, '.ontos/scripts/ontos_generate_context_map.py'], 
+        bundled_map = Path(__file__).resolve().parent / "ontos_generate_context_map.py"
+        subprocess.run([sys.executable, str(bundled_map)],
                        check=True, capture_output=True)
         print("   ✓ Context map generated")
     except subprocess.CalledProcessError:

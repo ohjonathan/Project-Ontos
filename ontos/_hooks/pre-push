@@ -1,15 +1,13 @@
 #!/bin/bash
-# Ontos pre-push hook v2.3
+# Ontos pre-push hook v3.0
 # All logic delegated to Python for testability
 
-SCRIPTS_DIR=".ontos/scripts"
-HOOK_SCRIPT="$SCRIPTS_DIR/ontos_pre_push_check.py"
-
 # Bypass if Ontos not installed
-if [ ! -f "$HOOK_SCRIPT" ]; then
+python3 -c "import importlib.util, sys; sys.exit(0 if importlib.util.find_spec('ontos._scripts.ontos_pre_push_check') else 1)"
+if [ $? -ne 0 ]; then
     exit 0
 fi
 
-# Hand off to Python immediately
-python3 "$HOOK_SCRIPT"
+# Hand off to bundled module
+python3 -m ontos._scripts.ontos_pre_push_check
 exit $?
