@@ -13,6 +13,12 @@ from typing import Optional
 from ontos.core.context import SessionContext
 from ontos.ui.output import OutputHandler
 
+# Phase 2: Import git operations from new module (used by wrappers)
+from ontos.io.git import (
+    get_current_branch as _git_get_current_branch,
+    get_commits_since_push as _git_get_commits_since_push,
+)
+
 from ontos_config import __version__, LOGS_DIR, CONTEXT_MAP_FILE, PROJECT_ROOT
 
 from ontos_lib import (
@@ -37,6 +43,7 @@ try:
     from ontos_config import DEFAULT_SOURCE
 except ImportError:
     DEFAULT_SOURCE = None
+
 
 # =============================================================================
 # PROPOSAL GRADUATION DETECTION (v2.6.1)

@@ -21,6 +21,9 @@ from ontos.core.curation import (
     level_marker,
 )
 
+# Phase 2: Import token estimation from new module
+from ontos.core.tokens import estimate_tokens, format_token_count
+
 from ontos_config import (
     __version__,
     DOCS_DIR,
@@ -66,40 +69,6 @@ from ontos_config_defaults import (
 )
 
 OUTPUT_FILE = CONTEXT_MAP_FILE
-
-
-def estimate_tokens(content: str) -> int:
-    """Estimate token count using character-based heuristic.
-    
-    Formula: tokens ≈ characters / 4
-    
-    This is a rough approximation that works well for English text.
-    More accurate than word count, simpler than actual tokenization.
-    
-    Args:
-        content: File content as string.
-        
-    Returns:
-        Estimated token count.
-    """
-    return len(content) // 4
-
-
-def format_token_count(tokens: int) -> str:
-    """Format token count for display.
-    
-    Args:
-        tokens: Token count.
-        
-    Returns:
-        Formatted string (e.g., "~450 tokens" or "~2,100 tokens").
-    """
-    if tokens < 1000:
-        return f"~{tokens} tokens"
-    else:
-        # Round to nearest 100 for larger counts
-        rounded = (tokens // 100) * 100
-        return f"~{rounded:,} tokens"
 
 
 
