@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2026-01-12 21:36:41 UTC
+Generated: 2026-01-12 21:43:42 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2026-01-12 16:36:41
+Generated on: 2026-01-12 16:43:42
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -196,9 +196,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   Fix: Add a document with `id: phase2_implementation_spec_verification_review_codex_round2` or remove it from depends_on
 - [BROKEN LINK] **phase2_implementation_instructions_antigravity** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase2/Phase2_Implementation_Instructions_Antigravity.md) references missing ID: `phase2_implementation_spec`
   Fix: Add a document with `id: phase2_implementation_spec` or remove it from depends_on
-- [DEPTH] **claude_opus_4_5_phase1_review_round2** has dependency depth 7 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [DEPTH] **claude_opus_4_5_phase1_review** has dependency depth 6 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **claude_opus_4_5_phase1_review_round2** has dependency depth 7 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [ARCHITECTURE] **phase2_implementation_instructions_antigravity** (strategy) depends on **chief_architect_round2_critical_analysis** (atom)
   Fix: strategy should not depend on atom. Invert the dependency or change document types
