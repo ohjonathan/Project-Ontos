@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2026-01-12 01:23:53 UTC
+Generated: 2026-01-12 01:53:04 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2026-01-11 20:23:53
+Generated on: 2026-01-11 20:53:04
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -57,9 +57,6 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **architect_synthesis_install_ux** [L2] [draft] (Architect_Synthesis_InstallUX.md) ~4,000 tokens
   - Status: draft
   - Depends On: installation_ux_proposal, claude_install_ux_review, gemini_install_ux_review, installation_ux_proposal_review
-- **chief_architect_v3_0_analysis** [L2] [draft] (Chief_Architect_v3.0_Comprehensive_Analysis.md) ~4,600 tokens
-  - Status: draft
-  - Depends On: technical_architecture, v3_0_security_requirements
 - **claude_install_ux_review** [L2] (Claude_InstallUX_Review.md) ~3,500 tokens
   - Status: complete
   - Depends On: installation_ux_proposal
@@ -75,15 +72,6 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **installation_experience_report** [L2] (Ontos_Installation_Experience_Report.md) ~2,200 tokens
   - Status: complete
   - Depends On: installation_ux_proposal
-- **llm_b_chief_architect_v3_board_review** [L2] [draft] (Ontos_v3.0_Board_Review_LLM_B_Chief_Architect_Response.md) ~4,400 tokens
-  - Status: draft
-  - Depends On: chief_architect_v3_0_analysis
-- **ontos_codebase_map** [L2] [draft] (Ontos_Codebase_Map.md) ~6,300 tokens
-  - Status: draft
-  - Depends On: philosophy, technical_architecture
-- **ontos_deep_analysis_brief** [L2] [draft] (Ontos_Deep_Analysis_Brief.md) ~4,700 tokens
-  - Status: draft
-  - Depends On: philosophy, mission, technical_architecture
 - **schema** [L2] (schema.md) ~450 tokens
   - Status: active
   - Depends On: philosophy
@@ -104,9 +92,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **log_20260107_v2_9_5_quality_release** [L1] (2026-01-07_v2-9-5-quality-release.md) ~265 tokens  ⚠️ active
   - Status: active
   - Impacts: None
-- **log_20260108_housekeeping_archive_docs** [L2] (2026-01-08_housekeeping-archive-docs.md) ~465 tokens
+- **log_20260108_housekeeping_archive_docs** [L2] (2026-01-08_housekeeping-archive-docs.md) ~454 tokens
   - Status: active
-  - Impacts: ontos_codebase_map, ontos_deep_analysis_brief, roadmap, technical_architecture
+  - Impacts: roadmap, technical_architecture
 - **log_20260111_fix_v2_9_6_correct_false_implemented_status_cl** [L1] (2026-01-11_fix-v2-9-6-correct-false-implemented-status-cl.md) ~115 tokens  ⚠️ active
   - Status: active
   - Impacts: None
@@ -146,7 +134,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   - Impacted: `constitution`, `philosophy`, `technical_architecture`, `v2_strategy`, `schema`
   - Concepts: schema, docs, architecture
 - **2026-01-08** [chore] **Housekeeping Archive Docs** (`log_20260108_housekeeping_archive_docs`)
-  - Impacted: `ontos_codebase_map`, `ontos_deep_analysis_brief`, `roadmap`, `technical_architecture`
+  - Impacted: `roadmap`, `technical_architecture`
   - Concepts: housekeeping, archival, documentation
 - **2026-01-07** [feature] **V2 9 5 Quality Release** (`log_20260107_v2_9_5_quality_release`)
 - **2025-12-20** [chore] **V2 7 1** (`log_20251220_v2_7_1`)
@@ -160,7 +148,6 @@ No issues found.
 | ID | Filename | Type |
 |---|---|---|
 | architect_synthesis_install_ux | [Architect_Synthesis_InstallUX.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/Install_experience/Architect_Synthesis_InstallUX.md) | atom |
-| chief_architect_v3_0_analysis | [Chief_Architect_v3.0_Comprehensive_Analysis.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0/V3.0-Components/Chief_Architect_v3.0_Comprehensive_Analysis.md) | atom |
 | claude_install_ux_review | [Claude_InstallUX_Review.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/Install_experience/Claude_InstallUX_Review.md) | atom |
 | common_concepts | [Common_Concepts.md](docs/reference/Common_Concepts.md) | atom |
 | constitution | [constitution.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/constitution.md) | kernel |
@@ -169,7 +156,6 @@ No issues found.
 | installation_experience_report | [Ontos_Installation_Experience_Report.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/Install_experience/Ontos_Installation_Experience_Report.md) | atom |
 | installation_ux_proposal | [Installation_UX_Proposal.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/Install_experience/Installation_UX_Proposal.md) | strategy |
 | installation_ux_proposal_review | [Installation_UX_Proposal_Review_Codex.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/Install_experience/Installation_UX_Proposal_Review_Codex.md) | strategy |
-| llm_b_chief_architect_v3_board_review | [Ontos_v3.0_Board_Review_LLM_B_Chief_Architect_Response.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0/V3.0-Components/Ontos_v3.0_Board_Review_LLM_B_Chief_Architect_Response.md) | atom |
 | log_20251218_v2_6_1_graduation | [2025-12-18_v2-6-1-graduation.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-18_v2-6-1-graduation.md) | log |
 | log_20251219_chore_maintenance_consolidate_logs_add_frontma | [2025-12-19_chore-maintenance-consolidate-logs-add-frontma.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-19_chore-maintenance-consolidate-logs-add-frontma.md) | log |
 | log_20251219_docs_graduate_master_plan_to_strategy_reorganize | [2025-12-19_docs-graduate-master-plan-to-strategy-reorganize.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-19_docs-graduate-master-plan-to-strategy-reorganize.md) | log |
@@ -186,15 +172,13 @@ No issues found.
 | mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |
 | ontology_spec | [ontology_spec.md](docs/reference/ontology_spec.md) | kernel |
 | ontos_agent_instructions | [Ontos_Agent_Instructions.md](docs/reference/Ontos_Agent_Instructions.md) | kernel |
-| ontos_codebase_map | [Ontos_Codebase_Map.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0/V3.0-Components/Ontos_Codebase_Map.md) | atom |
-| ontos_deep_analysis_brief | [Ontos_Deep_Analysis_Brief.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0/V3.0-Components/Ontos_Deep_Analysis_Brief.md) | atom |
 | ontos_manual | [Ontos_Manual.md](docs/reference/Ontos_Manual.md) | kernel |
 | philosophy | [philosophy.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/philosophy.md) | kernel |
 | roadmap | [roadmap.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/roadmap.md) | strategy |
 | schema | [schema.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/atom/schema.md) | atom |
 | technical_architecture | [technical_architecture.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/technical_architecture.md) | strategy |
 | v2_strategy | [v2_strategy.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2_strategy.md) | strategy |
-| v3_0_security_requirements | [v3.0_security_requirements.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0/security/v3.0_security_requirements.md) | strategy |
+| v3_0_security_requirements | [v3.0_security_requirements.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/v3.0_security_requirements.md) | strategy |
 
 
 ## 5. Documentation Staleness Audit
