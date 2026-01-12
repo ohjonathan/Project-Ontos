@@ -98,11 +98,18 @@ def main():
         print("This indicates a broken installation. Try reinstalling: pip install --force-reinstall ontos", file=sys.stderr)
         sys.exit(1)
 
+    # v3.0: Pass project root via env var for non-editable installs
+    # (bundled scripts can't reliably compute PROJECT_ROOT from __file__)
+    import os
+    env = os.environ.copy()
+    env["ONTOS_PROJECT_ROOT"] = str(project_root)
+
     # Execute the unified dispatcher with the same arguments
     # v1.1: Pass through streams to preserve TTY and signals
     result = subprocess.run(
         [sys.executable, str(unified_cli)] + sys.argv[1:],
         cwd=project_root,  # Run from project root
+        env=env,  # v3.0: Include project root env var
         stdin=sys.stdin,
         stdout=sys.stdout,
         stderr=sys.stderr,

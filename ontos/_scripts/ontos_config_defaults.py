@@ -12,8 +12,16 @@ from pathlib import Path
 
 
 def _load_ontology_module():
-    """Load ontology module without modifying sys.path (v2.9.6)."""
-    ontology_path = Path(__file__).resolve().parent / "ontos" / "core" / "ontology.py"
+    """Load ontology module without modifying sys.path (v2.9.6).
+    
+    v3.0: When bundled in ontos/_scripts/, the path is:
+        ontos/_scripts/ontos_config_defaults.py
+        -> parent = ontos/_scripts/
+        -> parent.parent = ontos/
+        -> core/ontology.py = ontos/core/ontology.py
+    """
+    # From _scripts, go up to ontos/, then into core/ontology.py
+    ontology_path = Path(__file__).resolve().parent.parent / "core" / "ontology.py"
     spec = importlib.util.spec_from_file_location("ontos.core.ontology", ontology_path)
     if spec is None or spec.loader is None:
         raise ImportError(f"Cannot load ontology module at {ontology_path}")
@@ -29,8 +37,10 @@ get_valid_types = _ontology.get_valid_types
 get_valid_type_status = _ontology.get_valid_type_status
 
 # Project root detection
-# Assumes this file is in .ontos/scripts/ relative to project root
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# v3.0: cli.py passes project root via ONTOS_PROJECT_ROOT env var
+# This works for both editable and non-editable installs
+# Fallback to CWD if not set (cli.py also sets CWD to project root)
+PROJECT_ROOT = os.environ.get("ONTOS_PROJECT_ROOT", os.getcwd())
 
 
 def is_ontos_repo() -> bool:

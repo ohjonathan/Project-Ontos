@@ -21,7 +21,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install package
+      - name: Install package (editable)
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
@@ -51,3 +51,25 @@ jobs:
         with:
           files: coverage.xml
         continue-on-error: true
+
+  # v3.0: Test non-editable install to catch path resolution bugs
+  test-non-editable:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package (non-editable)
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+
+      - name: Verify non-editable install
+        run: |
+          python -m ontos --version
+          python -c "import ontos; print(f'Version: {ontos.__version__}')"
+          python -m ontos map
