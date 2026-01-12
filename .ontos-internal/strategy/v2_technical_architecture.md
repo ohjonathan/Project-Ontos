@@ -1,11 +1,13 @@
 ---
-id: technical_architecture
+id: v2_technical_architecture
 type: strategy
-status: active
+status: deprecated
 depends_on: [mission, philosophy, constitution]
 ---
 
-# Project Ontos: Technical Architecture
+> **DEPRECATED:** This is the v2.x-era technical architecture. For current architecture, see [V3.0-Technical-Architecture.md](v3.0/V3.0-Technical-Architecture.md).
+
+# Project Ontos: Technical Architecture (v2.x)
 
 *Document Type: Architectural Decision Record (ADR) & Implementation Guide*
 

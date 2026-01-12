@@ -1,11 +1,13 @@
 ---
-id: roadmap
+id: v2_roadmap
 type: strategy
-status: active
+status: deprecated
 depends_on: [mission, philosophy]
 ---
 
-# Project Ontos: Roadmap
+> **DEPRECATED:** This is the v2.x-era roadmap. For current implementation plans, see [V3.0-Implementation-Roadmap.md](v3.0/V3.0-Implementation-Roadmap.md).
+
+# Project Ontos: Roadmap (v2.x)
 
 *Document Type: Strategic Roadmap*
 
