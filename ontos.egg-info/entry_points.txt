@@ -1,0 +1,2 @@
+[console_scripts]
+ontos = ontos.cli:main

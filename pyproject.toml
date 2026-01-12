@@ -1,0 +1,78 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ontos"
+version = "3.0.0a1"
+description = "Local-first documentation management for AI-assisted development"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "Ontos Project", email = "ontos@example.com"}
+]
+keywords = ["documentation", "ai", "context", "llm", "developer-tools"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Documentation",
+    "Topic :: Software Development :: Documentation",
+]
+dependencies = [
+    "pyyaml>=6.0",
+    "tomli>=2.0.1; python_version<'3.11'",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pre-commit>=3.0",
+]
+mcp = [
+    "pydantic>=2.0",
+]
+
+[project.scripts]
+ontos = "ontos.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/ohjona/Project-Ontos"
+Documentation = "https://github.com/ohjona/Project-Ontos/tree/main/docs"
+Repository = "https://github.com/ohjona/Project-Ontos"
+Issues = "https://github.com/ohjona/Project-Ontos/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ontos", "ontos.*"]
+
+[tool.setuptools.package-data]
+"ontos._scripts" = ["*.py"]
+"ontos._templates" = ["*"]
+"ontos._hooks" = ["*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", ".ontos/scripts/tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.coverage.run]
+source = ["ontos"]
+omit = ["tests/*", ".ontos/scripts/tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
