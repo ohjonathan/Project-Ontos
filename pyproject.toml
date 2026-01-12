@@ -57,6 +57,8 @@ include = ["ontos", "ontos.*"]
 
 [tool.setuptools.package-data]
 "ontos._scripts" = ["*.py"]
+"ontos._templates" = ["*"]
+"ontos._hooks" = ["*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", ".ontos/scripts/tests"]

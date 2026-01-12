@@ -10,6 +10,9 @@ ontos.egg-info/dependency_links.txt
 ontos.egg-info/entry_points.txt
 ontos.egg-info/requires.txt
 ontos.egg-info/top_level.txt
+ontos/_hooks/__init__.py
+ontos/_hooks/pre-commit
+ontos/_hooks/pre-push
 ontos/_scripts/__init__.py
 ontos/_scripts/ontos.py
 ontos/_scripts/ontos_config.py
@@ -36,6 +39,11 @@ ontos/_scripts/ontos_stub.py
 ontos/_scripts/ontos_summarize.py
 ontos/_scripts/ontos_update.py
 ontos/_scripts/ontos_verify.py
+ontos/_templates/__init__.py
+ontos/_templates/common_concepts_template.md
+ontos/_templates/decision_history_template.md
+ontos/_templates/ontos_config.py.template
+ontos/_templates/templates.py
 ontos/commands/__init__.py
 ontos/core/__init__.py
 ontos/core/config.py

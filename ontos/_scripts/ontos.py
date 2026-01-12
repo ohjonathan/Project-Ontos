@@ -28,20 +28,19 @@ import os
 from pathlib import Path
 
 # v3.0: Get project root from env var set by cli.py
-# This is required for non-editable installs where __file__ points to site-packages
 PROJECT_ROOT = os.environ.get("ONTOS_PROJECT_ROOT", os.getcwd())
 
-# Add bundled scripts directory to path for script imports (ontos_*.py)
-SCRIPTS_DIR = Path(__file__).parent
-sys.path.insert(0, str(SCRIPTS_DIR))
-
-# Add project root to sys.path AFTER scripts so it ends up at position 0
-# This ensures: 1) ontos package is found, 2) user's ontos_config.py is found
-# sys.path will be: [PROJECT_ROOT, SCRIPTS_DIR, ...]
+# Must come first to ensure project config wins over bundled config
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
+# Add bundled scripts directory for ontos_*.py imports
+SCRIPTS_DIR = Path(__file__).parent
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(1, str(SCRIPTS_DIR))
+
 COMMANDS = {
+    'init': ('ontos_init', 'Initialize Ontos in a project'),
     'log': ('ontos_end_session', 'Archive a session'),
     'map': ('ontos_generate_context_map', 'Generate context map'),
     'verify': ('ontos_verify', 'Verify describes dates'),

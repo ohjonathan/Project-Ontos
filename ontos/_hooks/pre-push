@@ -1,0 +1,15 @@
+#!/bin/bash
+# Ontos pre-push hook v2.3
+# All logic delegated to Python for testability
+
+SCRIPTS_DIR=".ontos/scripts"
+HOOK_SCRIPT="$SCRIPTS_DIR/ontos_pre_push_check.py"
+
+# Bypass if Ontos not installed
+if [ ! -f "$HOOK_SCRIPT" ]; then
+    exit 0
+fi
+
+# Hand off to Python immediately
+python3 "$HOOK_SCRIPT"
+exit $?
