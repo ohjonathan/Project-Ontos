@@ -1,0 +1,39 @@
+name: Golden Master Tests
+
+on:
+  push:
+    branches: [main, v3.0, "v3.0.*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  golden-master:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pyyaml
+
+      - name: Run Golden Master comparison
+        run: |
+          python tests/golden/compare_golden_master.py --fixture all
+
+      - name: Upload diff artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-master-diffs-${{ matrix.python-version }}
+          path: tests/golden/baselines/
+          retention-days: 7

@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2026-01-12 03:19:00 UTC
+Generated: 2026-01-12 11:47:16 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2026-01-11 22:19:00
+Generated on: 2026-01-12 06:47:16
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -40,6 +40,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **installation_ux_proposal_review** [L2] [draft] (Installation_UX_Proposal_Review_Codex.md) ~948 tokens
   - Status: draft
   - Depends On: installation_ux_proposal, philosophy, mission, ontos_manual
+- **phase0_golden_master_spec** [L2] (phase0_implementation_spec.md) ~10,300 tokens
+  - Status: active
+  - Depends On: v3_0_implementation_roadmap, v3_0_technical_architecture
 - **v3_0_implementation_roadmap** [L2] (V3.0-Implementation-Roadmap.md) ~9,800 tokens
   - Status: active
   - Depends On: v3_0_technical_architecture, v3_0_strategy_decisions
@@ -95,6 +98,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **log_20260108_housekeeping_archive_docs** [L2] (2026-01-08_housekeeping-archive-docs.md) ~446 tokens
   - Status: active
   - Impacts: None
+- **log_20260111_chore_pre_v3_0_documentation_cleanup** [L1] (2026-01-11_chore-pre-v3-0-documentation-cleanup.md) ~110 tokens  ⚠️ active
+  - Status: active
+  - Impacts: None
 - **log_20260111_fix_v2_9_6_correct_false_implemented_status_cl** [L1] (2026-01-11_fix-v2-9-6-correct-false-implemented-status-cl.md) ~115 tokens  ⚠️ active
   - Status: active
   - Impacts: None
@@ -113,12 +119,18 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **log_20260112_feat_v2_9_6_ontology_single_source_of_truth** [L2] (2026-01-12_feat-v2-9-6-ontology-single-source-of-truth.md) ~620 tokens
   - Status: active
   - Impacts: ontology_spec
+- **log_20260112_phase0_v3_0_alpha** [L2] (2026-01-12_phase0-v3-0-alpha.md) ~447 tokens
+  - Status: active
+  - Impacts: phase0_golden_master_spec
 - **log_20260112_v2_9_6_cleanup** [L2] (2026-01-12_chore-v2-9-6-cleanup.md) ~312 tokens
   - Status: active
   - Impacts: None
 
 
 ## 2. Recent Timeline
+- **2026-01-12** [feature] **Phase0 V3 0 Alpha** (`log_20260112_phase0_v3_0_alpha`)
+  - Impacted: `phase0_golden_master_spec`
+  - Concepts: golden-master, testing, v3.0, refactoring
 - **2026-01-12** [feature] **Feat V2 9 6 Ontology Single Source Of Truth** (`log_20260112_feat_v2_9_6_ontology_single_source_of_truth`)
   - Impacted: `ontology_spec`
   - Concepts: ontology, single-source-of-truth, immutability, import-safety
@@ -132,12 +144,11 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **2026-01-11** [decision] **Docs V3 0 Add Technical Architecture And Finaliz** (`log_20260111_ontology_architecture_research`)
   - Impacted: `constitution`, `philosophy`, `schema`
   - Concepts: schema, docs, architecture
+- **2026-01-11** [chore] **Chore Pre V3 0 Documentation Cleanup** (`log_20260111_chore_pre_v3_0_documentation_cleanup`)
 - **2026-01-08** [chore] **Housekeeping Archive Docs** (`log_20260108_housekeeping_archive_docs`)
   - Concepts: housekeeping, archival, documentation
-- **2026-01-07** [feature] **V2 9 5 Quality Release** (`log_20260107_v2_9_5_quality_release`)
-- **2025-12-20** [chore] **V2 7 1** (`log_20251220_v2_7_1`)
 
-*Showing 10 of 13 sessions*
+*Showing 10 of 15 sessions*
 
 ## 3. Dependency Audit
 No issues found.
@@ -160,17 +171,20 @@ No issues found.
 | log_20251220_v2_7_1 | [2025-12-20_v2-7-1.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2025-12-20_v2-7-1.md) | log |
 | log_20260107_v2_9_5_quality_release | [2026-01-07_v2-9-5-quality-release.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-07_v2-9-5-quality-release.md) | log |
 | log_20260108_housekeeping_archive_docs | [2026-01-08_housekeeping-archive-docs.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-08_housekeeping-archive-docs.md) | log |
+| log_20260111_chore_pre_v3_0_documentation_cleanup | [2026-01-11_chore-pre-v3-0-documentation-cleanup.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-11_chore-pre-v3-0-documentation-cleanup.md) | log |
 | log_20260111_fix_v2_9_6_correct_false_implemented_status_cl | [2026-01-11_fix-v2-9-6-correct-false-implemented-status-cl.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-11_fix-v2-9-6-correct-false-implemented-status-cl.md) | log |
 | log_20260111_ontology_architecture_research | [2026-01-11_docs-v3-0-add-technical-architecture-and-finaliz.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-11_docs-v3-0-add-technical-architecture-and-finaliz.md) | log |
 | log_20260111_v2_9_6 | [2026-01-11_v2-9-6.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-11_v2-9-6.md) | log |
 | log_20260111_v2_9_6_ontology_architecture | [2026-01-11_v2-9-6-ontology-architecture.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-11_v2-9-6-ontology-architecture.md) | log |
 | log_20260111_v2_9_6_round2_revision | [2026-01-11_v2-9-6-round2-revision.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-11_v2-9-6-round2-revision.md) | log |
 | log_20260112_feat_v2_9_6_ontology_single_source_of_truth | [2026-01-12_feat-v2-9-6-ontology-single-source-of-truth.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-12_feat-v2-9-6-ontology-single-source-of-truth.md) | log |
+| log_20260112_phase0_v3_0_alpha | [2026-01-12_phase0-v3-0-alpha.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-12_phase0-v3-0-alpha.md) | log |
 | log_20260112_v2_9_6_cleanup | [2026-01-12_chore-v2-9-6-cleanup.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-12_chore-v2-9-6-cleanup.md) | log |
 | mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |
 | ontology_spec | [ontology_spec.md](docs/reference/ontology_spec.md) | kernel |
 | ontos_agent_instructions | [Ontos_Agent_Instructions.md](docs/reference/Ontos_Agent_Instructions.md) | kernel |
 | ontos_manual | [Ontos_Manual.md](docs/reference/Ontos_Manual.md) | kernel |
+| phase0_golden_master_spec | [phase0_implementation_spec.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase0/phase0_implementation_spec.md) | strategy |
 | philosophy | [philosophy.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/philosophy.md) | kernel |
 | schema | [schema.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/atom/schema.md) | atom |
 | v3_0_implementation_roadmap | [V3.0-Implementation-Roadmap.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/V3.0-Implementation-Roadmap.md) | strategy |

@@ -1,0 +1,1 @@
+⚠️  Branch '<DEFAULT_BRANCH>' not suitable for auto-archive

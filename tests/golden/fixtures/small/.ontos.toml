@@ -1,0 +1,13 @@
+[ontos]
+version = "3.0"
+
+[paths]
+docs_dir = ".ontos-internal"
+logs_dir = ".ontos-internal/logs"
+context_map = "Ontos_Context_Map.md"
+
+[scanning]
+skip_patterns = ["_template.md", "archive/*"]
+
+[validation]
+strict = false
