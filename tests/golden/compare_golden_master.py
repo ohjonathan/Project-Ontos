@@ -108,18 +108,28 @@ def run_map_command(fixture_path: Path) -> dict:
         dirs_exist_ok=True
     )
 
-    result = subprocess.run(
-        [sys.executable, "ontos.py", "map"],
-        cwd=fixture_path,
-        capture_output=True,
-        text=True,
-        timeout=60
-    )
+    try:
+        result = subprocess.run(
+            [sys.executable, "ontos.py", "map"],
+            cwd=fixture_path,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            errors="replace"
+        )
+    except subprocess.TimeoutExpired:
+        print("    ERROR: Command timed out after 60 seconds")
+        return {
+            "stdout": "",
+            "stderr": "TIMEOUT: Command did not complete within 60 seconds",
+            "exit_code": -1,
+            "context_map": "",
+        }
 
     context_map_path = fixture_path / "Ontos_Context_Map.md"
     context_map_content = ""
     if context_map_path.exists():
-        context_map_content = context_map_path.read_text()
+        context_map_content = context_map_path.read_text(encoding="utf-8", errors="replace")
 
     return {
         "stdout": normalize_output(result.stdout, fixture_path),
@@ -149,25 +159,35 @@ def run_log_command(fixture_path: Path) -> dict:
         check=True
     )
 
-    result = subprocess.run(
-        [
-            sys.executable, "ontos.py", "log",
-            "-e", "chore",
-            "-s", "Golden Master Compare",
-            "--auto"
-        ],
-        cwd=fixture_path,
-        capture_output=True,
-        text=True,
-        timeout=60
-    )
+    try:
+        result = subprocess.run(
+            [
+                sys.executable, "ontos.py", "log",
+                "-e", "chore",
+                "-s", "Golden Master Compare",
+                "--auto"
+            ],
+            cwd=fixture_path,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            errors="replace"
+        )
+    except subprocess.TimeoutExpired:
+        print("    ERROR: Command timed out after 60 seconds")
+        return {
+            "stdout": "",
+            "stderr": "TIMEOUT: Command did not complete within 60 seconds",
+            "exit_code": -1,
+            "session_log": "",
+        }
 
     logs_dir = fixture_path / ".ontos-internal" / "logs"
     session_log_content = ""
     if logs_dir.exists():
         log_files = sorted(logs_dir.glob("*.md"), reverse=True)
         if log_files:
-            session_log_content = log_files[0].read_text()
+            session_log_content = log_files[0].read_text(encoding="utf-8", errors="replace")
 
     return {
         "stdout": normalize_output(result.stdout, fixture_path),
@@ -185,19 +205,19 @@ def load_baseline(fixture_name: str, command: str) -> dict:
         raise FileNotFoundError(f"Baseline not found: {baseline_dir}")
 
     data = {
-        "stdout": (baseline_dir / f"{command}_stdout.txt").read_text(),
-        "stderr": (baseline_dir / f"{command}_stderr.txt").read_text(),
+        "stdout": (baseline_dir / f"{command}_stdout.txt").read_text(encoding="utf-8", errors="replace"),
+        "stderr": (baseline_dir / f"{command}_stderr.txt").read_text(encoding="utf-8", errors="replace"),
         "exit_code": int((baseline_dir / f"{command}_exit_code.txt").read_text().strip()),
     }
 
     # Load generated files if present
     context_map_file = baseline_dir / "context_map.md"
     if context_map_file.exists():
-        data["context_map"] = context_map_file.read_text()
+        data["context_map"] = context_map_file.read_text(encoding="utf-8", errors="replace")
 
     session_log_file = baseline_dir / "session_log.md"
     if session_log_file.exists():
-        data["session_log"] = session_log_file.read_text()
+        data["session_log"] = session_log_file.read_text(encoding="utf-8", errors="replace")
 
     return data
 

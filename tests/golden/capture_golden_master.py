@@ -199,19 +199,29 @@ def capture_map_command(fixture_path: Path) -> dict:
         dirs_exist_ok=True
     )
 
-    result = subprocess.run(
-        [sys.executable, "ontos.py", "map"],
-        cwd=fixture_path,
-        capture_output=True,
-        text=True,
-        timeout=60
-    )
+    try:
+        result = subprocess.run(
+            [sys.executable, "ontos.py", "map"],
+            cwd=fixture_path,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            errors="replace"
+        )
+    except subprocess.TimeoutExpired:
+        print("    ERROR: Command timed out after 60 seconds")
+        return {
+            "stdout": "",
+            "stderr": "TIMEOUT: Command did not complete within 60 seconds",
+            "exit_code": -1,
+            "context_map": "",
+        }
 
     # Read generated context map
     context_map_path = fixture_path / "Ontos_Context_Map.md"
     context_map_content = ""
     if context_map_path.exists():
-        context_map_content = context_map_path.read_text()
+        context_map_content = context_map_path.read_text(encoding="utf-8", errors="replace")
 
     return {
         "stdout": normalize_output(result.stdout, fixture_path),
@@ -251,18 +261,28 @@ def capture_log_command(fixture_path: Path, event_type: str = "chore") -> dict:
         check=True
     )
 
-    result = subprocess.run(
-        [
-            sys.executable, "ontos.py", "log",
-            "-e", event_type,
-            "-s", "Golden Master Capture",
-            "--auto"
-        ],
-        cwd=fixture_path,
-        capture_output=True,
-        text=True,
-        timeout=60
-    )
+    try:
+        result = subprocess.run(
+            [
+                sys.executable, "ontos.py", "log",
+                "-e", event_type,
+                "-s", "Golden Master Capture",
+                "--auto"
+            ],
+            cwd=fixture_path,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            errors="replace"
+        )
+    except subprocess.TimeoutExpired:
+        print("    ERROR: Command timed out after 60 seconds")
+        return {
+            "stdout": "",
+            "stderr": "TIMEOUT: Command did not complete within 60 seconds",
+            "exit_code": -1,
+            "session_log": "",
+        }
 
     # Find generated session log
     logs_dir = fixture_path / ".ontos-internal" / "logs"
@@ -272,7 +292,7 @@ def capture_log_command(fixture_path: Path, event_type: str = "chore") -> dict:
         log_files = sorted(logs_dir.glob("*.md"), reverse=True)
         if log_files:
             newest_log = log_files[0]
-            session_log_content = newest_log.read_text()
+            session_log_content = newest_log.read_text(encoding="utf-8", errors="replace")
 
     return {
         "stdout": normalize_output(result.stdout, fixture_path),
