@@ -1,8 +1,8 @@
 ---
 id: ontology_architecture_proposal
-type: atom
+type: strategy
 status: draft
-depends_on: [technical_architecture, constitution, schema]
+depends_on: [technical_architecture, constitution]
 concepts: [schema, docs, architecture, v2.9.6]
 ---
 

@@ -2,7 +2,7 @@
 id: v2_9_6_critic_review_round_2_opus
 type: atom
 status: complete
-depends_on: [v2_9_6_implementation_specification, v2_9_6_critic_review_opus]
+depends_on: [v2_9_6_implementation_specification]
 concepts: [review, ontology, schema-as-code, YAGNI, approval]
 ---
 

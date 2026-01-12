@@ -1,7 +1,7 @@
 ---
 id: gemini_review_v2_9_6_spec
 type: atom
-status: active
+status: complete
 depends_on: [v2_9_6_implementation_specification]
 concepts: [review, ontology, architecture]
 ---
