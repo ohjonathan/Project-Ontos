@@ -71,6 +71,12 @@ class TestFieldDefinitions:
         assert fd.applies_to == ("log",)
         assert isinstance(fd.applies_to, tuple)  # verify immutability
 
+    def test_valid_values_is_tuple(self):
+        """valid_values must be tuple for immutability."""
+        fd = FIELD_DEFINITIONS["event_type"]
+        assert isinstance(fd.valid_values, tuple)
+        assert fd.valid_values == ("feature", "fix", "refactor", "exploration", "chore", "decision")
+
 
 class TestBackwardCompatHelpers:
     """Tests for backward-compatibility helper functions."""
@@ -155,3 +161,18 @@ class TestOntologySchemaAlignment:
             f"Type-specific required fields found: {type_specific_required}. "
             "L2 requirements should be in curation.py, not ontology.py."
         )
+
+
+class TestGeneratedSpec:
+    """Tests for the generated ontology_spec.md content."""
+
+    def test_spec_includes_schema_requirements_section(self):
+        """Generated spec must include schema requirements section."""
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+        from ontos_generate_ontology_spec import generate_spec
+
+        spec = generate_spec()
+        assert "## 3. Schema Requirements by Version" in spec
+

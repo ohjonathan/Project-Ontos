@@ -9,9 +9,9 @@ depends_on: [mission]
 
 > **GENERATED FILE - DO NOT EDIT DIRECTLY**
 >
-> Generated: 2026-01-11T23:50:22Z
+> Generated: 2026-01-12T00:02:36Z
 > Source: `.ontos/scripts/ontos/core/ontology.py`
-> Schema: v2.2+ (see schema.py for version differences)
+> Schema: v1.0–v3.0 (see schema.py for version differences)
 
 ---
 
