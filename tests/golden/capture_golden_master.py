@@ -73,6 +73,13 @@ def normalize_output(text: str, fixture_path: Path) -> str:
     home = str(Path.home())
     text = text.replace(home, '<HOME>')
 
+    # Normalize default branch name (main vs master varies by environment)
+    text = re.sub(
+        r"Branch '(main|master)'",
+        "Branch '<DEFAULT_BRANCH>'",
+        text
+    )
+
     return text
 
 

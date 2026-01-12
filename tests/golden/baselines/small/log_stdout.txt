@@ -1,1 +1,1 @@
-⚠️  Branch 'main' not suitable for auto-archive
+⚠️  Branch '<DEFAULT_BRANCH>' not suitable for auto-archive
