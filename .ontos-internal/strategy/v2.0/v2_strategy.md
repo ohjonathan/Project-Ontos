@@ -5,7 +5,7 @@ status: deprecated
 depends_on: [philosophy]
 ---
 
-> **DEPRECATED:** This is the v2.x strategy document. For current strategy, see [V3.0-Strategy-Decisions-Final.md](v3.0/V3.0-Strategy-Decisions-Final.md).
+> **DEPRECATED:** This is the v2.x strategy document. For current strategy, see [V3.0-Strategy-Decisions-Final.md](../v3.0/V3.0-Strategy-Decisions-Final.md).
 
 # Project Ontos v2.0 Strategy
 

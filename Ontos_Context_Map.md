@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2026-01-12 02:04:18 UTC
+Generated: 2026-01-12 02:05:57 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2026-01-11 21:04:18
+Generated on: 2026-01-11 21:05:57
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -46,7 +46,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **v2_strategy** [L2] [deprecated] (v2_strategy.md) ~947 tokens
   - Status: deprecated
   - Depends On: philosophy
-- **v2_technical_architecture** [L2] [deprecated] (v2_technical_architecture.md) ~834 tokens
+- **v2_technical_architecture** [L2] [deprecated] (v2_technical_architecture.md) ~835 tokens
   - Status: deprecated
   - Depends On: mission, philosophy, constitution
 - **v3_0_implementation_roadmap** [L2] (V3.0-Implementation-Roadmap.md) ~8,700 tokens
@@ -184,9 +184,9 @@ No issues found.
 | ontos_manual | [Ontos_Manual.md](docs/reference/Ontos_Manual.md) | kernel |
 | philosophy | [philosophy.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/philosophy.md) | kernel |
 | schema | [schema.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/atom/schema.md) | atom |
-| v2_roadmap | [v2_roadmap.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2_roadmap.md) | strategy |
-| v2_strategy | [v2_strategy.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2_strategy.md) | strategy |
-| v2_technical_architecture | [v2_technical_architecture.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2_technical_architecture.md) | strategy |
+| v2_roadmap | [v2_roadmap.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2.0/v2_roadmap.md) | strategy |
+| v2_strategy | [v2_strategy.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2.0/v2_strategy.md) | strategy |
+| v2_technical_architecture | [v2_technical_architecture.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v2.0/v2_technical_architecture.md) | strategy |
 | v3_0_implementation_roadmap | [V3.0-Implementation-Roadmap.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/V3.0-Implementation-Roadmap.md) | strategy |
 | v3_0_security_requirements | [v3.0_security_requirements.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/v3.0_security_requirements.md) | strategy |
 | v3_0_strategy_decisions | [V3.0-Strategy-Decisions-Final.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/V3.0-Strategy-Decisions-Final.md) | strategy |

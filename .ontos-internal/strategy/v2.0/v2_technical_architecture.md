@@ -5,7 +5,7 @@ status: deprecated
 depends_on: [mission, philosophy, constitution]
 ---
 
-> **DEPRECATED:** This is the v2.x-era technical architecture. For current architecture, see [V3.0-Technical-Architecture.md](v3.0/V3.0-Technical-Architecture.md).
+> **DEPRECATED:** This is the v2.x-era technical architecture. For current architecture, see [V3.0-Technical-Architecture.md](../v3.0/V3.0-Technical-Architecture.md).
 
 # Project Ontos: Technical Architecture (v2.x)
 
