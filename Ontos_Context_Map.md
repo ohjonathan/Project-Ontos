@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2026-01-12 21:43:42 UTC
+Generated: 2026-01-13 01:50:19 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2026-01-12 16:43:42
+Generated on: 2026-01-12 20:50:19
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -46,6 +46,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **phase1_package_structure_spec** [L2] [draft] (phase1_implementation_spec.md) ~7,300 tokens
   - Status: draft
   - Depends On: phase0_golden_master_spec, v3_0_implementation_roadmap
+- **phase2_godscript_reduction_instructions_antigravity** [L2] (Phase2_GodScript_Reduction_Instructions_Antigravity.md) ~4,900 tokens
+  - Status: active
+  - Depends On: phase2_implementation_spec, phase2_implementation_instructions_antigravity
 - **phase2_implementation_instructions_antigravity** [L2] (Phase2_Implementation_Instructions_Antigravity.md) ~3,500 tokens
   - Status: active
   - Depends On: phase2_implementation_spec, v3_0_technical_architecture, v3_0_implementation_roadmap, chief_architect_round2_critical_analysis
@@ -149,12 +152,17 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **log_20260112_phase1_v3_0_alpha** [L2] (2026-01-12_phase1-v3-0-alpha.md) ~455 tokens
   - Status: active
   - Impacts: v3_0_implementation_roadmap
+- **log_20260112_phase2_core_decomposition** [L1] (2026-01-12_phase2-core-decomposition.md) ~107 tokens  ⚠️ active
+  - Status: active
+  - Impacts: ontos
 - **log_20260112_v2_9_6_cleanup** [L2] (2026-01-12_chore-v2-9-6-cleanup.md) ~312 tokens
   - Status: active
   - Impacts: None
 
 
 ## 2. Recent Timeline
+- **2026-01-12** [chore] **Phase2 Core Decomposition** (`log_20260112_phase2_core_decomposition`)
+  - Impacted: `ontos`
 - **2026-01-12** [feature] **Phase1 V3 0 Alpha** (`log_20260112_phase1_v3_0_alpha`)
   - Impacted: `v3_0_implementation_roadmap`
   - Concepts: pip-package, cli, refactoring
@@ -173,11 +181,8 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **2026-01-11** [chore] **V2 9 6 Round2 Revision** (`log_20260111_v2_9_6_round2_revision`)
 - **2026-01-11** [feature] **V2 9 6 Ontology Architecture** (`log_20260111_v2_9_6_ontology_architecture`)
 - **2026-01-11** [chore] **Fix V2 9 6 Correct False Implemented Status Cl** (`log_20260111_fix_v2_9_6_correct_false_implemented_status_cl`)
-- **2026-01-11** [decision] **Docs V3 0 Add Technical Architecture And Finaliz** (`log_20260111_ontology_architecture_research`)
-  - Impacted: `constitution`, `philosophy`, `schema`
-  - Concepts: schema, docs, architecture
 
-*Showing 10 of 17 sessions*
+*Showing 10 of 18 sessions*
 
 ## 3. Dependency Audit
 - [BROKEN LINK] **claude_opus_4_5_phase2_alignment_review** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase2/Claude_Opus_4.5_Phase2_Alignment_Review.md) references missing ID: `phase2_implementation_spec`
@@ -194,6 +199,8 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   Fix: Add a document with `id: phase2_spec_verification_review_gemini` or remove it from depends_on
 - [BROKEN LINK] **chief_architect_round2_critical_analysis** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase2/Chief_Architect_Round2_Critical_Analysis.md) references missing ID: `phase2_implementation_spec_verification_review_codex_round2`
   Fix: Add a document with `id: phase2_implementation_spec_verification_review_codex_round2` or remove it from depends_on
+- [BROKEN LINK] **phase2_godscript_reduction_instructions_antigravity** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase2/Phase2_GodScript_Reduction_Instructions_Antigravity.md) references missing ID: `phase2_implementation_spec`
+  Fix: Add a document with `id: phase2_implementation_spec` or remove it from depends_on
 - [BROKEN LINK] **phase2_implementation_instructions_antigravity** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase2/Phase2_Implementation_Instructions_Antigravity.md) references missing ID: `phase2_implementation_spec`
   Fix: Add a document with `id: phase2_implementation_spec` or remove it from depends_on
 - [DEPTH] **claude_opus_4_5_phase1_review** has dependency depth 6 (max: 5)
@@ -202,6 +209,8 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [ARCHITECTURE] **phase2_implementation_instructions_antigravity** (strategy) depends on **chief_architect_round2_critical_analysis** (atom)
   Fix: strategy should not depend on atom. Invert the dependency or change document types
+- [BROKEN LINK] **log_20260112_phase2_core_decomposition** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-12_phase2-core-decomposition.md) impacts non-existent document: `ontos`
+  Fix: Create `ontos`, correct the reference, or archive this log
 - [BROKEN LINK] **log_20260112_phase1_package_structure_complete** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-12_phase1-package-structure-complete.md) impacts non-existent document: `ontos`
   Fix: Create `ontos`, correct the reference, or archive this log
 - [BROKEN LINK] **log_20260112_phase1_package_structure_complete** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-12_phase1-package-structure-complete.md) impacts non-existent document: `packaging`
@@ -242,6 +251,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 | log_20260112_phase0_v3_0_alpha | [2026-01-12_phase0-v3-0-alpha.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-12_phase0-v3-0-alpha.md) | log |
 | log_20260112_phase1_package_structure_complete | [2026-01-12_phase1-package-structure-complete.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-12_phase1-package-structure-complete.md) | log |
 | log_20260112_phase1_v3_0_alpha | [2026-01-12_phase1-v3-0-alpha.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-12_phase1-v3-0-alpha.md) | log |
+| log_20260112_phase2_core_decomposition | [2026-01-12_phase2-core-decomposition.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-12_phase2-core-decomposition.md) | log |
 | log_20260112_v2_9_6_cleanup | [2026-01-12_chore-v2-9-6-cleanup.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-12_chore-v2-9-6-cleanup.md) | log |
 | mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |
 | ontology_spec | [ontology_spec.md](docs/reference/ontology_spec.md) | kernel |
@@ -249,6 +259,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 | ontos_manual | [Ontos_Manual.md](docs/reference/Ontos_Manual.md) | kernel |
 | phase0_golden_master_spec | [phase0_implementation_spec.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase0/phase0_implementation_spec.md) | strategy |
 | phase1_package_structure_spec | [phase1_implementation_spec.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase1/phase1_implementation_spec.md) | strategy |
+| phase2_godscript_reduction_instructions_antigravity | [Phase2_GodScript_Reduction_Instructions_Antigravity.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase2/Phase2_GodScript_Reduction_Instructions_Antigravity.md) | strategy |
 | phase2_implementation_instructions_antigravity | [Phase2_Implementation_Instructions_Antigravity.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase2/Phase2_Implementation_Instructions_Antigravity.md) | strategy |
 | philosophy | [philosophy.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/philosophy.md) | kernel |
 | schema | [schema.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/atom/schema.md) | atom |
