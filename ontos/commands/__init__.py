@@ -42,6 +42,25 @@ from ontos.commands.init import (
     ONTOS_HOOK_MARKER,
 )
 
+# Phase 4: New commands
+from ontos.commands.doctor import (
+    DoctorOptions,
+    DoctorResult,
+    CheckResult,
+    doctor_command,
+    format_doctor_output,
+)
+
+from ontos.commands.hook import (
+    HookOptions,
+    hook_command,
+)
+
+from ontos.commands.export import (
+    ExportOptions,
+    export_command,
+)
+
 # Wrapper modules (delegate to bundled scripts)
 # These provide the new module API while maintaining behavioral parity
 
@@ -100,6 +119,16 @@ __all__ = [
     "InitOptions",
     "init_command",
     "ONTOS_HOOK_MARKER",
+    # Phase 4: New commands
+    "DoctorOptions",
+    "DoctorResult",
+    "CheckResult",
+    "doctor_command",
+    "format_doctor_output",
+    "HookOptions",
+    "hook_command",
+    "ExportOptions",
+    "export_command",
     # Wrappers (Phase 2, full impl Phase 4)
     "verify_document",
     "find_stale_documents",
