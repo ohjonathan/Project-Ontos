@@ -6,7 +6,8 @@ This module enables running Ontos as a Python module:
     python -m ontos log -e feature -s "Session summary"
 """
 
+import sys
 from ontos.cli import main
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -1,131 +1,452 @@
+# ontos/cli.py
 """
-CLI entry point for Phase 1.
+Ontos CLI - Unified command interface.
 
-This module provides the main entry point for the `ontos` command.
-It delegates to bundled legacy scripts to maintain exact v2.9.x behavior.
-
-v1.1 Changes:
-- Uses bundled scripts from ontos/_scripts/ (works for PyPI installs)
-- Adds project root discovery (works from subdirectories)
-- Passes through stdin/stdout/stderr (preserves TTY)
-
-v1.2 Changes:
-- Exempts `ontos init` from project root discovery (allows initialization in fresh directories)
+Full argparse implementation per Spec v1.1 Section 4.1.
 """
 
-import sys
+import argparse
 import subprocess
+import sys
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
+
+import ontos
+from ontos.ui.json_output import emit_json, emit_error, validate_json_output
 
 
-def find_project_root() -> Optional[Path]:
-    """
-    Find the Ontos project root by walking up the directory tree.
-
-    Looks for directories containing `.ontos/` or `.ontos-internal/`.
-    Returns None if no project root is found.
-    """
-    current = Path.cwd().resolve()
-
-    while current != current.parent:
-        if (current / ".ontos-internal").exists() or (current / ".ontos").exists():
-            return current
-        current = current.parent
-
-    # Check root as well
-    if (current / ".ontos-internal").exists() or (current / ".ontos").exists():
-        return current
-
-    return None
-
-
-def get_bundled_script(script_name: str) -> Path:
-    """
-    Get path to a bundled script in ontos/_scripts/.
-    """
-    return Path(__file__).parent / "_scripts" / script_name
-
-
-def main():
-    """
-    Main CLI entry point.
-
-    Delegates to bundled legacy scripts to maintain exact v2.9.x behavior.
-    Phase 4 will implement full CLI directly in this module.
-    """
-    import ontos
-
-    # Handle --version flag
-    if len(sys.argv) > 1 and sys.argv[1] in ("--version", "-V"):
-        print(f"ontos {ontos.__version__}")
-        sys.exit(0)
-
-    # Handle --help with no subcommand
-    if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] in ("--help", "-h")):
-        print(f"ontos {ontos.__version__}")
-        print()
-        print("Usage: ontos <command> [options]")
-        print()
-        print("Commands:")
-        print("  map         Generate context map")
-        print("  log         Create session log")
-        print("  init        Initialize project")
-        print("  verify      Verify documentation")
-        print("  query       Query documents")
-        print("  promote     Promote document curation level")
-        print()
-        print("Use 'ontos <command> --help' for command-specific help.")
-        sys.exit(0)
-
-    # Handle init specially - it doesn't need project root (v1.2 fix)
-    # Phase 3: Handle init natively to avoid module shadowing (B1 fix)
-    if len(sys.argv) > 1 and sys.argv[1] == "init":
-        from ontos.commands.init import init_command, InitOptions
-        options = InitOptions(
-            path=Path.cwd(),
-            force='--force' in sys.argv or '-f' in sys.argv,
-            interactive=False,  # Reserved for v3.1
-            skip_hooks='--skip-hooks' in sys.argv,
-        )
-        code, msg = init_command(options)
-        print(msg)
-        sys.exit(code)
-
-    # Find project root (v1.1: support running from subdirectories)
-    project_root = find_project_root()
-    if project_root is None:
-        print("Error: Not in an Ontos-enabled project.", file=sys.stderr)
-        print("Run 'ontos init' to initialize a project, or navigate to a project directory.", file=sys.stderr)
-        sys.exit(1)
-
-    # Use bundled unified dispatcher (v1.1: works for PyPI installs)
-    unified_cli = get_bundled_script("ontos.py")
-
-    if not unified_cli.exists():
-        # This should never happen if package is installed correctly
-        print(f"Error: Bundled scripts not found at {unified_cli}", file=sys.stderr)
-        print("This indicates a broken installation. Try reinstalling: pip install --force-reinstall ontos", file=sys.stderr)
-        sys.exit(1)
-
-    # v3.0: Pass project root via env var for non-editable installs
-    # (bundled scripts can't reliably compute PROJECT_ROOT from __file__)
-    import os
-    env = os.environ.copy()
-    env["ONTOS_PROJECT_ROOT"] = str(project_root)
-
-    # Execute the unified dispatcher with the same arguments
-    # v1.1: Pass through streams to preserve TTY and signals
-    result = subprocess.run(
-        [sys.executable, str(unified_cli)] + sys.argv[1:],
-        cwd=project_root,  # Run from project root
-        env=env,  # v3.0: Include project root env var
-        stdin=sys.stdin,
-        stdout=sys.stdout,
-        stderr=sys.stderr,
+def create_parser() -> argparse.ArgumentParser:
+    """Create the main argument parser with all commands."""
+    # Parent parser for shared options (used by all subparsers)
+    global_parser = argparse.ArgumentParser(add_help=False)
+    global_parser.add_argument(
+        "--quiet", "-q",
+        action="store_true",
+        help="Suppress non-essential output"
     )
-    sys.exit(result.returncode)
+    global_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output in JSON format"
+    )
+
+    # Main parser
+    parser = argparse.ArgumentParser(
+        prog="ontos",
+        description="Local-first documentation management for AI-assisted development",
+        parents=[global_parser],
+    )
+
+    # Global-only options (not needed in subparsers)
+    parser.add_argument(
+        "--version", "-V",
+        action="store_true",
+        help="Show version and exit"
+    )
+
+    # Subcommands (all inherit from global_parser)
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # Register commands with shared parent
+    _register_init(subparsers, global_parser)
+    _register_map(subparsers, global_parser)
+    _register_log(subparsers, global_parser)
+    _register_doctor(subparsers, global_parser)
+    _register_export(subparsers, global_parser)
+    _register_hook(subparsers, global_parser)
+    _register_verify(subparsers, global_parser)
+    _register_query(subparsers, global_parser)
+    _register_migrate(subparsers, global_parser)
+    _register_consolidate(subparsers, global_parser)
+    _register_promote(subparsers, global_parser)
+    _register_scaffold(subparsers, global_parser)
+    _register_stub(subparsers, global_parser)
+
+    return parser
+
+
+# ============================================================================
+# Command registration
+# ============================================================================
+
+def _register_init(subparsers, parent):
+    """Register init command."""
+    p = subparsers.add_parser("init", help="Initialize Ontos in a project", parents=[parent])
+    p.add_argument("--force", "-f", action="store_true",
+                   help="Overwrite existing config and hooks")
+    p.add_argument("--skip-hooks", action="store_true",
+                   help="Don't install git hooks")
+    p.set_defaults(func=_cmd_init)
+
+
+def _register_map(subparsers, parent):
+    """Register map command."""
+    p = subparsers.add_parser("map", help="Generate context map", parents=[parent])
+    p.add_argument("--strict", action="store_true",
+                   help="Treat warnings as errors")
+    p.add_argument("--output", "-o", type=Path,
+                   help="Output path (default: Ontos_Context_Map.md)")
+    p.set_defaults(func=_cmd_map)
+
+
+def _register_log(subparsers, parent):
+    """Register log command."""
+    p = subparsers.add_parser("log", help="End session logging", parents=[parent])
+    p.add_argument("--epoch", "-e",
+                   help="Epoch identifier")
+    p.add_argument("--title", "-t",
+                   help="Log entry title")
+    p.add_argument("--auto", action="store_true",
+                   help="Skip confirmation prompt")
+    p.set_defaults(func=_cmd_log)
+
+
+def _register_doctor(subparsers, parent):
+    """Register doctor command."""
+    p = subparsers.add_parser("doctor", help="Health check and diagnostics", parents=[parent])
+    p.add_argument("--verbose", "-v", action="store_true",
+                   help="Show detailed output")
+    p.set_defaults(func=_cmd_doctor)
+
+
+def _register_export(subparsers, parent):
+    """Register export command."""
+    p = subparsers.add_parser("export", help="Generate CLAUDE.md for AI assistants", parents=[parent])
+    p.add_argument("--force", "-f", action="store_true",
+                   help="Overwrite existing file")
+    p.add_argument("--output", "-o", type=Path,
+                   help="Output path (default: CLAUDE.md)")
+    p.set_defaults(func=_cmd_export)
+
+
+def _register_hook(subparsers, parent):
+    """Register hook command (internal)."""
+    p = subparsers.add_parser("hook", help="Git hook dispatcher (internal)", parents=[parent])
+    p.add_argument("hook_type", choices=["pre-push", "pre-commit"],
+                   help="Hook type to run")
+    p.set_defaults(func=_cmd_hook)
+
+
+def _register_verify(subparsers, parent):
+    """Register verify command (wrapper)."""
+    p = subparsers.add_parser("verify", help="Verify describes dates", parents=[parent])
+    p.set_defaults(func=_cmd_wrapper, wrapper_name="verify")
+
+
+def _register_query(subparsers, parent):
+    """Register query command (wrapper)."""
+    p = subparsers.add_parser("query", help="Search documents", parents=[parent])
+    p.add_argument("query_string", nargs="?", help="Search query")
+    p.set_defaults(func=_cmd_wrapper, wrapper_name="query")
+
+
+def _register_migrate(subparsers, parent):
+    """Register migrate command (wrapper)."""
+    p = subparsers.add_parser("migrate", help="Schema migration", parents=[parent])
+    p.set_defaults(func=_cmd_wrapper, wrapper_name="migrate")
+
+
+def _register_consolidate(subparsers, parent):
+    """Register consolidate command (wrapper)."""
+    p = subparsers.add_parser("consolidate", help="Archive old logs", parents=[parent])
+    p.set_defaults(func=_cmd_wrapper, wrapper_name="consolidate")
+
+
+def _register_promote(subparsers, parent):
+    """Register promote command (wrapper)."""
+    p = subparsers.add_parser("promote", help="Promote curation level", parents=[parent])
+    p.add_argument("file", nargs="?", help="File to promote")
+    p.set_defaults(func=_cmd_wrapper, wrapper_name="promote")
+
+
+def _register_scaffold(subparsers, parent):
+    """Register scaffold command (wrapper)."""
+    p = subparsers.add_parser("scaffold", help="Generate scaffolds", parents=[parent])
+    p.set_defaults(func=_cmd_wrapper, wrapper_name="scaffold")
+
+
+def _register_stub(subparsers, parent):
+    """Register stub command (wrapper)."""
+    p = subparsers.add_parser("stub", help="Create stub documents", parents=[parent])
+    p.add_argument("name", nargs="?", help="Stub name")
+    p.set_defaults(func=_cmd_wrapper, wrapper_name="stub")
+
+
+# ============================================================================
+# Command handlers
+# ============================================================================
+
+def _cmd_init(args) -> int:
+    """Handle init command."""
+    from ontos.commands.init import init_command, InitOptions
+
+    options = InitOptions(
+        path=Path.cwd(),
+        force=args.force,
+        skip_hooks=getattr(args, "skip_hooks", False),
+    )
+    code, msg = init_command(options)
+
+    if args.json:
+        emit_json({
+            "status": "success" if code == 0 else "error",
+            "message": msg,
+            "exit_code": code
+        })
+    elif not args.quiet:
+        print(msg)
+
+    return code
+
+
+def _cmd_map(args) -> int:
+    """Handle map command.
+    
+    Delegates to legacy script for now since native function
+    requires docs/config collection that the script handles.
+    """
+    # Build command for the wrapper
+    scripts_dir = Path(__file__).parent / "_scripts"
+    script_path = scripts_dir / "ontos_generate_context_map.py"
+    
+    if not script_path.exists():
+        if args.json:
+            emit_error("Map script not found", "E_NOT_FOUND")
+        else:
+            print("Error: Map script not found", file=sys.stderr)
+        return 5
+    
+    cmd = [sys.executable, str(script_path)]
+    if args.strict:
+        cmd.append("--strict")
+    if args.output:
+        cmd.extend(["--output", str(args.output)])
+    
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if args.json:
+            # Wrap output in JSON format
+            emit_json({
+                "status": "success" if result.returncode == 0 else "error",
+                "message": "Context map generated" if result.returncode == 0 else "Generation failed",
+                "output": result.stdout.strip() if result.stdout else None,
+                "exit_code": result.returncode
+            })
+        elif not args.quiet:
+            if result.stdout:
+                print(result.stdout, end="")
+            if result.stderr:
+                print(result.stderr, file=sys.stderr, end="")
+        
+        return result.returncode
+    except Exception as e:
+        if args.json:
+            emit_error(f"Map execution failed: {e}", "E_EXEC_FAIL")
+        else:
+            print(f"Error: {e}", file=sys.stderr)
+        return 5
+
+
+def _cmd_log(args) -> int:
+    """Handle log command."""
+    from ontos.commands.log import create_session_log, EndSessionOptions
+
+    options = EndSessionOptions(
+        epoch=args.epoch or "",
+        title=args.title or "",
+        auto=args.auto,
+        json_output=args.json,
+        quiet=args.quiet,
+    )
+
+    return create_session_log(options)
+
+
+def _cmd_doctor(args) -> int:
+    """Handle doctor command."""
+    from ontos.commands.doctor import doctor_command, DoctorOptions, format_doctor_output
+    from ontos.ui.json_output import to_json
+
+    options = DoctorOptions(
+        verbose=args.verbose,
+        json_output=args.json,
+    )
+
+    exit_code, result = doctor_command(options)
+
+    if args.json:
+        emit_json({
+            "status": result.status,
+            "checks": [to_json(c) for c in result.checks],
+            "summary": {
+                "passed": result.passed,
+                "failed": result.failed,
+                "warnings": result.warnings
+            }
+        })
+    elif not args.quiet:
+        print(format_doctor_output(result, verbose=args.verbose))
+
+    return exit_code
+
+
+def _cmd_export(args) -> int:
+    """Handle export command."""
+    from ontos.commands.export import export_command, ExportOptions
+
+    options = ExportOptions(
+        output_path=args.output,
+        force=args.force,
+    )
+
+    exit_code, message = export_command(options)
+
+    if args.json:
+        emit_json({
+            "status": "success" if exit_code == 0 else "error",
+            "message": message,
+            "exit_code": exit_code
+        })
+    elif not args.quiet:
+        print(message)
+
+    return exit_code
+
+
+def _cmd_hook(args) -> int:
+    """Handle hook command."""
+    from ontos.commands.hook import hook_command, HookOptions
+
+    options = HookOptions(
+        hook_type=args.hook_type,
+        args=[],
+    )
+
+    return hook_command(options)
+
+
+def _cmd_wrapper(args) -> int:
+    """
+    Handle wrapper commands that delegate to legacy scripts.
+
+    Per Decision: Option A with JSON validation fallback.
+    """
+    wrapper_name = args.wrapper_name
+
+    # Find the legacy script
+    scripts_dir = Path(__file__).parent / "_scripts"
+    script_map = {
+        "verify": "ontos_verify.py",
+        "query": "ontos_query.py",
+        "migrate": "ontos_migrate_schema.py",
+        "consolidate": "ontos_consolidate.py",
+        "promote": "ontos_promote.py",
+        "scaffold": "ontos_scaffold.py",
+        "stub": "ontos_stub.py",
+    }
+
+    script_name = script_map.get(wrapper_name)
+    if not script_name:
+        if args.json:
+            emit_error(f"Unknown wrapper command: {wrapper_name}", "E_UNKNOWN_CMD")
+        else:
+            print(f"Error: Unknown wrapper command: {wrapper_name}", file=sys.stderr)
+        return 5
+
+    script_path = scripts_dir / script_name
+    if not script_path.exists():
+        if args.json:
+            emit_error(f"Script not found: {script_name}", "E_NOT_FOUND")
+        else:
+            print(f"Error: Script not found: {script_path}", file=sys.stderr)
+        return 5
+
+    # Build command
+    cmd = [sys.executable, str(script_path)]
+
+    # Pass through JSON flag if requested
+    if args.json:
+        cmd.append("--json")
+
+    # Run the wrapper
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True)
+
+        # JSON validation per Decision
+        if args.json:
+            if validate_json_output(result.stdout):
+                print(result.stdout, end="")
+            else:
+                emit_error(
+                    message=f"Command '{wrapper_name}' does not support JSON output",
+                    code="E_JSON_UNSUPPORTED",
+                    details=result.stdout[:500] if result.stdout else result.stderr[:500]
+                )
+        else:
+            if result.stdout:
+                print(result.stdout, end="")
+            if result.stderr:
+                print(result.stderr, file=sys.stderr, end="")
+
+        return result.returncode
+
+    except Exception as e:
+        if args.json:
+            emit_error(f"Wrapper execution failed: {e}", "E_EXEC_FAIL")
+        else:
+            print(f"Error: {e}", file=sys.stderr)
+        return 5
+
+
+# ============================================================================
+# Main entry point
+# ============================================================================
+
+def main() -> int:
+    """Main entry point for CLI."""
+    parser = create_parser()
+    args = parser.parse_args()
+
+    # Workaround for argparse parent inheritance issue:
+    # When --json is before the command, it's consumed by parent parser
+    # but not propagated to subparser namespace. Check sys.argv as fallback.
+    if '--json' in sys.argv and not args.json:
+        args.json = True
+    if '-q' in sys.argv or '--quiet' in sys.argv:
+        if not getattr(args, 'quiet', False):
+            args.quiet = True
+
+    # Handle --version
+    if args.version:
+        if args.json:
+            emit_json({"version": ontos.__version__})
+        else:
+            print(f"ontos {ontos.__version__}")
+        return 0
+
+    # No command specified
+    if not args.command:
+        if args.json:
+            emit_error("No command specified", "E_NO_CMD")
+        else:
+            parser.print_help()
+        return 0
+
+    # Route to command handler
+    try:
+        return args.func(args)
+    except KeyboardInterrupt:
+        if not args.quiet:
+            print("\nInterrupted", file=sys.stderr)
+        return 130
+    except Exception as e:
+        if args.json:
+            emit_error(f"Internal error: {e}", "E_INTERNAL")
+        else:
+            print(f"Error: {e}", file=sys.stderr)
+        return 5
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

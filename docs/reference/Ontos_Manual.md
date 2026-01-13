@@ -38,9 +38,9 @@ Ontos offers three workflow modes, each with a clear promise:
 | **prompted** | "Keep me in the loop" | Blocks push | Agent reminder |
 | **advisory** | "Maximum flexibility" | Warning only | Manual only |
 
-**Choosing Your Mode:** During installation, `ontos_init.py` shows each mode's promise. Change later with:
+**Choosing Your Mode:** During installation, `ontos init` shows each mode's promise. Change later with:
 ```bash
-python3 ontos_init.py --reconfig
+ontos init --force
 ```
 
 **Environment Variables:** For CI/CD, set `ONTOS_SOURCE` to override the default source:
@@ -92,26 +92,26 @@ Say **"Ontos"** to your AI agent. It will:
 ### Query Graph
 Say **"Query Ontos"** to find connections:
 ```bash
-python3 .ontos/scripts/ontos_query.py --depends-on auth_flow
-python3 .ontos/scripts/ontos_query.py --stale 30
-python3 .ontos/scripts/ontos_query.py --health
+ontos query --depends-on auth_flow
+ontos query --stale 30
+ontos query --health
 ```
 
 ### Archive Session
 Say **"Archive Ontos"** at end of session:
 ```bash
 # Basic (interactive)
-python3 .ontos/scripts/ontos_end_session.py
+ontos log
 
 # Advanced (one-liner)
-python3 .ontos/scripts/ontos_end_session.py -e feature -s "Claude"
+ontos log -e feature -t "Session summary"
 ```
 
 **Automated Mode:** Sessions are auto-archived on push. One log per branch per day—subsequent pushes append to the same log.
 
 **Auto-generated logs:** Logs created by `--auto` are marked `status: auto-generated`. Enrich them with:
 ```bash
-python3 .ontos/scripts/ontos_end_session.py --enhance
+ontos log --enhance
 ```
 
 **The "Left Behind" Paradox:** Auto-generated logs are created during push but aren't included in *that* push (Git limitation). They'll be in your next commit. To include immediately: `git add . && git commit --amend`
@@ -122,7 +122,7 @@ Event types: `feature`, `fix`, `refactor`, `exploration`, `chore`, `decision`
 ### Maintain Graph
 Say **"Maintain Ontos"** weekly:
 ```bash
-python3 .ontos/scripts/ontos_maintain.py
+ontos map && ontos consolidate --days 30
 ```
 This runs three steps:
 1. **Migrate** — Tag untagged files
@@ -186,7 +186,7 @@ Answering `y` automatically:
 ### Viewing Rejected Proposals
 By default, rejected docs are excluded from context map. To recall:
 ```bash
-python3 .ontos/scripts/ontos_generate_context_map.py --include-rejected
+ontos map --include-rejected
 ```
 
 ---
@@ -259,17 +259,14 @@ python3 ontos.py migrate --check
 Direct script execution is deprecated. Use the unified CLI:
 
 ```bash
-# Deprecated (will be removed in v3.0)
-python3 .ontos/scripts/ontos_end_session.py
+# Deprecated (removed in v3.0)
+# python3 .ontos/scripts/ontos_end_session.py
 
 # Preferred
-python3 ontos.py log
+ontos log
 ```
 
-**Suppression:** To silence deprecation warnings in scripts:
-```bash
-ONTOS_NO_DEPRECATION_WARNINGS=1 python3 .ontos/scripts/ontos_end_session.py
-```
+**Note:** v3.0 no longer supports legacy script paths.
 
 ---
 
@@ -282,7 +279,7 @@ When `logs/` exceeds ~15 files, perform consolidation to keep context lean.
 1. **Review & Consolidate**
    Run the consolidation tool:
    ```bash
-   python3 .ontos/scripts/ontos_consolidate.py --days 30
+   ontos consolidate --days 30
    ```
    This script will:
    - Find old logs
@@ -347,13 +344,12 @@ python3 install.py
 The installer will:
 1. Verify SHA256 checksums of all assets (security first)
 2. Download and extract the Ontos bundle
-3. Run initialization (`ontos_init.py`)
+3. Run initialization (`ontos init`)
 
 ### Manual Install (Legacy)
 ```bash
-# Copy scripts and init file
+# Copy scripts
 cp -r /path/to/ontos/.ontos your-project/
-cp /path/to/ontos/ontos_init.py your-project/
 
 # Create docs directory
 mkdir -p docs/reference
@@ -366,7 +362,7 @@ cp /path/to/ontos/.ontos-internal/reference/Common_Concepts.md your-project/docs
 
 # Initialize (installs hooks, generates context map)
 cd your-project
-python3 ontos_init.py
+ontos init
 ```
 
 ### Configuration
@@ -397,13 +393,11 @@ DEFAULT_SOURCE = "Claude Code"
 
 ### Uninstall
 ```bash
-# 1. Optional: remove frontmatter (requires .ontos/)
-python3 .ontos/scripts/ontos_remove_frontmatter.py --yes
-# 2. Remove git hooks
+# 1. Remove git hooks
 rm -f .git/hooks/pre-push .git/hooks/pre-commit
-# 3. Remove Ontos files
-rm -rf .ontos/
-rm -f Ontos_Context_Map.md Ontos_Agent_Instructions.md ontos_config.py
+# 2. Remove Ontos files
+rm -rf .ontos/ .ontos.toml
+rm -f Ontos_Context_Map.md CLAUDE.md
 ```
 
 ---
@@ -429,7 +423,7 @@ Give your agent the generated `migration_prompt.txt`. It will:
 
 ### Validate
 ```bash
-python3 .ontos/scripts/ontos_generate_context_map.py --strict
+ontos map --strict
 ```
 
 ---
@@ -451,7 +445,7 @@ python3 .ontos/scripts/ontos_generate_context_map.py --strict
 ### Strict validation
 ```yaml
 - name: Validate Ontos
-  run: python3 .ontos/scripts/ontos_generate_context_map.py --strict --quiet
+  run: ontos map --strict --quiet
 ```
 
 ### Pre-commit hook
@@ -462,25 +456,25 @@ repos:
     hooks:
       - id: ontos-validate
         name: Validate Ontos
-        entry: python3 .ontos/scripts/ontos_generate_context_map.py --strict --quiet
+        entry: ontos map --strict --quiet
         language: system
         pass_filenames: false
 ```
 
 ---
 
-## 10. Unified CLI (v2.8+)
+## 10. Unified CLI (v3.0)
 
-Ontos v2.8 introduces a unified command interface:
+Ontos v3.0 introduces a unified command interface:
 
 ```bash
-python3 ontos.py <command> [options]
+ontos <command> [options]
 ```
 
 ### Available Commands
 
-| Command     | Description            | Old Syntax                                           |
-|-------------|------------------------|------------------------------------------------------|
+| Command     | Description            | Old Syntax (removed in v3.0)                          |
+|-------------|------------------------|-------------------------------------------------------|
 | `log`       | Archive a session      | `python3 .ontos/scripts/ontos_end_session.py`        |
 | `map`       | Generate context map   | `python3 .ontos/scripts/ontos_generate_context_map.py` |
 | `verify`    | Verify describes dates | `python3 .ontos/scripts/ontos_verify.py`             |
@@ -511,22 +505,22 @@ For convenience, commands have short aliases:
 
 ```bash
 # Archive a feature session
-python3 ontos.py log -e feature
+ontos log -e feature
 
 # Generate context map with strict validation
-python3 ontos.py map --strict
+ontos map --strict
 
 # Verify all stale documents
-python3 ontos.py verify --all
+ontos verify --all
 
 # Search for a concept
-python3 ontos.py query --concept caching
+ontos query --concept caching
 
 # Check graph health
-python3 ontos.py query --health
+ontos query --health
 ```
 
-> **Note:** The old script paths still work in v2.8. Direct script usage will show deprecation warnings starting in v2.9 and be removed in v3.0.
+> **Note:** The `python3 ontos.py` syntax is deprecated. Use `ontos <command>` directly.
 
 ---
 
@@ -534,12 +528,10 @@ python3 ontos.py query --health
 
 ```bash
 # Check for updates
-python3 .ontos/scripts/ontos_update.py --check
+ontos doctor
 
-# Apply update
-python3 .ontos/scripts/ontos_update.py
-
-# Your ontos_config.py is never overwritten
+# Reinstall from pip
+pip install --upgrade ontos
 ```
 
 ---
@@ -598,10 +590,10 @@ After reviewing and updating your docs:
 
 ```bash
 # Single file
-python3 .ontos/scripts/ontos_verify.py docs/readme.md
+ontos verify docs/readme.md
 
 # All stale docs interactively
-python3 .ontos/scripts/ontos_verify.py --all
+ontos verify --all
 ```
 
 ### Example: Documentation Chain

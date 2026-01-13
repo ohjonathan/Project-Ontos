@@ -1,0 +1,3 @@
+Archived on Tue Jan 13 16:09:26 EST 2026 for v3.0.0 release
+These scripts are preserved for reference only.
+Use 'ontos <command>' instead.

@@ -49,7 +49,7 @@ def init_command(options: InitOptions) -> Tuple[int, str]:
     # 3. Detect legacy .ontos/scripts/
     legacy_path = project_root / ".ontos" / "scripts"
     if legacy_path.exists():
-        print("Warning: Legacy .ontos/scripts/ detected. Consider migrating.")
+        print("Warning: Legacy .ontos/scripts/ detected. Consider migrating.", file=sys.stderr)
 
     # 4. Create default config
     config = default_config()
@@ -113,9 +113,9 @@ def _generate_initial_context_map(root: Path, config) -> None:
                 timeout=30
             )
             if result.returncode == 0:
-                print("   ✓ Context map generated")
+                print("   ✓ Context map generated", file=sys.stderr)
             else:
-                print(f"Warning: Context map generation returned code {result.returncode}")
+                print(f"Warning: Context map generation returned code {result.returncode}", file=sys.stderr)
         else:
             # Fallback: create a minimal context map placeholder
             context_map_path = root / config.paths.context_map
@@ -124,11 +124,11 @@ def _generate_initial_context_map(root: Path, config) -> None:
                     "# Ontos Context Map\n\n"
                     "> Run `ontos map` to generate the full context map.\n"
                 )
-                print("   ✓ Created placeholder context map")
+                print("   ✓ Created placeholder context map", file=sys.stderr)
     except subprocess.TimeoutExpired:
-        print("Warning: Context map generation timed out")
+        print("Warning: Context map generation timed out", file=sys.stderr)
     except Exception as e:
-        print(f"Warning: Could not generate initial context map: {e}")
+        print(f"Warning: Could not generate initial context map: {e}", file=sys.stderr)
 
 
 def _get_hooks_dir(root: Path) -> Path:
@@ -164,7 +164,7 @@ def _install_hooks(root: Path, options: InitOptions) -> int:
     try:
         hooks_dir = _get_hooks_dir(root)
     except Exception as e:
-        print(f"Warning: Could not access hooks directory: {e}")
+        print(f"Warning: Could not access hooks directory: {e}", file=sys.stderr)
         return 3
 
     hooks = ["pre-push", "pre-commit"]
@@ -181,14 +181,14 @@ def _install_hooks(root: Path, options: InitOptions) -> int:
                 else:
                     skipped.append(hook)
                     print(f"Warning: Existing {hook} hook detected. Skipping. "
-                          f"Use --force to overwrite, or manually integrate.")
+                          f"Use --force to overwrite, or manually integrate.", file=sys.stderr)
             else:
                 _write_shim_hook(hook_path, hook)
         except PermissionError as e:
-            print(f"Warning: Cannot write {hook} hook (permission denied): {e}")
+            print(f"Warning: Cannot write {hook} hook (permission denied): {e}", file=sys.stderr)
             skipped.append(hook)
         except Exception as e:
-            print(f"Warning: Failed to install {hook} hook: {e}")
+            print(f"Warning: Failed to install {hook} hook: {e}", file=sys.stderr)
             skipped.append(hook)
 
     return 3 if skipped else 0
@@ -204,26 +204,52 @@ def _is_ontos_hook(path: Path) -> bool:
 
 
 def _write_shim_hook(path: Path, hook_type: str) -> None:
-    """Write minimal shim hook with marker."""
+    """
+    Write minimal shim hook with marker.
+    
+    Per Spec v1.1 Section 4.6: Python-based shim hooks with 3-method fallback:
+    1. PATH lookup (preferred)
+    2. sys.executable -m ontos
+    3. Graceful degradation (allow operation, warn)
+    """
+    import os
+    import stat
+    
     shim = f'''#!/usr/bin/env python3
 {ONTOS_HOOK_MARKER}
-"""Ontos {hook_type} hook (shim). Delegates to global CLI."""
+"""Ontos {hook_type} hook. Delegates to ontos CLI."""
 import subprocess
 import sys
 
-try:
-    sys.exit(subprocess.call(["ontos", "hook", "{hook_type}"] + sys.argv[1:]))
-except FileNotFoundError:
-    try:
-        sys.exit(subprocess.call([sys.executable, "-m", "ontos", "hook", "{hook_type}"] + sys.argv[1:]))
-    except Exception:
-        print("Warning: ontos not found. Skipping hook.", file=sys.stderr)
-        sys.exit(0)
-'''
-    path.write_text(shim)
+def run_hook():
+    """Try multiple methods to invoke ontos hook."""
+    args = ["hook", "{hook_type}"] + sys.argv[1:]
 
-    # chmod is no-op on Windows but we still call it
+    # Method 1: PATH lookup (preferred)
     try:
-        path.chmod(0o755)
-    except OSError:
-        pass  # Windows: chmod may fail, but hooks will still work
+        return subprocess.call(["ontos"] + args)
+    except FileNotFoundError:
+        pass
+
+    # Method 2: sys.executable -m ontos
+    try:
+        return subprocess.call([sys.executable, "-m", "ontos"] + args)
+    except Exception:
+        pass
+
+    # Method 3: Graceful degradation
+    print("Warning: ontos not found. Skipping hook.", file=sys.stderr)
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(run_hook())
+'''
+    path.write_text(shim, encoding='utf-8')
+
+    # Set executable permission (no-op on Windows, required on Unix)
+    if os.name != 'nt':  # Not Windows
+        try:
+            current_mode = path.stat().st_mode
+            path.chmod(current_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+        except OSError:
+            pass  # Silently continue if chmod fails

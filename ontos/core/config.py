@@ -73,6 +73,7 @@ class HooksConfig:
     """[hooks] section."""
     pre_push: bool = True
     pre_commit: bool = True
+    strict: bool = False  # When True, hooks block on validation errors
 
 
 @dataclass

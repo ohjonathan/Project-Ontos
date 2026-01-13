@@ -28,6 +28,8 @@ class GenerateMapOptions:
     include_lint: bool = False
     max_dependency_depth: int = 5
     dry_run: bool = False
+    json_output: bool = False  # Phase 4: JSON output support
+    quiet: bool = False  # Phase 4: Quiet mode
 
 
 def generate_context_map(
