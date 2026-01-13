@@ -79,15 +79,25 @@ def main():
         sys.exit(0)
 
     # Handle init specially - it doesn't need project root (v1.2 fix)
+    # Phase 3: Handle init natively to avoid module shadowing (B1 fix)
     if len(sys.argv) > 1 and sys.argv[1] == "init":
-        project_root = Path.cwd()  # Use current directory for init
-    else:
-        # Find project root (v1.1: support running from subdirectories)
-        project_root = find_project_root()
-        if project_root is None:
-            print("Error: Not in an Ontos-enabled project.", file=sys.stderr)
-            print("Run 'ontos init' to initialize a project, or navigate to a project directory.", file=sys.stderr)
-            sys.exit(1)
+        from ontos.commands.init import init_command, InitOptions
+        options = InitOptions(
+            path=Path.cwd(),
+            force='--force' in sys.argv or '-f' in sys.argv,
+            interactive=False,  # Reserved for v3.1
+            skip_hooks='--skip-hooks' in sys.argv,
+        )
+        code, msg = init_command(options)
+        print(msg)
+        sys.exit(code)
+
+    # Find project root (v1.1: support running from subdirectories)
+    project_root = find_project_root()
+    if project_root is None:
+        print("Error: Not in an Ontos-enabled project.", file=sys.stderr)
+        print("Run 'ontos init' to initialize a project, or navigate to a project directory.", file=sys.stderr)
+        sys.exit(1)
 
     # Use bundled unified dispatcher (v1.1: works for PyPI installs)
     unified_cli = get_bundled_script("ontos.py")
