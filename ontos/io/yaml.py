@@ -18,15 +18,15 @@ def parse_yaml(content: str) -> Dict[str, Any]:
         content: YAML string to parse
 
     Returns:
-        Parsed dictionary (empty dict if parsing fails or content is empty)
+        Parsed dictionary
+
+    Raises:
+        yaml.YAMLError: If parsing fails
     """
     if not content or not content.strip():
         return {}
-    try:
-        result = yaml.safe_load(content)
-        return result if isinstance(result, dict) else {}
-    except yaml.YAMLError:
-        return {}
+    result = yaml.safe_load(content)
+    return result if isinstance(result, dict) else {}
 
 
 def dump_yaml(data: Dict[str, Any], default_flow_style: bool = False) -> str:
@@ -68,7 +68,10 @@ def parse_frontmatter_yaml(content: str) -> Optional[Dict[str, Any]]:
         return None
 
     yaml_content = '\n'.join(lines[1:end_idx])
-    return parse_yaml(yaml_content)
+    try:
+        return parse_yaml(yaml_content)
+    except yaml.YAMLError:
+        return None
 
 
 def parse_frontmatter_content(content: str) -> tuple:
@@ -91,7 +94,10 @@ def parse_frontmatter_content(content: str) -> tuple:
     if len(parts) < 3:
         return {}, content
     
-    fm = parse_yaml(parts[1])
+    try:
+        fm = parse_yaml(parts[1])
+    except yaml.YAMLError:
+        fm = {}
     body = parts[2].lstrip('\n')
     return fm, body
 
