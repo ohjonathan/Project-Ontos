@@ -102,51 +102,35 @@ class TestFileLocking:
         ctx._release_lock(lock_path)
 
 
-class TestBackwardsCompatibility:
-    """Tests that old import paths work and reference same objects."""
+class TestNewImportPaths:
+    """Tests that new import paths work correctly (v3.0+ only, shim removed)."""
     
-    def test_old_import_works(self):
-        """Shim should allow old import paths."""
-        from ontos_lib import parse_frontmatter
-        assert callable(parse_frontmatter)
-
-    def test_new_import_works(self):
+    def test_new_import_parse_frontmatter(self):
         """New import paths should work."""
         from ontos.core.frontmatter import parse_frontmatter
         assert callable(parse_frontmatter)
-
-    def test_same_function_parse_frontmatter(self):
-        """Old and new imports should reference same function."""
-        from ontos_lib import parse_frontmatter as old
-        from ontos.core.frontmatter import parse_frontmatter as new
-        assert old is new
-
-    def test_same_function_session_context(self):
-        """SessionContext import should be identical."""
-        from ontos_lib import SessionContext as old
-        from ontos.core.context import SessionContext as new
-        assert old is new
-
-    def test_same_function_validate_describes(self):
-        """validate_describes_field should be identical."""
-        from ontos_lib import validate_describes_field as old
-        from ontos.core.staleness import validate_describes_field as new
-        assert old is new
-
-    def test_same_function_check_staleness(self):
-        """check_staleness should be identical."""
-        from ontos_lib import check_staleness as old
-        from ontos.core.staleness import check_staleness as new
-        assert old is new
-
-    def test_same_function_generate_decision_history(self):
-        """generate_decision_history should be identical."""
-        from ontos_lib import generate_decision_history as old
-        from ontos.core.history import generate_decision_history as new
-        assert old is new
-
-    def test_same_constant_blocked_branch_names(self):
-        """BLOCKED_BRANCH_NAMES should be identical."""
-        from ontos_lib import BLOCKED_BRANCH_NAMES as old
-        from ontos.core.config import BLOCKED_BRANCH_NAMES as new
-        assert old is new
+    
+    def test_new_import_session_context(self):
+        """SessionContext import should work."""
+        from ontos.core.context import SessionContext
+        assert SessionContext is not None
+    
+    def test_new_import_validate_describes(self):
+        """validate_describes_field should work."""
+        from ontos.core.staleness import validate_describes_field
+        assert callable(validate_describes_field)
+    
+    def test_new_import_check_staleness(self):
+        """check_staleness should work."""
+        from ontos.core.staleness import check_staleness
+        assert callable(check_staleness)
+    
+    def test_new_import_generate_decision_history(self):
+        """generate_decision_history should work."""
+        from ontos.core.history import generate_decision_history
+        assert callable(generate_decision_history)
+    
+    def test_new_import_blocked_branch_names(self):
+        """BLOCKED_BRANCH_NAMES should work."""
+        from ontos.core.config import BLOCKED_BRANCH_NAMES
+        assert isinstance(BLOCKED_BRANCH_NAMES, (set, list, tuple))

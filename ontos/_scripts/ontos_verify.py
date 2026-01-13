@@ -19,13 +19,9 @@ from typing import Optional
 
 # Add scripts directory to path
 
-from ontos_lib import (
-    parse_frontmatter,
-    normalize_describes,
-    parse_describes_verified,
-    check_staleness,
-    get_decision_history_path,
-)
+from ontos.core.frontmatter import parse_frontmatter
+from ontos.core.staleness import normalize_describes, parse_describes_verified, check_staleness
+from ontos.core.paths import get_decision_history_path
 
 from ontos_config import (
     __version__,

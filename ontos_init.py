@@ -234,7 +234,7 @@ def create_directory_structure() -> None:
     """
     # Get docs dir from config (respects custom DOCS_DIR)
     try:
-        from ontos_lib import resolve_config
+        from ontos.core.paths import resolve_config
         docs_dir = resolve_config('DOCS_DIR', 'docs')
     except ImportError:
         docs_dir = 'docs'
@@ -267,7 +267,7 @@ def check_and_warn_old_paths() -> None:
     """Check for files in old locations and warn user."""
     # Get docs dir from config
     try:
-        from ontos_lib import resolve_config
+        from ontos.core.paths import resolve_config
         docs_dir = resolve_config('DOCS_DIR', 'docs')
     except ImportError:
         docs_dir = 'docs'
@@ -295,7 +295,7 @@ def scaffold_starter_docs() -> None:
     """
     # Get docs dir from config
     try:
-        from ontos_lib import resolve_config
+        from ontos.core.paths import resolve_config
         docs_dir = resolve_config('DOCS_DIR', 'docs')
     except ImportError:
         docs_dir = 'docs'

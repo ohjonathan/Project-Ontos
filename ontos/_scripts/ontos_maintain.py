@@ -8,7 +8,8 @@ import argparse
 
 
 from ontos_config import __version__, PROJECT_ROOT
-from ontos_lib import find_draft_proposals, get_proposals_dir, get_decision_history_path
+from ontos.core.proposals import find_draft_proposals
+from ontos.core.paths import get_proposals_dir, get_decision_history_path
 
 # v2.8.4: Import from ontos_end_session to avoid duplication
 # These functions were refactored with v2.8 transactional pattern in PR #27
@@ -201,7 +202,7 @@ Example:
     
     # Step 3: Consolidate logs (v2.4+, count-based since v2.6.2)
     try:
-        from ontos_lib import resolve_config
+        from ontos.core.paths import resolve_config
         auto_consolidate = resolve_config('AUTO_CONSOLIDATE', True)
     except ImportError:
         auto_consolidate = True

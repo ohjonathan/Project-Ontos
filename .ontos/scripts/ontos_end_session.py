@@ -1710,7 +1710,7 @@ Slug format:
             sys.exit(0)
         
         # Get source with fallback chain
-        from ontos_lib import get_source
+        from ontos.core.config import get_source
         source = get_source() or ''
         
         success = auto_archive(branch, source, args.quiet)

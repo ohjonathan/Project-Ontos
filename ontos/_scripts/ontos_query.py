@@ -9,12 +9,8 @@ from datetime import datetime
 
 # Add scripts dir to path
 
-from ontos_lib import (
-    parse_frontmatter,
-    normalize_depends_on,
-    normalize_type,
-    get_git_last_modified,
-)
+from ontos.core.frontmatter import parse_frontmatter, normalize_depends_on, normalize_type
+from ontos.core.config import get_git_last_modified
 from ontos_config import __version__, DOCS_DIR, SKIP_PATTERNS
 from ontos.ui.output import OutputHandler
 

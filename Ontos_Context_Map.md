@@ -1,6 +1,6 @@
 <!--
 Ontos Context Map
-Generated: 2026-01-13 23:26:49 UTC
+Generated: 2026-01-13 23:35:13 UTC
 Mode: Contributor
 Scanned: .ontos-internal
 -->
@@ -9,7 +9,7 @@ Scanned: .ontos-internal
 > in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2026-01-13 18:26:49
+Generated on: 2026-01-13 18:35:13
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -279,17 +279,17 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   Fix: Add a document with `id: phase2_implementation_spec` or remove it from depends_on
 - [BROKEN LINK] **phase2_implementation_instructions_antigravity** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase2/Phase2_Implementation_Instructions_Antigravity.md) references missing ID: `phase2_implementation_spec`
   Fix: Add a document with `id: phase2_implementation_spec` or remove it from depends_on
-- [DEPTH] **chief_architect_phase3_response** has dependency depth 7 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **phase3_pr_review_chief_architect** has dependency depth 9 (max: 5)
+- [DEPTH] **claude_opus_4_5_phase1_review_round2** has dependency depth 7 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [DEPTH] **phase3_implementation_prompt_antigravity** has dependency depth 8 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **claude_opus_4_5_phase1_review_round2** has dependency depth 7 (max: 5)
+- [DEPTH] **chief_architect_phase3_response** has dependency depth 7 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [DEPTH] **phase3_review_consolidation** has dependency depth 6 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [DEPTH] **claude_opus_4_5_phase1_review** has dependency depth 6 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **phase3_pr_review_chief_architect** has dependency depth 9 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [ARCHITECTURE] **phase3_review_consolidation** (strategy) depends on **claude_opus_4_5_phase3_alignment_review** (atom)
   Fix: strategy should not depend on atom. Invert the dependency or change document types

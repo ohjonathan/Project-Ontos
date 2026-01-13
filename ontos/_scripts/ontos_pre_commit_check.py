@@ -13,7 +13,7 @@ import sys
 import subprocess
 
 
-from ontos_lib import (
+from ontos.core.paths import (
     resolve_config,
     get_logs_dir,
     get_log_count,
