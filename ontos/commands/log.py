@@ -18,6 +18,21 @@ from ontos.core.suggestions import suggest_impacts, load_document_index, validat
 from ontos.core.types import TEMPLATES, SECTION_TEMPLATES
 
 
+# Event type aliases for common shorthand names
+EVENT_TYPE_ALIASES = {
+    "feat": "feature",
+    "docs": "chore",
+    "test": "chore",
+    "perf": "refactor",
+}
+
+
+def _get_template(event_type: str) -> str:
+    """Get template for event type, handling aliases."""
+    canonical = EVENT_TYPE_ALIASES.get(event_type, event_type)
+    return TEMPLATES.get(canonical, TEMPLATES.get("chore", ""))
+
+
 @dataclass
 class EndSessionOptions:
     """Configuration options for session log creation."""
@@ -67,8 +82,8 @@ def create_session_log(
         impacts=options.impacts,
     )
     
-    # Get template body
-    template = TEMPLATES.get(options.event_type, TEMPLATES["chore"])
+    # Get template body (with alias support for Bug 3 fix)
+    template = _get_template(options.event_type)
     
     # Fill in section placeholders
     body = f"# {topic}\n\n{template}"
@@ -78,8 +93,13 @@ def create_session_log(
     # Combine content
     content = f"---\n{frontmatter}---\n\n{body}"
     
-    # Determine output path
-    logs_dir = project_root / "docs" / "logs"
+    # Determine output path (Bug 4 fix: use config if available)
+    try:
+        from ontos_config import LOGS_DIR
+        logs_dir = Path(LOGS_DIR)
+    except ImportError:
+        logs_dir = project_root / "docs" / "logs"
+    
     filename = f"{date_str}_{topic_slug}.md"
     output_path = logs_dir / filename
     

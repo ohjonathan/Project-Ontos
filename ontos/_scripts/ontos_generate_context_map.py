@@ -22,7 +22,7 @@ warnings.warn(
 
 # === IMPORTS FROM NEW MODULES ===
 from ontos.io.files import scan_documents, load_document
-from ontos.io.yaml import parse_yaml
+from ontos.io.yaml import parse_frontmatter_content
 from ontos.core.validation import ValidationOrchestrator
 from ontos.core.tokens import estimate_tokens, format_token_count
 from ontos.commands.map import generate_context_map, GenerateMapOptions
@@ -90,7 +90,7 @@ def main() -> int:
 
     for path in doc_paths:
         try:
-            doc = load_document(path, parse_yaml)
+            doc = load_document(path, parse_frontmatter_content)
             docs[doc.id] = doc
         except Exception as e:
             print(f"  Warning: Failed to load {path}: {e}", file=sys.stderr)

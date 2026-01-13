@@ -69,3 +69,29 @@ def parse_frontmatter_yaml(content: str) -> Optional[Dict[str, Any]]:
 
     yaml_content = '\n'.join(lines[1:end_idx])
     return parse_yaml(yaml_content)
+
+
+def parse_frontmatter_content(content: str) -> tuple:
+    """Parse frontmatter and return (frontmatter_dict, body_string).
+    
+    This function matches the contract expected by io/files.py:load_document():
+        frontmatter_parser: Callable[[str], Tuple[Dict[str, Any], str]]
+    
+    Args:
+        content: Full document content with potential frontmatter
+        
+    Returns:
+        Tuple of (frontmatter_dict, body_string). If no frontmatter found,
+        returns ({}, content).
+    """
+    if not content.startswith('---'):
+        return {}, content
+    
+    parts = content.split('---', 2)
+    if len(parts) < 3:
+        return {}, content
+    
+    fm = parse_yaml(parts[1])
+    body = parts[2].lstrip('\n')
+    return fm, body
+
