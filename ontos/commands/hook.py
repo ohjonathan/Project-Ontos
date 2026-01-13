@@ -4,6 +4,16 @@ Git hook dispatcher command.
 
 Called by shim hooks in .git/hooks/ to execute Ontos validation.
 Per Spec v1.1 Section 4.3.
+
+DESIGN DECISION (B5): Fail-Open Behavior
+-----------------------------------------
+Hooks intentionally return 0 (allow) on error rather than blocking git operations.
+This is a deliberate safety choice:
+- Never block developers from pushing due to Ontos misconfiguration
+- Prefer allowing potentially invalid state over blocking legitimate work
+- Warnings are printed to stderr for visibility
+
+To enable blocking behavior, set strict mode in .ontos.toml (future feature).
 """
 
 import sys
