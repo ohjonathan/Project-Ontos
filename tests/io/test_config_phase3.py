@@ -81,6 +81,14 @@ version = "3.0"
         config = load_project_config(config_path=config_file)
         assert config.paths.docs_dir == "docs"  # Default
 
+    def test_load_project_config_raises_on_malformed_toml(self, tmp_path):
+        """Malformed TOML raises ConfigError (M2 test)."""
+        config_file = tmp_path / CONFIG_FILENAME
+        config_file.write_text("this is not valid TOML [[[")
+
+        with pytest.raises(ConfigError, match="Failed to parse"):
+            load_project_config(config_path=config_file)
+
 
 class TestSaveProjectConfig:
     """Tests for save_project_config() function."""
