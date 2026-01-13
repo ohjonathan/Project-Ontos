@@ -38,9 +38,9 @@ Ontos offers three workflow modes, each with a clear promise:
 | **prompted** | "Keep me in the loop" | Blocks push | Agent reminder |
 | **advisory** | "Maximum flexibility" | Warning only | Manual only |
 
-**Choosing Your Mode:** During installation, `ontos_init.py` shows each mode's promise. Change later with:
+**Choosing Your Mode:** During installation, `ontos init` shows each mode's promise. Change later with:
 ```bash
-python3 ontos_init.py --reconfig
+ontos init --force
 ```
 
 **Environment Variables:** For CI/CD, set `ONTOS_SOURCE` to override the default source:
@@ -347,13 +347,12 @@ python3 install.py
 The installer will:
 1. Verify SHA256 checksums of all assets (security first)
 2. Download and extract the Ontos bundle
-3. Run initialization (`ontos_init.py`)
+3. Run initialization (`ontos init`)
 
 ### Manual Install (Legacy)
 ```bash
-# Copy scripts and init file
+# Copy scripts
 cp -r /path/to/ontos/.ontos your-project/
-cp /path/to/ontos/ontos_init.py your-project/
 
 # Create docs directory
 mkdir -p docs/reference
@@ -366,7 +365,7 @@ cp /path/to/ontos/.ontos-internal/reference/Common_Concepts.md your-project/docs
 
 # Initialize (installs hooks, generates context map)
 cd your-project
-python3 ontos_init.py
+ontos init
 ```
 
 ### Configuration
