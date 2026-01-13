@@ -12,9 +12,10 @@ For testing, mock these functions directly:
         mock.return_value = (date(2025, 12, 20), ModifiedSource.GIT)
         result = check_staleness(doc, ctx)
 
-For production use with git:
-    from ontos.io.git import get_file_mtime
-    result = get_file_modification_date(path, git_mtime_provider=get_file_mtime)
+For production use:
+    result = get_file_modification_date(path, git_mtime_provider=my_git_provider)
+
+The caller (commands layer) provides the IO callback.
 """
 
 import os
@@ -54,9 +55,10 @@ def get_file_modification_date(
     PURE: This function accepts an optional callback for git operations.
     When git_mtime_provider is not supplied, falls back to filesystem mtime.
 
-    For production use with git:
-        from ontos.io.git import get_file_mtime
-        result = get_file_modification_date(path, git_mtime_provider=get_file_mtime)
+    For production use:
+        result = get_file_modification_date(path, git_mtime_provider=my_git_provider)
+
+    The caller (commands layer) provides the IO callback.
 
     Returns both the date and the source of that date (git, mtime, etc.)
     to indicate reliability. Uses caching for performance.
@@ -330,9 +332,10 @@ def check_staleness(
 
     PURE: Accepts optional callback for git operations via git_mtime_provider.
 
-    For production use with git:
-        from ontos.io.git import get_file_mtime
-        result = check_staleness(..., git_mtime_provider=get_file_mtime)
+    For production use:
+        result = check_staleness(..., git_mtime_provider=my_git_provider)
+
+    The caller (commands layer) provides the IO callback.
 
     Args:
         doc_id: ID of the document.

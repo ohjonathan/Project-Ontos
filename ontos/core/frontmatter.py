@@ -9,9 +9,10 @@ PURE FUNCTIONS (Phase 2 refactor):
     - normalize_type() - pure string normalization
     - load_common_concepts() - file reading only
 
-For production use with PyYAML:
-    from ontos.io.yaml import parse_yaml
-    frontmatter = parse_frontmatter(filepath, yaml_parser=parse_yaml)
+For production use:
+    frontmatter = parse_frontmatter(filepath, yaml_parser=my_yaml_parser)
+
+The caller (commands layer) provides the IO callback.
 """
 
 import os
@@ -28,9 +29,10 @@ def parse_frontmatter(
     PURE: Accepts optional callback for YAML parsing.
     When yaml_parser is None, returns raw frontmatter string split only.
 
-    For production use with PyYAML:
-        from ontos.io.yaml import parse_yaml
-        frontmatter = parse_frontmatter(filepath, yaml_parser=parse_yaml)
+    For production use:
+        frontmatter = parse_frontmatter(filepath, yaml_parser=my_yaml_parser)
+
+    The caller (commands layer) provides the IO callback.
 
     Args:
         filepath: Path to the markdown file.

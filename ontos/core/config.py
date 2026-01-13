@@ -5,9 +5,10 @@ and getting session source information.
 
 PURE (after Phase 2 refactor): Functions accept optional callbacks for git operations.
 
-For production use with git:
-    from ontos.io.git import get_git_config, get_file_mtime
-    source = get_source(git_username_provider=lambda: get_git_config("user.name"))
+For production use:
+    source = get_source(git_username_provider=my_git_provider)
+
+The caller (commands layer) provides the IO callback.
 """
 
 import os
@@ -173,9 +174,10 @@ def get_source(
 
     PURE: Accepts optional callback for git operations.
 
-    For production use with git:
-        from ontos.io.git import get_git_config
-        source = get_source(git_username_provider=lambda: get_git_config("user.name"))
+    For production use:
+        source = get_source(git_username_provider=my_git_provider)
+
+    The caller (commands layer) provides the IO callback.
 
     Resolution order:
     1. ONTOS_SOURCE environment variable
