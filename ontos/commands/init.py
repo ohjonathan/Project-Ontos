@@ -49,7 +49,7 @@ def init_command(options: InitOptions) -> Tuple[int, str]:
     # 3. Detect legacy .ontos/scripts/
     legacy_path = project_root / ".ontos" / "scripts"
     if legacy_path.exists():
-        print("Warning: Legacy .ontos/scripts/ detected. Consider migrating.")
+        print("Warning: Legacy .ontos/scripts/ detected. Consider migrating.", file=sys.stderr)
 
     # 4. Create default config
     config = default_config()
@@ -113,9 +113,9 @@ def _generate_initial_context_map(root: Path, config) -> None:
                 timeout=30
             )
             if result.returncode == 0:
-                print("   ✓ Context map generated")
+                print("   ✓ Context map generated", file=sys.stderr)
             else:
-                print(f"Warning: Context map generation returned code {result.returncode}")
+                print(f"Warning: Context map generation returned code {result.returncode}", file=sys.stderr)
         else:
             # Fallback: create a minimal context map placeholder
             context_map_path = root / config.paths.context_map
@@ -124,11 +124,11 @@ def _generate_initial_context_map(root: Path, config) -> None:
                     "# Ontos Context Map\n\n"
                     "> Run `ontos map` to generate the full context map.\n"
                 )
-                print("   ✓ Created placeholder context map")
+                print("   ✓ Created placeholder context map", file=sys.stderr)
     except subprocess.TimeoutExpired:
-        print("Warning: Context map generation timed out")
+        print("Warning: Context map generation timed out", file=sys.stderr)
     except Exception as e:
-        print(f"Warning: Could not generate initial context map: {e}")
+        print(f"Warning: Could not generate initial context map: {e}", file=sys.stderr)
 
 
 def _get_hooks_dir(root: Path) -> Path:
@@ -164,7 +164,7 @@ def _install_hooks(root: Path, options: InitOptions) -> int:
     try:
         hooks_dir = _get_hooks_dir(root)
     except Exception as e:
-        print(f"Warning: Could not access hooks directory: {e}")
+        print(f"Warning: Could not access hooks directory: {e}", file=sys.stderr)
         return 3
 
     hooks = ["pre-push", "pre-commit"]
@@ -181,14 +181,14 @@ def _install_hooks(root: Path, options: InitOptions) -> int:
                 else:
                     skipped.append(hook)
                     print(f"Warning: Existing {hook} hook detected. Skipping. "
-                          f"Use --force to overwrite, or manually integrate.")
+                          f"Use --force to overwrite, or manually integrate.", file=sys.stderr)
             else:
                 _write_shim_hook(hook_path, hook)
         except PermissionError as e:
-            print(f"Warning: Cannot write {hook} hook (permission denied): {e}")
+            print(f"Warning: Cannot write {hook} hook (permission denied): {e}", file=sys.stderr)
             skipped.append(hook)
         except Exception as e:
-            print(f"Warning: Failed to install {hook} hook: {e}")
+            print(f"Warning: Failed to install {hook} hook: {e}", file=sys.stderr)
             skipped.append(hook)
 
     return 3 if skipped else 0

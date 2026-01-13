@@ -17,45 +17,50 @@ from ontos.ui.json_output import emit_json, emit_error, validate_json_output
 
 def create_parser() -> argparse.ArgumentParser:
     """Create the main argument parser with all commands."""
-    parser = argparse.ArgumentParser(
-        prog="ontos",
-        description="Local-first documentation management for AI-assisted development",
-    )
-
-    # Global options
-    parser.add_argument(
-        "--version", "-V",
-        action="store_true",
-        help="Show version and exit"
-    )
-    parser.add_argument(
+    # Parent parser for shared options (used by all subparsers)
+    global_parser = argparse.ArgumentParser(add_help=False)
+    global_parser.add_argument(
         "--quiet", "-q",
         action="store_true",
         help="Suppress non-essential output"
     )
-    parser.add_argument(
+    global_parser.add_argument(
         "--json",
         action="store_true",
         help="Output in JSON format"
     )
 
-    # Subcommands
+    # Main parser
+    parser = argparse.ArgumentParser(
+        prog="ontos",
+        description="Local-first documentation management for AI-assisted development",
+        parents=[global_parser],
+    )
+
+    # Global-only options (not needed in subparsers)
+    parser.add_argument(
+        "--version", "-V",
+        action="store_true",
+        help="Show version and exit"
+    )
+
+    # Subcommands (all inherit from global_parser)
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
-    # Register commands
-    _register_init(subparsers)
-    _register_map(subparsers)
-    _register_log(subparsers)
-    _register_doctor(subparsers)
-    _register_export(subparsers)
-    _register_hook(subparsers)
-    _register_verify(subparsers)
-    _register_query(subparsers)
-    _register_migrate(subparsers)
-    _register_consolidate(subparsers)
-    _register_promote(subparsers)
-    _register_scaffold(subparsers)
-    _register_stub(subparsers)
+    # Register commands with shared parent
+    _register_init(subparsers, global_parser)
+    _register_map(subparsers, global_parser)
+    _register_log(subparsers, global_parser)
+    _register_doctor(subparsers, global_parser)
+    _register_export(subparsers, global_parser)
+    _register_hook(subparsers, global_parser)
+    _register_verify(subparsers, global_parser)
+    _register_query(subparsers, global_parser)
+    _register_migrate(subparsers, global_parser)
+    _register_consolidate(subparsers, global_parser)
+    _register_promote(subparsers, global_parser)
+    _register_scaffold(subparsers, global_parser)
+    _register_stub(subparsers, global_parser)
 
     return parser
 
@@ -64,9 +69,9 @@ def create_parser() -> argparse.ArgumentParser:
 # Command registration
 # ============================================================================
 
-def _register_init(subparsers):
+def _register_init(subparsers, parent):
     """Register init command."""
-    p = subparsers.add_parser("init", help="Initialize Ontos in a project")
+    p = subparsers.add_parser("init", help="Initialize Ontos in a project", parents=[parent])
     p.add_argument("--force", "-f", action="store_true",
                    help="Overwrite existing config and hooks")
     p.add_argument("--skip-hooks", action="store_true",
@@ -74,9 +79,9 @@ def _register_init(subparsers):
     p.set_defaults(func=_cmd_init)
 
 
-def _register_map(subparsers):
+def _register_map(subparsers, parent):
     """Register map command."""
-    p = subparsers.add_parser("map", help="Generate context map")
+    p = subparsers.add_parser("map", help="Generate context map", parents=[parent])
     p.add_argument("--strict", action="store_true",
                    help="Treat warnings as errors")
     p.add_argument("--output", "-o", type=Path,
@@ -84,9 +89,9 @@ def _register_map(subparsers):
     p.set_defaults(func=_cmd_map)
 
 
-def _register_log(subparsers):
+def _register_log(subparsers, parent):
     """Register log command."""
-    p = subparsers.add_parser("log", help="End session logging")
+    p = subparsers.add_parser("log", help="End session logging", parents=[parent])
     p.add_argument("--epoch", "-e",
                    help="Epoch identifier")
     p.add_argument("--title", "-t",
@@ -96,17 +101,17 @@ def _register_log(subparsers):
     p.set_defaults(func=_cmd_log)
 
 
-def _register_doctor(subparsers):
+def _register_doctor(subparsers, parent):
     """Register doctor command."""
-    p = subparsers.add_parser("doctor", help="Health check and diagnostics")
+    p = subparsers.add_parser("doctor", help="Health check and diagnostics", parents=[parent])
     p.add_argument("--verbose", "-v", action="store_true",
                    help="Show detailed output")
     p.set_defaults(func=_cmd_doctor)
 
 
-def _register_export(subparsers):
+def _register_export(subparsers, parent):
     """Register export command."""
-    p = subparsers.add_parser("export", help="Generate CLAUDE.md for AI assistants")
+    p = subparsers.add_parser("export", help="Generate CLAUDE.md for AI assistants", parents=[parent])
     p.add_argument("--force", "-f", action="store_true",
                    help="Overwrite existing file")
     p.add_argument("--output", "-o", type=Path,
@@ -114,55 +119,55 @@ def _register_export(subparsers):
     p.set_defaults(func=_cmd_export)
 
 
-def _register_hook(subparsers):
+def _register_hook(subparsers, parent):
     """Register hook command (internal)."""
-    p = subparsers.add_parser("hook", help="Git hook dispatcher (internal)")
+    p = subparsers.add_parser("hook", help="Git hook dispatcher (internal)", parents=[parent])
     p.add_argument("hook_type", choices=["pre-push", "pre-commit"],
                    help="Hook type to run")
     p.set_defaults(func=_cmd_hook)
 
 
-def _register_verify(subparsers):
+def _register_verify(subparsers, parent):
     """Register verify command (wrapper)."""
-    p = subparsers.add_parser("verify", help="Verify describes dates")
+    p = subparsers.add_parser("verify", help="Verify describes dates", parents=[parent])
     p.set_defaults(func=_cmd_wrapper, wrapper_name="verify")
 
 
-def _register_query(subparsers):
+def _register_query(subparsers, parent):
     """Register query command (wrapper)."""
-    p = subparsers.add_parser("query", help="Search documents")
+    p = subparsers.add_parser("query", help="Search documents", parents=[parent])
     p.add_argument("query_string", nargs="?", help="Search query")
     p.set_defaults(func=_cmd_wrapper, wrapper_name="query")
 
 
-def _register_migrate(subparsers):
+def _register_migrate(subparsers, parent):
     """Register migrate command (wrapper)."""
-    p = subparsers.add_parser("migrate", help="Schema migration")
+    p = subparsers.add_parser("migrate", help="Schema migration", parents=[parent])
     p.set_defaults(func=_cmd_wrapper, wrapper_name="migrate")
 
 
-def _register_consolidate(subparsers):
+def _register_consolidate(subparsers, parent):
     """Register consolidate command (wrapper)."""
-    p = subparsers.add_parser("consolidate", help="Archive old logs")
+    p = subparsers.add_parser("consolidate", help="Archive old logs", parents=[parent])
     p.set_defaults(func=_cmd_wrapper, wrapper_name="consolidate")
 
 
-def _register_promote(subparsers):
+def _register_promote(subparsers, parent):
     """Register promote command (wrapper)."""
-    p = subparsers.add_parser("promote", help="Promote curation level")
+    p = subparsers.add_parser("promote", help="Promote curation level", parents=[parent])
     p.add_argument("file", nargs="?", help="File to promote")
     p.set_defaults(func=_cmd_wrapper, wrapper_name="promote")
 
 
-def _register_scaffold(subparsers):
+def _register_scaffold(subparsers, parent):
     """Register scaffold command (wrapper)."""
-    p = subparsers.add_parser("scaffold", help="Generate scaffolds")
+    p = subparsers.add_parser("scaffold", help="Generate scaffolds", parents=[parent])
     p.set_defaults(func=_cmd_wrapper, wrapper_name="scaffold")
 
 
-def _register_stub(subparsers):
+def _register_stub(subparsers, parent):
     """Register stub command (wrapper)."""
-    p = subparsers.add_parser("stub", help="Create stub documents")
+    p = subparsers.add_parser("stub", help="Create stub documents", parents=[parent])
     p.add_argument("name", nargs="?", help="Stub name")
     p.set_defaults(func=_cmd_wrapper, wrapper_name="stub")
 
@@ -195,17 +200,52 @@ def _cmd_init(args) -> int:
 
 
 def _cmd_map(args) -> int:
-    """Handle map command."""
-    from ontos.commands.map import generate_context_map, GenerateMapOptions
-
-    options = GenerateMapOptions(
-        output_path=args.output,
-        strict=args.strict,
-        json_output=args.json,
-        quiet=args.quiet,
-    )
-
-    return generate_context_map(options)
+    """Handle map command.
+    
+    Delegates to legacy script for now since native function
+    requires docs/config collection that the script handles.
+    """
+    # Build command for the wrapper
+    scripts_dir = Path(__file__).parent / "_scripts"
+    script_path = scripts_dir / "ontos_generate_context_map.py"
+    
+    if not script_path.exists():
+        if args.json:
+            emit_error("Map script not found", "E_NOT_FOUND")
+        else:
+            print("Error: Map script not found", file=sys.stderr)
+        return 5
+    
+    cmd = [sys.executable, str(script_path)]
+    if args.strict:
+        cmd.append("--strict")
+    if args.output:
+        cmd.extend(["--output", str(args.output)])
+    
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if args.json:
+            # Wrap output in JSON format
+            emit_json({
+                "status": "success" if result.returncode == 0 else "error",
+                "message": "Context map generated" if result.returncode == 0 else "Generation failed",
+                "output": result.stdout.strip() if result.stdout else None,
+                "exit_code": result.returncode
+            })
+        elif not args.quiet:
+            if result.stdout:
+                print(result.stdout, end="")
+            if result.stderr:
+                print(result.stderr, file=sys.stderr, end="")
+        
+        return result.returncode
+    except Exception as e:
+        if args.json:
+            emit_error(f"Map execution failed: {e}", "E_EXEC_FAIL")
+        else:
+            print(f"Error: {e}", file=sys.stderr)
+        return 5
 
 
 def _cmd_log(args) -> int:
@@ -367,6 +407,15 @@ def main() -> int:
     """Main entry point for CLI."""
     parser = create_parser()
     args = parser.parse_args()
+
+    # Workaround for argparse parent inheritance issue:
+    # When --json is before the command, it's consumed by parent parser
+    # but not propagated to subparser namespace. Check sys.argv as fallback.
+    if '--json' in sys.argv and not args.json:
+        args.json = True
+    if '-q' in sys.argv or '--quiet' in sys.argv:
+        if not getattr(args, 'quiet', False):
+            args.quiet = True
 
     # Handle --version
     if args.version:
