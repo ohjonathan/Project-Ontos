@@ -137,14 +137,12 @@ def check_git_hooks() -> CheckResult:
             details="Run 'ontos init --force' to install hooks"
         )
 
-    # Check if hooks are Ontos-managed
-    ontos_marker = "# ontos-managed-hook"
+    # Check if hooks are Ontos-managed (lenient for reporting)
     non_ontos = []
 
     for hook_path in [pre_push, pre_commit]:
         if hook_path.exists():
-            content = hook_path.read_text()
-            if ontos_marker not in content:
+            if not _is_ontos_hook_lenient(hook_path):
                 non_ontos.append(hook_path.name)
 
     if non_ontos:
@@ -160,6 +158,34 @@ def check_git_hooks() -> CheckResult:
         status="pass",
         message="pre-push, pre-commit installed"
     )
+
+
+def _is_ontos_hook_lenient(hook_path: Path) -> bool:
+    """Check if hook is Ontos-managed (heuristic for reporting only).
+    
+    Uses a lenient heuristic that checks for:
+    1. The official marker comment: # ontos-managed-hook
+    2. Substring "ontos hook" in content
+    3. Python module execution: python3 -m ontos
+    
+    NOTE: This is for reporting in `ontos doctor` only. The `ontos init`
+    command uses strict marker checking for overwrite decisions.
+    
+    Args:
+        hook_path: Path to the git hook file.
+        
+    Returns:
+        True if the hook appears to be Ontos-managed.
+    """
+    try:
+        content = hook_path.read_text()
+        return (
+            "# ontos-managed-hook" in content or
+            "ontos hook" in content.lower() or
+            "python3 -m ontos" in content
+        )
+    except Exception:
+        return False
 
 
 def check_python_version() -> CheckResult:
