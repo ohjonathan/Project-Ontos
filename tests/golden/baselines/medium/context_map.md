@@ -1,12 +1,13 @@
-<!--
-Ontos Context Map
-Generated: <TIMESTAMP>
-Mode: <MODE>
-Scanned: .ontos-internal
--->
+---
+type: generated
+generator: ontos_generate_context_map
+generated: "<TIMESTAMP>"
+mode: Contributor
+scanned: .ontos-internal
+---
+
 > **Note for users:** This context map documents Project Ontos's own development.
-> When you run `python3 ontos_init.py` or `python3 .ontos/scripts/ontos_generate_context_map.py`
-> in your project, this file will be overwritten with your project's context.
+> When you run `ontos map` in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
 Generated on: <TIMESTAMP>

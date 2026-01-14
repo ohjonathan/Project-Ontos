@@ -1,2 +1,0 @@
-<FIXTURE_ROOT>/.ontos/scripts/ontos_generate_context_map.py:35: FutureWarning: Importing from 'ontos_lib' is deprecated. Import from 'ontos.core' instead. This module will be removed in v3.0. See: docs/reference/Ontos_Manual.md#migration-guide
-  from ontos_lib import (

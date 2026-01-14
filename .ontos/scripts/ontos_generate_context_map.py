@@ -397,19 +397,21 @@ def generate_provenance_header() -> str:
         
     timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
-    header = f"""<!--
-Ontos Context Map
-Generated: {timestamp}
-Mode: {mode}
-Scanned: {scanned_dir}
--->"""
+    # v3.0.1: YAML frontmatter for machine-readable provenance
+    header = f"""---
+type: generated
+generator: ontos_generate_context_map
+generated: "{timestamp}"
+mode: {mode}
+scanned: {scanned_dir}
+---
+"""
 
     # Add notice for Project Ontos repo (serves as example for users)
     if is_ontos_repo():
         header += """
 > **Note for users:** This context map documents Project Ontos's own development.
-> When you run `python3 ontos_init.py` or `python3 .ontos/scripts/ontos_generate_context_map.py`
-> in your project, this file will be overwritten with your project's context.
+> When you run `ontos map` in your project, this file will be overwritten with your project's context.
 """
 
     return header

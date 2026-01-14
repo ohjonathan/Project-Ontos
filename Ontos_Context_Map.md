@@ -1,15 +1,16 @@
-<!--
-Ontos Context Map
-Generated: 2026-01-13 23:35:13 UTC
-Mode: Contributor
-Scanned: .ontos-internal
--->
+---
+type: generated
+generator: ontos_generate_context_map
+generated: "2026-01-14 01:56:32 UTC"
+mode: Contributor
+scanned: .ontos-internal
+---
+
 > **Note for users:** This context map documents Project Ontos's own development.
-> When you run `python3 ontos_init.py` or `python3 .ontos/scripts/ontos_generate_context_map.py`
-> in your project, this file will be overwritten with your project's context.
+> When you run `ontos map` in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2026-01-13 18:35:13
+Generated on: 2026-01-13 20:56:32
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -26,7 +27,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **ontos_agent_instructions** [L2] (Ontos_Agent_Instructions.md) ~2,500 tokens
   - Status: active
   - Depends On: ontos_manual
-- **ontos_manual** [L2] (Ontos_Manual.md) ~4,000 tokens
+- **ontos_manual** [L2] (Ontos_Manual.md) ~3,900 tokens
   - Status: active
   - Depends On: None
 - **philosophy** [L2] (philosophy.md) ~1,700 tokens
@@ -85,6 +86,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **phase4_implementation_spec** [L2] (Phase4-Implementation-Spec.md) ~7,800 tokens
   - Status: approved
   - Depends On: phase3_final_approval_chief_architect
+- **phase5_code_review_claude** [L2] (Phase5_Code_Review_Claude.md) ~1,500 tokens
+  - Status: complete
+  - Depends On: phase5_implementation_spec
 - **phase5_implementation_spec** [L2] (Phase5-Implementation-Spec.md) ~1,000 tokens
   - Status: active
   - Depends On: phase4_final_approval_chief_architect
@@ -211,6 +215,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   - Impacts: ontos_manual, cli, json_output, hook, doctor, export
 
 ### UNKNOWN
+- **migration_v2_to_v3** [L2] (Migration_v2_to_v3.md) ~760 tokens
+  - Status: active
+  - Depends On: ontos_manual
 - **phase3_implementation_spec_review_codex** [L0] [draft] (Phase3-Implementation-Spec-Review-Codex.md) ~2,100 tokens  ⚠️ draft
   - Status: draft
   - Depends On: None
@@ -279,13 +286,15 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   Fix: Add a document with `id: phase2_implementation_spec` or remove it from depends_on
 - [BROKEN LINK] **phase2_implementation_instructions_antigravity** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase2/Phase2_Implementation_Instructions_Antigravity.md) references missing ID: `phase2_implementation_spec`
   Fix: Add a document with `id: phase2_implementation_spec` or remove it from depends_on
+- [ORPHAN] **migration_v2_to_v3** (docs/reference/Migration_v2_to_v3.md) has no dependents
+  Fix: Add `migration_v2_to_v3` to another document's depends_on, or delete if unused
 - [DEPTH] **claude_opus_4_5_phase1_review_round2** has dependency depth 7 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **phase3_implementation_prompt_antigravity** has dependency depth 8 (max: 5)
+- [DEPTH] **phase3_review_consolidation** has dependency depth 6 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [DEPTH] **chief_architect_phase3_response** has dependency depth 7 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **phase3_review_consolidation** has dependency depth 6 (max: 5)
+- [DEPTH] **phase3_implementation_prompt_antigravity** has dependency depth 8 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [DEPTH] **claude_opus_4_5_phase1_review** has dependency depth 6 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
@@ -364,6 +373,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 | log_20260112_v2_9_6_cleanup | [2026-01-12_chore-v2-9-6-cleanup.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-12_chore-v2-9-6-cleanup.md) | log |
 | log_20260113_phase2_v3_0_beta | [2026-01-13_phase2-v3-0-beta.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-13_phase2-v3-0-beta.md) | log |
 | log_20260113_phase4_cli_release | [2026-01-13_phase4_cli_release.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-13_phase4_cli_release.md) | log |
+| migration_v2_to_v3 | [Migration_v2_to_v3.md](docs/reference/Migration_v2_to_v3.md) | reference |
 | mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |
 | obsidian_compatibility_proposal | [Obsidian_Compatibility_Proposal.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/Obsidian_Compatibility_Proposal.md) | strategy |
 | ontology_spec | [ontology_spec.md](docs/reference/ontology_spec.md) | kernel |
@@ -384,6 +394,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 | phase4_final_approval_chief_architect | [Phase4_Final_Approval_Chief_Architect.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase4/Phase4_Final_Approval_Chief_Architect.md) | approval |
 | phase4_implementation_spec | [Phase4-Implementation-Spec.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase4/Phase4-Implementation-Spec.md) | strategy |
 | phase4_pr_review_chief_architect | [Phase4_PR_Review_Chief_Architect.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase4/Phase4_PR_Review_Chief_Architect.md) | review |
+| phase5_code_review_claude | [Phase5_Code_Review_Claude.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase5/Phase5_Code_Review_Claude.md) | strategy |
 | phase5_implementation_spec | [Phase5-Implementation-Spec.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase5/Phase5-Implementation-Spec.md) | strategy |
 | phase5_spec_review_claude | [Phase5_Spec_Review_Claude.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase5/Phase5_Spec_Review_Claude.md) | strategy |
 | philosophy | [philosophy.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/philosophy.md) | kernel |
