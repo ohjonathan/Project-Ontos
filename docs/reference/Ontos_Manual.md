@@ -378,10 +378,23 @@ DEFAULT_SOURCE = "Claude Code"
 | AUTO_CONSOLIDATE | True | True | False |
 
 ### Uninstall
+
+**Complete removal** (removes Ontos AND all frontmatter from your docs):
+```bash
+# 1. Remove frontmatter FIRST (requires .ontos/ to exist)
+python3 .ontos/scripts/ontos_remove_frontmatter.py --yes
+# 2. Remove git hooks
+rm -f .git/hooks/pre-push .git/hooks/pre-commit
+# 3. Remove Ontos files
+rm -rf .ontos/ .ontos.toml
+rm -f Ontos_Context_Map.md CLAUDE.md
+```
+
+**Keep frontmatter** (preserves YAML headers in your docs):
 ```bash
 # 1. Remove git hooks
 rm -f .git/hooks/pre-push .git/hooks/pre-commit
-# 2. Remove Ontos files
+# 2. Remove Ontos files only
 rm -rf .ontos/ .ontos.toml
 rm -f Ontos_Context_Map.md CLAUDE.md
 ```

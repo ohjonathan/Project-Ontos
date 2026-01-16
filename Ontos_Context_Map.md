@@ -1,7 +1,7 @@
 ---
 type: generated
 generator: ontos_generate_context_map
-generated: "2026-01-14 04:45:22 UTC"
+generated: "2026-01-15 12:04:47 UTC"
 mode: Contributor
 scanned: .ontos-internal
 ---
@@ -10,7 +10,7 @@ scanned: .ontos-internal
 > When you run `ontos map` in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2026-01-13 23:45:22
+Generated on: 2026-01-15 07:04:47
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -27,9 +27,12 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **ontos_agent_instructions** [L2] (Ontos_Agent_Instructions.md) ~2,500 tokens
   - Status: active
   - Depends On: ontos_manual
-- **ontos_manual** [L2] (Ontos_Manual.md) ~3,900 tokens
+- **ontos_manual** [L2] (Ontos_Manual.md) ~4,000 tokens
   - Status: active
   - Depends On: None
+- **ontos_philosophy_and_ontology** [L2] (Ontos_Philosophy_and_Ontology.md) ~7,200 tokens
+  - Status: active
+  - Depends On: mission, philosophy, constitution
 - **philosophy** [L2] (philosophy.md) ~1,700 tokens
   - Status: active
   - Depends On: mission
@@ -40,17 +43,23 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   - Depends On: phase3_implementation_spec, phase3_review_consolidation
 - **install_experience_technical_debt_proposal** [L2] [draft] (Install_Experience_Technical_Debt_Proposal.md) ~2,000 tokens
   - Status: draft
-  - Depends On: v3_0_implementation_roadmap, installation_ux_proposal, architect_synthesis_install_ux
+  - Depends On: v3_0_implementation_roadmap, installation_ux_proposal
 - **installation_ux_proposal** [L2] [draft] (Installation_UX_Proposal.md) ~7,100 tokens
   - Status: draft
   - Depends On: philosophy, mission, ontos_manual
 - **installation_ux_proposal_review** [L2] [draft] (Installation_UX_Proposal_Review_Codex.md) ~948 tokens
   - Status: draft
   - Depends On: installation_ux_proposal, philosophy, mission, ontos_manual
+- **maintain_command_v3_proposal** [L2] [draft] (Maintain_Command_v3_Proposal.md) ~1,800 tokens
+  - Status: draft
+  - Depends On: v3_0_implementation_roadmap, v3_0_technical_architecture
 - **obsidian_compatibility_proposal** [L2] [draft] (Obsidian_Compatibility_Proposal.md) ~2,200 tokens
   - Status: draft
   - Depends On: v3_0_implementation_roadmap
 - **ontos_strategic_analysis** [L2] (Ontos-Strategic-Analysis.md) ~3,400 tokens
+  - Status: active
+  - Depends On: mission, philosophy, ontology_spec, v3_0_technical_architecture
+- **ontos_strategic_analysis_codex** [L2] (Ontos-Strategic-Analysis-Codex.md) ~3,400 tokens
   - Status: active
   - Depends On: mission, philosophy, ontology_spec, v3_0_technical_architecture
 - **phase0_golden_master_spec** [L2] (phase0_implementation_spec.md) ~10,300 tokens
@@ -154,6 +163,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **ontos_technical_architecture_map** [L2] (Ontos-Technical-Architecture-Map.md) ~2,300 tokens
   - Status: active
   - Depends On: ontology_spec, v3_0_technical_architecture
+- **ontos_technical_architecture_map_codex** [L2] (Ontos-Technical-Architecture-Map-Codex.md) ~2,100 tokens
+  - Status: active
+  - Depends On: ontology_spec, v3_0_technical_architecture
 - **schema** [L2] (schema.md) ~450 tokens
   - Status: active
   - Depends On: philosophy
@@ -228,6 +240,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **log_20260113_v3_0_1_release** [L1] (2026-01-13_v3_0_1_release.md) ~922 tokens  ⚠️ active
   - Status: active
   - Impacts: v3_0_implementation_roadmap, phase5_implementation_spec, migration_v2_to_v3
+- **log_20260114_philosophy_research_and_tech_debt** [L2] (2026-01-14_philosophy-research-and-tech-debt.md) ~926 tokens
+  - Status: active
+  - Impacts: ontos_philosophy_and_ontology, ontos_manual, obsidian_compatibility_proposal, install_experience_technical_debt_proposal, maintain_command_v3_proposal
 
 ### UNKNOWN
 - **migration_v2_to_v3** [L2] (Migration_v2_to_v3.md) ~760 tokens
@@ -245,6 +260,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 
 ## 2. Recent Timeline
+- **2026-01-14** [chore] **Philosophy Research And Tech Debt** (`log_20260114_philosophy_research_and_tech_debt`)
+  - Impacted: `ontos_philosophy_and_ontology`, `ontos_manual`, `obsidian_compatibility_proposal`, `install_experience_technical_debt_proposal`, `maintain_command_v3_proposal`
+  - Concepts: philosophy, ontology, architecture, documentation, technical-debt
 - **2026-01-13** [feature] **V3 0 1 Release** (`log_20260113_v3_0_1_release`)
   - Impacted: `v3_0_implementation_roadmap`, `phase5_implementation_spec`, `migration_v2_to_v3`
 - **2026-01-13** [None] **Phase4 Cli Release** (`log_20260113_phase4_cli_release`)
@@ -266,11 +284,8 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **2026-01-12** [feature] **Phase0 V3 0 Alpha** (`log_20260112_phase0_v3_0_alpha`)
   - Impacted: `phase0_golden_master_spec`
   - Concepts: golden-master, testing, v3.0, refactoring, ci-workflow
-- **2026-01-12** [feature] **Feat V2 9 6 Ontology Single Source Of Truth** (`log_20260112_feat_v2_9_6_ontology_single_source_of_truth`)
-  - Impacted: `ontology_spec`
-  - Concepts: ontology, single-source-of-truth, immutability, import-safety
 
-*Showing 10 of 23 sessions*
+*Showing 10 of 24 sessions*
 
 ## 3. Dependency Audit
 - [BROKEN LINK] **phase4_chief_architect_response** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase4/Phase4_Chief_Architect_Response.md) references missing ID: `phase4_spec_review_consolidation`
@@ -305,17 +320,17 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   Fix: Add a document with `id: phase2_implementation_spec` or remove it from depends_on
 - [ORPHAN] **migration_v2_to_v3** (docs/reference/Migration_v2_to_v3.md) has no dependents
   Fix: Add `migration_v2_to_v3` to another document's depends_on, or delete if unused
-- [DEPTH] **claude_opus_4_5_phase1_review** has dependency depth 6 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **phase3_implementation_prompt_antigravity** has dependency depth 8 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [DEPTH] **phase3_pr_review_chief_architect** has dependency depth 9 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **claude_opus_4_5_phase1_review_round2** has dependency depth 7 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [DEPTH] **chief_architect_phase3_response** has dependency depth 7 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **phase3_implementation_prompt_antigravity** has dependency depth 8 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **claude_opus_4_5_phase1_review** has dependency depth 6 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [DEPTH] **phase3_review_consolidation** has dependency depth 6 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **claude_opus_4_5_phase1_review_round2** has dependency depth 7 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [ARCHITECTURE] **phase3_review_consolidation** (strategy) depends on **claude_opus_4_5_phase3_alignment_review** (atom)
   Fix: strategy should not depend on atom. Invert the dependency or change document types
@@ -325,8 +340,6 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   Fix: strategy should not depend on atom. Invert the dependency or change document types
 - [ARCHITECTURE] **phase5_implementation_spec** (strategy) depends on **phase4_final_approval_chief_architect** (approval)
   Fix: strategy should not depend on approval. Invert the dependency or change document types
-- [ARCHITECTURE] **install_experience_technical_debt_proposal** (strategy) depends on **architect_synthesis_install_ux** (atom)
-  Fix: strategy should not depend on atom. Invert the dependency or change document types
 - [MISSING FIELD] **log_20260113_phase4_cli_release** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-13_phase4_cli_release.md) is type 'log' but missing required field: event_type
   Fix: Add `event_type: feature|fix|refactor|exploration|chore` to frontmatter
 - [BROKEN LINK] **log_20260112_phase2_core_decomposition** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-12_phase2-core-decomposition.md) impacts non-existent document: `ontos`
@@ -393,14 +406,19 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 | log_20260113_phase2_v3_0_beta | [2026-01-13_phase2-v3-0-beta.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-13_phase2-v3-0-beta.md) | log |
 | log_20260113_phase4_cli_release | [2026-01-13_phase4_cli_release.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-13_phase4_cli_release.md) | log |
 | log_20260113_v3_0_1_release | [2026-01-13_v3_0_1_release.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-13_v3_0_1_release.md) | log |
+| log_20260114_philosophy_research_and_tech_debt | [2026-01-14_philosophy-research-and-tech-debt.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-14_philosophy-research-and-tech-debt.md) | log |
+| maintain_command_v3_proposal | [Maintain_Command_v3_Proposal.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/Maintain_Command_v3_Proposal.md) | strategy |
 | migration_v2_to_v3 | [Migration_v2_to_v3.md](docs/reference/Migration_v2_to_v3.md) | reference |
 | mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |
 | obsidian_compatibility_proposal | [Obsidian_Compatibility_Proposal.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/Obsidian_Compatibility_Proposal.md) | strategy |
 | ontology_spec | [ontology_spec.md](docs/reference/ontology_spec.md) | kernel |
 | ontos_agent_instructions | [Ontos_Agent_Instructions.md](docs/reference/Ontos_Agent_Instructions.md) | kernel |
 | ontos_manual | [Ontos_Manual.md](docs/reference/Ontos_Manual.md) | kernel |
+| ontos_philosophy_and_ontology | [Ontos_Philosophy_and_Ontology.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/reference/Ontos_Philosophy_and_Ontology.md) | kernel |
 | ontos_strategic_analysis | [Ontos-Strategic-Analysis.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/analysis/Ontos-Strategic-Analysis.md) | strategy |
+| ontos_strategic_analysis_codex | [Ontos-Strategic-Analysis-Codex.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/analysis/Ontos-Strategic-Analysis-Codex.md) | strategy |
 | ontos_technical_architecture_map | [Ontos-Technical-Architecture-Map.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/analysis/Ontos-Technical-Architecture-Map.md) | atom |
+| ontos_technical_architecture_map_codex | [Ontos-Technical-Architecture-Map-Codex.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/analysis/Ontos-Technical-Architecture-Map-Codex.md) | atom |
 | phase0_golden_master_spec | [phase0_implementation_spec.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase0/phase0_implementation_spec.md) | strategy |
 | phase1_package_structure_spec | [phase1_implementation_spec.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase1/phase1_implementation_spec.md) | strategy |
 | phase2_godscript_reduction_instructions_antigravity | [Phase2_GodScript_Reduction_Instructions_Antigravity.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase2/Phase2_GodScript_Reduction_Instructions_Antigravity.md) | strategy |

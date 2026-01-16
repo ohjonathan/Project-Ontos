@@ -2,7 +2,7 @@
 id: install_experience_technical_debt_proposal
 type: strategy
 status: draft
-depends_on: [v3_0_implementation_roadmap, installation_ux_proposal, architect_synthesis_install_ux]
+depends_on: [v3_0_implementation_roadmap, installation_ux_proposal]
 concepts: [installation, ux, technical-debt, documentation, v3-transition]
 ---
 

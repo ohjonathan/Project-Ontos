@@ -15,13 +15,13 @@
 
 - [The Problem](#the-problem)
 - [The Solution](#the-solution)
+- [Who Ontos Is For](#who-ontos-is-for)
 - [Why "Ontos"?](#why-ontos)
 - [Quick Start](#quick-start)
-- [Archiving](#archiving)
-- [Maintenance](#maintenance)
-- [Updating](#updating)
+- [Workflow](#workflow)
 - [Use Cases](#use-cases)
-- [What It Doesn't Do](#what-it-doesnt-do)
+- [What Ontos Is NOT](#what-ontos-is-not)
+- [Roadmap](#roadmap)
 - [Documentation](#documentation)
 
 ---
@@ -42,13 +42,15 @@ The common thread: **context isn't portable.**
 
 ## The Solution
 
-Ontos turns your documentation into a knowledge graph that survives everything - tool switches, tech migrations, team changes.
+Ontos creates a **portable knowledge graph** that lives in your repo as markdown files with YAML frontmatter. No cloud service, no vendor lock-in, no semantic search lottery.
+
+**Glass box, not black box.** Your context is readable, not just retrievable. Explicit structure instead of probabilistic search. Humans can inspect it. AIs follow it. Same input, same output, every time.
 
 **How it works:**
 
-1. Tag your docs with simple YAML headers (type, dependencies, status)
-2. A script generates `Ontos_Context_Map.md` - your project's memory
-3. Any AI tool reads the map, loads only what's relevant, and sees the full decision history
+1. Tag your docs with YAML headers (or run `ontos scaffold` to auto-generate them - you review, it tags)
+2. Run `ontos map` to generate `Ontos_Context_Map.md` - your project's memory
+3. Any AI agent reads the map, loads only what's relevant, sees the full decision history
 
 ```yaml
 ---
@@ -58,7 +60,7 @@ depends_on: [target_audience, mission]
 ---
 ```
 
-**The hierarchy:**
+**The hierarchy** (when uncertain: "If this doc changes, what else breaks?"):
 
 | Layer | What It Captures | Survives Migration? |
 |-------|------------------|---------------------|
@@ -68,6 +70,15 @@ depends_on: [target_audience, mission]
 | `atom` | Technical implementation | ❌ Rewritten |
 
 Your Streamlit atoms die. Your product decisions don't.
+
+---
+
+## Who Ontos Is For
+
+- **Teams switching between AI tools** (Claude, ChatGPT, Gemini, Cursor) who are tired of re-explaining their project
+- **Projects that outlive their prototypes** - when you rewrite from Streamlit to Next.js, your decisions should survive
+- **Developers who want context to persist** across session resets, tool switches, and team changes
+- **Anyone betting on AI-assisted development** who needs reliable, portable project memory
 
 ---
 
@@ -111,52 +122,22 @@ The Agent will:
 
 ---
 
-## Archiving
+## Workflow
 
-When you are done with a session:
-
-> **"Archive Ontos"** (or "Ontos archive")
-
-The Agent will save a log of all decisions made, ensuring no context is lost for the next session.
-
----
-
-## Maintenance
-
-To keep your graph healthy:
-
-> **"Maintain Ontos"**
-
-The Agent will scan for new files, rebuild the context map, and fix any integrity issues (broken links, circular dependencies).
-
----
-
-## Updating
-
-To update Ontos to the latest version:
-
-> **"Update Ontos"**
-
-Or use the installer:
+| Command | What It Does |
+|---------|--------------|
+| **"Ontos"** | Activate context - agent reads the map, loads relevant files |
+| **"Archive Ontos"** | End session - save decisions as a log for next time |
+| **"Maintain Ontos"** | Health check - scan for new files, fix broken links, regenerate map |
 
 ```bash
-python3 install.py --upgrade --latest
+# CLI equivalents
+ontos map          # Generate/update context map
+ontos log -e feature   # Archive a feature session
+ontos doctor       # Check graph health
 ```
 
-Your `ontos_config.py` customizations are automatically preserved.
-
-### Offline Installation
-
-For air-gapped environments:
-
-```bash
-# Download wheel on a connected machine
-pip download ontos -d ./packages
-
-# Install offline
-pip install --no-index --find-links=./packages ontos
-ontos init
-```
+**Update:** `pip install --upgrade ontos`
 
 ---
 
@@ -169,19 +150,33 @@ Switch between Claude Code, Cursor, ChatGPT, and Gemini CLI without re-explainin
 Built a demo in Streamlit? When you rewrite in FastAPI or Next.js, your atoms are disposable but your strategy survives. Three weeks of product decisions don't vanish with the old code.
 
 ### Project Handoffs
-Pass a project to another developer or agency. Session logs + context map = instant knowledge transfer, not a 2-hour call.
+Pass a project to another developer or agency. Everything travels with `git clone` - session logs, context map, decision history. No export, no onboarding docs, no 2-hour call. They clone, they know.
 
 ### Documentation Audits
 CI/CD validation catches broken links, circular dependencies, and architectural violations before they become tribal knowledge.
 
 ---
 
-## What It Doesn't Do
+## What Ontos Is NOT
 
-- No cloud service
-- No API keys
-- No vendor lock-in
-- Just Python scripts and markdown files in your repo
+- **Not a RAG system.** We use structural graph traversal, not semantic search. Deterministic beats probabilistic for critical decisions.
+- **Not zero-effort.** You decide what matters (curation). The tooling handles the paperwork (tagging, validation, maintenance).
+- **Not a cloud service.** Markdown files in your repo. No API keys, no accounts, no vendor lock-in.
+- **Not magic.** You still need to make decisions. But CI/CD handles validation, and scaffolding handles tagging.
+
+If you want zero-effort context capture, use a vector database. If you want reliable, portable, deterministic context delivery, use Ontos.
+
+---
+
+## Roadmap
+
+| Version | Status | Theme |
+|---------|--------|-------|
+| **v3.0.1** | ✅ Current | pip-installable package, 13 CLI commands, JSON output |
+| **v3.1** | Planned | Obsidian compatibility, `ontos deinit`, export templates |
+| **v4.0** | Vision | MCP as primary interface, daemon mode, lazy loading |
+
+v3.0 transformed Ontos from repo-injected scripts (~8,600 LOC) into a proper Python package with modular architecture. The core is zero-dependency (stdlib only).
 
 ---
 
