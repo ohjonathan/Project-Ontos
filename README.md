@@ -172,7 +172,7 @@ If you want zero-effort context capture, use a vector database. If you want reli
 
 | Version | Status | Theme |
 |---------|--------|-------|
-| **v3.0.1** | ✅ Current | pip-installable package, 13 CLI commands, JSON output |
+| **v3.0.0** | ✅ Current | pip-installable package, 13 CLI commands, JSON output |
 | **v3.1** | Planned | Obsidian compatibility, `ontos deinit`, export templates |
 | **v4.0** | Vision | MCP as primary interface, daemon mode, lazy loading |
 

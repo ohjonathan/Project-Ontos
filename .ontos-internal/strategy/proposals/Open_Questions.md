@@ -1,4 +1,4 @@
-# v3.0.2: Open Questions & Next Steps
+# v3.0.0: Open Questions & Next Steps
 
 **Author:** Chief Architect (Claude Opus 4.5)
 **Date:** 2026-01-14
@@ -249,7 +249,7 @@ ontos map
 
 **Issue:** `ontos/core/config.py:229` imports from `ontos.io.git`
 
-**Question:** Should this be fixed in v3.0.2 or tracked for later?
+**Question:** Should this be fixed in v3.0.0 or tracked for later?
 
 **Context:**
 - Violates core/ → io/ constraint
@@ -270,7 +270,7 @@ ontos map
 
 ### Q5.3: Golden Master Framework
 
-**Question:** Should golden tests be expanded for v3.0.2?
+**Question:** Should golden tests be expanded for v3.0.0?
 
 **Context:**
 - Currently only 2 golden tests

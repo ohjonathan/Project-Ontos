@@ -150,7 +150,7 @@ Accepted Codex's concerns. Added explicit mitigations:
 | # | Issue | Response | Action |
 |---|-------|----------|--------|
 | m1 | Missing `pyproject.toml` URL verification | Accept | Added to P5-8 release verification |
-| m2 | Migration Guide "Verifying Upgrade" section | Defer | Nice enhancement for v3.0.2 |
+| m2 | Migration Guide "Verifying Upgrade" section | Defer | Nice enhancement for v3.0.1 |
 
 ---
 
