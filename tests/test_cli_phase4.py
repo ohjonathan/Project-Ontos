@@ -125,9 +125,10 @@ class TestCLIExportCommand:
     """Tests for export command via CLI."""
 
     def test_export_creates_file(self, tmp_path, monkeypatch):
-        """export should create CLAUDE.md."""
+        """export should create AGENTS.md (deprecated alias for agents)."""
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
+        (tmp_path / ".ontos-internal").mkdir()
 
         result = subprocess.run(
             [sys.executable, "-m", "ontos", "export"],
@@ -135,7 +136,7 @@ class TestCLIExportCommand:
         )
 
         assert result.returncode == 0
-        assert (tmp_path / "CLAUDE.md").exists()
+        assert (tmp_path / "AGENTS.md").exists()  # v3.0.0: export creates AGENTS.md
 
 
 class TestCLIInitCommand:
