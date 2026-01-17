@@ -110,10 +110,16 @@ def _register_map(subparsers, parent):
 def _register_log(subparsers, parent):
     """Register log command."""
     p = subparsers.add_parser("log", help="End session logging", parents=[parent])
-    p.add_argument("--epoch", "-e",
-                   help="Epoch identifier")
+    p.add_argument("topic", nargs="?",
+                   help="Log entry title/topic")
+    p.add_argument("--event-type", "-e",
+                   help="Session event type (feature, fix, refactor, exploration, chore, decision, release)")
+    p.add_argument("--source", "-s",
+                   help="Session source (e.g., tool/agent name)")
+    p.add_argument("--epoch",
+                   help="(Deprecated) Alias for --source")
     p.add_argument("--title", "-t",
-                   help="Log entry title")
+                   help="Log entry title (overrides positional topic)")
     p.add_argument("--auto", action="store_true",
                    help="Skip confirmation prompt")
     p.set_defaults(func=_cmd_log)
@@ -273,8 +279,11 @@ def _cmd_log(args) -> int:
     from ontos.commands.log import log_command, LogOptions
 
     options = LogOptions(
+        event_type=args.event_type or "",
+        source=args.source or "",
         epoch=args.epoch or "",
         title=args.title or "",
+        topic=args.topic or "",
         auto=args.auto,
         json_output=args.json,
         quiet=args.quiet,

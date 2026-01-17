@@ -56,7 +56,7 @@ def main() -> int:
     parser.add_argument(
         "--event-type", "-e",
         default="chore",
-        choices=["feat", "fix", "chore", "docs", "refactor", "test", "perf"],
+        choices=["feat", "fix", "chore", "docs", "refactor", "test", "perf", "release"],
         help="Event type (default: chore)"
     )
     parser.add_argument(

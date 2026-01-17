@@ -119,6 +119,10 @@ EVENT_TYPES = {
         'definition': 'Architectural or design decisions',
         'examples': ['Chose OAuth over SAML', 'Selected PostgreSQL for persistence'],
     },
+    'release': {
+        'definition': 'Packaging or release activities',
+        'examples': ['Published v3.0.0', 'Cut release candidate'],
+    },
 }
 
 # Valid event type values (for validation)

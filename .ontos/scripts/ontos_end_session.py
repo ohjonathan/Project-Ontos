@@ -1649,8 +1649,8 @@ Slug format:
     
     # NEW v2.0 arguments
     parser.add_argument('--event-type', '-e', type=str, metavar='TYPE',
-                        choices=['feature', 'fix', 'refactor', 'exploration', 'chore', 'decision'],
-                        help='Type of work performed (feature/fix/refactor/exploration/chore/decision)')
+                        choices=['feature', 'fix', 'refactor', 'exploration', 'chore', 'decision', 'release'],
+                        help='Type of work performed (feature/fix/refactor/exploration/chore/decision/release)')
     parser.add_argument('--concepts', type=str, metavar='TAGS',
                         help='Comma-separated concept tags (e.g., "auth,oauth,security")')
     parser.add_argument('--impacts', type=str, metavar='IDS',
