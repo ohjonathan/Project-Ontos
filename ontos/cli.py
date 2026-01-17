@@ -69,7 +69,8 @@ def create_parser() -> argparse.ArgumentParser:
     _register_map(subparsers, global_parser)
     _register_log(subparsers, global_parser)
     _register_doctor(subparsers, global_parser)
-    _register_export(subparsers, global_parser)
+    _register_agents(subparsers, global_parser)
+    _register_export(subparsers, global_parser)  # Deprecated alias
     _register_hook(subparsers, global_parser)
     _register_verify(subparsers, global_parser)
     _register_query(subparsers, global_parser)
@@ -126,13 +127,27 @@ def _register_doctor(subparsers, parent):
     p.set_defaults(func=_cmd_doctor)
 
 
+def _register_agents(subparsers, parent):
+    """Register agents command."""
+    p = subparsers.add_parser("agents", help="Generate AGENTS.md and .cursorrules", parents=[parent])
+    p.add_argument("--force", "-f", action="store_true",
+                   help="Overwrite existing files (creates .bak backup)")
+    p.add_argument("--format", choices=["agents", "cursor"], default="agents",
+                   help="Output format (default: agents)")
+    p.add_argument("--all", dest="all_formats", action="store_true",
+                   help="Generate both AGENTS.md and .cursorrules")
+    p.add_argument("--output", "-o", type=Path,
+                   help="Output path for AGENTS.md")
+    p.set_defaults(func=_cmd_agents)
+
+
 def _register_export(subparsers, parent):
-    """Register export command."""
-    p = subparsers.add_parser("export", help="Generate CLAUDE.md for AI assistants", parents=[parent])
+    """Register export command (deprecated alias for agents)."""
+    p = subparsers.add_parser("export", help="(Deprecated) Use 'ontos agents' instead", parents=[parent])
     p.add_argument("--force", "-f", action="store_true",
                    help="Overwrite existing file")
     p.add_argument("--output", "-o", type=Path,
-                   help="Output path (default: CLAUDE.md)")
+                   help="Output path")
     p.set_defaults(func=_cmd_export)
 
 
@@ -296,16 +311,46 @@ def _cmd_doctor(args) -> int:
     return exit_code
 
 
-def _cmd_export(args) -> int:
-    """Handle export command."""
-    from ontos.commands.export import export_command, ExportOptions
+def _cmd_agents(args) -> int:
+    """Handle agents command."""
+    from ontos.commands.agents import agents_command, AgentsOptions
 
-    options = ExportOptions(
+    options = AgentsOptions(
         output_path=args.output,
         force=args.force,
+        format=getattr(args, 'format', 'agents'),
+        all_formats=getattr(args, 'all_formats', False),
     )
 
-    exit_code, message = export_command(options)
+    exit_code, message = agents_command(options)
+
+    if args.json:
+        emit_json({
+            "status": "success" if exit_code == 0 else "error",
+            "message": message,
+            "exit_code": exit_code
+        })
+    elif not args.quiet:
+        print(message)
+
+    return exit_code
+
+
+def _cmd_export(args) -> int:
+    """Handle export command (deprecated - delegates to agents)."""
+    import sys
+    print("Warning: 'ontos export' is deprecated. Use 'ontos agents' instead.", file=sys.stderr)
+    
+    from ontos.commands.agents import agents_command, AgentsOptions
+
+    options = AgentsOptions(
+        output_path=args.output,
+        force=args.force,
+        format="agents",
+        all_formats=False,
+    )
+
+    exit_code, message = agents_command(options)
 
     if args.json:
         emit_json({

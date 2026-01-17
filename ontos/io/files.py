@@ -8,6 +8,7 @@ Phase 2 Decomposition - Created from Phase2-Implementation-Spec.md Section 4.7
 """
 
 import os
+from fnmatch import fnmatch
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple, Any
@@ -76,10 +77,11 @@ def scan_documents(
         if not dir_path.exists():
             continue
         for md_file in dir_path.rglob("*.md"):
-            # Check skip patterns
+            # Check skip patterns against full path for robust matching
             skip = False
+            path_str = str(md_file)
             for pattern in skip_patterns:
-                if md_file.match(pattern):
+                if fnmatch(path_str, pattern) or md_file.match(pattern):
                     skip = True
                     break
             if not skip:

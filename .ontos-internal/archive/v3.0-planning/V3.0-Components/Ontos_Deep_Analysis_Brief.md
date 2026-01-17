@@ -2,7 +2,7 @@
 id: ontos_deep_analysis_brief
 type: atom
 status: draft
-depends_on: [philosophy, mission, technical_architecture]
+depends_on: [philosophy, mission]
 concepts: [analysis, summary, marketing, v3]
 ---
 

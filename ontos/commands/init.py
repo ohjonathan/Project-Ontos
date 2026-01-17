@@ -39,7 +39,7 @@ def init_command(options: InitOptions) -> Tuple[int, str]:
     # 1. Check if already initialized
     config_path = project_root / ".ontos.toml"
     if config_path.exists() and not options.force:
-        return 1, "Already initialized. Use --force to reinitialize."
+        return 0, "Already initialized. Use --force to reinitialize."
 
     # 2. Check for git repository (handle worktrees)
     git_check = _check_git_repo(project_root)
@@ -64,10 +64,13 @@ def init_command(options: InitOptions) -> Tuple[int, str]:
     # 7. Install hooks (with collision safety)
     hooks_status = _install_hooks(project_root, options)
 
-    # 8. Build success message
+    # 8. Auto-generate AGENTS.md (non-fatal on failure)
+    _generate_agents_file(project_root)
+
+    # 9. Build success message
     msg = f"Initialized Ontos in {project_root}\n"
     msg += f"Created: .ontos.toml, {config.paths.context_map}\n"
-    msg += "Tip: Run 'ontos export' for AI assistant integration"
+    msg += "Tip: Run 'ontos agents' to regenerate instruction files"
 
     return hooks_status, msg
 
@@ -129,6 +132,34 @@ def _generate_initial_context_map(root: Path, config) -> None:
         print("Warning: Context map generation timed out", file=sys.stderr)
     except Exception as e:
         print(f"Warning: Could not generate initial context map: {e}", file=sys.stderr)
+
+
+def _generate_agents_file(root: Path) -> None:
+    """
+    Generate AGENTS.md file after init.
+    
+    Non-fatal on failure per spec v1.1 Section 4.3.1.
+    """
+    try:
+        from ontos.commands.agents import agents_command, AgentsOptions
+        
+        options = AgentsOptions(
+            output_path=root / "AGENTS.md",
+            force=False,
+            format="agents",
+            all_formats=False,
+        )
+        exit_code, message = agents_command(options)
+        
+        if exit_code == 0:
+            print("   ✓ AGENTS.md generated", file=sys.stderr)
+        elif exit_code == 1:
+            # File already exists, not an error
+            print("   ✓ AGENTS.md exists", file=sys.stderr)
+        else:
+            print(f"Warning: AGENTS.md generation failed: {message}", file=sys.stderr)
+    except Exception as e:
+        print(f"Warning: Could not generate AGENTS.md: {e}", file=sys.stderr)
 
 
 def _get_hooks_dir(root: Path) -> Path:

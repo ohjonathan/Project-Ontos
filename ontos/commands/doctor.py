@@ -366,6 +366,93 @@ def check_cli_availability() -> CheckResult:
     )
 
 
+def check_agents_staleness() -> CheckResult:
+    """Check 8: AGENTS.md is not stale relative to source files."""
+    # Use shared repo-root helper (M2 fix)
+    from ontos.commands.agents import find_repo_root
+    
+    repo_root = find_repo_root()
+    if repo_root is None:
+        repo_root = Path.cwd()  # Fallback for doctor — still check if possible
+    
+    agents_path = repo_root / "AGENTS.md"
+    
+    if not agents_path.exists():
+        return CheckResult(
+            name="agents_staleness",
+            status="warn",
+            message="AGENTS.md not found",
+            details="Run 'ontos agents' to generate"
+        )
+    
+    try:
+        agents_mtime = agents_path.stat().st_mtime
+        
+        # Get source file paths
+        source_paths = []
+        
+        # Context map
+        try:
+            from ontos.io.config import load_project_config
+            config = load_project_config()
+            context_map = repo_root / config.paths.context_map
+            logs_dir = repo_root / config.paths.logs_dir
+        except Exception:
+            context_map = repo_root / "Ontos_Context_Map.md"
+            logs_dir = repo_root / ".ontos-internal" / "logs"
+        
+        config_path = repo_root / ".ontos.toml"
+        
+        # Collect existing source file mtimes
+        source_mtimes = []
+        
+        if context_map.exists():
+            source_mtimes.append(context_map.stat().st_mtime)
+            source_paths.append(context_map.name)
+        
+        if config_path.exists():
+            source_mtimes.append(config_path.stat().st_mtime)
+            source_paths.append(config_path.name)
+        
+        if logs_dir.exists():
+            # M5 fix: Use max() for O(n) instead of sorted() O(n log n)
+            log_files = list(logs_dir.glob("*.md"))
+            if log_files:
+                max_log_mtime = max(f.stat().st_mtime for f in log_files)
+                source_mtimes.append(max_log_mtime)
+                source_paths.append(f"{logs_dir.name}/")
+        
+        if not source_mtimes:
+            return CheckResult(
+                name="agents_staleness",
+                status="warn",
+                message="Cannot determine AGENTS.md staleness - no source files found"
+            )
+        
+        max_source_mtime = max(source_mtimes)
+        
+        if agents_mtime < max_source_mtime:
+            return CheckResult(
+                name="agents_staleness",
+                status="warn",
+                message="AGENTS.md may be stale. Run 'ontos agents' to regenerate."
+            )
+        
+        return CheckResult(
+            name="agents_staleness",
+            status="pass",
+            message="AGENTS.md up to date"
+        )
+    
+    except Exception as e:
+        return CheckResult(
+            name="agents_staleness",
+            status="warn",
+            message="Could not check AGENTS.md staleness",
+            details=str(e)
+        )
+
+
 def doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
     """
     Run health checks and return results.
@@ -384,6 +471,7 @@ def doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
         check_context_map,
         check_validation,
         check_cli_availability,
+        check_agents_staleness,
     ]
 
     for check_fn in checks:

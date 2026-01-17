@@ -2,7 +2,7 @@
 id: phase2_implementation_instructions_antigravity
 type: strategy
 status: active
-depends_on: [phase2_implementation_spec, v3_0_technical_architecture, v3_0_implementation_roadmap, chief_architect_round2_critical_analysis]
+depends_on: [v3_0_technical_architecture, v3_0_implementation_roadmap, chief_architect_round2_critical_analysis]
 ---
 
 # Ontos v3.0 Phase 2: Implementation Instructions for Antigravity

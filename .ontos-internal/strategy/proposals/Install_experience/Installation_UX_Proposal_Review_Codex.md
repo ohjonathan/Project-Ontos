@@ -2,7 +2,7 @@
 id: installation_ux_proposal_review
 type: strategy
 status: draft
-depends_on: [installation_ux_proposal, philosophy, mission, ontos_manual]
+depends_on: [installation_ux_proposal, philosophy, mission]
 concepts: [ux, installation, dx, onboarding, packaging, security]
 ---
 

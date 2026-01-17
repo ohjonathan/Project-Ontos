@@ -2,7 +2,7 @@
 id: phase3_final_approval_chief_architect
 type: strategy
 status: complete
-depends_on: [phase3_code_verification_codex, phase3_fix_summary_antigravity, phase3_code_review_consolidation]
+depends_on: []
 concepts: [final-approval, pr-review, configuration, init, v3-transition]
 ---
 

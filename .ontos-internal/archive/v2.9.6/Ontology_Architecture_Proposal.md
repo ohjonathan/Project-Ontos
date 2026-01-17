@@ -2,7 +2,7 @@
 id: ontology_architecture_proposal
 type: strategy
 status: draft
-depends_on: [technical_architecture, constitution]
+depends_on: [constitution]
 concepts: [schema, docs, architecture, v2.9.6]
 ---
 

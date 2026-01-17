@@ -7,15 +7,15 @@ depends_on: [ontos_manual]
 
 # Ontos Agent Instructions
 
-> **v2.8+ Unified CLI:** All commands use `python3 ontos.py <command>`.
-> Old script paths still work but will show deprecation warnings in v2.9.
-> See [Ontos Manual Section 8](Ontos_Manual.md#8-unified-cli-v28) for details.
+> **v3.0 CLI:** All commands use `ontos <command>` (package installed via pip).
+> Use `python3 -m ontos <command>` if not installed globally.
+> See [Ontos Manual](Ontos_Manual.md) for details.
 
 ## Commands
 
 ### "Ontos" (Activate)
 1. Check for `Ontos_Context_Map.md`
-2. If missing: `python3 ontos.py map`
+2. If missing: `ontos map`
 3. Read map, identify relevant IDs for user's request
 4. **Check consolidation status (prompted/advisory modes only):**
    - Context map generation now shows consolidation warning when needed
@@ -24,9 +24,9 @@ depends_on: [ontos_manual]
 6. print("Loaded: [id1, id2]")
 
 ### "Query Ontos"
-1. `python3 ontos.py query --depends-on [id]` (Check dependencies)
-2. `python3 ontos.py query --concept [tag]` (Find by concept)
-3. `python3 ontos.py query --stale 30` (Find stale docs)
+1. `ontos query --depends-on [id]` (Check dependencies)
+2. `ontos query --concept [tag]` (Find by concept)
+3. `ontos query --stale 30` (Find stale docs)
 
 ### "Archive Ontos" (End Session)
 

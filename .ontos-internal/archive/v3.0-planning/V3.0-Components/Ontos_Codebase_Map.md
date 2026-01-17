@@ -2,7 +2,7 @@
 id: ontos_codebase_map
 type: atom
 status: draft
-depends_on: [philosophy, technical_architecture]
+depends_on: [philosophy]
 concepts: [architecture, codebase, reference, technical]
 ---
 

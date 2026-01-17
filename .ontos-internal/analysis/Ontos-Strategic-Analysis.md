@@ -2,7 +2,7 @@
 id: ontos_strategic_analysis
 type: strategy
 status: active
-depends_on: [mission, philosophy, ontology_spec, v3_0_technical_architecture]
+depends_on: [mission, philosophy, v3_0_technical_architecture]
 ---
 
 # Project Ontos: Strategic Analysis

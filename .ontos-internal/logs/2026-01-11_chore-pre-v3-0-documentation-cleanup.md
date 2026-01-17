@@ -5,6 +5,8 @@ status: active
 event_type: chore
 concepts: []
 impacts: []
+branch: unknown
+source: Claude Code
 ---
 
 # Session Log: Chore Pre V3 0 Documentation Cleanup

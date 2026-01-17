@@ -2,7 +2,7 @@
 id: chief_architect_phase3_response
 type: strategy
 status: active
-depends_on: [phase3_implementation_spec, phase3_review_consolidation]
+depends_on: [phase3_implementation_spec]
 concepts: [configuration, init, review-response, v3-transition]
 ---
 

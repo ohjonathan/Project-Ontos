@@ -2,7 +2,7 @@
 id: claude_opus_4_5_phase2_alignment_review
 type: atom
 status: complete
-depends_on: [phase2_implementation_spec, v3_0_implementation_roadmap, v3_0_technical_architecture, v3_0_strategy_decisions]
+depends_on: [v3_0_implementation_roadmap, v3_0_technical_architecture, v3_0_strategy_decisions]
 ---
 
 # Phase 2 Implementation Spec: Alignment Review

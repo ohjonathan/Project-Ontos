@@ -99,6 +99,13 @@ pip install ontos
 ontos init
 ```
 
+If pip install fails (PyPI not yet available), use git:
+
+```bash
+pip install git+https://github.com/ohjona/Project-Ontos.git
+ontos init
+```
+
 Or for development/custom installations:
 
 ```bash

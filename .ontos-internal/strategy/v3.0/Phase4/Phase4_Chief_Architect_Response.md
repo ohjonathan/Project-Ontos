@@ -2,7 +2,7 @@
 id: phase4_chief_architect_response
 type: strategy
 status: complete
-depends_on: [phase4_spec_review_consolidation]
+depends_on: []
 concepts: [chief-architect-response, exit-codes, legacy-deletion, windows-hooks, export-scope]
 ---
 

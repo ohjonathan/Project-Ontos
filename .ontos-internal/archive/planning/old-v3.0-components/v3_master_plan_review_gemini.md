@@ -2,7 +2,7 @@
 id: gemini_v3_master_plan_review_v1
 type: atom
 status: complete
-depends_on: [master_plan_v4]
+depends_on: []
 concepts: [architecture, review, v3, master-plan]
 ---
 

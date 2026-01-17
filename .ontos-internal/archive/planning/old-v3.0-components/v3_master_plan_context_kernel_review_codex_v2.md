@@ -2,7 +2,7 @@
 id: v3_master_plan_context_kernel_review_codex_v2
 type: strategy
 status: draft
-depends_on: [master_plan_v4]
+depends_on: []
 ---
 
 # Review: Strategic Master Plan & Context Kernel v3.0.0 (Synthesized Architect Edition)

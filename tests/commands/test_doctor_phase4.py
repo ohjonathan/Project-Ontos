@@ -105,10 +105,11 @@ class TestDoctorCommand:
              patch("ontos.commands.doctor.check_docs_directory") as mock_docs, \
              patch("ontos.commands.doctor.check_context_map") as mock_map, \
              patch("ontos.commands.doctor.check_validation") as mock_valid, \
-             patch("ontos.commands.doctor.check_cli_availability") as mock_cli:
+             patch("ontos.commands.doctor.check_cli_availability") as mock_cli, \
+             patch("ontos.commands.doctor.check_agents_staleness") as mock_agents:
 
             for mock in [mock_config, mock_hooks, mock_python, mock_docs,
-                        mock_map, mock_valid, mock_cli]:
+                        mock_map, mock_valid, mock_cli, mock_agents]:
                 mock.return_value = CheckResult(
                     name="test", status="pass", message="OK"
                 )
@@ -117,7 +118,7 @@ class TestDoctorCommand:
             exit_code, result = doctor_command(options)
 
             assert exit_code == 0
-            assert result.passed == 7
+            assert result.passed == 8
             assert result.failed == 0
 
     def test_returns_exit_code_1_when_check_fails(self):
@@ -128,10 +129,11 @@ class TestDoctorCommand:
              patch("ontos.commands.doctor.check_docs_directory") as mock_docs, \
              patch("ontos.commands.doctor.check_context_map") as mock_map, \
              patch("ontos.commands.doctor.check_validation") as mock_valid, \
-             patch("ontos.commands.doctor.check_cli_availability") as mock_cli:
+             patch("ontos.commands.doctor.check_cli_availability") as mock_cli, \
+             patch("ontos.commands.doctor.check_agents_staleness") as mock_agents:
 
             for mock in [mock_hooks, mock_python, mock_docs,
-                        mock_map, mock_valid, mock_cli]:
+                        mock_map, mock_valid, mock_cli, mock_agents]:
                 mock.return_value = CheckResult(
                     name="test", status="pass", message="OK"
                 )
@@ -187,3 +189,68 @@ class TestFormatDoctorOutput:
         )
         output = format_doctor_output(result, verbose=True)
         assert "Extra info" in output
+
+
+class TestCheckAgentsStaleness:
+    """Tests for check_agents_staleness (M8)."""
+
+    def test_warns_when_agents_not_found(self, tmp_path, monkeypatch):
+        """Should warn when AGENTS.md doesn't exist."""
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
+        
+        from ontos.commands.doctor import check_agents_staleness
+        result = check_agents_staleness()
+        
+        assert result.status == "warn"
+        assert "not found" in result.message.lower()
+
+    def test_passes_when_agents_up_to_date(self, tmp_path, monkeypatch):
+        """Should pass when AGENTS.md is newer than source files."""
+        import time
+        monkeypatch.chdir(tmp_path)
+        
+        # Create source files
+        (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
+        (tmp_path / "Ontos_Context_Map.md").write_text("# Map")
+        
+        # Wait and create AGENTS.md (newer)
+        time.sleep(0.1)
+        (tmp_path / "AGENTS.md").write_text("# AGENTS.md")
+        
+        from ontos.commands.doctor import check_agents_staleness
+        result = check_agents_staleness()
+        
+        assert result.status == "pass"
+        assert "up to date" in result.message.lower()
+
+    def test_warns_when_agents_stale(self, tmp_path, monkeypatch):
+        """Should warn when AGENTS.md is older than source files."""
+        import time
+        monkeypatch.chdir(tmp_path)
+        
+        # Create AGENTS.md first
+        (tmp_path / "AGENTS.md").write_text("# AGENTS.md")
+        
+        # Wait and create source files (newer)
+        time.sleep(0.1)
+        (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
+        
+        from ontos.commands.doctor import check_agents_staleness
+        result = check_agents_staleness()
+        
+        assert result.status == "warn"
+        assert "stale" in result.message.lower()
+
+    def test_warns_when_no_source_files(self, tmp_path, monkeypatch):
+        """Should warn when no source files can be found."""
+        monkeypatch.chdir(tmp_path)
+        # Only AGENTS.md, no config or context map
+        (tmp_path / "AGENTS.md").write_text("# AGENTS.md")
+        
+        from ontos.commands.doctor import check_agents_staleness
+        result = check_agents_staleness()
+        
+        assert result.status == "warn"
+        assert "no source files" in result.message.lower()
+

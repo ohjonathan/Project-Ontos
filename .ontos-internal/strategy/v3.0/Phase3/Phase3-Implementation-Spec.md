@@ -2,7 +2,7 @@
 id: phase3_implementation_spec
 type: strategy
 status: active
-depends_on: [v3_0_implementation_roadmap, v3_0_technical_architecture, phase2_implementation_spec]
+depends_on: [v3_0_implementation_roadmap, v3_0_technical_architecture]
 concepts: [configuration, init, toml, cli, v3-transition]
 ---
 

@@ -2,7 +2,7 @@
 id: ontos_technical_architecture_map
 type: atom
 status: active
-depends_on: [ontology_spec, v3_0_technical_architecture]
+depends_on: [v3_0_technical_architecture]
 ---
 
 # Project Ontos: Technical Architecture Map

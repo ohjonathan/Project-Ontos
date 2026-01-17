@@ -2,7 +2,7 @@
 id: claude_opus_4_5_phase1_review_round2
 type: atom
 status: complete
-depends_on: [phase1_package_structure_spec, claude_opus_4_5_phase1_review]
+depends_on: [phase1_package_structure_spec]
 ---
 
 # Phase 1 Spec Review — Round 2 (Verification)

@@ -2,7 +2,7 @@
 id: phase2_godscript_reduction_instructions_antigravity
 type: strategy
 status: active
-depends_on: [phase2_implementation_spec, phase2_implementation_instructions_antigravity]
+depends_on: [phase2_implementation_instructions_antigravity]
 ---
 
 # Ontos v3.0 Phase 2: God Script Reduction — REQUIRED

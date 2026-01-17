@@ -2,7 +2,7 @@
 id: chief_architect_round2_critical_analysis
 type: atom
 status: complete
-depends_on: [phase2_implementation_spec, phase2_spec_verification_review_gemini, phase2_implementation_spec_verification_review_codex_round2, claude_opus_4_5_phase2_verification_review]
+depends_on: [claude_opus_4_5_phase2_verification_review]
 ---
 
 # Chief Architect Critical Analysis: Round 2 Review Verification

@@ -43,13 +43,13 @@ class TestInitCommand:
         assert (git_repo / "docs" / "archive").is_dir()
 
     def test_init_already_initialized(self, git_repo):
-        """Init fails with exit code 1 if config exists."""
+        """Init returns exit code 0 if config exists (v3.0.0 LLM-friendly)."""
         (git_repo / ".ontos.toml").write_text("[ontos]\n")
 
         options = InitOptions(path=git_repo)
         code, msg = init_command(options)
 
-        assert code == 1
+        assert code == 0  # v3.0.0: LLM-friendly exit code
         assert "Already initialized" in msg
 
     def test_init_force_reinitialize(self, git_repo):
