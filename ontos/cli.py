@@ -270,9 +270,9 @@ def _cmd_map(args) -> int:
 
 def _cmd_log(args) -> int:
     """Handle log command."""
-    from ontos.commands.log import create_session_log, EndSessionOptions
+    from ontos.commands.log import log_command, LogOptions
 
-    options = EndSessionOptions(
+    options = LogOptions(
         epoch=args.epoch or "",
         title=args.title or "",
         auto=args.auto,
@@ -280,7 +280,7 @@ def _cmd_log(args) -> int:
         quiet=args.quiet,
     )
 
-    return create_session_log(options)
+    return log_command(options)
 
 
 def _cmd_doctor(args) -> int:

@@ -46,6 +46,16 @@ class EndSessionOptions:
     dry_run: bool = False
 
 
+@dataclass
+class LogOptions:
+    """CLI-level options for log command."""
+    epoch: str = ""
+    title: str = ""
+    auto: bool = False
+    json_output: bool = False
+    quiet: bool = False
+
+
 def create_session_log(
     project_root: Path,
     options: EndSessionOptions,
@@ -206,16 +216,79 @@ def _generate_auto_topic(commits: List[str]) -> str:
     """Generate topic from commit messages."""
     if not commits:
         return "session"
-    
+
     # Use first commit message as topic basis
     first_commit = commits[0]
-    
+
     # Clean up common prefixes
     prefixes = ["feat:", "fix:", "chore:", "docs:", "refactor:", "test:"]
     for prefix in prefixes:
         if first_commit.lower().startswith(prefix):
             first_commit = first_commit[len(prefix):].strip()
             break
-    
+
     # Take first 50 chars
     return first_commit[:50] if first_commit else "session"
+
+
+def log_command(options: LogOptions) -> int:
+    """Execute log command from CLI.
+
+    Orchestrates git info gathering, log creation, and file writing.
+
+    Args:
+        options: CLI-level log options
+
+    Returns:
+        Exit code (0 for success)
+    """
+    from ontos.io.git import (
+        get_git_root,
+        get_current_branch,
+        get_commits_since_push,
+        get_changed_files_since_push,
+    )
+
+    # Get project root
+    project_root = get_git_root()
+    if not project_root:
+        if not options.quiet:
+            print("Error: Not in a git repository")
+        return 1
+
+    # Gather git info
+    git_info = {
+        "branch": get_current_branch() or "unknown",
+        "commits": get_commits_since_push(),
+        "changed_files": get_changed_files_since_push(),
+    }
+
+    # Map CLI options to session options
+    session_options = EndSessionOptions(
+        event_type="chore",
+        topic=options.title if options.title else None,
+        auto_mode=options.auto,
+        source=options.epoch if options.epoch else "cli",
+    )
+
+    # Create the log content
+    content, output_path = create_session_log(project_root, session_options, git_info)
+
+    # Ensure directory exists
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Write the file
+    output_path.write_text(content, encoding="utf-8")
+
+    # Output result
+    if options.json_output:
+        import json
+        print(json.dumps({
+            "status": "success",
+            "path": str(output_path),
+            "log_id": output_path.stem,
+        }))
+    elif not options.quiet:
+        print(f"Session log created: {output_path}")
+
+    return 0
