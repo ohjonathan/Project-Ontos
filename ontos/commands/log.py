@@ -24,6 +24,7 @@ EVENT_TYPE_ALIASES = {
     "docs": "chore",
     "test": "chore",
     "perf": "refactor",
+    "release": "chore",
 }
 
 
@@ -49,8 +50,11 @@ class EndSessionOptions:
 @dataclass
 class LogOptions:
     """CLI-level options for log command."""
-    epoch: str = ""
+    event_type: str = ""
+    source: str = ""
+    epoch: str = ""  # Deprecated: alias for source
     title: str = ""
+    topic: str = ""
     auto: bool = False
     json_output: bool = False
     quiet: bool = False
@@ -264,11 +268,15 @@ def log_command(options: LogOptions) -> int:
     }
 
     # Map CLI options to session options
+    event_type = options.event_type or "chore"
+    if options.epoch and not options.source:
+        options.source = options.epoch
+
     session_options = EndSessionOptions(
-        event_type="chore",
-        topic=options.title if options.title else None,
+        event_type=event_type,
+        topic=options.title or options.topic or None,
         auto_mode=options.auto,
-        source=options.epoch if options.epoch else "cli",
+        source=options.source or "cli",
     )
 
     # Create the log content
@@ -279,6 +287,9 @@ def log_command(options: LogOptions) -> int:
 
     # Write the file
     output_path.write_text(content, encoding="utf-8")
+
+    # Create marker for pre-push enforcement (best effort)
+    _create_archive_marker(project_root, output_path)
 
     # Output result
     if options.json_output:
@@ -292,3 +303,14 @@ def log_command(options: LogOptions) -> int:
         print(f"Session log created: {output_path}")
 
     return 0
+
+
+def _create_archive_marker(project_root: Path, log_path: Path) -> None:
+    """Create marker file to signal that a session was archived."""
+    marker_path = project_root / ".ontos" / "session_archived"
+    try:
+        marker_path.parent.mkdir(parents=True, exist_ok=True)
+        marker_path.write_text(str(log_path), encoding="utf-8")
+    except OSError:
+        # Non-fatal: marker creation failure shouldn't break logging
+        pass

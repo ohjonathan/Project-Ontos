@@ -3,7 +3,7 @@ Entry point for `python -m ontos` invocation.
 
 This module enables running Ontos as a Python module:
     python -m ontos map
-    python -m ontos log -e feature -s "Session summary"
+    python -m ontos log -e feature -t "Session summary"
 """
 
 import sys
