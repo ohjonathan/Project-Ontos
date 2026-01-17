@@ -21,6 +21,85 @@ All notable changes to **Project Ontos itself** (the protocol and tooling) will 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] - 2026-01-17
+
+### Theme: "Root Cleanup"
+
+Final polish for v3.0 PyPI release.
+
+### Changed
+- **Root directory cleanup** — Removed legacy v2 scripts, backup files, and review documents
+  - Cleaner repository structure for PyPI distribution
+  - All functionality now accessible via `ontos` CLI
+
+---
+
+## [3.0.0] - 2026-01-15
+
+### Theme: "PyPI Distribution"
+
+Major release: Ontos is now installable via `pip install ontos`.
+
+### Added
+- **PyPI Distribution** — Install with `pip install ontos`
+  - Proper Python package structure (`ontos/` package)
+  - Console script entry point: `ontos` command available globally after install
+  - Dependencies: `pyyaml>=6.0`, `tomli>=2.0.1` (Python <3.11 only)
+- **`ontos agents` command** — Generate AI agent configuration files
+  - Creates `AGENTS.md` with project context for AI assistants
+  - Creates `.cursorrules` for Cursor IDE integration
+  - Staleness detection for regeneration prompts
+- **Full argparse CLI** — 13 commands with consistent interface
+  - `init`, `log`, `map`, `maintain`, `consolidate`, `query`, `update`
+  - `doctor`, `hook`, `export`, `verify`, `agents`, `version`
+- **`ontos doctor` command** — Health check with 8 validation checks
+  - Hook installation status
+  - Configuration validity
+  - Context map freshness
+  - Agents file staleness
+- **`ontos hook` command** — Manage git hooks
+  - `ontos hook install` / `ontos hook uninstall`
+  - `ontos hook status` / `ontos hook validate`
+- **`ontos export` command** — Export context for LLMs
+  - `--format json|markdown`
+  - Includes frontmatter, content, and metadata
+- **JSON output support** — `--json` flag for machine-readable output
+  - `JsonOutputHandler` for consistent JSON formatting
+  - Works with `map`, `doctor`, `export`, `query` commands
+- **Security hardening** — Input validation and path traversal protection
+  - Validate all user inputs
+  - Secure file operations
+
+### Changed
+- **License** — Changed from MIT to Proprietary
+- **Package structure** — Reorganized into proper Python package
+  - `ontos/core/` — Pure logic modules
+  - `ontos/ui/` — I/O and display modules
+  - `ontos/_scripts/` — Bundled scripts for backwards compatibility
+  - `ontos/_templates/` — Bundled templates
+  - `ontos/_hooks/` — Bundled git hooks
+- **CLI entry point** — All commands via `ontos <command>` (previously `python3 ontos.py <command>`)
+- **Configuration** — Uses `pyproject.toml` or `ontos.toml` (TOML format)
+  - Legacy `ontos_config.py` still supported with deprecation notice
+
+### Removed
+- **Legacy scripts** — Direct script invocation deprecated
+  - `ontos_*.py` scripts archived but still bundled
+  - Use `ontos <command>` instead
+- **`ontos_lib.py`** — Fully removed (use `ontos.core.*` imports)
+
+### Migration Guide
+```bash
+# Old way (deprecated)
+python3 .ontos/scripts/ontos_end_session.py --source "Claude"
+
+# New way
+pip install ontos
+ontos log --source "Claude"
+```
+
+---
+
 ## [2.9.5] - 2026-01-08
 
 ### Theme: "Quality & Testing"
