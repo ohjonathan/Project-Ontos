@@ -1,7 +1,7 @@
 ---
 type: generated
 generator: ontos_generate_context_map
-generated: "2026-01-17 15:19:45 UTC"
+generated: "2026-01-17 19:02:51 UTC"
 mode: Contributor
 scanned: .ontos-internal
 ---
@@ -10,7 +10,7 @@ scanned: .ontos-internal
 > When you run `ontos map` in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2026-01-17 10:19:45
+Generated on: 2026-01-17 14:02:51
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -249,6 +249,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **log_20260116_version_rename** [L1] (2026-01-16_version-rename.md) ~140 tokens  ⚠️ active
   - Status: active
   - Impacts: None
+- **log_20260117_v3_0_0_activation_survival** [L2] (2026-01-17_v3_0_0_activation_survival.md) ~683 tokens
+  - Status: active
+  - Impacts: ontos_agent_instructions, agents_command, doctor_staleness
 
 ### UNKNOWN
 - **migration_v2_to_v3** [L2] (Migration_v2_to_v3.md) ~760 tokens
@@ -266,6 +269,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 
 ## 2. Recent Timeline
+- **2026-01-17** [feature] **V3 0 0 Activation Survival** (`log_20260117_v3_0_0_activation_survival`)
+  - Impacted: `ontos_agent_instructions`, `agents_command`, `doctor_staleness`
+  - Concepts: activation, agents, pypi, cli
 - **2026-01-16** [chore] **Version Rename** (`log_20260116_version_rename`)
 - **2026-01-15** [chore] **Philosophy Docs Update** (`log_20260115_philosophy_docs_update`)
 - **2026-01-14** [chore] **Philosophy Research And Tech Debt** (`log_20260114_philosophy_research_and_tech_debt`)
@@ -282,11 +288,8 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   - Impacted: `ontos_strategic_analysis`, `ontos_technical_architecture_map`
   - Concepts: strategy, architecture, ontology
 - **2026-01-12** [chore] **Phase2 Core Decomposition** (`log_20260112_phase2_core_decomposition`)
-- **2026-01-12** [feature] **Phase1 V3 0 Alpha** (`log_20260112_phase1_v3_0_alpha`)
-  - Impacted: `v3_0_implementation_roadmap`
-  - Concepts: pip-package, cli, refactoring
 
-*Showing 10 of 26 sessions*
+*Showing 10 of 27 sessions*
 
 ## 3. Dependency Audit
 - [ORPHAN] **migration_v2_to_v3** (docs/reference/Migration_v2_to_v3.md) has no dependents
@@ -297,6 +300,10 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   Fix: strategy should not depend on atom. Invert the dependency or change document types
 - [ARCHITECTURE] **phase5_implementation_spec** (strategy) depends on **phase4_final_approval_chief_architect** (approval)
   Fix: strategy should not depend on approval. Invert the dependency or change document types
+- [BROKEN LINK] **log_20260117_v3_0_0_activation_survival** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-17_v3_0_0_activation_survival.md) impacts non-existent document: `agents_command`
+  Fix: Create `agents_command`, correct the reference, or archive this log
+- [BROKEN LINK] **log_20260117_v3_0_0_activation_survival** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-17_v3_0_0_activation_survival.md) impacts non-existent document: `doctor_staleness`
+  Fix: Create `doctor_staleness`, correct the reference, or archive this log
 - [LINT] **log_20260113_phase2_v3_0_beta**: Invalid status 'auto-generated'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
 - [LINT] **phase4_implementation_spec**: Invalid status 'approved'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
 
@@ -346,6 +353,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 | log_20260114_philosophy_research_and_tech_debt | [2026-01-14_philosophy-research-and-tech-debt.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-14_philosophy-research-and-tech-debt.md) | log |
 | log_20260115_philosophy_docs_update | [2026-01-15_philosophy-docs-update.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-15_philosophy-docs-update.md) | log |
 | log_20260116_version_rename | [2026-01-16_version-rename.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-16_version-rename.md) | log |
+| log_20260117_v3_0_0_activation_survival | [2026-01-17_v3_0_0_activation_survival.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-17_v3_0_0_activation_survival.md) | log |
 | maintain_command_v3_proposal | [Maintain_Command_v3_Proposal.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/Maintain_Command_v3_Proposal.md) | strategy |
 | migration_v2_to_v3 | [Migration_v2_to_v3.md](docs/reference/Migration_v2_to_v3.md) | reference |
 | mission | [mission.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/mission.md) | kernel |
