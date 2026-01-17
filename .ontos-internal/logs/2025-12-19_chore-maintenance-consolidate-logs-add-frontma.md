@@ -3,8 +3,15 @@ id: log_20251219_chore_maintenance_consolidate_logs_add_frontma
 type: log
 status: active
 event_type: chore
-concepts: [maintenance, consolidation, frontmatter, type-hierarchy]
-impacts: [schema]
+concepts:
+- maintenance
+- consolidation
+- frontmatter
+- type-hierarchy
+impacts:
+- schema
+branch: unknown
+source: Claude
 ---
 
 # Session Log: Maintenance - Consolidate Logs & Add Frontmatter

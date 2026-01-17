@@ -2,7 +2,7 @@
 id: phase1_package_structure_spec
 type: strategy
 status: draft
-depends_on: [phase0_golden_master_spec, v3_0_implementation_roadmap]
+depends_on: [v3_0_implementation_roadmap]
 ---
 
 # Phase 1 Implementation Spec: Package Structure

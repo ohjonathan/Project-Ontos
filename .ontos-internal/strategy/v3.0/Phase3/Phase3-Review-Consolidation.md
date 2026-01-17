@@ -2,7 +2,7 @@
 id: phase3_review_consolidation
 type: strategy
 status: complete
-depends_on: [phase3_implementation_spec, claude_opus_4_5_phase3_alignment_review, phase3_implementation_spec_review_codex]
+depends_on: [phase3_implementation_spec]
 concepts: [review, consolidation, phase3, configuration, init]
 ---
 

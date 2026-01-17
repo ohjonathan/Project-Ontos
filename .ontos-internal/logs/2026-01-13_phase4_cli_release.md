@@ -4,18 +4,15 @@ type: log
 status: active
 session_date: 2026-01-13
 epoch: phase4
-impacts:
-  - ontos_manual
-  - cli
-  - json_output
-  - hook
-  - doctor
-  - export
+impacts: []
 concepts:
-  - argparse_cli
-  - json_output
-  - shim_hooks
-  - legacy_cleanup
+- argparse_cli
+- json_output
+- shim_hooks
+- legacy_cleanup
+branch: unknown
+source: unknown
+event_type: chore
 ---
 
 # Phase 4: Full CLI Release — Session Log

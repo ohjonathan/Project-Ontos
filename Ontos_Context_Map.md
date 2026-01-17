@@ -1,7 +1,7 @@
 ---
 type: generated
 generator: ontos_generate_context_map
-generated: "2026-01-17 14:57:46 UTC"
+generated: "2026-01-17 15:19:45 UTC"
 mode: Contributor
 scanned: .ontos-internal
 ---
@@ -10,7 +10,7 @@ scanned: .ontos-internal
 > When you run `ontos map` in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2026-01-17 09:57:46
+Generated on: 2026-01-17 10:19:45
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -40,7 +40,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 ### STRATEGY
 - **chief_architect_phase3_response** [L2] (Chief_Architect_Phase3_Response.md) ~3,200 tokens
   - Status: active
-  - Depends On: phase3_implementation_spec, phase3_review_consolidation
+  - Depends On: phase3_implementation_spec
 - **install_experience_technical_debt_proposal** [L2] [draft] (Install_Experience_Technical_Debt_Proposal.md) ~2,000 tokens
   - Status: draft
   - Depends On: v3_0_implementation_roadmap, installation_ux_proposal
@@ -67,7 +67,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   - Depends On: v3_0_implementation_roadmap, v3_0_technical_architecture
 - **phase1_package_structure_spec** [L2] [draft] (phase1_implementation_spec.md) ~7,300 tokens
   - Status: draft
-  - Depends On: phase0_golden_master_spec, v3_0_implementation_roadmap
+  - Depends On: v3_0_implementation_roadmap
 - **phase2_godscript_reduction_instructions_antigravity** [L2] (Phase2_GodScript_Reduction_Instructions_Antigravity.md) ~4,900 tokens
   - Status: active
   - Depends On: phase2_implementation_instructions_antigravity
@@ -79,16 +79,16 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   - Depends On: None
 - **phase3_implementation_prompt_antigravity** [L2] (Phase3_Implementation_Prompt_Antigravity.md) ~8,000 tokens
   - Status: active
-  - Depends On: phase3_implementation_spec, chief_architect_phase3_response
+  - Depends On: phase3_implementation_spec
 - **phase3_implementation_spec** [L2] (Phase3-Implementation-Spec.md) ~7,500 tokens
   - Status: active
   - Depends On: v3_0_implementation_roadmap, v3_0_technical_architecture
 - **phase3_pr_review_chief_architect** [L2] (Phase3_PR_Review_Chief_Architect.md) ~3,600 tokens
   - Status: active
-  - Depends On: phase3_implementation_spec, phase3_implementation_prompt_antigravity
+  - Depends On: phase3_implementation_spec
 - **phase3_review_consolidation** [L2] (Phase3-Review-Consolidation.md) ~5,100 tokens
   - Status: complete
-  - Depends On: phase3_implementation_spec, claude_opus_4_5_phase3_alignment_review, phase3_implementation_spec_review_codex
+  - Depends On: phase3_implementation_spec
 - **phase4_chief_architect_response** [L1] (Phase4_Chief_Architect_Response.md) ~3,700 tokens  ⚠️ complete
   - Status: complete
   - Depends On: None
@@ -136,9 +136,9 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **claude_opus_4_5_phase1_review** [L2] (Claude_Opus_4.5_Phase1_Review.md) ~2,900 tokens
   - Status: complete
   - Depends On: phase1_package_structure_spec
-- **claude_opus_4_5_phase1_review_round2** [L2] (Claude_Opus_4.5_Phase1_Review_Round2.md) ~895 tokens
+- **claude_opus_4_5_phase1_review_round2** [L2] (Claude_Opus_4.5_Phase1_Review_Round2.md) ~887 tokens
   - Status: complete
-  - Depends On: phase1_package_structure_spec, claude_opus_4_5_phase1_review
+  - Depends On: phase1_package_structure_spec
 - **claude_opus_4_5_phase2_alignment_review** [L2] (Claude_Opus_4.5_Phase2_Alignment_Review.md) ~3,100 tokens
   - Status: complete
   - Depends On: v3_0_implementation_roadmap, v3_0_technical_architecture, v3_0_strategy_decisions
@@ -173,80 +173,80 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 ### LOG
 - **log_20251218_v2_6_1_graduation** [L1] (2025-12-18_v2-6-1-graduation.md) ~971 tokens  ⚠️ active
   - Status: active
-  - Impacts: ontos_agent_instructions, ontos_manual
-- **log_20251219_chore_maintenance_consolidate_logs_add_frontma** [L2] (2025-12-19_chore-maintenance-consolidate-logs-add-frontma.md) ~332 tokens
+  - Impacts: None
+- **log_20251219_chore_maintenance_consolidate_logs_add_frontma** [L2] (2025-12-19_chore-maintenance-consolidate-logs-add-frontma.md) ~340 tokens
   - Status: active
   - Impacts: schema
-- **log_20251219_docs_graduate_master_plan_to_strategy_reorganize** [L2] (2025-12-19_docs-graduate-master-plan-to-strategy-reorganize.md) ~553 tokens
+- **log_20251219_docs_graduate_master_plan_to_strategy_reorganize** [L2] (2025-12-19_docs-graduate-master-plan-to-strategy-reorganize.md) ~562 tokens
   - Status: active
   - Impacts: philosophy
-- **log_20251220_v2_7_1** [L1] (2025-12-20_v2-7-1.md) ~383 tokens  ⚠️ active
+- **log_20251220_v2_7_1** [L1] (2025-12-20_v2-7-1.md) ~392 tokens  ⚠️ active
   - Status: active
   - Impacts: None
-- **log_20260107_v2_9_5_quality_release** [L1] (2026-01-07_v2-9-5-quality-release.md) ~265 tokens  ⚠️ active
+- **log_20260107_v2_9_5_quality_release** [L1] (2026-01-07_v2-9-5-quality-release.md) ~284 tokens  ⚠️ active
   - Status: active
   - Impacts: None
-- **log_20260108_housekeeping_archive_docs** [L2] (2026-01-08_housekeeping-archive-docs.md) ~446 tokens
+- **log_20260108_housekeeping_archive_docs** [L2] (2026-01-08_housekeeping-archive-docs.md) ~450 tokens
   - Status: active
   - Impacts: None
-- **log_20260111_chore_pre_v3_0_documentation_cleanup** [L1] (2026-01-11_chore-pre-v3-0-documentation-cleanup.md) ~110 tokens  ⚠️ active
+- **log_20260111_chore_pre_v3_0_documentation_cleanup** [L1] (2026-01-11_chore-pre-v3-0-documentation-cleanup.md) ~119 tokens  ⚠️ active
   - Status: active
   - Impacts: None
-- **log_20260111_fix_v2_9_6_correct_false_implemented_status_cl** [L1] (2026-01-11_fix-v2-9-6-correct-false-implemented-status-cl.md) ~115 tokens  ⚠️ active
+- **log_20260111_fix_v2_9_6_correct_false_implemented_status_cl** [L1] (2026-01-11_fix-v2-9-6-correct-false-implemented-status-cl.md) ~124 tokens  ⚠️ active
   - Status: active
   - Impacts: None
 - **log_20260111_ontology_architecture_research** [L2] (2026-01-11_docs-v3-0-add-technical-architecture-and-finaliz.md) ~1,200 tokens
   - Status: active
   - Impacts: constitution, philosophy, schema
-- **log_20260111_v2_9_6** [L1] (2026-01-11_v2-9-6.md) ~126 tokens  ⚠️ active
-  - Status: active
-  - Impacts: ontology_spec
-- **log_20260111_v2_9_6_ontology_architecture** [L1] (2026-01-11_v2-9-6-ontology-architecture.md) ~135 tokens  ⚠️ active
+- **log_20260111_v2_9_6** [L1] (2026-01-11_v2-9-6.md) ~131 tokens  ⚠️ active
   - Status: active
   - Impacts: None
-- **log_20260111_v2_9_6_round2_revision** [L1] (2026-01-11_v2-9-6-round2-revision.md) ~341 tokens  ⚠️ active
+- **log_20260111_v2_9_6_ontology_architecture** [L1] (2026-01-11_v2-9-6-ontology-architecture.md) ~144 tokens  ⚠️ active
   - Status: active
   - Impacts: None
-- **log_20260112_feat_v2_9_6_ontology_single_source_of_truth** [L2] (2026-01-12_feat-v2-9-6-ontology-single-source-of-truth.md) ~620 tokens
+- **log_20260111_v2_9_6_round2_revision** [L1] (2026-01-11_v2-9-6-round2-revision.md) ~350 tokens  ⚠️ active
   - Status: active
-  - Impacts: ontology_spec
-- **log_20260112_phase0_v3_0_alpha** [L2] (2026-01-12_phase0-v3-0-alpha.md) ~734 tokens
+  - Impacts: None
+- **log_20260112_feat_v2_9_6_ontology_single_source_of_truth** [L2] (2026-01-12_feat-v2-9-6-ontology-single-source-of-truth.md) ~623 tokens
+  - Status: active
+  - Impacts: None
+- **log_20260112_phase0_v3_0_alpha** [L2] (2026-01-12_phase0-v3-0-alpha.md) ~745 tokens
   - Status: active
   - Impacts: phase0_golden_master_spec
-- **log_20260112_phase1_package_structure_complete** [L1] (2026-01-12_phase1-package-structure-complete.md) ~115 tokens  ⚠️ active
-  - Status: active
-  - Impacts: ontos, packaging, CLI
-- **log_20260112_phase1_v3_0_alpha** [L2] (2026-01-12_phase1-v3-0-alpha.md) ~455 tokens
-  - Status: active
-  - Impacts: v3_0_implementation_roadmap
-- **log_20260112_phase2_core_decomposition** [L1] (2026-01-12_phase2-core-decomposition.md) ~107 tokens  ⚠️ active
-  - Status: active
-  - Impacts: ontos
-- **log_20260112_v2_9_6_cleanup** [L2] (2026-01-12_chore-v2-9-6-cleanup.md) ~312 tokens
+- **log_20260112_phase1_package_structure_complete** [L1] (2026-01-12_phase1-package-structure-complete.md) ~120 tokens  ⚠️ active
   - Status: active
   - Impacts: None
-- **log_20260113_analysis_docs_generation** [L2] (2026-01-13_analysis-docs-generation.md) ~339 tokens
+- **log_20260112_phase1_v3_0_alpha** [L2] (2026-01-12_phase1-v3-0-alpha.md) ~466 tokens
+  - Status: active
+  - Impacts: v3_0_implementation_roadmap
+- **log_20260112_phase2_core_decomposition** [L1] (2026-01-12_phase2-core-decomposition.md) ~116 tokens  ⚠️ active
+  - Status: active
+  - Impacts: None
+- **log_20260112_v2_9_6_cleanup** [L2] (2026-01-12_chore-v2-9-6-cleanup.md) ~322 tokens
+  - Status: active
+  - Impacts: None
+- **log_20260113_analysis_docs_generation** [L2] (2026-01-13_analysis-docs-generation.md) ~348 tokens
   - Status: active
   - Impacts: ontos_strategic_analysis, ontos_technical_architecture_map
-- **log_20260113_integrate_analysis_docs** [L1] (2026-01-13_integrate-analysis-docs.md) ~118 tokens  ⚠️ active
+- **log_20260113_integrate_analysis_docs** [L1] (2026-01-13_integrate-analysis-docs.md) ~127 tokens  ⚠️ active
   - Status: active
   - Impacts: ontos_strategic_analysis, ontos_technical_architecture_map
-- **log_20260113_phase2_v3_0_beta** [L1] (2026-01-13_phase2-v3-0-beta.md) ~192 tokens  ⚠️ auto-generated
+- **log_20260113_phase2_v3_0_beta** [L1] (2026-01-13_phase2-v3-0-beta.md) ~197 tokens  ⚠️ auto-generated
   - Status: auto-generated
   - Impacts: None
 - **log_20260113_phase4_cli_release** [L2] (2026-01-13_phase4_cli_release.md) ~1,800 tokens
   - Status: active
-  - Impacts: ontos_manual, cli, json_output, hook, doctor, export
-- **log_20260113_v3_0_1_release** [L1] (2026-01-13_v3_0_1_release.md) ~922 tokens  ⚠️ active
+  - Impacts: None
+- **log_20260113_v3_0_1_release** [L1] (2026-01-13_v3_0_1_release.md) ~921 tokens  ⚠️ active
   - Status: active
-  - Impacts: v3_0_implementation_roadmap, phase5_implementation_spec, migration_v2_to_v3
-- **log_20260114_philosophy_research_and_tech_debt** [L2] (2026-01-14_philosophy-research-and-tech-debt.md) ~926 tokens
+  - Impacts: v3_0_implementation_roadmap, phase5_implementation_spec
+- **log_20260114_philosophy_research_and_tech_debt** [L2] (2026-01-14_philosophy-research-and-tech-debt.md) ~929 tokens
   - Status: active
-  - Impacts: ontos_philosophy_and_ontology, ontos_manual, obsidian_compatibility_proposal, install_experience_technical_debt_proposal, maintain_command_v3_proposal
-- **log_20260115_philosophy_docs_update** [L1] (2026-01-15_philosophy-docs-update.md) ~107 tokens  ⚠️ active
+  - Impacts: ontos_philosophy_and_ontology, obsidian_compatibility_proposal, install_experience_technical_debt_proposal, maintain_command_v3_proposal
+- **log_20260115_philosophy_docs_update** [L1] (2026-01-15_philosophy-docs-update.md) ~115 tokens  ⚠️ active
   - Status: active
   - Impacts: None
-- **log_20260116_version_rename** [L1] (2026-01-16_version-rename.md) ~132 tokens  ⚠️ active
+- **log_20260116_version_rename** [L1] (2026-01-16_version-rename.md) ~140 tokens  ⚠️ active
   - Status: active
   - Impacts: None
 
@@ -269,12 +269,11 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **2026-01-16** [chore] **Version Rename** (`log_20260116_version_rename`)
 - **2026-01-15** [chore] **Philosophy Docs Update** (`log_20260115_philosophy_docs_update`)
 - **2026-01-14** [chore] **Philosophy Research And Tech Debt** (`log_20260114_philosophy_research_and_tech_debt`)
-  - Impacted: `ontos_philosophy_and_ontology`, `ontos_manual`, `obsidian_compatibility_proposal`, `install_experience_technical_debt_proposal`, `maintain_command_v3_proposal`
+  - Impacted: `ontos_philosophy_and_ontology`, `obsidian_compatibility_proposal`, `install_experience_technical_debt_proposal`, `maintain_command_v3_proposal`
   - Concepts: philosophy, ontology, architecture, documentation, technical-debt
 - **2026-01-13** [feature] **V3 0 1 Release** (`log_20260113_v3_0_1_release`)
-  - Impacted: `v3_0_implementation_roadmap`, `phase5_implementation_spec`, `migration_v2_to_v3`
-- **2026-01-13** [None] **Phase4 Cli Release** (`log_20260113_phase4_cli_release`)
-  - Impacted: `ontos_manual`, `cli`, `json_output`, `hook`, `doctor`, `export`
+  - Impacted: `v3_0_implementation_roadmap`, `phase5_implementation_spec`
+- **2026-01-13** [chore] **Phase4 Cli Release** (`log_20260113_phase4_cli_release`)
   - Concepts: argparse_cli, json_output, shim_hooks, legacy_cleanup
 - **2026-01-13** [chore] **Phase2 V3 0 Beta** (`log_20260113_phase2_v3_0_beta`)
 - **2026-01-13** [chore] **Integrate Analysis Docs** (`log_20260113_integrate_analysis_docs`)
@@ -283,7 +282,6 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   - Impacted: `ontos_strategic_analysis`, `ontos_technical_architecture_map`
   - Concepts: strategy, architecture, ontology
 - **2026-01-12** [chore] **Phase2 Core Decomposition** (`log_20260112_phase2_core_decomposition`)
-  - Impacted: `ontos`
 - **2026-01-12** [feature] **Phase1 V3 0 Alpha** (`log_20260112_phase1_v3_0_alpha`)
   - Impacted: `v3_0_implementation_roadmap`
   - Concepts: pip-package, cli, refactoring
@@ -293,46 +291,12 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 ## 3. Dependency Audit
 - [ORPHAN] **migration_v2_to_v3** (docs/reference/Migration_v2_to_v3.md) has no dependents
   Fix: Add `migration_v2_to_v3` to another document's depends_on, or delete if unused
-- [DEPTH] **claude_opus_4_5_phase1_review** has dependency depth 6 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **phase3_implementation_prompt_antigravity** has dependency depth 8 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **chief_architect_phase3_response** has dependency depth 7 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **phase3_pr_review_chief_architect** has dependency depth 9 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **claude_opus_4_5_phase1_review_round2** has dependency depth 7 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **phase3_review_consolidation** has dependency depth 6 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [ARCHITECTURE] **phase3_review_consolidation** (strategy) depends on **claude_opus_4_5_phase3_alignment_review** (atom)
-  Fix: strategy should not depend on atom. Invert the dependency or change document types
-- [ARCHITECTURE] **phase3_review_consolidation** (strategy) depends on **phase3_implementation_spec_review_codex** (unknown)
-  Fix: strategy should not depend on unknown. Invert the dependency or change document types
+- [ORPHAN] **phase3_implementation_spec_review_codex** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase3/Phase3-Implementation-Spec-Review-Codex.md) has no dependents
+  Fix: Add `phase3_implementation_spec_review_codex` to another document's depends_on, or delete if unused
 - [ARCHITECTURE] **phase2_implementation_instructions_antigravity** (strategy) depends on **chief_architect_round2_critical_analysis** (atom)
   Fix: strategy should not depend on atom. Invert the dependency or change document types
 - [ARCHITECTURE] **phase5_implementation_spec** (strategy) depends on **phase4_final_approval_chief_architect** (approval)
   Fix: strategy should not depend on approval. Invert the dependency or change document types
-- [MISSING FIELD] **log_20260113_phase4_cli_release** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-13_phase4_cli_release.md) is type 'log' but missing required field: event_type
-  Fix: Add `event_type: feature|fix|refactor|exploration|chore` to frontmatter
-- [BROKEN LINK] **log_20260112_phase2_core_decomposition** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-12_phase2-core-decomposition.md) impacts non-existent document: `ontos`
-  Fix: Create `ontos`, correct the reference, or archive this log
-- [BROKEN LINK] **log_20260112_phase1_package_structure_complete** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-12_phase1-package-structure-complete.md) impacts non-existent document: `ontos`
-  Fix: Create `ontos`, correct the reference, or archive this log
-- [BROKEN LINK] **log_20260112_phase1_package_structure_complete** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-12_phase1-package-structure-complete.md) impacts non-existent document: `packaging`
-  Fix: Create `packaging`, correct the reference, or archive this log
-- [BROKEN LINK] **log_20260112_phase1_package_structure_complete** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-12_phase1-package-structure-complete.md) impacts non-existent document: `CLI`
-  Fix: Create `CLI`, correct the reference, or archive this log
-- [BROKEN LINK] **log_20260113_phase4_cli_release** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-13_phase4_cli_release.md) impacts non-existent document: `cli`
-  Fix: Create `cli`, correct the reference, or archive this log
-- [BROKEN LINK] **log_20260113_phase4_cli_release** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-13_phase4_cli_release.md) impacts non-existent document: `json_output`
-  Fix: Create `json_output`, correct the reference, or archive this log
-- [BROKEN LINK] **log_20260113_phase4_cli_release** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-13_phase4_cli_release.md) impacts non-existent document: `hook`
-  Fix: Create `hook`, correct the reference, or archive this log
-- [BROKEN LINK] **log_20260113_phase4_cli_release** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-13_phase4_cli_release.md) impacts non-existent document: `doctor`
-  Fix: Create `doctor`, correct the reference, or archive this log
-- [BROKEN LINK] **log_20260113_phase4_cli_release** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/logs/2026-01-13_phase4_cli_release.md) impacts non-existent document: `export`
-  Fix: Create `export`, correct the reference, or archive this log
 - [LINT] **log_20260113_phase2_v3_0_beta**: Invalid status 'auto-generated'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
 - [LINT] **phase4_implementation_spec**: Invalid status 'approved'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
 

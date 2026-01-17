@@ -2,7 +2,7 @@
 id: phase3_pr_review_chief_architect
 type: strategy
 status: active
-depends_on: [phase3_implementation_spec, phase3_implementation_prompt_antigravity]
+depends_on: [phase3_implementation_spec]
 concepts: [pr-review, configuration, init, v3-transition]
 ---
 

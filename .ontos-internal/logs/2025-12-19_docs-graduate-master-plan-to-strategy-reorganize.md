@@ -3,8 +3,14 @@ id: log_20251219_docs_graduate_master_plan_to_strategy_reorganize
 type: log
 status: active
 event_type: chore
-concepts: [governance, proposals, graduation]
-impacts: [philosophy]
+concepts:
+- governance
+- proposals
+- graduation
+impacts:
+- philosophy
+branch: unknown
+source: Claude
 ---
 
 # Session Log: Docs Graduate Master Plan To Strategy Reorganize

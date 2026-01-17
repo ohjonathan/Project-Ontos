@@ -4,8 +4,12 @@ type: log
 status: active
 event_type: chore
 branch: main
-concepts: [housekeeping, archival, documentation]
+concepts:
+- housekeeping
+- archival
+- documentation
 impacts: []
+source: unknown
 ---
 
 # Housekeeping: Archive Completed Work & Update Docs

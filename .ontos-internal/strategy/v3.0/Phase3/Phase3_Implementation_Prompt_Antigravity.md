@@ -2,7 +2,7 @@
 id: phase3_implementation_prompt_antigravity
 type: strategy
 status: active
-depends_on: [phase3_implementation_spec, chief_architect_phase3_response]
+depends_on: [phase3_implementation_spec]
 concepts: [configuration, init, implementation, v3-transition]
 ---
 

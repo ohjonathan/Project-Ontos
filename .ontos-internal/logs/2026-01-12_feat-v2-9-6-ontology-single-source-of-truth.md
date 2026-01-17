@@ -3,15 +3,16 @@ id: log_20260112_feat_v2_9_6_ontology_single_source_of_truth
 type: log
 status: active
 event_type: feature
-impacts:
-  - ontology_spec
+impacts: []
 concepts:
-  - ontology
-  - single-source-of-truth
-  - immutability
-  - import-safety
-ontos_schema: "2.2"
+- ontology
+- single-source-of-truth
+- immutability
+- import-safety
+ontos_schema: '2.2'
 curation_level: L2
+branch: unknown
+source: unknown
 ---
 
 # v2.9.6: Ontology Single Source of Truth (PR #38)

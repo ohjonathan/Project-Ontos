@@ -5,6 +5,8 @@ status: active
 event_type: chore
 concepts: []
 impacts: []
+branch: unknown
+source: claude
 ---
 
 # Session Log: Philosophy Docs Update
