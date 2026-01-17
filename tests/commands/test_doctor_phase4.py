@@ -105,10 +105,11 @@ class TestDoctorCommand:
              patch("ontos.commands.doctor.check_docs_directory") as mock_docs, \
              patch("ontos.commands.doctor.check_context_map") as mock_map, \
              patch("ontos.commands.doctor.check_validation") as mock_valid, \
-             patch("ontos.commands.doctor.check_cli_availability") as mock_cli:
+             patch("ontos.commands.doctor.check_cli_availability") as mock_cli, \
+             patch("ontos.commands.doctor.check_agents_staleness") as mock_agents:
 
             for mock in [mock_config, mock_hooks, mock_python, mock_docs,
-                        mock_map, mock_valid, mock_cli]:
+                        mock_map, mock_valid, mock_cli, mock_agents]:
                 mock.return_value = CheckResult(
                     name="test", status="pass", message="OK"
                 )
@@ -117,7 +118,7 @@ class TestDoctorCommand:
             exit_code, result = doctor_command(options)
 
             assert exit_code == 0
-            assert result.passed == 7
+            assert result.passed == 8
             assert result.failed == 0
 
     def test_returns_exit_code_1_when_check_fails(self):
@@ -128,10 +129,11 @@ class TestDoctorCommand:
              patch("ontos.commands.doctor.check_docs_directory") as mock_docs, \
              patch("ontos.commands.doctor.check_context_map") as mock_map, \
              patch("ontos.commands.doctor.check_validation") as mock_valid, \
-             patch("ontos.commands.doctor.check_cli_availability") as mock_cli:
+             patch("ontos.commands.doctor.check_cli_availability") as mock_cli, \
+             patch("ontos.commands.doctor.check_agents_staleness") as mock_agents:
 
             for mock in [mock_hooks, mock_python, mock_docs,
-                        mock_map, mock_valid, mock_cli]:
+                        mock_map, mock_valid, mock_cli, mock_agents]:
                 mock.return_value = CheckResult(
                     name="test", status="pass", message="OK"
                 )

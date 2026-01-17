@@ -2,8 +2,8 @@
 """
 Health check and diagnostics command.
 
-Implements 7 health checks per Roadmap 6.4 and Spec v1.1 Section 4.2.
-Decision: Option B (Standard) - all 7 checks with graceful error handling.
+Implements 8 health checks per Roadmap 6.4 and Spec v1.1 Section 4.2.
+Decision: Option B (Standard) - all 8 checks with graceful error handling.
 """
 
 import shutil
@@ -366,6 +366,51 @@ def check_cli_availability() -> CheckResult:
     )
 
 
+def check_agents_staleness() -> CheckResult:
+    """Check 8: AGENTS.md is up-to-date with context map."""
+    agents_path = Path.cwd() / "AGENTS.md"
+
+    if not agents_path.exists():
+        return CheckResult(
+            name="agents_staleness",
+            status="warn",
+            message="AGENTS.md not found",
+            details="Run 'ontos agents' to generate"
+        )
+
+    # Check against context map
+    try:
+        from ontos.io.config import load_project_config
+        config = load_project_config()
+        context_map = Path.cwd() / config.paths.context_map
+    except Exception:
+        context_map = Path.cwd() / "Ontos_Context_Map.md"
+
+    if not context_map.exists():
+        return CheckResult(
+            name="agents_staleness",
+            status="pass",
+            message="AGENTS.md present (no context map to compare)"
+        )
+
+    agents_mtime = agents_path.stat().st_mtime
+    map_mtime = context_map.stat().st_mtime
+
+    if agents_mtime < map_mtime:
+        return CheckResult(
+            name="agents_staleness",
+            status="warn",
+            message="AGENTS.md may be stale",
+            details="Context map is newer. Run 'ontos agents' to regenerate."
+        )
+
+    return CheckResult(
+        name="agents_staleness",
+        status="pass",
+        message="AGENTS.md up-to-date"
+    )
+
+
 def doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
     """
     Run health checks and return results.
@@ -384,6 +429,7 @@ def doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
         check_context_map,
         check_validation,
         check_cli_availability,
+        check_agents_staleness,
     ]
 
     for check_fn in checks:

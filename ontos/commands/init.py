@@ -29,8 +29,7 @@ def init_command(options: InitOptions) -> Tuple[int, str]:
         Tuple of (exit_code, message)
 
     Exit Codes:
-        0: Success
-        1: Already initialized (use --force)
+        0: Success (or already initialized)
         2: Not a git repository
         3: Hooks skipped due to existing non-Ontos hooks
     """
@@ -39,7 +38,7 @@ def init_command(options: InitOptions) -> Tuple[int, str]:
     # 1. Check if already initialized
     config_path = project_root / ".ontos.toml"
     if config_path.exists() and not options.force:
-        return 1, "Already initialized. Use --force to reinitialize."
+        return 0, "Already initialized. Use --force to reinitialize."
 
     # 2. Check for git repository (handle worktrees)
     git_check = _check_git_repo(project_root)
@@ -61,13 +60,19 @@ def init_command(options: InitOptions) -> Tuple[int, str]:
     # 6. Generate initial context map
     _generate_initial_context_map(project_root, config)
 
+    # 6b. Generate instruction files (AGENTS.md)
+    agents_success = _generate_instruction_files(project_root)
+
     # 7. Install hooks (with collision safety)
     hooks_status = _install_hooks(project_root, options)
 
     # 8. Build success message
     msg = f"Initialized Ontos in {project_root}\n"
-    msg += f"Created: .ontos.toml, {config.paths.context_map}\n"
-    msg += "Tip: Run 'ontos export' for AI assistant integration"
+    created_files = f".ontos.toml, {config.paths.context_map}"
+    if agents_success:
+        created_files += ", AGENTS.md"
+    msg += f"Created: {created_files}\n"
+    msg += "Run 'ontos doctor' to verify setup"
 
     return hooks_status, msg
 
@@ -129,6 +134,27 @@ def _generate_initial_context_map(root: Path, config) -> None:
         print("Warning: Context map generation timed out", file=sys.stderr)
     except Exception as e:
         print(f"Warning: Could not generate initial context map: {e}", file=sys.stderr)
+
+
+def _generate_instruction_files(root: Path) -> bool:
+    """Generate AGENTS.md after init.
+
+    Returns:
+        True if successful, False otherwise.
+    """
+    try:
+        from ontos.commands.agents import agents_command, AgentsOptions
+        options = AgentsOptions(format="agents", force=False)
+        code, msg = agents_command(options)
+        if code == 0:
+            print("   ✓ AGENTS.md generated", file=sys.stderr)
+            return True
+        else:
+            print(f"Warning: Could not generate AGENTS.md: {msg}", file=sys.stderr)
+            return False
+    except Exception as e:
+        print(f"Warning: Could not generate instruction files: {e}", file=sys.stderr)
+        return False
 
 
 def _get_hooks_dir(root: Path) -> Path:

@@ -69,7 +69,8 @@ def create_parser() -> argparse.ArgumentParser:
     _register_map(subparsers, global_parser)
     _register_log(subparsers, global_parser)
     _register_doctor(subparsers, global_parser)
-    _register_export(subparsers, global_parser)
+    _register_agents(subparsers, global_parser)
+    _register_export(subparsers, global_parser)  # Deprecated alias
     _register_hook(subparsers, global_parser)
     _register_verify(subparsers, global_parser)
     _register_query(subparsers, global_parser)
@@ -124,6 +125,18 @@ def _register_doctor(subparsers, parent):
     p.add_argument("--verbose", "-v", action="store_true",
                    help="Show detailed output")
     p.set_defaults(func=_cmd_doctor)
+
+
+def _register_agents(subparsers, parent):
+    """Register agents command."""
+    p = subparsers.add_parser("agents", help="Generate AI instruction files", parents=[parent])
+    p.add_argument("--format", "-f", choices=["agents", "cursor", "all"],
+                   default="agents", help="Output format (default: agents)")
+    p.add_argument("--force", action="store_true",
+                   help="Overwrite existing file")
+    p.add_argument("--output", "-o", type=Path,
+                   help="Output path (optional)")
+    p.set_defaults(func=_cmd_agents)
 
 
 def _register_export(subparsers, parent):
@@ -296,22 +309,56 @@ def _cmd_doctor(args) -> int:
     return exit_code
 
 
-def _cmd_export(args) -> int:
-    """Handle export command."""
-    from ontos.commands.export import export_command, ExportOptions
+def _cmd_agents(args) -> int:
+    """Handle agents command."""
+    from ontos.commands.agents import agents_command, AgentsOptions
 
-    options = ExportOptions(
+    options = AgentsOptions(
+        format=args.format,
         output_path=args.output,
         force=args.force,
     )
 
-    exit_code, message = export_command(options)
+    exit_code, message = agents_command(options)
 
     if args.json:
         emit_json({
             "status": "success" if exit_code == 0 else "error",
             "message": message,
             "exit_code": exit_code
+        })
+    elif not args.quiet:
+        print(message)
+
+    return exit_code
+
+
+def _cmd_export(args) -> int:
+    """Handle export command (deprecated, use 'agents' instead)."""
+    import warnings
+
+    # Show deprecation warning
+    if not args.quiet:
+        print("Warning: 'ontos export' is deprecated. Use 'ontos agents' instead.", file=sys.stderr)
+
+    # Delegate to agents command with agents format
+    from ontos.commands.agents import agents_command, AgentsOptions
+
+    options = AgentsOptions(
+        format="agents",
+        output_path=args.output,
+        force=args.force,
+    )
+
+    exit_code, message = agents_command(options)
+
+    if args.json:
+        emit_json({
+            "status": "success" if exit_code == 0 else "error",
+            "message": message,
+            "exit_code": exit_code,
+            "deprecated": True,
+            "suggestion": "Use 'ontos agents' instead"
         })
     elif not args.quiet:
         print(message)

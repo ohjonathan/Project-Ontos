@@ -122,10 +122,10 @@ class TestCLIDoctorCommand:
 
 
 class TestCLIExportCommand:
-    """Tests for export command via CLI."""
+    """Tests for export command via CLI (deprecated, delegates to agents)."""
 
     def test_export_creates_file(self, tmp_path, monkeypatch):
-        """export should create CLAUDE.md."""
+        """export should create AGENTS.md (delegates to agents command)."""
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
 
@@ -135,7 +135,9 @@ class TestCLIExportCommand:
         )
 
         assert result.returncode == 0
-        assert (tmp_path / "CLAUDE.md").exists()
+        assert (tmp_path / "AGENTS.md").exists()
+        # Verify deprecation warning is shown
+        assert "deprecated" in result.stderr.lower()
 
 
 class TestCLIInitCommand:
