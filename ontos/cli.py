@@ -238,40 +238,17 @@ def _cmd_init(args) -> int:
 
 
 def _cmd_map(args) -> int:
-    """Handle map command.
-    
-    Uses -m module invocation for proper package imports in source checkouts.
-    """
-    cmd = [sys.executable, "-m", "ontos._scripts.ontos_generate_context_map"]
-    if args.strict:
-        cmd.append("--strict")
-    if args.output:
-        cmd.extend(["--output", str(args.output)])
-    
-    try:
-        result = subprocess.run(cmd, capture_output=True, text=True, env=_get_subprocess_env(), cwd=str(Path(__file__).parent.parent))
-        
-        if args.json:
-            # Wrap output in JSON format
-            emit_json({
-                "status": "success" if result.returncode == 0 else "error",
-                "message": "Context map generated" if result.returncode == 0 else "Generation failed",
-                "output": result.stdout.strip() if result.stdout else None,
-                "exit_code": result.returncode
-            })
-        elif not args.quiet:
-            if result.stdout:
-                print(result.stdout, end="")
-            if result.stderr:
-                print(result.stderr, file=sys.stderr, end="")
-        
-        return result.returncode
-    except Exception as e:
-        if args.json:
-            emit_error(f"Map execution failed: {e}", "E_EXEC_FAIL")
-        else:
-            print(f"Error: {e}", file=sys.stderr)
-        return 5
+    """Handle map command."""
+    from ontos.commands.map import map_command, MapOptions
+
+    options = MapOptions(
+        output=args.output,
+        strict=args.strict,
+        json_output=args.json,
+        quiet=args.quiet,
+    )
+
+    return map_command(options)
 
 
 def _cmd_log(args) -> int:

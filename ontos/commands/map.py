@@ -8,6 +8,7 @@ Phase 2 Decomposition - Created from Phase2-Implementation-Spec.md Section 4.10
 """
 
 from __future__ import annotations
+import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -257,29 +258,140 @@ def _generate_staleness_section(docs: Dict[str, DocumentData]) -> Optional[str]:
 def _generate_lint_section(docs: Dict[str, DocumentData], result: ValidationResult) -> Optional[str]:
     """Generate lint warnings section."""
     lint_issues = []
-    
+
     for doc in docs.values():
         doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
-        
+
         # Check for empty impacts on logs
         if doc_type == "log":
             impacts = doc.frontmatter.get("impacts", [])
             if not impacts:
                 lint_issues.append(f"**{doc.id}**: Empty impacts on log")
-        
+
         # Check for too many concepts
         concepts = doc.frontmatter.get("concepts", [])
         if len(concepts) > 6:
             lint_issues.append(f"**{doc.id}**: {len(concepts)} concepts (recommended: 2-4)")
-    
+
     if not lint_issues and not result.warnings:
         return None
-    
+
     lines = ["## Lint Warnings"]
     lines.append("")
-    
+
     for issue in lint_issues[:20]:  # Limit display
         lines.append(f"- ⚠️ {issue}")
-    
+
     return "\n".join(lines)
+
+
+@dataclass
+class MapOptions:
+    """CLI-level options for map command."""
+    output: Optional[Path] = None
+    strict: bool = False
+    json_output: bool = False
+    quiet: bool = False
+
+
+def map_command(options: MapOptions) -> int:
+    """Execute map command from CLI.
+
+    Orchestrates document scanning, loading, map generation, and file writing.
+
+    Args:
+        options: CLI-level map options
+
+    Returns:
+        Exit code (0 for success, 1 for errors, 2 for warnings in strict mode)
+    """
+    from ontos.io.files import find_project_root, scan_documents, load_document
+    from ontos.io.config import load_project_config
+    from ontos.io.yaml import parse_frontmatter_content
+
+    # Find project root
+    try:
+        project_root = find_project_root()
+    except FileNotFoundError as e:
+        if options.json_output:
+            print(json.dumps({"status": "error", "message": str(e)}))
+        elif not options.quiet:
+            print(f"Error: {e}")
+        return 1
+
+    # Load config
+    try:
+        config = load_project_config(repo_root=project_root)
+    except Exception as e:
+        if options.json_output:
+            print(json.dumps({"status": "error", "message": f"Config error: {e}"}))
+        elif not options.quiet:
+            print(f"Config error: {e}")
+        return 1
+
+    # Determine paths
+    docs_dir = project_root / config.paths.docs_dir
+    output_path = options.output or (project_root / config.paths.context_map)
+
+    # Scan for documents
+    doc_paths = scan_documents(
+        [docs_dir, project_root],
+        skip_patterns=config.scanning.skip_patterns
+    )
+
+    # Load documents
+    docs: Dict[str, DocumentData] = {}
+    for path in doc_paths:
+        try:
+            doc = load_document(path, parse_frontmatter_content)
+            docs[doc.id] = doc
+        except Exception as e:
+            if not options.quiet:
+                print(f"Warning: Failed to load {path}: {e}")
+
+    # Build config dict for generation
+    gen_config = {
+        "project_name": project_root.name,
+        "version": config.ontos.version,
+        "allowed_orphan_types": config.validation.allowed_orphan_types,
+    }
+
+    # Generate context map
+    gen_options = GenerateMapOptions(
+        output_path=output_path,
+        strict=options.strict,
+        max_dependency_depth=config.validation.max_dependency_depth,
+    )
+
+    content, result = generate_context_map(docs, gen_config, gen_options)
+
+    # Write output
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(content, encoding="utf-8")
+
+    # Determine exit code
+    exit_code = 0
+    if result.errors:
+        exit_code = 1
+    elif options.strict and result.warnings:
+        exit_code = 2
+
+    # Output result
+    if options.json_output:
+        print(json.dumps({
+            "status": "success" if exit_code == 0 else "error",
+            "path": str(output_path),
+            "documents": len(docs),
+            "errors": len(result.errors),
+            "warnings": len(result.warnings),
+        }))
+    elif not options.quiet:
+        print(f"Context map generated: {output_path}")
+        print(f"  Documents: {len(docs)}")
+        if result.errors:
+            print(f"  Errors: {len(result.errors)}")
+        if result.warnings:
+            print(f"  Warnings: {len(result.warnings)}")
+
+    return exit_code
 
