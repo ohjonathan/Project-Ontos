@@ -97,8 +97,7 @@ def compare_exit_code(expected: int, actual: int, name: str) -> ComparisonResult
 
 def run_map_command(fixture_path: Path) -> dict:
     """Run map command and return normalized results."""
-    # Copy ontos.py and .ontos/ to fixture
-    shutil.copy(PROJECT_ROOT / "ontos.py", fixture_path / "ontos.py")
+    # Copy .ontos/ to fixture (v3.0: ontos is installed as package, no ontos.py)
     if (fixture_path / ".ontos").exists():
         shutil.rmtree(fixture_path / ".ontos")
     shutil.copytree(
@@ -109,7 +108,7 @@ def run_map_command(fixture_path: Path) -> dict:
 
     try:
         result = subprocess.run(
-            [sys.executable, "ontos.py", "map"],
+            [sys.executable, "-m", "ontos", "map"],
             cwd=fixture_path,
             capture_output=True,
             text=True,
@@ -161,7 +160,7 @@ def run_log_command(fixture_path: Path) -> dict:
     try:
         result = subprocess.run(
             [
-                sys.executable, "ontos.py", "log",
+                sys.executable, "-m", "ontos", "log",
                 "-e", "chore",
                 "-s", "Golden Master Compare",
                 "--auto"
@@ -274,8 +273,7 @@ def compare_fixture(fixture_name: str) -> bool:
         shutil.rmtree(fixture_path)
         fixture_path = setup_fixture(fixture_name)
 
-        # Copy ontos again for log command
-        shutil.copy(PROJECT_ROOT / "ontos.py", fixture_path / "ontos.py")
+        # Copy .ontos/ for log command (v3.0: ontos is installed as package)
         shutil.copytree(
             PROJECT_ROOT / ".ontos",
             fixture_path / ".ontos",

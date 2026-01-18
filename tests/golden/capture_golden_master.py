@@ -190,7 +190,7 @@ def setup_fixture(fixture_name: str) -> Path:
 
 def capture_map_command(fixture_path: Path) -> dict:
     """
-    Capture output of `python3 ontos.py map` command.
+    Capture output of `python -m ontos map` command.
 
     Returns dict with:
     - stdout: normalized stdout
@@ -198,8 +198,7 @@ def capture_map_command(fixture_path: Path) -> dict:
     - exit_code: int
     - context_map: normalized content of generated file
     """
-    # Copy ontos.py and .ontos/ to fixture (simulates installed state)
-    shutil.copy(PROJECT_ROOT / "ontos.py", fixture_path / "ontos.py")
+    # Copy .ontos/ to fixture (v3.0: ontos is installed as package)
     shutil.copytree(
         PROJECT_ROOT / ".ontos",
         fixture_path / ".ontos",
@@ -208,7 +207,7 @@ def capture_map_command(fixture_path: Path) -> dict:
 
     try:
         result = subprocess.run(
-            [sys.executable, "ontos.py", "map"],
+            [sys.executable, "-m", "ontos", "map"],
             cwd=fixture_path,
             capture_output=True,
             text=True,
@@ -240,7 +239,7 @@ def capture_map_command(fixture_path: Path) -> dict:
 
 def capture_log_command(fixture_path: Path, event_type: str = "chore") -> dict:
     """
-    Capture output of `python3 ontos.py log` command.
+    Capture output of `python -m ontos log` command.
 
     Note: Uses --auto flag to avoid interactive prompts.
 
@@ -271,7 +270,7 @@ def capture_log_command(fixture_path: Path, event_type: str = "chore") -> dict:
     try:
         result = subprocess.run(
             [
-                sys.executable, "ontos.py", "log",
+                sys.executable, "-m", "ontos", "log",
                 "-e", event_type,
                 "-s", "Golden Master Capture",
                 "--auto"
