@@ -68,7 +68,7 @@ Before starting, verify your environment:
 ```bash
 # 1. Correct directory
 pwd
-# Expected: /Users/jonathanoh/Dev/Project-Ontos
+# Expected: ~/Dev/Project-Ontos
 
 # 2. Correct branch
 git branch --show-current

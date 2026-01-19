@@ -314,7 +314,7 @@ The architectural decisions are sound:
 
 | Document | Reviewer | Status |
 |----------|----------|--------|
-| v2.7_documentation_ontology.md | Johnny + Architect | Philosophy proposal |
+| v2.7_documentation_ontology.md | Project Lead + Architect | Philosophy proposal |
 | Claude_V2.7Phil_v1.md | Claude (Co-Founder) | Initial review |
 | Codex_V2.7Phil_v1.md | Codex (Co-Founder) | Initial review |
 | Gemini_V2.7Phil_v1.md | Gemini (Co-Founder) | Initial review |

@@ -4,7 +4,7 @@
 **Status:** Ready for Implementation  
 **Created:** 2025-12-14  
 **Revised:** 2025-12-14  
-**Authors:** Johnny (Human), Claude Opus 4.5, Claude Code, ChatGPT Codex, Google Gemini  
+**Authors:** Project Lead (Human), Claude Opus 4.5, Claude Code, ChatGPT Codex, Google Gemini  
 
 ---
 

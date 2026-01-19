@@ -53,7 +53,7 @@ Before starting, verify:
 
 ```bash
 # 1. You're in the correct directory
-pwd  # Should show: /Users/jonathanoh/Dev/Project-Ontos
+pwd  # Should show: ~/Dev/Project-Ontos
 
 # 2. You're on the correct branch
 git branch --show-current  # Should show: Phase2_V3.0_beta

@@ -21,3 +21,14 @@ Thumbs.db
 .ontos/session_archived
 ontos.egg-info/
 dist/
+
+# Local IDE settings
+.claude/settings.local.json
+**/.claude/settings.local.json
+
+# Environment files
+.env
+.env.*
+
+# Pytest cache
+.pytest_cache/

@@ -42,7 +42,7 @@ Synthesize technical co-founder reviews (Codex, Claude, Gemini) of the v2.7 Docu
 
 ## 4. Next Steps
 
-1. Review synthesis with Johnny for final approval
+1. Review synthesis with Project Lead for final approval
 2. If philosophy approved, create v2.7 implementation proposal
 3. Begin implementation: schema → context map → staleness detection → verification workflow
 

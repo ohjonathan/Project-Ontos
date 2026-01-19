@@ -38,7 +38,7 @@
 $ tmpdir=$(mktemp -d)
 $ cd "$tmpdir" && git init -q
 $ printf "# Test Doc\n" > README.md
-$ PYTHONPATH=/Users/jonathanoh/Dev/Project-Ontos python3 -m ontos map
+$ PYTHONPATH=~/Dev/Project-Ontos python3 -m ontos map
 Errors (33):
   - ... (validation errors from repo content)
 ```

@@ -17,14 +17,14 @@ Event Type: feature
 
 Create a philosophical framework proposal for v2.7 "Documentation Ontology" - a system to detect when user-facing documentation becomes stale after atom changes.
 
-This is a philosophy proposal (not implementation) per Johnny's explicit request:
+This is a philosophy proposal (not implementation) per Project Lead's explicit request:
 > "I think even before a proposal doc for implementation, we may need to make a proposal doc for philosophy / strategy update."
 
 ## 2. Key Decisions
 
 **Captured via Q&A dialogue:**
 
-| Question | Johnny's Answer |
+| Question | Project Lead's Answer |
 |----------|-----------------|
 | Q1: Where should the link live? | Combination of frontmatter + manifest, bidirectional indication needed |
 | Q2: What triggers staleness? | Version bumps (primary), Archive Ontos (fallback for non-versioned projects) |
@@ -43,8 +43,8 @@ This is a philosophy proposal (not implementation) per Johnny's explicit request
 - Created v2.7 proposal directory: `.ontos-internal/strategy/proposals/v2.7/`
 - Created philosophy proposal: `v2.7_documentation_ontology.md`
   - Preamble explaining why philosophy proposal precedes implementation
-  - Part I: Original problem from Johnny's observation
-  - Part II: Q&A dialogue with Johnny's answers
+  - Part I: Original problem from Project Lead's observation
+  - Part II: Q&A dialogue with Project Lead's answers
   - Part III: Philosophical deep dive (second-order atoms, bidirectionality)
   - Part IV: Proposed model (`documents` relationship)
   - Part V: Open questions requiring resolution
@@ -62,7 +62,7 @@ This is a philosophy proposal (not implementation) per Johnny's explicit request
 
 ## 4. Next Steps
 
-1. Review philosophy proposal with Johnny
+1. Review philosophy proposal with Project Lead
 2. Resolve open questions:
    - Frontmatter vs manifest as source of truth
    - Section-level tracking worth complexity?
@@ -71,13 +71,13 @@ This is a philosophy proposal (not implementation) per Johnny's explicit request
 
 ## 5. Notable Quotes
 
-Johnny on the importance of this work:
+Project Lead on the importance of this work:
 > "This is getting deep. I don't think you are overcomplicating these; I think this is important."
 
-Johnny on bidirectionality:
+Project Lead on bidirectionality:
 > "Dependency (or, at least indication of relationships) need to be bi-directional."
 
-Johnny on doc independence:
+Project Lead on doc independence:
 > "I don't think so, because they can exist on their own... they all have their own independence."
 
 ---

@@ -11,7 +11,7 @@ concepts: [ux, installation, friction, testing]
 **Date:** 2025-12-18
 **Installer:** Claude (AI Agent)
 **Project Ontos Version:** 2.5.2
-**Target Repository:** Test-Personal-ERP (empty project)
+**Target Repository:** Test project (empty project)
 
 ---
 
@@ -53,8 +53,8 @@ The installation process required significant manual intervention, undocumented 
 ### Step 3: Copy Core Files ✅
 **Actions:**
 ```bash
-cp -r /tmp/Project-Ontos/.ontos /Users/jonathanoh/Dev/Test-Personal-ERP/
-cp /tmp/Project-Ontos/ontos_init.py /Users/jonathanoh/Dev/Test-Personal-ERP/
+cp -r /tmp/Project-Ontos/.ontos ~/Dev/Test-Project/
+cp /tmp/Project-Ontos/ontos_init.py ~/Dev/Test-Project/
 ```
 **Result:** Success
 **Friction:** None (once files were identified)

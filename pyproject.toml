@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "Proprietary"}
 authors = [
-    {name = "Ontos Project", email = "ontos@example.com"}
+    {name = "Ontos Project", email = "ohjona@users.noreply.github.com"}
 ]
 keywords = ["documentation", "ai", "context", "llm", "developer-tools"]
 classifiers = [

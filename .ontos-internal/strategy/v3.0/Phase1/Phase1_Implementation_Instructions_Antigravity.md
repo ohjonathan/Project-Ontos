@@ -27,7 +27,7 @@ Before starting, verify:
 
 ```bash
 # 1. You're in the correct directory
-pwd  # Should show: /Users/jonathanoh/Dev/Project-Ontos
+pwd  # Should show: ~/Dev/Project-Ontos
 
 # 2. Git is clean (or stash changes)
 git status
@@ -45,7 +45,7 @@ python -m pytest tests/ -v --tb=short
 
 ### Step 1.1: Create `pyproject.toml`
 
-**File:** `/Users/jonathanoh/Dev/Project-Ontos/pyproject.toml`
+**File:** `~/Dev/Project-Ontos/pyproject.toml`
 
 **Action:** Create new file with this exact content:
 
@@ -152,7 +152,7 @@ mkdir -p ontos/_scripts
 
 ### Step 1.3: Create `ontos/__init__.py`
 
-**File:** `/Users/jonathanoh/Dev/Project-Ontos/ontos/__init__.py`
+**File:** `~/Dev/Project-Ontos/ontos/__init__.py`
 
 **CRITICAL:** This must preserve EXACT v2.8 API exports. Copy from `.ontos/scripts/ontos/__init__.py` and only change version.
 
@@ -222,7 +222,7 @@ from ontos.ui.output import OutputHandler
 
 ### Step 1.4: Create `ontos/__main__.py`
 
-**File:** `/Users/jonathanoh/Dev/Project-Ontos/ontos/__main__.py`
+**File:** `~/Dev/Project-Ontos/ontos/__main__.py`
 
 **Action:** Create new file:
 
@@ -245,7 +245,7 @@ if __name__ == "__main__":
 
 ### Step 1.5: Create `ontos/cli.py`
 
-**File:** `/Users/jonathanoh/Dev/Project-Ontos/ontos/cli.py`
+**File:** `~/Dev/Project-Ontos/ontos/cli.py`
 
 **Action:** Create new file:
 
@@ -765,7 +765,7 @@ cd ..
 
 ### Step 4.1: Update `.github/workflows/ci.yml`
 
-**File:** `/Users/jonathanoh/Dev/Project-Ontos/.github/workflows/ci.yml`
+**File:** `~/Dev/Project-Ontos/.github/workflows/ci.yml`
 
 **Action:** Replace content with:
 

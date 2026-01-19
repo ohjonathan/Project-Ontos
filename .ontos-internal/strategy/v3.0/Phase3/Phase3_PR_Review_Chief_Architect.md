@@ -302,7 +302,7 @@ Pre-existing failures (unrelated to Phase 3):
 ```bash
 $ python3 -m ontos init
 Warning: Legacy .ontos/scripts/ detected. Consider migrating.
-Initialized Ontos in /Users/jonathanoh/Dev/Project-Ontos
+Initialized Ontos in ~/Dev/Project-Ontos
 Created: .ontos.toml, Ontos_Context_Map.md
 ```
 
@@ -475,7 +475,7 @@ After Antigravity pushes the fix, run these commands to verify:
 
 ```bash
 # From project directory
-cd /Users/jonathanoh/Dev/Project-Ontos
+cd ~/Dev/Project-Ontos
 git pull origin phase3-config-init
 pip3 install -e .
 

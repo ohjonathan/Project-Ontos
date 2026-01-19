@@ -1,6 +1,6 @@
 # Project Ontos v3.0: Comprehensive Strategic Analysis
 
-**Prepared for:** Johnny (Project Lead)  
+**Prepared for:** Project Lead (Project Lead)  
 **Prepared by:** Technical Co-Founder Analysis  
 **Date:** January 8, 2026  
 **Document Version:** 1.0  
@@ -1133,7 +1133,7 @@ description = "Context-aware documentation for the agentic era"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "Johnny", email = "johnny@example.com"}
+    {name = "Project Lead", email = "johnny@example.com"}
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -2503,10 +2503,10 @@ description = "Context-aware documentation for the agentic era"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "Johnny"}
+    {name = "Project Lead"}
 ]
 maintainers = [
-    {name = "Johnny"}
+    {name = "Project Lead"}
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
