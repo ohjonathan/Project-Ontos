@@ -2,7 +2,6 @@
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Tuple
-import subprocess
 import sys
 
 from ontos.core.config import default_config, ConfigError
@@ -103,24 +102,38 @@ def _create_directories(root: Path, config) -> None:
 
 
 def _generate_initial_context_map(root: Path, config) -> None:
-    """Generate initial context map by running the map command."""
+    """Generate initial context map by running the map command.
+
+    Non-fatal on failure - creates placeholder if native command fails.
+    """
     try:
-        # Use subprocess to call the bundled map script
-        # This is the same approach the legacy init uses
-        bundled_map = Path(__file__).resolve().parent.parent / "_scripts" / "ontos_generate_context_map.py"
-        if bundled_map.exists():
-            result = subprocess.run(
-                [sys.executable, str(bundled_map)],
-                cwd=str(root),
-                capture_output=True,
-                timeout=30
+        from ontos.commands.map import map_command, MapOptions
+
+        # Save current working directory and change to project root
+        import os
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(str(root))
+
+            options = MapOptions(
+                output=root / config.paths.context_map,
+                strict=False,
+                json_output=False,
+                quiet=True,  # Suppress verbose output during init
             )
-            if result.returncode == 0:
+            exit_code = map_command(options)
+
+            if exit_code == 0:
                 print("   ✓ Context map generated", file=sys.stderr)
             else:
-                print(f"Warning: Context map generation returned code {result.returncode}", file=sys.stderr)
-        else:
-            # Fallback: create a minimal context map placeholder
+                print(f"Warning: Context map generation returned code {exit_code}", file=sys.stderr)
+        finally:
+            os.chdir(original_cwd)
+
+    except Exception as e:
+        # Fallback: create a minimal context map placeholder
+        print(f"Warning: Could not generate context map: {e}", file=sys.stderr)
+        try:
             context_map_path = root / config.paths.context_map
             if not context_map_path.exists():
                 context_map_path.write_text(
@@ -128,10 +141,8 @@ def _generate_initial_context_map(root: Path, config) -> None:
                     "> Run `ontos map` to generate the full context map.\n"
                 )
                 print("   ✓ Created placeholder context map", file=sys.stderr)
-    except subprocess.TimeoutExpired:
-        print("Warning: Context map generation timed out", file=sys.stderr)
-    except Exception as e:
-        print(f"Warning: Could not generate initial context map: {e}", file=sys.stderr)
+        except Exception as fallback_error:
+            print(f"Warning: Could not create placeholder: {fallback_error}", file=sys.stderr)
 
 
 def _generate_agents_file(root: Path) -> None:

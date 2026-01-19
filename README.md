@@ -205,6 +205,22 @@ v3.0 transformed Ontos from repo-injected scripts into a pip-installable package
 
 ---
 
+## Known Issues (v3.0.2)
+
+| Command | Status | Workaround |
+|---------|--------|------------|
+| `ontos verify` | Broken | Use `python3 -m ontos doctor` for basic validation |
+| `ontos query` | Broken | Manual grep/search |
+| `ontos consolidate` | Broken | Manual log archival |
+
+**Legacy script limitation:** Commands `scaffold`, `stub`, `promote`, `migrate`
+ignore `.ontos.toml` configuration. Use native CLI commands (`init`, `map`, `doctor`,
+`agents`) which respect config settings.
+
+These issues are tracked for v3.0.3.
+
+---
+
 ## Documentation
 
 - **[Ontos Manual](docs/reference/Ontos_Manual.md)**: Complete reference—installation, workflow, configuration, errors

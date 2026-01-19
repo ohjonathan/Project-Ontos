@@ -157,3 +157,47 @@ class TestCLICommands:
         """agents command should run without crashing."""
         result = self.run_cli('agents', '--help')
         assert result.returncode == 0
+
+
+class TestLegacyScriptExecution:
+    """Test that fixed legacy scripts execute without ModuleNotFoundError.
+
+    These tests verify the v3.0.2 fixes for sys.path shadowing issues where
+    ontos/_scripts/ontos.py was shadowing the ontos package.
+    """
+
+    def run_cli(self, *args):
+        """Helper to run ontos CLI with given arguments."""
+        result = subprocess.run(
+            [sys.executable, '-m', 'ontos'] + list(args),
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        return result
+
+    def test_scaffold_executes(self):
+        """scaffold command should execute without import errors."""
+        result = self.run_cli('scaffold')
+        # Should NOT have ModuleNotFoundError
+        assert 'ModuleNotFoundError' not in result.stderr
+        assert "'ontos' is not a package" not in result.stderr
+
+    def test_stub_executes(self):
+        """stub command should execute without import errors."""
+        result = self.run_cli('stub', '--help')
+        assert 'ModuleNotFoundError' not in result.stderr
+        assert result.returncode == 0
+
+    def test_promote_executes(self):
+        """promote command should execute without import errors."""
+        result = self.run_cli('promote', '--check')
+        assert 'ModuleNotFoundError' not in result.stderr
+        assert "'ontos' is not a package" not in result.stderr
+
+    def test_migrate_executes(self):
+        """migrate command should execute without import errors."""
+        result = self.run_cli('migrate', '--check')
+        assert 'ModuleNotFoundError' not in result.stderr
+        assert "'ontos' is not a package" not in result.stderr
