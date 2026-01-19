@@ -1,7 +1,7 @@
 ---
 type: generated
 generator: ontos_generate_context_map
-generated: "2026-01-19 02:19:51 UTC"
+generated: "2026-01-19 12:21:56 UTC"
 mode: Contributor
 scanned: .ontos-internal
 ---
@@ -10,7 +10,7 @@ scanned: .ontos-internal
 > When you run `ontos map` in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2026-01-18 21:19:51
+Generated on: 2026-01-19 07:21:56
 Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -107,10 +107,10 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **phase5_spec_review_claude** [L2] (Phase5_Spec_Review_Claude.md) ~1,200 tokens
   - Status: complete
   - Depends On: phase5_implementation_spec
-- **v3_0_2_cli_legacy_remediation** [L2] [draft] (v3.0.2_CLI_Legacy_Remediation_Proposal.md) ~3,100 tokens
+- **v3_0_2_cli_legacy_remediation** [L2] [draft] (v3.0.3_CLI_Legacy_Remediation_Proposal.md) ~3,100 tokens
   - Status: draft
-  - Depends On: v3_0_technical_architecture, v3_0_0_implementation_specs
-- **v3_0_2_tech_debt_resolution_proposal** [L2] [draft] (v3.0.2_Tech_Debt_Resolution_Proposal.md) ~616 tokens
+  - Depends On: v3_0_technical_architecture
+- **v3_0_2_tech_debt_resolution_proposal** [L2] [draft] (v3.0.3_Tech_Debt_Resolution_Proposal.md) ~616 tokens
   - Status: draft
   - Depends On: install_experience_technical_debt_proposal
 - **v3_0_implementation_roadmap** [L2] (V3.0-Implementation-Roadmap.md) ~10,100 tokens
@@ -127,7 +127,7 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
   - Depends On: mission, philosophy, constitution
 - **v3_1_0_implementation_plan** [L2] [draft] (V3.1.0-Implementation-Plan.md) ~2,600 tokens
   - Status: draft
-  - Depends On: v3_0_implementation_roadmap, v3_1_0_obsidian_compatibility_spec, v3_1_0_sidecar_pattern
+  - Depends On: v3_0_implementation_roadmap, v3_1_0_obsidian_compatibility_spec
 - **v3_1_0_obsidian_compatibility_spec** [L2] [draft] (V3.1.0-Obsidian-Compatibility-Spec.md) ~1,900 tokens
   - Status: draft
   - Depends On: v3_0_implementation_roadmap
@@ -181,12 +181,18 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **schema** [L2] (schema.md) ~450 tokens
   - Status: active
   - Depends On: philosophy
-- **v3_0_2_hybrid_review_alignment_claude** [L2] (v3.0.2_Hybrid_Review_Alignment_Claude.md) ~2,700 tokens
+- **v3_0_2_hybrid_review_alignment_claude** [L2] (v3.0.3_Hybrid_Review_Alignment_Claude.md) ~2,700 tokens
   - Status: complete
-  - Depends On: v3.0.2_Implementation_Spec, 20260116_bug-log
-- **v3_0_2_hybrid_review_consolidation** [L2] (v3.0.2_Hybrid_Review_Consolidation.md) ~2,000 tokens
+  - Depends On: v3.0.3_Implementation_Spec
+- **v3_0_2_hybrid_review_consolidation** [L2] (v3.0.3_Hybrid_Review_Consolidation.md) ~2,000 tokens
   - Status: complete
-  - Depends On: v3.0.2_Hybrid_Review_Peer_Gemini, v3.0.2_Hybrid_Review_Alignment_Claude, v3.0.2_Hybrid_Review_Adversarial_Codex
+  - Depends On: v3_0_3_hybrid_review_peer_gemini, v3_0_2_hybrid_review_alignment_claude, v3_0_3_hybrid_review_adversarial_codex
+- **v3_0_3_hybrid_review_adversarial_codex** [L2] (v3.0.3_Hybrid_Review_Adversarial_Codex.md) ~2,700 tokens
+  - Status: complete
+  - Depends On: v3.0.3_Implementation_Spec
+- **v3_0_3_hybrid_review_peer_gemini** [L2] (v3.0.3_Hybrid_Review_Peer_Gemini.md) ~1,100 tokens
+  - Status: complete
+  - Depends On: v3.0.3_Implementation_Spec
 
 ### LOG
 - **log_20251218_v2_6_1_graduation** [L1] (2025-12-18_v2-6-1-graduation.md) ~971 tokens  ⚠️ active
@@ -293,12 +299,12 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 - **phase4_pr_review_chief_architect** [L2] (Phase4_PR_Review_Chief_Architect.md) ~1,600 tokens
   - Status: complete
   - Depends On: phase4_chief_architect_response
-- **v3_0_2_chief_architect_response** [L2] (v3.0.2_Chief_Architect_Response.md) ~1,900 tokens
+- **v3_0_2_chief_architect_response** [L2] (v3.0.3_Chief_Architect_Response.md) ~1,900 tokens
   - Status: complete
   - Depends On: v3_0_2_hybrid_review_consolidation
-- **v3_0_2_implementation_spec_v1_1** [L2] (v3.0.2-Implementation-Spec-v1.1.md) ~2,500 tokens
+- **v3_0_2_implementation_spec_v1_1** [L2] (v3.0.3-Implementation-Spec-v1.1.md) ~2,500 tokens
   - Status: complete
-  - Depends On: v3_0_2_implementation_spec, v3_0_2_chief_architect_response
+  - Depends On: v3.0.3_Implementation_Spec, v3_0_2_chief_architect_response
 
 
 ## 2. Recent Timeline
@@ -322,28 +328,22 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 *Showing 10 of 30 sessions*
 
 ## 3. Dependency Audit
-- [BROKEN LINK] **v3_0_2_hybrid_review_consolidation** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.2/v3.0.2_Hybrid_Review_Consolidation.md) references missing ID: `v3.0.2_Hybrid_Review_Peer_Gemini`
-  Fix: Add a document with `id: v3.0.2_Hybrid_Review_Peer_Gemini` or remove it from depends_on
-- [BROKEN LINK] **v3_0_2_hybrid_review_consolidation** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.2/v3.0.2_Hybrid_Review_Consolidation.md) references missing ID: `v3.0.2_Hybrid_Review_Alignment_Claude`
-  Fix: Add a document with `id: v3.0.2_Hybrid_Review_Alignment_Claude` or remove it from depends_on
-- [BROKEN LINK] **v3_0_2_hybrid_review_consolidation** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.2/v3.0.2_Hybrid_Review_Consolidation.md) references missing ID: `v3.0.2_Hybrid_Review_Adversarial_Codex`
-  Fix: Add a document with `id: v3.0.2_Hybrid_Review_Adversarial_Codex` or remove it from depends_on
-- [BROKEN LINK] **v3_0_2_hybrid_review_alignment_claude** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.2/v3.0.2_Hybrid_Review_Alignment_Claude.md) references missing ID: `v3.0.2_Implementation_Spec`
-  Fix: Add a document with `id: v3.0.2_Implementation_Spec` or remove it from depends_on
-- [BROKEN LINK] **v3_0_2_hybrid_review_alignment_claude** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.2/v3.0.2_Hybrid_Review_Alignment_Claude.md) references missing ID: `20260116_bug-log`
-  Fix: Add a document with `id: 20260116_bug-log` or remove it from depends_on
-- [BROKEN LINK] **v3_0_2_cli_legacy_remediation** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.2/v3.0.2_CLI_Legacy_Remediation_Proposal.md) references missing ID: `v3_0_0_implementation_specs`
-  Fix: Add a document with `id: v3_0_0_implementation_specs` or remove it from depends_on
-- [BROKEN LINK] **v3_0_2_implementation_spec_v1_1** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.2/v3.0.2-Implementation-Spec-v1.1.md) references missing ID: `v3_0_2_implementation_spec`
-  Fix: Add a document with `id: v3_0_2_implementation_spec` or remove it from depends_on
-- [CYCLE] Circular dependency: v3_1_0_implementation_plan -> v3_1_0_sidecar_pattern -> v3_1_0_implementation_plan
-  Fix: Remove one of the depends_on links to break the cycle
-- [ORPHAN] **migration_v2_to_v3** (docs/reference/Migration_v2_to_v3.md) has no dependents
-  Fix: Add `migration_v2_to_v3` to another document's depends_on, or delete if unused
+- [BROKEN LINK] **v3_0_2_hybrid_review_alignment_claude** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.3/v3.0.3_Hybrid_Review_Alignment_Claude.md) references missing ID: `v3.0.3_Implementation_Spec`
+  Fix: Add a document with `id: v3.0.3_Implementation_Spec` or remove it from depends_on
+- [BROKEN LINK] **v3_0_3_hybrid_review_adversarial_codex** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.3/v3.0.3_Hybrid_Review_Adversarial_Codex.md) references missing ID: `v3.0.3_Implementation_Spec`
+  Fix: Add a document with `id: v3.0.3_Implementation_Spec` or remove it from depends_on
+- [BROKEN LINK] **v3_0_3_hybrid_review_peer_gemini** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.3/v3.0.3_Hybrid_Review_Peer_Gemini.md) references missing ID: `v3.0.3_Implementation_Spec`
+  Fix: Add a document with `id: v3.0.3_Implementation_Spec` or remove it from depends_on
+- [BROKEN LINK] **v3_0_2_implementation_spec_v1_1** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.3/v3.0.3-Implementation-Spec-v1.1.md) references missing ID: `v3.0.3_Implementation_Spec`
+  Fix: Add a document with `id: v3.0.3_Implementation_Spec` or remove it from depends_on
+- [ORPHAN] **v3_0_2_implementation_spec_v1_1** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.3/v3.0.3-Implementation-Spec-v1.1.md) has no dependents
+  Fix: Add `v3_0_2_implementation_spec_v1_1` to another document's depends_on, or delete if unused
 - [ORPHAN] **phase3_implementation_spec_review_codex** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase3/Phase3-Implementation-Spec-Review-Codex.md) has no dependents
   Fix: Add `phase3_implementation_spec_review_codex` to another document's depends_on, or delete if unused
-- [ORPHAN] **v3_0_2_implementation_spec_v1_1** (/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.2/v3.0.2-Implementation-Spec-v1.1.md) has no dependents
-  Fix: Add `v3_0_2_implementation_spec_v1_1` to another document's depends_on, or delete if unused
+- [ORPHAN] **migration_v2_to_v3** (docs/reference/Migration_v2_to_v3.md) has no dependents
+  Fix: Add `migration_v2_to_v3` to another document's depends_on, or delete if unused
+- [DEPTH] **v3_1_0_sidecar_pattern** has dependency depth 6 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [ARCHITECTURE] **phase2_implementation_instructions_antigravity** (strategy) depends on **chief_architect_round2_critical_analysis** (atom)
   Fix: strategy should not depend on atom. Invert the dependency or change document types
 - [ARCHITECTURE] **phase5_implementation_spec** (strategy) depends on **phase4_final_approval_chief_architect** (approval)
@@ -437,12 +437,14 @@ Scanned Directory: `/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal, docs`
 | phase5_spec_review_claude | [Phase5_Spec_Review_Claude.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/Phase5/Phase5_Spec_Review_Claude.md) | strategy |
 | philosophy | [philosophy.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/kernel/philosophy.md) | kernel |
 | schema | [schema.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/atom/schema.md) | atom |
-| v3_0_2_chief_architect_response | [v3.0.2_Chief_Architect_Response.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.2/v3.0.2_Chief_Architect_Response.md) | decision |
-| v3_0_2_cli_legacy_remediation | [v3.0.2_CLI_Legacy_Remediation_Proposal.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.2/v3.0.2_CLI_Legacy_Remediation_Proposal.md) | strategy |
-| v3_0_2_hybrid_review_alignment_claude | [v3.0.2_Hybrid_Review_Alignment_Claude.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.2/v3.0.2_Hybrid_Review_Alignment_Claude.md) | atom |
-| v3_0_2_hybrid_review_consolidation | [v3.0.2_Hybrid_Review_Consolidation.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.2/v3.0.2_Hybrid_Review_Consolidation.md) | atom |
-| v3_0_2_implementation_spec_v1_1 | [v3.0.2-Implementation-Spec-v1.1.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.2/v3.0.2-Implementation-Spec-v1.1.md) | spec |
-| v3_0_2_tech_debt_resolution_proposal | [v3.0.2_Tech_Debt_Resolution_Proposal.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.2/v3.0.2_Tech_Debt_Resolution_Proposal.md) | strategy |
+| v3_0_2_chief_architect_response | [v3.0.3_Chief_Architect_Response.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.3/v3.0.3_Chief_Architect_Response.md) | decision |
+| v3_0_2_cli_legacy_remediation | [v3.0.3_CLI_Legacy_Remediation_Proposal.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.3/v3.0.3_CLI_Legacy_Remediation_Proposal.md) | strategy |
+| v3_0_2_hybrid_review_alignment_claude | [v3.0.3_Hybrid_Review_Alignment_Claude.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.3/v3.0.3_Hybrid_Review_Alignment_Claude.md) | atom |
+| v3_0_2_hybrid_review_consolidation | [v3.0.3_Hybrid_Review_Consolidation.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.3/v3.0.3_Hybrid_Review_Consolidation.md) | atom |
+| v3_0_2_implementation_spec_v1_1 | [v3.0.3-Implementation-Spec-v1.1.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.3/v3.0.3-Implementation-Spec-v1.1.md) | spec |
+| v3_0_2_tech_debt_resolution_proposal | [v3.0.3_Tech_Debt_Resolution_Proposal.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.3/v3.0.3_Tech_Debt_Resolution_Proposal.md) | strategy |
+| v3_0_3_hybrid_review_adversarial_codex | [v3.0.3_Hybrid_Review_Adversarial_Codex.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.3/v3.0.3_Hybrid_Review_Adversarial_Codex.md) | atom |
+| v3_0_3_hybrid_review_peer_gemini | [v3.0.3_Hybrid_Review_Peer_Gemini.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/proposals/v3.0.3/v3.0.3_Hybrid_Review_Peer_Gemini.md) | atom |
 | v3_0_implementation_roadmap | [V3.0-Implementation-Roadmap.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/V3.0-Implementation-Roadmap.md) | strategy |
 | v3_0_security_requirements | [v3.0_security_requirements.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/v3.0_security_requirements.md) | strategy |
 | v3_0_strategy_decisions | [V3.0-Strategy-Decisions-Final.md](/Users/jonathanoh/Dev/Project-Ontos/.ontos-internal/strategy/v3.0/V3.0-Strategy-Decisions-Final.md) | strategy |
