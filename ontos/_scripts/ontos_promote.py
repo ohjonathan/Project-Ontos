@@ -22,11 +22,13 @@ import sys
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-# Ensure scripts directory is in path
-SCRIPTS_DIR = Path(__file__).parent
-if str(SCRIPTS_DIR) not in sys.path:
+# Fix sys.path to avoid ontos.py shadowing the ontos package.
+# Python auto-inserts script dir at sys.path[0]; remove it before importing ontos.
+SCRIPTS_DIR = Path(__file__).parent.resolve()
+if sys.path and Path(sys.path[0]).resolve() == SCRIPTS_DIR:
+    sys.path.pop(0)
 
-from ontos_config_defaults import PROJECT_ROOT, VALID_TYPES
+# Import ontos package BEFORE adding scripts dir back to path
 from ontos.core.context import SessionContext
 from ontos.core.frontmatter import parse_frontmatter
 from ontos.core.schema import serialize_frontmatter
@@ -40,6 +42,11 @@ from ontos.core.curation import (
     level_marker,
 )
 from ontos.ui.output import OutputHandler
+
+# Now add scripts dir to import ontos_config_defaults
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.append(str(SCRIPTS_DIR))
+from ontos_config_defaults import PROJECT_ROOT, VALID_TYPES
 
 
 def find_all_document_ids(docs_dir: Path) -> List[str]:

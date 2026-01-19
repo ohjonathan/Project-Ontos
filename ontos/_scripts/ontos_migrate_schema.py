@@ -26,10 +26,13 @@ import argparse
 from pathlib import Path
 from typing import List, Tuple, Optional
 
-# Add scripts directory to path
-SCRIPTS_DIR = Path(__file__).parent
-if str(SCRIPTS_DIR) not in sys.path:
+# Fix sys.path to avoid ontos.py shadowing the ontos package.
+# Python auto-inserts script dir at sys.path[0]; remove it before importing ontos.
+SCRIPTS_DIR = Path(__file__).parent.resolve()
+if sys.path and Path(sys.path[0]).resolve() == SCRIPTS_DIR:
+    sys.path.pop(0)
 
+# Import ontos package BEFORE adding scripts dir back to path
 from ontos.core.schema import (
     detect_schema_version,
     serialize_frontmatter,
@@ -38,9 +41,11 @@ from ontos.core.schema import (
 )
 from ontos.core.context import SessionContext
 from ontos.ui.output import OutputHandler
-
-# Import frontmatter parsing (uses yaml module from existing code)
 from ontos.core.frontmatter import parse_frontmatter
+
+# Now add scripts dir for ontos_config_defaults imports (used later)
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.append(str(SCRIPTS_DIR))
 
 
 def find_markdown_files(directories: List[str], skip_patterns: List[str] = None) -> List[Path]:
