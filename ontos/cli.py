@@ -17,18 +17,31 @@ from ontos.ui.json_output import emit_json, emit_error, validate_json_output
 
 
 def _get_subprocess_env() -> dict:
-    """Get environment for subprocess calls with PYTHONPATH set.
-    
-    Ensures subprocesses can import from ontos package in source checkouts
-    by adding the project root to PYTHONPATH.
+    """Get environment for subprocess calls.
+
+    Sets:
+    - ONTOS_PROJECT_ROOT: User's current working directory (for legacy script compatibility)
+    - PYTHONPATH: Includes both user's project root (for config imports) and
+                  package installation root (for ontos.core imports)
     """
     env = os.environ.copy()
-    project_root = str(Path(__file__).parent.parent)
+    # Use user's CWD as project root, not package installation directory
+    try:
+        project_root = str(Path.cwd())
+    except OSError:
+        # CWD deleted or inaccessible; subprocess will fail gracefully
+        project_root = "/"
+    env.setdefault('ONTOS_PROJECT_ROOT', project_root)
+    
+    # Package installation root (needed for legacy scripts to import ontos.core)
+    package_root = str(Path(__file__).parent.parent)
+    
+    # Build PYTHONPATH: project_root + package_root + existing
     existing_pythonpath = env.get('PYTHONPATH', '')
+    path_parts = [project_root, package_root]
     if existing_pythonpath:
-        env['PYTHONPATH'] = f"{project_root}{os.pathsep}{existing_pythonpath}"
-    else:
-        env['PYTHONPATH'] = project_root
+        path_parts.append(existing_pythonpath)
+    env['PYTHONPATH'] = os.pathsep.join(path_parts)
     return env
 
 
@@ -407,7 +420,7 @@ def _cmd_wrapper(args) -> int:
 
     # Run the wrapper
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, env=_get_subprocess_env(), cwd=str(Path(__file__).parent.parent))
+        result = subprocess.run(cmd, capture_output=True, text=True, env=_get_subprocess_env())
 
         # JSON validation per Decision
         if args.json:
