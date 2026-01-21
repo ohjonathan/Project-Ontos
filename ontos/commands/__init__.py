@@ -66,45 +66,48 @@ from ontos.commands.export import (
 
 # verify - Document verification
 from ontos.commands.verify import (
+    verify_command,
+    VerifyOptions,
     verify_document,
-    find_stale_documents,
-    verify_all_interactive,
+    find_stale_documents_list,
 )
 
 # query - Document query
 from ontos.commands.query import (
-    query_documents,
-    get_document_by_id,
+    query_command,
+    QueryOptions,
+    scan_docs_for_query,
 )
 
 # migrate - Schema migration
 from ontos.commands.migrate import (
-    migrate_schema,
-    check_schema_version,
+    migrate_command,
+    MigrateOptions,
 )
 
 # consolidate - Log consolidation
 from ontos.commands.consolidate import (
-    consolidate_logs,
-    get_consolidation_candidates,
+    consolidate_command,
+    ConsolidateOptions,
 )
 
 # promote - Proposal promotion
 from ontos.commands.promote import (
-    promote_proposal,
-    find_promotable_proposals,
+    promote_command,
+    PromoteOptions,
 )
 
 # scaffold - Document scaffolding
 from ontos.commands.scaffold import (
-    scaffold_document,
-    get_available_templates,
+    scaffold_command,
+    ScaffoldOptions,
+    find_untagged_files,
 )
 
-# stub - Stub creation
+# stub - Document scaffolding
 from ontos.commands.stub import (
-    create_stub,
-    create_stubs_for_missing,
+    stub_command,
+    StubOptions,
 )
 
 __all__ = [
@@ -130,20 +133,22 @@ __all__ = [
     "ExportOptions",
     "export_command",
     # Wrappers (Phase 2, full impl Phase 4)
-    "verify_document",
-    "find_stale_documents",
-    "verify_all_interactive",
-    "query_documents",
-    "get_document_by_id",
-    "migrate_schema",
-    "check_schema_version",
-    "consolidate_logs",
-    "get_consolidation_candidates",
-    "promote_proposal",
-    "find_promotable_proposals",
-    "scaffold_document",
-    "get_available_templates",
-    "create_stub",
-    "create_stubs_for_missing",
+    "verify_command",
+    "VerifyOptions",
+    "find_stale_documents_list",
+    "query_command",
+    "QueryOptions",
+    "scan_docs_for_query",
+    "migrate_command",
+    "MigrateOptions",
+    "consolidate_command",
+    "ConsolidateOptions",
+    "promote_command",
+    "PromoteOptions",
+    "scaffold_command",
+    "ScaffoldOptions",
+    "find_untagged_files",
+    "stub_command",
+    "StubOptions",
 ]
 

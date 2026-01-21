@@ -191,48 +191,166 @@ def _register_hook(subparsers, parent):
 
 
 def _register_verify(subparsers, parent):
-    """Register verify command (wrapper)."""
-    p = subparsers.add_parser("verify", help="Verify describes dates", parents=[parent])
-    p.set_defaults(func=_cmd_wrapper, wrapper_name="verify")
+    """Register verify command."""
+    p = subparsers.add_parser(
+        "verify",
+        help="Verify document describes dates",
+        parents=[parent]
+    )
+    p.add_argument(
+        "path",
+        nargs="?",
+        type=Path,
+        help="Specific file to verify"
+    )
+    p.add_argument(
+        "--all", "-a",
+        action="store_true",
+        help="Verify all stale documents interactively"
+    )
+    p.add_argument(
+        "--date", "-d",
+        help="Verification date (YYYY-MM-DD, default: today)"
+    )
+    p.set_defaults(func=_cmd_verify)
 
 
 def _register_query(subparsers, parent):
-    """Register query command (wrapper)."""
-    p = subparsers.add_parser("query", help="Search documents", parents=[parent])
-    p.add_argument("query_string", nargs="?", help="Search query")
-    p.set_defaults(func=_cmd_wrapper, wrapper_name="query")
+    """Register query command."""
+    p = subparsers.add_parser(
+        "query",
+        help="Search and analyze document graph",
+        parents=[parent]
+    )
+    group = p.add_mutually_exclusive_group(required=True)
+    group.add_argument("--depends-on", metavar="ID",
+                       help="What does this document depend on?")
+    group.add_argument("--depended-by", metavar="ID",
+                       help="What documents depend on this one?")
+    group.add_argument("--concept", metavar="TAG",
+                       help="Find all documents with this concept")
+    group.add_argument("--stale", metavar="DAYS", type=int,
+                       help="Find documents not updated in N days")
+    group.add_argument("--health", action="store_true",
+                       help="Show graph health metrics")
+    group.add_argument("--list-ids", action="store_true",
+                       help="List all document IDs")
+    
+    p.add_argument("--dir", type=Path,
+                   help="Documentation directory to scan")
+    p.set_defaults(func=_cmd_query)
 
 
 def _register_migrate(subparsers, parent):
-    """Register migrate command (wrapper)."""
-    p = subparsers.add_parser("migrate", help="Schema migration", parents=[parent])
-    p.set_defaults(func=_cmd_wrapper, wrapper_name="migrate")
+    """Register migrate command."""
+    p = subparsers.add_parser(
+        "migrate",
+        help="Migrate document schema versions",
+        parents=[parent]
+    )
+    group = p.add_mutually_exclusive_group(required=True)
+    group.add_argument("--check", action="store_true",
+                       help="Check which files need migration")
+    group.add_argument("--dry-run", "-n", action="store_true",
+                       help="Preview changes without applying")
+    group.add_argument("--apply", action="store_true",
+                       help="Apply schema migrations")
+    
+    p.add_argument("--dirs", nargs="+", type=Path,
+                   help="Directories to scan")
+    p.set_defaults(func=_cmd_migrate)
 
 
 def _register_consolidate(subparsers, parent):
-    """Register consolidate command (wrapper)."""
-    p = subparsers.add_parser("consolidate", help="Archive old logs", parents=[parent])
-    p.set_defaults(func=_cmd_wrapper, wrapper_name="consolidate")
+    """Register consolidate command."""
+    p = subparsers.add_parser(
+        "consolidate",
+        help="Archive old session logs",
+        parents=[parent]
+    )
+    p.add_argument(
+        "--count",
+        type=int,
+        default=15,
+        help="Number of newest logs to keep (default: 15)"
+    )
+    p.add_argument(
+        "--by-age",
+        action="store_true",
+        help="Use age-based instead of count-based"
+    )
+    p.add_argument(
+        "--days",
+        type=int,
+        default=30,
+        help="Age threshold in days, requires --by-age (default: 30)"
+    )
+    p.add_argument(
+        "--dry-run", "-n",
+        action="store_true",
+        help="Preview changes without applying"
+    )
+    p.add_argument(
+        "--all", "-a",
+        action="store_true",
+        help="Process all logs without prompting"
+    )
+    p.set_defaults(func=_cmd_consolidate)
 
 
 def _register_promote(subparsers, parent):
-    """Register promote command (wrapper)."""
-    p = subparsers.add_parser("promote", help="Promote curation level", parents=[parent])
-    p.add_argument("file", nargs="?", help="File to promote")
-    p.set_defaults(func=_cmd_wrapper, wrapper_name="promote")
+    """Register promote command."""
+    p = subparsers.add_parser(
+        "promote",
+        help="Promote documents to Level 2",
+        parents=[parent]
+    )
+    p.add_argument("files", nargs="*", type=Path, help="Specific files to promote")
+    p.add_argument("--check", action="store_true", help="Show promotable documents")
+    p.add_argument("--all-ready", action="store_true", help="Promote all ready documents")
+    p.set_defaults(func=_cmd_promote)
 
 
 def _register_scaffold(subparsers, parent):
-    """Register scaffold command (wrapper)."""
-    p = subparsers.add_parser("scaffold", help="Generate scaffolds", parents=[parent])
-    p.set_defaults(func=_cmd_wrapper, wrapper_name="scaffold")
+    """Register scaffold command."""
+    p = subparsers.add_parser(
+        "scaffold",
+        help="Add frontmatter to markdown files",
+        description="Add frontmatter to markdown files",
+        parents=[parent]
+    )
+    p.add_argument(
+        "paths",
+        nargs="*",
+        type=Path,
+        help="File(s) or directory to scaffold (default: scan all)"
+    )
+    p.add_argument(
+        "--apply",
+        action="store_true",
+        help="Apply scaffolding (default: dry-run)"
+    )
+    p.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview changes without modifying files"
+    )
+    p.set_defaults(func=_cmd_scaffold)
 
 
 def _register_stub(subparsers, parent):
-    """Register stub command (wrapper)."""
-    p = subparsers.add_parser("stub", help="Create stub documents", parents=[parent])
-    p.add_argument("name", nargs="?", help="Stub name")
-    p.set_defaults(func=_cmd_wrapper, wrapper_name="stub")
+    """Register stub command."""
+    p = subparsers.add_parser(
+        "stub",
+        help="Create new document stub",
+        parents=[parent]
+    )
+    p.add_argument("--goal", "-g", help="Goal description")
+    p.add_argument("--type", "-t", dest="doc_type", help="Document type")
+    p.add_argument("--id", help="Document ID")
+    p.add_argument("--output", "-o", type=Path, help="Output file path")
+    p.add_argument("--depends-on", "-d", help="Comma-separated list of dependencies")
+    p.set_defaults(func=_cmd_stub)
 
 
 # ============================================================================
@@ -380,6 +498,125 @@ def _cmd_export(args) -> int:
     return exit_code
 
 
+def _cmd_migrate(args) -> int:
+    """Handle migrate command."""
+    from ontos.commands.migrate import MigrateOptions, migrate_command
+
+    options = MigrateOptions(
+        check=args.check,
+        dry_run=args.dry_run,
+        apply=args.apply,
+        dirs=args.dirs,
+        quiet=args.quiet,
+        json_output=args.json,
+    )
+    exit_code, message = migrate_command(options)
+    return exit_code
+
+
+def _cmd_consolidate(args) -> int:
+    """Handle consolidate command."""
+    from ontos.commands.consolidate import ConsolidateOptions, consolidate_command
+
+    options = ConsolidateOptions(
+        count=args.count,
+        by_age=args.by_age,
+        days=args.days,
+        dry_run=args.dry_run,
+        quiet=args.quiet,
+        all=args.all,
+        json_output=args.json,
+    )
+    exit_code, message = consolidate_command(options)
+    return exit_code
+
+
+def _cmd_stub(args) -> int:
+    """Handle stub command."""
+    from ontos.commands.stub import StubOptions, stub_command
+
+    # Parse depends_on
+    depends_on = None
+    if args.depends_on:
+        depends_on = [d.strip() for d in args.depends_on.split(',') if d.strip()]
+
+    options = StubOptions(
+        goal=args.goal,
+        doc_type=args.doc_type,
+        id=args.id,
+        output=args.output,
+        depends_on=depends_on,
+        quiet=args.quiet,
+        json_output=args.json,
+    )
+    exit_code, message = stub_command(options)
+    return exit_code
+
+
+def _cmd_promote(args) -> int:
+    """Handle promote command."""
+    from ontos.commands.promote import PromoteOptions, promote_command
+
+    options = PromoteOptions(
+        files=args.files,
+        check=args.check,
+        all_ready=args.all_ready,
+        quiet=args.quiet,
+        json_output=args.json,
+    )
+    exit_code, message = promote_command(options)
+    return exit_code
+
+
+def _cmd_query(args) -> int:
+    """Handle query command."""
+    from ontos.commands.query import QueryOptions, query_command
+
+    options = QueryOptions(
+        depends_on=args.depends_on,
+        depended_by=args.depended_by,
+        concept=args.concept,
+        stale=args.stale,
+        health=args.health,
+        list_ids=args.list_ids,
+        directory=args.dir,
+        quiet=args.quiet,
+        json_output=args.json,
+    )
+    exit_code, message = query_command(options)
+    return exit_code
+
+
+def _cmd_verify(args) -> int:
+    """Handle verify command."""
+    from ontos.commands.verify import VerifyOptions, verify_command
+
+    options = VerifyOptions(
+        path=args.path,
+        all=args.all,
+        date=args.date,
+        quiet=args.quiet,
+        json_output=args.json,
+    )
+    exit_code, message = verify_command(options)
+    return exit_code
+
+
+def _cmd_scaffold(args) -> int:
+    """Handle scaffold command."""
+    from ontos.commands.scaffold import ScaffoldOptions, scaffold_command
+
+    options = ScaffoldOptions(
+        paths=args.paths if args.paths else None,
+        apply=args.apply,
+        dry_run=not args.apply,  # Default to dry-run
+        quiet=args.quiet,
+        json_output=args.json,
+    )
+    exit_code, message = scaffold_command(options)
+    return exit_code
+
+
 def _cmd_hook(args) -> int:
     """Handle hook command."""
     from ontos.commands.hook import hook_command, HookOptions
@@ -405,11 +642,8 @@ def _cmd_wrapper(args) -> int:
     script_map = {
         "verify": "ontos_verify.py",
         "query": "ontos_query.py",
-        "migrate": "ontos_migrate_schema.py",
         "consolidate": "ontos_consolidate.py",
         "promote": "ontos_promote.py",
-        "scaffold": "ontos_scaffold.py",
-        "stub": "ontos_stub.py",
     }
 
     script_name = script_map.get(wrapper_name)
