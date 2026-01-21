@@ -26,7 +26,7 @@
 - [What Ontos Is NOT](#what-ontos-is-not)
 - [Roadmap](#roadmap)
 - [Documentation](#documentation)
-- [Known Issues](#known-issues-v304)
+- [Known Issues](#known-issues-v305)
 - [Feedback](#feedback)
 - [License](#license)
 
@@ -205,7 +205,7 @@ If you want automatic context capture, use a vector database. If you want reliab
 
 | Version | Status | Highlights |
 |---------|--------|------------|
-| **v3.0.4** | ✅ Current | CLI wrapper commands fixed, documentation link fixes |
+| **v3.0.5** | ✅ Current | Tech debt patch, UX improvements (init hooks consent) |
 | **v3.1** | Next | Obsidian compatibility, `ontos deinit`, concepts → tags mapping |
 | **v4.0** | Vision | MCP as primary interface, full template system, daemon mode |
 
