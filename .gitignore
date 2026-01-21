@@ -29,6 +29,18 @@ dist/
 # Environment files
 .env
 .env.*
+.venv/
+venv/
+ENV/
+env/
+
+# Backups and transient files
+*.bak
+*_bak
+*.bak*
+*.swp
+*.tmp
+.claude.bak/
 
 # Pytest cache
 .pytest_cache/
