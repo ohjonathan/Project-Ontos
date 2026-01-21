@@ -18,8 +18,16 @@ def test_compact_output_rich_with_escaping():
         "doc1": Doc(type="atom", status="active", frontmatter={"summary": "Line 1\nLine 2 with \"quotes\" and \\backslash"}),
     }
     output = _generate_compact_output(docs, CompactMode.RICH)
-    # Line 1\nLine 2 with \"quotes\" and \\backslash
     expected = 'doc1:atom:active:"Line 1\\nLine 2 with \\"quotes\\" and \\\\backslash"'
+    assert output == expected
+
+def test_compact_output_rich_non_string_summary():
+    docs = {
+        "doc1": Doc(type="atom", status="active", frontmatter={"summary": ["Line 1", "Line 2"]}),
+    }
+    output = _generate_compact_output(docs, CompactMode.RICH)
+    # ["Line 1", "Line 2"] as string is "['Line 1', 'Line 2']"
+    expected = 'doc1:atom:active:"[\'Line 1\', \'Line 2\']"'
     assert output == expected
 
 def test_compact_output_off():

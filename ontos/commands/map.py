@@ -321,7 +321,7 @@ def _generate_compact_output(docs: Dict[str, Any], mode: CompactMode) -> str:
         doc_status = doc.status.value if hasattr(doc.status, 'value') else str(doc.status)
 
         if mode == CompactMode.RICH:
-            summary = doc.frontmatter.get('summary', '')
+            summary = str(doc.frontmatter.get('summary', ''))
             if summary:
                 # Escape backslashes, quotes, and newlines
                 summary_safe = (summary
