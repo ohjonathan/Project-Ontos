@@ -14,6 +14,7 @@ from typing import List, Optional
 
 import ontos
 from ontos.ui.json_output import emit_json, emit_error, validate_json_output
+from ontos.commands.map import CompactMode
 
 
 def _get_subprocess_env() -> dict:
@@ -119,6 +120,15 @@ def _register_map(subparsers, parent):
                    help="Treat warnings as errors")
     p.add_argument("--output", "-o", type=Path,
                    help="Output path (default: Ontos_Context_Map.md)")
+    p.add_argument("--obsidian", action="store_true",
+                   help="Enable Obsidian-compatible output (wikilinks, tags)")
+    p.add_argument("--compact", nargs="?", const="basic", default="off",
+                   choices=["basic", "rich"],
+                   help="Compact output: 'basic' (default) or 'rich' (with summaries)")
+    p.add_argument("--filter", "-f", metavar="EXPR",
+                   help="Filter documents by expression (e.g., 'type:strategy')")
+    p.add_argument("--no-cache", action="store_true",
+                   help="Bypass document cache (for debugging)")
     p.set_defaults(func=_cmd_map)
 
 
@@ -262,6 +272,10 @@ def _cmd_map(args) -> int:
         strict=args.strict,
         json_output=args.json,
         quiet=args.quiet,
+        obsidian=args.obsidian,
+        compact=CompactMode(args.compact) if args.compact != "off" else CompactMode.OFF,
+        filter_expr=getattr(args, 'filter', None),
+        no_cache=getattr(args, 'no_cache', False),
     )
 
     return map_command(options)

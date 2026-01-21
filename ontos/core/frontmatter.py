@@ -237,3 +237,66 @@ def load_common_concepts(docs_dir: str = None) -> set:
         pass
     
     return concepts
+
+
+def normalize_tags(frontmatter: dict) -> list[str]:
+    """Extract tags from frontmatter, merging concepts + explicit tags.
+
+    Priority:
+    1. Explicit 'tags' field (if present)
+    2. 'concepts' field (Ontos standard)
+
+    Args:
+        frontmatter: Parsed YAML frontmatter dictionary.
+
+    Returns:
+        List of unique tag strings, sorted alphabetically.
+    """
+    tags = set()
+
+    if 'tags' in frontmatter:
+        raw_tags = frontmatter['tags']
+        if isinstance(raw_tags, list):
+            tags.update(str(t).strip() for t in raw_tags if t)
+        elif isinstance(raw_tags, str):
+            stripped = raw_tags.strip()
+            if stripped:
+                tags.add(stripped)
+
+    if 'concepts' in frontmatter:
+        concepts = frontmatter['concepts']
+        if isinstance(concepts, list):
+            tags.update(str(c).strip() for c in concepts if c)
+
+    return sorted(tags)
+
+
+def normalize_aliases(frontmatter: dict, doc_id: str) -> list[str]:
+    """Extract aliases from frontmatter, auto-generating from id.
+
+    Args:
+        frontmatter: Parsed YAML frontmatter dictionary.
+        doc_id: Document ID for auto-generation.
+
+    Returns:
+        List of alias strings including auto-generated variants.
+    """
+    aliases = set()
+
+    if 'aliases' in frontmatter:
+        raw = frontmatter['aliases']
+        if isinstance(raw, list):
+            aliases.update(str(a).strip() for a in raw if a)
+        elif isinstance(raw, str):
+            stripped = raw.strip()
+            if stripped:
+                aliases.add(stripped)
+
+    # Auto-generate aliases from id
+    if doc_id:
+        # snake_case → Title Case
+        aliases.add(doc_id.replace('_', ' ').title())
+        # snake_case → kebab-case
+        aliases.add(doc_id.replace('_', '-'))
+
+    return sorted(aliases)

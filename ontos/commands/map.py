@@ -11,12 +11,20 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 
 from ontos.core.validation import ValidationOrchestrator
 from ontos.core.tokens import estimate_tokens, format_token_count
 from ontos.core.types import DocumentData, ValidationResult
+
+
+class CompactMode(Enum):
+    """Compact output mode for context map."""
+    OFF = "off"
+    BASIC = "basic"
+    RICH = "rich"
 
 
 @dataclass
@@ -31,6 +39,8 @@ class GenerateMapOptions:
     dry_run: bool = False
     json_output: bool = False  # Phase 4: JSON output support
     quiet: bool = False  # Phase 4: Quiet mode
+    obsidian: bool = False
+    compact: CompactMode = CompactMode.OFF
 
 
 def generate_context_map(
@@ -63,8 +73,12 @@ def generate_context_map(
     # Header with provenance
     sections.append(_generate_header(config))
 
+    # Compact output (if enabled)
+    if options.compact != CompactMode.OFF:
+        return _generate_compact_output(docs, options.compact), result
+
     # Document table
-    sections.append(_generate_document_table(docs))
+    sections.append(_generate_document_table(docs, options.obsidian))
 
     # Validation messages (if any)
     if result.errors or result.warnings:
@@ -132,7 +146,7 @@ def _escape_markdown_table_cell(value: str) -> str:
     return value.replace("\\", "\\\\").replace("|", "\\|")
 
 
-def _generate_document_table(docs: Dict[str, DocumentData]) -> str:
+def _generate_document_table(docs: Dict[str, DocumentData], obsidian_mode: bool = False) -> str:
     """Generate document listing table."""
     if not docs:
         return "## Documents\n\nNo documents found."
@@ -152,8 +166,8 @@ def _generate_document_table(docs: Dict[str, DocumentData]) -> str:
         doc_status = doc.status.value if hasattr(doc.status, 'value') else str(doc.status)
         # Escape special characters to prevent table breakage
         filepath = _escape_markdown_table_cell(str(doc.filepath))
-        doc_id = _escape_markdown_table_cell(doc.id)
-        lines.append(f"| {filepath} | {doc_id} | {doc_type} | {doc_status} |")
+        doc_id_link = _format_doc_link(doc.id, doc.filepath, obsidian_mode)
+        lines.append(f"| {filepath} | {doc_id_link} | {doc_type} | {doc_status} |")
 
     return "\n".join(lines)
 
@@ -285,6 +299,137 @@ def _generate_lint_section(docs: Dict[str, DocumentData], result: ValidationResu
     return "\n".join(lines)
 
 
+def _generate_compact_output(docs: Dict[str, Any], mode: CompactMode) -> str:
+    """Generate compact context map format.
+
+    Standard compact (BASIC): id:type:status
+    Rich compact (RICH): id:type:status:"summary"
+
+    Args:
+        docs: Document dictionary (DocumentData objects).
+        mode: CompactMode (BASIC or RICH).
+
+    Returns:
+        Compact format string, one doc per line.
+    """
+    if mode == CompactMode.OFF:
+        return ""
+
+    lines = []
+    for doc_id, doc in sorted(docs.items()):
+        doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
+        doc_status = doc.status.value if hasattr(doc.status, 'value') else str(doc.status)
+
+        if mode == CompactMode.RICH:
+            summary = doc.frontmatter.get('summary', '')
+            if summary:
+                # Escape backslashes, quotes, and newlines
+                summary_safe = (summary
+                    .replace('\\', '\\\\')
+                    .replace('"', '\\"')
+                    .replace('\n', '\\n'))
+                lines.append(f'{doc_id}:{doc_type}:{doc_status}:"{summary_safe}"')
+            else:
+                lines.append(f'{doc_id}:{doc_type}:{doc_status}')
+        else:
+            lines.append(f'{doc_id}:{doc_type}:{doc_status}')
+
+    return '\n'.join(lines)
+
+
+def _format_doc_link(doc_id: str, doc_path: Path, obsidian_mode: bool) -> str:
+    """Format document link based on output mode.
+
+    In Obsidian mode, uses [[filename|display]] format since Obsidian
+    resolves links by filename, not frontmatter ID.
+
+    Args:
+        doc_id: Document ID from frontmatter.
+        doc_path: Path to the document file.
+        obsidian_mode: Whether to use Obsidian wikilink format.
+
+    Returns:
+        Formatted link string.
+    """
+    if obsidian_mode:
+        filename = doc_path.stem  # filename without extension
+        if filename == doc_id:
+            return f"[[{doc_id}]]"  # No alias needed
+        return f"[[{filename}|{doc_id}]]"  # Alias for display
+    return f"`{doc_id}`"
+
+
+@dataclass
+class FilterExpression:
+    """Single filter expression."""
+    field: str
+    values: list
+
+
+def parse_filter(expr: str) -> list:
+    """Parse filter expression string.
+
+    Syntax: FIELD:VALUE | FIELD:VALUE,VALUE | EXPR EXPR
+    - Multiple values for same field: OR (match any)
+    - Multiple fields: AND (match all)
+
+    Args:
+        expr: Filter string like "type:strategy status:active"
+
+    Returns:
+        List of FilterExpression objects.
+    """
+    if not expr or not expr.strip():
+        return []
+
+    filters = []
+    for part in expr.split():
+        if ':' not in part:
+            continue  # Skip invalid parts
+        field, _, value = part.partition(':')
+        field = field.strip().lower()
+        if not field or not value:
+            continue  # Skip empty field or value
+        values = [v.strip() for v in value.split(',') if v.strip()]
+        if values:
+            filters.append(FilterExpression(field=field, values=values))
+    return filters
+
+
+def matches_filter(doc: Any, filters: list) -> bool:
+    """Check if document matches all filter expressions.
+
+    Args:
+        doc: Document to check (DocumentData).
+        filters: List of FilterExpression objects (AND).
+
+    Returns:
+        True if document matches all filters.
+    """
+    import fnmatch
+
+    for f in filters:
+        doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
+        doc_status = doc.status.value if hasattr(doc.status, 'value') else str(doc.status)
+
+        if f.field == 'type':
+            if doc_type.lower() not in [v.lower() for v in f.values]:
+                return False
+        elif f.field == 'status':
+            if doc_status.lower() not in [v.lower() for v in f.values]:
+                return False
+        elif f.field == 'concept':
+            concepts = doc.frontmatter.get('concepts', [])
+            if not any(c.lower() in [v.lower() for v in f.values] for c in concepts):
+                return False
+        elif f.field == 'id':
+            if not any(fnmatch.fnmatch(doc.id.lower(), v.lower()) for v in f.values):
+                return False
+        # Unknown fields: ignore (per CA guidance)
+
+    return True
+
+
 @dataclass
 class MapOptions:
     """CLI-level options for map command."""
@@ -292,6 +437,10 @@ class MapOptions:
     strict: bool = False
     json_output: bool = False
     quiet: bool = False
+    obsidian: bool = False
+    compact: CompactMode = CompactMode.OFF
+    filter_expr: Optional[str] = None
+    no_cache: bool = False
 
 
 def map_command(options: MapOptions) -> int:
@@ -305,9 +454,11 @@ def map_command(options: MapOptions) -> int:
     Returns:
         Exit code (0 for success, 1 for errors, 2 for warnings in strict mode)
     """
-    from ontos.io.files import find_project_root, scan_documents, load_document
+    from ontos.io.files import find_project_root, scan_documents, load_document, load_document_from_content
     from ontos.io.config import load_project_config
     from ontos.io.yaml import parse_frontmatter_content
+    from ontos.io.obsidian import read_file_lenient
+    from ontos.core.cache import DocumentCache
 
     # Find project root
     try:
@@ -339,12 +490,29 @@ def map_command(options: MapOptions) -> int:
         skip_patterns=config.scanning.skip_patterns
     )
 
-    # Load documents
+    # Load documents with filter and cache
     docs: Dict[str, DocumentData] = {}
+    cache = DocumentCache() if not options.no_cache else None
+    filters = parse_filter(options.filter_expr)
+
     for path in doc_paths:
         try:
-            doc = load_document(path, parse_frontmatter_content)
-            docs[doc.id] = doc
+            mtime = path.stat().st_mtime
+            doc = None
+
+            if cache:
+                doc = cache.get(path, mtime)
+
+            if doc is None:
+                content = read_file_lenient(path)
+                doc = load_document_from_content(path, content, parse_frontmatter_content)
+                
+                if cache:
+                    cache.set(path, doc, mtime)
+
+            if matches_filter(doc, filters):
+                docs[doc.id] = doc
+
         except Exception as e:
             if not options.quiet:
                 print(f"Warning: Failed to load {path}: {e}")
@@ -361,6 +529,8 @@ def map_command(options: MapOptions) -> int:
         output_path=output_path,
         strict=options.strict,
         max_dependency_depth=config.validation.max_dependency_depth,
+        obsidian=options.obsidian,
+        compact=options.compact,
     )
 
     content, result = generate_context_map(docs, gen_config, gen_options)

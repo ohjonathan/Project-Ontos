@@ -118,7 +118,29 @@ def load_document(
         DocumentData with normalized types
     """
     content = path.read_text(encoding="utf-8")
+    return load_document_from_content(path, content, frontmatter_parser)
+
+
+def load_document_from_content(
+    path: Path,
+    content: str,
+    frontmatter_parser: Callable[[str], Tuple[Dict[str, Any], str]]
+) -> DocumentData:
+    """Load and normalize a document from provided content.
+
+    Args:
+        path: Original file path (for ID fallback and metadata)
+        content: File content string
+        frontmatter_parser: Function to parse frontmatter from content
+
+    Returns:
+        DocumentData with normalized types
+    """
+    from ontos.core.frontmatter import normalize_tags, normalize_aliases
+    
     fm, body = frontmatter_parser(content)
+    
+    doc_id = fm.get("id", path.stem)
 
     # Normalize strings to enums at this boundary
     type_str = fm.get("type", "atom")
@@ -135,6 +157,10 @@ def load_document(
     except ValueError:
         doc_status = DocumentStatus.DRAFT
 
+    # Normalize tags and aliases
+    tags = normalize_tags(fm)
+    aliases = normalize_aliases(fm, doc_id)
+
     # Normalize depends_on to list
     depends_on = fm.get("depends_on", [])
     if depends_on is None:
@@ -150,7 +176,7 @@ def load_document(
         impacts = [impacts]
 
     return DocumentData(
-        id=fm.get("id", path.stem),
+        id=doc_id,
         type=doc_type,
         status=doc_status,
         filepath=path,
@@ -158,6 +184,8 @@ def load_document(
         content=body,
         depends_on=depends_on,
         impacts=impacts,
+        tags=tags,
+        aliases=aliases,
     )
 
 

@@ -71,6 +71,8 @@ class DocumentData:
     content: str
     depends_on: List[str] = field(default_factory=list)
     impacts: List[str] = field(default_factory=list)
+    tags: List[str] = field(default_factory=list)
+    aliases: List[str] = field(default_factory=list)
 
 
 @dataclass

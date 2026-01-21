@@ -453,6 +453,37 @@ def check_agents_staleness() -> CheckResult:
         )
 
 
+def _get_config_path() -> Optional[Path]:
+    """Get config path if it exists."""
+    config_path = Path.cwd() / ".ontos.toml"
+    if config_path.exists():
+        return config_path
+    return None
+
+
+def _print_verbose_config(options: DoctorOptions) -> None:
+    """Print resolved configuration paths in verbose mode."""
+    if not options.verbose:
+        return
+
+    from ontos.io.files import find_project_root
+    from ontos.io.config import load_project_config
+
+    try:
+        project_root = find_project_root()
+        config = load_project_config(repo_root=project_root)
+
+        print("Configuration:")
+        print(f"  repo_root:    {project_root}")
+        print(f"  config_path:  {_get_config_path() or 'default'}")
+        print(f"  docs_dir:     {project_root / config.paths.docs_dir}")
+        print(f"  context_map:  {project_root / config.paths.context_map}")
+        print()
+    except Exception as e:
+        print(f"Configuration: Unable to load ({e})")
+        print()
+
+
 def doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
     """
     Run health checks and return results.
@@ -461,6 +492,9 @@ def doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
         Tuple of (exit_code, DoctorResult)
         Exit code 0 if all pass, 1 if any fail
     """
+    # Print verbose config if requested
+    _print_verbose_config(options)
+
     result = DoctorResult()
 
     checks = [
