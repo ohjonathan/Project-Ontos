@@ -3,7 +3,7 @@
 [![CI](https://github.com/ohjona/Project-Ontos/actions/workflows/ci.yml/badge.svg)](https://github.com/ohjona/Project-Ontos/actions/workflows/ci.yml)
 [![PyPI version](https://img.shields.io/pypi/v/ontos.svg)](https://pypi.org/project/ontos/)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](https://github.com/ohjona/Project-Ontos/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![GitHub](https://img.shields.io/badge/GitHub-Source-black?logo=github)](https://github.com/ohjona/Project-Ontos)
 
 **Portable context for the agentic era.**
@@ -253,17 +253,20 @@ See [Changelog](https://github.com/ohjona/Project-Ontos/blob/main/Ontos_CHANGELO
 
 ## Feedback
 
-This is a source-available project. The code is public for transparency, not contribution.
-
-**Welcome:**
-- Bug reports and feature requests via [GitHub Issues](https://github.com/ohjona/Project-Ontos/issues)
-- Questions and feedback
-
-**Not accepted:**
-- Pull requests (proprietary codebase; roadmap and implementation are managed privately)
+Issues and feature requests welcome via [GitHub Issues](https://github.com/ohjona/Project-Ontos/issues).
 
 ---
 
 ## License
 
-Proprietary. All rights reserved. See [LICENSE](https://github.com/ohjona/Project-Ontos/blob/main/LICENSE) for details.
+Apache-2.0. See [LICENSE](LICENSE).
+
+### Why Apache-2.0?
+
+Ontos exists because context should be portable and owned by you. A restrictive license would contradict that philosophy.
+
+You can use, modify, distribute, and build commercial products on Ontos. The requirements: include the license text, keep copyright notices, and note significant changes if you redistribute. Apache-2.0 also includes a patent grant from contributors (though not from unrelated third parties).
+
+### Contributing
+
+Issues and PRs welcome. If you're planning something substantial, open an issue first so we can align on direction.

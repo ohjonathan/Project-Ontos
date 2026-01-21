@@ -8,7 +8,7 @@ version = "3.0.5"
 description = "Local-first documentation management for AI-assisted development"
 readme = "README.md"
 requires-python = ">=3.9"
-license = {text = "Proprietary"}
+license = "Apache-2.0"
 authors = [
     {name = "Ontos Project", email = "ohjona@users.noreply.github.com"}
 ]
@@ -17,7 +17,7 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: Developers",
-    "License :: Other/Proprietary License",
+    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
