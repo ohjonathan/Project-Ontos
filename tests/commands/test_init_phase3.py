@@ -167,12 +167,98 @@ class TestHookInstallation:
         foreign_hook = hooks_dir / "pre-commit"
         foreign_hook.write_text("#!/bin/sh\necho 'foreign hook'\n")
 
-        options = InitOptions(path=git_repo, force=True)
+        options = InitOptions(path=git_repo, force=True, yes=True)
         code, _ = init_command(options)
 
         # Should succeed
         assert code == 0
 
-        # Hook should now be ours
+        # Hook should now be ours and the foreign content should be gone
         content = foreign_hook.read_text()
         assert ONTOS_HOOK_MARKER in content
+        assert "foreign hook" not in content
+
+class TestHookConfirmation:
+    """Tests for hook confirmation flow (v3.0.5 UX-1)."""
+
+    def test_skip_hooks_flag_skips_confirmation(self, git_repo):
+        """--skip-hooks bypasses confirmation entirely."""
+        options = InitOptions(path=git_repo, skip_hooks=True)
+        code, _ = init_command(options)
+
+        assert code == 0
+        # No hooks should be installed
+        pre_commit = git_repo / ".git" / "hooks" / "pre-commit"
+        if pre_commit.exists():
+            assert ONTOS_HOOK_MARKER not in pre_commit.read_text()
+
+    def test_yes_flag_skips_confirmation(self, git_repo):
+        """--yes installs hooks without prompting."""
+        options = InitOptions(path=git_repo, yes=True)
+        code, _ = init_command(options)
+
+        assert code in (0, 3)  # 0 success, 3 if collision
+        # In clean repo, hooks should be installed
+        if code == 0:
+            pre_commit = git_repo / ".git" / "hooks" / "pre-commit"
+            assert pre_commit.exists()
+            assert ONTOS_HOOK_MARKER in pre_commit.read_text()
+
+    def test_skip_hooks_wins_over_yes(self, git_repo):
+        """--skip-hooks takes precedence over --yes."""
+        options = InitOptions(path=git_repo, skip_hooks=True, yes=True)
+        code, _ = init_command(options)
+
+        assert code == 0
+        pre_commit = git_repo / ".git" / "hooks" / "pre-commit"
+        if pre_commit.exists():
+            assert ONTOS_HOOK_MARKER not in pre_commit.read_text()
+
+    def test_ctrl_c_aborts_init_and_cleans_up(self, git_repo, monkeypatch):
+        """Ctrl+C during hook confirmation aborts entire init and cleans up all changes."""
+        # Simulate KeyboardInterrupt during input()
+        def mock_input(prompt):
+            raise KeyboardInterrupt()
+        monkeypatch.setattr('builtins.input', mock_input)
+        monkeypatch.setattr('sys.stdin.isatty', lambda: True)
+
+        options = InitOptions(path=git_repo)
+        code, msg = init_command(options)
+
+        # Should return SIGINT exit code
+        assert code == 130
+        assert "Aborted" in msg
+
+        # Verification of complete cleanup
+        assert not (git_repo / ".ontos.toml").exists()
+        assert not (git_repo / "docs").exists()
+        assert not (git_repo / "Ontos_Context_Map.md").exists()
+
+    def test_ctrl_d_skips_hooks(self, git_repo, monkeypatch):
+        """EOF (Ctrl+D) during hook confirmation skips hooks but proceeds with init."""
+        # Simulate EOFError during input()
+        def mock_input(prompt):
+            raise EOFError()
+        monkeypatch.setattr('builtins.input', mock_input)
+        monkeypatch.setattr('sys.stdin.isatty', lambda: True)
+
+        options = InitOptions(path=git_repo)
+        code, msg = init_command(options)
+
+        assert code == 0
+        assert (git_repo / ".ontos.toml").exists()
+        # Hooks should NOT be installed
+        pre_commit = git_repo / ".git" / "hooks" / "pre-commit"
+        if pre_commit.exists():
+            assert ONTOS_HOOK_MARKER not in pre_commit.read_text()
+
+    def test_non_tty_auto_installs_hooks(self, git_repo, monkeypatch):
+        """Non-TTY (CI) environment auto-installs hooks."""
+        monkeypatch.setattr('sys.stdin.isatty', lambda: False)
+        
+        options = InitOptions(path=git_repo)
+        code, _ = init_command(options)
+
+        assert code == 0
+        assert (git_repo / ".git" / "hooks" / "pre-commit").exists()
+        assert ONTOS_HOOK_MARKER in (git_repo / ".git" / "hooks" / "pre-commit").read_text()

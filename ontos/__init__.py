@@ -7,7 +7,7 @@ Package structure:
     ontos.ui   - I/O layer (CLI, output, prompts)
 """
 
-__version__ = "3.0.4"
+__version__ = "3.0.5"
 
 # Re-export commonly used items for convenience
 from ontos.core.context import SessionContext, FileOperation, PendingWrite

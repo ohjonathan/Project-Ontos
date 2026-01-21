@@ -26,7 +26,7 @@
 - [What Ontos Is NOT](#what-ontos-is-not)
 - [Roadmap](#roadmap)
 - [Documentation](#documentation)
-- [Known Issues](#known-issues-v304)
+- [Known Issues](#known-issues-v305)
 - [Feedback](#feedback)
 - [License](#license)
 
@@ -205,7 +205,7 @@ If you want automatic context capture, use a vector database. If you want reliab
 
 | Version | Status | Highlights |
 |---------|--------|------------|
-| **v3.0.4** | ✅ Current | CLI wrapper commands fixed, documentation link fixes |
+| **v3.0.5** | ✅ Current | Tech debt patch, UX improvements (init hooks consent) |
 | **v3.1** | Next | Obsidian compatibility, `ontos deinit`, concepts → tags mapping |
 | **v4.0** | Vision | MCP as primary interface, full template system, daemon mode |
 
@@ -213,9 +213,29 @@ v3.0 transformed Ontos from repo-injected scripts into a pip-installable package
 
 ---
 
-## Known Issues (v3.0.4)
+## Known Issues (v3.0.5)
 
-No known critical issues as of 2026-01-19. See [Changelog](https://github.com/ohjona/Project-Ontos/blob/main/Ontos_CHANGELOG.md) and [Issues](https://github.com/ohjona/Project-Ontos/issues) for updates.
+### Wrapper Commands
+
+Some commands delegate to legacy scripts and may have limitations:
+
+| Command | Status | Notes |
+|---------|--------|-------|
+| `verify` | ⚠️ | Legacy script requires explicit path. Subparser lacks positional argument support. |
+| `query` | ⚠️ | Requires legacy flags (e.g., `--health`, `--stale`). |
+| `consolidate` | ⚠️ | Requires `.ontos-internal/strategy/decision_history.md` to exist. |
+| `migrate` | ✅ | Functional delegation. |
+| `promote` | ✅ | Functional delegation. |
+| `scaffold` | ❌ | Broken: rejects positional arguments in unified CLI. |
+| `stub` | ✅ | Functional delegation. |
+
+**Workaround:** For full functionality, use native commands: `map`, `doctor`, `agents`, `log`, `init`.
+
+### Configuration
+
+Legacy wrapper commands do not honor `.ontos.toml` configuration. This will be addressed in v3.1.
+
+See [Changelog](https://github.com/ohjona/Project-Ontos/blob/main/Ontos_CHANGELOG.md) and [Issues](https://github.com/ohjona/Project-Ontos/issues) for updates.
 
 ---
 

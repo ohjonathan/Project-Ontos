@@ -107,6 +107,8 @@ def _register_init(subparsers, parent):
                    help="Overwrite existing config and hooks")
     p.add_argument("--skip-hooks", action="store_true",
                    help="Don't install git hooks")
+    p.add_argument("--yes", "-y", action="store_true",
+                   help="Non-interactive mode: accept all defaults")
     p.set_defaults(func=_cmd_init)
 
 
@@ -235,6 +237,7 @@ def _cmd_init(args) -> int:
         path=Path.cwd(),
         force=args.force,
         skip_hooks=getattr(args, "skip_hooks", False),
+        yes=getattr(args, "yes", False),
     )
     code, msg = init_command(options)
 
