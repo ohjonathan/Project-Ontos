@@ -1,0 +1,17 @@
+Configuration:
+  repo_root:    /Users/jonathanoh/Dev/Ontos-dev
+  config_path:  /Users/jonathanoh/Dev/Ontos-dev/.ontos.toml
+  docs_dir:     /Users/jonathanoh/Dev/Ontos-dev/docs
+  context_map:  /Users/jonathanoh/Dev/Ontos-dev/Ontos_Context_Map.md
+
+OK: configuration: .ontos.toml valid
+WARN: git_hooks: Hooks missing: pre-push, pre-commit
+     Run 'ontos init --force' to install hooks
+OK: python_version: 3.9.6 (>=3.9 required)
+OK: docs_directory: 7 documents in docs/
+OK: context_map: Context map valid
+OK: validation: No obvious issues
+OK: cli_availability: ontos available via 'python -m ontos'
+WARN: agents_staleness: AGENTS.md may be stale. Run 'ontos agents' to regenerate.
+
+Health check: 6 passed, 0 failed, 2 warnings

@@ -130,11 +130,26 @@ CI validation catches broken links, circular dependencies, and architectural vio
 
 **Requirements:** Python 3.9+, inside a git repository
 
-**Install:**
+**Install (recommended):**
+
+```bash
+# pipx installs in an isolated environment and adds to PATH automatically
+pipx install ontos
+```
+
+> [!TIP]
+> Don't have pipx? Install it with `brew install pipx` (macOS) or `pip install pipx`. See [pipx docs](https://pipx.pypa.io/).
+
+**Alternative install:**
 
 ```bash
 pip install ontos
 ```
+
+> [!NOTE]
+> **"command not found: ontos"?** Your Python scripts directory may not be on PATH.
+> - **Quick fix:** Use `python -m ontos` instead (e.g., `python -m ontos map`)
+> - **Permanent fix:** Add Python's bin directory to your PATH (the `pip install` output shows the location)
 
 Source available at [github.com/ohjona/Project-Ontos](https://github.com/ohjona/Project-Ontos).
 
@@ -176,7 +191,7 @@ ontos doctor       # Check graph health
 ontos agents       # Regenerate AGENTS.md and .cursorrules
 ```
 
-**Update:** `pip install --upgrade ontos`
+**Update:** `pipx upgrade ontos` or `pip install --upgrade ontos`
 
 ---
 
