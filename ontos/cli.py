@@ -110,6 +110,12 @@ def _register_init(subparsers, parent):
                    help="Don't install git hooks")
     p.add_argument("--yes", "-y", action="store_true",
                    help="Non-interactive mode: accept all defaults")
+    # Scaffold flags (mutually exclusive)
+    scaffold_group = p.add_mutually_exclusive_group()
+    scaffold_group.add_argument("--scaffold", action="store_true",
+                                help="Auto-scaffold untagged files (uses docs/ scope)")
+    scaffold_group.add_argument("--no-scaffold", action="store_true",
+                                help="Skip scaffold prompt")
     p.set_defaults(func=_cmd_init)
 
 
@@ -366,6 +372,8 @@ def _cmd_init(args) -> int:
         force=args.force,
         skip_hooks=getattr(args, "skip_hooks", False),
         yes=getattr(args, "yes", False),
+        scaffold=getattr(args, "scaffold", False),
+        no_scaffold=getattr(args, "no_scaffold", False),
     )
     code, msg = init_command(options)
 

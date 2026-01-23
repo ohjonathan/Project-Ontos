@@ -19,6 +19,8 @@ class InitOptions:
     interactive: bool = False  # Reserved for v3.1
     skip_hooks: bool = False
     yes: bool = False
+    scaffold: bool = False      # Force scaffold without prompt
+    no_scaffold: bool = False   # Suppress scaffold prompt entirely
 
 
 def _confirm_hooks(options: InitOptions) -> bool:
@@ -61,6 +63,131 @@ def _confirm_hooks(options: InitOptions) -> bool:
         raise  # Re-raise to abort init entirely
 
 
+def _prompt_scaffold(project_root: Path, config, options: InitOptions):
+    """Prompt user to scaffold untagged markdown files during init.
+
+    Returns:
+        List[Path] of directories to scaffold, or None to skip.
+
+    Behavioral matrix:
+        no_scaffold=True     -> None (skip)
+        scaffold=True        -> [docs_dir] (force, docs scope)
+        non-TTY              -> None (skip silently)
+            Rationale: hooks proceed in non-TTY because they add new files.
+            Scaffold modifies existing files, requiring explicit opt-in.
+        TTY, 0 untagged      -> None (no prompt)
+        TTY, N untagged      -> prompt user for confirmation + scope
+    """
+    from typing import List
+
+    # Short-circuit on flags
+    if options.no_scaffold:
+        return None
+
+    docs_path = project_root / config.paths.docs_dir
+
+    if options.scaffold:
+        return [docs_path]
+
+    # Non-TTY: skip silently
+    if not sys.stdin.isatty():
+        return None
+
+    # Detect untagged files in docs_dir
+    try:
+        from ontos.commands.scaffold import find_untagged_files
+        untagged = find_untagged_files(paths=[docs_path])
+    except Exception:
+        return None
+
+    if not untagged:
+        return None
+
+    # Large file count warning
+    count = len(untagged)
+    if count > 50:
+        print(f"\nNote: Found {count} untagged files. This may take a moment.", file=sys.stderr)
+
+    # Prompt for confirmation
+    print(f"\nFound {count} untagged markdown file(s).")
+    print("Scaffold adds YAML headers to identify each file.")
+    try:
+        response = input("Would you like to scaffold them? [y/N] ").strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        return None
+
+    if response not in ('y', 'yes'):
+        return None
+
+    # Prompt for scope
+    print(f"\nWhere should we scan?")
+    print(f"  (1) {config.paths.docs_dir}/ directory only")
+    print("  (2) Entire repository (excludes node_modules, .venv, etc.)")
+    print("  (3) Custom path")
+
+    try:
+        choice = input("Choice [1]: ").strip()
+    except (EOFError, KeyboardInterrupt):
+        return None
+
+    if choice == '2':
+        return [project_root]
+    elif choice == '3':
+        try:
+            custom_input = input("Path (relative to project root): ").strip()
+        except (EOFError, KeyboardInterrupt):
+            return None
+
+        if not custom_input:
+            return [docs_path]
+
+        custom_path = Path(custom_input)
+        if not custom_path.is_absolute():
+            custom_path = project_root / custom_path
+        resolved = custom_path.resolve()
+
+        # Path escape guard (B2)
+        if not resolved.is_relative_to(project_root.resolve()):
+            print("Error: Path must be within project root.", file=sys.stderr)
+            return None
+
+        if not resolved.exists():
+            print(f"Error: Path '{custom_input}' does not exist.", file=sys.stderr)
+            return None
+
+        return [resolved]
+    elif choice in ('1', ''):
+        return [docs_path]
+    else:
+        print("Invalid choice, using docs/ directory.", file=sys.stderr)
+        return [docs_path]
+
+
+def _run_scaffold(project_root: Path, paths) -> None:
+    """Run scaffold on given paths during init. Non-fatal on failure.
+
+    Matches the non-fatal pattern of _generate_agents_file().
+    Note: Scaffold writes persist even if init is subsequently aborted.
+    """
+    try:
+        from ontos.commands.scaffold import ScaffoldOptions, scaffold_command
+
+        options = ScaffoldOptions(
+            paths=paths,
+            apply=True,
+            dry_run=False,
+            quiet=True,
+        )
+        exit_code, message = scaffold_command(options)
+
+        if exit_code == 0:
+            print("   Scaffold complete.", file=sys.stderr)
+        else:
+            print(f"Warning: Scaffold completed with errors: {message}", file=sys.stderr)
+    except Exception as e:
+        print(f"Warning: Could not run scaffold: {e}", file=sys.stderr)
+
+
 def init_command(options: InitOptions) -> Tuple[int, str]:
     """
     Initialize a new Ontos project.
@@ -101,11 +228,14 @@ def init_command(options: InitOptions) -> Tuple[int, str]:
             created_paths.append(config_path)
         save_project_config(config, config_path)
 
-        # 5. Create directory structure
+        # 5. Create directory structure (full type hierarchy)
         dirs = [
             config.paths.docs_dir,
             config.paths.logs_dir,
+            f"{config.paths.docs_dir}/kernel",
             f"{config.paths.docs_dir}/strategy",
+            f"{config.paths.docs_dir}/product",
+            f"{config.paths.docs_dir}/atom",
             f"{config.paths.docs_dir}/reference",
             f"{config.paths.docs_dir}/archive",
         ]
@@ -116,6 +246,11 @@ def init_command(options: InitOptions) -> Tuple[int, str]:
                 # We track the deepest nonexistent parent to avoid orphaned folders
                 created_paths.append(p)
             p.mkdir(parents=True, exist_ok=True)
+
+        # 5.5 Scaffold integration (optional, interactive)
+        scaffold_paths = _prompt_scaffold(project_root, config, options)
+        if scaffold_paths is not None:
+            _run_scaffold(project_root, scaffold_paths)
 
         # 6. Generate initial context map
         context_map_path = project_root / config.paths.context_map
@@ -174,7 +309,10 @@ def _create_directories(root: Path, config) -> None:
     dirs = [
         config.paths.docs_dir,
         config.paths.logs_dir,
+        f"{config.paths.docs_dir}/kernel",
         f"{config.paths.docs_dir}/strategy",
+        f"{config.paths.docs_dir}/product",
+        f"{config.paths.docs_dir}/atom",
         f"{config.paths.docs_dir}/reference",
         f"{config.paths.docs_dir}/archive",
     ]
