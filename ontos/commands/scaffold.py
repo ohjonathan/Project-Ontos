@@ -11,6 +11,15 @@ from ontos.core.context import SessionContext
 from ontos.io.files import find_project_root, scan_documents
 from ontos.ui.output import OutputHandler
 
+# Hardcoded exclusion patterns for dependency directories.
+# These are always skipped regardless of .ontosignore presence.
+# Mirrors legacy _scripts/ontos_scaffold.py behavior.
+DEFAULT_IGNORES = [
+    'node_modules', '.venv', 'venv', 'vendor',
+    '__pycache__', '.pytest_cache', '.mypy_cache',
+    'dist', 'build', '.tox', '.eggs',
+]
+
 
 @dataclass
 class ScaffoldOptions:
@@ -60,6 +69,10 @@ def find_untagged_files(paths: Optional[List[Path]] = None) -> List[Path]:
         if any(part.startswith('.') for part in rel_path.parts[:-1]):
             if '.ontos' not in str(f) and '.ontos-internal' not in str(f):
                 continue
+
+        # Skip DEFAULT_IGNORES directories (safety: prevents modifying dependency files)
+        if any(ignore in rel_path.parts for ignore in DEFAULT_IGNORES):
+            continue
 
         # Check for frontmatter
         try:
