@@ -24,7 +24,7 @@ class TestInitCommand:
 
     def test_init_empty_directory(self, git_repo):
         """Init in empty git repo creates .ontos.toml."""
-        options = InitOptions(path=git_repo)
+        options = InitOptions(path=git_repo, no_scaffold=True)
         code, msg = init_command(options)
 
         # Exit code 0 (success) or 3 (hooks skipped) are both valid
@@ -32,13 +32,16 @@ class TestInitCommand:
         assert (git_repo / ".ontos.toml").exists()
 
     def test_init_creates_directory_structure(self, git_repo):
-        """Init creates the expected directory structure."""
-        options = InitOptions(path=git_repo)
+        """Init creates the full type hierarchy directory structure."""
+        options = InitOptions(path=git_repo, no_scaffold=True)
         init_command(options)
 
         assert (git_repo / "docs").is_dir()
         assert (git_repo / "docs" / "logs").is_dir()
+        assert (git_repo / "docs" / "kernel").is_dir()
         assert (git_repo / "docs" / "strategy").is_dir()
+        assert (git_repo / "docs" / "product").is_dir()
+        assert (git_repo / "docs" / "atom").is_dir()
         assert (git_repo / "docs" / "reference").is_dir()
         assert (git_repo / "docs" / "archive").is_dir()
 
@@ -120,7 +123,7 @@ class TestHookInstallation:
 
     def test_hooks_installed(self, git_repo):
         """Init installs hooks in .git/hooks."""
-        options = InitOptions(path=git_repo)
+        options = InitOptions(path=git_repo, no_scaffold=True)
         code, _ = init_command(options)
 
         if code == 0:  # Only check if hooks weren't skipped
@@ -148,7 +151,7 @@ class TestHookInstallation:
         foreign_hook = hooks_dir / "pre-commit"
         foreign_hook.write_text("#!/bin/sh\necho 'foreign hook'\n")
 
-        options = InitOptions(path=git_repo)
+        options = InitOptions(path=git_repo, no_scaffold=True)
         code, _ = init_command(options)
 
         # Should exit with code 3 (hooks skipped)
@@ -256,7 +259,7 @@ class TestHookConfirmation:
         """Non-TTY (CI) environment auto-installs hooks."""
         monkeypatch.setattr('sys.stdin.isatty', lambda: False)
         
-        options = InitOptions(path=git_repo)
+        options = InitOptions(path=git_repo, no_scaffold=True)
         code, _ = init_command(options)
 
         assert code == 0
