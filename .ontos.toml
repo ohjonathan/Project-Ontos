@@ -23,4 +23,5 @@ log_retention_count = 20
 [hooks]
 pre_push = true
 pre_commit = true
+strict = false
 

@@ -20,13 +20,14 @@ Reference document tracking which Ontos features work in Contributor Mode vs Use
 |-----------|------------------|-----------|-------|
 | Documentation root | `.ontos-internal/` | `docs/` | Set by `is_ontos_repo()` |
 | Session logs | `.ontos-internal/logs/` | `docs/logs/` | |
+| Kernel docs | `.ontos-internal/kernel/` | `docs/kernel/` | v3.1.1+ |
 | Strategy docs | `.ontos-internal/strategy/` | `docs/strategy/` | |
+| Product docs | — | `docs/product/` | v3.1.1+ |
+| Atom docs | `.ontos-internal/atom/` | `docs/atom/` | v3.1.1+ |
 | Proposals | `.ontos-internal/strategy/proposals/` | `docs/strategy/proposals/` | v2.5.2+ |
 | Archive (logs) | `.ontos-internal/archive/logs/` | `docs/archive/logs/` | v2.5.2+ |
 | Archive (proposals) | `.ontos-internal/archive/proposals/` | `docs/archive/proposals/` | v2.5.2+ |
 | Reference docs | `.ontos-internal/reference/` | `docs/reference/` | |
-| Kernel docs | `.ontos-internal/kernel/` | `docs/` (flat) | Users don't need kernel/ |
-| Atom docs | `.ontos-internal/atom/` | `docs/` (flat) | Users don't need atom/ |
 
 ---
 
@@ -155,6 +156,7 @@ def is_ontos_repo() -> bool:
 
 | Version | Changes |
 |---------|---------|
+| v3.1.1 | Full type hierarchy in user mode: kernel/, product/, atom/ subdirectories |
 | v2.5.2 | Added nested directory structure, template loader, path helpers with backward compat |
 | v2.5.1 | Added proposals directory concept |
 | v2.5.0 | Mode promises, consolidation behavior per mode |
