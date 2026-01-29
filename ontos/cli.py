@@ -83,6 +83,7 @@ def create_parser() -> argparse.ArgumentParser:
     _register_map(subparsers, global_parser)
     _register_log(subparsers, global_parser)
     _register_doctor(subparsers, global_parser)
+    _register_env(subparsers, global_parser)
     _register_agents(subparsers, global_parser)
     _register_agent_export(subparsers, global_parser)  # Deprecated alias
     _register_export(subparsers, global_parser)
@@ -96,6 +97,10 @@ def create_parser() -> argparse.ArgumentParser:
     _register_stub(subparsers, global_parser)
     _register_migration_report(subparsers, global_parser)
     _register_migrate_convenience(subparsers, global_parser)
+
+    # Legacy Aliases (v3.2)
+    _register_tree_alias(subparsers, global_parser)
+    _register_validate_alias(subparsers, global_parser)
 
     return parser
 
@@ -165,6 +170,32 @@ def _register_doctor(subparsers, parent):
     p.add_argument("--verbose", "-v", action="store_true",
                    help="Show detailed output")
     p.set_defaults(func=_cmd_doctor)
+
+
+def _register_env(subparsers, parent):
+    """Register env command."""
+    p = subparsers.add_parser(
+        "env",
+        help="Detect and document environment manifests",
+        parents=[parent]
+    )
+    p.add_argument(
+        "--write", "-w",
+        action="store_true",
+        help="Write environment documentation to .ontos/environment.md"
+    )
+    p.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite existing environment.md (required with --write if file exists)"
+    )
+    p.add_argument(
+        "--format", "-f",
+        choices=["text", "json"],
+        default="text",
+        help="Output format (default: text)"
+    )
+    p.set_defaults(func=_cmd_env)
 
 
 def _register_agents(subparsers, parent):
@@ -444,6 +475,29 @@ def _register_migrate_convenience(subparsers, parent):
     p.set_defaults(func=_cmd_migrate_convenience)
 
 
+def _register_tree_alias(subparsers, parent):
+    """Register tree command (deprecated alias for map)."""
+    p = subparsers.add_parser("tree", help="(Deprecated) Use 'ontos map' instead", parents=[parent])
+    # Include map arguments to maintain compatibility
+    p.add_argument("--strict", action="store_true", help="Treat warnings as errors")
+    p.add_argument("--output", "-o", type=Path, help="Output path")
+    p.add_argument("--obsidian", action="store_true", help="Enable Obsidian output")
+    p.add_argument("--compact", nargs="?", const="basic", default="off",
+                   choices=["basic", "rich"], help="Compact output")
+    p.add_argument("--filter", "-f", metavar="EXPR", help="Filter documents")
+    p.add_argument("--no-cache", action="store_true", help="Bypass cache")
+    p.set_defaults(func=_cmd_tree)
+
+
+def _register_validate_alias(subparsers, parent):
+    """Register validate command (deprecated alias for verify)."""
+    p = subparsers.add_parser("validate", help="(Deprecated) Use 'ontos verify' instead", parents=[parent])
+    p.add_argument("path", nargs="?", type=Path, help="Specific file to verify")
+    p.add_argument("--all", "-a", action="store_true", help="Verify all stale documents")
+    p.add_argument("--date", "-d", help="Verification date")
+    p.set_defaults(func=_cmd_validate)
+
+
 # ============================================================================
 # Command handlers
 # ============================================================================
@@ -534,6 +588,30 @@ def _cmd_doctor(args) -> int:
         })
     elif not args.quiet:
         print(format_doctor_output(result, verbose=args.verbose))
+
+    return exit_code
+
+
+def _cmd_env(args) -> int:
+    """Handle env command."""
+    from ontos.commands.env import env_command, EnvOptions
+
+    options = EnvOptions(
+        path=Path.cwd(),
+        write=getattr(args, "write", False),
+        force=getattr(args, "force", False),  # v1.1: --force flag
+        format=getattr(args, "format", "text"),
+        quiet=args.quiet,
+    )
+
+    exit_code, output = env_command(options)
+
+    if args.json or options.format == "json":
+        # Already JSON formatted
+        if output:
+            print(output)
+    elif not args.quiet and output:
+        print(output)
 
     return exit_code
 
@@ -866,6 +944,20 @@ def _cmd_scaffold(args) -> int:
     )
     exit_code, message = scaffold_command(options)
     return exit_code
+
+
+def _cmd_tree(args) -> int:
+    """Handle tree command (deprecated alias for map)."""
+    import sys
+    print("Warning: 'ontos tree' is deprecated. Use 'ontos map' instead.", file=sys.stderr)
+    return _cmd_map(args)
+
+
+def _cmd_validate(args) -> int:
+    """Handle validate command (deprecated alias for verify)."""
+    import sys
+    print("Warning: 'ontos validate' is deprecated. Use 'ontos verify' instead.", file=sys.stderr)
+    return _cmd_verify(args)
 
 
 def _cmd_hook(args) -> int:

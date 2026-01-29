@@ -65,7 +65,7 @@ class TestUnifiedCLI:
     # Test all v3.0 commands respond to --help
     @pytest.mark.parametrize("command", [
         'init', 'map', 'log', 'doctor', 'agents', 'export', 'hook',
-        'verify', 'query', 'migrate', 'consolidate', 'promote', 'scaffold', 'stub'
+        'verify', 'query', 'migrate', 'consolidate', 'promote', 'scaffold', 'stub', 'env'
     ])
     def test_command_help(self, command):
         """Each command should respond to --help."""
@@ -143,7 +143,7 @@ class TestCLICommands:
         result = self.run_cli('--help')
         expected_commands = [
             'init', 'map', 'log', 'doctor', 'agents', 'export', 'hook',
-            'verify', 'query', 'migrate', 'consolidate', 'promote', 'scaffold', 'stub'
+            'verify', 'query', 'migrate', 'consolidate', 'promote', 'scaffold', 'stub', 'env'
         ]
         for cmd in expected_commands:
             assert cmd in result.stdout, f"Command '{cmd}' not in help output"

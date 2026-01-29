@@ -453,6 +453,46 @@ def check_agents_staleness() -> CheckResult:
         )
 
 
+def check_environment_manifests() -> CheckResult:
+    """Check 9: Detect project environment manifests (v3.2)."""
+    from ontos.commands.env import detect_manifests
+    
+    try:
+        manifests, warnings = detect_manifests(Path.cwd())
+        
+        if warnings:
+            # Surface parse warnings (v3.2)
+            warning_msg = f"Detected {len(manifests)} manifests with {len(warnings)} parse warnings"
+            return CheckResult(
+                name="environment",
+                status="warn",
+                message=warning_msg,
+                details="\n".join(warnings)
+            )
+
+        if not manifests:
+            return CheckResult(
+                name="environment",
+                status="warn",
+                message="No environment manifests detected",
+                details="Run 'ontos env' to see supported project types"
+            )
+            
+        manifest_names = [m.path.name for m in manifests]
+        return CheckResult(
+            name="environment",
+            status="pass",
+            message=f"Detected: {', '.join(manifest_names)}"
+        )
+    except Exception as e:
+        return CheckResult(
+            name="environment",
+            status="warn",
+            message="Environment check failed",
+            details=str(e)
+        )
+
+
 def _get_config_path() -> Optional[Path]:
     """Get config path if it exists."""
     config_path = Path.cwd() / ".ontos.toml"
@@ -506,6 +546,7 @@ def doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
         check_validation,
         check_cli_availability,
         check_agents_staleness,
+        check_environment_manifests,
     ]
 
     for check_fn in checks:
