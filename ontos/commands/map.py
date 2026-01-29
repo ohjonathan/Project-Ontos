@@ -181,12 +181,16 @@ def _generate_validation_section(result: ValidationResult) -> str:
         lines.append("### Errors")
         for error in result.errors:
             lines.append(f"- ❌ **{error.doc_id}**: {error.message}")
+            if error.fix_suggestion:
+                lines.append(f"    {error.fix_suggestion}")
     
     if result.warnings:
         lines.append("")
         lines.append("### Warnings")
         for warning in result.warnings:
             lines.append(f"- ⚠️ **{warning.doc_id}**: {warning.message}")
+            if warning.fix_suggestion:
+                lines.append(f"    {warning.fix_suggestion}")
     
     return "\n".join(lines)
 

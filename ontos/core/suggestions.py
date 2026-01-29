@@ -11,6 +11,9 @@ import os
 import re
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
+from difflib import SequenceMatcher
+
+from ontos.core.types import DocumentData
 
 
 def load_document_index(context_map_content: str) -> Dict[str, str]:
@@ -164,3 +167,55 @@ def extract_doc_ids_from_text(text: str, valid_ids: Set[str]) -> List[str]:
             found.append(doc_id)
     
     return found
+
+
+def suggest_candidates_for_broken_ref(
+    broken_ref: str,
+    all_docs: Dict[str, DocumentData],
+    referencing_doc: Optional[DocumentData] = None,
+    threshold: float = 0.5
+) -> List[Tuple[str, float, str]]:
+    """
+    Generate candidate suggestions for a broken reference.
+
+    Uses three matching strategies:
+    1. Substring match (broken_ref appears in doc_id) -> 0.85 confidence
+    2. Alias match (broken_ref matches doc aliases) -> 0.85 confidence
+    3. Levenshtein distance (fuzzy string similarity) -> actual ratio as confidence
+
+    Args:
+        broken_ref: The invalid document ID reference
+        all_docs: Dictionary mapping doc_id to DocumentData
+        referencing_doc: The DocumentData object containing the broken ref (optional)
+        threshold: Minimum similarity ratio for fuzzy matching (0.0-1.0)
+                   Note: 0.5 is baseline for fuzzy; 0.85 is fixed for substring/alias
+
+    Returns:
+        List of (doc_id, confidence_score, reason) tuples,
+        sorted by confidence descending (then alphabetically for ties), max 3 results
+    """
+    candidates = []
+    broken_lower = broken_ref.lower()
+
+    for doc_id, doc in all_docs.items():
+        doc_id_lower = doc_id.lower()
+
+        # Strategy 1: Substring match (high confidence: 0.85)
+        # broken_ref is contained in doc_id OR doc_id is contained in broken_ref
+        if broken_lower in doc_id_lower or doc_id_lower in broken_lower:
+            candidates.append((doc_id, 0.85, "substring match"))
+            continue
+
+        # Strategy 2: Alias match (high confidence: 0.85)
+        aliases = doc.aliases if hasattr(doc, 'aliases') else []
+        if aliases and any(broken_lower in alias.lower() for alias in aliases):
+            candidates.append((doc_id, 0.85, "alias match"))
+            continue
+
+        # Strategy 3: Levenshtein distance via SequenceMatcher (variable confidence)
+        ratio = SequenceMatcher(None, broken_lower, doc_id_lower).ratio()
+        if ratio >= threshold:
+            candidates.append((doc_id, ratio, f"similarity: {ratio:.0%}"))
+
+    # v1.1: Sort by confidence descending, then alphabetically by doc_id for deterministic ties
+    return sorted(candidates, key=lambda x: (-x[1], x[0]))[:3]

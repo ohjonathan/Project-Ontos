@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Set, Optional, Tuple, Union
 
 from ontos.core.types import DocumentData, ValidationError, ValidationErrorType
+from ontos.core.suggestions import suggest_candidates_for_broken_ref
 
 
 @dataclass
@@ -62,12 +63,20 @@ def build_graph(docs: Dict[str, DocumentData]) -> Tuple[DependencyGraph, List[Va
         # Check for broken links
         for dep_id in depends_on:
             if dep_id not in existing_ids:
+                # Generate candidate suggestions (v3.2)
+                candidates = suggest_candidates_for_broken_ref(dep_id, docs)
+                fix_suggestion = f"Remove '{dep_id}' from depends_on or create the missing document"
+                
+                if candidates:
+                    suggestion_text = ", ".join(c[0] for c in candidates)
+                    fix_suggestion += f". Did you mean: {suggestion_text}?"
+
                 errors.append(ValidationError(
                     error_type=ValidationErrorType.BROKEN_LINK,
                     doc_id=doc_id,
                     filepath=str(doc.filepath),
                     message=f"Broken dependency: '{dep_id}' does not exist",
-                    fix_suggestion=f"Remove '{dep_id}' from depends_on or create the missing document",
+                    fix_suggestion=fix_suggestion,
                     severity="error"
                 ))
 

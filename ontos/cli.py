@@ -83,6 +83,7 @@ def create_parser() -> argparse.ArgumentParser:
     _register_map(subparsers, global_parser)
     _register_log(subparsers, global_parser)
     _register_doctor(subparsers, global_parser)
+    _register_env(subparsers, global_parser)
     _register_agents(subparsers, global_parser)
     _register_agent_export(subparsers, global_parser)  # Deprecated alias
     _register_export(subparsers, global_parser)
@@ -165,6 +166,32 @@ def _register_doctor(subparsers, parent):
     p.add_argument("--verbose", "-v", action="store_true",
                    help="Show detailed output")
     p.set_defaults(func=_cmd_doctor)
+
+
+def _register_env(subparsers, parent):
+    """Register env command."""
+    p = subparsers.add_parser(
+        "env",
+        help="Detect and document environment manifests",
+        parents=[parent]
+    )
+    p.add_argument(
+        "--write", "-w",
+        action="store_true",
+        help="Write environment documentation to .ontos/environment.md"
+    )
+    p.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite existing environment.md (required with --write if file exists)"
+    )
+    p.add_argument(
+        "--format", "-f",
+        choices=["text", "json"],
+        default="text",
+        help="Output format (default: text)"
+    )
+    p.set_defaults(func=_cmd_env)
 
 
 def _register_agents(subparsers, parent):
@@ -534,6 +561,30 @@ def _cmd_doctor(args) -> int:
         })
     elif not args.quiet:
         print(format_doctor_output(result, verbose=args.verbose))
+
+    return exit_code
+
+
+def _cmd_env(args) -> int:
+    """Handle env command."""
+    from ontos.commands.env import env_command, EnvOptions
+
+    options = EnvOptions(
+        path=Path.cwd(),
+        write=getattr(args, "write", False),
+        force=getattr(args, "force", False),  # v1.1: --force flag
+        format=getattr(args, "format", "text"),
+        quiet=args.quiet,
+    )
+
+    exit_code, output = env_command(options)
+
+    if args.json or options.format == "json":
+        # Already JSON formatted
+        if output:
+            print(output)
+    elif not args.quiet and output:
+        print(output)
 
     return exit_code
 

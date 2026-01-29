@@ -466,7 +466,7 @@ ontos map --strict
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| `[BROKEN LINK]` | Reference to nonexistent ID | Create doc or remove reference |
+| `[BROKEN LINK]` | Reference to nonexistent ID | Create doc or remove reference. (v3.2: See candidate suggestions) |
 | `[CYCLE]` | A → B → A | Remove one dependency |
 | `[ORPHAN]` | No dependents | Connect it or delete |
 | `[DEPTH]` | Chain > 5 levels | Flatten hierarchy |
@@ -511,6 +511,7 @@ ontos <command> [options]
 |-------------|------------------------|-------------------------------------------------------|
 | `log`       | Archive a session      | `python3 .ontos/scripts/ontos_end_session.py`        |
 | `map`       | Generate context map   | `python3 .ontos/scripts/ontos_generate_context_map.py` |
+| `env`       | Detect environment     | (New in v3.2)                                         |
 | `verify`    | Verify describes dates | `python3 .ontos/scripts/ontos_verify.py`             |
 | `maintain`  | Run maintenance tasks  | `python3 .ontos/scripts/ontos_maintain.py`           |
 | `consolidate` | Archive old logs     | `python3 .ontos/scripts/ontos_consolidate.py`        |
@@ -553,6 +554,46 @@ ontos query --concept caching
 # Check graph health
 ontos query --health
 ```
+
+### 10.1 Environment Detection (v3.2)
+
+The `env` command automatically detects project environment manifests (like `pyproject.toml` or `package.json`) and generates onboarding documentation.
+
+```bash
+# Preview detected manifests
+ontos env
+
+# preview in JSON format
+ontos env --format json
+
+# Write results to .ontos/environment.md
+ontos env --write
+
+# Overwrite existing environment.md
+ontos env --write --force
+```
+
+**Supported Manifests:**
+-   **Python:** `pyproject.toml` (Poetry/PDM/Pip), `requirements.txt`, `setup.py`, `environment.yml` (Conda)
+-   **Node.js:** `package.json`
+-   **Generic:** `.tool-versions` (asdf), `Makefile`, `Dockerfile`
+
+---
+
+## 11. Candidate Suggestions (v3.2)
+
+Ontos v3.2 introduces intelligent candidate suggestions for broken references. When a document ID is referenced but not found, Ontos uses three strategies to find the intended target:
+
+1.  **Substring Match:** Checks if the broken ID is a partial match for an existing ID.
+2.  **Alias Match:** Matches against the `aliases` field in document frontmatter.
+3.  **Fuzzy Match:** Uses Levenshtein distance for near-miss typos.
+
+Suggestions appear in:
+-   `ontos map` validation output
+-   `ontos doctor` validation checks
+
+Example output:
+`❌ broken_doc: Broken dependency: 'auth_servidce' does not exist. Did you mean: auth_service?`
 
 > **Note:** The `python3 ontos.py` syntax is deprecated. Use `ontos <command>` directly.
 
