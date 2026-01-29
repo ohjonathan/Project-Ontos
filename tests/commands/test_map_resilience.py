@@ -67,13 +67,15 @@ def test_tiered_map_structure(mock_docs):
     content, _ = generate_context_map(mock_docs, config, options)
     
     # Tier 1 checks
-    assert "# Test Project Tiered Context Map" in content
-    assert "## Tier 1: Recent Session Logs" in content
-    assert "## Tier 1: Core Architecture" in content
+    assert "## Tier 1: Essential Context" in content
+    assert "### Project Summary" in content
+    assert "### Recent Activity" in content
     
     # Tier 2 checks
-    assert "# Tier 2: Deep Context" in content
-    assert "## Documents" in content
+    assert "## Tier 2: Document Index" in content
+    
+    # Tier 3 checks
+    assert "## Tier 3: Full Graph Details" in content
     
     # Content frequency
     assert "log_2026-01-09" in content  # Recent log in Tier 1
@@ -129,8 +131,9 @@ def test_map_sync_agents_flag(tmp_path, monkeypatch):
 def test_tier1_token_capping(mock_docs):
     """Tier 1 should be truncated if it exceeds limit (simulated)."""
     # Create very large summary to trigger capping
-    # 2000 tokens * 4 = 8000 chars. Let's do 10000 to be safe.
-    large_summary = "A" * 2000
+    # New code limits to 3 logs in Tier 1.
+    # 3 logs * 3000 chars = 9000 chars = 2250 tokens > 2000 limit.
+    large_summary = "A" * 4000
     mock_docs["arch_1"].frontmatter["summary"] = large_summary
     mock_docs["ref_1"].frontmatter["summary"] = large_summary
     
@@ -154,5 +157,5 @@ def test_tier1_token_capping(mock_docs):
     content, _ = generate_context_map(mock_docs, config, options)
     
     # Check for truncation message
-    assert "truncated" in content.lower()
+    assert "(Tier 1 truncated)" in content
     assert "Tier 2" in content
