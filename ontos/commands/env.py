@@ -174,6 +174,9 @@ def _parse_manifest(info: ManifestInfo) -> Optional[str]:
         if isinstance(e, json.JSONDecodeError):
              return f"{info.path.name}: parse failed (JSONDecodeError)"
         
+        if isinstance(e, ValueError) and "empty" in str(e):
+             return f"{info.path.name}: parse failed (empty file)"
+        
         # Catch-all for unexpected errors
         return f"{info.path.name}: parse failed ({type(e).__name__})"
 
@@ -183,14 +186,20 @@ def _parse_pyproject(info: ManifestInfo) -> None:
     if tomllib is None:
         raise ImportError("tomllib or tomli is required to parse pyproject.toml")
         
-    content = info.path.read_text()
+    content = info.path.read_text().strip()
+    if not content:
+        # NB4: Empty file warning
+        raise ValueError("file is empty")
+        
     data = tomllib.loads(content)
 
     # Detect package manager
+    pm_detected = False
     if "tool" in data:
         if "poetry" in data["tool"]:
             info.package_manager = "poetry"
             info.bootstrap_command = "poetry install"
+            pm_detected = True
             deps = data["tool"]["poetry"].get("dependencies", {})
             dev_deps = data["tool"]["poetry"].get("dev-dependencies", {})
             # Exclude python itself from count
@@ -199,9 +208,29 @@ def _parse_pyproject(info: ManifestInfo) -> None:
         elif "pdm" in data["tool"]:
             info.package_manager = "pdm"
             info.bootstrap_command = "pdm install"
+            pm_detected = True
         elif "uv" in data["tool"]:
             info.package_manager = "uv"
             info.bootstrap_command = "uv sync"
+            pm_detected = True
+
+    # Fallback to lock file inference if no tool section (v3.2)
+    if not pm_detected:
+        parent = info.path.parent
+        if (parent / "poetry.lock").exists():
+            info.package_manager = "poetry"
+            info.bootstrap_command = "poetry install"
+        elif (parent / "pdm.lock").exists():
+            info.package_manager = "pdm"
+            info.bootstrap_command = "pdm install"
+        elif (parent / "uv.lock").exists():
+            info.package_manager = "uv"
+            info.bootstrap_command = "uv sync"
+        elif (parent / "requirements.txt").exists():
+            info.bootstrap_command = "pip install -r requirements.txt"
+        else:
+            # Generic PEP 621 without obvious tool
+            info.bootstrap_command = "pip install ."
 
     # PEP 621 dependencies
     if "project" in data:
@@ -235,7 +264,8 @@ def _parse_tool_versions(info: ManifestInfo) -> None:
     content = info.path.read_text()
     runtimes = {}
     for line in content.strip().split("\n"):
-        if line.strip() and not line.startswith("#"):
+        line = line.strip()
+        if line and not line.startswith("#"):
             parts = line.split()
             if len(parts) >= 2:
                 runtimes[parts[0]] = parts[1]
