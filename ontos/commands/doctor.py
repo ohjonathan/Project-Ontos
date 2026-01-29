@@ -460,6 +460,16 @@ def check_environment_manifests() -> CheckResult:
     try:
         manifests, warnings = detect_manifests(Path.cwd())
         
+        if warnings:
+            # Surface parse warnings (v3.2)
+            warning_msg = f"Detected {len(manifests)} manifests with {len(warnings)} parse warnings"
+            return CheckResult(
+                name="environment",
+                status="warn",
+                message=warning_msg,
+                details="\n".join(warnings)
+            )
+
         if not manifests:
             return CheckResult(
                 name="environment",
