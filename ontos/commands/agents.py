@@ -86,7 +86,9 @@ If you notice any of these, re-run activation:
 
 # USER CUSTOM
 
+<!-- USER CUSTOM -->
 <!-- Add your project-specific notes below. This section is preserved during auto-sync. -->
+<!-- /USER CUSTOM -->
 
 ## Staleness
 If `AGENTS.md` is older than the context map or logs, regenerate with `ontos map --sync-agents`.
@@ -248,15 +250,21 @@ def generate_agents_content(existing_content: Optional[str] = None) -> str:
     )
     
     # Preserve USER CUSTOM section if it exists
-    if existing_content and "# USER CUSTOM" in existing_content:
-        parts = existing_content.split("# USER CUSTOM", 1)
-        if len(parts) > 1:
-            custom_section = parts[1].strip()
-            if custom_section:
+    if existing_content and "<!-- USER CUSTOM -->" in existing_content:
+        import re
+        pattern = r"<!-- USER CUSTOM -->(.*?)<!-- /USER CUSTOM -->"
+        match = re.search(pattern, existing_content, re.DOTALL)
+        if match:
+            custom_content = match.group(1).strip()
+            if custom_content:
                 # Replace the placeholder in the new content
-                content_parts = content.split("# USER CUSTOM", 1)
-                if len(content_parts) > 1:
-                    content = content_parts[0] + "# USER CUSTOM\n\n" + custom_section
+                placeholder_pattern = r"(<!-- USER CUSTOM -->).*?(<!-- /USER CUSTOM -->)"
+                content = re.sub(
+                    placeholder_pattern,
+                    f"\\1\n{custom_content}\n\\2",
+                    content,
+                    flags=re.DOTALL
+                )
     
     return content
 
