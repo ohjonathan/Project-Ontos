@@ -98,6 +98,10 @@ def create_parser() -> argparse.ArgumentParser:
     _register_migration_report(subparsers, global_parser)
     _register_migrate_convenience(subparsers, global_parser)
 
+    # Legacy Aliases (v3.2)
+    _register_tree_alias(subparsers, global_parser)
+    _register_validate_alias(subparsers, global_parser)
+
     return parser
 
 
@@ -469,6 +473,29 @@ def _register_migrate_convenience(subparsers, parent):
     p.add_argument("--force", "-f", action="store_true",
                    help="Overwrite existing files")
     p.set_defaults(func=_cmd_migrate_convenience)
+
+
+def _register_tree_alias(subparsers, parent):
+    """Register tree command (deprecated alias for map)."""
+    p = subparsers.add_parser("tree", help="(Deprecated) Use 'ontos map' instead", parents=[parent])
+    # Include map arguments to maintain compatibility
+    p.add_argument("--strict", action="store_true", help="Treat warnings as errors")
+    p.add_argument("--output", "-o", type=Path, help="Output path")
+    p.add_argument("--obsidian", action="store_true", help="Enable Obsidian output")
+    p.add_argument("--compact", nargs="?", const="basic", default="off",
+                   choices=["basic", "rich"], help="Compact output")
+    p.add_argument("--filter", "-f", metavar="EXPR", help="Filter documents")
+    p.add_argument("--no-cache", action="store_true", help="Bypass cache")
+    p.set_defaults(func=_cmd_tree)
+
+
+def _register_validate_alias(subparsers, parent):
+    """Register validate command (deprecated alias for verify)."""
+    p = subparsers.add_parser("validate", help="(Deprecated) Use 'ontos verify' instead", parents=[parent])
+    p.add_argument("path", nargs="?", type=Path, help="Specific file to verify")
+    p.add_argument("--all", "-a", action="store_true", help="Verify all stale documents")
+    p.add_argument("--date", "-d", help="Verification date")
+    p.set_defaults(func=_cmd_validate)
 
 
 # ============================================================================
@@ -917,6 +944,20 @@ def _cmd_scaffold(args) -> int:
     )
     exit_code, message = scaffold_command(options)
     return exit_code
+
+
+def _cmd_tree(args) -> int:
+    """Handle tree command (deprecated alias for map)."""
+    import sys
+    print("Warning: 'ontos tree' is deprecated. Use 'ontos map' instead.", file=sys.stderr)
+    return _cmd_map(args)
+
+
+def _cmd_validate(args) -> int:
+    """Handle validate command (deprecated alias for verify)."""
+    import sys
+    print("Warning: 'ontos validate' is deprecated. Use 'ontos verify' instead.", file=sys.stderr)
+    return _cmd_verify(args)
 
 
 def _cmd_hook(args) -> int:

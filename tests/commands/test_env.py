@@ -148,3 +148,54 @@ def test_parse_warnings_in_output(temp_workspace):
     assert exit_code == 0
     assert "Parse Warnings:" in output
     assert "package.json: parse failed" in output
+
+
+def test_ambiguity_warning_multi_lockfile(temp_workspace):
+    """Test X-H1: Ambiguity warning when multiple lockfiles present."""
+    (temp_workspace / "pyproject.toml").write_text("[project]\nname='x'")
+    (temp_workspace / "poetry.lock").write_text("")
+    (temp_workspace / "pdm.lock").write_text("")
+    
+    manifests, warnings = detect_manifests(temp_workspace)
+    assert len(manifests) == 1
+    assert any("multiple lock files detected" in w for w in warnings)
+    assert manifests[0].bootstrap_command == "pip install ."
+
+
+def test_invalid_workspace_path(temp_workspace):
+    """Test X-M3: Invalid workspace path returns error."""
+    # Non-existent
+    non_existent = temp_workspace / "ghost"
+    options = EnvOptions(path=non_existent)
+    exit_code, output = env_command(options)
+    assert exit_code == 1
+    assert "does not exist" in output
+
+    # Is a file
+    a_file = temp_workspace / "not_a_dir.txt"
+    a_file.write_text("hello")
+    options = EnvOptions(path=a_file)
+    exit_code, output = env_command(options)
+    assert exit_code == 1
+    assert "not a directory" in output
+
+
+def test_cli_aliases_parity_and_warning(capsys):
+    """Test X-R2: tree and validate aliases work and warn."""
+    from ontos.cli import create_parser
+    parser = create_parser()
+
+    # Test 'tree' alias
+    args = parser.parse_args(["tree"])
+    assert args.command == "tree"
+    # Execute the handler (mocking internal call)
+    exit_code = args.func(args)
+    captured = capsys.readouterr()
+    assert "Warning: 'ontos tree' is deprecated" in captured.err
+
+    # Test 'validate' alias
+    args = parser.parse_args(["validate"])
+    assert args.command == "validate"
+    args.func(args)
+    captured = capsys.readouterr()
+    assert "Warning: 'ontos validate' is deprecated" in captured.err

@@ -18,6 +18,11 @@ except ImportError:
         tomllib = None
 
 
+class AmbiguityError(ValueError):
+    """Raised when multiple conflicting configurations are found."""
+    pass
+
+
 # =============================================================================
 # Data Structures
 # =============================================================================
@@ -177,6 +182,9 @@ def _parse_manifest(info: ManifestInfo) -> Optional[str]:
         if isinstance(e, ValueError) and "empty" in str(e):
              return f"{info.path.name}: parse failed (empty file)"
         
+        if isinstance(e, AmbiguityError):
+             return f"{info.path.name}: {str(e)}"
+        
         # Catch-all for unexpected errors
         return f"{info.path.name}: parse failed ({type(e).__name__})"
 
@@ -217,13 +225,22 @@ def _parse_pyproject(info: ManifestInfo) -> None:
     # Fallback to lock file inference if no tool section (v3.2)
     if not pm_detected:
         parent = info.path.parent
-        if (parent / "poetry.lock").exists():
+        found_locks = []
+        if (parent / "poetry.lock").exists(): found_locks.append("poetry.lock")
+        if (parent / "pdm.lock").exists(): found_locks.append("pdm.lock")
+        if (parent / "uv.lock").exists(): found_locks.append("uv.lock")
+
+        if len(found_locks) > 1:
+            # X-H1: Ambiguity warning
+            info.bootstrap_command = "pip install ."
+            raise AmbiguityError(f"multiple lock files detected ({', '.join(found_locks)}); cannot infer package manager")
+        elif "poetry.lock" in found_locks:
             info.package_manager = "poetry"
             info.bootstrap_command = "poetry install"
-        elif (parent / "pdm.lock").exists():
+        elif "pdm.lock" in found_locks:
             info.package_manager = "pdm"
             info.bootstrap_command = "pdm install"
-        elif (parent / "uv.lock").exists():
+        elif "uv.lock" in found_locks:
             info.package_manager = "uv"
             info.bootstrap_command = "uv sync"
         elif (parent / "requirements.txt").exists():
@@ -519,6 +536,12 @@ def env_command(options: EnvOptions) -> Tuple[int, str]:
         Tuple of (exit_code, output_message)
     """
     workspace = options.path
+
+    # X-M3: Validate workspace path
+    if not workspace.exists():
+        return 1, f"Error: workspace path does not exist: {workspace}"
+    if not workspace.is_dir():
+        return 1, f"Error: workspace path is not a directory: {workspace}"
 
     # Detect manifests (v1.1: now returns tuple with warnings)
     manifests, parse_warnings = detect_manifests(workspace)
