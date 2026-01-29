@@ -2,6 +2,7 @@
 
 import subprocess
 import os
+import sys
 from pathlib import Path
 from datetime import date
 
@@ -18,7 +19,7 @@ def golden_help():
 def test_verify_help_parity(golden_help):
     """Native --help matches legacy."""
     result = subprocess.run(
-        ["python3", "-m", "ontos.cli", "verify", "--help"],
+        [sys.executable, "-m", "ontos.cli", "verify", "--help"],
         capture_output=True,
         text=True,
         env=os.environ.copy()
@@ -42,7 +43,7 @@ Content""")
     # Run native command
     today = date.today().isoformat()
     result = subprocess.run(
-        ["python3", "-m", "ontos.cli", "verify", str(test_file)],
+        [sys.executable, "-m", "ontos.cli", "verify", str(test_file)],
         capture_output=True,
         text=True,
         env=os.environ.copy()

@@ -71,7 +71,7 @@ def scan_documents(
         List of markdown file paths
     """
     skip_patterns = skip_patterns or []
-    results = []
+    results = set()
 
     for dir_path in dirs:
         if not dir_path.exists():
@@ -85,9 +85,9 @@ def scan_documents(
                     skip = True
                     break
             if not skip:
-                results.append(md_file)
+                results.add(md_file.resolve())
 
-    return sorted(results)
+    return sorted(list(results))
 
 
 def read_document(path: Path) -> str:

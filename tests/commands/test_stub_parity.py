@@ -1,4 +1,5 @@
 """Parity tests for stub command."""
+import sys
 
 import subprocess
 import os
@@ -10,7 +11,7 @@ import pytest
 def test_stub_help_parity():
     """Native --help matches legacy."""
     result = subprocess.run(
-        ["python3", "-m", "ontos.cli", "stub", "--help"],
+        [sys.executable, "-m", "ontos.cli", "stub", "--help"],
         capture_output=True,
         text=True,
         env=os.environ.copy()
@@ -27,7 +28,7 @@ def test_stub_file_creation_parity(tmp_path):
     
     # Run native command
     result = subprocess.run(
-        ["python3", "-m", "ontos.cli", "stub", 
+        [sys.executable, "-m", "ontos.cli", "stub", 
          "--id", "test_stub", 
          "--type", "atom", 
          "--goal", "Test Goal",

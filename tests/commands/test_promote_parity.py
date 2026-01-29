@@ -1,4 +1,5 @@
 """Parity tests for promote command."""
+import sys
 
 import subprocess
 import os
@@ -10,7 +11,7 @@ import pytest
 def test_promote_help_parity():
     """Native --help matches legacy."""
     result = subprocess.run(
-        ["python3", "-m", "ontos.cli", "promote", "--help"],
+        [sys.executable, "-m", "ontos.cli", "promote", "--help"],
         capture_output=True,
         text=True,
         env=os.environ.copy()
@@ -32,7 +33,7 @@ def test_promote_check_parity(tmp_path):
     env["PYTHONPATH"] = os.getcwd() # Project root
     
     result = subprocess.run(
-        ["python3", "-m", "ontos.cli", "promote", "--check"],
+        [sys.executable, "-m", "ontos.cli", "promote", "--check"],
         capture_output=True,
         text=True,
         env=env,

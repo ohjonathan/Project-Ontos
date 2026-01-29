@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 import pytest
 from pathlib import Path
@@ -16,7 +17,7 @@ def test_consolidate_cli_no_crash(tmp_path):
     env["PYTHONPATH"] = os.getcwd()
     
     result = subprocess.run(
-        ["python3", "-m", "ontos", "consolidate", "--dry-run"],
+        [sys.executable, "-m", "ontos", "consolidate", "--dry-run"],
         cwd=str(project_root),
         env=env,
         capture_output=True,

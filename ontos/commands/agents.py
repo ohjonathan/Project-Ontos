@@ -168,15 +168,20 @@ def gather_stats(repo_root: Path) -> Dict[str, str]:
                 pass  # Keep defaults
 
         # Count .md files (cap at 5000)
-        count = 0
-        if docs_dir.exists():
-            for _ in docs_dir.rglob("*.md"):
-                count += 1
-                if count >= 5000:
-                    stats["doc_count"] = "5000+"
-                    break
-            else:
-                stats["doc_count"] = str(count)
+        from ontos.io.files import scan_documents
+        skip_patterns = []
+        if 'config' in locals() and hasattr(config, 'scanning'):
+            skip_patterns = config.scanning.skip_patterns
+
+        doc_paths = scan_documents(
+            [docs_dir, repo_root],
+            skip_patterns=skip_patterns
+        )
+        count = len(doc_paths)
+        if count >= 5000:
+            stats["doc_count"] = "5000+"
+        else:
+            stats["doc_count"] = str(count)
 
         # Find max mtime
         mtimes = []

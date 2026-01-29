@@ -2,6 +2,7 @@
 
 import subprocess
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -24,7 +25,7 @@ def test_setup(tmp_path):
 def test_consolidate_help_parity():
     """Native --help matches legacy."""
     result = subprocess.run(
-        ["python3", "-m", "ontos.cli", "consolidate", "--help"],
+        [sys.executable, "-m", "ontos.cli", "consolidate", "--help"],
         capture_output=True,
         text=True,
         env=os.environ.copy()
@@ -70,7 +71,7 @@ Test log {i}
     (tmp_path / ".ontos").mkdir()
     
     result = subprocess.run(
-        ["python3", "-m", "ontos.cli", "consolidate", "--count", "1", "--all"],
+        [sys.executable, "-m", "ontos.cli", "consolidate", "--count", "1", "--all"],
         capture_output=True,
         text=True,
         env=os.environ.copy(),

@@ -1,4 +1,5 @@
 """Parity tests for scaffold command."""
+import sys
 
 import subprocess
 import os
@@ -19,7 +20,7 @@ def test_scaffold_help_parity(golden_help):
     # Run the native command through the main entry point
     # We use 'python3 -m ontos.cli' to ensure we run the package code
     result = subprocess.run(
-        ["python3", "-m", "ontos.cli", "scaffold", "--help"],
+        [sys.executable, "-m", "ontos.cli", "scaffold", "--help"],
         capture_output=True,
         text=True,
         env=os.environ.copy()
@@ -40,7 +41,7 @@ def test_scaffold_dry_run_parity(tmp_path):
 
     # Run native command
     result = subprocess.run(
-        ["python3", "-m", "ontos.cli", "scaffold", str(test_file), "--dry-run"],
+        [sys.executable, "-m", "ontos.cli", "scaffold", str(test_file), "--dry-run"],
         capture_output=True,
         text=True,
         env=os.environ.copy()

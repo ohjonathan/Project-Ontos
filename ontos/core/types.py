@@ -31,6 +31,7 @@ class DocumentType(Enum):
     PRODUCT = "product"
     ATOM = "atom"
     LOG = "log"
+    REFERENCE = "reference"
 
 
 class DocumentStatus(Enum):
