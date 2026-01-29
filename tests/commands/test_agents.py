@@ -159,6 +159,7 @@ class TestAgentsContent:
         
         content = generate_agents_content()
         assert "## Ontos Activation" in content
+        assert "Tier 1 minimum" in content
 
     def test_content_has_quick_reference(self, tmp_path, monkeypatch):
         """Template should include Quick Reference with 5 commands."""
@@ -285,7 +286,8 @@ class TestGatherStats:
         (docs / "file2.md").write_text("# Doc 2")
         (docs / "file3.md").write_text("# Doc 3")
 
-        doc_count, _ = gather_stats(tmp_path)
+        stats = gather_stats(tmp_path)
+        doc_count = stats["doc_count"]
 
         assert doc_count == "3"
 
@@ -294,7 +296,8 @@ class TestGatherStats:
         monkeypatch.chdir(tmp_path)
         # No .ontos.toml, no docs - should still work with defaults
 
-        doc_count, last_updated = gather_stats(tmp_path)
+        stats = gather_stats(tmp_path)
+        doc_count = stats["doc_count"]
 
         # May be Unknown or 0 depending on defaults
         assert doc_count is not None
