@@ -96,8 +96,13 @@ def parse_frontmatter_content(content: str) -> tuple:
     
     try:
         fm = parse_yaml(parts[1])
-    except yaml.YAMLError:
-        fm = {}
+        if not fm and parts[1].strip():
+            # YAML was valid but resulted in non-dict (e.g. string) or empty
+            # If parts[1] is not empty, it probably should have been a dict
+            raise ValueError("Invalid YAML frontmatter: content is not a dictionary")
+    except yaml.YAMLError as e:
+        raise ValueError(f"Invalid YAML frontmatter: {e}")
+    
     body = parts[2].lstrip('\n')
     return fm, body
 

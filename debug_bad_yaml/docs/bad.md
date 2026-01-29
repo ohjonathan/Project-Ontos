@@ -1,0 +1,4 @@
+---
+invalid: yaml: here
+---
+# Bad

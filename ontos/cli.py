@@ -665,6 +665,34 @@ def _cmd_export_deprecated(args) -> int:
     return _cmd_export_claude(args)
 
 
+def _cmd_export(args) -> int:
+    """Handle export command (deprecated - delegates to agents)."""
+    import sys
+    print("Warning: 'ontos export' is deprecated. Use 'ontos agents' instead.", file=sys.stderr)
+
+    from ontos.commands.agents import agents_command, AgentsOptions
+
+    options = AgentsOptions(
+        output_path=args.output,
+        force=args.force,
+        format="agents",
+        all_formats=False,
+    )
+
+    exit_code, message = agents_command(options)
+
+    if args.json:
+        emit_json({
+            "status": "success" if exit_code == 0 else "error",
+            "message": message,
+            "exit_code": exit_code
+        })
+    elif not args.quiet:
+        print(message)
+
+    return exit_code
+
+
 
 
 def _cmd_schema_migrate(args) -> int:
