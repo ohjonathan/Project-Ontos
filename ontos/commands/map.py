@@ -139,66 +139,94 @@ def _generate_tier1_summary(
     """Generate Tier 1: Essential Context (~2k tokens).
 
     Includes: Project summary, recent activity, critical paths.
-    Hard cap at ~2000 tokens with truncation.
+    Hard cap at ~2000 tokens with section-aware truncation.
     """
-    lines = ["## Tier 1: Essential Context"]
-    lines.append("")
+    sections = []
+    
+    # Header
+    sections.append("## Tier 1: Essential Context\n")
 
     # Project Summary
-    lines.append("### Project Summary")
+    summary_lines = ["### Project Summary"]
     project_name = config.get("project_name", "Unknown Project")
-    lines.append(f"- **Name:** {project_name}")
-    lines.append(f"- **Doc Count:** {len(docs)}")
-    lines.append(f"- **Last Updated:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
-    lines.append("")
+    summary_lines.append(f"- **Name:** {project_name}")
+    summary_lines.append(f"- **Doc Count:** {len(docs)}")
+    summary_lines.append(f"- **Last Updated:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
+    summary_lines.append("")
+    sections.append("\n".join(summary_lines))
 
     # Recent Activity (from logs, limit to 3)
-    lines.append("### Recent Activity")
+    log_lines = ["### Recent Activity"]
     log_docs = [d for d in docs.values() if d.type.value == "log" or str(d.type) == "log"]
-    log_docs_sorted = sorted(log_docs, key=lambda d: d.id, reverse=True)[:3]
+    
+    # Sort by date frontmatter (falling back to ID)
+    def log_sort_key(doc):
+        date_str = doc.frontmatter.get("date")
+        if date_str:
+            return str(date_str)
+        return doc.id
+
+    log_docs_sorted = sorted(log_docs, key=log_sort_key, reverse=True)[:3]
 
     if log_docs_sorted:
-        lines.append("| Log | Status | Summary |")
-        lines.append("|-----|--------|---------|")
+        log_lines.append("| Log | Status | Summary |")
+        log_lines.append("|-----|--------|---------|")
         for doc in log_docs_sorted:
             status = doc.status.value if hasattr(doc.status, 'value') else str(doc.status)
             summary = doc.frontmatter.get("summary", "No summary")
-            lines.append(f"| {doc.id} | {status} | {summary} |")
+            # B3: Escape pipes and remove newlines in summary
+            summary_escaped = _escape_markdown_table_cell(summary).replace("\n", " ")
+            log_lines.append(f"| {doc.id} | {status} | {summary_escaped} |")
 
         remaining = len(log_docs) - 3
         if remaining > 0:
-            lines.append(f"| ... and {remaining} more logs | | |")
+            log_lines.append(f"| ... and {remaining} more logs | | |")
     else:
-        lines.append("No recent logs found.")
-    lines.append("")
+        log_lines.append("No recent logs found.")
+    log_lines.append("")
+    sections.append("\n".join(log_lines))
 
     # In Progress Documents
+    ip_lines = []
     in_progress = [d for d in docs.values() if (d.status.value if hasattr(d.status, 'value') else str(d.status)) == "in_progress"]
     if in_progress:
-        lines.append("### In Progress")
-        lines.append("| Document | ID |")
-        lines.append("|----------|-----|")
+        ip_lines.append("### In Progress")
+        ip_lines.append("| Document | ID |")
+        ip_lines.append("|----------|-----|")
         for doc in in_progress[:5]:
-            lines.append(f"| {doc.filepath.name} | {doc.id} |")
+            ip_lines.append(f"| {doc.filepath.name} | {doc.id} |")
         if len(in_progress) > 5:
-            lines.append(f"| ... and {len(in_progress) - 5} more | |")
-        lines.append("")
+            ip_lines.append(f"| ... and {len(in_progress) - 5} more | |")
+        ip_lines.append("")
+        sections.append("\n".join(ip_lines))
 
-    # Critical Paths (static for now, could be configurable)
-    lines.append("### Critical Paths")
-    lines.append("- **Entry:** `docs/reference/Ontos_Manual.md`")
-    lines.append("- **Strategy:** `.ontos-internal/strategy/`")
-    lines.append("- **Logs:** `.ontos-internal/logs/`")
-    lines.append("")
+    # Critical Paths
+    cp_lines = ["### Critical Paths"]
+    cp_lines.append("- **Entry:** `docs/reference/Ontos_Manual.md`")
+    cp_lines.append("- **Strategy:** `.ontos-internal/strategy/`")
+    cp_lines.append("- **Logs:** `.ontos-internal/logs/`")
+    cp_lines.append("")
+    sections.append("\n".join(cp_lines))
 
-    lines.append("---")
-    lines.append("")
+    # Build content with token awareness
+    content_parts = []
+    current_tokens = 0
+    token_limit = 2000
+    truncated = False
 
-    content = "\n".join(lines)
+    for section in sections:
+        section_tokens = estimate_tokens(section)
+        if current_tokens + section_tokens > token_limit:
+            truncated = True
+            break
+        content_parts.append(section)
+        current_tokens += section_tokens
+
+    if truncated:
+        content_parts.append("\n... (Tier 1 truncated to stay within 2k token budget) ...\n")
     
-    # Apply token cap if needed
-    if estimate_tokens(content) > 2000:
-        content = content[:8000] + "\n\n... (Tier 1 truncated) ...\n"
+    content_parts.append("---")
+    content = "\n".join(content_parts)
         
     return content
 
@@ -635,8 +663,9 @@ def map_command(options: MapOptions) -> int:
             else:
                 if not options.quiet:
                     print("⚠ AGENTS.md not found. Run 'ontos agents' to create.")
-        except Exception:
-            pass  # Fail gracefully on sync errors
+        except Exception as e:
+            if not options.quiet:
+                print(f"⚠ Failed to sync AGENTS.md: {e}")
 
     # Determine exit code
     exit_code = 0
