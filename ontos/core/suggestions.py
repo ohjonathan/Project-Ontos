@@ -194,6 +194,9 @@ def suggest_candidates_for_broken_ref(
         List of (doc_id, confidence_score, reason) tuples,
         sorted by confidence descending (then alphabetically for ties), max 3 results
     """
+    if not broken_ref or not broken_ref.strip():
+        return []
+        
     candidates = []
     broken_lower = broken_ref.lower()
 
