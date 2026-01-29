@@ -445,6 +445,7 @@ class MapOptions:
     compact: CompactMode = CompactMode.OFF
     filter_expr: Optional[str] = None
     no_cache: bool = False
+    sync_agents: bool = False
 
 
 def map_command(options: MapOptions) -> int:
@@ -542,6 +543,25 @@ def map_command(options: MapOptions) -> int:
     # Write output
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(content, encoding="utf-8")
+    
+    # Sync AGENTS.md if flag is set and file exists
+    if options.sync_agents:
+        from ontos.io.files import find_project_root
+        try:
+            repo_root = find_project_root()
+            agents_path = repo_root / "AGENTS.md"
+            if agents_path.exists():
+                if not options.quiet:
+                    print("Syncing AGENTS.md...")
+                from ontos.commands.agents import agents_command, AgentsOptions
+                agents_command(AgentsOptions(force=True))
+                if not options.quiet:
+                    print("✓ AGENTS.md synced")
+            else:
+                if not options.quiet:
+                    print("⚠ AGENTS.md not found. Run 'ontos agents' to create.")
+        except Exception:
+            pass  # Fail gracefully on sync errors
 
     # Determine exit code
     exit_code = 0
