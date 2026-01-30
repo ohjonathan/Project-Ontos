@@ -175,8 +175,20 @@ def gather_stats(repo_root: Path) -> Dict[str, str]:
         if 'config' in locals() and hasattr(config, 'scanning'):
             skip_patterns = config.scanning.skip_patterns
 
+        # X-M1: Build explicit scan roots list to avoid full repo scan
+        scan_dirs = []
+        if docs_dir.exists():
+            scan_dirs.append(docs_dir)
+        if logs_dir.exists() and logs_dir != docs_dir:
+            scan_dirs.append(logs_dir)
+        
+        # Include archive logs if present
+        archive_logs = repo_root / ".ontos-internal" / "archive" / "logs"
+        if archive_logs.exists():
+            scan_dirs.append(archive_logs)
+
         doc_paths = scan_documents(
-            [docs_dir, repo_root],
+            scan_dirs,
             skip_patterns=skip_patterns
         )
         count = len(doc_paths)
