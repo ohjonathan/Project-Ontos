@@ -159,6 +159,7 @@ class TestAgentsContent:
         
         content = generate_agents_content()
         assert "## Ontos Activation" in content
+        assert "Tier 1 minimum" in content
 
     def test_content_has_quick_reference(self, tmp_path, monkeypatch):
         """Template should include Quick Reference with 5 commands."""
@@ -276,25 +277,69 @@ class TestGatherStats:
     """Tests for gather_stats function."""
 
     def test_counts_md_files(self, tmp_path, monkeypatch):
-        """Should count .md files in docs directory."""
+        """Should count .md files in docs and logs directories."""
         monkeypatch.chdir(tmp_path)
-        (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n[paths]\ndocs_dir = '.ontos-internal'")
-        docs = tmp_path / ".ontos-internal"
+        (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n[paths]\ndocs_dir = 'docs'\nlogs_dir = 'logs'")
+        
+        docs = tmp_path / "docs"
         docs.mkdir()
         (docs / "file1.md").write_text("# Doc 1")
-        (docs / "file2.md").write_text("# Doc 2")
-        (docs / "file3.md").write_text("# Doc 3")
+        
+        logs = tmp_path / "logs"
+        logs.mkdir()
+        (logs / "log1.md").write_text("# Log 1")
 
-        doc_count, _ = gather_stats(tmp_path)
+        stats = gather_stats(tmp_path)
+        doc_count = stats["doc_count"]
 
-        assert doc_count == "3"
+        # 1 doc + 1 log = 2
+        assert doc_count == "2"
+
+    def test_excludes_root_md_files(self, tmp_path, monkeypatch):
+        """X-M1: Should not count .md files at the repository root."""
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n[paths]\ndocs_dir = 'docs'")
+        
+        docs = tmp_path / "docs"
+        docs.mkdir()
+        (docs / "file1.md").write_text("# Doc 1")
+        
+        # Markdown at root should be ignored
+        (tmp_path / "README.md").write_text("# Root README")
+        (tmp_path / "STALENESS.md").write_text("# Root Staleness")
+
+        stats = gather_stats(tmp_path)
+        doc_count = stats["doc_count"]
+
+        # Only 'docs/file1.md' should be counted
+        assert doc_count == "1"
+
+    def test_counts_archive_logs(self, tmp_path, monkeypatch):
+        """X-M1: Should count .md files in .ontos-internal/archive/logs."""
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n[paths]\ndocs_dir = 'docs'")
+        
+        docs = tmp_path / "docs"
+        docs.mkdir()
+        (docs / "file1.md").write_text("# Doc 1")
+        
+        archive = tmp_path / ".ontos-internal" / "archive" / "logs"
+        archive.mkdir(parents=True)
+        (archive / "old_log.md").write_text("# Old Log")
+
+        stats = gather_stats(tmp_path)
+        doc_count = stats["doc_count"]
+
+        # 1 doc + 1 archive log = 2
+        assert doc_count == "2"
 
     def test_returns_unknown_on_error(self, tmp_path, monkeypatch):
         """Should return Unknown if stats gathering fails."""
         monkeypatch.chdir(tmp_path)
         # No .ontos.toml, no docs - should still work with defaults
 
-        doc_count, last_updated = gather_stats(tmp_path)
+        stats = gather_stats(tmp_path)
+        doc_count = stats["doc_count"]
 
         # May be Unknown or 0 depending on defaults
         assert doc_count is not None

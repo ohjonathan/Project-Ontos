@@ -143,6 +143,8 @@ def _register_map(subparsers, parent):
                    help="Filter documents by expression (e.g., 'type:strategy')")
     p.add_argument("--no-cache", action="store_true",
                    help="Bypass document cache (for debugging)")
+    p.add_argument("--sync-agents", action="store_true",
+                   help="Also sync AGENTS.md if it exists")
     p.set_defaults(func=_cmd_map)
 
 
@@ -541,6 +543,7 @@ def _cmd_map(args) -> int:
         compact=CompactMode(args.compact) if args.compact != "off" else CompactMode.OFF,
         filter_expr=getattr(args, 'filter', None),
         no_cache=getattr(args, 'no_cache', False),
+        sync_agents=getattr(args, 'sync_agents', False),
     )
 
     return map_command(options)

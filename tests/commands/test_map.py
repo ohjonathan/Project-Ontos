@@ -1,0 +1,88 @@
+
+import pytest
+import sys
+from pathlib import Path
+from ontos.commands.map import map_command, MapOptions, GenerateMapOptions, generate_context_map
+
+def test_map_sync_agents_flag_exists():
+    """--sync-agents flag is recognized."""
+    import subprocess
+    result = subprocess.run(
+        [sys.executable, "-m", "ontos", "map", "--help"],
+        capture_output=True,
+        text=True
+    )
+    assert "--sync-agents" in result.stdout
+
+
+def test_map_sync_agents_updates_agents_md(tmp_path, monkeypatch):
+    """When --sync-agents is set and AGENTS.md exists, it gets updated."""
+    # Setup: Create minimal ontos project
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".ontos.toml").write_text("[project]\nname = 'test'\n")
+    (tmp_path / ".ontos-internal").mkdir()
+
+    # Create initial AGENTS.md
+    agents_path = tmp_path / "AGENTS.md"
+    agents_path.write_text("# Old content")
+    
+    # We need to make sure the stats can be gathered
+    (tmp_path / ".git").mkdir()
+
+    import time
+    old_mtime = agents_path.stat().st_mtime
+    time.sleep(0.1)  # Ensure mtime difference
+
+    # Run map with --sync-agents
+    from ontos.commands.map import map_command, MapOptions
+    map_command(MapOptions(sync_agents=True))
+
+    # Verify AGENTS.md was updated
+    new_content = agents_path.read_text()
+    assert "Current Project State" in new_content
+    assert agents_path.stat().st_mtime > old_mtime
+
+
+def test_map_sync_agents_no_create_if_missing(tmp_path, monkeypatch):
+    """When --sync-agents is set but AGENTS.md doesn't exist, don't create it."""
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".ontos.toml").write_text("[project]\nname = 'test'\n")
+    (tmp_path / ".ontos-internal").mkdir()
+
+    agents_path = tmp_path / "AGENTS.md"
+    assert not agents_path.exists()
+
+    from ontos.commands.map import map_command, MapOptions
+    map_command(MapOptions(sync_agents=True))
+
+    # AGENTS.md should NOT be created
+    assert not agents_path.exists()
+
+
+def test_tiered_context_map_has_tier_markers(tmp_path, monkeypatch):
+    """Context map includes Tier 1, 2, 3 section markers."""
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".ontos.toml").write_text("[project]\nname = 'test'\n")
+    (tmp_path / ".ontos-internal").mkdir()
+
+    from ontos.commands.map import map_command, MapOptions
+    map_command(MapOptions())
+
+    content = (tmp_path / "Ontos_Context_Map.md").read_text()
+    assert "## Tier 1: Essential Context" in content
+    assert "## Tier 2: Document Index" in content
+    assert "## Tier 3: Full Graph Details" in content
+
+
+def test_tier1_contains_project_summary(tmp_path, monkeypatch):
+    """Tier 1 includes project summary section."""
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".ontos.toml").write_text("[project]\nname = 'TestProject'\n")
+    (tmp_path / ".ontos-internal").mkdir()
+
+    from ontos.commands.map import map_command, MapOptions
+    map_command(MapOptions())
+
+    content = (tmp_path / "Ontos_Context_Map.md").read_text()
+    assert "### Project Summary" in content
+    assert "TestProject" in content or "Doc Count" in content

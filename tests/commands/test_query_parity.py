@@ -1,4 +1,5 @@
 """Parity tests for query command."""
+import sys
 
 import subprocess
 import os
@@ -17,7 +18,7 @@ def golden_help():
 def test_query_help_parity(golden_help):
     """Native --help matches legacy."""
     result = subprocess.run(
-        ["python3", "-m", "ontos.cli", "query", "--help"],
+        [sys.executable, "-m", "ontos.cli", "query", "--help"],
         capture_output=True,
         text=True,
         env=os.environ.copy()
@@ -36,7 +37,7 @@ def test_query_health_parity(tmp_path):
 
     # Run native command
     result = subprocess.run(
-        ["python3", "-m", "ontos.cli", "query", "--health", "--dir", str(tmp_path)],
+        [sys.executable, "-m", "ontos.cli", "query", "--health", "--dir", str(tmp_path)],
         capture_output=True,
         text=True,
         env=os.environ.copy()

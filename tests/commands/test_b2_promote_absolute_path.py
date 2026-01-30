@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 import pytest
 from pathlib import Path
@@ -18,7 +19,7 @@ def test_promote_absolute_path_no_crash(tmp_path):
     env["PYTHONPATH"] = os.getcwd()
     
     result = subprocess.run(
-        ["python3", "-m", "ontos", "promote", str(external_file), "--check"],
+        [sys.executable, "-m", "ontos", "promote", str(external_file), "--check"],
         cwd=str(project_root),
         env=env,
         capture_output=True,
