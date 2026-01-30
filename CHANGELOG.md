@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.2.0] - 2026-01-30
+
+v3.2 delivers three major themes: Re-Architecture Support, Environment Detection, and Activation Resilience.
+
+### Added
+
+**Theme 1: Re-Architecture Support**
+- `ontos export data` — Bulk JSON export with dependency graph
+- `ontos export claude` — CLAUDE.md generation (deprecates bare `export`)
+- `ontos migration-report` — Dependency analysis (safe/review/rewrite classification)
+- `ontos migrate` — Convenience command (runs export + migration-report)
+
+**Theme 2: Environment Detection**
+- `ontos env` — Detect environment manifests (pyproject.toml, Brewfile, package.json, .tool-versions)
+- `ontos doctor` environment check — Warns about missing or unparseable manifests (9 checks total)
+- Candidate suggestions for document scaffolding
+
+**Theme 3: Activation Resilience**
+- Tiered context map structure (Tier 1: ~2k tokens, Tier 2: doc index, Tier 3: full graph)
+- `ontos map --sync-agents` flag for AGENTS.md auto-sync
+- AGENTS.md Current Project State section (branch, doc count, last log, health)
+- AGENTS.md Re-Activation Trigger section for context recovery hints
+- AGENTS.md USER CUSTOM section preserved during regeneration
+
+### Fixed
+- Section-aware token truncation for Tier 1 (not character-based)
+- USER CUSTOM preservation uses explicit markers
+- Pipe and newline escaping in Tier 1 tables
+- `gather_stats` optimized (scans docs/logs directories only, not entire repo)
+
+### Changed
+- Context map format updated (`ontos_map_version: 2`)
+- AGENTS.md template expanded with Current Project State and Re-Activation sections
+- `ontos export` without subcommand now warns and runs `export claude`
+
 ## [3.1.0] - 2026-01-22
 
 ### Added

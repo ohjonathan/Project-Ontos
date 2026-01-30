@@ -5,7 +5,7 @@ status: active
 depends_on: []
 ---
 
-# Ontos Manual v3.0
+# Ontos Manual v3.2
 
 *The complete reference for Project Ontos*
 

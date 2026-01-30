@@ -243,11 +243,11 @@ Version 3 is when Ontos became public. The earlier versions live on in the desig
 
 | Version | Status | Highlights |
 |---------|--------|------------|
-| **v3.1.0** | ✅ Current | Obsidian compatibility, native commands, token efficiency |
-| **v3.2** | Next | Edge case fixes, improved validation |
+| **v3.2.0** | ✅ Current | Re-architecture support, environment detection, activation resilience |
+| **v3.3** | Next | Decision capture, typed dependencies, import capability |
 | **v4.0** | Vision | MCP as primary interface, full template system, daemon mode |
 
-v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python (no subprocess overhead) and fixed the broken scaffold command.
+v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python. v3.2 adds re-architecture support for stack migrations, environment detection for faster onboarding, and activation resilience for cheaper context recovery.
 
 ---
 
