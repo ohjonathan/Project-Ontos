@@ -90,9 +90,16 @@ These items were identified during Track B code review but deferred as non-block
 
 ---
 
-## New Features (TBD)
+## New Features (v3.2.2 Planned)
 
-*Add new v3.2 features here as they are planned.*
+| ID | Feature | Priority | Mode | Description |
+|----|---------|----------|------|-------------|
+| F-M1 | `ontos retrofit` | P1 | Maintenance | Library-wide update for Obsidian sync, lint-fixing, and standardization. |
+| F-M2 | `ontos rename` | P1 | Integrity | Atomic renaming of docs including all graph references (depends_on). |
+| F-M3 | `ontos link-check` | P2 | Diagnostics | Find broken depends_on and markdown/wikilink references. |
+| F-M4 | `doctor --repair` | P2 | UX | Interactive fix for project setup issues identified by doctor. |
+
+---
 
 ---
 
@@ -100,7 +107,7 @@ These items were identified during Track B code review but deferred as non-block
 
 - All deferred items are P2 (medium priority)
 - None are blocking for normal operation
-- Consider bundling with other improvements for v3.2
+- **v3.2.2 Planning**: See [.ontos-internal/strategy/proposals/v3.2.2/interop_maintenance_discussion.md](file:///Users/jonathanoh/Dev/Ontos-dev/.ontos-internal/strategy/proposals/v3.2.2/interop_maintenance_discussion.md) for open discussion.
 
 ---
 
