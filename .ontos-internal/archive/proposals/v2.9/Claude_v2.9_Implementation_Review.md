@@ -425,7 +425,7 @@ Adding schema detection + curation level checks to every document parse may slow
 
 When things fail, users should be directed to help:
 ```python
-log("For help, visit: https://github.com/ohjona/Project-Ontos/issues", "info")
+log("For help, visit: https://github.com/ohjonathan/Project-Ontos/issues", "info")
 ```
 
 ---

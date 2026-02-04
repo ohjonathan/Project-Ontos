@@ -36,7 +36,7 @@ ee51d7b - Address review feedback: FutureWarning, cleanup test, SimpleNamespace
 7425368 - Address review feedback: Fix CHANGELOG year, remove unused import
 a00ab0d - v2.9.5: Quality Release - Fix pure/impure violation, add SessionContext tests
 3c465d1 - docs(v3.0): add security requirements from v2.9.4 Architecture Board
-342e837 - Merge pull request #36 from ohjona/v2.9.4
+342e837 - Merge pull request #36 from ohjonathan/v2.9.4
 1ec1e31 - fix: Address Codex security review for v2.9.4
 6767f6d - fix: Address PR #36 review feedback
 391bc29 - feat(docs): complete v2.9.4 documentation and polish

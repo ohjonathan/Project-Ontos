@@ -33,7 +33,7 @@ Event Type: feature
 f821efd - feat(v2.8.1): refactor ontos_generate_context_map.py to use SessionContext
 77f6e9c - docs: add session log for v2.8 version bump
 ac0f728 - chore: bump version to 2.8.0 and add changelog entry
-7e328cc - Merge pull request #24 from ohjona/v2.8
+7e328cc - Merge pull request #24 from ohjonathan/v2.8
 7c0a3c1 - docs: add session log for PR #24 fixes
 0ba6ff6 - fix(v2.8): address Chief Architect review feedback on PR #24
 83ab3e7 - docs: add session log for v2.8 PR #1 implementation
@@ -43,6 +43,6 @@ ac0f728 - chore: bump version to 2.8.0 and add changelog entry
 a003775 - docs: v2.8 implementation plan v2.0.0 - incorporate LLM Review Board feedback
 b7c1abd - docs: add session log for v2.8 planning
 07f83fa - docs: add v2.8 implementation plan for LLM Review Board
-c587596 - Merge pull request #23 from ohjona/v2.7.1
+c587596 - Merge pull request #23 from ohjonathan/v2.7.1
 2f7d483 - fix(ci): Remove invalid ontos_config from session log impacts
 ```

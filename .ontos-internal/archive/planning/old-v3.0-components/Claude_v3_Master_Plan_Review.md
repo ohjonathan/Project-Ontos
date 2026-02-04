@@ -308,7 +308,7 @@ Skip `install.sh` entirely. Instead:
 
 ```bash
 # V2.9: Single-file installer (Python, not shell)
-curl -O https://raw.githubusercontent.com/ohjona/Project-Ontos/main/install.py
+curl -O https://raw.githubusercontent.com/ohjonathan/Project-Ontos/main/install.py
 python3 install.py
 ```
 

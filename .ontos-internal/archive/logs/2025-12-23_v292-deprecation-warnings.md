@@ -32,14 +32,14 @@ Event Type: feature
 ```text
 44c8a13 - feat(v2.9.2): add deprecation warnings for v3.0 preparation
 ae33a14 - docs(v2.9): update implementation plan and instructions for v2.9.2
-d48c08a - Merge pull request #33 from ohjona/v2.9.1
+d48c08a - Merge pull request #33 from ohjonathan/v2.9.1
 d2e1ece - docs(v2.9.1): Archive session log for Curation Levels feature
 ffeb96a - fix(v2.9.1): Make curation level check informational, not strict error
 61423fd - docs(v2.9.1): Update CHANGELOG per Chief Architect feedback
 b3102ca - feat(v2.9.1): Address Chief Architect PR #33 feedback
 76f5e64 - feat(v2.9.1): Curation Levels (L0/L1/L2 tiered validation)
 ae694bd - docs(v2.9): update plan and instructions post-PR #31 merge
-2b97429 - Merge pull request #31 from ohjona/v2.9.0
+2b97429 - Merge pull request #31 from ohjonathan/v2.9.0
 0cdab99 - chore: archive v2.9.0 session log
 fa88ec7 - fix(ci): Resolve DEPTH validation errors in review documents
 e944a3f - fix(schema): Address Chief Architect feedback

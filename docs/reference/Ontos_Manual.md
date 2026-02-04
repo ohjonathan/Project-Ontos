@@ -341,7 +341,7 @@ ontos init
 
 For development:
 ```bash
-git clone https://github.com/ohjona/Project-Ontos.git
+git clone https://github.com/ohjonathan/Project-Ontos.git
 cd Project-Ontos
 pip install -e .
 ontos init

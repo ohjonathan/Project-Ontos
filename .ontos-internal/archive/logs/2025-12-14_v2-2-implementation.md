@@ -53,7 +53,7 @@ f61f6f5 - fix: correct version 2.2.0 → 2.1.0
 2a16451 - docs: add agent --no-verify rule to instructions
 a5671db - docs(log): archive session context-map-notice
 2048ac8 - feat: add notice to context map for Project Ontos repo
-025433d - Merge pull request #12 from ohjona/v2.1-smart-memory
+025433d - Merge pull request #12 from ohjonathan/v2.1-smart-memory
 9715207 - fix(pr-12): add concepts to session log, fix validation
 dec3897 - docs(log): archive session pr-12-fixes
 db6e5c3 - fix(pr-12): address review feedback
@@ -66,5 +66,5 @@ cd376e7 - docs: Archive cleanup session and update changelog
 a5d2f05 - docs: Update changelog with compaction changes
 994ed34 - docs: Archive documentation compaction session
 a37695a - chore: compact documentation - 47% line reduction
-e5e1c83 - Merge pull request #11 from ohjona/ontos-2.0
+e5e1c83 - Merge pull request #11 from ohjonathan/ontos-2.0
 ```

@@ -49,6 +49,6 @@ b2ec214 - docs: add session log for v2.7 philosophy review synthesis
 629166d - docs: add session log for v2.7 philosophy proposal
 b3ed19a - docs: add executive summary to v2.7 philosophy proposal
 79523fe - docs: add v2.7 philosophical framework proposal
-a311554 - Merge pull request #21 from ohjona/fix/v2.6.3-non-interactive-init
+a311554 - Merge pull request #21 from ohjonathan/fix/v2.6.3-non-interactive-init
 ffb2f97 - fix: handle non-interactive environments in ontos_init.py
 ```

@@ -99,7 +99,7 @@ Event types: `feature`, `fix`, `refactor`, `exploration`, `chore`, `decision`
 ### "Install Ontos" (v2.9.3+)
 For fresh installations:
 ```bash
-curl -sO https://raw.githubusercontent.com/ohjona/Project-Ontos/v2.9.4/install.py
+curl -sO https://raw.githubusercontent.com/ohjonathan/Project-Ontos/v2.9.4/install.py
 python3 install.py
 ```
 The installer verifies SHA256 checksums before extraction.

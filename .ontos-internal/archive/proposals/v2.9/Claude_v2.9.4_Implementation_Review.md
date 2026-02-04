@@ -168,7 +168,7 @@ Add a proper Section 15 for v2.9.4:
 Add to Quick Start section:
 ```bash
 # Install Ontos
-curl -sO https://raw.githubusercontent.com/ohjona/Project-Ontos/v2.9.4/install.py
+curl -sO https://raw.githubusercontent.com/ohjonathan/Project-Ontos/v2.9.4/install.py
 python3 install.py
 ```
 

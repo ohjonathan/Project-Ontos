@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = "Apache-2.0"
 authors = [
-    {name = "Ontos Project", email = "ohjona@users.noreply.github.com"}
+    {name = "Ontos Project", email = "ohjonathan@users.noreply.github.com"}
 ]
 keywords = ["documentation", "ai", "context", "llm", "developer-tools"]
 classifiers = [
@@ -45,10 +45,10 @@ mcp = [
 ontos = "ontos.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/ohjona/Project-Ontos"
-Documentation = "https://github.com/ohjona/Project-Ontos/tree/main/docs"
-Repository = "https://github.com/ohjona/Project-Ontos"
-Issues = "https://github.com/ohjona/Project-Ontos/issues"
+Homepage = "https://github.com/ohjonathan/Project-Ontos"
+Documentation = "https://github.com/ohjonathan/Project-Ontos/tree/main/docs"
+Repository = "https://github.com/ohjonathan/Project-Ontos"
+Issues = "https://github.com/ohjonathan/Project-Ontos/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]

@@ -10,7 +10,7 @@ concepts: [review, implementation, describes, immutable-history]
 
 **Reviewer:** Claude Code (Opus 4.5) as Chief Architect
 **Date:** 2025-12-19
-**PR:** https://github.com/ohjona/Project-Ontos/pull/22
+**PR:** https://github.com/ohjonathan/Project-Ontos/pull/22
 **Review Round:** 2 (Follow-up after feedback implementation)
 
 ---

@@ -4,7 +4,7 @@
 **Phase:** D.5a Round 2 (Adversarial Verification)  
 **Track:** A — Obsidian Compatibility + Token Efficiency  
 **Branch:** `feat/v3.1.0-track-a`  
-**PR:** #54 — https://github.com/ohjona/Project-Ontos/pull/54  
+**PR:** #54 — https://github.com/ohjonathan/Project-Ontos/pull/54  
 **Date:** 2026-01-21
 
 ---
@@ -72,4 +72,4 @@ Full suite: 449 passed, 2 skipped
 ---
 
 *Phase D.5a (Round 2) — Codex Verification*  
-*PR #54: https://github.com/ohjona/Project-Ontos/pull/54*
+*PR #54: https://github.com/ohjonathan/Project-Ontos/pull/54*

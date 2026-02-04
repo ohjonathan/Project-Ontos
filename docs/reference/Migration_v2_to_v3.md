@@ -130,4 +130,4 @@ cp ontos_config.py.backup ontos_config.py
 
 - Run `ontos doctor` for diagnostics
 - Check [Ontos Manual](Ontos_Manual.md) for complete reference
-- Open an issue at [GitHub](https://github.com/ohjona/Project-Ontos/issues)
+- Open an issue at [GitHub](https://github.com/ohjonathan/Project-Ontos/issues)

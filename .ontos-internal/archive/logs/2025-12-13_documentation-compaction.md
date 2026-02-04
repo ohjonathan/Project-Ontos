@@ -50,7 +50,7 @@ Compact Project Ontos documentation to reduce token overhead while preserving es
 ## Raw Session History
 ```text
 a37695a - chore: compact documentation - 47% line reduction
-e5e1c83 - Merge pull request #11 from ohjona/ontos-2.0
+e5e1c83 - Merge pull request #11 from ohjonathan/ontos-2.0
 4215a93 - feat: Add configurable workflow enforcement options
 607be1a - feat: Add blocking pre-push hook to enforce session archiving
 2878d84 - docs: Archive PR #11 review session
@@ -58,7 +58,7 @@ e5e1c83 - Merge pull request #11 from ohjona/ontos-2.0
 2eeb545 - chore: Bump version to 2.0.0, maintenance fixes
 c3c64d1 - feat: Implement Ontos V2.0 (Dual Ontology, Visibility, Intelligence)
 258a9dc - docs: rename architecture.md to v2_technical_architecture.md
-5c1d2dd - Merge pull request #10 from ohjona/Ontos-self-dev
+5c1d2dd - Merge pull request #10 from ohjonathan/Ontos-self-dev
 e6cb68b - docs: consolidate v2 strategy and architecture specs
 1e7173f - docs: rename Ontos_Strategy.md to Ontos_2.0_Strategy.md + session log
 52d4046 - chore: bump version to 1.5.0 for self-development protocol

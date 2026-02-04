@@ -56,8 +56,8 @@ def is_ontos_repo() -> bool:
 ONTOS_VERSION = "2.9.6"
 
 # GitHub repository for updates
-ONTOS_REPO_URL = 'https://github.com/ohjona/project-ontos'
-ONTOS_REPO_RAW_URL = 'https://raw.githubusercontent.com/ohjona/project-ontos/main'
+ONTOS_REPO_URL = 'https://github.com/ohjonathan/project-ontos'
+ONTOS_REPO_RAW_URL = 'https://raw.githubusercontent.com/ohjonathan/project-ontos/main'
 
 # Directory settings (defaults - override in ontos_config.py)
 DEFAULT_DOCS_DIR = 'docs'

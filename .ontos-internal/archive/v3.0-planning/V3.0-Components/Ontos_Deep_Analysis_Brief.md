@@ -299,7 +299,7 @@ All file writes go through `SessionContext`:
 
 Curl-bootstrapped installation with security:
 ```bash
-curl -sO https://raw.githubusercontent.com/ohjona/Project-Ontos/v2.9.5/install.py
+curl -sO https://raw.githubusercontent.com/ohjonathan/Project-Ontos/v2.9.5/install.py
 python3 install.py
 ```
 

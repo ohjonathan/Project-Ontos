@@ -1169,10 +1169,10 @@ dev = [
 ontos = "ontos.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/ohjona/Project-Ontos"
-Documentation = "https://github.com/ohjona/Project-Ontos#readme"
-Repository = "https://github.com/ohjona/Project-Ontos"
-Changelog = "https://github.com/ohjona/Project-Ontos/blob/main/Ontos_CHANGELOG.md"
+Homepage = "https://github.com/ohjonathan/Project-Ontos"
+Documentation = "https://github.com/ohjonathan/Project-Ontos#readme"
+Repository = "https://github.com/ohjonathan/Project-Ontos"
+Changelog = "https://github.com/ohjonathan/Project-Ontos/blob/main/Ontos_CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -2557,11 +2557,11 @@ docs = [
 ontos = "ontos.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/ohjona/Project-Ontos"
-Documentation = "https://github.com/ohjona/Project-Ontos#readme"
-Repository = "https://github.com/ohjona/Project-Ontos"
-Changelog = "https://github.com/ohjona/Project-Ontos/blob/main/Ontos_CHANGELOG.md"
-"Bug Tracker" = "https://github.com/ohjona/Project-Ontos/issues"
+Homepage = "https://github.com/ohjonathan/Project-Ontos"
+Documentation = "https://github.com/ohjonathan/Project-Ontos#readme"
+Repository = "https://github.com/ohjonathan/Project-Ontos"
+Changelog = "https://github.com/ohjonathan/Project-Ontos/blob/main/Ontos_CHANGELOG.md"
+"Bug Tracker" = "https://github.com/ohjonathan/Project-Ontos/issues"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

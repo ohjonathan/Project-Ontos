@@ -39,11 +39,11 @@ Design v2.5 "The Promises" feature: mode-based consolidation behavior with clear
 ```text
 be52684 - docs: add v2.5 "The Promises" implementation plan
 d4154ee - chore: remove testing file
-472ae15 - Merge pull request #16 from ohjona/TEST-GEMINI
+472ae15 - Merge pull request #16 from ohjonathan/TEST-GEMINI
 8a1fc34 - test: add testing file for Gemini PR review
 a9a0ede - feat: add Gemini CLI workflows for automated PR review
 72caecb - chore: archive v2.4 planning docs after merge
-739dfa3 - Merge pull request #15 from ohjona/v2.4-config-automation
+739dfa3 - Merge pull request #15 from ohjonathan/v2.4-config-automation
 0e9bce4 - docs: update documentation for v2.4 features
 af13def - fix: final PR #15 fixes from Codex review
 8d2bd50 - fix: address remaining PR #15 feedback

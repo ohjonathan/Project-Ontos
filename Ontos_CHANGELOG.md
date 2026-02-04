@@ -166,7 +166,7 @@ Single-file Python installer with SHA256 verification for curl-bootstrapped inst
 
 ### Added
 - **`install.py`** - Root-level installer (NEW)
-  - Curl-bootstrapped: `curl -sO https://raw.githubusercontent.com/ohjona/Project-Ontos/v2.9.3/install.py && python3 install.py`
+  - Curl-bootstrapped: `curl -sO https://raw.githubusercontent.com/ohjonathan/Project-Ontos/v2.9.3/install.py && python3 install.py`
   - SHA256 checksum verification from tag-aligned `checksums.json`
   - Path traversal and symlink attack protection
   - Python 3.9+ version check

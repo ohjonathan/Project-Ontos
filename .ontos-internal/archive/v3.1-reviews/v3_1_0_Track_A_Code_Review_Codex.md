@@ -4,7 +4,7 @@
 **Phase:** D.2a (Code Review)  
 **Track:** A — Obsidian Compatibility + Token Efficiency  
 **Branch:** `feat/v3.1.0-track-a`  
-**PR:** #54 — https://github.com/ohjona/Project-Ontos/pull/54  
+**PR:** #54 — https://github.com/ohjonathan/Project-Ontos/pull/54  
 **Date:** 2026-01-21
 
 ---

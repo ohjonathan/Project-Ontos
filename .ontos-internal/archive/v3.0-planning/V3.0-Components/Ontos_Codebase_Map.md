@@ -541,7 +541,7 @@ Curl-bootstrapped installation with SHA256 verification.
 
 **Usage:**
 ```bash
-curl -sO https://raw.githubusercontent.com/ohjona/Project-Ontos/v2.9.5/install.py
+curl -sO https://raw.githubusercontent.com/ohjonathan/Project-Ontos/v2.9.5/install.py
 python3 install.py
 ```
 

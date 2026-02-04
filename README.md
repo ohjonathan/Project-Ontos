@@ -1,16 +1,16 @@
 # Project Ontos
 
-[![CI](https://github.com/ohjona/Project-Ontos/actions/workflows/ci.yml/badge.svg)](https://github.com/ohjona/Project-Ontos/actions/workflows/ci.yml)
+[![CI](https://github.com/ohjonathan/Project-Ontos/actions/workflows/ci.yml/badge.svg)](https://github.com/ohjonathan/Project-Ontos/actions/workflows/ci.yml)
 [![PyPI version](https://img.shields.io/pypi/v/ontos.svg)](https://pypi.org/project/ontos/)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![GitHub](https://img.shields.io/badge/GitHub-Source-black?logo=github)](https://github.com/ohjona/Project-Ontos)
+[![GitHub](https://img.shields.io/badge/GitHub-Source-black?logo=github)](https://github.com/ohjonathan/Project-Ontos)
 
 **Portable context for the agentic era.**
 
 *Never explain twice. Own your context.*
 
-*Source available at [github.com/ohjona/Project-Ontos](https://github.com/ohjona/Project-Ontos).*
+*Source available at [github.com/ohjonathan/Project-Ontos](https://github.com/ohjonathan/Project-Ontos).*
 
 ---
 
@@ -153,7 +153,7 @@ pip install ontos
 > - **Quick fix:** Use `python -m ontos` instead (e.g., `python -m ontos map`)
 > - **Permanent fix:** Add Python's bin directory to your PATH (the `pip install` output shows the location)
 
-Source available at [github.com/ohjona/Project-Ontos](https://github.com/ohjona/Project-Ontos).
+Source available at [github.com/ohjonathan/Project-Ontos](https://github.com/ohjonathan/Project-Ontos).
 
 **Initialize:**
 
@@ -255,17 +255,17 @@ v3.0 transformed Ontos from repo-injected scripts into a pip-installable package
 
 > *Note: Documentation links below point to the latest source on GitHub and may reflect features not yet released.*
 
-- **[Ontos Manual](https://github.com/ohjona/Project-Ontos/blob/main/docs/reference/Ontos_Manual.md)**: Complete reference—installation, workflow, configuration, errors
-- **[Agent Instructions](https://github.com/ohjona/Project-Ontos/blob/main/docs/reference/Ontos_Agent_Instructions.md)**: Commands for AI agents
-- **[Migration Guide v2→v3](https://github.com/ohjona/Project-Ontos/blob/main/docs/reference/Migration_v2_to_v3.md)**: Upgrading from v2.x
-- **[Minimal Example](https://github.com/ohjona/Project-Ontos/blob/main/examples/minimal/README.md)**: 3-file quick start
-- **[Changelog](https://github.com/ohjona/Project-Ontos/blob/main/Ontos_CHANGELOG.md)**: Version history
+- **[Ontos Manual](https://github.com/ohjonathan/Project-Ontos/blob/main/docs/reference/Ontos_Manual.md)**: Complete reference—installation, workflow, configuration, errors
+- **[Agent Instructions](https://github.com/ohjonathan/Project-Ontos/blob/main/docs/reference/Ontos_Agent_Instructions.md)**: Commands for AI agents
+- **[Migration Guide v2→v3](https://github.com/ohjonathan/Project-Ontos/blob/main/docs/reference/Migration_v2_to_v3.md)**: Upgrading from v2.x
+- **[Minimal Example](https://github.com/ohjonathan/Project-Ontos/blob/main/examples/minimal/README.md)**: 3-file quick start
+- **[Changelog](https://github.com/ohjonathan/Project-Ontos/blob/main/Ontos_CHANGELOG.md)**: Version history
 
 ---
 
 ## Feedback
 
-Issues and feature requests welcome via [GitHub Issues](https://github.com/ohjona/Project-Ontos/issues).
+Issues and feature requests welcome via [GitHub Issues](https://github.com/ohjonathan/Project-Ontos/issues).
 
 ---
 
