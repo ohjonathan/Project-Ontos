@@ -43,11 +43,11 @@ def is_ontos_repo() -> bool:
     return os.path.exists(os.path.join(PROJECT_ROOT, '.ontos-internal'))
 
 # Version - used by update script to check for newer versions
-ONTOS_VERSION = "3.0.3"
+ONTOS_VERSION = "3.2.1"
 
 # GitHub repository for updates
-ONTOS_REPO_URL = 'https://github.com/ohjona/project-ontos'
-ONTOS_REPO_RAW_URL = 'https://raw.githubusercontent.com/ohjona/project-ontos/main'
+ONTOS_REPO_URL = 'https://github.com/ohjonathan/Project-Ontos'
+ONTOS_REPO_RAW_URL = 'https://raw.githubusercontent.com/ohjonathan/Project-Ontos/main'
 
 # Directory settings (defaults - override in ontos_config.py)
 DEFAULT_DOCS_DIR = 'docs'

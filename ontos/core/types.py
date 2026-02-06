@@ -41,6 +41,8 @@ class DocumentStatus(Enum):
     DEPRECATED = "deprecated"
     REJECTED = "rejected"
     COMPLETE = "complete"
+    SCAFFOLD = "scaffold"
+    IN_PROGRESS = "in_progress"
 
 
 class ValidationErrorType(Enum):

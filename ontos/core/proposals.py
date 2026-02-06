@@ -77,7 +77,7 @@ def find_draft_proposals() -> List[Dict]:
 
     # Get current ONTOS_VERSION for matching
     try:
-        from ontos_config_defaults import ONTOS_VERSION
+        from ontos import __version__ as ONTOS_VERSION
     except ImportError:
         ONTOS_VERSION = None
 

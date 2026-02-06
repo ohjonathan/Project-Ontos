@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ontos"
-version = "3.2.0"
+version = "3.2.1"
 description = "Local-first documentation management for AI-assisted development"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -37,10 +37,6 @@ dev = [
     "pytest-cov>=4.0,<6.0",
     "pre-commit>=3.0,<5.0",
 ]
-mcp = [
-    "pydantic>=2.0,<3.0",
-]
-
 [project.scripts]
 ontos = "ontos.cli:main"
 
@@ -55,7 +51,6 @@ where = ["."]
 include = ["ontos", "ontos.*"]
 
 [tool.setuptools.package-data]
-"ontos._scripts" = ["*.py"]
 "ontos._templates" = ["*"]
 "ontos._hooks" = ["*"]
 

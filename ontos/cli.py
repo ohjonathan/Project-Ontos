@@ -6,8 +6,6 @@ Full argparse implementation per Spec v1.1 Section 4.1.
 """
 
 import argparse
-import os
-import subprocess
 import sys
 from pathlib import Path
 from typing import List, Optional
@@ -15,35 +13,6 @@ from typing import List, Optional
 import ontos
 from ontos.ui.json_output import emit_json, emit_error, validate_json_output
 from ontos.commands.map import CompactMode
-
-
-def _get_subprocess_env() -> dict:
-    """Get environment for subprocess calls.
-
-    Sets:
-    - ONTOS_PROJECT_ROOT: User's current working directory (for legacy script compatibility)
-    - PYTHONPATH: Includes both user's project root (for config imports) and
-                  package installation root (for ontos.core imports)
-    """
-    env = os.environ.copy()
-    # Use user's CWD as project root, not package installation directory
-    try:
-        project_root = str(Path.cwd())
-    except OSError:
-        # CWD deleted or inaccessible; subprocess will fail gracefully
-        project_root = "/"
-    env.setdefault('ONTOS_PROJECT_ROOT', project_root)
-    
-    # Package installation root (needed for legacy scripts to import ontos.core)
-    package_root = str(Path(__file__).parent.parent)
-    
-    # Build PYTHONPATH: project_root + package_root + existing
-    existing_pythonpath = env.get('PYTHONPATH', '')
-    path_parts = [project_root, package_root]
-    if existing_pythonpath:
-        path_parts.append(existing_pythonpath)
-    env['PYTHONPATH'] = os.pathsep.join(path_parts)
-    return env
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -216,7 +185,7 @@ def _register_agents(subparsers, parent):
 
 def _register_agent_export(subparsers, parent):
     """Register agent-export command (deprecated alias for agents)."""
-    p = subparsers.add_parser("agent-export", help="(Deprecated) Use 'ontos agents' instead", parents=[parent])
+    p = subparsers.add_parser("agent-export", help=argparse.SUPPRESS, parents=[parent])
     p.add_argument("--force", "-f", action="store_true",
                    help="Overwrite existing file")
     p.add_argument("--output", "-o", type=Path,
@@ -277,7 +246,7 @@ def _register_export(subparsers, parent):
 
 def _register_hook(subparsers, parent):
     """Register hook command (internal)."""
-    p = subparsers.add_parser("hook", help="Git hook dispatcher (internal)", parents=[parent])
+    p = subparsers.add_parser("hook", help=argparse.SUPPRESS, parents=[parent])
     p.add_argument("hook_type", choices=["pre-push", "pre-commit"],
                    help="Hook type to run")
     p.add_argument("extra_args", nargs="*", help="Extra arguments from git")
@@ -479,7 +448,7 @@ def _register_migrate_convenience(subparsers, parent):
 
 def _register_tree_alias(subparsers, parent):
     """Register tree command (deprecated alias for map)."""
-    p = subparsers.add_parser("tree", help="(Deprecated) Use 'ontos map' instead", parents=[parent])
+    p = subparsers.add_parser("tree", help=argparse.SUPPRESS, parents=[parent])
     # Include map arguments to maintain compatibility
     p.add_argument("--strict", action="store_true", help="Treat warnings as errors")
     p.add_argument("--output", "-o", type=Path, help="Output path")
@@ -493,7 +462,7 @@ def _register_tree_alias(subparsers, parent):
 
 def _register_validate_alias(subparsers, parent):
     """Register validate command (deprecated alias for verify)."""
-    p = subparsers.add_parser("validate", help="(Deprecated) Use 'ontos verify' instead", parents=[parent])
+    p = subparsers.add_parser("validate", help=argparse.SUPPRESS, parents=[parent])
     p.add_argument("path", nargs="?", type=Path, help="Specific file to verify")
     p.add_argument("--all", "-a", action="store_true", help="Verify all stale documents")
     p.add_argument("--date", "-d", help="Verification date")
@@ -973,76 +942,6 @@ def _cmd_hook(args) -> int:
     )
 
     return hook_command(options)
-
-
-def _cmd_wrapper(args) -> int:
-    """
-    Handle wrapper commands that delegate to legacy scripts.
-
-    Per Decision: Option A with JSON validation fallback.
-    """
-    wrapper_name = args.wrapper_name
-
-    # Find the legacy script
-    scripts_dir = Path(__file__).parent / "_scripts"
-    script_map = {
-        "verify": "ontos_verify.py",
-        "query": "ontos_query.py",
-        "consolidate": "ontos_consolidate.py",
-        "promote": "ontos_promote.py",
-    }
-
-    script_name = script_map.get(wrapper_name)
-    if not script_name:
-        if args.json:
-            emit_error(f"Unknown wrapper command: {wrapper_name}", "E_UNKNOWN_CMD")
-        else:
-            print(f"Error: Unknown wrapper command: {wrapper_name}", file=sys.stderr)
-        return 5
-
-    script_path = scripts_dir / script_name
-    if not script_path.exists():
-        if args.json:
-            emit_error(f"Script not found: {script_name}", "E_NOT_FOUND")
-        else:
-            print(f"Error: Script not found: {script_path}", file=sys.stderr)
-        return 5
-
-    # Build command
-    cmd = [sys.executable, str(script_path)]
-
-    # Pass through JSON flag if requested
-    if args.json:
-        cmd.append("--json")
-
-    # Run the wrapper
-    try:
-        result = subprocess.run(cmd, capture_output=True, text=True, env=_get_subprocess_env())
-
-        # JSON validation per Decision
-        if args.json:
-            if validate_json_output(result.stdout):
-                print(result.stdout, end="")
-            else:
-                emit_error(
-                    message=f"Command '{wrapper_name}' does not support JSON output",
-                    code="E_JSON_UNSUPPORTED",
-                    details=result.stdout[:500] if result.stdout else result.stderr[:500]
-                )
-        else:
-            if result.stdout:
-                print(result.stdout, end="")
-            if result.stderr:
-                print(result.stderr, file=sys.stderr, end="")
-
-        return result.returncode
-
-    except Exception as e:
-        if args.json:
-            emit_error(f"Wrapper execution failed: {e}", "E_EXEC_FAIL")
-        else:
-            print(f"Error: {e}", file=sys.stderr)
-        return 5
 
 
 # ============================================================================

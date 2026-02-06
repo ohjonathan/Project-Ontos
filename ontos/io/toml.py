@@ -96,9 +96,13 @@ def write_config(path: Path, config: Dict[str, Any]) -> None:
         if isinstance(value, dict):
             lines.append(f'[{key}]')
             for k, v in value.items():
+                if v is None:
+                    continue
                 lines.append(f'{k} = {_format_value(v)}')
             lines.append('')
         else:
+            if value is None:
+                continue
             lines.append(f'{key} = {_format_value(value)}')
 
     path.parent.mkdir(parents=True, exist_ok=True)
