@@ -7,6 +7,7 @@ IMPURE: Many functions use os.path.exists() and imports from config modules.
 """
 
 import os
+import importlib
 import warnings
 from datetime import datetime
 from pathlib import Path
@@ -31,12 +32,55 @@ def is_ontos_repo() -> bool:
 
 
 def resolve_config(setting_name: str, default=None):
-    """Resolve a config value. Returns the default.
+    """Resolve a config value with legacy compatibility.
 
-    Note: Legacy config resolution via ontos_config.py/ontos_config_defaults.py
-    was removed in v3.2.1. Use .ontos.toml via load_project_config() instead.
+    Resolution order:
+    1. ``ontos_config.py`` override (if present on PYTHONPATH)
+    2. ``ontos_config_defaults.py`` fallback (if present on PYTHONPATH)
+    3. Provided ``default`` argument
     """
+    user_config = None
+    try:
+        user_config = importlib.import_module("ontos_config")
+    except ImportError as exc:
+        # Only suppress missing module errors for ontos_config itself.
+        if getattr(exc, "name", None) != "ontos_config":
+            raise
+
+    if user_config is not None:
+        _warn_legacy_config()
+        if hasattr(user_config, setting_name):
+            return getattr(user_config, setting_name)
+
+    defaults_module = None
+    try:
+        defaults_module = importlib.import_module("ontos_config_defaults")
+    except ImportError as exc:
+        # Only suppress missing module errors for ontos_config_defaults itself.
+        if getattr(exc, "name", None) != "ontos_config_defaults":
+            raise
+
+    if defaults_module is not None and hasattr(defaults_module, setting_name):
+        return getattr(defaults_module, setting_name)
+
     return default
+
+
+_legacy_config_warning_emitted = False
+
+
+def _warn_legacy_config() -> None:
+    """Warn once when legacy ontos_config.py is detected."""
+    global _legacy_config_warning_emitted
+    if _legacy_config_warning_emitted:
+        return
+    _legacy_config_warning_emitted = True
+    warnings.warn(
+        "Legacy ontos_config.py detected; this path is deprecated and will be removed "
+        "in a future release. Use .ontos.toml.",
+        FutureWarning,
+        stacklevel=3,
+    )
 
 
 # Track deprecation warnings to avoid spam

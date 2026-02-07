@@ -17,7 +17,7 @@ from typing import Dict, List, Optional, Any, Tuple
 
 from ontos.core.validation import ValidationOrchestrator
 from ontos.core.tokens import estimate_tokens, format_token_count
-from ontos.core.types import DocumentData, DocumentStatus, DocumentType, ValidationResult
+from ontos.core.types import DocumentData, DocumentStatus, ValidationResult
 
 
 class CompactMode(Enum):
@@ -201,7 +201,6 @@ def _generate_tier1_summary(
         sections.append("\n".join(ip_lines))
 
     # Key Documents (derived from dependency graph in-degree)
-    kd_lines = ["### Key Documents"]
     in_degree: Dict[str, int] = {}
     for doc in docs.values():
         for dep_id in doc.depends_on:
@@ -209,22 +208,14 @@ def _generate_tier1_summary(
                 in_degree[dep_id] = in_degree.get(dep_id, 0) + 1
 
     if in_degree:
-        # Show top documents by in-degree (most depended-on)
-        top_docs = sorted(in_degree.items(), key=lambda x: -x[1])[:5]
+        kd_lines = ["### Key Documents"]
+        # Show top documents by in-degree (most depended-on), max 3.
+        top_docs = sorted(in_degree.items(), key=lambda x: (-x[1], x[0]))[:3]
         for doc_id, count in top_docs:
             kd_lines.append(f"- **{doc_id}** ({count} dependents)")
-    else:
-        # Cold-start fallback: list kernel and strategy docs by type
-        kernel_docs = [d.id for d in docs.values() if d.type == DocumentType.KERNEL]
-        strategy_docs = [d.id for d in docs.values() if d.type == DocumentType.STRATEGY]
-        kd_lines.append("No dependency data yet.")
-        if kernel_docs:
-            kd_lines.append(f"- Kernel docs: {', '.join(sorted(kernel_docs))}")
-        if strategy_docs:
-            kd_lines.append(f"- Strategy docs: {', '.join(sorted(strategy_docs))}")
 
-    kd_lines.append("")
-    sections.append("\n".join(kd_lines))
+        kd_lines.append("")
+        sections.append("\n".join(kd_lines))
 
     # Build content with token awareness
     content_parts = []
@@ -711,4 +702,3 @@ def map_command(options: MapOptions) -> int:
             print(f"  Warnings: {len(result.warnings)}")
 
     return exit_code
-
