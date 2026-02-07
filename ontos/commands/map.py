@@ -17,7 +17,7 @@ from typing import Dict, List, Optional, Any, Tuple
 
 from ontos.core.validation import ValidationOrchestrator
 from ontos.core.tokens import estimate_tokens, format_token_count
-from ontos.core.types import DocumentData, ValidationResult
+from ontos.core.types import DocumentData, DocumentStatus, ValidationResult
 
 
 class CompactMode(Enum):
@@ -188,7 +188,7 @@ def _generate_tier1_summary(
 
     # In Progress Documents
     ip_lines = []
-    in_progress = [d for d in docs.values() if (d.status.value if hasattr(d.status, 'value') else str(d.status)) == "in_progress"]
+    in_progress = [d for d in docs.values() if d.status == DocumentStatus.IN_PROGRESS]
     if in_progress:
         ip_lines.append("### In Progress")
         ip_lines.append("| Document | ID |")
@@ -200,13 +200,22 @@ def _generate_tier1_summary(
         ip_lines.append("")
         sections.append("\n".join(ip_lines))
 
-    # Critical Paths
-    cp_lines = ["### Critical Paths"]
-    cp_lines.append("- **Entry:** `docs/reference/Ontos_Manual.md`")
-    cp_lines.append("- **Strategy:** `.ontos-internal/strategy/`")
-    cp_lines.append("- **Logs:** `.ontos-internal/logs/`")
-    cp_lines.append("")
-    sections.append("\n".join(cp_lines))
+    # Key Documents (derived from dependency graph in-degree)
+    in_degree: Dict[str, int] = {}
+    for doc in docs.values():
+        for dep_id in doc.depends_on:
+            if dep_id in docs:
+                in_degree[dep_id] = in_degree.get(dep_id, 0) + 1
+
+    if in_degree:
+        kd_lines = ["### Key Documents"]
+        # Show top documents by in-degree (most depended-on), max 3.
+        top_docs = sorted(in_degree.items(), key=lambda x: (-x[1], x[0]))[:3]
+        for doc_id, count in top_docs:
+            kd_lines.append(f"- **{doc_id}** ({count} dependents)")
+
+        kd_lines.append("")
+        sections.append("\n".join(kd_lines))
 
     # Build content with token awareness
     content_parts = []
@@ -592,11 +601,12 @@ def map_command(options: MapOptions) -> int:
     docs_dir = project_root / config.paths.docs_dir
     output_path = options.output or (project_root / config.paths.context_map)
 
-    # Scan for documents
-    doc_paths = scan_documents(
-        [docs_dir, project_root],
-        skip_patterns=config.scanning.skip_patterns
-    )
+    # Scan for documents (docs_dir + configured scan_paths only)
+    scan_dirs = [docs_dir] + [project_root / p for p in config.scanning.scan_paths]
+    skip = list(config.scanning.skip_patterns)
+    # Skip the context map itself using full resolved path
+    skip.append(str(output_path.resolve()))
+    doc_paths = scan_documents(scan_dirs, skip_patterns=skip)
 
     # Load documents with filter and cache
     docs: Dict[str, DocumentData] = {}
@@ -692,4 +702,3 @@ def map_command(options: MapOptions) -> int:
             print(f"  Warnings: {len(result.warnings)}")
 
     return exit_code
-

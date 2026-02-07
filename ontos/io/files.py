@@ -155,6 +155,8 @@ def load_document_from_content(
     try:
         doc_status = DocumentStatus(status_str)
     except ValueError:
+        import sys
+        print(f"Warning: Unknown status '{status_str}' in {path}, defaulting to 'draft'", file=sys.stderr)
         doc_status = DocumentStatus.DRAFT
 
     # Normalize tags and aliases

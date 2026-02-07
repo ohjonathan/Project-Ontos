@@ -64,8 +64,9 @@ class TestUnifiedCLI:
 
     # Test all v3.0 commands respond to --help
     @pytest.mark.parametrize("command", [
-        'init', 'map', 'log', 'doctor', 'agents', 'export', 'hook',
-        'verify', 'query', 'migrate', 'consolidate', 'promote', 'scaffold', 'stub', 'env'
+        'init', 'map', 'log', 'doctor', 'agents', 'export', 'hook', 'agent-export',
+        'verify', 'query', 'migrate', 'consolidate', 'promote', 'scaffold', 'stub', 'env',
+        'tree', 'validate'
     ])
     def test_command_help(self, command):
         """Each command should respond to --help."""
@@ -142,11 +143,20 @@ class TestCLICommands:
         """All v3.0 commands should appear in --help output."""
         result = self.run_cli('--help')
         expected_commands = [
-            'init', 'map', 'log', 'doctor', 'agents', 'export', 'hook',
+            'init', 'map', 'log', 'doctor', 'agents', 'export',
             'verify', 'query', 'migrate', 'consolidate', 'promote', 'scaffold', 'stub', 'env'
         ]
         for cmd in expected_commands:
             assert cmd in result.stdout, f"Command '{cmd}' not in help output"
+
+    def test_hidden_commands_not_listed_in_top_level_help(self):
+        """Deprecated/internal commands should be hidden from top-level --help."""
+        result = self.run_cli('--help')
+        hidden_commands = ['agent-export', 'hook', 'tree', 'validate']
+
+        for cmd in hidden_commands:
+            assert cmd not in result.stdout, f"Hidden command '{cmd}' leaked into --help output"
+        assert '==SUPPRESS==' not in result.stdout
 
     def test_doctor_runs(self):
         """doctor command should run without crashing."""

@@ -50,7 +50,10 @@ class PathsConfig:
 @dataclass
 class ScanningConfig:
     """[scanning] section."""
-    skip_patterns: List[str] = field(default_factory=lambda: ["_template.md", "archive/*"])
+    skip_patterns: List[str] = field(default_factory=lambda: [
+        "_template.md", "archive/*", ".git/*", "node_modules/*", "__pycache__/*"
+    ])
+    scan_paths: List[str] = field(default_factory=list)
 
 
 @dataclass

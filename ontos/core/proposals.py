@@ -10,6 +10,11 @@ from typing import List, Dict
 
 from ontos.core.paths import get_proposals_dir, get_decision_history_path
 
+try:
+    from ontos import __version__ as ONTOS_VERSION
+except ImportError:
+    ONTOS_VERSION = None
+
 
 def load_decision_history_entries() -> dict:
     """Load decision_history.md entries for validation.
@@ -74,12 +79,6 @@ def find_draft_proposals() -> List[Dict]:
     proposals_dir = get_proposals_dir()
     if not proposals_dir or not os.path.exists(proposals_dir):
         return []
-
-    # Get current ONTOS_VERSION for matching
-    try:
-        from ontos_config_defaults import ONTOS_VERSION
-    except ImportError:
-        ONTOS_VERSION = None
 
     draft_proposals = []
 
