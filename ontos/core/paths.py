@@ -32,7 +32,7 @@ def is_ontos_repo() -> bool:
     return os.path.exists(os.path.join(PROJECT_ROOT, '.ontos-internal'))
 
 
-def resolve_config(setting_name: str, default=None):
+def resolve_config(setting_name: str, default=None, warn_legacy: bool = True):
     """Resolve a config value with legacy compatibility.
 
     Resolution order:
@@ -44,9 +44,11 @@ def resolve_config(setting_name: str, default=None):
         try:
             user_config = importlib.import_module("ontos_config")
         except Exception as exc:
-            _warn_legacy_config_import_failure("ontos_config.py", exc)
+            if warn_legacy:
+                _warn_legacy_config_import_failure("ontos_config.py", exc)
         else:
-            _warn_legacy_config()
+            if warn_legacy:
+                _warn_legacy_config()
             if hasattr(user_config, setting_name):
                 return getattr(user_config, setting_name)
 
@@ -54,7 +56,8 @@ def resolve_config(setting_name: str, default=None):
         try:
             defaults_module = importlib.import_module("ontos_config_defaults")
         except Exception as exc:
-            _warn_legacy_config_import_failure("ontos_config_defaults.py", exc)
+            if warn_legacy:
+                _warn_legacy_config_import_failure("ontos_config_defaults.py", exc)
         else:
             if hasattr(defaults_module, setting_name):
                 return getattr(defaults_module, setting_name)

@@ -8,28 +8,27 @@ Full argparse implementation per Spec v1.1 Section 4.1.
 import argparse
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 import ontos
 from ontos.ui.json_output import emit_json, emit_error, validate_json_output
 from ontos.commands.map import CompactMode
 
 
-class HiddenSubparsersAction(argparse._SubParsersAction):
-    """Subparser action that hides selected commands from top-level help."""
-
-    def __init__(self, *args, hidden_commands=None, **kwargs):
-        self._hidden_commands = set(hidden_commands or ())
-        # Avoid rendering hidden command names in usage synopsis.
-        kwargs.setdefault("metavar", "<command>")
-        super().__init__(*args, **kwargs)
-
-    def _get_subactions(self):
-        actions = super()._get_subactions()
-        return [action for action in actions if action.dest not in self._hidden_commands]
+HIDDEN_COMMANDS = ("agent-export", "hook", "tree", "validate")
 
 
-def create_parser() -> argparse.ArgumentParser:
+def _first_command(argv: Sequence[str]) -> Optional[str]:
+    """Return the first non-flag argument (interpreted as the command)."""
+    for token in argv:
+        if token == "--":
+            continue
+        if not token.startswith("-"):
+            return token
+    return None
+
+
+def create_parser(include_hidden: bool = True) -> argparse.ArgumentParser:
     """Create the main argument parser with all commands."""
     # Parent parser for shared options (used by all subparsers)
     global_parser = argparse.ArgumentParser(add_help=False)
@@ -59,12 +58,7 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     # Subcommands (all inherit from global_parser)
-    subparsers = parser.add_subparsers(
-        dest="command",
-        help="Available commands",
-        action=HiddenSubparsersAction,
-        hidden_commands=("agent-export", "hook", "tree", "validate"),
-    )
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Register commands with shared parent
     _register_init(subparsers, global_parser)
@@ -73,9 +67,7 @@ def create_parser() -> argparse.ArgumentParser:
     _register_doctor(subparsers, global_parser)
     _register_env(subparsers, global_parser)
     _register_agents(subparsers, global_parser)
-    _register_agent_export(subparsers, global_parser)  # Deprecated alias
     _register_export(subparsers, global_parser)
-    _register_hook(subparsers, global_parser)
     _register_verify(subparsers, global_parser)
     _register_query(subparsers, global_parser)
     _register_schema_migrate(subparsers, global_parser)
@@ -86,9 +78,12 @@ def create_parser() -> argparse.ArgumentParser:
     _register_migration_report(subparsers, global_parser)
     _register_migrate_convenience(subparsers, global_parser)
 
-    # Legacy Aliases (v3.2)
-    _register_tree_alias(subparsers, global_parser)
-    _register_validate_alias(subparsers, global_parser)
+    if include_hidden:
+        _register_agent_export(subparsers, global_parser)  # Deprecated alias
+        _register_hook(subparsers, global_parser)
+        # Legacy Aliases (v3.2)
+        _register_tree_alias(subparsers, global_parser)
+        _register_validate_alias(subparsers, global_parser)
 
     return parser
 
@@ -969,7 +964,9 @@ def _cmd_hook(args) -> int:
 
 def main() -> int:
     """Main entry point for CLI."""
-    parser = create_parser()
+    requested_command = _first_command(sys.argv[1:])
+    include_hidden = requested_command in HIDDEN_COMMANDS
+    parser = create_parser(include_hidden=include_hidden)
     args = parser.parse_args()
 
     # Workaround for argparse parent inheritance issue:
