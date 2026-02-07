@@ -8,6 +8,7 @@ IMPURE: Many functions use os.path.exists() and imports from config modules.
 
 import os
 import importlib
+import importlib.util
 import warnings
 from datetime import datetime
 from pathlib import Path
@@ -39,34 +40,30 @@ def resolve_config(setting_name: str, default=None):
     2. ``ontos_config_defaults.py`` fallback (if present on PYTHONPATH)
     3. Provided ``default`` argument
     """
-    user_config = None
-    try:
-        user_config = importlib.import_module("ontos_config")
-    except ImportError as exc:
-        # Only suppress missing module errors for ontos_config itself.
-        if getattr(exc, "name", None) != "ontos_config":
-            raise
+    if importlib.util.find_spec("ontos_config") is not None:
+        try:
+            user_config = importlib.import_module("ontos_config")
+        except Exception as exc:
+            _warn_legacy_config_import_failure("ontos_config.py", exc)
+        else:
+            _warn_legacy_config()
+            if hasattr(user_config, setting_name):
+                return getattr(user_config, setting_name)
 
-    if user_config is not None:
-        _warn_legacy_config()
-        if hasattr(user_config, setting_name):
-            return getattr(user_config, setting_name)
-
-    defaults_module = None
-    try:
-        defaults_module = importlib.import_module("ontos_config_defaults")
-    except ImportError as exc:
-        # Only suppress missing module errors for ontos_config_defaults itself.
-        if getattr(exc, "name", None) != "ontos_config_defaults":
-            raise
-
-    if defaults_module is not None and hasattr(defaults_module, setting_name):
-        return getattr(defaults_module, setting_name)
+    if importlib.util.find_spec("ontos_config_defaults") is not None:
+        try:
+            defaults_module = importlib.import_module("ontos_config_defaults")
+        except Exception as exc:
+            _warn_legacy_config_import_failure("ontos_config_defaults.py", exc)
+        else:
+            if hasattr(defaults_module, setting_name):
+                return getattr(defaults_module, setting_name)
 
     return default
 
 
 _legacy_config_warning_emitted = False
+_legacy_config_import_failure_warned = set()
 
 
 def _warn_legacy_config() -> None:
@@ -78,6 +75,19 @@ def _warn_legacy_config() -> None:
     warnings.warn(
         "Legacy ontos_config.py detected; this path is deprecated and will be removed "
         "in a future release. Use .ontos.toml.",
+        FutureWarning,
+        stacklevel=3,
+    )
+
+
+def _warn_legacy_config_import_failure(module_label: str, exc: Exception) -> None:
+    """Warn once when a legacy config module exists but cannot be imported."""
+    if module_label in _legacy_config_import_failure_warned:
+        return
+    _legacy_config_import_failure_warned.add(module_label)
+    warnings.warn(
+        f"Failed to load legacy {module_label} ({exc.__class__.__name__}: {exc}). "
+        "Ignoring legacy config and falling back to defaults. Use .ontos.toml.",
         FutureWarning,
         stacklevel=3,
     )

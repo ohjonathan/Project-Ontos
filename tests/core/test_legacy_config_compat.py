@@ -76,6 +76,38 @@ def test_resolve_config_emits_legacy_warning_once(tmp_path):
     assert result.stdout.strip() == "1"
 
 
+def test_resolve_config_broken_legacy_config_is_non_fatal(tmp_path):
+    """Broken ontos_config.py should warn and fall back to provided default."""
+    (tmp_path / "ontos_config.py").write_text(
+        "import does_not_exist_anywhere\nLOGS_DIR = 'custom_logs'\n",
+        encoding="utf-8",
+    )
+
+    result = _run_python(
+        "\n".join(
+            [
+                "import warnings",
+                "from ontos.core.paths import resolve_config",
+                "with warnings.catch_warnings(record=True) as captured:",
+                "    warnings.simplefilter('always', FutureWarning)",
+                "    value = resolve_config('LOGS_DIR', 'fallback')",
+                "import_warnings = [",
+                "    w for w in captured",
+                "    if 'Failed to load legacy ontos_config.py' in str(w.message)",
+                "]",
+                "print(value)",
+                "print(len(import_warnings))",
+            ]
+        ),
+        extra_pythonpath=tmp_path,
+    )
+
+    assert result.returncode == 0
+    lines = result.stdout.strip().splitlines()
+    assert lines[0] == "fallback"
+    assert lines[1] == "1"
+
+
 def test_proposals_exports_ontos_version_constant():
     """ontos.core.proposals should export ONTOS_VERSION."""
     from ontos import __version__
