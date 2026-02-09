@@ -144,3 +144,14 @@ class TestClaudeMdTemplate:
 
     def test_template_mentions_context_map(self):
         assert "Ontos_Context_Map.md" in CLAUDE_MD_TEMPLATE
+
+    def test_template_does_not_reference_manual(self):
+        assert "Ontos_Manual.md" not in CLAUDE_MD_TEMPLATE
+
+
+class TestExportClaudeTemplate:
+    """Tests for export claude template content."""
+
+    def test_export_claude_template_no_manual(self):
+        from ontos.commands.export_claude import CLAUDE_MD_TEMPLATE as CLAUDE_MD_TEMPLATE_CLAUDE
+        assert "Ontos_Manual.md" not in CLAUDE_MD_TEMPLATE_CLAUDE

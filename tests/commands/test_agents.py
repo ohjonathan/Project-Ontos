@@ -161,6 +161,23 @@ class TestAgentsContent:
         assert "## Ontos Activation" in content
         assert "Tier 1 minimum" in content
 
+    def test_content_has_trigger_phrases(self, tmp_path, monkeypatch):
+        """Template should include Trigger Phrases section."""
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
+
+        content = generate_agents_content()
+        assert "## Trigger Phrases" in content
+        assert "activate ontos" in content
+
+    def test_content_has_compaction_recovery(self, tmp_path, monkeypatch):
+        """Template should include compaction recovery instructions."""
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
+
+        content = generate_agents_content()
+        assert "## After Context Compaction" in content
+
     def test_content_has_quick_reference(self, tmp_path, monkeypatch):
         """Template should include Quick Reference with 5 commands."""
         monkeypatch.chdir(tmp_path)

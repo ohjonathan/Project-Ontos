@@ -36,8 +36,6 @@ Ontos is a local-first documentation management system that:
 - Maintains a context map of all project documentation
 - Tracks documentation dependencies and status
 - Ensures documentation stays synchronized with code changes
-
-For more information, see `docs/reference/Ontos_Manual.md`.
 '''
 
 
