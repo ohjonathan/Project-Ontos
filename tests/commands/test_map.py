@@ -187,8 +187,11 @@ def test_critical_paths_missing_annotation(tmp_path, monkeypatch):
     map_command(MapOptions())
 
     content = (tmp_path / "Ontos_Context_Map.md").read_text()
-    assert "custom/logs/" in content
-    assert "(missing)" in content
+    logs_line = next(
+        line for line in content.splitlines() if line.startswith("- **Logs:**")
+    )
+    assert "custom/logs/" in logs_line
+    assert logs_line.endswith("(missing)")
 
 
 def test_critical_paths_sanitizes_backticks(tmp_path, monkeypatch):
@@ -227,8 +230,26 @@ def test_critical_paths_uses_custom_docs_dir(tmp_path, monkeypatch):
     assert "custom/docs/" in content
 
 
-def test_critical_paths_rejects_absolute_and_traversal(tmp_path):
-    """Absolute or traversal paths should be marked invalid."""
+def test_critical_paths_rejects_absolute_path(tmp_path):
+    """Absolute paths should be marked invalid."""
     root_path = tmp_path.resolve()
     assert _format_critical_path("/etc", root_path) == "`(invalid path)`"
+
+
+def test_critical_paths_rejects_traversal_path(tmp_path):
+    """Traversal paths should be marked invalid."""
+    root_path = tmp_path.resolve()
     assert _format_critical_path("../escape", root_path) == "`(invalid path)`"
+
+
+def test_critical_paths_unset_values(tmp_path):
+    """Unset paths should be marked as (unset)."""
+    root_path = tmp_path.resolve()
+    assert _format_critical_path(None, root_path) == "`(unset)`"
+    assert _format_critical_path("", root_path) == "`(unset)`"
+    assert _format_critical_path("   ", root_path) == "`(unset)`"
+
+
+def test_critical_paths_root_path_none():
+    """Without root_path, formatting should still be safe."""
+    assert _format_critical_path("docs", None) == "`docs/`"

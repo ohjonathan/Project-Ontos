@@ -325,11 +325,15 @@ def _format_critical_path(path_str: Optional[str], root_path: Optional[Path]) ->
         return "`(unset)`"
 
     raw = str(path_str).strip()
-    path = Path(raw)
+    try:
+        path = Path(raw)
+    except ValueError:
+        return "`(invalid path)`"
 
     if path.is_absolute():
         return "`(invalid path)`"
 
+    # Tri-state: None = unknown (no root), False = missing, True = present.
     exists = None
     if root_path:
         try:
