@@ -8,31 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Tuple
 
+from ontos.commands.claude_template import CLAUDE_MD_TEMPLATE
 from ontos.io.files import find_project_root
-
-
-CLAUDE_MD_TEMPLATE = '''# CLAUDE.md
-
-## Ontos Activation
-
-This project uses **Ontos** for documentation management.
-
-At the start of every session:
-1. Run `ontos map` to generate the context map
-2. Read `Ontos_Context_Map.md` to understand the project documentation structure
-
-When ending a session:
-3. Run `ontos log` to record your work
-
-## What is Ontos?
-
-Ontos is a local-first documentation management system that:
-- Maintains a context map of all project documentation
-- Tracks documentation dependencies and status
-- Ensures documentation stays synchronized with code changes
-
-For more information, see `docs/reference/Ontos_Manual.md`.
-'''
 
 
 @dataclass
@@ -86,7 +63,5 @@ def export_claude_command(options: ExportClaudeOptions) -> Tuple[int, str]:
         return 2, f"Error writing file to {output_path}: {e}"
     except Exception as e:
         return 2, f"An unexpected error occurred: {e}"
-
-    return 0, f"Created {output_path}"
 
     return 0, f"Created {output_path}"
