@@ -43,11 +43,11 @@ def test_tier1_key_documents_lists_top_three_only():
     summary = _generate_tier1_summary(docs, {"project_name": "Test"})
 
     assert "### Key Documents" in summary
-    assert "- **key_a** (5 dependents)" in summary
-    assert "- **key_b** (4 dependents)" in summary
-    assert "- **key_c** (3 dependents)" in summary
-    assert "- **key_d** (2 dependents)" not in summary
-    assert "- **key_e** (1 dependents)" not in summary
+    assert "- `key_a` (5 dependents) — docs/key_a.md" in summary
+    assert "- `key_b` (4 dependents) — docs/key_b.md" in summary
+    assert "- `key_c` (3 dependents) — docs/key_c.md" in summary
+    assert "- `key_d` (2 dependents)" not in summary
+    assert "- `key_e` (1 dependents)" not in summary
 
 
 def test_tier1_key_documents_omitted_without_dependency_data():
@@ -61,3 +61,37 @@ def test_tier1_key_documents_omitted_without_dependency_data():
 
     assert "### Key Documents" not in summary
     assert "No dependency data yet." not in summary
+
+
+def test_tier1_key_documents_never_leaks_absolute_paths(tmp_path):
+    """Key Documents should not emit absolute paths when outside project root."""
+    docs = {
+        "inside": _make_doc("inside"),
+        "outside": DocumentData(
+            id="outside",
+            filepath=tmp_path.parent / "outside.md",
+            type=DocumentType.ATOM,
+            status=DocumentStatus.ACTIVE,
+            frontmatter={},
+            content="",
+            depends_on=[],
+        ),
+        "ref_inside": _make_doc("ref_inside", ["inside"]),
+        "ref_outside": DocumentData(
+            id="ref_outside",
+            filepath=tmp_path / "ref_outside.md",
+            type=DocumentType.ATOM,
+            status=DocumentStatus.ACTIVE,
+            frontmatter={},
+            content="",
+            depends_on=["outside"],
+        ),
+    }
+
+    summary = _generate_tier1_summary(
+        docs,
+        {"project_name": "Test", "project_root": str(tmp_path)},
+    )
+
+    assert "outside.md" in summary
+    assert str(tmp_path.parent) not in summary

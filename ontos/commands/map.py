@@ -77,7 +77,11 @@ def generate_context_map(
         _generate_tier1_summary(docs, config, options),
         "## Tier 2: Document Index",
         "",
-        _generate_document_table(docs, options.obsidian),
+        _generate_document_table(
+            docs,
+            options.obsidian,
+            root_path=Path(config["project_root"]).resolve() if config.get("project_root") else None,
+        ),
         "",
         "## Tier 3: Full Graph Details",
         "",
@@ -214,24 +218,9 @@ def _generate_tier1_summary(
         project_root = config.get("project_root")
         root_path = Path(project_root).resolve() if project_root else None
 
-        def _format_rel_path(path: Path) -> str:
-            try:
-                resolved = path.resolve()
-            except Exception:
-                resolved = path
-            if root_path:
-                try:
-                    return str(resolved.relative_to(root_path))
-                except Exception:
-                    pass
-            try:
-                return str(resolved.relative_to(Path.cwd()))
-            except Exception:
-                return str(resolved)
-
         for doc_id, count in top_docs:
             doc = docs.get(doc_id)
-            rel_path = _format_rel_path(doc.filepath) if doc else ""
+            rel_path = _format_rel_path(doc.filepath, root_path) if doc else ""
             kd_lines.append(f"- `{doc_id}` ({count} dependents) — {rel_path}")
 
         kd_lines.append("")
@@ -271,7 +260,35 @@ def _escape_markdown_table_cell(value: str) -> str:
     return value.replace("\\", "\\\\").replace("|", "\\|")
 
 
-def _generate_document_table(docs: Dict[str, DocumentData], obsidian_mode: bool = False) -> str:
+def _format_rel_path(path: Path, root_path: Optional[Path] = None) -> str:
+    """Format a path relative to project root or CWD without leaking absolute paths."""
+    try:
+        resolved = path.resolve()
+    except (OSError, RuntimeError):
+        resolved = path
+
+    if root_path:
+        try:
+            return resolved.relative_to(root_path).as_posix()
+        except ValueError:
+            pass
+
+    try:
+        return resolved.relative_to(Path.cwd()).as_posix()
+    except ValueError:
+        pass
+
+    if not path.is_absolute():
+        return path.as_posix()
+
+    return path.name
+
+
+def _generate_document_table(
+    docs: Dict[str, DocumentData],
+    obsidian_mode: bool = False,
+    root_path: Optional[Path] = None,
+) -> str:
     """Generate document listing table."""
     if not docs:
         return "## Documents\n\nNo documents found."
@@ -290,7 +307,7 @@ def _generate_document_table(docs: Dict[str, DocumentData], obsidian_mode: bool 
         doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
         doc_status = doc.status.value if hasattr(doc.status, 'value') else str(doc.status)
         # Escape special characters to prevent table breakage
-        filepath = _escape_markdown_table_cell(str(doc.filepath))
+        filepath = _escape_markdown_table_cell(_format_rel_path(doc.filepath, root_path))
         doc_id_link = _format_doc_link(doc.id, doc.filepath, obsidian_mode)
         lines.append(f"| {filepath} | {doc_id_link} | {doc_type} | {doc_status} |")
 
