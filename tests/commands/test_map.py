@@ -2,7 +2,13 @@
 import pytest
 import sys
 from pathlib import Path
-from ontos.commands.map import map_command, MapOptions, GenerateMapOptions, generate_context_map
+from ontos.commands.map import (
+    _format_critical_path,
+    map_command,
+    MapOptions,
+    GenerateMapOptions,
+    generate_context_map,
+)
 
 def test_map_sync_agents_flag_exists():
     """--sync-agents flag is recognized."""
@@ -34,7 +40,6 @@ def test_map_sync_agents_updates_agents_md(tmp_path, monkeypatch):
     time.sleep(0.1)  # Ensure mtime difference
 
     # Run map with --sync-agents
-    from ontos.commands.map import map_command, MapOptions
     map_command(MapOptions(sync_agents=True))
 
     # Verify AGENTS.md was updated
@@ -52,7 +57,6 @@ def test_map_sync_agents_no_create_if_missing(tmp_path, monkeypatch):
     agents_path = tmp_path / "AGENTS.md"
     assert not agents_path.exists()
 
-    from ontos.commands.map import map_command, MapOptions
     map_command(MapOptions(sync_agents=True))
 
     # AGENTS.md should NOT be created
@@ -65,7 +69,6 @@ def test_tiered_context_map_has_tier_markers(tmp_path, monkeypatch):
     (tmp_path / ".ontos.toml").write_text("[project]\nname = 'test'\n")
     (tmp_path / ".ontos-internal").mkdir()
 
-    from ontos.commands.map import map_command, MapOptions
     map_command(MapOptions())
 
     content = (tmp_path / "Ontos_Context_Map.md").read_text()
@@ -80,7 +83,6 @@ def test_tier1_contains_project_summary(tmp_path, monkeypatch):
     (tmp_path / ".ontos.toml").write_text("[project]\nname = 'TestProject'\n")
     (tmp_path / ".ontos-internal").mkdir()
 
-    from ontos.commands.map import map_command, MapOptions
     map_command(MapOptions())
 
     content = (tmp_path / "Ontos_Context_Map.md").read_text()
@@ -100,7 +102,6 @@ def test_tier1_key_documents_format(tmp_path, monkeypatch):
     (docs_dir / "a.md").write_text("---\nid: a\ntype: atom\nstatus: active\ndepends_on: [b]\n---\n")
     (docs_dir / "c.md").write_text("---\nid: c\ntype: atom\nstatus: active\ndepends_on: [b]\n---\n")
 
-    from ontos.commands.map import map_command, MapOptions
     map_command(MapOptions())
 
     content = (tmp_path / "Ontos_Context_Map.md").read_text()
@@ -118,7 +119,6 @@ def test_tier1_key_documents_omitted_when_empty(tmp_path, monkeypatch):
 
     (docs_dir / "solo.md").write_text("---\nid: solo\ntype: atom\nstatus: active\n---\n")
 
-    from ontos.commands.map import map_command, MapOptions
     map_command(MapOptions())
 
     content = (tmp_path / "Ontos_Context_Map.md").read_text()
@@ -133,7 +133,6 @@ def test_critical_paths_user_mode_excludes_ontos_internal(tmp_path, monkeypatch)
     docs_dir.mkdir()
     (docs_dir / "doc.md").write_text("---\nid: doc\ntype: atom\nstatus: active\n---\n")
 
-    from ontos.commands.map import map_command, MapOptions
     map_command(MapOptions())
 
     content = (tmp_path / "Ontos_Context_Map.md").read_text()
@@ -151,7 +150,6 @@ def test_critical_paths_contributor_mode_includes_strategy(tmp_path, monkeypatch
     docs_dir.mkdir()
     (docs_dir / "doc.md").write_text("---\nid: doc\ntype: atom\nstatus: active\n---\n")
 
-    from ontos.commands.map import map_command, MapOptions
     map_command(MapOptions())
 
     content = (tmp_path / "Ontos_Context_Map.md").read_text()
@@ -170,7 +168,6 @@ def test_critical_paths_uses_custom_logs_dir(tmp_path, monkeypatch):
     docs_dir.mkdir()
     (docs_dir / "doc.md").write_text("---\nid: doc\ntype: atom\nstatus: active\n---\n")
 
-    from ontos.commands.map import map_command, MapOptions
     map_command(MapOptions())
 
     content = (tmp_path / "Ontos_Context_Map.md").read_text()
@@ -187,7 +184,6 @@ def test_critical_paths_missing_annotation(tmp_path, monkeypatch):
     docs_dir.mkdir()
     (docs_dir / "doc.md").write_text("---\nid: doc\ntype: atom\nstatus: active\n---\n")
 
-    from ontos.commands.map import map_command, MapOptions
     map_command(MapOptions())
 
     content = (tmp_path / "Ontos_Context_Map.md").read_text()
@@ -205,12 +201,14 @@ def test_critical_paths_sanitizes_backticks(tmp_path, monkeypatch):
     docs_dir.mkdir()
     (docs_dir / "doc.md").write_text("---\nid: doc\ntype: atom\nstatus: active\n---\n")
 
-    from ontos.commands.map import map_command, MapOptions
     map_command(MapOptions())
 
     content = (tmp_path / "Ontos_Context_Map.md").read_text()
-    assert "docs`evil" not in content
-    assert "docs'evil/" in content
+    docs_root_line = next(
+        line for line in content.splitlines() if line.startswith("- **Docs Root:**")
+    )
+    assert "docs`evil" not in docs_root_line
+    assert "docs'evil/" in docs_root_line
 
 
 def test_critical_paths_uses_custom_docs_dir(tmp_path, monkeypatch):
@@ -223,8 +221,14 @@ def test_critical_paths_uses_custom_docs_dir(tmp_path, monkeypatch):
     docs_dir.mkdir(parents=True)
     (docs_dir / "doc.md").write_text("---\nid: doc\ntype: atom\nstatus: active\n---\n")
 
-    from ontos.commands.map import map_command, MapOptions
     map_command(MapOptions())
 
     content = (tmp_path / "Ontos_Context_Map.md").read_text()
     assert "custom/docs/" in content
+
+
+def test_critical_paths_rejects_absolute_and_traversal(tmp_path):
+    """Absolute or traversal paths should be marked invalid."""
+    root_path = tmp_path.resolve()
+    assert _format_critical_path("/etc", root_path) == "`(invalid path)`"
+    assert _format_critical_path("../escape", root_path) == "`(invalid path)`"

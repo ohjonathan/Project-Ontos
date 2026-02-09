@@ -234,13 +234,6 @@ def _generate_tier1_summary(
         sections.append("\n".join(kd_lines))
 
     # Critical Paths (config-driven)
-    def _format_critical_path(path_str: str) -> str:
-        display_path = f"{path_str.rstrip('/')}/"
-        if root_path:
-            if not (root_path / Path(path_str)).exists():
-                return f"`{display_path}` (missing)"
-        return f"`{display_path}`"
-
     cp_lines = ["### Critical Paths"]
     docs_dir = config.get("docs_dir") or "docs"
     logs_dir = config.get("logs_dir") or f"{docs_dir}/logs"
