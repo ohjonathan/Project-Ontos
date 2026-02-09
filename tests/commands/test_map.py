@@ -123,3 +123,53 @@ def test_tier1_key_documents_omitted_when_empty(tmp_path, monkeypatch):
 
     content = (tmp_path / "Ontos_Context_Map.md").read_text()
     assert "### Key Documents" not in content
+
+
+def test_critical_paths_user_mode_excludes_ontos_internal(tmp_path, monkeypatch):
+    """User mode should not expose .ontos-internal strategy path."""
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".ontos.toml").write_text("[project]\nname = 'TestProject'\n")
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    (docs_dir / "doc.md").write_text("---\nid: doc\ntype: atom\nstatus: active\n---\n")
+
+    from ontos.commands.map import map_command, MapOptions
+    map_command(MapOptions())
+
+    content = (tmp_path / "Ontos_Context_Map.md").read_text()
+    assert "### Critical Paths" in content
+    assert ".ontos-internal/strategy/" not in content
+
+
+def test_critical_paths_contributor_mode_includes_strategy(tmp_path, monkeypatch):
+    """Contributor mode should include .ontos-internal strategy path."""
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".ontos.toml").write_text("[project]\nname = 'TestProject'\n")
+    (tmp_path / ".ontos-internal" / "strategy").mkdir(parents=True)
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    (docs_dir / "doc.md").write_text("---\nid: doc\ntype: atom\nstatus: active\n---\n")
+
+    from ontos.commands.map import map_command, MapOptions
+    map_command(MapOptions())
+
+    content = (tmp_path / "Ontos_Context_Map.md").read_text()
+    assert ".ontos-internal/strategy/" in content
+
+
+def test_critical_paths_uses_custom_logs_dir(tmp_path, monkeypatch):
+    """Critical Paths should reflect custom logs_dir from config."""
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".ontos.toml").write_text(
+        "[project]\nname = 'TestProject'\n[paths]\nlogs_dir = 'custom/logs'\n"
+    )
+    (tmp_path / "custom" / "logs").mkdir(parents=True)
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    (docs_dir / "doc.md").write_text("---\nid: doc\ntype: atom\nstatus: active\n---\n")
+
+    from ontos.commands.map import map_command, MapOptions
+    map_command(MapOptions())
+
+    content = (tmp_path / "Ontos_Context_Map.md").read_text()
+    assert "custom/logs/" in content

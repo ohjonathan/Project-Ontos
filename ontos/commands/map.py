@@ -207,6 +207,9 @@ def _generate_tier1_summary(
         ip_lines.append("")
         sections.append("\n".join(ip_lines))
 
+    project_root = config.get("project_root")
+    root_path = Path(project_root).resolve() if project_root else None
+
     # Key Documents (derived from dependency graph in-degree)
     in_degree: Dict[str, int] = {}
     for doc in docs.values():
@@ -218,8 +221,6 @@ def _generate_tier1_summary(
         kd_lines = ["### Key Documents"]
         # Show top documents by in-degree (most depended-on), max 3.
         top_docs = sorted(in_degree.items(), key=lambda x: (-x[1], x[0]))[:3]
-        project_root = config.get("project_root")
-        root_path = Path(project_root).resolve() if project_root else None
 
         for doc_id, count in top_docs:
             doc = docs.get(doc_id)
@@ -228,6 +229,24 @@ def _generate_tier1_summary(
 
         kd_lines.append("")
         sections.append("\n".join(kd_lines))
+
+    # Critical Paths (config-driven)
+    def _format_critical_path(path_str: str) -> str:
+        display_path = f"{path_str.rstrip('/')}/"
+        if root_path:
+            if not (root_path / Path(path_str)).exists():
+                return f"`{display_path}` (missing)"
+        return f"`{display_path}`"
+
+    cp_lines = ["### Critical Paths"]
+    docs_dir = config.get("docs_dir", "docs")
+    logs_dir = config.get("logs_dir", f"{docs_dir}/logs")
+    cp_lines.append(f"- **Docs Root:** {_format_critical_path(docs_dir)}")
+    cp_lines.append(f"- **Logs:** {_format_critical_path(logs_dir)}")
+    if config.get("is_contributor_mode", False):
+        cp_lines.append(f"- **Strategy:** {_format_critical_path('.ontos-internal/strategy')}")
+    cp_lines.append("")
+    sections.append("\n".join(cp_lines))
 
     # Build content with token awareness
     content_parts = []
@@ -676,11 +695,15 @@ def map_command(options: MapOptions) -> int:
                 print(f"Warning: Failed to load {path}: {e}")
 
     # Build config dict for generation
+    is_contributor_mode = (project_root / ".ontos-internal").exists()
     gen_config = {
         "project_name": project_root.name,
         "version": config.ontos.version,
         "allowed_orphan_types": config.validation.allowed_orphan_types,
         "project_root": str(project_root),
+        "docs_dir": str(config.paths.docs_dir),
+        "logs_dir": str(config.paths.logs_dir),
+        "is_contributor_mode": is_contributor_mode,
     }
 
     # Generate context map
