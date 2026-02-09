@@ -72,12 +72,19 @@ def generate_context_map(
         return _generate_compact_output(docs, options.compact), result
 
     # Generate context map with 3 tiers
+    project_root = config.get("project_root")
+    root_path = Path(project_root).resolve() if project_root else None
+
     sections = [
         _generate_header(config),
         _generate_tier1_summary(docs, config, options),
         "## Tier 2: Document Index",
         "",
-        _generate_document_table(docs, options.obsidian),
+        _generate_document_table(
+            docs,
+            options.obsidian,
+            root_path=root_path,
+        ),
         "",
         "## Tier 3: Full Graph Details",
         "",
@@ -211,8 +218,13 @@ def _generate_tier1_summary(
         kd_lines = ["### Key Documents"]
         # Show top documents by in-degree (most depended-on), max 3.
         top_docs = sorted(in_degree.items(), key=lambda x: (-x[1], x[0]))[:3]
+        project_root = config.get("project_root")
+        root_path = Path(project_root).resolve() if project_root else None
+
         for doc_id, count in top_docs:
-            kd_lines.append(f"- **{doc_id}** ({count} dependents)")
+            doc = docs.get(doc_id)
+            rel_path = _format_rel_path(doc.filepath, root_path) if doc else "(path unknown)"
+            kd_lines.append(f"- `{doc_id}` ({count} dependents) — {rel_path}")
 
         kd_lines.append("")
         sections.append("\n".join(kd_lines))
@@ -251,7 +263,35 @@ def _escape_markdown_table_cell(value: str) -> str:
     return value.replace("\\", "\\\\").replace("|", "\\|")
 
 
-def _generate_document_table(docs: Dict[str, DocumentData], obsidian_mode: bool = False) -> str:
+def _format_rel_path(path: Path, root_path: Optional[Path] = None) -> str:
+    """Format a path relative to project root or CWD without leaking absolute paths."""
+    try:
+        resolved = path.resolve()
+    except (OSError, RuntimeError):
+        resolved = path
+
+    if root_path:
+        try:
+            return resolved.relative_to(root_path).as_posix()
+        except ValueError:
+            pass
+
+    try:
+        return resolved.relative_to(Path.cwd()).as_posix()
+    except ValueError:
+        pass
+
+    if not path.is_absolute():
+        return path.as_posix()
+
+    return path.name
+
+
+def _generate_document_table(
+    docs: Dict[str, DocumentData],
+    obsidian_mode: bool = False,
+    root_path: Optional[Path] = None,
+) -> str:
     """Generate document listing table."""
     if not docs:
         return "## Documents\n\nNo documents found."
@@ -270,7 +310,7 @@ def _generate_document_table(docs: Dict[str, DocumentData], obsidian_mode: bool 
         doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
         doc_status = doc.status.value if hasattr(doc.status, 'value') else str(doc.status)
         # Escape special characters to prevent table breakage
-        filepath = _escape_markdown_table_cell(str(doc.filepath))
+        filepath = _escape_markdown_table_cell(_format_rel_path(doc.filepath, root_path))
         doc_id_link = _format_doc_link(doc.id, doc.filepath, obsidian_mode)
         lines.append(f"| {filepath} | {doc_id_link} | {doc_type} | {doc_status} |")
 
@@ -640,6 +680,7 @@ def map_command(options: MapOptions) -> int:
         "project_name": project_root.name,
         "version": config.ontos.version,
         "allowed_orphan_types": config.validation.allowed_orphan_types,
+        "project_root": str(project_root),
     }
 
     # Generate context map
