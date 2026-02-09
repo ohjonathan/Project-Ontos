@@ -31,7 +31,7 @@ Document activation resilience gaps and missing CLI commands discovered during s
 
 | File | Change |
 |------|--------|
-| `.ontos-internal/strategy/proposals/v3.2.1/activation_resilience_proposal.md` | **[NEW]** Trigger phrases, compaction survival |
+| `.ontos-internal/strategy/proposals/v3.2.1c/activation_resilience_proposal.md` | **[NEW]** Trigger phrases, compaction survival |
 | `.ontos-internal/strategy/proposals/v3.2.2/maintain_command_proposal.md` | **[NEW]** Missing `ontos maintain` command |
 | `AGENTS.md` | Regenerated (was stale) |
 | `Ontos_Context_Map.md` | Regenerated (542 docs) |

@@ -1,7 +1,11 @@
+from pathlib import Path
+import random
+
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
-import random
+
+OUTPUT_DIR = Path(__file__).resolve().parent
 
 def setup_canvas():
     """Sets up a 1280x640 canvas (GitHub Social Preview size)"""
@@ -13,9 +17,10 @@ def setup_canvas():
 
 def save_plot(filename):
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-    plt.savefig(filename, dpi=100)
+    output_path = OUTPUT_DIR / filename
+    plt.savefig(output_path, dpi=100)
     plt.close()
-    print(f"Generated: {filename}")
+    print(f"Generated: {output_path}")
 
 # --- DESIGN 1: THE CONTEXT GRAPH (Dark Mode) ---
 def create_graph_design():
@@ -156,9 +161,10 @@ def create_terminal_design():
     ax.text(1150, start_y - (9 * line_height), "ONTOS", fontsize=30, color='#30363d', 
             fontname=font_family, ha='right', weight='bold')
 
-    save_plot('docs/assets/ontos_terminal.png')
+    save_plot('ontos_terminal.png')
 
 if __name__ == "__main__":
+    random.seed(42)
     create_graph_design()
     create_stack_design()
     create_terminal_design()
