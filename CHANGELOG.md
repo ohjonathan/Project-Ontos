@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.2.1] - 2026-02-09
+
+Patch release focused on review remediation, safer context map output, and activation resilience.
+
+### Added
+- AGENTS.md Trigger Phrases and post-compaction recovery guidance
+- Proposal governance references:
+  - `.ontos-internal/strategy/proposals/README.md`
+  - `.ontos-internal/tmp/README.md`
+- `docs/assets/` visuals used in README
+
+### Fixed
+- External review remediation set from PR #61
+- Key Documents formatting and path-safety issues in context map output (PR #62)
+- Config-driven/mode-aware Critical Paths behavior in Tier 1 (PR #63)
+- Activation resiliency content parity in `.cursorrules` transform (PR #64)
+- Proposal naming typo cleanup and deterministic thumbnail generation (PR #65)
+
+### Changed
+- Reorganized v3.2.1 proposal tracks into `v3.2.1a` / `v3.2.1b` / `v3.2.1c` / `v3.2.1d`
+- Added release notes source file at `docs/releases/v3.2.1.md`
+
 ## [3.2.0] - 2026-01-30
 
 v3.2 delivers three major themes: Re-Architecture Support, Environment Detection, and Activation Resilience.
