@@ -71,9 +71,13 @@ def generate_context_map(
     if options.compact != CompactMode.OFF:
         return _generate_compact_output(docs, options.compact), result
 
+    # Ensure project_root exists in config (fallback to CWD for standalone usage)
+    if "project_root" not in config:
+        config = dict(config)
+        config["project_root"] = str(Path.cwd())
+
     # Generate context map with 3 tiers
-    project_root = config.get("project_root")
-    root_path = Path(project_root).resolve() if project_root else None
+    root_path = _get_root_path(config)
 
     sections = [
         _generate_header(config),
@@ -207,6 +211,8 @@ def _generate_tier1_summary(
         ip_lines.append("")
         sections.append("\n".join(ip_lines))
 
+    root_path = _get_root_path(config)
+
     # Key Documents (derived from dependency graph in-degree)
     in_degree: Dict[str, int] = {}
     for doc in docs.values():
@@ -218,8 +224,6 @@ def _generate_tier1_summary(
         kd_lines = ["### Key Documents"]
         # Show top documents by in-degree (most depended-on), max 3.
         top_docs = sorted(in_degree.items(), key=lambda x: (-x[1], x[0]))[:3]
-        project_root = config.get("project_root")
-        root_path = Path(project_root).resolve() if project_root else None
 
         for doc_id, count in top_docs:
             doc = docs.get(doc_id)
@@ -228,6 +232,18 @@ def _generate_tier1_summary(
 
         kd_lines.append("")
         sections.append("\n".join(kd_lines))
+
+    # Critical Paths (config-driven)
+    cp_lines = ["### Critical Paths"]
+    docs_dir = config.get("docs_dir") or "docs"
+    logs_dir = config.get("logs_dir") or f"{docs_dir}/logs"
+    cp_lines.append(f"- **Docs Root:** {_format_critical_path(docs_dir, root_path)}")
+    cp_lines.append(f"- **Logs:** {_format_critical_path(logs_dir, root_path)}")
+    if config.get("is_contributor_mode", False):
+        cp_lines.append(f"- **Strategy:** {_format_critical_path('.ontos-internal/strategy', root_path)}")
+        cp_lines.append(f"- **Reference:** {_format_critical_path('.ontos-internal/reference', root_path)}")
+    cp_lines.append("")
+    sections.append("\n".join(cp_lines))
 
     # Build content with token awareness
     content_parts = []
@@ -263,6 +279,22 @@ def _escape_markdown_table_cell(value: str) -> str:
     return value.replace("\\", "\\\\").replace("|", "\\|")
 
 
+def _get_root_path(config: Dict[str, Any]) -> Optional[Path]:
+    """Resolve project root from config, or return None if unavailable."""
+    project_root = config.get("project_root")
+    if not project_root:
+        return None
+    try:
+        return Path(project_root).resolve()
+    except (OSError, RuntimeError):
+        return None
+
+
+def _sanitize_inline_code(value: str) -> str:
+    """Escape backticks to avoid Markdown injection."""
+    return str(value).replace("`", "'")
+
+
 def _format_rel_path(path: Path, root_path: Optional[Path] = None) -> str:
     """Format a path relative to project root or CWD without leaking absolute paths."""
     try:
@@ -285,6 +317,39 @@ def _format_rel_path(path: Path, root_path: Optional[Path] = None) -> str:
         return path.as_posix()
 
     return path.name
+
+
+def _format_critical_path(path_str: Optional[str], root_path: Optional[Path]) -> str:
+    """Format a config path for Critical Paths, with validation and safety."""
+    if not path_str or not str(path_str).strip():
+        return "`(unset)`"
+
+    raw = str(path_str).strip()
+    try:
+        path = Path(raw)
+    except ValueError:
+        return "`(invalid path)`"
+
+    if path.is_absolute():
+        return "`(invalid path)`"
+
+    # Tri-state: None = unknown (no root), False = missing, True = present.
+    exists = None
+    if root_path:
+        try:
+            resolved = (root_path / path).resolve()
+            if not resolved.is_relative_to(root_path):
+                return "`(invalid path)`"
+            display = resolved.relative_to(root_path).as_posix()
+            exists = resolved.exists()
+        except (OSError, RuntimeError, ValueError):
+            return "`(invalid path)`"
+    else:
+        display = path.as_posix()
+
+    display = _sanitize_inline_code(display.rstrip("/") + "/")
+    suffix = " (missing)" if exists is False else ""
+    return f"`{display}`{suffix}"
 
 
 def _generate_document_table(
@@ -676,11 +741,15 @@ def map_command(options: MapOptions) -> int:
                 print(f"Warning: Failed to load {path}: {e}")
 
     # Build config dict for generation
+    is_contributor_mode = (project_root / ".ontos-internal").is_dir()
     gen_config = {
         "project_name": project_root.name,
         "version": config.ontos.version,
         "allowed_orphan_types": config.validation.allowed_orphan_types,
         "project_root": str(project_root),
+        "docs_dir": str(config.paths.docs_dir),
+        "logs_dir": str(config.paths.logs_dir),
+        "is_contributor_mode": is_contributor_mode,
     }
 
     # Generate context map
