@@ -72,6 +72,9 @@ def generate_context_map(
         return _generate_compact_output(docs, options.compact), result
 
     # Generate context map with 3 tiers
+    project_root = config.get("project_root")
+    root_path = Path(project_root).resolve() if project_root else None
+
     sections = [
         _generate_header(config),
         _generate_tier1_summary(docs, config, options),
@@ -80,7 +83,7 @@ def generate_context_map(
         _generate_document_table(
             docs,
             options.obsidian,
-            root_path=Path(config["project_root"]).resolve() if config.get("project_root") else None,
+            root_path=root_path,
         ),
         "",
         "## Tier 3: Full Graph Details",
@@ -220,7 +223,7 @@ def _generate_tier1_summary(
 
         for doc_id, count in top_docs:
             doc = docs.get(doc_id)
-            rel_path = _format_rel_path(doc.filepath, root_path) if doc else ""
+            rel_path = _format_rel_path(doc.filepath, root_path) if doc else "(path unknown)"
             kd_lines.append(f"- `{doc_id}` ({count} dependents) — {rel_path}")
 
         kd_lines.append("")
