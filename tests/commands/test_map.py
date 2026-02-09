@@ -146,6 +146,7 @@ def test_critical_paths_contributor_mode_includes_strategy(tmp_path, monkeypatch
     monkeypatch.chdir(tmp_path)
     (tmp_path / ".ontos.toml").write_text("[project]\nname = 'TestProject'\n")
     (tmp_path / ".ontos-internal" / "strategy").mkdir(parents=True)
+    (tmp_path / ".ontos-internal" / "reference").mkdir(parents=True)
     docs_dir = tmp_path / "docs"
     docs_dir.mkdir()
     (docs_dir / "doc.md").write_text("---\nid: doc\ntype: atom\nstatus: active\n---\n")
@@ -155,6 +156,7 @@ def test_critical_paths_contributor_mode_includes_strategy(tmp_path, monkeypatch
 
     content = (tmp_path / "Ontos_Context_Map.md").read_text()
     assert ".ontos-internal/strategy/" in content
+    assert ".ontos-internal/reference/" in content
 
 
 def test_critical_paths_uses_custom_logs_dir(tmp_path, monkeypatch):
@@ -173,3 +175,56 @@ def test_critical_paths_uses_custom_logs_dir(tmp_path, monkeypatch):
 
     content = (tmp_path / "Ontos_Context_Map.md").read_text()
     assert "custom/logs/" in content
+
+
+def test_critical_paths_missing_annotation(tmp_path, monkeypatch):
+    """Missing paths should be annotated as (missing)."""
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".ontos.toml").write_text(
+        "[project]\nname = 'TestProject'\n[paths]\nlogs_dir = 'custom/logs'\n"
+    )
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    (docs_dir / "doc.md").write_text("---\nid: doc\ntype: atom\nstatus: active\n---\n")
+
+    from ontos.commands.map import map_command, MapOptions
+    map_command(MapOptions())
+
+    content = (tmp_path / "Ontos_Context_Map.md").read_text()
+    assert "custom/logs/" in content
+    assert "(missing)" in content
+
+
+def test_critical_paths_sanitizes_backticks(tmp_path, monkeypatch):
+    """Backticks in config paths should be sanitized."""
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".ontos.toml").write_text(
+        "[project]\nname = 'TestProject'\n[paths]\ndocs_dir = 'docs`evil'\n"
+    )
+    docs_dir = tmp_path / "docs`evil"
+    docs_dir.mkdir()
+    (docs_dir / "doc.md").write_text("---\nid: doc\ntype: atom\nstatus: active\n---\n")
+
+    from ontos.commands.map import map_command, MapOptions
+    map_command(MapOptions())
+
+    content = (tmp_path / "Ontos_Context_Map.md").read_text()
+    assert "docs`evil" not in content
+    assert "docs'evil/" in content
+
+
+def test_critical_paths_uses_custom_docs_dir(tmp_path, monkeypatch):
+    """Docs root should reflect custom docs_dir from config."""
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".ontos.toml").write_text(
+        "[project]\nname = 'TestProject'\n[paths]\ndocs_dir = 'custom/docs'\n"
+    )
+    docs_dir = tmp_path / "custom" / "docs"
+    docs_dir.mkdir(parents=True)
+    (docs_dir / "doc.md").write_text("---\nid: doc\ntype: atom\nstatus: active\n---\n")
+
+    from ontos.commands.map import map_command, MapOptions
+    map_command(MapOptions())
+
+    content = (tmp_path / "Ontos_Context_Map.md").read_text()
+    assert "custom/docs/" in content
