@@ -6,6 +6,8 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![GitHub](https://img.shields.io/badge/GitHub-Source-black?logo=github)](https://github.com/ohjonathan/Project-Ontos)
 
+![Project Ontos](docs/assets/ontos_terminal.png)
+
 **Portable context for the agentic era.**
 
 *Never explain twice. Own your context.*
