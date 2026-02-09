@@ -168,7 +168,23 @@ class TestAgentsContent:
 
         content = generate_agents_content()
         assert "## Trigger Phrases" in content
-        assert "activate ontos" in content
+        assert '- "activate ontos"' in content
+        assert '- "ontos"' in content
+        assert '- "/ontos"' in content
+        assert '- "load context"' in content
+        assert '- "reload context"' in content
+        assert "Do NOT ask for clarification. Just execute the steps." in content
+
+    def test_content_has_reactivation_trigger(self, tmp_path, monkeypatch):
+        """Template should include re-activation trigger list."""
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
+
+        content = generate_agents_content()
+        assert "## Re-Activation Trigger" in content
+        assert "Don't recognize the project structure" in content
+        assert "Can't recall doc count or recent work" in content
+        assert "Unsure about file locations" in content
 
     def test_content_has_compaction_recovery(self, tmp_path, monkeypatch):
         """Template should include compaction recovery instructions."""
@@ -177,6 +193,8 @@ class TestAgentsContent:
 
         content = generate_agents_content()
         assert "## After Context Compaction" in content
+        assert "re-read this file (AGENTS.md)" in content
+        assert "Re-Activation Trigger" in content
 
     def test_content_has_quick_reference(self, tmp_path, monkeypatch):
         """Template should include Quick Reference with 5 commands."""
@@ -250,6 +268,31 @@ class TestCursorruleTransform:
         # Should have v3.0 CLI commands
         assert "`ontos map`" in transformed
         assert "`ontos agents`" in transformed
+
+    def test_cursorrules_includes_trigger_phrases(self, tmp_path, monkeypatch):
+        """Trigger phrases should survive the Cursor transform."""
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
+
+        content = generate_agents_content()
+        transformed = transform_to_cursorrules(content)
+
+        assert "## Trigger Phrases" in transformed
+        assert '- "activate ontos"' in transformed
+        assert '- "ontos"' in transformed
+        assert "Do NOT ask for clarification" in transformed
+
+    def test_cursorrules_includes_reactivation_and_compaction(self, tmp_path, monkeypatch):
+        """Re-activation and compaction sections should be preserved for Cursor."""
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
+
+        content = generate_agents_content()
+        transformed = transform_to_cursorrules(content)
+
+        assert "## Re-Activation Trigger" in transformed
+        assert "## After Context Compaction" in transformed
+        assert "re-read this file (AGENTS.md)" in transformed
 
 
 class TestFindRepoRoot:
