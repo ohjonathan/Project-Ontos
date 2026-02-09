@@ -86,3 +86,40 @@ def test_tier1_contains_project_summary(tmp_path, monkeypatch):
     content = (tmp_path / "Ontos_Context_Map.md").read_text()
     assert "### Project Summary" in content
     assert "TestProject" in content or "Doc Count" in content
+
+
+def test_tier1_key_documents_format(tmp_path, monkeypatch):
+    """Key Documents lists top dependents with rel path format."""
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".ontos.toml").write_text("[project]\nname = 'TestProject'\n")
+    (tmp_path / ".ontos-internal").mkdir()
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+
+    (docs_dir / "b.md").write_text("---\nid: b\ntype: atom\nstatus: active\n---\n")
+    (docs_dir / "a.md").write_text("---\nid: a\ntype: atom\nstatus: active\ndepends_on: [b]\n---\n")
+    (docs_dir / "c.md").write_text("---\nid: c\ntype: atom\nstatus: active\ndepends_on: [b]\n---\n")
+
+    from ontos.commands.map import map_command, MapOptions
+    map_command(MapOptions())
+
+    content = (tmp_path / "Ontos_Context_Map.md").read_text()
+    assert "### Key Documents" in content
+    assert "- `b` (2 dependents) — docs/b.md" in content
+
+
+def test_tier1_key_documents_omitted_when_empty(tmp_path, monkeypatch):
+    """Key Documents section omitted when no dependents exist."""
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".ontos.toml").write_text("[project]\nname = 'TestProject'\n")
+    (tmp_path / ".ontos-internal").mkdir()
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+
+    (docs_dir / "solo.md").write_text("---\nid: solo\ntype: atom\nstatus: active\n---\n")
+
+    from ontos.commands.map import map_command, MapOptions
+    map_command(MapOptions())
+
+    content = (tmp_path / "Ontos_Context_Map.md").read_text()
+    assert "### Key Documents" not in content

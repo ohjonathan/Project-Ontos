@@ -211,8 +211,28 @@ def _generate_tier1_summary(
         kd_lines = ["### Key Documents"]
         # Show top documents by in-degree (most depended-on), max 3.
         top_docs = sorted(in_degree.items(), key=lambda x: (-x[1], x[0]))[:3]
+        project_root = config.get("project_root")
+        root_path = Path(project_root).resolve() if project_root else None
+
+        def _format_rel_path(path: Path) -> str:
+            try:
+                resolved = path.resolve()
+            except Exception:
+                resolved = path
+            if root_path:
+                try:
+                    return str(resolved.relative_to(root_path))
+                except Exception:
+                    pass
+            try:
+                return str(resolved.relative_to(Path.cwd()))
+            except Exception:
+                return str(resolved)
+
         for doc_id, count in top_docs:
-            kd_lines.append(f"- **{doc_id}** ({count} dependents)")
+            doc = docs.get(doc_id)
+            rel_path = _format_rel_path(doc.filepath) if doc else ""
+            kd_lines.append(f"- `{doc_id}` ({count} dependents) — {rel_path}")
 
         kd_lines.append("")
         sections.append("\n".join(kd_lines))
@@ -640,6 +660,7 @@ def map_command(options: MapOptions) -> int:
         "project_name": project_root.name,
         "version": config.ontos.version,
         "allowed_orphan_types": config.validation.allowed_orphan_types,
+        "project_root": str(project_root),
     }
 
     # Generate context map
