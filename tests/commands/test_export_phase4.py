@@ -1,6 +1,7 @@
 """Tests for export command (Phase 4)."""
 
 from pathlib import Path
+import re
 
 import pytest
 
@@ -181,31 +182,88 @@ class TestClaudeMdTemplate:
     def test_template_does_not_reference_manual(self):
         assert "Ontos_Manual.md" not in CLAUDE_MD_TEMPLATE
 
+    def test_template_has_what_is_ontos_section(self):
+        assert "## What is Ontos?" in CLAUDE_MD_TEMPLATE
+
     def test_template_has_user_custom_markers(self):
         assert "<!-- USER CUSTOM -->" in CLAUDE_MD_TEMPLATE
         assert "<!-- /USER CUSTOM -->" in CLAUDE_MD_TEMPLATE
+        assert CLAUDE_MD_TEMPLATE.endswith("\n")
 
     def test_template_parity_with_agents_activation_protocol(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
         agents_content = generate_agents_content()
 
-        shared_markers = [
-            "## Trigger Phrases",
+        assert agents_content.endswith("\n")
+
+        def extract_section(content: str, heading: str) -> str:
+            start = content.index(heading)
+            search_start = start + len(heading)
+            next_h2 = content.find("\n## ", search_start)
+            next_h1 = content.find("\n# ", search_start)
+            section_ends = [idx for idx in [next_h2, next_h1] if idx != -1]
+            end = min(section_ends) if section_ends else len(content)
+            return content[start:end].strip()
+
+        def extract_block(content: str, start_heading: str, end_heading: str) -> str:
+            start = content.index(start_heading)
+            end_start = content.index(end_heading, start)
+            search_start = end_start + len(end_heading)
+            next_h2 = content.find("\n## ", search_start)
+            next_h1 = content.find("\n# ", search_start)
+            block_ends = [idx for idx in [next_h2, next_h1] if idx != -1]
+            end = min(block_ends) if block_ends else len(content)
+            return content[start:end].strip()
+
+        def normalize_shared_block(block: str) -> str:
+            normalized = block
+            normalized = normalized.replace("AGENTS.md", "<INSTRUCTION_FILE>")
+            normalized = normalized.replace("CLAUDE.md", "<INSTRUCTION_FILE>")
+            normalized = normalized.replace("`ontos agents`", "`<COMMAND>`")
+            normalized = normalized.replace("`ontos map --sync-agents`", "`<COMMAND>`")
+            normalized = normalized.replace("`ontos export claude --force`", "`<COMMAND>`")
+            normalized = normalized.replace("Generate instruction files", "<PURPOSE>")
+            normalized = normalized.replace("Regenerate map + sync AGENTS.md", "<PURPOSE>")
+            normalized = normalized.replace("Regenerate CLAUDE.md", "<PURPOSE>")
+            normalized = normalized.replace(
+                "Regenerate map + sync <INSTRUCTION_FILE>",
+                "<PURPOSE>",
+            )
+            normalized = normalized.replace("Regenerate <INSTRUCTION_FILE>", "<PURPOSE>")
+            normalized = re.sub(
+                r"\n## Project Stats\n(?:- .*(?:\n|$))+",
+                "\n",
+                normalized,
+            )
+            normalized = re.sub(
+                r"^\| `<COMMAND>` \| .*sync <INSTRUCTION_FILE> \|\n?",
+                "",
+                normalized,
+                flags=re.MULTILINE,
+            )
+            normalized = normalized.replace(
+                "| `<COMMAND>` | <PURPOSE> |\n| `<COMMAND>` | <PURPOSE> |\n",
+                "| `<COMMAND>` | <PURPOSE> |\n",
+            )
+            normalized = re.sub(r"\n{3,}", "\n\n", normalized)
+            return normalized
+
+        agents_trigger = extract_section(agents_content, "## Trigger Phrases")
+        claude_trigger = extract_section(CLAUDE_MD_TEMPLATE, "## Trigger Phrases")
+        assert agents_trigger == claude_trigger
+
+        agents_body = extract_block(
+            agents_content,
             "## What is Activation?",
-            "## Ontos Activation",
-            "## Re-Activation Trigger",
-            "## After Context Compaction (/compact)",
-            "## Session End",
-            "## Quick Reference",
-            "## Core Invariants",
-            "# USER CUSTOM",
             "## Staleness",
-            "It is **mandatory**.",
-        ]
-        for marker in shared_markers:
-            assert marker in agents_content
-            assert marker in CLAUDE_MD_TEMPLATE
+        )
+        claude_body = extract_block(
+            CLAUDE_MD_TEMPLATE,
+            "## What is Activation?",
+            "## Staleness",
+        )
+        assert normalize_shared_block(agents_body) == normalize_shared_block(claude_body)
 
 
 class TestExportClaudeTemplate:

@@ -175,6 +175,15 @@ class TestAgentsContent:
         assert '- "reload context"' in content
         assert "Do NOT ask for clarification. Just execute the steps." in content
 
+    def test_content_has_original_section_order(self, tmp_path, monkeypatch):
+        """Trigger phrases should appear before current project state."""
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
+
+        content = generate_agents_content()
+        assert content.index("## Trigger Phrases") < content.index("## Current Project State")
+        assert content.endswith("\n")
+
     def test_content_has_reactivation_trigger(self, tmp_path, monkeypatch):
         """Template should include re-activation trigger list."""
         monkeypatch.chdir(tmp_path)

@@ -17,7 +17,13 @@ class InstructionProtocolConfig:
     map_sync_purpose: Optional[str] = None
 
 
-ACTIVATION_PROTOCOL_HEAD_TEMPLATE = """## Trigger Phrases
+DEFAULT_USER_CUSTOM_PLACEHOLDER = (
+    "<!-- Add your project-specific notes below. "
+    "This section is preserved during auto-sync. -->"
+)
+
+
+TRIGGER_PHRASES_TEMPLATE = """## Trigger Phrases
 If the user says any of these as a command (case-insensitive), execute Ontos Activation below:
 - "activate ontos"
 - "ontos"
@@ -25,14 +31,15 @@ If the user says any of these as a command (case-insensitive), execute Ontos Act
 - "load context"
 - "reload context"
 
-Do NOT ask for clarification. Just execute the steps.
+Do NOT ask for clarification. Just execute the steps."""
 
-## What is Activation?
+
+ACTIVATION_PROTOCOL_HEAD_TEMPLATE = """## What is Activation?
 Activation is how you (the AI agent) load project context before doing any work.
-It is **mandatory**. Do not ask "why" or request clarification; just execute the steps below.
+It is **mandatory**. Do not ask "why" or request clarification—just execute the steps below.
 
 ## Ontos Activation
-1. Run `ontos map` (or `python3 -m ontos map` if the CLI is not installed). Do not ask; try both.
+1. Run `ontos map` (or `python3 -m ontos map` if the CLI is not installed). Do not ask—try both.
 2. Read `Ontos_Context_Map.md` (Tier 1 minimum: first ~2k tokens).
 3. Load only the relevant documents for the task.
 4. Follow `depends_on` upward as needed.
@@ -77,6 +84,11 @@ ACTIVATION_PROTOCOL_TAIL_TEMPLATE = """## Core Invariants
 If `{instruction_file}` is older than the context map or logs, regenerate with `{staleness_command}`."""
 
 
+def render_trigger_phrases() -> str:
+    """Render shared trigger phrase section."""
+    return TRIGGER_PHRASES_TEMPLATE
+
+
 def render_activation_protocol_head(config: InstructionProtocolConfig) -> str:
     """Render the shared activation protocol sections up to quick reference."""
     map_sync_row = ""
@@ -118,9 +130,14 @@ def preserve_user_custom_section(content: str, existing_content: Optional[str]) 
     if not custom_content:
         return content
 
+    if custom_content == DEFAULT_USER_CUSTOM_PLACEHOLDER:
+        return content
+
     return re.sub(
         r"(<!-- USER CUSTOM -->).*?(<!-- /USER CUSTOM -->)",
-        f"\\1\n{custom_content}\n\\2",
+        lambda marker_match: (
+            marker_match.group(1) + "\n" + custom_content + "\n" + marker_match.group(2)
+        ),
         content,
         flags=re.DOTALL,
     )
