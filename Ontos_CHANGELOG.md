@@ -21,6 +21,18 @@ All notable changes to **Project Ontos itself** (the protocol and tooling) will 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.3] - 2026-02-10
+
+### Theme: "Publish Recovery"
+
+Follow-up patch to restore PyPI publish flow after `v3.2.2` tag/package version mismatch.
+
+### Fixed
+- **Version metadata alignment** — bumped package version to `3.2.3` in both `pyproject.toml` and `ontos.__version__`.
+- **Release pipeline unblock** — uses a new tag/version pair so `publish.yml` validation passes.
+
+---
+
 ## [3.2.2] - 2026-02-10
 
 ### Theme: "Maintain Command Parity"

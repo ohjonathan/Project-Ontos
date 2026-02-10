@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.2.3] - 2026-02-10
+
+Patch release to fix package/tag version alignment for PyPI publishing.
+
+### Fixed
+- Aligned package version metadata to `3.2.3` in `pyproject.toml` and `ontos/__init__.py`.
+- Unblocked publish workflow by using a fresh tag/version pair after the `v3.2.2` mismatch.
+
 ## [3.2.2] - 2026-02-10
 
 Patch release focused on shipping `ontos maintain` and aligning weekly maintenance documentation.
