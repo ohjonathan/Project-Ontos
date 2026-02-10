@@ -4,9 +4,10 @@ from pathlib import Path
 
 import pytest
 
+from ontos.commands.agents import generate_agents_content
+from ontos.commands.claude_template import CLAUDE_MD_TEMPLATE
 from ontos.commands.export import (
     ExportOptions,
-    CLAUDE_MD_TEMPLATE,
     export_command,
     find_repo_root,
 )
@@ -68,6 +69,27 @@ class TestExportCommand:
 
         assert exit_code == 0
         assert (tmp_path / "CLAUDE.md").read_text() == CLAUDE_MD_TEMPLATE
+
+    def test_overwrites_with_force_preserves_user_custom(self, tmp_path, monkeypatch):
+        """Should preserve USER CUSTOM section on forced overwrite."""
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
+        (tmp_path / "CLAUDE.md").write_text(
+            CLAUDE_MD_TEMPLATE.replace(
+                "<!-- USER CUSTOM -->\n"
+                "<!-- Add your project-specific notes below. This section is preserved during auto-sync. -->\n"
+                "<!-- /USER CUSTOM -->",
+                "<!-- USER CUSTOM -->\nKeep this note.\n<!-- /USER CUSTOM -->",
+            )
+        )
+
+        options = ExportOptions(force=True)
+        exit_code, _ = export_command(options)
+
+        assert exit_code == 0
+        content = (tmp_path / "CLAUDE.md").read_text()
+        assert "Keep this note." in content
+        assert "## Staleness" in content
 
     def test_rejects_path_outside_repo(self, tmp_path, monkeypatch):
         """Should reject output path outside repo root."""
@@ -138,15 +160,52 @@ class TestClaudeMdTemplate:
     def test_template_has_activation_section(self):
         assert "## Ontos Activation" in CLAUDE_MD_TEMPLATE
 
+    def test_template_has_activation_resilience_sections(self):
+        assert "## Trigger Phrases" in CLAUDE_MD_TEMPLATE
+        assert "## Re-Activation Trigger" in CLAUDE_MD_TEMPLATE
+        assert "## After Context Compaction (/compact)" in CLAUDE_MD_TEMPLATE
+        assert "## Staleness" in CLAUDE_MD_TEMPLATE
+
+    def test_template_has_mandatory_activation_language(self):
+        assert "It is **mandatory**." in CLAUDE_MD_TEMPLATE
+        assert "Do NOT ask for clarification." in CLAUDE_MD_TEMPLATE
+
     def test_template_has_commands(self):
         assert "ontos map" in CLAUDE_MD_TEMPLATE
         assert "ontos log" in CLAUDE_MD_TEMPLATE
+        assert "ontos export claude --force" in CLAUDE_MD_TEMPLATE
 
     def test_template_mentions_context_map(self):
         assert "Ontos_Context_Map.md" in CLAUDE_MD_TEMPLATE
 
     def test_template_does_not_reference_manual(self):
         assert "Ontos_Manual.md" not in CLAUDE_MD_TEMPLATE
+
+    def test_template_has_user_custom_markers(self):
+        assert "<!-- USER CUSTOM -->" in CLAUDE_MD_TEMPLATE
+        assert "<!-- /USER CUSTOM -->" in CLAUDE_MD_TEMPLATE
+
+    def test_template_parity_with_agents_activation_protocol(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
+        agents_content = generate_agents_content()
+
+        shared_markers = [
+            "## Trigger Phrases",
+            "## What is Activation?",
+            "## Ontos Activation",
+            "## Re-Activation Trigger",
+            "## After Context Compaction (/compact)",
+            "## Session End",
+            "## Quick Reference",
+            "## Core Invariants",
+            "# USER CUSTOM",
+            "## Staleness",
+            "It is **mandatory**.",
+        ]
+        for marker in shared_markers:
+            assert marker in agents_content
+            assert marker in CLAUDE_MD_TEMPLATE
 
 
 class TestExportClaudeTemplate:

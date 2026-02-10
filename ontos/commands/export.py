@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Tuple
 
-from ontos.commands.claude_template import CLAUDE_MD_TEMPLATE
+from ontos.commands.claude_template import generate_claude_content
 
 
 @dataclass
@@ -63,8 +63,15 @@ def export_command(options: ExportOptions) -> Tuple[int, str]:
         return 1, f"CLAUDE.md already exists at {output_path}. Use --force to overwrite."
 
     try:
+        existing_content = None
+        if output_path.exists():
+            existing_content = output_path.read_text(encoding="utf-8")
+
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(CLAUDE_MD_TEMPLATE, encoding="utf-8")
+        output_path.write_text(
+            generate_claude_content(existing_content),
+            encoding="utf-8",
+        )
     except Exception as e:
         return 2, f"Error writing file: {e}"
 

@@ -1,23 +1,42 @@
-# ontos/commands/claude_template.py
 """Shared CLAUDE.md template for export commands."""
 
-CLAUDE_MD_TEMPLATE = '''# CLAUDE.md
+from typing import Optional
 
-## Ontos Activation
+from ontos.commands.instruction_protocol import (
+    InstructionProtocolConfig,
+    preserve_user_custom_section,
+    render_activation_protocol_head,
+    render_activation_protocol_tail,
+)
 
-This project uses **Ontos** for documentation management.
 
-At the start of every session:
-1. Run `ontos map` to generate the context map
-2. Read `Ontos_Context_Map.md` to understand the project documentation structure
+CLAUDE_PROTOCOL_CONFIG = InstructionProtocolConfig(
+    instruction_file="CLAUDE.md",
+    regenerate_command="ontos export claude --force",
+    regenerate_purpose="Regenerate CLAUDE.md",
+    staleness_command="ontos export claude --force",
+)
 
-When ending a session:
-3. Run `ontos log` to record your work
 
-## What is Ontos?
+CLAUDE_HEADER_TEMPLATE = """# CLAUDE.md
 
-Ontos is a local-first documentation management system that:
-- Maintains a context map of all project documentation
-- Tracks documentation dependencies and status
-- Ensures documentation stays synchronized with code changes
-'''
+This project uses **Ontos** for documentation management."""
+
+
+CLAUDE_TOOLING_NOTES = """## Claude Notes
+If `MEMORY.md` exists, use it for Claude memory only. Project activation still comes from this file."""
+
+
+CLAUDE_MD_TEMPLATE = "\n\n".join(
+    [
+        CLAUDE_HEADER_TEMPLATE,
+        CLAUDE_TOOLING_NOTES,
+        render_activation_protocol_head(CLAUDE_PROTOCOL_CONFIG),
+        render_activation_protocol_tail(CLAUDE_PROTOCOL_CONFIG),
+    ]
+)
+
+
+def generate_claude_content(existing_content: Optional[str] = None) -> str:
+    """Generate CLAUDE.md content while preserving USER CUSTOM when present."""
+    return preserve_user_custom_section(CLAUDE_MD_TEMPLATE, existing_content)
