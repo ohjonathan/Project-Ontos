@@ -83,12 +83,15 @@ Event types: `feature`, `fix`, `refactor`, `exploration`, `chore`, `decision`
 
 ### "Maintain Ontos" (Weekly)
 1. `ontos maintain`
-2. This runs five steps:
+2. This runs eight tasks:
    - Migrate untagged files
    - Regenerate context map
-   - **Report curation stats (L0/L1/L2)**
+   - Run health checks (`ontos doctor`)
+   - Report curation stats (L0/L1/L2)
    - Consolidate old logs (if `AUTO_CONSOLIDATE=True`)
-   - **Review proposals (v2.6.1)** — prompts to graduate implemented proposals
+   - Review draft proposals (reports candidates for manual graduation)
+   - Validate dependency links
+   - Sync `AGENTS.md` (if stale)
 3. Fix any errors reported
 4. Commit context map if changed
 
@@ -229,7 +232,7 @@ When a proposal is implemented:
       Status: draft → active
 ```
 
-**Maintain Ontos fallback:** If graduation was missed, Maintain Ontos prompts for any draft proposals where ONTOS_VERSION matches.
+**Maintain Ontos fallback:** If graduation was missed, Maintain Ontos reports draft proposals that match the current Ontos version for manual graduation.
 
 **Example:**
 ```

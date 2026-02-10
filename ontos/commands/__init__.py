@@ -14,6 +14,7 @@ Phase 2 modules:
 - promote.py: Proposal promotion (wrapper)
 - scaffold.py: Document scaffolding (wrapper)
 - stub.py: Stub creation (wrapper)
+- maintain.py: Weekly maintenance runner
 
 Phase 3 modules:
 - init.py: Project initialization
@@ -110,6 +111,12 @@ from ontos.commands.stub import (
     StubOptions,
 )
 
+# maintain - Weekly maintenance
+from ontos.commands.maintain import (
+    maintain_command,
+    MaintainOptions,
+)
+
 __all__ = [
     # Native orchestration (Phase 2)
     "GenerateMapOptions",
@@ -150,5 +157,6 @@ __all__ = [
     "find_untagged_files",
     "stub_command",
     "StubOptions",
+    "maintain_command",
+    "MaintainOptions",
 ]
-

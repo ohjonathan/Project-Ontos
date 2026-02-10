@@ -65,6 +65,7 @@ def create_parser(include_hidden: bool = True) -> argparse.ArgumentParser:
     _register_map(subparsers, global_parser)
     _register_log(subparsers, global_parser)
     _register_doctor(subparsers, global_parser)
+    _register_maintain(subparsers, global_parser)
     _register_env(subparsers, global_parser)
     _register_agents(subparsers, global_parser)
     _register_export(subparsers, global_parser)
@@ -155,6 +156,38 @@ def _register_doctor(subparsers, parent):
     p.add_argument("--verbose", "-v", action="store_true",
                    help="Show detailed output")
     p.set_defaults(func=_cmd_doctor)
+
+
+def _register_maintain(subparsers, parent):
+    """Register maintain command."""
+    p = subparsers.add_parser(
+        "maintain",
+        help="Run weekly maintenance tasks",
+        parents=[parent]
+    )
+    p.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Show detailed output per task"
+    )
+    p.add_argument(
+        "--dry-run", "-n",
+        action="store_true",
+        help="Report tasks without executing them"
+    )
+    p.add_argument(
+        "--skip",
+        action="append",
+        default=[],
+        metavar="TASK_NAME",
+        help=(
+            "Skip a maintenance task (repeatable or comma-separated). "
+            "Tasks: migrate_untagged, regenerate_map, health_check, "
+            "curation_stats, consolidate_logs, review_proposals, "
+            "check_links, sync_agents"
+        )
+    )
+    p.set_defaults(func=_cmd_maintain)
 
 
 def _register_env(subparsers, parent):
@@ -576,6 +609,21 @@ def _cmd_doctor(args) -> int:
         print(format_doctor_output(result, verbose=args.verbose))
 
     return exit_code
+
+
+def _cmd_maintain(args) -> int:
+    """Handle maintain command."""
+    from ontos.commands.maintain import maintain_command, MaintainOptions
+
+    options = MaintainOptions(
+        verbose=getattr(args, "verbose", False),
+        dry_run=getattr(args, "dry_run", False),
+        skip=getattr(args, "skip", []),
+        quiet=args.quiet,
+        json_output=args.json,
+    )
+
+    return maintain_command(options)
 
 
 def _cmd_env(args) -> int:
