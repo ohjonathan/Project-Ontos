@@ -9,7 +9,8 @@ concepts: [backlog, v3.2, planning, deferred-items]
 # Ontos v3.2 Backlog
 
 **Created:** 2026-01-22
-**Source:** Deferred items from v3.1.0 Track B review
+**Source:** Deferred items from v3.1.0 Track B review and v3.2.2 maintain review
+**Updated:** 2026-02-10
 
 ---
 
@@ -90,6 +91,20 @@ These items were identified during Track B code review but deferred as non-block
 
 ---
 
+## Deferred from v3.2.2 Maintain Review
+
+These items were explicitly deferred during the v3.2.2 `ontos maintain` cross-check because they are non-blocking or policy/process decisions.
+
+| ID | Issue | Priority | Source | Description |
+|----|-------|----------|--------|-------------|
+| X-M5 | unknown `--skip` behavior | P2 | v3.2.2 maintain review | `ontos maintain --skip unknown_task` warns and exits success; decide whether unknown names should be hard errors. |
+| X-M6 | proposal lifecycle status | P2 | v3.2.2 maintain review | `v3_2_2_maintain_command_proposal` remains `status: draft`; decide whether to graduate to `active` or `complete`. |
+| X-M7 | command import layering cleanup | P3 | v3.2.2 maintain review | Re-evaluate command-to-command imports in `maintain.py` and potential extraction of shared orchestration utilities. |
+| X-M8 | `_parse_bool` empty-string semantics | P3 | v3.2.2 maintain review | Define whether empty/unknown values should default silently or produce explicit warnings/errors. |
+| X-M9 | `TaskResult.status` type strictness | P3 | v3.2.2 maintain review | Tighten `TaskResult.status` from free-form `str` to constrained literal/enum for stronger static checks. |
+
+---
+
 ## New Features (v3.2.2 Planned)
 
 | ID | Feature | Priority | Mode | Description |
@@ -105,9 +120,9 @@ These items were identified during Track B code review but deferred as non-block
 
 ## Notes
 
-- All deferred items are P2 (medium priority)
+- Deferred items are P2-P3 and non-blocking
 - None are blocking for normal operation
-- **v3.2.2 Planning**: See [.ontos-internal/strategy/proposals/v3.2.2/interop_maintenance_discussion.md](file:///Users/jonathanoh/Dev/Ontos-dev/.ontos-internal/strategy/proposals/v3.2.2/interop_maintenance_discussion.md) for open discussion.
+- **v3.2.2 Planning**: See `.ontos-internal/strategy/proposals/v3.2.2/maintain_command_review.md` for review context.
 
 ---
 
