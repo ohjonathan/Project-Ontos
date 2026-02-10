@@ -21,6 +21,31 @@ All notable changes to **Project Ontos itself** (the protocol and tooling) will 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.2] - 2026-02-10
+
+### Theme: "Maintain Command Parity"
+
+Introduces `ontos maintain` as a native command and aligns maintenance workflow documentation.
+
+### Added
+- **`ontos maintain` command** in the unified CLI with `--dry-run`, `--verbose`, and `--skip`.
+- **Registry-backed maintenance runner** with ordered and conditional tasks.
+- **Maintain command tests** in `tests/commands/test_maintain.py` for dry-run, skip parsing, error isolation, and proposal review behavior.
+- **Release notes source**: `docs/releases/v3.2.2.md`.
+
+### Fixed
+- **Documentation/implementation gap** — `ontos maintain` now exists in CLI as documented.
+- **Proposal review UX** — Removed interactive no-op prompt; maintain now reports candidates for manual graduation.
+- **Dry-run contract** — Tasks that should not execute now short-circuit without unnecessary scanning.
+- **Repo-root consistency** — AGENTS staleness checks now use maintain command context root.
+- **Documentation alignment** — Weekly maintenance guidance updated in Agent Instructions and Manual.
+
+### Changed
+- **Maintenance workflow** now executes 8 tasks (including health checks, link checks, and conditional AGENTS sync).
+- **Maintain JSON output** now includes per-task `details`.
+
+---
+
 ## [3.0.2] - 2026-01-17
 
 ### Theme: "Test Infrastructure"

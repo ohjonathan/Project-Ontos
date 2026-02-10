@@ -1,7 +1,7 @@
 ---
 id: v3_2_2_maintain_command_proposal
 type: strategy
-status: draft
+status: complete
 depends_on: [ontos_agent_instructions, v3_2_2_interop_discussion]
 concepts: [cli, maintenance, documentation-parity]
 ---
@@ -10,7 +10,7 @@ concepts: [cli, maintenance, documentation-parity]
 
 **Author:** Antigravity  
 **Date:** 2026-01-31  
-**Status:** Draft
+**Status:** Complete
 
 ---
 

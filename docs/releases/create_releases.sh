@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Create GitHub releases for all missing tagged versions (v3.0.4 through v3.2.1).
+# Create GitHub releases for all missing tagged versions (v3.0.4 through v3.2.2).
 # Requires: gh CLI authenticated with a token that has 'repo' scope.
 #
 # Usage:
@@ -44,11 +44,18 @@ gh release create v3.2.0 \
   --latest=false \
   --notes-file docs/releases/v3.2.0.md
 
-echo "==> Creating release v3.2.1 (Latest)..."
+echo "==> Creating release v3.2.1..."
 gh release create v3.2.1 \
   --repo "$REPO" \
   --title "v3.2.1" \
-  --latest=true \
+  --latest=false \
   --notes-file docs/releases/v3.2.1.md
 
-echo "✅ All 6 releases created successfully."
+echo "==> Creating release v3.2.2 (Latest)..."
+gh release create v3.2.2 \
+  --repo "$REPO" \
+  --title "v3.2.2" \
+  --latest=true \
+  --notes-file docs/releases/v3.2.2.md
+
+echo "✅ All 7 releases created successfully."

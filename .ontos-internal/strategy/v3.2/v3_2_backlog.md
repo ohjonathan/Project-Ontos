@@ -98,7 +98,7 @@ These items were explicitly deferred during the v3.2.2 `ontos maintain` cross-ch
 | ID | Issue | Priority | Source | Description |
 |----|-------|----------|--------|-------------|
 | X-M5 | unknown `--skip` behavior | P2 | v3.2.2 maintain review | `ontos maintain --skip unknown_task` warns and exits success; decide whether unknown names should be hard errors. |
-| X-M6 | proposal lifecycle status | P2 | v3.2.2 maintain review | `v3_2_2_maintain_command_proposal` remains `status: draft`; decide whether to graduate to `active` or `complete`. |
+| X-M6 | proposal lifecycle status (resolved) | P3 | v3.2.2 maintain review | Resolved on 2026-02-10: `v3_2_2_maintain_command_proposal` marked `status: complete`. |
 | X-M7 | command import layering cleanup | P3 | v3.2.2 maintain review | Re-evaluate command-to-command imports in `maintain.py` and potential extraction of shared orchestration utilities. |
 | X-M8 | `_parse_bool` empty-string semantics | P3 | v3.2.2 maintain review | Define whether empty/unknown values should default silently or produce explicit warnings/errors. |
 | X-M9 | `TaskResult.status` type strictness | P3 | v3.2.2 maintain review | Tighten `TaskResult.status` from free-form `str` to constrained literal/enum for stronger static checks. |

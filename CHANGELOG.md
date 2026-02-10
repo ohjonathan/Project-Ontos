@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.2.2] - 2026-02-10
+
+Patch release focused on shipping `ontos maintain` and aligning weekly maintenance documentation.
+
+### Added
+- Native `ontos maintain` command in the unified CLI.
+- `maintain` flags: `--dry-run`, `--verbose`, and repeatable/comma-separated `--skip`.
+- Maintain test suite in `tests/commands/test_maintain.py`.
+- Release notes source file at `docs/releases/v3.2.2.md`.
+
+### Fixed
+- Documentation/implementation gap where `ontos maintain` was documented but unavailable.
+- No-op interactive proposal prompt in maintenance flow; now reports candidates for manual graduation.
+- Dry-run behavior for maintenance tasks that previously scanned documents unnecessarily.
+- AGENTS staleness checks now use the maintain command repo root consistently.
+- Maintenance workflow text alignment in `Ontos_Agent_Instructions.md` and `Ontos_Manual.md`.
+
+### Changed
+- Weekly maintenance workflow now runs 8 tasks: migrate, map, health check, curation stats, consolidate, proposal review report, link check, and AGENTS sync.
+- Maintain JSON output now includes per-task `details`.
+
 ## [3.2.1] - 2026-02-09
 
 Patch release focused on review remediation, safer context map output, and activation resilience.

@@ -122,14 +122,22 @@ Event types: `feature`, `fix`, `refactor`, `exploration`, `chore`, `decision`
 ### Maintain Graph
 Say **"Maintain Ontos"** weekly:
 ```bash
-ontos map && ontos consolidate --days 30
+ontos maintain
 ```
-This runs three steps:
+This runs eight tasks:
 1. **Migrate** — Tag untagged files
-2. **Generate** — Validate and regenerate context map  
-3. **Consolidate** — Archive old logs (if `AUTO_CONSOLIDATE=True`)
+2. **Regenerate** — Regenerate context map
+3. **Health Check** — Run `ontos doctor`
+4. **Report** — Report curation stats (L0/L1/L2)
+5. **Consolidate** — Archive old logs (if `AUTO_CONSOLIDATE=True`)
+6. **Review Proposals** — Report draft proposals for manual graduation
+7. **Check Links** — Validate dependency links
+8. **Sync Agents** — Regenerate `AGENTS.md` when stale
 
-Use `--lint` to check for data quality issues.
+Useful flags:
+- `--dry-run` — Preview tasks without executing
+- `--verbose` — Show detailed output per task
+- `--skip TASK_NAME` — Skip specific tasks
 
 ---
 
@@ -160,7 +168,7 @@ Answering `y` automatically:
 2. **Move file** from `proposals/` to `strategy/` (graduate up)
 3. Add entry to `decision_history.md` with APPROVED outcome
 
-**Fallback:** Maintain Ontos prompts for missed graduations when ONTOS_VERSION matches a draft proposal
+**Fallback:** Maintain Ontos reports missed graduation candidates that match the current Ontos version for manual graduation
 
 ### Rejecting a Proposal
 1. Change `status: draft` → `status: rejected`
@@ -618,7 +626,7 @@ pip install --upgrade ontos
 | `ontos_generate_context_map.py` | Build graph, validate, generate map |
 | `ontos_end_session.py` | Create session log |
 | `ontos_query.py` | Query the graph (deps, concepts, stale) |
-| `ontos_maintain.py` | Run migration + regeneration tasks |
+| `ontos_maintain.py` | Run weekly maintenance workflow |
 | `ontos_consolidate.py` | Consolidate old logs into history |
 | `ontos_migrate_frontmatter.py` | Find untagged files |
 | `ontos_update.py` | Pull latest from GitHub |
