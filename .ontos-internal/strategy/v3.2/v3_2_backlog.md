@@ -9,7 +9,7 @@ concepts: [backlog, v3.2, planning, deferred-items]
 # Ontos v3.2 Backlog
 
 **Created:** 2026-01-22
-**Source:** Deferred items from v3.1.0 Track B review and v3.2.2 maintain review
+**Source:** Deferred items from v3.1.0 Track B review, v3.2.2 maintain review, and v3.2.3 template parity review (PR #66)
 **Updated:** 2026-02-10
 
 ---
@@ -105,6 +105,18 @@ These items were explicitly deferred during the v3.2.2 `ontos maintain` cross-ch
 
 ---
 
+## Deferred from v3.2.3 Template Parity Review (PR #66)
+
+These items came from the CA cross-check against consolidated review feedback for PR #66.
+
+| ID | Issue | Priority | Source | Description |
+|----|-------|----------|--------|-------------|
+| X-M10 | USER CUSTOM nested marker parsing | P2 | PR #66 cross-check | Handle nested/escaped `<!-- USER CUSTOM -->` marker text without truncation; deferred to v3.2.4 hardening pass. |
+| X-M11 | `ontos export --all` command | P3 | v3.2.3 open question | Evaluate adding a single command to export all instruction files (`AGENTS.md`, `CLAUDE.md`, `.cursorrules`) as non-patch scope enhancement. |
+| X-M12 | CLI consolidation (`export claude` vs `agents --format claude`) | P3 | v3.2.3 open question | Evaluate command-surface consolidation in a minor release; do not change CLI behavior in patch line. |
+
+---
+
 ## New Features (v3.2.2 Planned)
 
 | ID | Feature | Priority | Mode | Description |
@@ -116,13 +128,12 @@ These items were explicitly deferred during the v3.2.2 `ontos maintain` cross-ch
 
 ---
 
----
-
 ## Notes
 
 - Deferred items are P2-P3 and non-blocking
 - None are blocking for normal operation
 - **v3.2.2 Planning**: See `.ontos-internal/strategy/proposals/v3.2.2/maintain_command_review.md` for review context.
+- **v3.2.3 Review Context**: See `.ontos-internal/strategy/proposals/v3.2.3/pr66_review_consolidation.md`.
 
 ---
 
