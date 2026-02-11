@@ -59,8 +59,10 @@ Content""")
 def test_verify_all_fails_on_duplicates(tmp_path):
     """VUL-03: verify --all command must fail on duplicate IDs."""
     (tmp_path / ".ontos").mkdir()
-    (tmp_path / "doc1.md").write_text("---\nid: collision\ntype: atom\n---\n")
-    (tmp_path / "doc2.md").write_text("---\nid: collision\ntype: atom\n---\n")
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    (docs_dir / "doc1.md").write_text("---\nid: collision\ntype: atom\n---\n")
+    (docs_dir / "doc2.md").write_text("---\nid: collision\ntype: atom\n---\n")
     
     env = os.environ.copy()
     env["PYTHONPATH"] = os.getcwd()

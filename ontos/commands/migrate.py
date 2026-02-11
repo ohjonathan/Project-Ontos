@@ -10,7 +10,9 @@ from ontos.core.schema import (
     add_schema_to_frontmatter,
 )
 from ontos.core.context import SessionContext
-from ontos.io.files import find_project_root, scan_documents, load_documents, load_frontmatter
+from ontos.io.config import load_project_config
+from ontos.io.files import find_project_root, load_documents, load_frontmatter
+from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
 from ontos.io.yaml import parse_frontmatter_content
 from ontos.ui.output import OutputHandler
 
@@ -24,6 +26,7 @@ class MigrateOptions:
     dirs: Optional[List[Path]] = None
     quiet: bool = False
     json_output: bool = False
+    scope: Optional[str] = None
 
 
 def check_file_needs_migration(filepath: Path) -> Tuple[bool, str, str]:
@@ -50,23 +53,18 @@ def migrate_command(options: MigrateOptions) -> Tuple[int, str]:
     """Execute migrate command."""
     output = OutputHandler(quiet=options.quiet)
     root = find_project_root()
-    
-    # Determine directories to scan
-    search_dirs = options.dirs if options.dirs else []
-    if not search_dirs:
-        for d in ['docs', '.ontos-internal']:
-            p = root / d
-            if p.exists():
-                search_dirs.append(p)
-    
-    if not search_dirs:
-        output.error("No default directories found. Use --dirs to specify.")
-        return 1, "No directories to scan"
 
     from ontos.core.curation import load_ontosignore
+    config = load_project_config(repo_root=root)
+    effective_scope = resolve_scan_scope(options.scope, config.scanning.default_scope)
     ignore_patterns = load_ontosignore(root)
-    files = scan_documents(search_dirs, skip_patterns=ignore_patterns) # Filter by .md only
-    files = [f for f in files if f.suffix == ".md"]
+    files = collect_scoped_documents(
+        root,
+        config,
+        effective_scope,
+        base_skip_patterns=ignore_patterns,
+        explicit_dirs=options.dirs,
+    )
 
     load_result = load_documents(files, parse_frontmatter_content)
     if load_result.has_fatal_errors or load_result.duplicate_ids:

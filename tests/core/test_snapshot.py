@@ -80,6 +80,40 @@ status: active
         assert "k1" in snapshot.documents
         assert "a1" not in snapshot.documents
 
+    def test_create_snapshot_default_scope_excludes_internal_docs(self, tmp_path):
+        """Default snapshot scope (docs) excludes .ontos-internal docs."""
+        config = tmp_path / ".ontos.toml"
+        config.write_text("[ontos]\nversion = '3.2'\n")
+        docs = tmp_path / "docs"
+        docs.mkdir()
+        internal = tmp_path / ".ontos-internal"
+        internal.mkdir()
+
+        (docs / "docs.md").write_text("---\nid: docs_doc\ntype: atom\nstatus: active\n---\n")
+        (internal / "internal.md").write_text("---\nid: internal_doc\ntype: atom\nstatus: active\n---\n")
+
+        snapshot = create_snapshot(tmp_path)
+
+        assert "docs_doc" in snapshot.documents
+        assert "internal_doc" not in snapshot.documents
+
+    def test_create_snapshot_library_scope_includes_internal_docs(self, tmp_path):
+        """Library scope snapshot includes .ontos-internal docs."""
+        config = tmp_path / ".ontos.toml"
+        config.write_text("[ontos]\nversion = '3.2'\n")
+        docs = tmp_path / "docs"
+        docs.mkdir()
+        internal = tmp_path / ".ontos-internal"
+        internal.mkdir()
+
+        (docs / "docs.md").write_text("---\nid: docs_doc\ntype: atom\nstatus: active\n---\n")
+        (internal / "internal.md").write_text("---\nid: internal_doc\ntype: atom\nstatus: active\n---\n")
+
+        snapshot = create_snapshot(tmp_path, scope="library")
+
+        assert "docs_doc" in snapshot.documents
+        assert "internal_doc" in snapshot.documents
+
 
 class TestSnapshotProperties:
     """Tests for DocumentSnapshot properties."""

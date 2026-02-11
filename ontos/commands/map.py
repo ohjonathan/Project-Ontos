@@ -708,6 +708,7 @@ class MapOptions:
     filter_expr: Optional[str] = None
     no_cache: bool = False
     sync_agents: bool = False
+    scope: Optional[str] = None
 
 
 def map_command(options: MapOptions) -> int:
@@ -721,8 +722,9 @@ def map_command(options: MapOptions) -> int:
     Returns:
         Exit code (0 for success, 1 for errors, 2 for warnings in strict mode)
     """
-    from ontos.io.files import find_project_root, scan_documents, load_documents, DocumentLoadResult
+    from ontos.io.files import find_project_root, load_documents, DocumentLoadResult
     from ontos.io.config import load_project_config
+    from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
     from ontos.io.yaml import parse_frontmatter_content
     from ontos.core.cache import DocumentCache
 
@@ -747,15 +749,19 @@ def map_command(options: MapOptions) -> int:
         return 1
 
     # Determine paths
-    docs_dir = project_root / config.paths.docs_dir
     output_path = options.output or (project_root / config.paths.context_map)
 
-    # Scan for documents (docs_dir + configured scan_paths only)
-    scan_dirs = [docs_dir] + [project_root / p for p in config.scanning.scan_paths]
+    # Scan using shared scope utility.
+    effective_scope = resolve_scan_scope(options.scope, config.scanning.default_scope)
     skip = list(config.scanning.skip_patterns)
     # Skip the context map itself using full resolved path
     skip.append(str(output_path.resolve()))
-    doc_paths = scan_documents(scan_dirs, skip_patterns=skip)
+    doc_paths = collect_scoped_documents(
+        project_root,
+        config,
+        effective_scope,
+        base_skip_patterns=skip,
+    )
 
     # Load documents using canonical loader (#40, #10)
     cache = DocumentCache() if not options.no_cache else None

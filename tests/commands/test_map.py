@@ -296,3 +296,33 @@ def test_map_fails_on_duplicate_ids(tmp_path, monkeypatch):
     exit_code = map_command(MapOptions())
     
     assert exit_code != 0
+
+
+def test_map_default_scope_excludes_internal_docs(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n")
+    (tmp_path / "docs").mkdir()
+    (tmp_path / ".ontos-internal").mkdir()
+    (tmp_path / "docs" / "doc.md").write_text("---\nid: docs_doc\ntype: atom\nstatus: active\n---\n")
+    (tmp_path / ".ontos-internal" / "internal.md").write_text("---\nid: internal_doc\ntype: atom\nstatus: active\n---\n")
+
+    map_command(MapOptions(quiet=True))
+
+    content = (tmp_path / "Ontos_Context_Map.md").read_text()
+    assert "docs_doc" in content
+    assert "internal_doc" not in content
+
+
+def test_map_library_scope_includes_internal_docs(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n")
+    (tmp_path / "docs").mkdir()
+    (tmp_path / ".ontos-internal").mkdir()
+    (tmp_path / "docs" / "doc.md").write_text("---\nid: docs_doc\ntype: atom\nstatus: active\n---\n")
+    (tmp_path / ".ontos-internal" / "internal.md").write_text("---\nid: internal_doc\ntype: atom\nstatus: active\n---\n")
+
+    map_command(MapOptions(quiet=True, scope="library"))
+
+    content = (tmp_path / "Ontos_Context_Map.md").read_text()
+    assert "docs_doc" in content
+    assert "internal_doc" in content

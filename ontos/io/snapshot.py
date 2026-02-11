@@ -12,7 +12,8 @@ from ontos.core.snapshot import DocumentSnapshot, SnapshotFilters, matches_filte
 from ontos.core.graph import build_graph
 from ontos.core.validation import ValidationOrchestrator
 from ontos.io.config import load_project_config
-from ontos.io.files import scan_documents, load_documents
+from ontos.io.files import load_documents
+from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
 from ontos.io.yaml import parse_frontmatter_content
 
 def create_snapshot(
@@ -20,6 +21,7 @@ def create_snapshot(
     include_content: bool = True,
     filters: Optional[SnapshotFilters] = None,
     git_commit_provider: Optional[Callable[[], Optional[str]]] = None,
+    scope: Optional[str] = None,
 ) -> DocumentSnapshot:
     """
     Create a snapshot of all documents using the canonical loader.
@@ -36,19 +38,15 @@ def create_snapshot(
     # Load config
     config = load_project_config(repo_root=root)
 
-    # Determine docs directory
-    docs_dir = root / config.paths.docs_dir
-    internal_dir = root / ".ontos-internal"
-
-    scan_dirs = []
-    if docs_dir.exists():
-        scan_dirs.append(docs_dir)
-    if internal_dir.exists():
-        scan_dirs.append(internal_dir)
-
     # Scan documents
     skip_patterns = config.scanning.skip_patterns if config.scanning else ["_template.md", "archive/*"]
-    doc_paths = scan_documents(scan_dirs, skip_patterns=skip_patterns)
+    effective_scope = resolve_scan_scope(scope, config.scanning.default_scope)
+    doc_paths = collect_scoped_documents(
+        root,
+        config,
+        effective_scope,
+        base_skip_patterns=skip_patterns,
+    )
 
     # Load documents using unified loader
     load_result = load_documents(doc_paths, parse_frontmatter_content)

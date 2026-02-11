@@ -54,6 +54,7 @@ class ScanningConfig:
         "_template.md", "archive/*", ".git/*", "node_modules/*", "__pycache__/*"
     ])
     scan_paths: List[str] = field(default_factory=list)
+    default_scope: str = "docs"
 
 
 @dataclass

@@ -346,7 +346,7 @@ class TestGatherStats:
     """Tests for gather_stats function."""
 
     def test_counts_md_files(self, tmp_path, monkeypatch):
-        """Should count .md files in docs and logs directories."""
+        """Should count .md files in docs scope by default."""
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n[paths]\ndocs_dir = 'docs'\nlogs_dir = 'logs'")
         
@@ -361,8 +361,8 @@ class TestGatherStats:
         stats = gather_stats(tmp_path)
         doc_count = stats["doc_count"]
 
-        # 1 doc + 1 log = 2
-        assert doc_count == "2"
+        # default docs scope should ignore logs outside docs/
+        assert doc_count == "1"
 
     def test_excludes_root_md_files(self, tmp_path, monkeypatch):
         """X-M1: Should not count .md files at the repository root."""
@@ -384,7 +384,7 @@ class TestGatherStats:
         assert doc_count == "1"
 
     def test_counts_archive_logs(self, tmp_path, monkeypatch):
-        """X-M1: Should count .md files in .ontos-internal/archive/logs."""
+        """Library scope should count .md files in .ontos-internal/archive/logs."""
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n[paths]\ndocs_dir = 'docs'")
         
@@ -396,7 +396,7 @@ class TestGatherStats:
         archive.mkdir(parents=True)
         (archive / "old_log.md").write_text("# Old Log")
 
-        stats = gather_stats(tmp_path)
+        stats = gather_stats(tmp_path, scope="library")
         doc_count = stats["doc_count"]
 
         # 1 doc + 1 archive log = 2

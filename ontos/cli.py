@@ -93,6 +93,16 @@ def create_parser(include_hidden: bool = True) -> argparse.ArgumentParser:
 # Command registration
 # ============================================================================
 
+
+def _add_scope_argument(parser) -> None:
+    """Add shared scan scope argument to a command parser."""
+    parser.add_argument(
+        "--scope",
+        choices=["docs", "library"],
+        default=None,
+        help="Scan scope: docs (default) or library (includes .ontos-internal)",
+    )
+
 def _register_init(subparsers, parent):
     """Register init command."""
     p = subparsers.add_parser("init", help="Initialize Ontos in a project", parents=[parent])
@@ -129,6 +139,7 @@ def _register_map(subparsers, parent):
                    help="Bypass document cache (for debugging)")
     p.add_argument("--sync-agents", action="store_true",
                    help="Also sync AGENTS.md if it exists")
+    _add_scope_argument(p)
     p.set_defaults(func=_cmd_map)
 
 
@@ -155,6 +166,7 @@ def _register_doctor(subparsers, parent):
     p = subparsers.add_parser("doctor", help="Health check and diagnostics", parents=[parent])
     p.add_argument("--verbose", "-v", action="store_true",
                    help="Show detailed output")
+    _add_scope_argument(p)
     p.set_defaults(func=_cmd_doctor)
 
 
@@ -187,6 +199,7 @@ def _register_maintain(subparsers, parent):
             "check_links, sync_agents"
         )
     )
+    _add_scope_argument(p)
     p.set_defaults(func=_cmd_maintain)
 
 
@@ -227,6 +240,7 @@ def _register_agents(subparsers, parent):
                    help="Generate both AGENTS.md and .cursorrules")
     p.add_argument("--output", "-o", type=Path,
                    help="Output path for AGENTS.md")
+    _add_scope_argument(p)
     p.set_defaults(func=_cmd_agents)
 
 
@@ -237,6 +251,7 @@ def _register_agent_export(subparsers, parent):
                    help="Overwrite existing file")
     p.add_argument("--output", "-o", type=Path,
                    help="Output path")
+    _add_scope_argument(p)
     p.set_defaults(func=_cmd_agent_export)
 
 
@@ -256,7 +271,7 @@ def _register_export(subparsers, parent):
     # export data
     data_parser = export_subparsers.add_parser(
         "data",
-        help="Export documents as structured JSON",
+        help="Export documents as structured JSON (use --scope library to include .ontos-internal)",
         parents=[parent]
     )
     data_parser.add_argument("-o", "--output", type=Path,
@@ -273,6 +288,7 @@ def _register_export(subparsers, parent):
                              help="Stable output for testing")
     data_parser.add_argument("--force", "-f", action="store_true",
                              help="Overwrite existing file")
+    _add_scope_argument(data_parser)
     data_parser.set_defaults(func=_cmd_export_data)
 
     # export claude
@@ -316,12 +332,13 @@ def _register_verify(subparsers, parent):
     p.add_argument(
         "--all", "-a",
         action="store_true",
-        help="Verify all stale documents interactively"
+        help="Verify all stale documents interactively (use --scope library to include .ontos-internal)"
     )
     p.add_argument(
         "--date", "-d",
         help="Verification date (YYYY-MM-DD, default: today)"
     )
+    _add_scope_argument(p)
     p.set_defaults(func=_cmd_verify)
 
 
@@ -329,7 +346,7 @@ def _register_query(subparsers, parent):
     """Register query command."""
     p = subparsers.add_parser(
         "query",
-        help="Search and analyze document graph",
+        help="Search and analyze document graph (use --scope library to include .ontos-internal)",
         parents=[parent]
     )
     group = p.add_mutually_exclusive_group(required=True)
@@ -348,6 +365,7 @@ def _register_query(subparsers, parent):
     
     p.add_argument("--dir", type=Path,
                    help="Documentation directory to scan")
+    _add_scope_argument(p)
     p.set_defaults(func=_cmd_query)
 
 
@@ -355,7 +373,7 @@ def _register_schema_migrate(subparsers, parent):
     """Register schema migration command."""
     p = subparsers.add_parser(
         "schema-migrate",
-        help="Migrate document schema versions",
+        help="Migrate document schema versions (use --scope library to include .ontos-internal)",
         parents=[parent]
     )
     group = p.add_mutually_exclusive_group(required=True)
@@ -368,6 +386,7 @@ def _register_schema_migrate(subparsers, parent):
     
     p.add_argument("--dirs", nargs="+", type=Path,
                    help="Directories to scan")
+    _add_scope_argument(p)
     p.set_defaults(func=_cmd_schema_migrate)
 
 
@@ -412,12 +431,13 @@ def _register_promote(subparsers, parent):
     """Register promote command."""
     p = subparsers.add_parser(
         "promote",
-        help="Promote documents to Level 2",
+        help="Promote documents to Level 2 (use --scope library to include .ontos-internal)",
         parents=[parent]
     )
     p.add_argument("files", nargs="*", type=Path, help="Specific files to promote")
     p.add_argument("--check", action="store_true", help="Show promotable documents")
     p.add_argument("--all-ready", action="store_true", help="Promote all ready documents")
+    _add_scope_argument(p)
     p.set_defaults(func=_cmd_promote)
 
 
@@ -445,6 +465,7 @@ def _register_scaffold(subparsers, parent):
         action="store_true",
         help="Preview changes without modifying files"
     )
+    _add_scope_argument(p)
     p.set_defaults(func=_cmd_scaffold)
 
 
@@ -467,7 +488,7 @@ def _register_migration_report(subparsers, parent):
     """Register migration-report command."""
     p = subparsers.add_parser(
         "migration-report",
-        help="Analyze documents for migration safety",
+        help="Analyze documents for migration safety (use --scope library to include .ontos-internal)",
         parents=[parent]
     )
     p.add_argument("-o", "--output", type=Path,
@@ -476,6 +497,7 @@ def _register_migration_report(subparsers, parent):
                    help="Output format (default: md)")
     p.add_argument("--force", "-f", action="store_true",
                    help="Overwrite existing file")
+    _add_scope_argument(p)
     p.set_defaults(func=_cmd_migration_report)
 
 
@@ -483,13 +505,14 @@ def _register_migrate_convenience(subparsers, parent):
     """Register migrate convenience command."""
     p = subparsers.add_parser(
         "migrate",
-        help="Generate migration artifacts (snapshot + report)",
+        help="Generate migration artifacts (snapshot + report; use --scope library to include .ontos-internal)",
         parents=[parent]
     )
     p.add_argument("--out-dir", type=Path, default=Path("./migration/"),
                    help="Output directory (default: ./migration/)")
     p.add_argument("--force", "-f", action="store_true",
                    help="Overwrite existing files")
+    _add_scope_argument(p)
     p.set_defaults(func=_cmd_migrate_convenience)
 
 
@@ -504,6 +527,7 @@ def _register_tree_alias(subparsers, parent):
                    choices=["basic", "rich"], help="Compact output")
     p.add_argument("--filter", "-f", metavar="EXPR", help="Filter documents")
     p.add_argument("--no-cache", action="store_true", help="Bypass cache")
+    _add_scope_argument(p)
     p.set_defaults(func=_cmd_tree)
 
 
@@ -513,6 +537,7 @@ def _register_validate_alias(subparsers, parent):
     p.add_argument("path", nargs="?", type=Path, help="Specific file to verify")
     p.add_argument("--all", "-a", action="store_true", help="Verify all stale documents")
     p.add_argument("--date", "-d", help="Verification date")
+    _add_scope_argument(p)
     p.set_defaults(func=_cmd_validate)
 
 
@@ -560,6 +585,7 @@ def _cmd_map(args) -> int:
         filter_expr=getattr(args, 'filter', None),
         no_cache=getattr(args, 'no_cache', False),
         sync_agents=getattr(args, 'sync_agents', False),
+        scope=getattr(args, "scope", None),
     )
 
     return map_command(options)
@@ -591,6 +617,7 @@ def _cmd_doctor(args) -> int:
     options = DoctorOptions(
         verbose=args.verbose,
         json_output=args.json,
+        scope=getattr(args, "scope", None),
     )
 
     exit_code, result = doctor_command(options)
@@ -621,6 +648,7 @@ def _cmd_maintain(args) -> int:
         skip=getattr(args, "skip", []),
         quiet=args.quiet,
         json_output=args.json,
+        scope=getattr(args, "scope", None),
     )
 
     return maintain_command(options)
@@ -659,6 +687,7 @@ def _cmd_agents(args) -> int:
         force=args.force,
         format=getattr(args, 'format', 'agents'),
         all_formats=getattr(args, 'all_formats', False),
+        scope=getattr(args, "scope", None),
     )
 
     exit_code, message = agents_command(options)
@@ -687,6 +716,7 @@ def _cmd_agent_export(args) -> int:
         force=args.force,
         format="agents",
         all_formats=False,
+        scope=getattr(args, "scope", None),
     )
 
     exit_code, message = agents_command(options)
@@ -717,6 +747,7 @@ def _cmd_export_data(args) -> int:
         force=args.force,
         quiet=args.quiet,
         json_output=args.json,
+        scope=getattr(args, "scope", None),
     )
 
     exit_code, message = export_data_command(options)
@@ -818,6 +849,7 @@ def _cmd_schema_migrate(args) -> int:
         dirs=args.dirs,
         quiet=args.quiet,
         json_output=args.json,
+        scope=getattr(args, "scope", None),
     )
     exit_code, message = migrate_command(options)
     return exit_code
@@ -833,6 +865,7 @@ def _cmd_migration_report(args) -> int:
         force=args.force,
         quiet=args.quiet,
         json_output=args.json,
+        scope=getattr(args, "scope", None),
     )
 
     exit_code, message = migration_report_command(options)
@@ -861,6 +894,7 @@ def _cmd_migrate_convenience(args) -> int:
         force=args.force,
         quiet=args.quiet,
         json_output=args.json,
+        scope=getattr(args, "scope", None),
     )
 
     exit_code, message = migrate_convenience_command(options)
@@ -926,6 +960,7 @@ def _cmd_promote(args) -> int:
         all_ready=args.all_ready,
         quiet=args.quiet,
         json_output=args.json,
+        scope=getattr(args, "scope", None),
     )
     exit_code, message = promote_command(options)
     return exit_code
@@ -945,6 +980,7 @@ def _cmd_query(args) -> int:
         directory=args.dir,
         quiet=args.quiet,
         json_output=args.json,
+        scope=getattr(args, "scope", None),
     )
     exit_code, message = query_command(options)
     return exit_code
@@ -960,6 +996,7 @@ def _cmd_verify(args) -> int:
         date=args.date,
         quiet=args.quiet,
         json_output=args.json,
+        scope=getattr(args, "scope", None),
     )
     exit_code, message = verify_command(options)
     return exit_code
@@ -975,6 +1012,7 @@ def _cmd_scaffold(args) -> int:
         dry_run=not args.apply,  # Default to dry-run
         quiet=args.quiet,
         json_output=args.json,
+        scope=getattr(args, "scope", None),
     )
     exit_code, message = scaffold_command(options)
     return exit_code

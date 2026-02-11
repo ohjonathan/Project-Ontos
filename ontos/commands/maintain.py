@@ -19,7 +19,8 @@ from ontos.core.config import OntosConfig
 from ontos.core.curation import CurationLevel, detect_curation_level
 from ontos.core.graph import build_graph
 from ontos.io.config import load_project_config
-from ontos.io.files import find_project_root, scan_documents
+from ontos.io.files import find_project_root
+from ontos.io.scan_scope import build_scope_roots, collect_scoped_documents, resolve_scan_scope
 from ontos.ui.output import OutputHandler
 
 STATUS_SUCCESS = "success"
@@ -36,6 +37,7 @@ class MaintainOptions:
     skip: List[str] = field(default_factory=list)
     quiet: bool = False
     json_output: bool = False
+    scope: Optional[str] = None
 
 
 @dataclass
@@ -229,16 +231,20 @@ def _condition_agents_stale(ctx: MaintainContext) -> Tuple[bool, str]:
 
 
 def _scan_dirs(ctx: MaintainContext) -> List[Path]:
-    scan_dirs = [ctx.repo_root / ctx.config.paths.docs_dir]
-    scan_dirs.extend(ctx.repo_root / p for p in ctx.config.scanning.scan_paths)
-    return scan_dirs
+    scope = resolve_scan_scope(ctx.options.scope, ctx.config.scanning.default_scope)
+    return build_scope_roots(ctx.repo_root, ctx.config, scope)
 
 
 def _scan_docs(ctx: MaintainContext) -> List[Path]:
-    skip_patterns = list(ctx.config.scanning.skip_patterns)
     context_map = (ctx.repo_root / ctx.config.paths.context_map).resolve()
-    skip_patterns.append(str(context_map))
-    return scan_documents(_scan_dirs(ctx), skip_patterns=skip_patterns)
+    scope = resolve_scan_scope(ctx.options.scope, ctx.config.scanning.default_scope)
+    return collect_scoped_documents(
+        ctx.repo_root,
+        ctx.config,
+        scope,
+        base_skip_patterns=list(ctx.config.scanning.skip_patterns),
+        extra_skip_patterns=[str(context_map)],
+    )
 
 
 def _load_docs_for_graph(ctx: MaintainContext) -> "DocumentLoadResult":
@@ -312,6 +318,7 @@ def _task_regenerate_map(ctx: MaintainContext) -> TaskResult:
         MapOptions(
             quiet=True,
             json_output=False,
+            scope=ctx.options.scope,
         )
     )
     if exit_code == 0:
@@ -334,6 +341,7 @@ def _task_health_check(ctx: MaintainContext) -> TaskResult:
         DoctorOptions(
             verbose=ctx.options.verbose,
             json_output=False,
+            scope=ctx.options.scope,
         )
     )
 

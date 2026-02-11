@@ -7,7 +7,9 @@ from typing import List, Optional, Tuple
 from ontos.core.curation import create_scaffold, load_ontosignore, should_ignore
 from ontos.core.schema import serialize_frontmatter
 from ontos.core.context import SessionContext
+from ontos.io.config import load_project_config
 from ontos.io.files import find_project_root, scan_documents, load_documents, load_frontmatter
+from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
 from ontos.io.yaml import parse_frontmatter_content
 from ontos.ui.output import OutputHandler
 
@@ -29,9 +31,14 @@ class ScaffoldOptions:
     dry_run: bool = True
     quiet: bool = False
     json_output: bool = False
+    scope: Optional[str] = None
 
 
-def find_untagged_files(paths: Optional[List[Path]] = None, root: Optional[Path] = None) -> List[Path]:
+def find_untagged_files(
+    paths: Optional[List[Path]] = None,
+    root: Optional[Path] = None,
+    scope: Optional[str] = None,
+) -> List[Path]:
     """Find markdown files without valid frontmatter.
 
     Args:
@@ -55,9 +62,16 @@ def find_untagged_files(paths: Optional[List[Path]] = None, root: Optional[Path]
         # Deduplicate and sort
         files = sorted(list(set(search_paths)))
     else:
-        # Default scan from root
+        # Default scan from configured scope
+        config = load_project_config(repo_root=root)
+        effective_scope = resolve_scan_scope(scope, config.scanning.default_scope)
         ignore_patterns = load_ontosignore(root)
-        files = scan_documents([root], skip_patterns=ignore_patterns)
+        files = collect_scoped_documents(
+            root,
+            config,
+            effective_scope,
+            base_skip_patterns=ignore_patterns,
+        )
 
     load_result = load_documents(files, parse_frontmatter_content)
     if load_result.has_fatal_errors:
@@ -137,18 +151,19 @@ def scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
 
     # 1. Find untagged files
     root = find_project_root()
-    from ontos.io.config import load_project_config
     config = load_project_config(repo_root=root)
-    
-    docs_dir = root / config.paths.docs_dir
-    logs_dir = root / config.paths.logs_dir
-    scan_dirs = [d for d in [docs_dir, logs_dir] if d.exists()]
+    effective_scope = resolve_scan_scope(options.scope, config.scanning.default_scope)
     
     ignore_patterns = load_ontosignore(root)
     # Explicitly exclude archives and tmp to avoid duplicate ID noise
     ignore_patterns.extend(["**/archive/**", "**/tmp/**", "archive/*", ".ontos-internal/archive/*", ".ontos-internal/tmp/*"])
     
-    all_files = scan_documents(scan_dirs, skip_patterns=ignore_patterns) or []
+    all_files = collect_scoped_documents(
+        root,
+        config,
+        effective_scope,
+        base_skip_patterns=ignore_patterns,
+    ) or []
     load_result = load_documents(all_files, parse_frontmatter_content)
     
     if load_result.has_fatal_errors:
@@ -170,7 +185,7 @@ def scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
     # Check specifically for duplicates of paths we are trying to scaffold?
     # Actually, scan_documents already picked them up.
 
-    untagged = find_untagged_files(options.paths)
+    untagged = find_untagged_files(options.paths, scope=options.scope)
     if not untagged:
         if not options.quiet:
             output.success("No files need scaffolding")

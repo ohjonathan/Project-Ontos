@@ -28,6 +28,7 @@ class AgentsOptions:
     force: bool = False
     format: str = "agents"  # agents|cursor
     all_formats: bool = False
+    scope: Optional[str] = None
 
 
 AGENTS_PROTOCOL_CONFIG = InstructionProtocolConfig(
@@ -101,7 +102,7 @@ def find_repo_root() -> Optional[Path]:
     return None
 
 
-def gather_stats(repo_root: Path) -> Dict[str, str]:
+def gather_stats(repo_root: Path, scope: Optional[str] = None) -> Dict[str, str]:
     """
     Gather project stats for template.
 
@@ -117,44 +118,40 @@ def gather_stats(repo_root: Path) -> Dict[str, str]:
     }
 
     try:
-        # Load config to find docs directory
+        # Load config to find docs and logs directories.
         config_path = repo_root / ".ontos.toml"
-        docs_dir = repo_root / ".ontos-internal"  # Default
-        logs_dir = repo_root / ".ontos-internal" / "logs"
+        docs_dir = repo_root / "docs"
+        logs_dir = repo_root / "docs" / "logs"
         context_map = repo_root / "Ontos_Context_Map.md"
 
+        skip_patterns = []
         if config_path.exists():
             try:
                 from ontos.io.config import load_project_config
-                config = load_project_config()
+                from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
+
+                config = load_project_config(repo_root=repo_root)
                 docs_dir = repo_root / config.paths.docs_dir
                 logs_dir = repo_root / config.paths.logs_dir
                 context_map = repo_root / config.paths.context_map
+                skip_patterns = config.scanning.skip_patterns
+
+                effective_scope = resolve_scan_scope(scope, config.scanning.default_scope)
+                doc_paths = collect_scoped_documents(
+                    repo_root,
+                    config,
+                    effective_scope,
+                    base_skip_patterns=skip_patterns,
+                )
             except Exception:
-                pass  # Keep defaults
+                doc_paths = []
+        else:
+            doc_paths = []
 
-        # Count .md files (cap at 5000)
-        from ontos.io.files import scan_documents
-        skip_patterns = []
-        if 'config' in locals() and hasattr(config, 'scanning'):
-            skip_patterns = config.scanning.skip_patterns
-
-        # X-M1: Build explicit scan roots list to avoid full repo scan
-        scan_dirs = []
-        if docs_dir.exists():
-            scan_dirs.append(docs_dir)
-        if logs_dir.exists() and logs_dir != docs_dir:
-            scan_dirs.append(logs_dir)
-        
-        # Include archive logs if present
-        archive_logs = repo_root / ".ontos-internal" / "archive" / "logs"
-        if archive_logs.exists():
-            scan_dirs.append(archive_logs)
-
-        doc_paths = scan_documents(
-            scan_dirs,
-            skip_patterns=skip_patterns
-        )
+        if not doc_paths and docs_dir.exists():
+            # Fallback for repos without config (legacy behavior).
+            from ontos.io.files import scan_documents
+            doc_paths = scan_documents([docs_dir], skip_patterns=skip_patterns)
         count = len(doc_paths)
         if count >= 5000:
             stats["doc_count"] = "5000+"
@@ -208,10 +205,10 @@ def gather_stats(repo_root: Path) -> Dict[str, str]:
     return stats
 
 
-def generate_agents_content(existing_content: Optional[str] = None) -> str:
+def generate_agents_content(existing_content: Optional[str] = None, scope: Optional[str] = None) -> str:
     """Generate AGENTS.md content with stats."""
     repo_root = find_repo_root()
-    stats = gather_stats(repo_root)
+    stats = gather_stats(repo_root, scope=scope)
 
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
@@ -364,7 +361,7 @@ def agents_command(options: AgentsOptions) -> Tuple[int, str]:
                 existing_content = agents_path.read_text(encoding='utf-8')
                 
             agents_path.parent.mkdir(parents=True, exist_ok=True)
-            content = generate_agents_content(existing_content)
+            content = generate_agents_content(existing_content, scope=options.scope)
             agents_path.write_text(content, encoding='utf-8')
             messages.append(f"Created {agents_path}")
         except Exception as e:
@@ -391,7 +388,7 @@ def agents_command(options: AgentsOptions) -> Tuple[int, str]:
                 if existing_agents_path.exists():
                     existing_content = existing_agents_path.read_text(encoding='utf-8')
                 
-                agents_content = generate_agents_content(existing_content)
+                agents_content = generate_agents_content(existing_content, scope=options.scope)
                 cursor_content = transform_to_cursorrules(agents_content)
                 cursor_path.write_text(cursor_content, encoding='utf-8')
                 messages.append(f"Created {cursor_path}")

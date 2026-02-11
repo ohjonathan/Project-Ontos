@@ -96,7 +96,7 @@ def _prompt_scaffold(project_root: Path, config, options: InitOptions):
     # Detect untagged files in ENTIRE repo (X-H1)
     try:
         from ontos.commands.scaffold import find_untagged_files
-        all_untagged = find_untagged_files(root=project_root)
+        all_untagged = find_untagged_files(paths=[project_root], root=project_root)
     except Exception:
         return None
 

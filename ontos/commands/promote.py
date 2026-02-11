@@ -15,7 +15,9 @@ from ontos.core.curation import (
     level_marker,
 )
 from ontos.core.context import SessionContext
-from ontos.io.files import find_project_root, scan_documents, load_documents, load_frontmatter
+from ontos.io.config import load_project_config
+from ontos.io.files import find_project_root, load_documents, load_frontmatter
+from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
 from ontos.io.yaml import parse_frontmatter_content
 from ontos.ui.output import OutputHandler
 
@@ -28,6 +30,7 @@ class PromoteOptions:
     all_ready: bool = False
     quiet: bool = False
     json_output: bool = False
+    scope: Optional[str] = None
 
 
 def fuzzy_match_ids(query: str, all_ids: List[str]) -> List[str]:
@@ -155,14 +158,17 @@ def promote_command(options: PromoteOptions) -> Tuple[int, str]:
     if options.files:
         files = [root / f if not f.is_absolute() else f for f in options.files]
     else:
-        # Scan all documents
-        dirs = [root / d for d in ['docs', '.ontos-internal'] if (root / d).exists()]
-        if not dirs:
-            dirs = [root]
+        # Scan by configured scope.
+        config = load_project_config(repo_root=root)
+        effective_scope = resolve_scan_scope(options.scope, config.scanning.default_scope)
         from ontos.core.curation import load_ontosignore
         ignore_patterns = load_ontosignore(root)
-        files = scan_documents(dirs, skip_patterns=ignore_patterns)
-        files = [f for f in files if f.suffix == ".md"]
+        files = collect_scoped_documents(
+            root,
+            config,
+            effective_scope,
+            base_skip_patterns=ignore_patterns,
+        )
 
     # 2. Extract info and filter promotable using canonical loader
     load_result = load_documents(files, parse_frontmatter_content)

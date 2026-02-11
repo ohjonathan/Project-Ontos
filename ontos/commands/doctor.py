@@ -28,6 +28,7 @@ class DoctorOptions:
     """Configuration for doctor command."""
     verbose: bool = False
     json_output: bool = False
+    scope: Optional[str] = None
 
 
 @dataclass
@@ -208,29 +209,48 @@ def check_python_version() -> CheckResult:
         )
 
 
-def check_docs_directory() -> CheckResult:
+def check_docs_directory(scope: Optional[str] = None) -> CheckResult:
     """Check 4: Docs directory exists and contains .md files."""
     try:
+        from ontos.io.files import find_project_root
         from ontos.io.config import load_project_config
-        config = load_project_config()
-        docs_dir = Path.cwd() / config.paths.docs_dir
+        from ontos.io.scan_scope import ScanScope, collect_scoped_documents, resolve_scan_scope
+
+        repo_root = find_project_root()
+        config = load_project_config(repo_root=repo_root)
+        effective_scope = resolve_scan_scope(scope, config.scanning.default_scope)
+        docs_dir = repo_root / config.paths.docs_dir
+
+        if effective_scope == ScanScope.DOCS and not docs_dir.exists():
+            return CheckResult(
+                name="docs_directory",
+                status="fail",
+                message=f"Docs directory not found: {docs_dir}",
+                details="Create the docs directory or update .ontos.toml"
+            )
+
+        md_files = collect_scoped_documents(
+            repo_root,
+            config,
+            effective_scope,
+            base_skip_patterns=config.scanning.skip_patterns,
+        )
     except Exception:
         docs_dir = Path.cwd() / "docs"
+        if not docs_dir.exists():
+            return CheckResult(
+                name="docs_directory",
+                status="fail",
+                message=f"Docs directory not found: {docs_dir}",
+                details="Create the docs directory or update .ontos.toml"
+            )
+        md_files = list(docs_dir.rglob("*.md"))
 
-    if not docs_dir.exists():
-        return CheckResult(
-            name="docs_directory",
-            status="fail",
-            message=f"Docs directory not found: {docs_dir}",
-            details="Create the docs directory or update .ontos.toml"
-        )
-
-    md_files = list(docs_dir.rglob("*.md"))
     if not md_files:
         return CheckResult(
             name="docs_directory",
             status="warn",
-            message=f"No .md files in {docs_dir}",
+            message=f"No .md files in selected scope ({scope or 'docs'})",
             details="Add documentation files to track"
         )
 
@@ -282,21 +302,31 @@ def check_context_map() -> CheckResult:
         )
 
 
-def check_validation() -> CheckResult:
+def check_validation(scope: Optional[str] = None) -> CheckResult:
     """Check 6: No validation errors in current documents."""
     try:
+        from ontos.io.files import find_project_root
         from ontos.io.config import load_project_config
-        config = load_project_config()
-        docs_dir = Path.cwd() / config.paths.docs_dir
+        from ontos.io.scan_scope import ScanScope, collect_scoped_documents, resolve_scan_scope
 
-        if not docs_dir.exists():
+        repo_root = find_project_root()
+        config = load_project_config(repo_root=repo_root)
+        effective_scope = resolve_scan_scope(scope, config.scanning.default_scope)
+        docs_dir = repo_root / config.paths.docs_dir
+
+        if effective_scope == ScanScope.DOCS and not docs_dir.exists():
             return CheckResult(
                 name="validation",
                 status="warn",
                 message="Cannot validate (no docs directory)"
             )
 
-        md_files = list(docs_dir.rglob("*.md"))
+        md_files = collect_scoped_documents(
+            repo_root,
+            config,
+            effective_scope,
+            base_skip_patterns=config.scanning.skip_patterns,
+        )
         issues = 0
 
         for md_file in md_files[:50]:  # Check first 50 to avoid slowness
@@ -541,9 +571,9 @@ def doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
         check_configuration,
         check_git_hooks,
         check_python_version,
-        check_docs_directory,
+        lambda: check_docs_directory(options.scope),
         check_context_map,
-        check_validation,
+        lambda: check_validation(options.scope),
         check_cli_availability,
         check_agents_staleness,
         check_environment_manifests,

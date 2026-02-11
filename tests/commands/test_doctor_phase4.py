@@ -256,3 +256,22 @@ class TestCheckAgentsStaleness:
         assert result.status == "warn"
         assert "no source files" in result.message.lower()
 
+
+def test_check_docs_directory_scope_library_includes_internal(tmp_path, monkeypatch):
+    """check_docs_directory should include .ontos-internal docs when scope=library."""
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "a.md").write_text("---\nid: a\ntype: atom\n---\n")
+    (tmp_path / ".ontos-internal").mkdir()
+    (tmp_path / ".ontos-internal" / "b.md").write_text("---\nid: b\ntype: atom\n---\n")
+
+    from ontos.commands.doctor import check_docs_directory
+
+    docs_result = check_docs_directory()
+    library_result = check_docs_directory("library")
+
+    assert docs_result.status == "pass"
+    assert library_result.status == "pass"
+    assert "1 documents" in docs_result.message
+    assert "2 documents" in library_result.message
