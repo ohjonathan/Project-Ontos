@@ -1,29 +1,35 @@
-"""Regression test for consolidate root initialization."""
+import subprocess
+import sys
+import os
+from pathlib import Path
 
-from ontos.commands import consolidate as consolidate_module
-
-
-def test_consolidate_dry_run_uses_configured_logs_dir(tmp_path, monkeypatch):
-    """consolidate_command should honor get_logs_dir() rather than hardcoded paths."""
-    project_root = tmp_path / "project"
+def test_consolidate_runtime_root_resolution(tmp_path):
+    """Regression test: consolidate must use runtime project root, not package root."""
+    # Setup temp project
+    project_root = tmp_path / "my_project"
     project_root.mkdir()
-    (project_root / ".ontos").mkdir()
-
-    logs_dir = project_root / "custom_logs"
-    logs_dir.mkdir()
+    # Create .ontos.toml to mark as project root
+    (project_root / ".ontos.toml").write_text("[project]\nname = 'test'\n[paths]\ndocs_dir = 'docs'\nlogs_dir = 'docs/logs'\n")
+    
+    # Create logs
+    logs_dir = project_root / "docs" / "logs"
+    logs_dir.mkdir(parents=True)
     (logs_dir / "2020-01-01-test.md").write_text(
         "---\n"
         "id: log_test\n"
+        "type: log\n"
         "event_type: chore\n"
         "impacts: []\n"
         "---\n"
         "## Goal\n"
-        "Test log\n",
+        "Test log content\n",
         encoding="utf-8",
     )
-
-    archive_dir = project_root / "archive"
-    history_file = project_root / "decision_history.md"
+    
+    # Create decision history in the local project
+    strategy_dir = project_root / "docs" / "strategy"
+    strategy_dir.mkdir(parents=True)
+    history_file = strategy_dir / "decision_history.md"
     history_file.write_text(
         "# Decision History\n\n"
         "## History Ledger\n\n"
@@ -32,20 +38,22 @@ def test_consolidate_dry_run_uses_configured_logs_dir(tmp_path, monkeypatch):
         encoding="utf-8",
     )
 
-    monkeypatch.chdir(project_root)
-    monkeypatch.setattr(consolidate_module, "get_logs_dir", lambda: str(logs_dir))
-    monkeypatch.setattr(consolidate_module, "get_archive_logs_dir", lambda: str(archive_dir))
-    monkeypatch.setattr(consolidate_module, "get_decision_history_path", lambda: str(history_file))
-
-    exit_code, message = consolidate_module.consolidate_command(
-        consolidate_module.ConsolidateOptions(
-            by_age=True,
-            days=0,
-            dry_run=True,
-            all=True,
-            quiet=True,
-        )
+    # Run command via subprocess to ensure it discovers project_root at runtime
+    # and doesn't rely on package-anchored PROJECT_ROOT for the command logic.
+    env = os.environ.copy()
+    env["PYTHONPATH"] = os.getcwd() # Ensure ontos package is findable
+    
+    result = subprocess.run(
+        [sys.executable, "-m", "ontos.cli", "consolidate", "--dry-run", "--all", "--by-age", "--days", "0"],
+        cwd=str(project_root),
+        capture_output=True,
+        text=True,
+        env=env
     )
 
-    assert exit_code == 0
-    assert message == "Would consolidate 1 logs"
+    # Verification
+    assert result.returncode == 0
+    assert "log_test" in result.stdout
+    assert "Would consolidate 1 log(s)" in result.stdout
+    # Ensure it didn't crash searching for logs in the package root
+    assert "Document load failed" not in result.stderr

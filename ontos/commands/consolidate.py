@@ -8,11 +8,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-from ontos.core.paths import (
-    get_logs_dir,
-    get_archive_logs_dir,
-    get_decision_history_path,
-)
 from ontos.core.context import SessionContext
 from ontos.io.files import find_project_root, scan_documents, load_documents, load_frontmatter
 from ontos.io.yaml import parse_frontmatter_content
@@ -33,9 +28,8 @@ class ConsolidateOptions:
     json_output: bool = False
 
 
-def find_logs_to_consolidate(options: ConsolidateOptions, load_result=None) -> List[Tuple[Path, str, dict]]:
+def find_logs_to_consolidate(options: ConsolidateOptions, logs_dir: Path, load_result=None) -> List[Tuple[Path, str, dict]]:
     """Find logs to consolidate based on count or age."""
-    logs_dir = Path(get_logs_dir())
     if not logs_dir.exists():
         return []
 
@@ -93,12 +87,12 @@ def append_to_decision_history(
     event_type: str,
     summary: str,
     impacts: List[str],
-    archive_path: str,
+    history_path: Path,
     ctx: SessionContext,
     output: OutputHandler
 ) -> bool:
     """Append entry to the History Ledger table in decision_history.md."""
-    history_file = Path(get_decision_history_path())
+    history_file = history_path
     if not history_file.exists():
         output.error(f"{history_file} not found.")
         return False
@@ -159,7 +153,44 @@ def consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
     """Execute consolidate command."""
     root = find_project_root()
     output = OutputHandler(quiet=options.quiet)
-    logs_dir = Path(get_logs_dir())
+    # Resolve paths relative to runtime project root
+    from ontos.io.config import load_project_config
+    if (root / '.ontos-internal').exists():
+        # Contributor mode
+        logs_dir = root / ".ontos-internal" / "logs"
+        archive_logs_dir = root / ".ontos-internal" / "archive" / "logs"
+        decision_history_path = root / ".ontos-internal" / "reference" / "decision_history.md"
+    else:
+        # User mode
+        config = load_project_config(repo_root=root)
+        docs_dir = root / config.paths.docs_dir
+        
+        # logs_dir
+        if Path(config.paths.logs_dir).is_absolute():
+            logs_dir = Path(config.paths.logs_dir)
+        else:
+            logs_dir = root / config.paths.logs_dir
+            
+        # archive_logs_dir (with fallback)
+        new_archive_path = docs_dir / "archive" / "logs"
+        old_archive_path = docs_dir / "archive"
+        if new_archive_path.exists():
+            archive_logs_dir = new_archive_path
+        elif old_archive_path.exists():
+            archive_logs_dir = old_archive_path
+        else:
+            archive_logs_dir = new_archive_path
+            
+        # decision_history_path (with fallback)
+        new_history_path = docs_dir / "strategy" / "decision_history.md"
+        old_history_path = docs_dir / "decision_history.md"
+        if new_history_path.exists():
+            decision_history_path = new_history_path
+        elif old_history_path.exists():
+            decision_history_path = old_history_path
+        else:
+            decision_history_path = new_history_path
+
     load_result = None
     if logs_dir.exists():
         load_result = load_documents(list(logs_dir.glob("*.md")), parse_frontmatter_content)
@@ -169,7 +200,7 @@ def consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
                     output.error(issue.message)
             return 1, "Document load failed"
             
-    logs_to_consolidate = find_logs_to_consolidate(options, load_result=load_result)
+    logs_to_consolidate = find_logs_to_consolidate(options, logs_dir, load_result=load_result)
     if not logs_to_consolidate:
         if not options.quiet:
             output.success("Nothing to consolidate.")
@@ -179,7 +210,7 @@ def consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
     
     ctx = SessionContext.from_repo(root)
     consolidated_count = 0
-    archive_dir = Path(get_archive_logs_dir())
+    archive_dir = archive_logs_dir
     
     for path, doc_id, fm in logs_to_consolidate:
         date_str = path.name[:10]
@@ -237,7 +268,7 @@ def consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
             # For parity, we'll use shutil.move.
             shutil.move(str(path), str(new_path))
             
-            if append_to_decision_history(date_str, slug, event_type, summary, impacts, str(rel_archive_path), ctx, output):
+            if append_to_decision_history(date_str, slug, event_type, summary, impacts, str(rel_archive_path), decision_history_path, ctx, output):
                 output.success("Archived and recorded in decision_history.md")
                 consolidated_count += 1
             else:
