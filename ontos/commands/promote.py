@@ -166,15 +166,15 @@ def promote_command(options: PromoteOptions) -> Tuple[int, str]:
 
     # 2. Extract info and filter promotable using canonical loader
     load_result = load_documents(files, parse_frontmatter_content)
-    if load_result.has_fatal_errors:
+    if load_result.has_fatal_errors or load_result.duplicate_ids:
         fatal = False
         for issue in load_result.issues:
             if issue.code in {"parse_error", "io_error"}:
                 output.error(issue.message)
                 fatal = True
             elif issue.code == "duplicate_id":
-                # Only fatal if it impacts the target paths or we're doing a global scan
-                output.warning(issue.message)
+                output.error(issue.message)
+                fatal = True
         
         if fatal:
             return 1, "Document load failed"

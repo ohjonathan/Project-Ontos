@@ -44,3 +44,23 @@ def test_promote_check_parity(tmp_path):
     assert "Found 1 document" in result.stdout
     assert "scaffold_doc" in result.stdout
     assert "[L0]" in result.stdout
+
+def test_promote_fails_on_duplicates(tmp_path):
+    """VUL-03: promote command must fail on duplicate IDs."""
+    (tmp_path / ".ontos").mkdir()
+    (tmp_path / "doc1.md").write_text("---\nid: collision\ntype: atom\n---\n")
+    (tmp_path / "doc2.md").write_text("---\nid: collision\ntype: atom\n---\n")
+    
+    env = os.environ.copy()
+    env["PYTHONPATH"] = os.getcwd()
+    
+    result = subprocess.run(
+        [sys.executable, "-m", "ontos.cli", "promote", "--check"],
+        capture_output=True,
+        text=True,
+        env=env,
+        cwd=str(tmp_path)
+    )
+    
+    assert result.returncode != 0
+    assert "Duplicate ID 'collision' found" in result.stderr

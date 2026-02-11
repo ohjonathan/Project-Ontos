@@ -1,7 +1,7 @@
 ---
 type: generated
 generator: ontos_generate_context_map
-generated: "2026-02-11 05:49:55 UTC"
+generated: "2026-02-11 06:03:59 UTC"
 mode: Contributor
 scanned: .ontos-internal
 ---
@@ -10,7 +10,7 @@ scanned: .ontos-internal
 > When you run `ontos map` in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2026-02-11 00:49:55
+Generated on: 2026-02-11 01:03:59
 Scanned Directory: `/Users/jonathanoh/Dev/Ontos-dev/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -487,79 +487,79 @@ Scanned Directory: `/Users/jonathanoh/Dev/Ontos-dev/.ontos-internal, docs`
   Fix: Add a document with `id: v3_1_0_spec_review_gpt5` or remove it from depends_on
 - [BROKEN LINK] **v3_1_0_track_b_pr_review_chief_architect** (/Users/jonathanoh/Dev/Ontos-dev/.ontos-internal/strategy/v3.1/v3_1_0_Track_B_PR_Review_Chief_Architect.md) references missing ID: `v3_1_0_track_b_implementation_prompt_antigravity`
   Fix: Add a document with `id: v3_1_0_track_b_implementation_prompt_antigravity` or remove it from depends_on
-- [ORPHAN] **phase3_implementation_spec_review_codex** (/Users/jonathanoh/Dev/Ontos-dev/.ontos-internal/strategy/v3.0/Phase3/Phase3-Implementation-Spec-Review-Codex.md) has no dependents
-  Fix: Add `phase3_implementation_spec_review_codex` to another document's depends_on, or delete if unused
 - [ORPHAN] **v3_1_0_track_a_code_review_consolidation** (/Users/jonathanoh/Dev/Ontos-dev/.ontos-internal/strategy/v3.1/v3_1_0_Track_A_Code_Review_Consolidation.md) has no dependents
   Fix: Add `v3_1_0_track_a_code_review_consolidation` to another document's depends_on, or delete if unused
-- [ORPHAN] **v3_1_0_track_a_final_approval_d6a** (/Users/jonathanoh/Dev/Ontos-dev/.ontos-internal/strategy/v3.1/v3_1_0_Track_A_Final_Approval_D6a.md) has no dependents
-  Fix: Add `v3_1_0_track_a_final_approval_d6a` to another document's depends_on, or delete if unused
-- [ORPHAN] **v323** (docs/releases/v3.2.3.md) has no dependents
-  Fix: Add `v323` to another document's depends_on, or delete if unused
-- [ORPHAN] **v3_1_0_chief_architect_response** (/Users/jonathanoh/Dev/Ontos-dev/.ontos-internal/strategy/v3.1/v3_1_0_Chief_Architect_Response.md) has no dependents
-  Fix: Add `v3_1_0_chief_architect_response` to another document's depends_on, or delete if unused
 - [ORPHAN] **v301** (docs/releases/v3.0.1.md) has no dependents
   Fix: Add `v301` to another document's depends_on, or delete if unused
+- [ORPHAN] **phase3_implementation_spec_review_codex** (/Users/jonathanoh/Dev/Ontos-dev/.ontos-internal/strategy/v3.0/Phase3/Phase3-Implementation-Spec-Review-Codex.md) has no dependents
+  Fix: Add `phase3_implementation_spec_review_codex` to another document's depends_on, or delete if unused
 - [ORPHAN] **migration_v2_to_v3** (docs/reference/Migration_v2_to_v3.md) has no dependents
   Fix: Add `migration_v2_to_v3` to another document's depends_on, or delete if unused
-- [ORPHAN] **v3_1_0_track_b_code_review_consolidation** (/Users/jonathanoh/Dev/Ontos-dev/.ontos-internal/strategy/v3.1/v3_1_0_Track_B_Code_Review_Consolidation.md) has no dependents
-  Fix: Add `v3_1_0_track_b_code_review_consolidation` to another document's depends_on, or delete if unused
 - [ORPHAN] **ontos_internal_tmp_readme** (/Users/jonathanoh/Dev/Ontos-dev/.ontos-internal/tmp/README.md) has no dependents
   Fix: Add `ontos_internal_tmp_readme` to another document's depends_on, or delete if unused
+- [ORPHAN] **v323** (docs/releases/v3.2.3.md) has no dependents
+  Fix: Add `v323` to another document's depends_on, or delete if unused
 - [ORPHAN] **proposals_naming_conventions** (/Users/jonathanoh/Dev/Ontos-dev/.ontos-internal/strategy/proposals/README.md) has no dependents
   Fix: Add `proposals_naming_conventions` to another document's depends_on, or delete if unused
-- [DEPTH] **v3_1_0_spec_review_consolidation** has dependency depth 10 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_3_release_plan** has dependency depth 10 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_2_2_maintain_command_proposal** has dependency depth 6 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_2_4_discovery_design_report** has dependency depth 6 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [ORPHAN] **v3_1_0_track_b_code_review_consolidation** (/Users/jonathanoh/Dev/Ontos-dev/.ontos-internal/strategy/v3.1/v3_1_0_Track_B_Code_Review_Consolidation.md) has no dependents
+  Fix: Add `v3_1_0_track_b_code_review_consolidation` to another document's depends_on, or delete if unused
+- [ORPHAN] **v3_1_0_track_a_final_approval_d6a** (/Users/jonathanoh/Dev/Ontos-dev/.ontos-internal/strategy/v3.1/v3_1_0_Track_A_Final_Approval_D6a.md) has no dependents
+  Fix: Add `v3_1_0_track_a_final_approval_d6a` to another document's depends_on, or delete if unused
+- [ORPHAN] **v3_1_0_chief_architect_response** (/Users/jonathanoh/Dev/Ontos-dev/.ontos-internal/strategy/v3.1/v3_1_0_Chief_Architect_Response.md) has no dependents
+  Fix: Add `v3_1_0_chief_architect_response` to another document's depends_on, or delete if unused
 - [DEPTH] **v3_1_0_sidecar_pattern** has dependency depth 6 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **v3_1_0_spec_review_claude** has dependency depth 9 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [DEPTH] **v3_1_0_track_a_ca_rulings_d3a** has dependency depth 10 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_final_decision_chief_architect** has dependency depth 7 (max: 5)
+- [DEPTH] **v3_3_release_plan** has dependency depth 10 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [DEPTH] **v3_2_4_prea_adversarial_review** has dependency depth 8 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **v3_3_track_a1_implementation_spec** has dependency depth 11 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **v3_3_merged_audit_findings** has dependency depth 9 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **v3_1_0_track_a_code_review_consolidation** has dependency depth 10 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **v3_1_0_track_a_implementation_prompt** has dependency depth 8 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **v3_1_0_final_decision_chief_architect** has dependency depth 7 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **v3_3_track_a1_alignment_review** has dependency depth 12 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [DEPTH] **v3_2_4_prea_consolidation** has dependency depth 9 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [DEPTH] **v3_3_track_a1_ca_crosscheck** has dependency depth 12 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_track_a_code_review_consolidation** has dependency depth 10 (max: 5)
+- [DEPTH] **v3_3_track_a1_review_consolidation_remediation** has dependency depth 13 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_track_a_final_approval_d6a** has dependency depth 11 (max: 5)
+- [DEPTH] **v3_1_0_implementation_spec** has dependency depth 6 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [DEPTH] **v3_2_4_prea_alignment_review** has dependency depth 8 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_3_track_a1_implementation_spec** has dependency depth 11 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_3_track_a1_review_consolidation_remediation** has dependency depth 13 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_audit_triage_chief_architect** has dependency depth 8 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_chief_architect_response** has dependency depth 11 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_3_track_a1_alignment_review** has dependency depth 12 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_research_review_chief_architect** has dependency depth 7 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [DEPTH] **v3_2_4_proposal_library_maintenance** has dependency depth 7 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_spec_review_claude** has dependency depth 9 (max: 5)
+- [DEPTH] **v3_2_4_discovery_design_report** has dependency depth 6 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [DEPTH] **v3_3_audit_architecture_claude_code** has dependency depth 8 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_3_merged_audit_findings** has dependency depth 9 (max: 5)
+- [DEPTH] **v3_1_0_track_a_pr_review_chief_architect** has dependency depth 9 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [DEPTH] **v3_3_track_a1_adversarial_review** has dependency depth 12 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_track_a_implementation_prompt** has dependency depth 8 (max: 5)
+- [DEPTH] **v3_2_2_maintain_command_proposal** has dependency depth 6 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_track_a_pr_review_chief_architect** has dependency depth 9 (max: 5)
+- [DEPTH] **v3_1_0_spec_review_consolidation** has dependency depth 10 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_implementation_spec** has dependency depth 6 (max: 5)
+- [DEPTH] **v3_1_0_audit_triage_chief_architect** has dependency depth 8 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **v3_1_0_research_review_chief_architect** has dependency depth 7 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **v3_1_0_track_a_final_approval_d6a** has dependency depth 11 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **v3_1_0_chief_architect_response** has dependency depth 11 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [ARCHITECTURE] **v3_2_backlog** (strategy) depends on **v3_1_0_track_b_final_approval_chief_architect** (approval)
   Fix: strategy should not depend on approval. Invert the dependency or change document types

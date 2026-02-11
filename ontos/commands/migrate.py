@@ -69,7 +69,7 @@ def migrate_command(options: MigrateOptions) -> Tuple[int, str]:
     files = [f for f in files if f.suffix == ".md"]
 
     load_result = load_documents(files, parse_frontmatter_content)
-    if load_result.has_fatal_errors:
+    if load_result.has_fatal_errors or load_result.duplicate_ids:
         for issue in load_result.issues:
             if issue.code in {"duplicate_id", "parse_error", "io_error"}:
                 output.error(issue.message)

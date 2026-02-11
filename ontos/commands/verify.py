@@ -35,7 +35,7 @@ def find_stale_documents_list() -> List[dict]:
     ignore_patterns = load_ontosignore(root)
     files = scan_documents([root], skip_patterns=ignore_patterns)
     load_result = load_documents(files, parse_frontmatter_content)
-    if load_result.has_fatal_errors:
+    if load_result.has_fatal_errors or load_result.duplicate_ids:
         return [] # Caller will handle empty and check if it needs to fail
     
     # Build ID to path mapping for staleness checker
@@ -150,7 +150,7 @@ def verify_all_interactive(verify_date: date, output: OutputHandler) -> int:
     files = scan_documents([root], skip_patterns=ignore_patterns)
     load_result = load_documents(files, parse_frontmatter_content)
     
-    if load_result.has_fatal_errors:
+    if load_result.has_fatal_errors or load_result.duplicate_ids:
         for issue in load_result.issues:
             if issue.code in {"duplicate_id", "parse_error", "io_error"}:
                 output.error(issue.message)
