@@ -2,7 +2,8 @@
 
 import pytest
 from pathlib import Path
-from ontos.core.snapshot import create_snapshot, SnapshotFilters, DocumentSnapshot
+from ontos.core.snapshot import SnapshotFilters, DocumentSnapshot
+from ontos.io.snapshot import create_snapshot
 
 
 class TestCreateSnapshot:

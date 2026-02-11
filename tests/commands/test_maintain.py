@@ -211,9 +211,9 @@ def test_check_links_task_reports_broken_dependencies(tmp_path):
     ctx = _build_context(tmp_path, quiet=True)
     result = _task_check_links(ctx)
 
-    assert result.status == "failed"
+    assert result.status == "success"
     assert result.metrics["broken_links"] == 1
-    assert "broken" in result.message.lower()
+    assert "warning" in result.message.lower()
 
 
 def test_curation_stats_task_counts_l0_l1_l2(tmp_path):

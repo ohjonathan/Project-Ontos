@@ -8,12 +8,43 @@ Phase 2 Decomposition - Created from Phase2-Implementation-Spec.md Section 4.7
 """
 
 import os
+import warnings
 from fnmatch import fnmatch
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple, Any
+from dataclasses import dataclass
 
 from ontos.core.types import DocumentType, DocumentStatus, DocumentData
+from ontos.core.cache import DocumentCache
+
+
+@dataclass
+class DocumentLoadIssue:
+    code: str  # parse_error | duplicate_id | invalid_enum | invalid_reference_type
+    path: Path
+    message: str
+    doc_id: Optional[str] = None
+    field: Optional[str] = None
+    value: Optional[Any] = None
+
+
+@dataclass
+class DocumentLoadResult:
+    documents: Dict[str, DocumentData]
+    issues: List[DocumentLoadIssue]
+    duplicate_ids: Dict[str, List[Path]]  # sorted; first path is canonical kept doc
+
+    @property
+    def has_errors(self) -> bool:
+        """True if any issues were found during loading."""
+        return len(self.issues) > 0
+
+    @property
+    def has_fatal_errors(self) -> bool:
+        """True if any fatal issues (parse/IO errors) were found. Duplicates are handled by commands."""
+        fatal_codes = {"parse_error", "io_error"}
+        return any(issue.code in fatal_codes for issue in self.issues)
 
 
 def find_project_root(start_path: Path = None) -> Path:
@@ -102,6 +133,131 @@ def read_document(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def load_frontmatter(
+    path: Path,
+    frontmatter_parser: Callable[[str], Tuple[Dict[str, Any], str]],
+    on_issue: Optional[Callable[[DocumentLoadIssue], None]] = None
+) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    """Load and return frontmatter and body from a file.
+
+    Args:
+        path: Path to document
+        frontmatter_parser: Function to parse frontmatter from content
+        on_issue: Optional callback for recording parse/IO issues
+
+    Returns:
+        Tuple of (frontmatter_dict, body_string). Returns (None, None) on parse/IO failure.
+    """
+    try:
+        content = path.read_text(encoding="utf-8")
+        return frontmatter_parser(content)
+    except (ValueError, UnicodeDecodeError) as exc:
+        issue = DocumentLoadIssue(
+            code="parse_error",
+            path=path,
+            message=f"Error parsing {path.name}: {exc}"
+        )
+    except OSError as exc:
+        issue = DocumentLoadIssue(
+            code="io_error",
+            path=path,
+            message=f"IO error reading {path.name}: {exc}"
+        )
+
+    if on_issue is not None:
+        on_issue(issue)
+    else:
+        warnings.warn(issue.message, RuntimeWarning, stacklevel=2)
+
+    # Align with load_documents contract: parse/IO failures are non-fatal.
+    return None, None
+
+
+def load_documents(
+    paths: List[Path],
+    frontmatter_parser: Callable[[str], Tuple[Dict[str, Any], str]],
+    cache: Optional[DocumentCache] = None
+) -> DocumentLoadResult:
+    """Load multiple documents with duplicate detection and error tracking.
+
+    Args:
+        paths: List of file paths to load
+        frontmatter_parser: Parser function (S4 contract)
+        cache: Optional DocumentCache for mtime-based optimization
+
+    Returns:
+        DocumentLoadResult containing docs, issues, and collision details
+    """
+    documents: Dict[str, DocumentData] = {}
+    issues: List[DocumentLoadIssue] = []
+    duplicate_ids: Dict[str, List[Path]] = {}
+    
+    # Determinism: paths processed in sorted order
+    sorted_paths = sorted(paths)
+    
+    for path in sorted_paths:
+        try:
+            doc = None
+            mtime = None
+            
+            if cache:
+                try:
+                    mtime = path.stat().st_mtime
+                    doc = cache.get(path, mtime)
+                except OSError:
+                    pass # Handled below by catch-all
+            
+            if doc is None:
+                # Lenient read (BOM stripping and leading lstrip for frontmatter detection)
+                raw_bytes = path.read_bytes()
+                if raw_bytes.startswith(b'\xef\xbb\xbf'):
+                    raw_bytes = raw_bytes[3:]
+                content = raw_bytes.decode('utf-8', errors='replace').lstrip()
+                
+                doc, doc_issues = load_document_from_content(path, content, frontmatter_parser)
+                issues.extend(doc_issues)
+                
+                if cache and mtime is not None:
+                    cache.set(path, doc, mtime)
+            
+            # Duplicate ID handling
+            if doc.id in documents:
+                # Collision detected
+                if doc.id not in duplicate_ids:
+                    duplicate_ids[doc.id] = [documents[doc.id].filepath]
+                duplicate_ids[doc.id].append(path)
+                
+                issues.append(DocumentLoadIssue(
+                    code="duplicate_id",
+                    path=path,
+                    message=f"Duplicate ID '{doc.id}' found in {path}. Keeping original from {documents[doc.id].filepath}.",
+                    doc_id=doc.id
+                ))
+                continue
+                
+            documents[doc.id] = doc
+            
+        except (ValueError, UnicodeDecodeError) as e:
+            # S4: parse failures skip with warning
+            issues.append(DocumentLoadIssue(
+                code="parse_error",
+                path=path,
+                message=f"Error parsing {path.name}: {e}"
+            ))
+        except OSError as e:
+            issues.append(DocumentLoadIssue(
+                code="io_error",
+                path=path,
+                message=f"IO error reading {path.name}: {e}"
+            ))
+            
+    return DocumentLoadResult(
+        documents=documents,
+        issues=issues,
+        duplicate_ids=duplicate_ids
+    )
+
+
 def load_document(
     path: Path,
     frontmatter_parser: Callable[[str], Tuple[Dict[str, Any], str]]
@@ -117,15 +273,19 @@ def load_document(
     Returns:
         DocumentData with normalized types
     """
-    content = path.read_text(encoding="utf-8")
-    return load_document_from_content(path, content, frontmatter_parser)
+    raw_bytes = path.read_bytes()
+    if raw_bytes.startswith(b'\xef\xbb\xbf'):
+        raw_bytes = raw_bytes[3:]
+    content = raw_bytes.decode('utf-8', errors='replace').lstrip()
+    doc, _ = load_document_from_content(path, content, frontmatter_parser)
+    return doc
 
 
 def load_document_from_content(
     path: Path,
     content: str,
     frontmatter_parser: Callable[[str], Tuple[Dict[str, Any], str]]
-) -> DocumentData:
+) -> Tuple[DocumentData, List[DocumentLoadIssue]]:
     """Load and normalize a document from provided content.
 
     Args:
@@ -134,50 +294,49 @@ def load_document_from_content(
         frontmatter_parser: Function to parse frontmatter from content
 
     Returns:
-        DocumentData with normalized types
+        Tuple of (DocumentData, List[DocumentLoadIssue])
     """
-    from ontos.core.frontmatter import normalize_tags, normalize_aliases
+    from ontos.core.frontmatter import (
+    normalize_depends_on, 
+    normalize_type, 
+    normalize_status, 
+    normalize_tags, 
+    normalize_aliases
+)
+    from ontos.core.staleness import normalize_describes
+    from ontos.core.cache import DocumentCache # This import is not used in this function, but kept as per instruction.
     
     fm, body = frontmatter_parser(content)
-    
-    doc_id = fm.get("id", path.stem)
+    issues: List[DocumentLoadIssue] = []
 
-    # Normalize strings to enums at this boundary
-    type_str = fm.get("type", "atom")
-    status_str = fm.get("status", "draft")
+    def report_warning(msg: str):
+        issues.append(DocumentLoadIssue(
+            code="invalid_reference_type",
+            path=path,
+            message=msg,
+            doc_id=fm.get('id', path.stem)
+        ))
 
-    # Handle unknown types gracefully
-    try:
-        doc_type = DocumentType(type_str)
-    except ValueError:
-        doc_type = DocumentType.ATOM
+    def report_enum_error(msg: str, val: Any, options: List[str]):
+        issues.append(DocumentLoadIssue(
+            code="invalid_enum",
+            path=path,
+            message=f"{msg}. Expected one of: {', '.join(options)}",
+            doc_id=fm.get('id', path.stem),
+            value=val
+        ))
 
-    try:
-        doc_status = DocumentStatus(status_str)
-    except ValueError:
-        import sys
-        print(f"Warning: Unknown status '{status_str}' in {path}, defaulting to 'draft'", file=sys.stderr)
-        doc_status = DocumentStatus.DRAFT
-
-    # Normalize tags and aliases
+    # Core fields (B1 Canonical Mapping)
+    doc_id = fm.get('id', path.stem)
+    doc_type = normalize_type(fm.get('type'), on_error=report_enum_error)
+    doc_status = normalize_status(fm.get('status'), on_error=report_enum_error)
+    depends_on = normalize_depends_on(fm.get('depends_on'), on_warning=report_warning)
+    impacts = normalize_depends_on(fm.get('impacts'), on_warning=report_warning)
     tags = normalize_tags(fm)
     aliases = normalize_aliases(fm, doc_id)
+    describes = normalize_describes(fm.get('describes'), on_warning=report_warning)
 
-    # Normalize depends_on to list
-    depends_on = fm.get("depends_on", [])
-    if depends_on is None:
-        depends_on = []
-    elif isinstance(depends_on, str):
-        depends_on = [depends_on]
-
-    # Normalize impacts to list
-    impacts = fm.get("impacts", [])
-    if impacts is None:
-        impacts = []
-    elif isinstance(impacts, str):
-        impacts = [impacts]
-
-    return DocumentData(
+    doc_data = DocumentData(
         id=doc_id,
         type=doc_type,
         status=doc_status,
@@ -188,7 +347,10 @@ def load_document_from_content(
         impacts=impacts,
         tags=tags,
         aliases=aliases,
+        describes=describes
     )
+    
+    return doc_data, issues
 
 
 def get_file_mtime(path: Path) -> Optional[datetime]:

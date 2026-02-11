@@ -43,6 +43,11 @@ class GenerateMapOptions:
     compact: CompactMode = CompactMode.OFF
 
 
+# Helper to handle string/enum duality for type/status fields
+def _val(item: Any) -> str:
+    return item.value if hasattr(item, "value") else str(item)
+
+
 def generate_context_map(
     docs: Dict[str, DocumentData],
     config: Dict[str, Any],
@@ -60,10 +65,24 @@ def generate_context_map(
     """
     options = options or GenerateMapOptions()
 
+    # Collect vocabulary for concepts validation (#42 / CC-16)
+    all_concepts = set()
+    for doc in docs.values():
+        concepts = doc.frontmatter.get("concepts")
+        if isinstance(concepts, list):
+            for c in concepts:
+                if isinstance(c, str):
+                    all_concepts.add(c)
+    
     # Run validation
     validator = ValidationOrchestrator(docs, {
         "max_dependency_depth": options.max_dependency_depth,
         "allowed_orphan_types": config.get("allowed_orphan_types", ["atom", "log"]),
+        "severity_map": {
+            "broken_link": "warning",
+            "concepts": "warning"
+        },
+        "known_concepts": all_concepts
     })
     result = validator.validate_all()
 
@@ -168,7 +187,7 @@ def _generate_tier1_summary(
 
     # Recent Activity (from logs, limit to 3)
     log_lines = ["### Recent Activity"]
-    log_docs = [d for d in docs.values() if d.type.value == "log" or str(d.type) == "log"]
+    log_docs = [d for d in docs.values() if _val(d.type) == "log"]
     
     # Sort by date frontmatter (falling back to ID)
     def log_sort_key(doc):
@@ -183,7 +202,7 @@ def _generate_tier1_summary(
         log_lines.append("| Log | Status | Summary |")
         log_lines.append("|-----|--------|---------|")
         for doc in log_docs_sorted:
-            status = doc.status.value if hasattr(doc.status, 'value') else str(doc.status)
+            status = doc.status.value
             summary = doc.frontmatter.get("summary", "No summary")
             # B3: Escape pipes and remove newlines in summary
             summary_escaped = _escape_markdown_table_cell(summary).replace("\n", " ")
@@ -372,8 +391,8 @@ def _generate_document_table(
     sorted_docs = sorted(docs.values(), key=lambda d: str(d.filepath))
 
     for doc in sorted_docs:
-        doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
-        doc_status = doc.status.value if hasattr(doc.status, 'value') else str(doc.status)
+        doc_type = _val(doc.type)
+        doc_status = _val(doc.status)
         # Escape special characters to prevent table breakage
         filepath = _escape_markdown_table_cell(_format_rel_path(doc.filepath, root_path))
         doc_id_link = _format_doc_link(doc.id, doc.filepath, obsidian_mode)
@@ -447,7 +466,7 @@ def _generate_timeline(docs: Dict[str, DocumentData]) -> str:
     
     # Filter to logs only
     logs = [doc for doc in docs.values() 
-            if (doc.type.value if hasattr(doc.type, 'value') else str(doc.type)) == "log"]
+            if doc.type.value == "log"]
     
     if not logs:
         lines.append("\nNo session logs found.")
@@ -495,7 +514,7 @@ def _generate_lint_section(docs: Dict[str, DocumentData], result: ValidationResu
     lint_issues = []
 
     for doc in docs.values():
-        doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
+        doc_type = _val(doc.type)
 
         # Check for empty impacts on logs
         if doc_type == "log":
@@ -538,8 +557,8 @@ def _generate_compact_output(docs: Dict[str, Any], mode: CompactMode) -> str:
 
     lines = []
     for doc_id, doc in sorted(docs.items()):
-        doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
-        doc_status = doc.status.value if hasattr(doc.status, 'value') else str(doc.status)
+        doc_type = _val(doc.type)
+        doc_status = _val(doc.status)
 
         if mode == CompactMode.RICH:
             summary = str(doc.frontmatter.get('summary', ''))
@@ -630,14 +649,13 @@ def matches_filter(doc: Any, filters: list) -> bool:
     import fnmatch
 
     for f in filters:
-        doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
-        doc_status = doc.status.value if hasattr(doc.status, 'value') else str(doc.status)
-
         if f.field == 'type':
-            if doc_type.lower() not in [v.lower() for v in f.values]:
+            doc_type_str = _val(doc.type)
+            if doc_type_str.lower() not in [v.lower() for v in f.values]:
                 return False
         elif f.field == 'status':
-            if doc_status.lower() not in [v.lower() for v in f.values]:
+            doc_status_str = _val(doc.status)
+            if doc_status_str.lower() not in [v.lower() for v in f.values]:
                 return False
         elif f.field == 'concept':
             concepts = doc.frontmatter.get('concepts', [])
@@ -676,10 +694,9 @@ def map_command(options: MapOptions) -> int:
     Returns:
         Exit code (0 for success, 1 for errors, 2 for warnings in strict mode)
     """
-    from ontos.io.files import find_project_root, scan_documents, load_document, load_document_from_content
+    from ontos.io.files import find_project_root, scan_documents, load_documents, DocumentLoadResult
     from ontos.io.config import load_project_config
     from ontos.io.yaml import parse_frontmatter_content
-    from ontos.io.obsidian import read_file_lenient
     from ontos.core.cache import DocumentCache
 
     # Find project root
@@ -713,32 +730,30 @@ def map_command(options: MapOptions) -> int:
     skip.append(str(output_path.resolve()))
     doc_paths = scan_documents(scan_dirs, skip_patterns=skip)
 
-    # Load documents with filter and cache
-    docs: Dict[str, DocumentData] = {}
+    # Load documents using canonical loader (#40, #10)
     cache = DocumentCache() if not options.no_cache else None
+    load_result: DocumentLoadResult = load_documents(
+        doc_paths, 
+        parse_frontmatter_content, 
+        cache=cache
+    )
+    
+    # Process load issues
+    for issue in load_result.issues:
+        label = "Error" if issue.code in {"duplicate_id", "parse_error", "io_error"} else "Warning"
+        if not options.quiet:
+            print(f"{label}: {issue.message}")
+
+    if load_result.has_fatal_errors or load_result.duplicate_ids:
+        return 1
+
+    # filter
     filters = parse_filter(options.filter_expr)
-
-    for path in doc_paths:
-        try:
-            mtime = path.stat().st_mtime
-            doc = None
-
-            if cache:
-                doc = cache.get(path, mtime)
-
-            if doc is None:
-                content = read_file_lenient(path)
-                doc = load_document_from_content(path, content, parse_frontmatter_content)
-                
-                if cache:
-                    cache.set(path, doc, mtime)
-
-            if matches_filter(doc, filters):
-                docs[doc.id] = doc
-
-        except Exception as e:
-            if not options.quiet:
-                print(f"Warning: Failed to load {path}: {e}")
+    docs = {
+        doc_id: doc 
+        for doc_id, doc in load_result.documents.items() 
+        if matches_filter(doc, filters)
+    }
 
     # Build config dict for generation
     is_contributor_mode = (project_root / ".ontos-internal").is_dir()

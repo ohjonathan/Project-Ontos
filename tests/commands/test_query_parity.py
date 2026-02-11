@@ -48,3 +48,23 @@ def test_query_health_parity(tmp_path):
     assert "kernel: 1" in result.stdout
     assert "atom: 1" in result.stdout
     assert "Connectivity: 100.0% reachable from kernel" in result.stdout
+
+
+def test_query_warns_on_duplicate_ids(tmp_path):
+    """VUL-03: query command warns on duplicates but exits successfully (0)."""
+    # Create two different files with same ID
+    (tmp_path / "doc1.md").write_text("---\nid: same_id\ntype: atom\nstatus: active\n---\nDoc 1")
+    (tmp_path / "doc2.md").write_text("---\nid: same_id\ntype: atom\nstatus: active\n---\nDoc 2")
+    
+    # Run native command
+    result = subprocess.run(
+        [sys.executable, "-m", "ontos.cli", "query", "--list-ids", "--dir", str(tmp_path)],
+        capture_output=True,
+        text=True,
+        env=os.environ.copy()
+    )
+    
+    assert result.returncode == 0
+    assert "Duplicate ID 'same_id' found" in result.stderr or "Duplicate ID 'same_id' found" in result.stdout
+    # Should still list the id once
+    assert "same_id (atom)" in result.stdout

@@ -13,6 +13,14 @@ from typing import Dict, List, Set, Optional, Tuple, Union
 
 from ontos.core.types import DocumentData, ValidationError, ValidationErrorType
 from ontos.core.suggestions import suggest_candidates_for_broken_ref
+ 
+# SEVERITY RATIONALE (v3.3 Track A1)
+# ---------------------------------
+# - ERROR (depends_on): Structural, defines the graph integrity.
+# - WARNING (impacts/describes): Informational, broken links don't corrupt traversal.
+DEPENDS_ON_SEVERITY_DEFAULT = "error"
+IMPACTS_SEVERITY_DEFAULT = "warning"
+DESCRIBES_SEVERITY_DEFAULT = "warning"
 
 
 @dataclass
@@ -41,23 +49,33 @@ class DependencyGraph:
             self.reverse_edges[dep].append(doc_id)
 
 
-def build_graph(docs: Dict[str, DocumentData]) -> Tuple[DependencyGraph, List[ValidationError]]:
+def build_graph(
+    docs: Dict[str, DocumentData],
+    severity_map: Optional[Dict[str, str]] = None
+) -> Tuple[DependencyGraph, List[ValidationError]]:
     """Build dependency graph from document dictionary.
 
     Args:
         docs: Dictionary mapping doc_id to DocumentData
+        severity_map: Optional mapping of error types to severities
 
     Returns:
         Tuple of (DependencyGraph, list of broken link errors)
     """
+    severity_map = severity_map or {}
     graph = DependencyGraph()
     errors = []
     existing_ids = set(docs.keys())
+    depends_on_severity = severity_map.get(
+        "depends_on",
+        severity_map.get("broken_link", DEPENDS_ON_SEVERITY_DEFAULT),
+    )
+    circular_severity = severity_map.get("circular", depends_on_severity)
 
     for doc_id, doc in docs.items():
         depends_on = doc.depends_on if hasattr(doc, 'depends_on') else []
         # Handle enum types
-        doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
+        doc_type = doc.type.value
         graph.add_node(doc_id, doc_type, str(doc.filepath), depends_on)
 
         # Check for broken links
@@ -75,9 +93,9 @@ def build_graph(docs: Dict[str, DocumentData]) -> Tuple[DependencyGraph, List[Va
                     error_type=ValidationErrorType.BROKEN_LINK,
                     doc_id=doc_id,
                     filepath=str(doc.filepath),
-                    message=f"Broken dependency: '{dep_id}' does not exist",
+                    message=f"Broken dependency: '{dep_id}' (declared in {doc_id}) does not exist",
                     fix_suggestion=fix_suggestion,
-                    severity="error"
+                    severity=circular_severity if dep_id == doc_id else depends_on_severity
                 ))
 
     return graph, errors

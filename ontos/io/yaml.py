@@ -45,7 +45,7 @@ def dump_yaml(data: Dict[str, Any], default_flow_style: bool = False) -> str:
 def parse_frontmatter_yaml(content: str) -> Optional[Dict[str, Any]]:
     """Parse YAML frontmatter from document content.
 
-    Extracts content between --- markers at the start of the document.
+    NON-CANONICAL internal-legacy API. Wraps parse_frontmatter_content.
 
     Args:
         content: Full document content with potential frontmatter
@@ -53,25 +53,8 @@ def parse_frontmatter_yaml(content: str) -> Optional[Dict[str, Any]]:
     Returns:
         Parsed frontmatter dict, or None if no valid frontmatter found
     """
-    if not content.startswith('---'):
-        return None
-
-    lines = content.split('\n')
-    end_idx = None
-
-    for i, line in enumerate(lines[1:], start=1):
-        if line.strip() == '---':
-            end_idx = i
-            break
-
-    if end_idx is None:
-        return None
-
-    yaml_content = '\n'.join(lines[1:end_idx])
-    try:
-        return parse_yaml(yaml_content)
-    except yaml.YAMLError:
-        return None
+    fm, _ = parse_frontmatter_content(content)
+    return fm if fm else None
 
 
 def parse_frontmatter_content(content: str) -> tuple:

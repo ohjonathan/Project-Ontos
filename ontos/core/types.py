@@ -17,14 +17,18 @@ from typing import Any, Dict, List, Optional, Set
 # RE-EXPORTS (consolidate existing types here)
 # =============================================================================
 
-# Re-export CurationLevel from its canonical location
-from ontos.core.curation import CurationLevel
+# CurationLevel moved here to prevent circular imports
+class CurationLevel(IntEnum):
+    """Document curation levels."""
+    SCAFFOLD = 0  # Auto-generated placeholder
+    STUB = 1      # User provides goal only
+    FULL = 2      # Complete Ontos document
 
 # =============================================================================
 # ENUMS (new)
 # =============================================================================
 
-class DocumentType(Enum):
+class DocumentType(str, Enum):
     """Document types in the Ontos ontology."""
     KERNEL = "kernel"
     STRATEGY = "strategy"
@@ -32,9 +36,11 @@ class DocumentType(Enum):
     ATOM = "atom"
     LOG = "log"
     REFERENCE = "reference"
+    CONCEPT = "concept"
+    UNKNOWN = "unknown"
 
 
-class DocumentStatus(Enum):
+class DocumentStatus(str, Enum):
     """Document lifecycle status."""
     DRAFT = "draft"
     ACTIVE = "active"
@@ -44,10 +50,12 @@ class DocumentStatus(Enum):
     SCAFFOLD = "scaffold"
     PENDING_CURATION = "pending_curation"
     IN_PROGRESS = "in_progress"
+    UNKNOWN = "unknown"
 
 
 class ValidationErrorType(Enum):
     """Categories of validation errors."""
+    DUPLICATE_ID = "duplicate_id"
     BROKEN_LINK = "broken_link"
     CYCLE = "cycle"
     ORPHAN = "orphan"
@@ -77,6 +85,7 @@ class DocumentData:
     impacts: List[str] = field(default_factory=list)
     tags: List[str] = field(default_factory=list)
     aliases: List[str] = field(default_factory=list)
+    describes: List[str] = field(default_factory=list)
 
 
 @dataclass

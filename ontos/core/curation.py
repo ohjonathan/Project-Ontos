@@ -15,11 +15,7 @@ from typing import Dict, List, Optional, Tuple, Any
 import re
 
 
-class CurationLevel(IntEnum):
-    """Document curation levels."""
-    SCAFFOLD = 0  # Auto-generated placeholder
-    STUB = 1      # User provides goal only
-    FULL = 2      # Complete Ontos document
+from ontos.core.types import CurationLevel
 
 
 @dataclass
@@ -168,6 +164,9 @@ def detect_curation_level(frontmatter: Dict[str, Any]) -> CurationLevel:
         >>> detect_curation_level({"id": "test", "type": "atom", "depends_on": ["x"]})
         <CurationLevel.FULL: 2>
     """
+    if not frontmatter:
+        return CurationLevel.SCAFFOLD
+        
     # Explicit level takes precedence
     if 'curation_level' in frontmatter:
         level = frontmatter['curation_level']

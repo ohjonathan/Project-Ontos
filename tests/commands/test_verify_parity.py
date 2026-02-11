@@ -55,3 +55,24 @@ Content""")
     # Check file content
     content = test_file.read_text()
     assert f"describes_verified: {today}" in content
+
+def test_verify_all_fails_on_duplicates(tmp_path):
+    """VUL-03: verify --all command must fail on duplicate IDs."""
+    (tmp_path / ".ontos").mkdir()
+    (tmp_path / "doc1.md").write_text("---\nid: collision\ntype: atom\n---\n")
+    (tmp_path / "doc2.md").write_text("---\nid: collision\ntype: atom\n---\n")
+    
+    env = os.environ.copy()
+    env["PYTHONPATH"] = os.getcwd()
+    
+    result = subprocess.run(
+        # We use --all to trigger the scan that calls load_documents
+        [sys.executable, "-m", "ontos.cli", "verify", "--all"],
+        capture_output=True,
+        text=True,
+        env=env,
+        cwd=str(tmp_path)
+    )
+    
+    assert result.returncode != 0
+    assert "Duplicate ID 'collision' found" in result.stderr

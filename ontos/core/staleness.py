@@ -21,7 +21,7 @@ The caller (commands layer) provides the IO callback.
 import os
 from datetime import date, datetime
 from enum import Enum
-from typing import Optional, Tuple, List, Dict, Callable
+from typing import Optional, Tuple, List, Dict, Callable, Any
 from pathlib import Path
 
 
@@ -126,11 +126,12 @@ def _fetch_last_modified(
     return (date.fromtimestamp(mtime), ModifiedSource.MTIME)
 
 
-def normalize_describes(value) -> List[str]:
+def normalize_describes(value: Any, on_warning: Optional[Callable[[str], None]] = None) -> List[str]:
     """Normalize describes field to a list of strings.
     
     Args:
         value: Raw value from YAML frontmatter.
+        on_warning: Optional callback for warning messages.
         
     Returns:
         List of described atom IDs (empty list if none).
@@ -138,9 +139,24 @@ def normalize_describes(value) -> List[str]:
     if value is None:
         return []
     if isinstance(value, str):
-        return [value] if value.strip() else []
+        stripped = value.strip()
+        return [stripped] if stripped else []
     if isinstance(value, list):
-        return [str(v) for v in value if v is not None and str(v).strip()]
+        results = []
+        for v in value:
+            if v is None:
+                continue
+            if isinstance(v, str):
+                stripped = v.strip()
+                if stripped:
+                    results.append(stripped)
+            else:
+                if on_warning:
+                    on_warning(f"Non-string member '{v}' in describes field dropped.")
+        return results
+    
+    if on_warning:
+        on_warning(f"Invalid type '{type(value).__name__}' for describes field - expected list or scalar.")
     return []
 
 

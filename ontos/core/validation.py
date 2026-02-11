@@ -21,33 +21,55 @@ from ontos.core.graph import (
     detect_cycles,
     detect_orphans,
     calculate_depths,
+    DEPENDS_ON_SEVERITY_DEFAULT,
+    IMPACTS_SEVERITY_DEFAULT,
+    DESCRIBES_SEVERITY_DEFAULT,
 )
+
+# SEVERITY RATIONALE (v3.3 Track A1)
+# ---------------------------------
+# - ERROR: Circular dependencies or duplicate IDs (breaking graph integrity).
+# - WARNING: Orphan documents, depth exceedance, or missing/invalid descriptive metadata.
+# - NOTE: depends_on is structural (error); impacts/describes are informational (warning).
+REFERENCE_SEVERITY_DEFAULT = {
+    "depends_on": DEPENDS_ON_SEVERITY_DEFAULT,
+    "impacts": IMPACTS_SEVERITY_DEFAULT,
+    "describes": DESCRIBES_SEVERITY_DEFAULT,
+    "circular": DEPENDS_ON_SEVERITY_DEFAULT,
+    "orphan": "warning",
+    "depth": "warning",
+    "schema": "warning",
+    "concepts": "warning"
+}
 
 
 def validate_describes_field(
     doc: DocumentData,
-    valid_targets: Set[str]
-) -> Optional[ValidationError]:
-    """Validate describes field references valid targets.
-
+    valid_targets: Set[str],
+    severity: str = DESCRIBES_SEVERITY_DEFAULT
+) -> List[ValidationError]:
+    """Validate describes field references valid targets (list-safe).
+    
     Args:
-        doc: Document with optional describes field
+        doc: Document with list of described atoms
         valid_targets: Set of valid target doc_ids
-
+        
     Returns:
-        ValidationError if invalid, None if valid
+        List of ValidationErrors for invalid references
     """
-    describes = doc.frontmatter.get("describes")
-    if describes and describes not in valid_targets:
-        return ValidationError(
-            error_type=ValidationErrorType.SCHEMA,
-            doc_id=doc.id,
-            filepath=str(doc.filepath),
-            message=f"describes '{describes}' not found",
-            fix_suggestion=f"Update describes to valid target or remove",
-            severity="warning"
-        )
-    return None
+    errors = []
+    # Use the normalized describes list from DocumentData
+    for target in doc.describes:
+        if target not in valid_targets:
+            errors.append(ValidationError(
+                error_type=ValidationErrorType.SCHEMA,
+                doc_id=doc.id,
+                filepath=str(doc.filepath),
+                message=f"describes '{target}' not found",
+                fix_suggestion=f"Update describes to valid target or remove",
+                severity=severity
+            ))
+    return errors
 
 
 class ValidationOrchestrator:
@@ -66,8 +88,19 @@ class ValidationOrchestrator:
         """
         self.docs = docs
         self.config = config or {}
+        self.severity_map = {
+            **REFERENCE_SEVERITY_DEFAULT,
+            **self.config.get("severity_map", {}),
+        }
         self.errors: List[ValidationError] = []
         self.warnings: List[ValidationError] = []
+
+    def _report(self, error: ValidationError) -> None:
+        """Report an error or warning based on its severity."""
+        if error.severity == "error":
+            self.errors.append(error)
+        else:
+            self.warnings.append(error)
 
     def validate_all(self) -> ValidationResult:
         """Run all validations and return collected results.
@@ -79,6 +112,7 @@ class ValidationOrchestrator:
         self.validate_log_schema()
         self.validate_impacts()
         self.validate_describes()
+        self.validate_concepts()
 
         return ValidationResult(
             errors=self.errors,
@@ -87,8 +121,9 @@ class ValidationOrchestrator:
 
     def validate_graph(self) -> None:
         """Validate dependency graph: broken links, cycles, orphans, depth."""
-        graph, broken_link_errors = build_graph(self.docs)
-        self.errors.extend(broken_link_errors)
+        graph, broken_link_errors = build_graph(self.docs, severity_map=self.severity_map)
+        self.errors.extend([e for e in broken_link_errors if e.severity == "error"])
+        self.warnings.extend([e for e in broken_link_errors if e.severity == "warning"])
 
         # Detect cycles
         cycles = detect_cycles(graph)
@@ -137,7 +172,7 @@ class ValidationOrchestrator:
 
         for doc_id, doc in self.docs.items():
             # Handle both enum and string types
-            doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
+            doc_type = doc.type.value
             if doc_type != "log":
                 continue
 
@@ -152,27 +187,128 @@ class ValidationOrchestrator:
                     severity="warning"
                 ))
 
-    def validate_impacts(self) -> None:
-        """Validate impacts[] references exist."""
+    def validate_impacts(self, severity: Optional[str] = None) -> None:
+        """Validate impacts[] references exist.
+
+        Args:
+            severity: Optional override ("error" or "warning"). Defaults to severity map.
+        """
         valid_ids = set(self.docs.keys())
+        effective_severity = (
+            severity
+            if severity is not None
+            else self.severity_map.get("impacts", IMPACTS_SEVERITY_DEFAULT)
+        )
 
         for doc_id, doc in self.docs.items():
             for impact in doc.impacts:
                 if impact not in valid_ids:
-                    self.warnings.append(ValidationError(
+                    self._report(ValidationError(
                         error_type=ValidationErrorType.IMPACTS,
                         doc_id=doc_id,
                         filepath=str(doc.filepath),
                         message=f"Impact reference '{impact}' not found",
                         fix_suggestion=f"Remove '{impact}' or create the document",
-                        severity="warning"
+                        severity=effective_severity
                     ))
 
-    def validate_describes(self) -> None:
-        """Validate describes field references."""
-        valid_ids = set(self.docs.keys())
+    def validate_describes(self, severity: Optional[str] = None) -> None:
+        """Validate describes field references.
 
+        Args:
+            severity: Optional override ("error" or "warning"). Defaults to severity map.
+        """
+        valid_ids = set(self.docs.keys())
+        effective_severity = (
+            severity
+            if severity is not None
+            else self.severity_map.get("describes", DESCRIBES_SEVERITY_DEFAULT)
+        )
+ 
         for doc_id, doc in self.docs.items():
-            error = validate_describes_field(doc, valid_ids)
-            if error:
-                self.warnings.append(error)
+            errors = validate_describes_field(
+                doc, 
+                valid_ids, 
+                severity=effective_severity
+            )
+            for error in errors:
+                self._report(error)
+
+    def validate_concepts(self) -> None:
+        """Validate concept field usage and structure (#42)."""
+        known_concepts = self.config.get("known_concepts", set())
+        
+        for doc_id, doc in self.docs.items():
+            concepts = doc.frontmatter.get("concepts")
+            
+            # Structural check: empty list
+            if isinstance(concepts, list) and not concepts:
+                self._report(ValidationError(
+                    error_type=ValidationErrorType.CURATION,
+                    doc_id=doc_id,
+                    filepath=str(doc.filepath),
+                    message="Empty 'concepts' list",
+                    fix_suggestion="Add concepts or remove the field",
+                    severity=self.severity_map.get("concepts", "warning")
+                ))
+
+            if concepts:
+                if not isinstance(concepts, list):
+                    self._report(ValidationError(
+                        error_type=ValidationErrorType.CURATION,
+                        doc_id=doc_id,
+                        filepath=str(doc.filepath),
+                        message=f"Invalid 'concepts' type: {type(concepts).__name__} (expected list)",
+                        fix_suggestion="Convert concepts to a YAML list",
+                        severity=self.severity_map.get("concepts", "warning")
+                    ))
+                else:
+                    # Structural check: non-string elements
+                    non_strings = [str(c) for c in concepts if not isinstance(c, str)]
+                    if non_strings:
+                        self._report(ValidationError(
+                            error_type=ValidationErrorType.CURATION,
+                            doc_id=doc_id,
+                            filepath=str(doc.filepath),
+                            message=f"Non-string items in concepts: {', '.join(non_strings)}",
+                            fix_suggestion="Ensure all concepts are strings",
+                            severity=self.severity_map.get("concepts", "warning")
+                        ))
+
+                    # Structural check: duplicates
+                    # Guard against unhashable members (dicts, lists) during set conversion (VUL-01)
+                    hashable_concepts = [c for c in concepts if isinstance(c, (str, int, float, bool))]
+                    if len(hashable_concepts) != len(set(hashable_concepts)):
+                        dupes = [c for c in set(hashable_concepts) if hashable_concepts.count(c) > 1]
+                        self._report(ValidationError(
+                            error_type=ValidationErrorType.CURATION,
+                            doc_id=doc_id,
+                            filepath=str(doc.filepath),
+                            message=f"Duplicate concepts: {', '.join(map(str, dupes))}",
+                            fix_suggestion="Remove duplicate concepts",
+                            severity=self.severity_map.get("concepts", "warning")
+                        ))
+
+                    # Vocabulary check (#42)
+                    if known_concepts:
+                        unknown = [c for c in concepts if isinstance(c, str) and c not in known_concepts]
+                        for u in unknown:
+                            self._report(ValidationError(
+                                error_type=ValidationErrorType.CURATION,
+                                doc_id=doc_id,
+                                filepath=str(doc.filepath),
+                                message=f"Unknown concept: '{u}'",
+                                fix_suggestion=f"Add '{u}' to vocabulary or use an existing concept",
+                                severity=self.severity_map.get("concepts", "warning")
+                            ))
+
+            # Role-based check: log requirement
+            if doc.type.value == "log" and concepts is None:
+                self._report(ValidationError(
+                    error_type=ValidationErrorType.CURATION,
+                    doc_id=doc_id,
+                    filepath=str(doc.filepath),
+                    message="Log document missing 'concepts' field (required at L2)",
+                    fix_suggestion="Add a concepts: list to the frontmatter",
+                    severity=self.severity_map.get("concepts", "warning")
+                ))

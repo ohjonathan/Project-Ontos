@@ -42,8 +42,9 @@ class OutputHandler:
         Args:
             errors: List of error messages.
         """
+        import sys
         for e in errors:
-            print(f"❌ Error: {e}")
+            print(f"❌ Error: {e}", file=sys.stderr)
     
     def error(self, message: str) -> None:
         """Display a single error message.
@@ -51,7 +52,8 @@ class OutputHandler:
         Args:
             message: Error message to display.
         """
-        print(f"❌ {message}")
+        import sys
+        print(f"❌ {message}", file=sys.stderr)
     
     def warning(self, message: str) -> None:
         """Display a single warning message.
@@ -59,8 +61,9 @@ class OutputHandler:
         Args:
             message: Warning message to display.
         """
+        import sys
         if not self.quiet:
-            print(f"⚠️  {message}")
+            print(f"⚠️  {message}", file=sys.stderr)
     
     def success(self, message: str) -> None:
         """Display a success message.

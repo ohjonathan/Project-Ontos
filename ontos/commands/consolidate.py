@@ -8,14 +8,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-from ontos.core.frontmatter import parse_frontmatter
 from ontos.core.paths import (
     get_logs_dir,
     get_archive_logs_dir,
     get_decision_history_path,
 )
 from ontos.core.context import SessionContext
-from ontos.io.files import find_project_root
+from ontos.io.files import find_project_root, scan_documents, load_documents, load_frontmatter
+from ontos.io.yaml import parse_frontmatter_content
 from ontos.ui.output import OutputHandler
 
 HISTORY_LEDGER_HEADER = '| Date | Slug | Event | Decision / Outcome |'
@@ -40,17 +40,15 @@ def find_logs_to_consolidate(options: ConsolidateOptions) -> List[Tuple[Path, st
         return []
 
     all_logs = []
-    for f in sorted(logs_dir.glob("*.md")):
-        if re.match(r'^\d{4}-\d{2}-\d{2}', f.name):
-            try:
-                fm = parse_frontmatter(str(f))
-                if fm:
-                    all_logs.append((f, fm.get('id', f.name), fm))
-            except Exception:
-                continue
+    load_result = load_documents(list(logs_dir.glob("*.md")), parse_frontmatter_content)
+    if load_result.has_fatal_errors or load_result.duplicate_ids:
+        return []
 
-    # Sort by filename (date-based), oldest first
-    all_logs.sort(key=lambda x: x[0].name)
+    # Filter and sort by filename (date-based), oldest first
+    for doc in sorted(load_result.documents.values(), key=lambda d: d.filepath.name):
+        path = doc.filepath
+        if re.match(r'^\d{4}-\d{2}-\d{2}', path.name):
+            all_logs.append((path, doc.id, doc.frontmatter))
 
     if options.by_age:
         today = datetime.now()
@@ -158,9 +156,17 @@ def append_to_decision_history(
 
 def consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
     """Execute consolidate command."""
-    output = OutputHandler(quiet=options.quiet)
     root = find_project_root()
-    
+    output = OutputHandler(quiet=options.quiet)
+    logs_dir = Path(get_logs_dir())
+    if logs_dir.exists():
+        load_result = load_documents(list(logs_dir.glob("*.md")), parse_frontmatter_content)
+        if load_result.has_fatal_errors or load_result.duplicate_ids:
+            for issue in load_result.issues:
+                if issue.code in {"duplicate_id", "parse_error", "io_error"}:
+                    output.error(issue.message)
+            return 1, "Document load failed"
+            
     logs_to_consolidate = find_logs_to_consolidate(options)
     if not logs_to_consolidate:
         if not options.quiet:

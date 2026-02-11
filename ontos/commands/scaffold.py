@@ -8,7 +8,8 @@ from ontos.core.frontmatter import parse_frontmatter
 from ontos.core.curation import create_scaffold, load_ontosignore, should_ignore
 from ontos.core.schema import serialize_frontmatter
 from ontos.core.context import SessionContext
-from ontos.io.files import find_project_root, scan_documents
+from ontos.io.files import find_project_root, scan_documents, load_documents, load_frontmatter
+from ontos.io.yaml import parse_frontmatter_content
 from ontos.ui.output import OutputHandler
 
 # Hardcoded exclusion patterns for dependency directories.
@@ -59,6 +60,11 @@ def find_untagged_files(paths: Optional[List[Path]] = None, root: Optional[Path]
         ignore_patterns = load_ontosignore(root)
         files = scan_documents([root], skip_patterns=ignore_patterns)
 
+    load_result = load_documents(files, parse_frontmatter_content)
+    if load_result.has_fatal_errors:
+        # We can't safely scaffold if the graph is broken
+        return [] 
+
     untagged = []
     for f in files:
         # Skip hidden directories except .ontos and .ontos-internal
@@ -75,13 +81,12 @@ def find_untagged_files(paths: Optional[List[Path]] = None, root: Optional[Path]
         if any(ignore in rel_path.parts for ignore in DEFAULT_IGNORES):
             continue
 
-        # Check for frontmatter
+        # Check for frontmatter using canonical loader
         try:
-            content = f.read_text(encoding="utf-8")
-            if not content.strip():
+            fm, raw_content = load_frontmatter(f, parse_frontmatter_content)
+            if not raw_content or not raw_content.strip():
                 continue
             
-            fm = parse_frontmatter(str(f)) # parse_frontmatter reads the file
             if not fm or 'id' not in fm:
                 untagged.append(f)
         except Exception:
@@ -129,12 +134,38 @@ def scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
     output = OutputHandler(quiet=options.quiet)
 
     # 1. Find untagged files
-    try:
-        untagged = find_untagged_files(options.paths)
-    except FileNotFoundError as e:
-        output.error(str(e))
-        return 1, str(e)
+    root = find_project_root()
+    from ontos.io.config import load_project_config
+    config = load_project_config(repo_root=root)
+    
+    docs_dir = root / config.paths.docs_dir
+    logs_dir = root / config.paths.logs_dir
+    scan_dirs = [d for d in [docs_dir, logs_dir] if d.exists()]
+    
+    ignore_patterns = load_ontosignore(root)
+    # Explicitly exclude archives and tmp to avoid duplicate ID noise
+    ignore_patterns.extend(["**/archive/**", "**/tmp/**", "archive/*", ".ontos-internal/archive/*", ".ontos-internal/tmp/*"])
+    
+    all_files = scan_documents(scan_dirs, skip_patterns=ignore_patterns) or []
+    load_result = load_documents(all_files, parse_frontmatter_content)
+    
+    if load_result.has_fatal_errors:
+        fatal = False
+        for issue in load_result.issues:
+            if issue.code in {"parse_error", "io_error"}:
+                output.error(issue.message)
+                fatal = True
+            elif issue.code == "duplicate_id":
+                # Duplicates are reported but not always fatal for scaffolding
+                output.warning(issue.message)
+        
+        if fatal:
+            return 1, "Document load failed"
+    
+    # Check specifically for duplicates of paths we are trying to scaffold?
+    # Actually, scan_documents already picked them up.
 
+    untagged = find_untagged_files(options.paths)
     if not untagged:
         if not options.quiet:
             output.success("No files need scaffolding")

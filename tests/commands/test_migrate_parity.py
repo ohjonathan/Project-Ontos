@@ -35,3 +35,17 @@ def test_schema_migrate_check_parity(tmp_path):
     assert result.returncode == 1 # Exit code 1 when migrations needed
     assert "Need migration: 1" in result.stdout
     assert "legacy.md" in result.stdout
+
+def test_schema_migrate_fails_on_duplicates(tmp_path):
+    """VUL-03: schema-migrate command must fail on duplicate IDs."""
+    (tmp_path / "doc1.md").write_text("---\nid: collision\ntype: atom\n---\n")
+    (tmp_path / "doc2.md").write_text("---\nid: collision\ntype: atom\n---\n")
+    
+    result = subprocess.run(
+        [sys.executable, "-m", "ontos.cli", "schema-migrate", "--check", "--dirs", str(tmp_path)],
+        capture_output=True,
+        text=True
+    )
+    
+    assert result.returncode != 0
+    assert "Duplicate ID 'collision' found" in result.stderr

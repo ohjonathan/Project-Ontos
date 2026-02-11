@@ -17,7 +17,7 @@ status: pending_curation
 # Pending Curation
 """
 
-    doc = load_document_from_content(
+    doc, _ = load_document_from_content(
         path=Path("docs/pending_doc.md"),
         content=content,
         frontmatter_parser=parse_frontmatter_content,

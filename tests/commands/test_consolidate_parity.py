@@ -84,3 +84,31 @@ Test log {i}
     
     # assert result.returncode == 0
     # assert "Consolidated 2 log(s)" in result.stdout
+
+def test_consolidate_fails_on_duplicates(test_setup):
+    """VUL-03: consolidate command must fail on duplicate IDs."""
+    tmp_path = test_setup
+    logs_dir = tmp_path / "docs" / "logs"
+    logs_dir.mkdir(parents=True)
+    (tmp_path / ".ontos").mkdir()
+    
+    # Create two different files with same ID in logs dir
+    (logs_dir / "2023-01-01-doc1.md").write_text("---\nid: collision\ntype: log\n---\n## Goal\nTest 1")
+    (logs_dir / "2023-01-01-doc2.md").write_text("---\nid: collision\ntype: log\n---\n## Goal\nTest 2")
+
+    # Ensure command resolves logs against this temp project.
+    (tmp_path / "ontos_config.py").write_text(f'LOGS_DIR = r"{logs_dir}"\n', encoding="utf-8")
+    
+    env = os.environ.copy()
+    env["PYTHONPATH"] = f"{tmp_path}:{os.getcwd()}"
+    
+    result = subprocess.run(
+        [sys.executable, "-m", "ontos.cli", "consolidate", "--all"],
+        capture_output=True,
+        text=True,
+        env=env,
+        cwd=str(tmp_path)
+    )
+    
+    assert result.returncode != 0
+    assert "Duplicate ID 'collision' found" in result.stderr

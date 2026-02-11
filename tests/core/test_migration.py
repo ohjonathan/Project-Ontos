@@ -2,7 +2,7 @@
 
 import pytest
 from pathlib import Path
-from ontos.core.snapshot import create_snapshot
+from ontos.io.snapshot import create_snapshot
 from ontos.core.migration import classify_documents, MigrationReport
 
 

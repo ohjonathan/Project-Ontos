@@ -6,6 +6,7 @@ from typing import List, Optional, Tuple
 
 from ontos.core.frontmatter import parse_frontmatter
 from ontos.core.schema import serialize_frontmatter
+from ontos.core.types import DocumentData, DocumentType
 from ontos.core.curation import (
     CurationLevel,
     CurationInfo,
@@ -14,7 +15,8 @@ from ontos.core.curation import (
     level_marker,
 )
 from ontos.core.context import SessionContext
-from ontos.io.files import find_project_root, scan_documents
+from ontos.io.files import find_project_root, scan_documents, load_documents, load_frontmatter
+from ontos.io.yaml import parse_frontmatter_content
 from ontos.ui.output import OutputHandler
 
 
@@ -162,20 +164,28 @@ def promote_command(options: PromoteOptions) -> Tuple[int, str]:
         files = scan_documents(dirs, skip_patterns=ignore_patterns)
         files = [f for f in files if f.suffix == ".md"]
 
-    # 2. Extract info and filter promotable
+    # 2. Extract info and filter promotable using canonical loader
+    load_result = load_documents(files, parse_frontmatter_content)
+    if load_result.has_fatal_errors or load_result.duplicate_ids:
+        fatal = False
+        for issue in load_result.issues:
+            if issue.code in {"parse_error", "io_error"}:
+                output.error(issue.message)
+                fatal = True
+            elif issue.code == "duplicate_id":
+                output.error(issue.message)
+                fatal = True
+        
+        if fatal:
+            return 1, "Document load failed"
+
     promotable = []
-    existing_ids = []
-    for f in files:
-        try:
-            fm = parse_frontmatter(str(f))
-            if fm and 'id' in fm:
-                doc_id = fm['id']
-                existing_ids.append(doc_id)
-                info = get_curation_info(fm)
-                if info.level < CurationLevel.FULL:
-                    promotable.append((f, fm, info))
-        except Exception:
-            continue
+    for doc_id, doc in load_result.documents.items():
+        info = get_curation_info(doc.frontmatter)
+        if info.level < CurationLevel.FULL:
+            promotable.append((doc.filepath, doc.frontmatter, info))
+            
+    existing_ids = list(load_result.documents.keys())
             
     if not promotable:
         if not options.quiet:

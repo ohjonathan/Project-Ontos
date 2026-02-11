@@ -253,3 +253,20 @@ def test_critical_paths_unset_values(tmp_path):
 def test_critical_paths_root_path_none():
     """Without root_path, formatting should still be safe."""
     assert _format_critical_path("docs", None) == "`docs/`"
+
+
+def test_map_fails_on_duplicate_ids(tmp_path, monkeypatch):
+    """VUL-03: map command must fail (exit non-zero) when duplicate IDs exist."""
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".ontos.toml").write_text("[project]\nname = 'test'\n")
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    
+    # Create two different files with same ID
+    (docs_dir / "doc1.md").write_text("---\nid: same_id\ntype: atom\nstatus: active\n---\nDoc 1")
+    (docs_dir / "doc2.md").write_text("---\nid: same_id\ntype: atom\nstatus: active\n---\nDoc 2")
+    
+    # Run map
+    exit_code = map_command(MapOptions())
+    
+    assert exit_code != 0

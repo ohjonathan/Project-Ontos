@@ -9,7 +9,7 @@ import pytest
 
 # Add bundled scripts directory to path for legacy imports
 # (Tests import directly from script names like ontos_generate_context_map)
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'ontos', '_scripts'))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), '.ontos', 'scripts'))
 
 
 # v2.9.2: Configure warning filters for deprecation warnings

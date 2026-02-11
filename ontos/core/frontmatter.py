@@ -26,6 +26,7 @@ def parse_frontmatter(
 ) -> Optional[dict]:
     """Parse YAML frontmatter from a markdown file.
 
+    NON-CANONICAL internal-legacy API. Use io/files.py:load_documents() for runtime loading.
     PURE: Accepts optional callback for YAML parsing.
     When yaml_parser is None, returns raw frontmatter string split only.
 
@@ -151,49 +152,122 @@ def _fallback_yaml_parse(content: str) -> Optional[Dict[str, Any]]:
     return result if result else None
 
 
-def normalize_depends_on(value) -> List[str]:
+def normalize_reference_list(value: Any, field_name: str, on_warning: Optional[Callable[[str], None]] = None) -> List[str]:
+    """Normalize reference lists (depends_on, impacts) to List[str].
+    
+    Args:
+        value: Raw value from YAML.
+        field_name: Name of field for warning context.
+        on_warning: Optional callback for warning messages.
+        
+    Returns:
+        Normalized list of strings.
+    """
+    if value is None:
+        return []
+        
+    if isinstance(value, (str, int, float, bool)):
+        if isinstance(value, str):
+            stripped = value.strip()
+            return [stripped] if stripped else []
+        return [str(value)]
+        
+    if isinstance(value, list):
+        results = []
+        for item in value:
+            if item is None:
+                continue
+            if isinstance(item, (str, int, float, bool)):
+                if isinstance(item, str):
+                    stripped = item.strip()
+                    if stripped:
+                        results.append(stripped)
+                else:
+                    results.append(str(item))
+            else:
+                if on_warning:
+                    on_warning(f"Invalid nested type '{type(item).__name__}' in field '{field_name}' dropped.")
+        return results
+        
+    if on_warning:
+        on_warning(f"Invalid type '{type(value).__name__}' for field '{field_name}' - expected list or scalar.")
+    return []
+
+
+def normalize_depends_on(value, on_warning: Optional[Callable[[str], None]] = None) -> List[str]:
     """Normalize depends_on field to a list of strings.
 
-    Handles YAML edge cases: null, empty, string, or list.
+    Delegates to the canonical normalize_reference_list utility.
 
     Args:
         value: Raw value from YAML frontmatter.
+        on_warning: Optional callback for warning messages.
 
     Returns:
         List of dependency IDs (empty list if none).
     """
-    if value is None:
-        return []
-    if isinstance(value, str):
-        return [value] if value.strip() else []
-    if isinstance(value, list):
-        return [str(v) for v in value if v is not None and str(v).strip()]
-    return []
+    return normalize_reference_list(value, "depends_on", on_warning=on_warning)
 
 
-def normalize_type(value) -> str:
-    """Normalize type field to a string.
-
+def normalize_type(value, on_error: Optional[Callable[[str, Any, List[str]], None]] = None) -> Any:
+    """Normalize type field to DocumentType enum.
+    
     Args:
-        value: Raw value from YAML frontmatter.
-
+        value: Raw value from YAML.
+        on_error: Optional callback (message, value, options) for failures.
+        
     Returns:
-        Type string ('unknown' if invalid).
+        DocumentType enum (ATOM if invalid).
     """
-    if value is None:
-        return 'unknown'
+    from ontos.core.types import DocumentType
+    
+    if isinstance(value, DocumentType):
+        return value
+        
+    # Standard string normalization
+    type_str = 'unknown'
     if isinstance(value, str):
-        stripped = value.strip()
-        if not stripped or '|' in stripped:
-            return 'unknown'
-        return stripped
-    if isinstance(value, list):
-        if value and value[0] is not None:
-            first = str(value[0]).strip()
-            if '|' in first:
-                return 'unknown'
-            return first if first else 'unknown'
-    return 'unknown'
+        type_str = value.strip().lower()
+    elif isinstance(value, list) and value:
+        type_str = str(value[0]).strip().lower()
+        
+    try:
+        return DocumentType(type_str)
+    except (ValueError, TypeError):
+        if on_error:
+            options = [t.value for t in DocumentType]
+            on_error(f"Invalid doc type '{type_str}'", type_str, options)
+        return DocumentType.UNKNOWN
+
+def normalize_status(value, on_error: Optional[Callable[[str, Any, List[str]], None]] = None) -> Any:
+    """Normalize status field to DocumentStatus enum.
+    
+    Args:
+        value: Raw value from YAML.
+        on_error: Optional callback (message, value, options) for failures.
+        
+    Returns:
+        DocumentStatus enum (DRAFT if invalid).
+    """
+    from ontos.core.types import DocumentStatus
+    
+    if isinstance(value, DocumentStatus):
+        return value
+        
+    # Standard string normalization
+    status_str = 'unknown'
+    if isinstance(value, str):
+        status_str = value.strip().lower()
+    elif isinstance(value, list) and value:
+        status_str = str(value[0]).strip().lower()
+        
+    try:
+        return DocumentStatus(status_str)
+    except (ValueError, TypeError):
+        if on_error:
+            options = [s.value for s in DocumentStatus]
+            on_error(f"Invalid doc status '{status_str}'", status_str, options)
+        return DocumentStatus.UNKNOWN
 
 
 def load_common_concepts(docs_dir: str = None) -> set:
