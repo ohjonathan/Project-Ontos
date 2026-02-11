@@ -8,12 +8,75 @@ import re
 from datetime import datetime
 from typing import List, Dict
 
-from ontos.core.paths import get_proposals_dir, get_decision_history_path
+from ontos.core.paths import resolve_config, _warn_deprecated
 
 try:
     from ontos import __version__ as ONTOS_VERSION
 except ImportError:
     ONTOS_VERSION = None
+
+
+def _find_runtime_project_root(start_path: str = None) -> str:
+    """Find project root relative to current execution context."""
+    current = os.path.abspath(start_path or os.getcwd())
+    while True:
+        if (
+            os.path.exists(os.path.join(current, ".ontos.toml"))
+            or os.path.exists(os.path.join(current, ".ontos"))
+            or os.path.exists(os.path.join(current, ".ontos-internal"))
+            or os.path.exists(os.path.join(current, ".git"))
+        ):
+            return current
+        parent = os.path.dirname(current)
+        if parent == current:
+            return os.path.abspath(start_path or os.getcwd())
+        current = parent
+
+
+def _resolve_runtime_docs_dir(root: str) -> tuple:
+    """Resolve docs directory from runtime root + config."""
+    docs_dir_cfg = None
+    try:
+        from pathlib import Path
+        from ontos.io.config import load_project_config
+
+        config = load_project_config(repo_root=Path(root))
+        docs_dir_cfg = str(config.paths.docs_dir).strip()
+    except Exception:
+        docs_dir_cfg = str(resolve_config("DOCS_DIR", "docs")).strip()
+
+    if os.path.isabs(docs_dir_cfg):
+        return docs_dir_cfg, docs_dir_cfg
+    return os.path.join(root, docs_dir_cfg), docs_dir_cfg
+
+
+def _resolve_runtime_proposals_dir(root: str) -> str:
+    """Resolve proposals directory relative to runtime root."""
+    if os.path.exists(os.path.join(root, ".ontos-internal")):
+        return os.path.join(root, ".ontos-internal", "strategy", "proposals")
+    docs_dir, _ = _resolve_runtime_docs_dir(root)
+    return os.path.join(docs_dir, "strategy", "proposals")
+
+
+def _resolve_runtime_decision_history_path(root: str) -> str:
+    """Resolve decision_history path relative to runtime root."""
+    if os.path.exists(os.path.join(root, ".ontos-internal")):
+        return os.path.join(root, ".ontos-internal", "reference", "decision_history.md")
+
+    docs_dir, docs_dir_cfg = _resolve_runtime_docs_dir(root)
+    new_path = os.path.join(docs_dir, "strategy", "decision_history.md")
+    if os.path.exists(new_path):
+        return new_path
+
+    old_path = os.path.join(docs_dir, "decision_history.md")
+    if os.path.exists(old_path):
+        _warn_deprecated(
+            f"{docs_dir_cfg}/decision_history.md",
+            f"{docs_dir_cfg}/strategy/decision_history.md",
+        )
+        return old_path
+
+    return new_path
 
 
 def load_decision_history_entries() -> dict:
@@ -32,7 +95,8 @@ def load_decision_history_entries() -> dict:
           - 'approved_slugs': set of slugs with APPROVED in outcome
           - 'outcomes': dict mapping slug -> full outcome text
     """
-    history_path = get_decision_history_path()
+    root = _find_runtime_project_root()
+    history_path = _resolve_runtime_decision_history_path(root)
     entries = {
         'archive_paths': {},  # Now a dict: path -> slug
         'slugs': set(),
@@ -76,7 +140,8 @@ def find_draft_proposals() -> List[Dict]:
     Returns:
         List of dicts with 'id', 'filepath', 'version', 'age_days'.
     """
-    proposals_dir = get_proposals_dir()
+    root = _find_runtime_project_root()
+    proposals_dir = _resolve_runtime_proposals_dir(root)
     if not proposals_dir or not os.path.exists(proposals_dir):
         return []
 

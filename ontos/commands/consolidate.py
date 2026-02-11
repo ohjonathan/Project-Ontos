@@ -164,7 +164,9 @@ def consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
     else:
         # User mode
         config = load_project_config(repo_root=root)
-        docs_dir = root / config.paths.docs_dir
+        docs_dir_setting = str(config.paths.docs_dir).strip()
+        docs_dir = root / docs_dir_setting
+        from ontos.core.paths import _warn_deprecated
         
         # logs_dir
         if Path(config.paths.logs_dir).is_absolute():
@@ -178,6 +180,10 @@ def consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
         if new_archive_path.exists():
             archive_logs_dir = new_archive_path
         elif old_archive_path.exists():
+            _warn_deprecated(
+                f"{docs_dir_setting}/archive/",
+                f"{docs_dir_setting}/archive/logs/",
+            )
             archive_logs_dir = old_archive_path
         else:
             archive_logs_dir = new_archive_path
@@ -188,6 +194,10 @@ def consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
         if new_history_path.exists():
             decision_history_path = new_history_path
         elif old_history_path.exists():
+            _warn_deprecated(
+                f"{docs_dir_setting}/decision_history.md",
+                f"{docs_dir_setting}/strategy/decision_history.md",
+            )
             decision_history_path = old_history_path
         else:
             decision_history_path = new_history_path
