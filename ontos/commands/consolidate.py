@@ -33,16 +33,9 @@ class ConsolidateOptions:
     json_output: bool = False
 
 
-def find_logs_to_consolidate(options: ConsolidateOptions, root: Path) -> List[Tuple[Path, str, dict]]:
+def find_logs_to_consolidate(options: ConsolidateOptions) -> List[Tuple[Path, str, dict]]:
     """Find logs to consolidate based on count or age."""
-    from ontos.core.paths import is_ontos_repo
-    if (root / '.ontos-internal').exists():
-        logs_dir = root / '.ontos-internal' / 'logs'
-    else:
-        logs_dir = root / 'docs' / 'logs'
-        if not logs_dir.exists() and (root / 'logs').exists():
-            logs_dir = root / 'logs'
-        
+    logs_dir = Path(get_logs_dir())
     if not logs_dir.exists():
         return []
 
@@ -165,14 +158,7 @@ def consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
     """Execute consolidate command."""
     root = find_project_root()
     output = OutputHandler(quiet=options.quiet)
-    from ontos.core.paths import is_ontos_repo
-    if (root / '.ontos-internal').exists():
-        logs_dir = root / '.ontos-internal' / 'logs'
-    else:
-        logs_dir = root / 'docs' / 'logs'
-        if not logs_dir.exists() and (root / 'logs').exists():
-            logs_dir = root / 'logs'
-        
+    logs_dir = Path(get_logs_dir())
     if logs_dir.exists():
         load_result = load_documents(list(logs_dir.glob("*.md")), parse_frontmatter_content)
         if load_result.has_fatal_errors or load_result.duplicate_ids:
@@ -181,7 +167,7 @@ def consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
                     output.error(issue.message)
             return 1, "Document load failed"
             
-    logs_to_consolidate = find_logs_to_consolidate(options, root)
+    logs_to_consolidate = find_logs_to_consolidate(options)
     if not logs_to_consolidate:
         if not options.quiet:
             output.success("Nothing to consolidate.")
