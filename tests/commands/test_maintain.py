@@ -433,6 +433,25 @@ def test_parse_bool_warns_on_empty_and_unknown():
     assert any("Unrecognized boolean value" in msg and "'maybe'" in msg for msg in messages)
 
 
+def test_parse_bool_valid_values_emit_no_warning():
+    valid_cases = [
+        ("1", True),
+        ("true", True),
+        ("yes", True),
+        ("on", True),
+        ("0", False),
+        ("false", False),
+        ("no", False),
+        ("off", False),
+    ]
+
+    for raw, expected in valid_cases:
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            assert _parse_bool(raw, default=not expected) is expected
+        assert not caught
+
+
 def test_maintain_invalid_task_status_becomes_failed(tmp_path, monkeypatch, capsys):
     _init_project(tmp_path)
     monkeypatch.chdir(tmp_path)

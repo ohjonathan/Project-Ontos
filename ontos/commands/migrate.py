@@ -189,7 +189,7 @@ def migrate_command(options: MigrateOptions) -> Tuple[int, str]:
     
     for f, schema in needs_migration:
         try:
-            fm, content = load_frontmatter(f, parse_frontmatter_content)
+            fm, body = load_frontmatter(f, parse_frontmatter_content)
             if fm is None:
                 errors += 1
                 continue
@@ -200,15 +200,11 @@ def migrate_command(options: MigrateOptions) -> Tuple[int, str]:
                 migrated_count += 1
                 continue
                 
-            # Build new content
-            parts = content.split('---', 2)
-            if len(parts) < 3:
-                output.error(f"Incomplete frontmatter in {f}")
-                errors += 1
-                continue
-                
+            # load_frontmatter returns parsed frontmatter + body, not raw content.
             new_fm_str = serialize_frontmatter(new_fm)
-            new_content = f"---\n{new_fm_str}\n---{parts[2]}"
+            body_text = body or ""
+            separator = "\n" if body_text and not body_text.startswith("\n") else ""
+            new_content = f"---\n{new_fm_str}\n---{separator}{body_text}"
             
             ctx.buffer_write(f, new_content)
             output.success(f"Migrated: {f} → ontos_schema: {schema}")

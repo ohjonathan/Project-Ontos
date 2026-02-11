@@ -1,5 +1,9 @@
 """Tests for doctor command (Phase 4)."""
 
+import os
+import subprocess
+import sys
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import pytest
@@ -302,3 +306,22 @@ def test_check_docs_directory_from_subdirectory_matches_project_root(tmp_path, m
 
     assert result.status == "pass"
     assert "1 documents" in result.message
+
+
+def test_doctor_cli_outside_project_returns_nonzero(tmp_path):
+    """Outside-project doctor run should fail with explicit root-discovery message."""
+    project_root = Path(__file__).resolve().parents[2]
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(project_root)
+
+    result = subprocess.run(
+        [sys.executable, "-m", "ontos", "doctor"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 1
+    combined = (result.stdout + result.stderr).lower()
+    assert "project root" in combined or "not in an ontos project" in combined

@@ -117,3 +117,24 @@ def test_schema_migrate_apply_nonzero_with_unsupported_schema(tmp_path):
     assert result.returncode == 1
     combined = f"{result.stdout}\n{result.stderr}".lower()
     assert "unsupported schema" in combined
+
+
+def test_schema_migrate_apply_writes_files_to_disk(tmp_path):
+    (tmp_path / ".ontos").mkdir()
+    (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n", encoding="utf-8")
+    legacy = tmp_path / "legacy.md"
+    legacy.write_text(
+        "---\nid: legacy_doc\ntype: atom\nstatus: active\n---\n",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [sys.executable, "-m", "ontos.cli", "schema-migrate", "--apply", "--dirs", str(tmp_path)],
+        capture_output=True,
+        text=True,
+        cwd=tmp_path,
+    )
+
+    assert result.returncode == 0
+    migrated = legacy.read_text(encoding="utf-8")
+    assert "ontos_schema:" in migrated
