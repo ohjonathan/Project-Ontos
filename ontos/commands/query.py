@@ -11,7 +11,9 @@ from ontos.core.types import DocumentData, DocumentType
 from ontos.core.graph import build_graph as core_build_graph
 from ontos.core.config import get_git_last_modified
 from ontos.io.git import get_file_mtime as git_mtime_provider
-from ontos.io.files import find_project_root, scan_documents, load_documents, DocumentLoadResult
+from ontos.io.config import load_project_config
+from ontos.io.files import find_project_root, load_documents, DocumentLoadResult
+from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
 from ontos.io.yaml import parse_frontmatter_content
 from ontos.ui.output import OutputHandler
 
@@ -28,15 +30,24 @@ class QueryOptions:
     directory: Optional[Path] = None
     quiet: bool = False
     json_output: bool = False
+    scope: Optional[str] = None
 
 
-def scan_docs_for_query(root: Path) -> DocumentLoadResult:
+def scan_docs_for_query(root: Path, scope: Optional[str], explicit_dirs: Optional[List[Path]] = None) -> DocumentLoadResult:
     """Scan documentation files for query operations using canonical loader."""
     from ontos.core.curation import load_ontosignore
-    
+
+    config = load_project_config(repo_root=root)
+    effective_scope = resolve_scan_scope(scope, config.scanning.default_scope)
     ignore_patterns = load_ontosignore(root)
-    files = scan_documents([root], skip_patterns=ignore_patterns)
-    
+    files = collect_scoped_documents(
+        root,
+        config,
+        effective_scope,
+        base_skip_patterns=ignore_patterns,
+        explicit_dirs=explicit_dirs,
+    )
+
     return load_documents(files, parse_frontmatter_content)
 
 
@@ -159,9 +170,9 @@ def query_command(options: QueryOptions) -> Tuple[int, str]:
     """Execute query command."""
     output = OutputHandler(quiet=options.quiet)
     root = find_project_root()
-    search_dir = options.directory if options.directory else root
-    
-    load_result = scan_docs_for_query(search_dir)
+
+    explicit_dirs = [options.directory] if options.directory else None
+    load_result = scan_docs_for_query(root, options.scope, explicit_dirs=explicit_dirs)
     if load_result.has_fatal_errors:
         for issue in load_result.issues:
             if issue.code in {"parse_error", "io_error"}:
@@ -176,7 +187,10 @@ def query_command(options: QueryOptions) -> Tuple[int, str]:
         
     files_data = load_result.documents
     if not files_data:
-        output.error(f"No documents found in {search_dir}")
+        if options.directory:
+            output.error(f"No documents found in {options.directory}")
+        else:
+            output.error("No documents found in selected scope")
         return 1, "No documents found"
 
     if options.depends_on:

@@ -25,7 +25,9 @@ def test_promote_check_parity(tmp_path):
     """Promote check identifies L0/L1 documents."""
     # Initialize mock repo
     (tmp_path / ".ontos").mkdir()
-    l0_file = tmp_path / "scaffold.md"
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    l0_file = docs_dir / "scaffold.md"
     l0_file.write_text("---\nid: scaffold_doc\ntype: atom\nstatus: scaffold\ncuration_level: 0\nontos_schema: '2.2'\n---\n")
 
     # Run native command
@@ -48,8 +50,10 @@ def test_promote_check_parity(tmp_path):
 def test_promote_fails_on_duplicates(tmp_path):
     """VUL-03: promote command must fail on duplicate IDs."""
     (tmp_path / ".ontos").mkdir()
-    (tmp_path / "doc1.md").write_text("---\nid: collision\ntype: atom\n---\n")
-    (tmp_path / "doc2.md").write_text("---\nid: collision\ntype: atom\n---\n")
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    (docs_dir / "doc1.md").write_text("---\nid: collision\ntype: atom\n---\n")
+    (docs_dir / "doc2.md").write_text("---\nid: collision\ntype: atom\n---\n")
     
     env = os.environ.copy()
     env["PYTHONPATH"] = os.getcwd()

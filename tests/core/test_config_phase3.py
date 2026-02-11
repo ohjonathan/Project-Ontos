@@ -40,6 +40,11 @@ class TestDefaultConfig:
         config = default_config()
         assert config.workflow.log_retention_count == 20
 
+    def test_default_config_has_scan_scope_default(self):
+        """Default scanning scope is docs."""
+        config = default_config()
+        assert config.scanning.default_scope == "docs"
+
 
 class TestConfigToDict:
     """Tests for config_to_dict() function."""

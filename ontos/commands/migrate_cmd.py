@@ -20,6 +20,7 @@ class MigrateOptions:
     force: bool = False
     quiet: bool = False
     json_output: bool = False
+    scope: Optional[str] = None
 
 
 def migrate_convenience_command(options: MigrateOptions) -> Tuple[int, str]:
@@ -53,6 +54,7 @@ def migrate_convenience_command(options: MigrateOptions) -> Tuple[int, str]:
         output_path=out_dir / "snapshot.json",
         force=options.force,
         quiet=True,
+        scope=options.scope,
     )
     export_code, export_msg = export_data_command(export_options)
     if export_code != 0:
@@ -64,6 +66,7 @@ def migrate_convenience_command(options: MigrateOptions) -> Tuple[int, str]:
         format="md",
         force=options.force,
         quiet=True,
+        scope=options.scope,
     )
     report_code, report_msg = migration_report_command(report_options)
     if report_code != 0:

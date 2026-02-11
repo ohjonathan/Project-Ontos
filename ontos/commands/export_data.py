@@ -28,6 +28,7 @@ class ExportDataOptions:
     force: bool = False
     quiet: bool = False
     json_output: bool = False
+    scope: Optional[str] = None
 
 
 def _parse_csv(value: Optional[str]) -> Optional[List[str]]:
@@ -174,6 +175,7 @@ def export_data_command(options: ExportDataOptions) -> Tuple[int, str]:
         root=root,
         include_content=not options.no_content,
         filters=None,  # Get everything
+        scope=options.scope,
     )
 
     # Convert to JSON with filters applied during serialization

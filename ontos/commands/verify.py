@@ -11,7 +11,9 @@ from ontos.core.staleness import (
     check_staleness,
 )
 from ontos.core.context import SessionContext
-from ontos.io.files import find_project_root, scan_documents, load_documents, load_frontmatter
+from ontos.io.config import load_project_config
+from ontos.io.files import find_project_root, load_documents, load_frontmatter
+from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
 from ontos.io.yaml import parse_frontmatter_content
 from ontos.ui.output import OutputHandler
 
@@ -24,15 +26,23 @@ class VerifyOptions:
     date: Optional[str] = None  # YYYY-MM-DD format
     quiet: bool = False
     json_output: bool = False
+    scope: Optional[str] = None
 
 
-def find_stale_documents_list() -> List[dict]:
+def find_stale_documents_list(scope: Optional[str] = None) -> List[dict]:
     """Find all documents with stale describes fields using new architecture symbols."""
     from ontos.core.curation import load_ontosignore
-    
+
     root = find_project_root()
+    config = load_project_config(repo_root=root)
+    effective_scope = resolve_scan_scope(scope, config.scanning.default_scope)
     ignore_patterns = load_ontosignore(root)
-    files = scan_documents([root], skip_patterns=ignore_patterns)
+    files = collect_scoped_documents(
+        root,
+        config,
+        effective_scope,
+        base_skip_patterns=ignore_patterns,
+    )
     load_result = load_documents(files, parse_frontmatter_content)
     if load_result.has_fatal_errors or load_result.duplicate_ids:
         return [] # Caller will handle empty and check if it needs to fail
@@ -141,12 +151,19 @@ def verify_document(path: Path, verify_date: str) -> Tuple[bool, str]:
     return False, "Failed"
 
 
-def verify_all_interactive(verify_date: date, output: OutputHandler) -> int:
+def verify_all_interactive(verify_date: date, output: OutputHandler, scope: Optional[str] = None) -> int:
     """Interactively verify all stale documents."""
     root = find_project_root()
     from ontos.core.curation import load_ontosignore
+    config = load_project_config(repo_root=root)
+    effective_scope = resolve_scan_scope(scope, config.scanning.default_scope)
     ignore_patterns = load_ontosignore(root)
-    files = scan_documents([root], skip_patterns=ignore_patterns)
+    files = collect_scoped_documents(
+        root,
+        config,
+        effective_scope,
+        base_skip_patterns=ignore_patterns,
+    )
     load_result = load_documents(files, parse_frontmatter_content)
     
     if load_result.has_fatal_errors or load_result.duplicate_ids:
@@ -155,7 +172,7 @@ def verify_all_interactive(verify_date: date, output: OutputHandler) -> int:
                 output.error(issue.message)
         return 1
 
-    stale_docs = find_stale_documents_list()
+    stale_docs = find_stale_documents_list(scope=scope)
     
     if not stale_docs:
         output.success("No stale documents found.")
@@ -239,7 +256,7 @@ def verify_command(options: VerifyOptions) -> Tuple[int, str]:
 
     elif options.all:
         # Interactive all mode
-        result = verify_all_interactive(verify_date, output)
+        result = verify_all_interactive(verify_date, output, scope=options.scope)
         return result, "Interactive session ended"
         
     else:

@@ -23,6 +23,7 @@ class MigrationReportOptions:
     force: bool = False
     quiet: bool = False
     json_output: bool = False
+    scope: Optional[str] = None
 
 
 def _generate_markdown_report(report: MigrationReport, project_name: str) -> str:
@@ -176,7 +177,7 @@ def migration_report_command(options: MigrationReportOptions) -> Tuple[int, str]
             return 1, f"Error: Output file exists: {options.output_path}. Use --force to overwrite."
 
     # Create snapshot and classify
-    snapshot = create_snapshot(root)
+    snapshot = create_snapshot(root, scope=options.scope)
     report = classify_documents(snapshot)
 
     # Generate report

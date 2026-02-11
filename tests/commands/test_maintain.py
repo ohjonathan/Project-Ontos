@@ -14,6 +14,7 @@ from ontos.commands.maintain import (
     TaskResult,
     _condition_agents_stale,
     _condition_auto_consolidate,
+    _scan_docs,
     _task_check_links,
     _task_curation_stats,
     _task_review_proposals,
@@ -214,6 +215,34 @@ def test_check_links_task_reports_broken_dependencies(tmp_path):
     assert result.status == "success"
     assert result.metrics["broken_links"] == 1
     assert "warning" in result.message.lower()
+
+
+def test_maintain_scan_docs_default_scope_excludes_internal(tmp_path):
+    _init_project(tmp_path)
+    (tmp_path / "docs" / "a.md").write_text("---\nid: docs_only\ntype: atom\nstatus: active\n---\n")
+    (tmp_path / ".ontos-internal").mkdir()
+    (tmp_path / ".ontos-internal" / "b.md").write_text("---\nid: internal_only\ntype: atom\nstatus: active\n---\n")
+
+    ctx = _build_context(tmp_path, quiet=True)
+    paths = _scan_docs(ctx)
+
+    names = {p.name for p in paths}
+    assert "a.md" in names
+    assert "b.md" not in names
+
+
+def test_maintain_scan_docs_library_scope_includes_internal(tmp_path):
+    _init_project(tmp_path)
+    (tmp_path / "docs" / "a.md").write_text("---\nid: docs_only\ntype: atom\nstatus: active\n---\n")
+    (tmp_path / ".ontos-internal").mkdir()
+    (tmp_path / ".ontos-internal" / "b.md").write_text("---\nid: internal_only\ntype: atom\nstatus: active\n---\n")
+
+    ctx = _build_context(tmp_path, quiet=True, scope="library")
+    paths = _scan_docs(ctx)
+
+    names = {p.name for p in paths}
+    assert "a.md" in names
+    assert "b.md" in names
 
 
 def test_curation_stats_task_counts_l0_l1_l2(tmp_path):
