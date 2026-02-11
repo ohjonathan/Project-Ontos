@@ -48,6 +48,7 @@ class DocumentStatus(Enum):
 
 class ValidationErrorType(Enum):
     """Categories of validation errors."""
+    DUPLICATE_ID = "duplicate_id"
     BROKEN_LINK = "broken_link"
     CYCLE = "cycle"
     ORPHAN = "orphan"
@@ -77,6 +78,7 @@ class DocumentData:
     impacts: List[str] = field(default_factory=list)
     tags: List[str] = field(default_factory=list)
     aliases: List[str] = field(default_factory=list)
+    describes: List[str] = field(default_factory=list)
 
 
 @dataclass

@@ -9,7 +9,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Any
 
-from ontos.core.snapshot import create_snapshot
+from ontos.core.snapshot import SnapshotFilters
+from ontos.io.snapshot import create_snapshot
 from ontos.core.migration import classify_documents, MigrationReport
 from ontos.io.files import find_project_root
 

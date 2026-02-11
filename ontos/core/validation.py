@@ -27,27 +27,29 @@ from ontos.core.graph import (
 def validate_describes_field(
     doc: DocumentData,
     valid_targets: Set[str]
-) -> Optional[ValidationError]:
-    """Validate describes field references valid targets.
-
+) -> List[ValidationError]:
+    """Validate describes field references valid targets (list-safe).
+    
     Args:
-        doc: Document with optional describes field
+        doc: Document with list of described atoms
         valid_targets: Set of valid target doc_ids
-
+        
     Returns:
-        ValidationError if invalid, None if valid
+        List of ValidationErrors for invalid references
     """
-    describes = doc.frontmatter.get("describes")
-    if describes and describes not in valid_targets:
-        return ValidationError(
-            error_type=ValidationErrorType.SCHEMA,
-            doc_id=doc.id,
-            filepath=str(doc.filepath),
-            message=f"describes '{describes}' not found",
-            fix_suggestion=f"Update describes to valid target or remove",
-            severity="warning"
-        )
-    return None
+    errors = []
+    # Use the normalized describes list from DocumentData
+    for target in doc.describes:
+        if target not in valid_targets:
+            errors.append(ValidationError(
+                error_type=ValidationErrorType.SCHEMA,
+                doc_id=doc.id,
+                filepath=str(doc.filepath),
+                message=f"describes '{target}' not found",
+                fix_suggestion=f"Update describes to valid target or remove",
+                severity="warning"
+            ))
+    return errors
 
 
 class ValidationOrchestrator:
@@ -79,6 +81,7 @@ class ValidationOrchestrator:
         self.validate_log_schema()
         self.validate_impacts()
         self.validate_describes()
+        self.validate_concepts()
 
         return ValidationResult(
             errors=self.errors,
@@ -171,8 +174,21 @@ class ValidationOrchestrator:
     def validate_describes(self) -> None:
         """Validate describes field references."""
         valid_ids = set(self.docs.keys())
-
+ 
         for doc_id, doc in self.docs.items():
-            error = validate_describes_field(doc, valid_ids)
-            if error:
+            errors = validate_describes_field(doc, valid_ids)
+            for error in errors:
                 self.warnings.append(error)
+
+    def validate_concepts(self) -> None:
+        """Validate concept field usage in logs items."""
+        for doc_id, doc in self.docs.items():
+            if doc.type.value == "log" and not doc.frontmatter.get("concepts"):
+                self.warnings.append(ValidationError(
+                    error_type=ValidationErrorType.CURATION,
+                    doc_id=doc_id,
+                    filepath=str(doc.filepath),
+                    message="Log document missing 'concepts' field (required at L2)",
+                    fix_suggestion="Add a concepts: list to the frontmatter",
+                    severity="warning"
+                ))

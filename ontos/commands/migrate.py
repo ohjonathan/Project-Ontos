@@ -9,9 +9,9 @@ from ontos.core.schema import (
     serialize_frontmatter,
     add_schema_to_frontmatter,
 )
-from ontos.core.frontmatter import parse_frontmatter
 from ontos.core.context import SessionContext
-from ontos.io.files import find_project_root, scan_documents
+from ontos.io.files import find_project_root, scan_documents, load_documents, load_frontmatter
+from ontos.io.yaml import parse_frontmatter_content
 from ontos.ui.output import OutputHandler
 
 
@@ -29,7 +29,7 @@ class MigrateOptions:
 def check_file_needs_migration(filepath: Path) -> Tuple[bool, str, str]:
     """Check if a file needs schema migration."""
     try:
-        fm = parse_frontmatter(str(filepath))
+        fm, _ = load_frontmatter(filepath, parse_frontmatter_content)
         if fm is None:
             return False, "", "No frontmatter"
         
@@ -67,6 +67,13 @@ def migrate_command(options: MigrateOptions) -> Tuple[int, str]:
     ignore_patterns = load_ontosignore(root)
     files = scan_documents(search_dirs, skip_patterns=ignore_patterns) # Filter by .md only
     files = [f for f in files if f.suffix == ".md"]
+
+    load_result = load_documents(files, parse_frontmatter_content)
+    if load_result.has_fatal_errors:
+        for issue in load_result.issues:
+            if issue.code in {"duplicate_id", "parse_error", "io_error"}:
+                output.error(issue.message)
+        return 1, "Document load failed"
 
     needs_migration = []
     already_migrated = 0
@@ -111,8 +118,10 @@ def migrate_command(options: MigrateOptions) -> Tuple[int, str]:
     
     for f, schema in needs_migration:
         try:
-            content = f.read_text(encoding='utf-8')
-            fm = parse_frontmatter(str(f))
+            fm, content = load_frontmatter(f, parse_frontmatter_content)
+            if fm is None:
+                errors += 1
+                continue
             new_fm = add_schema_to_frontmatter(fm, schema_version=schema)
             
             if options.dry_run:

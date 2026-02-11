@@ -13,6 +13,10 @@ from typing import Dict, List, Set, Optional, Tuple, Union
 
 from ontos.core.types import DocumentData, ValidationError, ValidationErrorType
 from ontos.core.suggestions import suggest_candidates_for_broken_ref
+ 
+# Standard severity for broken references.
+# Milestone 3 allows parameterizing this if needed by the caller.
+REFERENCE_SEVERITY_DEFAULT = "error"
 
 
 @dataclass
@@ -77,7 +81,7 @@ def build_graph(docs: Dict[str, DocumentData]) -> Tuple[DependencyGraph, List[Va
                     filepath=str(doc.filepath),
                     message=f"Broken dependency: '{dep_id}' does not exist",
                     fix_suggestion=fix_suggestion,
-                    severity="error"
+                    severity=REFERENCE_SEVERITY_DEFAULT
                 ))
 
     return graph, errors

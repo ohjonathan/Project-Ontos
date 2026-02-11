@@ -242,21 +242,11 @@ def _scan_docs(ctx: MaintainContext) -> List[Path]:
     return scan_documents(_scan_dirs(ctx), skip_patterns=skip_patterns)
 
 
-def _load_docs_for_graph(ctx: MaintainContext) -> Dict[str, object]:
-    from ontos.io.files import load_document_from_content
-    from ontos.io.obsidian import read_file_lenient
+def _load_docs_for_graph(ctx: MaintainContext) -> "DocumentLoadResult":
+    from ontos.io.files import load_documents
     from ontos.io.yaml import parse_frontmatter_content
 
-    docs = {}
-    for path in _scan_docs(ctx):
-        try:
-            content = read_file_lenient(path)
-            doc = load_document_from_content(path, content, parse_frontmatter_content)
-            docs[doc.id] = doc
-        except Exception:
-            # Keep maintenance resilient to single-file parse errors.
-            continue
-    return docs
+    return load_documents(_scan_docs(ctx), parse_frontmatter_content)
 
 
 @register_maintain_task(
@@ -380,16 +370,13 @@ def _task_curation_stats(ctx: MaintainContext) -> TaskResult:
         CurationLevel.FULL: 0,
     }
 
-    for path in _scan_docs(ctx):
-        try:
-            frontmatter = parse_frontmatter(str(path))
-        except Exception:
-            frontmatter = None
+    from ontos.io.files import load_documents
+    from ontos.io.yaml import parse_frontmatter_content
+    
+    load_result = load_documents(_scan_docs(ctx), parse_frontmatter_content)
 
-        if not frontmatter:
-            level = CurationLevel.SCAFFOLD
-        else:
-            level = detect_curation_level(frontmatter)
+    for doc in load_result.documents.values():
+        level = detect_curation_level(doc.frontmatter)
         counts[level] += 1
 
     total = sum(counts.values())
@@ -555,27 +542,43 @@ def _task_check_links(ctx: MaintainContext) -> TaskResult:
     if ctx.options.dry_run:
         return _ok("Would validate dependency links.")
 
-    docs = _load_docs_for_graph(ctx)
+    load_result = _load_docs_for_graph(ctx)
+    docs = load_result.documents
+    
     if not docs:
+        load_issues = len(load_result.issues)
+        if load_issues > 0:
+            return _fail(f"No documents loaded. Found {load_issues} load issues.")
         return _ok("No documents found for link validation.", metrics={"broken_links": 0})
 
     _, broken = build_graph(docs)
     broken_count = len(broken)
-
-    if broken_count == 0:
-        return _ok("No broken dependency links found.", metrics={"broken_links": 0})
+    duplicate_count = len(load_result.duplicate_ids)
 
     details = []
+    # Report load issues (parse errors, duplicates)
+    for issue in load_result.issues:
+        details.append(f"LOAD {issue.code.upper()}: {issue.message}")
+
     for error in broken[:5]:
-        details.append(f"{error.doc_id}: {error.message}")
+        details.append(f"BROKEN: {error.doc_id}: {error.message}")
     if broken_count > 5:
         details.append(f"... and {broken_count - 5} more")
 
-    return _fail(
-        f"Found {broken_count} broken dependency link(s).",
-        details=details,
-        metrics={"broken_links": broken_count},
-    )
+    metrics = {
+        "broken_links": broken_count,
+        "load_issues": len(load_result.issues),
+        "duplicates": duplicate_count,
+    }
+
+    if broken_count > 0 or duplicate_count > 0:
+        return _fail(
+            f"Found {broken_count} broken link(s) and {duplicate_count} duplicate(s).",
+            details=details,
+            metrics=metrics,
+        )
+
+    return _ok("No broken dependency links found.", details=details if details else None, metrics=metrics)
 
 
 @register_maintain_task(

@@ -12,7 +12,8 @@ from ontos.core.staleness import (
     check_staleness,
 )
 from ontos.core.context import SessionContext
-from ontos.io.files import find_project_root, scan_documents
+from ontos.io.files import find_project_root, scan_documents, load_documents, load_frontmatter
+from ontos.io.yaml import parse_frontmatter_content
 from ontos.ui.output import OutputHandler
 
 
@@ -32,48 +33,34 @@ def find_stale_documents_list() -> List[dict]:
     
     root = find_project_root()
     ignore_patterns = load_ontosignore(root)
-    files = scan_documents([root], skip_patterns=ignore_patterns) # Should probably use a more targeted scan if possible
+    load_result = load_documents(files, parse_frontmatter_content)
+    if load_result.has_fatal_errors:
+        return [] # Caller will handle empty and check if it needs to fail
     
-    # Build ID to path mapping and gather data
-    files_data = {}
-    id_to_path = {}
+    # Build ID to path mapping for staleness checker
+    id_to_path = {
+        doc_id: str(doc.filepath) 
+        for doc_id, doc in load_result.documents.items()
+    }
     
-    for f in files:
-        try:
-            # We need raw frontmatter for fields
-            # Better to use a unified document loader if available, 
-            # but for now we'll match legacy script logic.
-            fm = parse_frontmatter(str(f))
-            if not fm:
-                continue
-            
-            doc_id = fm.get('id', f.stem)
-            id_to_path[doc_id] = str(f)
-            files_data[doc_id] = {
-                'filepath': str(f),
-                'describes': normalize_describes(fm.get('describes')),
-                'describes_verified': fm.get('describes_verified')
-            }
-        except Exception:
-            continue
-            
     stale_docs = []
-    for doc_id, data in files_data.items():
-        if not data['describes']:
+    for doc_id, doc in load_result.documents.items():
+        describes = normalize_describes(doc.frontmatter.get('describes'))
+        if not describes:
             continue
             
         staleness = check_staleness(
             doc_id=doc_id,
-            doc_path=data['filepath'],
-            describes=data['describes'],
-            describes_verified=data['describes_verified'],
+            doc_path=str(doc.filepath),
+            describes=describes,
+            describes_verified=doc.frontmatter.get('describes_verified'),
             id_to_path=id_to_path
         )
         
         if staleness and staleness.is_stale():
             stale_docs.append({
                 'doc_id': doc_id,
-                'filepath': data['filepath'],
+                'filepath': str(doc.filepath),
                 'staleness': staleness
             })
             
@@ -156,18 +143,23 @@ def verify_document(path: Path, verify_date: str) -> Tuple[bool, str]:
 
 def verify_all_interactive(verify_date: date, output: OutputHandler) -> int:
     """Interactively verify all stale documents."""
-    stale_docs = find_stale_documents_list()
+    root = find_project_root()
+    from ontos.core.curation import load_ontosignore
+    ignore_patterns = load_ontosignore(root)
+    files = scan_documents([root], skip_patterns=ignore_patterns)
+    load_result = load_documents(files, parse_frontmatter_content)
+    
+    if load_result.has_fatal_errors:
+        for issue in load_result.issues:
+            if issue.code in {"duplicate_id", "parse_error", "io_error"}:
+                output.error(issue.message)
+        return 1
+
+    stale_docs = find_stale_documents_list() # This re-loads, but it's safe for now.
     
     if not stale_docs:
         output.success("No stale documents found.")
         return 0
-    
-    output.info(f"Found {len(stale_docs)} stale documents:")
-    
-    root = find_project_root()
-    ctx = SessionContext.from_repo(root)
-    updated = 0
-    skipped = 0
     
     for i, doc in enumerate(stale_docs, 1):
         staleness = doc['staleness']
@@ -224,10 +216,10 @@ def verify_command(options: VerifyOptions) -> Tuple[int, str]:
         ctx = SessionContext.from_repo(root)
         
         # Check if doc has describes
-        fm = parse_frontmatter(str(options.path))
+        fm, _ = load_frontmatter(options.path, parse_frontmatter_content)
         if not fm:
-            output.error(f"No frontmatter in {options.path}")
-            return 1, "No frontmatter"
+            output.error(f"Failed to parse frontmatter in {options.path}")
+            return 1, "Parse failure"
             
         describes = normalize_describes(fm.get('describes'))
         if not describes:

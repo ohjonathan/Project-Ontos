@@ -10,7 +10,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 
-from ontos.core.snapshot import create_snapshot, SnapshotFilters, DocumentSnapshot
+from ontos.core.snapshot import SnapshotFilters
+from ontos.io.snapshot import create_snapshot, DocumentSnapshot
 from ontos.core.migration import classify_documents
 from ontos.io.files import find_project_root
 
@@ -49,7 +50,7 @@ def _snapshot_to_json(
     """Convert snapshot to JSON-serializable dict."""
     import ontos
 
-    from ontos.core.snapshot import _matches_filter
+    from ontos.core.snapshot import matches_filter
     from ontos.core.migration import classify_documents
 
     # Get migration classifications
@@ -62,7 +63,7 @@ def _snapshot_to_json(
         doc = snapshot.documents[doc_id]
         
         # Apply filters during serialization (B2)
-        if not _matches_filter(doc, filters):
+        if not matches_filter(doc, filters):
             continue
 
         included_ids.add(doc_id)
