@@ -57,3 +57,60 @@ def test_consolidate_runtime_root_resolution(tmp_path):
     assert "Would consolidate 1 log(s)" in result.stdout
     # Ensure it didn't crash searching for logs in the package root
     assert "Document load failed" not in result.stderr
+
+
+def test_consolidate_non_dry_run_updates_history_and_archives(tmp_path):
+    """Regression test: non-dry-run consolidate should archive and update history."""
+    project_root = tmp_path / "my_project"
+    project_root.mkdir()
+    (project_root / ".ontos.toml").write_text(
+        "[project]\nname = 'test'\n[paths]\ndocs_dir = 'docs'\nlogs_dir = 'docs/logs'\n"
+    )
+
+    logs_dir = project_root / "docs" / "logs"
+    logs_dir.mkdir(parents=True)
+    original_log = logs_dir / "2020-01-01-test.md"
+    original_log.write_text(
+        "---\n"
+        "id: log_test\n"
+        "type: log\n"
+        "event_type: chore\n"
+        "impacts: []\n"
+        "---\n"
+        "## Goal\n"
+        "Test log content\n",
+        encoding="utf-8",
+    )
+
+    strategy_dir = project_root / "docs" / "strategy"
+    strategy_dir.mkdir(parents=True)
+    history_file = strategy_dir / "decision_history.md"
+    history_file.write_text(
+        "# Decision History\n\n"
+        "## History Ledger\n\n"
+        "| Date | Slug | Event | Decision / Outcome | Impacts | Archive Path |\n"
+        "|:---|:---|:---|:---|:---|:---|\n",
+        encoding="utf-8",
+    )
+
+    env = os.environ.copy()
+    env["PYTHONPATH"] = os.getcwd()
+
+    result = subprocess.run(
+        [sys.executable, "-m", "ontos.cli", "consolidate", "--all", "--by-age", "--days", "0"],
+        cwd=str(project_root),
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    archived_log = project_root / "docs" / "archive" / "logs" / "2020-01-01-test.md"
+    assert result.returncode == 0
+    assert "Consolidated 1 log(s)." in result.stdout
+    assert archived_log.exists()
+    assert not original_log.exists()
+    assert (
+        "| 2020-01-01 | test | chore | Test log content | — | `docs/archive/logs/2020-01-01-test.md` |"
+        in history_file.read_text(encoding="utf-8")
+    )
+    assert "Error archiving" not in result.stderr

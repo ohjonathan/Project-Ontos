@@ -87,6 +87,7 @@ def append_to_decision_history(
     event_type: str,
     summary: str,
     impacts: List[str],
+    archive_path: str,
     history_path: Path,
     ctx: SessionContext,
     output: OutputHandler
