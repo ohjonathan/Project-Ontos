@@ -74,6 +74,12 @@ class TestUnifiedCLI:
         assert result.returncode == 0, f"Command '{command}' --help failed"
         assert 'usage:' in result.stdout.lower(), f"Command '{command}' didn't show usage"
 
+    def test_rename_help_mentions_dry_run_safety_note(self):
+        """rename help should include explicit dry-run safety note."""
+        result = self.run_cli('rename', '--help')
+        assert result.returncode == 0
+        assert 'Dry-run by default. Use --apply to write changes.' in result.stdout
+
 
 class TestCLIArgumentPassthrough:
     """Test that arguments are passed through to subcommands correctly."""

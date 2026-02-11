@@ -221,6 +221,11 @@ def _register_rename(subparsers, parent):
     p = subparsers.add_parser(
         "rename",
         help="Plan or apply atomic ID rename across frontmatter and body references",
+        description=(
+            "Plan or apply atomic ID rename across frontmatter and body references.\n"
+            "Dry-run by default. Use --apply to write changes."
+        ),
+        epilog="Dry-run by default. Use --apply to write changes.",
         parents=[parent],
     )
     p.add_argument("old_id", help="Existing document ID to rename")

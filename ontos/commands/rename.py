@@ -951,7 +951,7 @@ def _patch_scalar_after_colon(after_colon: str, old_id: str, new_id: str) -> Tup
         return after_colon, False, None
 
     replacement_token = f"{quote}{new_id}{quote}" if quote is not None else new_id
-    replaced = _replace_preserving_padding(value_part, value_token, replacement_token)
+    replaced = _replace_preserving_padding(value_part, replacement_token)
     return replaced + comment_part, True, None
 
 
@@ -1003,14 +1003,14 @@ def _patch_inline_list_after_colon(
         if decoded != old_id:
             continue
         replacement_token = f"{quote_char}{new_id}{quote_char}" if quote_char is not None else new_id
-        segments[index] = _replace_preserving_padding(segment, segment_token, replacement_token)
+        segments[index] = _replace_preserving_padding(segment, replacement_token)
         changed = True
 
     if not changed:
         return after_colon, False, None
 
     new_token = "[" + ",".join(segments) + "]"
-    replaced = _replace_preserving_padding(value_part, token, new_token)
+    replaced = _replace_preserving_padding(value_part, new_token)
     return replaced + comment_part, True, None
 
 
@@ -1042,7 +1042,7 @@ def _split_comment_unquoted(text: str) -> Tuple[str, str]:
     return text, ""
 
 
-def _replace_preserving_padding(original: str, token: str, replacement: str) -> str:
+def _replace_preserving_padding(original: str, replacement: str) -> str:
     leading = len(original) - len(original.lstrip())
     trailing = len(original) - len(original.rstrip())
     suffix = original[len(original) - trailing :] if trailing > 0 else ""

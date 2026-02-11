@@ -356,3 +356,163 @@ def test_rename_end_to_end_dry_run_apply_then_link_check(tmp_path: Path):
     assert payload["summary"]["broken_references"] == 0
     assert payload["summary"]["duplicate_ids"] == 0
 
+
+def test_rename_quoted_double_id_value_preserves_quote_style(tmp_path: Path):
+    _init_repo(tmp_path)
+    path = tmp_path / "docs" / "double.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "---\n"
+        'id: "old_id"\n'
+        "type: strategy\n"
+        "status: active\n"
+        "---\n"
+        "See old_id.\n",
+        encoding="utf-8",
+    )
+    _init_git_repo(tmp_path)
+
+    result = _run_ontos(tmp_path, "rename", "old_id", "new_id", "--apply")
+    assert result.returncode == 0
+    updated = path.read_text(encoding="utf-8")
+    assert 'id: "new_id"' in updated
+
+
+def test_rename_quoted_single_id_value_preserves_quote_style(tmp_path: Path):
+    _init_repo(tmp_path)
+    path = tmp_path / "docs" / "single.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "---\n"
+        "id: 'old_id'\n"
+        "type: strategy\n"
+        "status: active\n"
+        "---\n"
+        "See old_id.\n",
+        encoding="utf-8",
+    )
+    _init_git_repo(tmp_path)
+
+    result = _run_ontos(tmp_path, "rename", "old_id", "new_id", "--apply")
+    assert result.returncode == 0
+    updated = path.read_text(encoding="utf-8")
+    assert "id: 'new_id'" in updated
+
+
+def test_rename_anchor_alias_detection_warns_and_blocks_apply(tmp_path: Path):
+    _init_repo(tmp_path)
+    path = tmp_path / "docs" / "anchor.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "---\n"
+        "id: &root old_id\n"
+        "type: strategy\n"
+        "status: active\n"
+        "depends_on: *root\n"
+        "---\n"
+        "See old_id.\n",
+        encoding="utf-8",
+    )
+    _init_git_repo(tmp_path)
+
+    dry_run = _run_ontos(tmp_path, "--json", "rename", "old_id", "new_id")
+    assert dry_run.returncode == 0
+    dry_payload = json.loads(dry_run.stdout)
+    assert any(item["reason_code"] == "anchor_or_alias" for item in dry_payload["warnings"])
+
+    apply_result = _run_ontos(tmp_path, "--json", "rename", "old_id", "new_id", "--apply")
+    assert apply_result.returncode == 1
+    apply_payload = json.loads(apply_result.stdout)
+    assert apply_payload["error"]["code"] == "unsupported_target_format"
+
+
+def test_rename_block_scalar_detection_warns_and_blocks_apply(tmp_path: Path):
+    _init_repo(tmp_path)
+    path = tmp_path / "docs" / "block-scalar.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "---\n"
+        "id: old_id\n"
+        "type: strategy\n"
+        "status: active\n"
+        "depends_on: |-\n"
+        "  old_id\n"
+        "---\n"
+        "See old_id.\n",
+        encoding="utf-8",
+    )
+    _init_git_repo(tmp_path)
+
+    dry_run = _run_ontos(tmp_path, "--json", "rename", "old_id", "new_id")
+    assert dry_run.returncode == 0
+    dry_payload = json.loads(dry_run.stdout)
+    assert any(item["reason_code"] == "block_scalar_value" for item in dry_payload["warnings"])
+
+    apply_result = _run_ontos(tmp_path, "--json", "rename", "old_id", "new_id", "--apply")
+    assert apply_result.returncode == 1
+    apply_payload = json.loads(apply_result.stdout)
+    assert apply_payload["error"]["code"] == "unsupported_target_format"
+
+
+def test_rename_self_referential_depends_on_updates_id_and_dependency(tmp_path: Path):
+    _init_repo(tmp_path)
+    _write_doc(
+        tmp_path / "docs" / "self.md",
+        "old_id",
+        doc_type="strategy",
+        depends_on="[old_id]",
+        body="Self ref old_id.",
+    )
+    _init_git_repo(tmp_path)
+
+    result = _run_ontos(tmp_path, "rename", "old_id", "new_id", "--apply")
+    assert result.returncode == 0
+    content = (tmp_path / "docs" / "self.md").read_text(encoding="utf-8")
+    assert "id: new_id" in content
+    assert "depends_on: [new_id]" in content
+
+
+def test_rename_scope_library_updates_internal_documents(tmp_path: Path):
+    _init_repo(tmp_path)
+    _write_doc(
+        tmp_path / ".ontos-internal" / "internal.md",
+        "old_id",
+        doc_type="strategy",
+        body="Internal old_id.",
+    )
+    _write_doc(
+        tmp_path / "docs" / "source.md",
+        "source_doc",
+        doc_type="strategy",
+        depends_on="[old_id]",
+        body="See old_id in docs.",
+    )
+    _init_git_repo(tmp_path)
+
+    result = _run_ontos(
+        tmp_path,
+        "rename",
+        "old_id",
+        "new_id",
+        "--scope",
+        "library",
+        "--apply",
+    )
+    assert result.returncode == 0
+
+    internal = (tmp_path / ".ontos-internal" / "internal.md").read_text(encoding="utf-8")
+    docs = (tmp_path / "docs" / "source.md").read_text(encoding="utf-8")
+    assert "id: new_id" in internal
+    assert "depends_on: [new_id]" in docs
+    assert "See new_id in docs." in docs
+
+
+def test_rename_quiet_mode_suppresses_per_file_details(tmp_path: Path):
+    _init_repo(tmp_path)
+    _write_doc(tmp_path / "docs" / "target.md", "old_id")
+    _write_doc(tmp_path / "docs" / "source.md", "source_doc", body="See old_id.")
+
+    result = _run_ontos(tmp_path, "rename", "old_id", "new_id", "--quiet")
+    assert result.returncode == 0
+    assert "Summary" in result.stdout
+    assert "File:" not in result.stdout
