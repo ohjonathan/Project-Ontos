@@ -17,7 +17,6 @@ from typing import Callable, Dict, List, Optional, Sequence, Tuple
 import ontos
 from ontos.core.config import OntosConfig
 from ontos.core.curation import CurationLevel, detect_curation_level
-from ontos.core.frontmatter import parse_frontmatter
 from ontos.core.graph import build_graph
 from ontos.io.config import load_project_config
 from ontos.io.files import find_project_root, scan_documents

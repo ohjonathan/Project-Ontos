@@ -5,7 +5,7 @@ Phase 2 creates this layer to isolate I/O operations from core logic.
 Core modules should not import from this package directly.
 """
 
-from ontos.io.yaml import parse_yaml, dump_yaml, parse_frontmatter_yaml
+from ontos.io.yaml import parse_yaml, dump_yaml
 from ontos.io.git import (
     get_current_branch,
     get_commits_since_push,
@@ -42,7 +42,6 @@ __all__ = [
     # yaml
     "parse_yaml",
     "dump_yaml",
-    "parse_frontmatter_yaml",
     # git
     "get_current_branch",
     "get_commits_since_push",

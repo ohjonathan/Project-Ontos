@@ -73,7 +73,7 @@ def build_graph(
     circular_severity = severity_map.get("circular", depends_on_severity)
 
     for doc_id, doc in docs.items():
-        depends_on = doc.depends_on if hasattr(doc, 'depends_on') else []
+        depends_on = doc.depends_on
         # Handle enum types
         doc_type = doc.type.value
         graph.add_node(doc_id, doc_type, str(doc.filepath), depends_on)

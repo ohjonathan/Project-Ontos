@@ -112,3 +112,34 @@ def test_loader_duplicate_contract_no_crash_resilience(tmp_path):
     assert "collision" in load_result.documents
     assert "valid_doc" in load_result.documents
     assert len(load_result.documents) == 2
+
+
+def test_lstrip_frontmatter_detection_with_leading_whitespace(tmp_path):
+    """VUL-04: Verify that leading whitespace before --- is handled leniently."""
+    from ontos.io.yaml import parse_frontmatter_content
+    from ontos.io.files import load_document_from_content
+    content = "\n\n---\nid: lstrip_test\ntype: atom\n---\nBody content"
+    path = tmp_path / "lstrip_test.md"
+    path.write_text(content)
+
+    doc, issues = load_document_from_content(path, content, parse_frontmatter_content)
+
+    # The lstrip behavior means this IS detected as having frontmatter
+    assert doc.id == "lstrip_test"
+
+
+def test_loader_duplicate_detection_is_case_sensitive(tmp_path):
+    """VUL-11: IDs differing only in case should be treated as distinct."""
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+
+    (docs_dir / "lower.md").write_text("---\nid: my_doc\ntype: atom\n---\n")
+    (docs_dir / "upper.md").write_text("---\nid: MY_DOC\ntype: atom\n---\n")
+
+    files = list(docs_dir.glob("*.md"))
+    load_result = load_documents(files, parse_frontmatter_content)
+
+    # Both should load — they are NOT duplicates
+    assert "my_doc" in load_result.documents
+    assert "MY_DOC" in load_result.documents
+    assert len(load_result.duplicate_ids) == 0

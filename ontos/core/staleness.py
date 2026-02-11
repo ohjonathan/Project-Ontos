@@ -151,6 +151,10 @@ def normalize_describes(value: Any, on_warning: Optional[Callable[[str], None]] 
                 if stripped:
                     results.append(stripped)
             else:
+                # describes targets must be exact document IDs (always strings).
+                # Unlike normalize_reference_list() which coerces int/float/bool
+                # for depends_on/impacts (YAML convenience), describes is strict:
+                # non-string values are dropped, not coerced.
                 if on_warning:
                     on_warning(f"Non-string member '{v}' in describes field dropped.")
         return results

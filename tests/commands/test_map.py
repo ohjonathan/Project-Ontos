@@ -48,6 +48,32 @@ def test_map_sync_agents_updates_agents_md(tmp_path, monkeypatch):
     assert agents_path.stat().st_mtime > old_mtime
 
 
+def test_map_vocabulary_check_uses_authoritative_source(tmp_path, monkeypatch):
+    """VUL-06: Vocabulary check should use Common_Concepts.md, not self-reference."""
+    # Set up minimal project structure
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+
+    # Create a doc with a concept NOT in Common_Concepts.md
+    (docs_dir / "test.md").write_text(
+        "---\nid: test_doc\ntype: atom\nconcepts: [auth, totally_unknown_concept]\n---\nBody"
+    )
+
+    # Create Common_Concepts.md with only 'auth'
+    ref_dir = tmp_path / ".ontos-internal" / "reference"
+    ref_dir.mkdir(parents=True)
+    (ref_dir / "Common_Concepts.md").write_text(
+        "---\nid: common_concepts\ntype: atom\n---\n"
+        "# Common Concepts\n\n"
+        "| Concept | Covers |\n|:---|:---|\n| `auth` | Authentication |\n"
+    )
+
+    # _load_known_concepts should return {'auth'}
+    from ontos.commands.map import _load_known_concepts
+    concepts = _load_known_concepts(tmp_path)
+    assert concepts == {"auth"}
+
+
 def test_map_sync_agents_no_create_if_missing(tmp_path, monkeypatch):
     """When --sync-agents is set but AGENTS.md doesn't exist, don't create it."""
     monkeypatch.chdir(tmp_path)

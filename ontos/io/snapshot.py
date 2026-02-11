@@ -79,7 +79,9 @@ def create_snapshot(
     # Build graph
     graph, _ = build_graph(filtered_docs)
 
-    # Run validation
+    # Run structural validation only (no vocabulary check).
+    # Snapshot is an IO-layer operation — vocabulary checking requires
+    # project-level config (known_concepts) which is a command-layer concern.
     orchestrator = ValidationOrchestrator(filtered_docs, {})
     validation_result = orchestrator.validate_all()
     
@@ -88,7 +90,7 @@ def create_snapshot(
     if git_commit_provider:
         try:
             git_commit = git_commit_provider()
-        except:
+        except Exception:
             pass
 
     return DocumentSnapshot(

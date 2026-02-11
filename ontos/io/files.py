@@ -212,6 +212,10 @@ def load_documents(
                 raw_bytes = path.read_bytes()
                 if raw_bytes.startswith(b'\xef\xbb\xbf'):
                     raw_bytes = raw_bytes[3:]
+                # .lstrip() intentionally strips leading whitespace/BOM before frontmatter detection.
+                # This is more lenient than the legacy parser (core/frontmatter.py) which required
+                # content.startswith('---') with no leading whitespace. The leniency handles BOM
+                # artifacts and minor formatting issues in imported/external files.
                 content = raw_bytes.decode('utf-8', errors='replace').lstrip()
                 
                 doc, doc_issues = load_document_from_content(path, content, frontmatter_parser)
@@ -221,6 +225,9 @@ def load_documents(
                     cache.set(path, doc, mtime)
             
             # Duplicate ID handling
+            # Duplicate ID detection is case-sensitive by design.
+            # YAML keys are case-sensitive per spec, so 'my_doc' and 'MY_DOC' are distinct IDs.
+            # Track B rename should preserve this behavior.
             if doc.id in documents:
                 # Collision detected
                 if doc.id not in duplicate_ids:
@@ -276,6 +283,10 @@ def load_document(
     raw_bytes = path.read_bytes()
     if raw_bytes.startswith(b'\xef\xbb\xbf'):
         raw_bytes = raw_bytes[3:]
+    # .lstrip() intentionally strips leading whitespace/BOM before frontmatter detection.
+    # This is more lenient than the legacy parser (core/frontmatter.py) which required
+    # content.startswith('---') with no leading whitespace. The leniency handles BOM
+    # artifacts and minor formatting issues in imported/external files.
     content = raw_bytes.decode('utf-8', errors='replace').lstrip()
     doc, _ = load_document_from_content(path, content, frontmatter_parser)
     return doc

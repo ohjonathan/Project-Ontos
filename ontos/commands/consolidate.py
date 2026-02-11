@@ -33,16 +33,17 @@ class ConsolidateOptions:
     json_output: bool = False
 
 
-def find_logs_to_consolidate(options: ConsolidateOptions) -> List[Tuple[Path, str, dict]]:
+def find_logs_to_consolidate(options: ConsolidateOptions, load_result=None) -> List[Tuple[Path, str, dict]]:
     """Find logs to consolidate based on count or age."""
     logs_dir = Path(get_logs_dir())
     if not logs_dir.exists():
         return []
 
     all_logs = []
-    load_result = load_documents(list(logs_dir.glob("*.md")), parse_frontmatter_content)
-    if load_result.has_fatal_errors or load_result.duplicate_ids:
-        return []
+    if load_result is None:
+        load_result = load_documents(list(logs_dir.glob("*.md")), parse_frontmatter_content)
+        if load_result.has_fatal_errors or load_result.duplicate_ids:
+            return []
 
     # Filter and sort by filename (date-based), oldest first
     for doc in sorted(load_result.documents.values(), key=lambda d: d.filepath.name):
@@ -159,6 +160,7 @@ def consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
     root = find_project_root()
     output = OutputHandler(quiet=options.quiet)
     logs_dir = Path(get_logs_dir())
+    load_result = None
     if logs_dir.exists():
         load_result = load_documents(list(logs_dir.glob("*.md")), parse_frontmatter_content)
         if load_result.has_fatal_errors or load_result.duplicate_ids:
@@ -167,7 +169,7 @@ def consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
                     output.error(issue.message)
             return 1, "Document load failed"
             
-    logs_to_consolidate = find_logs_to_consolidate(options)
+    logs_to_consolidate = find_logs_to_consolidate(options, load_result=load_result)
     if not logs_to_consolidate:
         if not options.quiet:
             output.success("Nothing to consolidate.")

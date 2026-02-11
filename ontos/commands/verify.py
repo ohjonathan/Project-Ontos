@@ -6,7 +6,6 @@ from datetime import date
 from pathlib import Path
 from typing import Optional, Tuple, List
 
-from ontos.core.frontmatter import parse_frontmatter
 from ontos.core.staleness import (
     normalize_describes,
     check_staleness,

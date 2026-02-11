@@ -210,7 +210,7 @@ def suggest_candidates_for_broken_ref(
             continue
 
         # Strategy 2: Alias match (high confidence: 0.85)
-        aliases = doc.aliases if hasattr(doc, 'aliases') else []
+        aliases = doc.aliases
         if aliases and any(broken_lower in alias.lower() for alias in aliases):
             candidates.append((doc_id, 0.85, "alias match"))
             continue

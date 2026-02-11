@@ -41,22 +41,6 @@ def dump_yaml(data: Dict[str, Any], default_flow_style: bool = False) -> str:
     """
     return yaml.dump(data, default_flow_style=default_flow_style, allow_unicode=True)
 
-
-def parse_frontmatter_yaml(content: str) -> Optional[Dict[str, Any]]:
-    """Parse YAML frontmatter from document content.
-
-    NON-CANONICAL internal-legacy API. Wraps parse_frontmatter_content.
-
-    Args:
-        content: Full document content with potential frontmatter
-
-    Returns:
-        Parsed frontmatter dict, or None if no valid frontmatter found
-    """
-    fm, _ = parse_frontmatter_content(content)
-    return fm if fm else None
-
-
 def parse_frontmatter_content(content: str) -> tuple:
     """Parse frontmatter and return (frontmatter_dict, body_string).
     

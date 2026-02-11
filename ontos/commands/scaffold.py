@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-from ontos.core.frontmatter import parse_frontmatter
 from ontos.core.curation import create_scaffold, load_ontosignore, should_ignore
 from ontos.core.schema import serialize_frontmatter
 from ontos.core.context import SessionContext
@@ -64,6 +63,9 @@ def find_untagged_files(paths: Optional[List[Path]] = None, root: Optional[Path]
     if load_result.has_fatal_errors:
         # We can't safely scaffold if the graph is broken
         return [] 
+    # Duplicate IDs are intentionally tolerated in scaffold context.
+    # Scaffold creates new files and only needs the existing ID set for
+    # collision avoidance — first-wins resolution is sufficient.
 
     untagged = []
     for f in files:
@@ -159,6 +161,9 @@ def scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
                 # Duplicates are reported but not always fatal for scaffolding
                 output.warning(issue.message)
         
+        # Duplicate IDs are intentionally tolerated in scaffold context.
+        # Scaffold creates new files and only needs the existing ID set for
+        # collision avoidance — first-wins resolution is sufficient.
         if fatal:
             return 1, "Document load failed"
     

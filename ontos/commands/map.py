@@ -48,10 +48,43 @@ def _val(item: Any) -> str:
     return item.value if hasattr(item, "value") else str(item)
 
 
+def _load_known_concepts(root: Path) -> set:
+    """Load known concept vocabulary from Common_Concepts.md.
+
+    Returns an empty set if the file doesn't exist or can't be parsed,
+    which disables vocabulary checking (structural checks still run).
+    """
+    # Check both possible locations
+    for candidate in [
+        root / ".ontos-internal" / "reference" / "Common_Concepts.md",
+        root / "docs" / "reference" / "Common_Concepts.md",
+    ]:
+        if candidate.exists():
+            try:
+                content = candidate.read_text(encoding='utf-8')
+                concepts = set()
+                # Extract concept names from the markdown table rows
+                # Format: | `concept_name` | ... |
+                for line in content.split('\n'):
+                    line = line.strip()
+                    if line.startswith('|') and '`' in line:
+                        cells = line.split('|')
+                        if len(cells) >= 2:
+                            cell = cells[1].strip()
+                            # Extract backtick-wrapped concept name
+                            if cell.startswith('`') and cell.endswith('`'):
+                                concepts.add(cell[1:-1])
+                return concepts
+            except Exception:
+                pass
+    return set()
+
+
 def generate_context_map(
     docs: Dict[str, DocumentData],
     config: Dict[str, Any],
-    options: GenerateMapOptions = None
+    options: GenerateMapOptions = None,
+    known_concepts: set = None
 ) -> Tuple[str, ValidationResult]:
     """Generate the context map markdown content.
 
@@ -65,14 +98,8 @@ def generate_context_map(
     """
     options = options or GenerateMapOptions()
 
-    # Collect vocabulary for concepts validation (#42 / CC-16)
-    all_concepts = set()
-    for doc in docs.values():
-        concepts = doc.frontmatter.get("concepts")
-        if isinstance(concepts, list):
-            for c in concepts:
-                if isinstance(c, str):
-                    all_concepts.add(c)
+    # Vocabulary check (#42 / CC-16 / VUL-06)
+    # If known_concepts is not provided, vocabulary check is skipped (old behavior)
     
     # Run validation
     validator = ValidationOrchestrator(docs, {
@@ -82,7 +109,7 @@ def generate_context_map(
             "broken_link": "warning",
             "concepts": "warning"
         },
-        "known_concepts": all_concepts
+        "known_concepts": known_concepts
     })
     result = validator.validate_all()
 
@@ -776,7 +803,10 @@ def map_command(options: MapOptions) -> int:
         compact=options.compact,
     )
 
-    content, result = generate_context_map(docs, gen_config, gen_options)
+    # Load authoritative vocabulary (#42 / CC-16 / VUL-06)
+    known_concepts = _load_known_concepts(project_root)
+
+    content, result = generate_context_map(docs, gen_config, gen_options, known_concepts=known_concepts)
 
     # Write output
     output_path.parent.mkdir(parents=True, exist_ok=True)

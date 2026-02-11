@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-from ontos.core.frontmatter import parse_frontmatter
+from pathlib import Path
 from ontos.core.schema import serialize_frontmatter
 from ontos.core.types import DocumentData, DocumentType
 from ontos.core.curation import (

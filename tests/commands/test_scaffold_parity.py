@@ -52,3 +52,19 @@ def test_scaffold_dry_run_parity(tmp_path):
     # Legacy format check
     assert "id: test" in result.stdout
     assert "status: scaffold" in result.stdout
+
+
+def test_scaffold_tolerates_duplicate_ids(tmp_path):
+    """OBS-03: Scaffold should continue despite duplicate IDs."""
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+
+    (docs_dir / "a.md").write_text("---\nid: collision\ntype: atom\n---\n")
+    (docs_dir / "b.md").write_text("---\nid: collision\ntype: atom\n---\n")
+    (docs_dir / "untagged.md").write_text("# No frontmatter\nJust content")
+
+    # scaffold should still find untagged.md despite the duplicate collision
+    from ontos.commands.scaffold import find_untagged_files
+    untagged = find_untagged_files(paths=[docs_dir], root=tmp_path)
+    
+    assert any("untagged.md" in str(p) for p in untagged)
