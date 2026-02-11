@@ -117,6 +117,11 @@ from ontos.commands.maintain import (
     MaintainOptions,
 )
 
+from ontos.commands.rename import (
+    rename_command,
+    RenameOptions,
+)
+
 __all__ = [
     # Native orchestration (Phase 2)
     "GenerateMapOptions",
@@ -159,4 +164,6 @@ __all__ = [
     "StubOptions",
     "maintain_command",
     "MaintainOptions",
+    "rename_command",
+    "RenameOptions",
 ]

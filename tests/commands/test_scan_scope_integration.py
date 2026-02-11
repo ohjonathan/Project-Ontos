@@ -64,6 +64,7 @@ def _init_repo(tmp_path: Path) -> None:
         ("validate", "--help"),
         ("agent-export", "--help"),
         ("link-check", "--help"),
+        ("rename", "--help"),
     ],
 )
 def test_scope_flag_registered_for_migrated_commands(tmp_path: Path, args: tuple[str, ...]) -> None:
