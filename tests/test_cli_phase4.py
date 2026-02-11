@@ -78,6 +78,15 @@ class TestCLICommands:
         assert result.returncode == 0
         assert "verbose" in result.stdout.lower()
 
+    def test_link_check_help(self):
+        """link-check --help should work."""
+        result = subprocess.run(
+            [sys.executable, "-m", "ontos", "link-check", "--help"],
+            capture_output=True, text=True
+        )
+        assert result.returncode == 0
+        assert "--scope" in result.stdout
+
     def test_export_help(self):
         """export --help should work (v3.2: subcommand pattern)."""
         result = subprocess.run(

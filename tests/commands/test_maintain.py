@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import sys
+from types import SimpleNamespace
 from pathlib import Path
 
 from ontos.commands.maintain import (
@@ -212,9 +213,42 @@ def test_check_links_task_reports_broken_dependencies(tmp_path):
     ctx = _build_context(tmp_path, quiet=True)
     result = _task_check_links(ctx)
 
-    assert result.status == "success"
+    assert result.status == "failed"
     assert result.metrics["broken_links"] == 1
-    assert "warning" in result.message.lower()
+    assert "broken references" in result.message.lower()
+
+
+def test_check_links_task_uses_shared_link_diagnostics(tmp_path, monkeypatch):
+    _init_project(tmp_path)
+    (tmp_path / "docs" / "a.md").write_text("---\nid: a\ntype: atom\nstatus: active\n---\n", encoding="utf-8")
+    ctx = _build_context(tmp_path, quiet=True)
+    observed = {}
+
+    def _fake_run_link_diagnostics(**kwargs):
+        observed.update(kwargs)
+        return SimpleNamespace(
+            exit_code=0,
+            load_warnings=[],
+            broken_references=[],
+            duplicates={},
+            external_references=[],
+            parse_failed_candidates=[],
+            orphans=[],
+            summary=SimpleNamespace(
+                broken_references=0,
+                orphans=0,
+                external_references=0,
+                duplicate_ids=0,
+                load_warnings=0,
+            ),
+        )
+
+    monkeypatch.setattr("ontos.commands.maintain.run_link_diagnostics", _fake_run_link_diagnostics)
+    result = _task_check_links(ctx)
+
+    assert result.status == "success"
+    assert observed["include_body"] is False
+    assert observed["include_external_scope_resolution"] is True
 
 
 def test_maintain_scan_docs_default_scope_excludes_internal(tmp_path):

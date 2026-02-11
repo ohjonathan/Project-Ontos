@@ -66,6 +66,7 @@ def create_parser(include_hidden: bool = True) -> argparse.ArgumentParser:
     _register_log(subparsers, global_parser)
     _register_doctor(subparsers, global_parser)
     _register_maintain(subparsers, global_parser)
+    _register_link_check(subparsers, global_parser)
     _register_env(subparsers, global_parser)
     _register_agents(subparsers, global_parser)
     _register_export(subparsers, global_parser)
@@ -201,6 +202,17 @@ def _register_maintain(subparsers, parent):
     )
     _add_scope_argument(p)
     p.set_defaults(func=_cmd_maintain)
+
+
+def _register_link_check(subparsers, parent):
+    """Register link-check command."""
+    p = subparsers.add_parser(
+        "link-check",
+        help="Validate internal document references (frontmatter + body), duplicates, and orphans",
+        parents=[parent],
+    )
+    _add_scope_argument(p)
+    p.set_defaults(func=_cmd_link_check)
 
 
 def _register_env(subparsers, parent):
@@ -652,6 +664,18 @@ def _cmd_maintain(args) -> int:
     )
 
     return maintain_command(options)
+
+
+def _cmd_link_check(args) -> int:
+    """Handle link-check command."""
+    from ontos.commands.link_check import LinkCheckOptions, link_check_command
+
+    options = LinkCheckOptions(
+        scope=getattr(args, "scope", None),
+        json_output=args.json,
+        quiet=args.quiet,
+    )
+    return link_check_command(options)
 
 
 def _cmd_env(args) -> int:
