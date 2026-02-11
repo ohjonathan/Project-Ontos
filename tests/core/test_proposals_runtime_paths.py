@@ -77,3 +77,28 @@ def test_load_decision_history_entries_warns_on_legacy_layout(tmp_path, monkeypa
 
     warning_messages = [str(w.message) for w in caught]
     assert any("deprecated path 'docs/decision_history.md'" in m for m in warning_messages)
+
+
+def test_load_decision_history_entries_skips_table_separator_rows(tmp_path, monkeypatch):
+    project_root = tmp_path / "runtime_project"
+    project_root.mkdir()
+    (project_root / ".ontos.toml").write_text(
+        "[project]\nname = 'test'\n[paths]\ndocs_dir = 'docs'\nlogs_dir = 'docs/logs'\n"
+    )
+    history_file = project_root / "docs" / "strategy" / "decision_history.md"
+    history_file.parent.mkdir(parents=True)
+    history_file.write_text(
+        "# Decision History\n\n"
+        "## History Ledger\n\n"
+        "| Date | Slug | Event | Decision / Outcome | Impacts | Archive Path |\n"
+        "|:---|:---|:---|:---|:---|:---|\n"
+        "|---|---|---|---|---|---|\n"
+        "| 2026-01-01 | valid_slug | chore | APPROVED | none | `docs/archive/proposals/x.md` |\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.chdir(project_root)
+    entries = load_decision_history_entries()
+
+    assert "valid_slug" in entries["slugs"]
+    assert "---" not in entries["slugs"]

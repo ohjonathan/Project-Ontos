@@ -88,3 +88,36 @@ def test_preserve_user_custom_section_returns_original_when_markers_missing():
     content = "Header\n\n<!-- USER CUSTOM -->\n<!-- /USER CUSTOM -->\n"
     existing = "No markers here"
     assert preserve_user_custom_section(content, existing) == content
+
+
+def test_preserve_user_custom_section_outermost_markers_win_with_nested_markers():
+    content = (
+        "Header\n\n<!-- USER CUSTOM -->\n"
+        "<!-- Add your project-specific notes below. This section is preserved during auto-sync. -->\n"
+        "<!-- /USER CUSTOM -->\n"
+    )
+    existing = (
+        "Old\n\n<!-- USER CUSTOM -->\n"
+        "outer-start\n"
+        "<!-- USER CUSTOM -->\n"
+        "inner-content\n"
+        "<!-- /USER CUSTOM -->\n"
+        "outer-end\n"
+        "<!-- /USER CUSTOM -->\n"
+    )
+
+    result = preserve_user_custom_section(content, existing)
+    assert "outer-start" in result
+    assert "inner-content" in result
+    assert "outer-end" in result
+
+
+def test_preserve_user_custom_section_unbalanced_markers_do_not_truncate():
+    content = (
+        "Header\n\n<!-- USER CUSTOM -->\n"
+        "<!-- Add your project-specific notes below. This section is preserved during auto-sync. -->\n"
+        "<!-- /USER CUSTOM -->\n"
+    )
+    existing = "Old\n\n<!-- USER CUSTOM -->\nmissing close"
+
+    assert preserve_user_custom_section(content, existing) == content

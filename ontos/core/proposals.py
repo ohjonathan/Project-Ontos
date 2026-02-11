@@ -15,6 +15,8 @@ try:
 except ImportError:
     ONTOS_VERSION = None
 
+_TABLE_SEPARATOR_RE = re.compile(r"^\|\s*:?-{3,}\s*(\|\s*:?-{3,}\s*)+\|?$")
+
 
 def _find_runtime_project_root(start_path: str = None) -> str:
     """Find project root relative to current execution context."""
@@ -110,6 +112,8 @@ def load_decision_history_entries() -> dict:
             for line in f:
                 # Parse table rows: | date | slug | event | outcome | impacted | archive_path |
                 if line.startswith('|') and not line.startswith('|:') and not line.startswith('| Date'):
+                    if _TABLE_SEPARATOR_RE.match(line.strip()):
+                        continue
                     parts = [p.strip() for p in line.split('|')]
                     if len(parts) >= 7:
                         slug = parts[2]

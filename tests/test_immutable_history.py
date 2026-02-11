@@ -281,3 +281,17 @@ Test.
         
         assert output_path.exists()
         assert "GENERATED FILE" in output_path.read_text()
+
+    def test_writes_to_bare_filename_output_path(self, tmp_path, monkeypatch):
+        """Bare filename output path should default to current directory."""
+        logs_dir = tmp_path / "logs"
+        logs_dir.mkdir()
+        (logs_dir / "2025-01-01_test.md").write_text(
+            "---\nid: test\ndate: 2025-01-01\n---\nTest.\n",
+            encoding="utf-8",
+        )
+
+        monkeypatch.chdir(tmp_path)
+        generate_decision_history([str(logs_dir)], "decision_history.md")
+
+        assert (tmp_path / "decision_history.md").exists()

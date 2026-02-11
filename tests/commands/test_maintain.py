@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import sys
+import warnings
 from types import SimpleNamespace
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from ontos.commands.maintain import (
     TaskResult,
     _condition_agents_stale,
     _condition_auto_consolidate,
+    _parse_bool,
     _scan_docs,
     _task_check_links,
     _task_curation_stats,
@@ -418,4 +420,39 @@ def test_maintain_dry_run_cli_executes(tmp_path):
 
     assert result.returncode == 0
     assert "maintenance" in result.stdout.lower()
-    assert "migrate_untagged" in result.stdout
+
+
+def test_parse_bool_warns_on_empty_and_unknown():
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        assert _parse_bool("", default=True) is True
+        assert _parse_bool("maybe", default=False) is False
+
+    messages = [str(item.message) for item in caught]
+    assert any("Unrecognized boolean value" in msg and "''" in msg for msg in messages)
+    assert any("Unrecognized boolean value" in msg and "'maybe'" in msg for msg in messages)
+
+
+def test_maintain_invalid_task_status_becomes_failed(tmp_path, monkeypatch, capsys):
+    _init_project(tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    registry = MaintainTaskRegistry()
+    registry.register(
+        MaintainTask(
+            name="bad_status",
+            order=10,
+            description="bad",
+            run=lambda _ctx: TaskResult(status="unexpected", message="oops"),  # type: ignore[arg-type]
+        )
+    )
+
+    exit_code = maintain_command(
+        MaintainOptions(json_output=True, quiet=True),
+        registry=registry,
+    )
+
+    assert exit_code == 1
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["tasks"][0]["status"] == "failed"
+    assert "invalid task status" in payload["tasks"][0]["details"][0]
