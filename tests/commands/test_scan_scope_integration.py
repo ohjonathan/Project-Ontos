@@ -128,7 +128,7 @@ def test_verify_scope_library_detects_cross_scope_duplicate(tmp_path: Path) -> N
 
 def test_schema_migrate_scope_library_includes_internal(tmp_path: Path) -> None:
     _init_repo(tmp_path)
-    _write_doc(tmp_path / "docs" / "already.md", "docs_ok", extra_frontmatter="ontos_schema: '3.2'\n")
+    _write_doc(tmp_path / "docs" / "already.md", "docs_ok", extra_frontmatter="ontos_schema: '2.2'\n")
     _write_doc(tmp_path / ".ontos-internal" / "needs.md", "internal_needs")
 
     default_result = _run_ontos(tmp_path, "schema-migrate", "--check")

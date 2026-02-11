@@ -13,6 +13,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+from ontos.core.paths import resolve_project_root
+
 
 @dataclass
 class CheckResult:
@@ -49,9 +51,18 @@ class DoctorResult:
         return "pass"
 
 
-def check_configuration() -> CheckResult:
+def check_configuration(repo_root: Optional[Path] = None) -> CheckResult:
     """Check 1: .ontos.toml exists and is valid."""
-    config_path = Path.cwd() / ".ontos.toml"
+    try:
+        root = resolve_project_root(repo_root=repo_root)
+    except FileNotFoundError as exc:
+        return CheckResult(
+            name="configuration",
+            status="fail",
+            message="Could not resolve Ontos project root",
+            details=str(exc),
+        )
+    config_path = root / ".ontos.toml"
 
     if not config_path.exists():
         return CheckResult(
@@ -63,7 +74,7 @@ def check_configuration() -> CheckResult:
 
     try:
         from ontos.io.config import load_project_config
-        load_project_config()
+        load_project_config(repo_root=root)
         return CheckResult(
             name="configuration",
             status="pass",
@@ -78,8 +89,18 @@ def check_configuration() -> CheckResult:
         )
 
 
-def check_git_hooks() -> CheckResult:
+def check_git_hooks(repo_root: Optional[Path] = None) -> CheckResult:
     """Check 2: Git hooks installed and point to ontos."""
+    try:
+        root = resolve_project_root(repo_root=repo_root)
+    except FileNotFoundError as exc:
+        return CheckResult(
+            name="git_hooks",
+            status="warn",
+            message="Not an Ontos project",
+            details=str(exc),
+        )
+
     # Verify git is available (graceful handling)
     try:
         result = subprocess.run(
@@ -110,7 +131,7 @@ def check_git_hooks() -> CheckResult:
         )
 
     # Check if in a git repo
-    git_dir = Path.cwd() / ".git"
+    git_dir = root / ".git"
     if not git_dir.is_dir():
         return CheckResult(
             name="git_hooks",
@@ -209,17 +230,16 @@ def check_python_version() -> CheckResult:
         )
 
 
-def check_docs_directory(scope: Optional[str] = None) -> CheckResult:
+def check_docs_directory(scope: Optional[str] = None, repo_root: Optional[Path] = None) -> CheckResult:
     """Check 4: Docs directory exists and contains .md files."""
     try:
-        from ontos.io.files import find_project_root
         from ontos.io.config import load_project_config
         from ontos.io.scan_scope import ScanScope, collect_scoped_documents, resolve_scan_scope
 
-        repo_root = find_project_root()
-        config = load_project_config(repo_root=repo_root)
+        root = resolve_project_root(repo_root=repo_root)
+        config = load_project_config(repo_root=root)
         effective_scope = resolve_scan_scope(scope, config.scanning.default_scope)
-        docs_dir = repo_root / config.paths.docs_dir
+        docs_dir = root / config.paths.docs_dir
 
         if effective_scope == ScanScope.DOCS and not docs_dir.exists():
             return CheckResult(
@@ -230,21 +250,18 @@ def check_docs_directory(scope: Optional[str] = None) -> CheckResult:
             )
 
         md_files = collect_scoped_documents(
-            repo_root,
+            root,
             config,
             effective_scope,
             base_skip_patterns=config.scanning.skip_patterns,
         )
-    except Exception:
-        docs_dir = Path.cwd() / "docs"
-        if not docs_dir.exists():
-            return CheckResult(
-                name="docs_directory",
-                status="fail",
-                message=f"Docs directory not found: {docs_dir}",
-                details="Create the docs directory or update .ontos.toml"
-            )
-        md_files = list(docs_dir.rglob("*.md"))
+    except Exception as e:
+        return CheckResult(
+            name="docs_directory",
+            status="warn",
+            message="Docs directory check failed",
+            details=str(e),
+        )
 
     if not md_files:
         return CheckResult(
@@ -261,14 +278,24 @@ def check_docs_directory(scope: Optional[str] = None) -> CheckResult:
     )
 
 
-def check_context_map() -> CheckResult:
+def check_context_map(repo_root: Optional[Path] = None) -> CheckResult:
     """Check 5: Context map exists and has valid frontmatter."""
     try:
         from ontos.io.config import load_project_config
-        config = load_project_config()
-        context_map = Path.cwd() / config.paths.context_map
+        root = resolve_project_root(repo_root=repo_root)
+        config = load_project_config(repo_root=root)
+        context_map = root / config.paths.context_map
     except Exception:
-        context_map = Path.cwd() / "Ontos_Context_Map.md"
+        try:
+            root = resolve_project_root(repo_root=repo_root)
+            context_map = root / "Ontos_Context_Map.md"
+        except Exception as e:
+            return CheckResult(
+                name="context_map",
+                status="warn",
+                message="Context map check failed",
+                details=str(e),
+            )
 
     if not context_map.exists():
         return CheckResult(
@@ -302,17 +329,16 @@ def check_context_map() -> CheckResult:
         )
 
 
-def check_validation(scope: Optional[str] = None) -> CheckResult:
+def check_validation(scope: Optional[str] = None, repo_root: Optional[Path] = None) -> CheckResult:
     """Check 6: No validation errors in current documents."""
     try:
-        from ontos.io.files import find_project_root
         from ontos.io.config import load_project_config
         from ontos.io.scan_scope import ScanScope, collect_scoped_documents, resolve_scan_scope
 
-        repo_root = find_project_root()
-        config = load_project_config(repo_root=repo_root)
+        root = resolve_project_root(repo_root=repo_root)
+        config = load_project_config(repo_root=root)
         effective_scope = resolve_scan_scope(scope, config.scanning.default_scope)
-        docs_dir = repo_root / config.paths.docs_dir
+        docs_dir = root / config.paths.docs_dir
 
         if effective_scope == ScanScope.DOCS and not docs_dir.exists():
             return CheckResult(
@@ -322,7 +348,7 @@ def check_validation(scope: Optional[str] = None) -> CheckResult:
             )
 
         md_files = collect_scoped_documents(
-            repo_root,
+            root,
             config,
             effective_scope,
             base_skip_patterns=config.scanning.skip_patterns,
@@ -396,16 +422,19 @@ def check_cli_availability() -> CheckResult:
     )
 
 
-def check_agents_staleness() -> CheckResult:
+def check_agents_staleness(repo_root: Optional[Path] = None) -> CheckResult:
     """Check 8: AGENTS.md is not stale relative to source files."""
-    # Use shared repo-root helper (M2 fix)
-    from ontos.commands.agents import find_repo_root
+    try:
+        root = resolve_project_root(repo_root=repo_root)
+    except Exception as e:
+        return CheckResult(
+            name="agents_staleness",
+            status="warn",
+            message="Cannot determine AGENTS.md staleness",
+            details=str(e),
+        )
     
-    repo_root = find_repo_root()
-    if repo_root is None:
-        repo_root = Path.cwd()  # Fallback for doctor — still check if possible
-    
-    agents_path = repo_root / "AGENTS.md"
+    agents_path = root / "AGENTS.md"
     
     if not agents_path.exists():
         return CheckResult(
@@ -424,14 +453,14 @@ def check_agents_staleness() -> CheckResult:
         # Context map
         try:
             from ontos.io.config import load_project_config
-            config = load_project_config()
-            context_map = repo_root / config.paths.context_map
-            logs_dir = repo_root / config.paths.logs_dir
+            config = load_project_config(repo_root=root)
+            context_map = root / config.paths.context_map
+            logs_dir = root / config.paths.logs_dir
         except Exception:
-            context_map = repo_root / "Ontos_Context_Map.md"
-            logs_dir = repo_root / ".ontos-internal" / "logs"
+            context_map = root / "Ontos_Context_Map.md"
+            logs_dir = root / ".ontos-internal" / "logs"
         
-        config_path = repo_root / ".ontos.toml"
+        config_path = root / ".ontos.toml"
         
         # Collect existing source file mtimes
         source_mtimes = []
@@ -483,12 +512,13 @@ def check_agents_staleness() -> CheckResult:
         )
 
 
-def check_environment_manifests() -> CheckResult:
+def check_environment_manifests(repo_root: Optional[Path] = None) -> CheckResult:
     """Check 9: Detect project environment manifests (v3.2)."""
     from ontos.commands.env import detect_manifests
     
     try:
-        manifests, warnings = detect_manifests(Path.cwd())
+        root = resolve_project_root(repo_root=repo_root)
+        manifests, warnings = detect_manifests(root)
         
         if warnings:
             # Surface parse warnings (v3.2)
@@ -523,29 +553,29 @@ def check_environment_manifests() -> CheckResult:
         )
 
 
-def _get_config_path() -> Optional[Path]:
+def _get_config_path(repo_root: Optional[Path] = None) -> Optional[Path]:
     """Get config path if it exists."""
-    config_path = Path.cwd() / ".ontos.toml"
+    root = resolve_project_root(repo_root=repo_root)
+    config_path = root / ".ontos.toml"
     if config_path.exists():
         return config_path
     return None
 
 
-def _print_verbose_config(options: DoctorOptions) -> None:
+def _print_verbose_config(options: DoctorOptions, repo_root: Optional[Path] = None) -> None:
     """Print resolved configuration paths in verbose mode."""
     if not options.verbose:
         return
 
-    from ontos.io.files import find_project_root
     from ontos.io.config import load_project_config
 
     try:
-        project_root = find_project_root()
+        project_root = resolve_project_root(repo_root=repo_root)
         config = load_project_config(repo_root=project_root)
 
         print("Configuration:")
         print(f"  repo_root:    {project_root}")
-        print(f"  config_path:  {_get_config_path() or 'default'}")
+        print(f"  config_path:  {_get_config_path(project_root) or 'default'}")
         print(f"  docs_dir:     {project_root / config.paths.docs_dir}")
         print(f"  context_map:  {project_root / config.paths.context_map}")
         print()
@@ -562,21 +592,39 @@ def doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
         Tuple of (exit_code, DoctorResult)
         Exit code 0 if all pass, 1 if any fail
     """
+    try:
+        repo_root = resolve_project_root()
+    except FileNotFoundError as exc:
+        result = DoctorResult(
+            checks=[
+                CheckResult(
+                    name="project_root",
+                    status="fail",
+                    message="Could not resolve Ontos project root",
+                    details=str(exc),
+                )
+            ],
+            passed=0,
+            failed=1,
+            warnings=0,
+        )
+        return 1, result
+
     # Print verbose config if requested
-    _print_verbose_config(options)
+    _print_verbose_config(options, repo_root)
 
     result = DoctorResult()
 
     checks = [
-        check_configuration,
-        check_git_hooks,
+        lambda: check_configuration(repo_root),
+        lambda: check_git_hooks(repo_root),
         check_python_version,
-        lambda: check_docs_directory(options.scope),
-        check_context_map,
-        lambda: check_validation(options.scope),
+        lambda: check_docs_directory(options.scope, repo_root),
+        lambda: check_context_map(repo_root),
+        lambda: check_validation(options.scope, repo_root),
         check_cli_availability,
-        check_agents_staleness,
-        check_environment_manifests,
+        lambda: check_agents_staleness(repo_root),
+        lambda: check_environment_manifests(repo_root),
     ]
 
     for check_fn in checks:

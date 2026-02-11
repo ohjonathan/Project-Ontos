@@ -1,7 +1,6 @@
 """Shared instruction protocol blocks for generated agent instruction files."""
 
 from dataclasses import dataclass
-import re
 from typing import Optional
 
 
@@ -115,29 +114,37 @@ def render_activation_protocol_tail(config: InstructionProtocolConfig) -> str:
 
 def preserve_user_custom_section(content: str, existing_content: Optional[str]) -> str:
     """Preserve user custom content between stable markers when present."""
-    if not existing_content or "<!-- USER CUSTOM -->" not in existing_content:
+    open_marker = "<!-- USER CUSTOM -->"
+    close_marker = "<!-- /USER CUSTOM -->"
+
+    if not existing_content:
         return content
 
-    match = re.search(
-        r"<!-- USER CUSTOM -->(.*?)<!-- /USER CUSTOM -->",
-        existing_content,
-        re.DOTALL,
-    )
-    if not match:
+    existing_open = existing_content.find(open_marker)
+    existing_close = existing_content.rfind(close_marker)
+    if existing_open == -1 or existing_close == -1:
+        return content
+    if existing_close < existing_open + len(open_marker):
         return content
 
-    custom_content = match.group(1).strip()
+    custom_content = existing_content[existing_open + len(open_marker):existing_close].strip()
     if not custom_content:
         return content
 
     if custom_content == DEFAULT_USER_CUSTOM_PLACEHOLDER:
         return content
 
-    return re.sub(
-        r"(<!-- USER CUSTOM -->).*?(<!-- /USER CUSTOM -->)",
-        lambda marker_match: (
-            marker_match.group(1) + "\n" + custom_content + "\n" + marker_match.group(2)
-        ),
-        content,
-        flags=re.DOTALL,
+    target_open = content.find(open_marker)
+    target_close = content.rfind(close_marker)
+    if target_open == -1 or target_close == -1:
+        return content
+    if target_close < target_open + len(open_marker):
+        return content
+
+    return (
+        content[: target_open + len(open_marker)]
+        + "\n"
+        + custom_content
+        + "\n"
+        + content[target_close:]
     )

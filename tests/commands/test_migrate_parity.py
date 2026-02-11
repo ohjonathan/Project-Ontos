@@ -49,3 +49,92 @@ def test_schema_migrate_fails_on_duplicates(tmp_path):
     
     assert result.returncode != 0
     assert "Duplicate ID 'collision' found" in result.stderr
+
+
+def test_migrate_mode_guard_rejects_missing_mode(tmp_path, monkeypatch):
+    from ontos.commands.migrate import MigrateOptions, migrate_command
+
+    (tmp_path / ".ontos").mkdir()
+    (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+
+    exit_code, message = migrate_command(MigrateOptions())
+
+    assert exit_code == 1
+    assert "Select exactly one mode" in message
+
+
+def test_migrate_mode_guard_rejects_conflicting_mode(tmp_path, monkeypatch):
+    from ontos.commands.migrate import MigrateOptions, migrate_command
+
+    (tmp_path / ".ontos").mkdir()
+    (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+
+    exit_code, message = migrate_command(MigrateOptions(check=True, apply=True))
+
+    assert exit_code == 1
+    assert "Select exactly one mode" in message or "cannot be combined" in message
+
+
+def test_schema_migrate_check_reports_unsupported_schema(tmp_path):
+    (tmp_path / ".ontos").mkdir()
+    (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n", encoding="utf-8")
+    unsupported_file = tmp_path / "unsupported.md"
+    unsupported_file.write_text(
+        "---\nid: unsupported_doc\ntype: atom\nstatus: active\nontos_schema: 99.0\n---\n",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [sys.executable, "-m", "ontos.cli", "schema-migrate", "--check", "--dirs", str(tmp_path)],
+        capture_output=True,
+        text=True,
+        cwd=tmp_path,
+    )
+
+    assert result.returncode == 1
+    assert "unsupported schema" in result.stdout.lower()
+    assert "unsupported.md" in result.stdout
+    assert "99.0" in result.stdout
+
+
+def test_schema_migrate_apply_nonzero_with_unsupported_schema(tmp_path):
+    (tmp_path / ".ontos").mkdir()
+    (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n", encoding="utf-8")
+    (tmp_path / "unsupported.md").write_text(
+        "---\nid: unsupported_doc\ntype: atom\nstatus: active\nontos_schema: 99.0\n---\n",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [sys.executable, "-m", "ontos.cli", "schema-migrate", "--apply", "--dirs", str(tmp_path)],
+        capture_output=True,
+        text=True,
+        cwd=tmp_path,
+    )
+
+    assert result.returncode == 1
+    combined = f"{result.stdout}\n{result.stderr}".lower()
+    assert "unsupported schema" in combined
+
+
+def test_schema_migrate_apply_writes_files_to_disk(tmp_path):
+    (tmp_path / ".ontos").mkdir()
+    (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n", encoding="utf-8")
+    legacy = tmp_path / "legacy.md"
+    legacy.write_text(
+        "---\nid: legacy_doc\ntype: atom\nstatus: active\n---\n",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [sys.executable, "-m", "ontos.cli", "schema-migrate", "--apply", "--dirs", str(tmp_path)],
+        capture_output=True,
+        text=True,
+        cwd=tmp_path,
+    )
+
+    assert result.returncode == 0
+    migrated = legacy.read_text(encoding="utf-8")
+    assert "ontos_schema:" in migrated

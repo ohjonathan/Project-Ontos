@@ -10,26 +10,69 @@ import os
 import importlib
 import importlib.util
 import warnings
+from functools import lru_cache
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 
-# =============================================================================
-# Project root and mode detection (moved to top for direct use)
-# =============================================================================
-
+# NOTE:
+# Keep PROJECT_ROOT constant for compatibility with legacy imports, but do not
+# use it as the runtime anchor for path resolution.
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-def is_ontos_repo() -> bool:
+def _normalize_start_path(start_path: Optional[Union[Path, str]] = None) -> str:
+    """Normalize root-discovery start path for cache keys."""
+    if start_path is None:
+        return str(Path.cwd().resolve())
+    return str(Path(start_path).expanduser().resolve())
+
+
+@lru_cache(maxsize=128)
+def _discover_runtime_root_cached(start_path: str) -> str:
+    """Discover project root using runtime precedence from a normalized start path."""
+    current = Path(start_path)
+    while True:
+        if (current / ".ontos.toml").exists():
+            return str(current)
+        if (current / ".ontos").exists() or (current / ".ontos-internal").exists():
+            return str(current)
+        if (current / ".git").exists():
+            return str(current)
+        if current.parent == current:
+            break
+        current = current.parent
+
+    raise FileNotFoundError(
+        "Not in an Ontos project. No .ontos.toml, .ontos/.ontos-internal, or .git found."
+    )
+
+
+def resolve_project_root(
+    repo_root: Optional[Union[Path, str]] = None,
+    *,
+    start_path: Optional[Union[Path, str]] = None,
+) -> Path:
+    """Resolve runtime project root.
+
+    If repo_root is provided, it is used directly. Otherwise, root is discovered
+    from start_path/cwd using cached precedence-based lookup.
+    """
+    if repo_root is not None:
+        return Path(repo_root).expanduser().resolve()
+    return Path(_discover_runtime_root_cached(_normalize_start_path(start_path)))
+
+
+def is_ontos_repo(repo_root: Optional[Union[Path, str]] = None) -> bool:
     """Check if this is the Ontos repository itself (contributor mode).
 
     Returns:
         True if .ontos-internal/ exists (contributor mode),
         False otherwise (user mode).
     """
-    return os.path.exists(os.path.join(PROJECT_ROOT, '.ontos-internal'))
+    root = resolve_project_root(repo_root=repo_root)
+    return (root / ".ontos-internal").exists()
 
 
 def resolve_config(setting_name: str, default=None, warn_legacy: bool = True):
@@ -118,7 +161,23 @@ def _warn_deprecated(old_path: str, new_path: str) -> None:
     )
 
 
-def get_logs_dir() -> str:
+def _runtime_docs_and_logs_dirs(root: Path) -> tuple[str, Optional[str]]:
+    """Resolve docs/logs dirs from runtime project config with legacy fallback."""
+    try:
+        from ontos.io.config import load_project_config
+
+        config = load_project_config(repo_root=root)
+        docs_dir = str(config.paths.docs_dir).strip() or "docs"
+        logs_dir = str(config.paths.logs_dir).strip() if getattr(config.paths, "logs_dir", None) else None
+        return docs_dir, logs_dir
+    except Exception:
+        docs_dir = str(resolve_config("DOCS_DIR", "docs")).strip()
+        logs_dir_raw = resolve_config("LOGS_DIR", None)
+        logs_dir = str(logs_dir_raw).strip() if logs_dir_raw else None
+        return docs_dir, logs_dir
+
+
+def get_logs_dir(repo_root: Optional[Union[Path, str]] = None) -> str:
     """Get the logs directory path based on config.
 
     Respects LOGS_DIR config setting if set, otherwise derives from DOCS_DIR.
@@ -127,24 +186,26 @@ def get_logs_dir() -> str:
     Returns:
         Absolute path to logs directory.
     """
+    root = resolve_project_root(repo_root=repo_root)
+
+    # Contributor mode uses .ontos-internal/logs
+    if is_ontos_repo(repo_root=root):
+        return str(root / ".ontos-internal" / "logs")
+
+    docs_dir, logs_dir = _runtime_docs_and_logs_dirs(root)
+
     # Try LOGS_DIR first (most explicit)
-    logs_dir = resolve_config('LOGS_DIR', None)
     if logs_dir and os.path.isabs(logs_dir):
         return logs_dir
 
-    # Contributor mode uses .ontos-internal/logs
-    if is_ontos_repo():
-        return os.path.join(PROJECT_ROOT, '.ontos-internal', 'logs')
-
     # User mode: derive from LOGS_DIR or DOCS_DIR
     if logs_dir:
-        return os.path.join(PROJECT_ROOT, logs_dir)
+        return str(root / logs_dir)
 
-    docs_dir = resolve_config('DOCS_DIR', 'docs')
-    return os.path.join(PROJECT_ROOT, docs_dir, 'logs')
+    return str(root / docs_dir / "logs")
 
 
-def get_log_count() -> int:
+def get_log_count(repo_root: Optional[Union[Path, str]] = None) -> int:
     """Count active session logs in logs directory.
 
     Only counts markdown files starting with a digit (date-prefixed logs).
@@ -152,7 +213,7 @@ def get_log_count() -> int:
     Returns:
         Number of active log files.
     """
-    logs_dir = get_logs_dir()
+    logs_dir = get_logs_dir(repo_root=repo_root)
     if not os.path.exists(logs_dir):
         return 0
 
@@ -160,7 +221,7 @@ def get_log_count() -> int:
                 if f.endswith('.md') and f[0].isdigit()])
 
 
-def get_logs_older_than(days: int) -> list:
+def get_logs_older_than(days: int, repo_root: Optional[Union[Path, str]] = None) -> list:
     """Get list of log filenames older than N days.
 
     Args:
@@ -170,7 +231,7 @@ def get_logs_older_than(days: int) -> list:
         List of log filenames (not full paths) older than threshold.
     """
     from datetime import timedelta
-    logs_dir = get_logs_dir()
+    logs_dir = get_logs_dir(repo_root=repo_root)
     if not os.path.exists(logs_dir):
         return []
 
@@ -190,20 +251,22 @@ def get_logs_older_than(days: int) -> list:
     return old_logs
 
 
-def get_archive_dir() -> str:
+def get_archive_dir(repo_root: Optional[Union[Path, str]] = None) -> str:
     """Get the archive directory path based on config.
 
     Returns:
         Absolute path to archive directory.
     """
-    if is_ontos_repo():
-        return os.path.join(PROJECT_ROOT, '.ontos-internal', 'archive')
+    root = resolve_project_root(repo_root=repo_root)
 
-    docs_dir = resolve_config('DOCS_DIR', 'docs')
-    return os.path.join(PROJECT_ROOT, docs_dir, 'archive')
+    if is_ontos_repo(repo_root=root):
+        return str(root / ".ontos-internal" / "archive")
+
+    docs_dir, _ = _runtime_docs_and_logs_dirs(root)
+    return str(root / docs_dir / "archive")
 
 
-def get_decision_history_path() -> str:
+def get_decision_history_path(repo_root: Optional[Union[Path, str]] = None) -> str:
     """Get decision_history.md path with backward compatibility.
 
     v2.5.2: Uses nested structure (docs/strategy/decision_history.md)
@@ -212,18 +275,20 @@ def get_decision_history_path() -> str:
     Returns:
         Absolute path to decision_history.md.
     """
-    if is_ontos_repo():
-        return os.path.join(PROJECT_ROOT, '.ontos-internal', 'reference', 'decision_history.md')
+    root = resolve_project_root(repo_root=repo_root)
 
-    docs_dir = resolve_config('DOCS_DIR', 'docs')
+    if is_ontos_repo(repo_root=root):
+        return str(root / ".ontos-internal" / "reference" / "decision_history.md")
+
+    docs_dir, _ = _runtime_docs_and_logs_dirs(root)
 
     # Try new location first (v2.5.2+)
-    new_path = os.path.join(PROJECT_ROOT, docs_dir, 'strategy', 'decision_history.md')
+    new_path = str(root / docs_dir / "strategy" / "decision_history.md")
     if os.path.exists(new_path):
         return new_path
 
     # Fall back to old location (pre-v2.5.2)
-    old_path = os.path.join(PROJECT_ROOT, docs_dir, 'decision_history.md')
+    old_path = str(root / docs_dir / "decision_history.md")
     if os.path.exists(old_path):
         _warn_deprecated(f'{docs_dir}/decision_history.md', f'{docs_dir}/strategy/decision_history.md')
         return old_path
@@ -232,20 +297,22 @@ def get_decision_history_path() -> str:
     return new_path
 
 
-def get_proposals_dir() -> str:
+def get_proposals_dir(repo_root: Optional[Union[Path, str]] = None) -> str:
     """Get proposals directory path (mode-aware).
 
     Returns:
         Absolute path to proposals directory.
     """
-    if is_ontos_repo():
-        return os.path.join(PROJECT_ROOT, '.ontos-internal', 'strategy', 'proposals')
+    root = resolve_project_root(repo_root=repo_root)
 
-    docs_dir = resolve_config('DOCS_DIR', 'docs')
-    return os.path.join(PROJECT_ROOT, docs_dir, 'strategy', 'proposals')
+    if is_ontos_repo(repo_root=root):
+        return str(root / ".ontos-internal" / "strategy" / "proposals")
+
+    docs_dir, _ = _runtime_docs_and_logs_dirs(root)
+    return str(root / docs_dir / "strategy" / "proposals")
 
 
-def get_archive_logs_dir() -> str:
+def get_archive_logs_dir(repo_root: Optional[Union[Path, str]] = None) -> str:
     """Get archive/logs directory path with backward compatibility.
 
     v2.5.2: Uses nested structure (docs/archive/logs/)
@@ -254,18 +321,20 @@ def get_archive_logs_dir() -> str:
     Returns:
         Absolute path to archive/logs directory.
     """
-    if is_ontos_repo():
-        return os.path.join(PROJECT_ROOT, '.ontos-internal', 'archive', 'logs')
+    root = resolve_project_root(repo_root=repo_root)
 
-    docs_dir = resolve_config('DOCS_DIR', 'docs')
+    if is_ontos_repo(repo_root=root):
+        return str(root / ".ontos-internal" / "archive" / "logs")
+
+    docs_dir, _ = _runtime_docs_and_logs_dirs(root)
 
     # Try new location first (v2.5.2+)
-    new_path = os.path.join(PROJECT_ROOT, docs_dir, 'archive', 'logs')
+    new_path = str(root / docs_dir / "archive" / "logs")
     if os.path.exists(new_path):
         return new_path
 
     # Fall back to old location (pre-v2.5.2: logs directly in archive/)
-    old_path = os.path.join(PROJECT_ROOT, docs_dir, 'archive')
+    old_path = str(root / docs_dir / "archive")
     if os.path.exists(old_path):
         _warn_deprecated(f'{docs_dir}/archive/', f'{docs_dir}/archive/logs/')
         return old_path
@@ -274,7 +343,7 @@ def get_archive_logs_dir() -> str:
     return new_path
 
 
-def get_archive_proposals_dir() -> str:
+def get_archive_proposals_dir(repo_root: Optional[Union[Path, str]] = None) -> str:
     """Get archive/proposals directory path (mode-aware).
 
     New in v2.5.2 - no backward compatibility needed.
@@ -282,14 +351,16 @@ def get_archive_proposals_dir() -> str:
     Returns:
         Absolute path to archive/proposals directory.
     """
-    if is_ontos_repo():
-        return os.path.join(PROJECT_ROOT, '.ontos-internal', 'archive', 'proposals')
+    root = resolve_project_root(repo_root=repo_root)
 
-    docs_dir = resolve_config('DOCS_DIR', 'docs')
-    return os.path.join(PROJECT_ROOT, docs_dir, 'archive', 'proposals')
+    if is_ontos_repo(repo_root=root):
+        return str(root / ".ontos-internal" / "archive" / "proposals")
+
+    docs_dir, _ = _runtime_docs_and_logs_dirs(root)
+    return str(root / docs_dir / "archive" / "proposals")
 
 
-def get_concepts_path() -> str:
+def get_concepts_path(repo_root: Optional[Union[Path, str]] = None) -> str:
     """Get Common_Concepts.md path with backward compatibility.
 
     v2.5.2: Uses nested structure (docs/reference/Common_Concepts.md)
@@ -298,18 +369,20 @@ def get_concepts_path() -> str:
     Returns:
         Absolute path to Common_Concepts.md.
     """
-    if is_ontos_repo():
-        return os.path.join(PROJECT_ROOT, '.ontos-internal', 'reference', 'Common_Concepts.md')
+    root = resolve_project_root(repo_root=repo_root)
 
-    docs_dir = resolve_config('DOCS_DIR', 'docs')
+    if is_ontos_repo(repo_root=root):
+        return str(root / ".ontos-internal" / "reference" / "Common_Concepts.md")
+
+    docs_dir, _ = _runtime_docs_and_logs_dirs(root)
 
     # Try new location first (v2.5.2+)
-    new_path = os.path.join(PROJECT_ROOT, docs_dir, 'reference', 'Common_Concepts.md')
+    new_path = str(root / docs_dir / "reference" / "Common_Concepts.md")
     if os.path.exists(new_path):
         return new_path
 
     # Fall back to old location (pre-v2.5.2)
-    old_path = os.path.join(PROJECT_ROOT, docs_dir, 'Common_Concepts.md')
+    old_path = str(root / docs_dir / "Common_Concepts.md")
     if os.path.exists(old_path):
         _warn_deprecated(f'{docs_dir}/Common_Concepts.md', f'{docs_dir}/reference/Common_Concepts.md')
         return old_path
@@ -318,7 +391,10 @@ def get_concepts_path() -> str:
     return new_path
 
 
-def find_last_session_date(logs_dir: str = None) -> str:
+def find_last_session_date(
+    logs_dir: Optional[str] = None,
+    repo_root: Optional[Union[Path, str]] = None,
+) -> str:
     """Find the date of the most recent session log.
 
     Args:
@@ -328,7 +404,7 @@ def find_last_session_date(logs_dir: str = None) -> str:
         Date string in YYYY-MM-DD format, or empty string if no logs found.
     """
     if logs_dir is None:
-        logs_dir = get_logs_dir()
+        logs_dir = get_logs_dir(repo_root=repo_root)
 
     if not os.path.exists(logs_dir):
         return ""

@@ -10,9 +10,10 @@ import json
 import os
 import re
 import time
+import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, List, Literal, Optional, Sequence, Tuple, cast
 
 import ontos
 from ontos.core.config import OntosConfig
@@ -26,6 +27,7 @@ from ontos.ui.output import OutputHandler
 STATUS_SUCCESS = "success"
 STATUS_FAILED = "failed"
 STATUS_SKIPPED = "skipped"
+TaskStatus = Literal["success", "failed", "skipped"]
 
 
 @dataclass
@@ -44,7 +46,7 @@ class MaintainOptions:
 class TaskResult:
     """Result returned by each task."""
 
-    status: str
+    status: TaskStatus
     message: str
     details: List[str] = field(default_factory=list)
     metrics: Dict[str, int] = field(default_factory=dict)
@@ -66,7 +68,7 @@ class TaskExecution:
     """Execution record for one task."""
 
     name: str
-    status: str
+    status: TaskStatus
     message: str
     details: List[str] = field(default_factory=list)
     metrics: Dict[str, int] = field(default_factory=dict)
@@ -163,11 +165,36 @@ def _parse_bool(value: object, default: bool) -> bool:
         return default
 
     normalized = str(value).strip().lower()
+    accepted = "'1', 'true', 'yes', 'on', '0', 'false', 'no', 'off'"
+    if normalized == "":
+        warnings.warn(
+            f"Unrecognized boolean value {value!r}; using default={default}. Accepted values: {accepted}.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        return default
+
     if normalized in {"1", "true", "yes", "on"}:
         return True
     if normalized in {"0", "false", "no", "off"}:
         return False
+    warnings.warn(
+        f"Unrecognized boolean value {value!r}; using default={default}. Accepted values: {accepted}.",
+        RuntimeWarning,
+        stacklevel=2,
+    )
     return default
+
+
+def _normalize_task_status(status: object) -> Tuple[TaskStatus, Optional[str]]:
+    """Normalize runtime status values to the TaskStatus contract."""
+    if status in {STATUS_SUCCESS, STATUS_FAILED, STATUS_SKIPPED}:
+        return cast(TaskStatus, status), None
+    return (
+        STATUS_FAILED,
+        f"invalid task status {status!r}; expected one of "
+        f"{STATUS_SUCCESS!r}, {STATUS_FAILED!r}, {STATUS_SKIPPED!r}",
+    )
 
 
 def _auto_consolidate_enabled() -> bool:
@@ -783,12 +810,15 @@ def maintain_command(options: MaintainOptions, registry: Optional[MaintainTaskRe
 
         try:
             result = task.run(context)
-            status = result.status if result.status in {STATUS_SUCCESS, STATUS_FAILED} else STATUS_FAILED
+            status, status_error = _normalize_task_status(result.status)
+            details = list(result.details)
+            if status_error:
+                details.insert(0, status_error)
             execution = TaskExecution(
                 name=task.name,
                 status=status,
                 message=result.message,
-                details=result.details,
+                details=details,
                 metrics=result.metrics,
             )
         except Exception as exc:

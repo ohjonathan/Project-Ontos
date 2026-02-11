@@ -256,7 +256,8 @@ To regenerate: `python3 .ontos/scripts/ontos_generate_context_map.py`
     
     # Write to file if output_path provided
     if output_path:
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        out_dir = os.path.dirname(output_path) or "."
+        os.makedirs(out_dir, exist_ok=True)
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(markdown_content)
     

@@ -1,5 +1,9 @@
 """Tests for doctor command (Phase 4)."""
 
+import os
+import subprocess
+import sys
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import pytest
@@ -8,6 +12,7 @@ from ontos.commands.doctor import (
     CheckResult,
     DoctorOptions,
     DoctorResult,
+    check_docs_directory,
     check_configuration,
     check_git_hooks,
     check_python_version,
@@ -73,6 +78,7 @@ class TestCheckGitHooks:
 
     def test_handles_git_not_installed(self, tmp_path, monkeypatch):
         """Should fail gracefully when git not installed."""
+        (tmp_path / ".ontos").mkdir()
         monkeypatch.chdir(tmp_path)
 
         with patch("subprocess.run") as mock_run:
@@ -88,6 +94,7 @@ class TestCheckConfiguration:
 
     def test_fails_when_no_config(self, tmp_path, monkeypatch):
         """Should fail when .ontos.toml doesn't exist."""
+        (tmp_path / ".ontos").mkdir()
         monkeypatch.chdir(tmp_path)
         result = check_configuration()
         assert result.status == "fail"
@@ -149,6 +156,15 @@ class TestDoctorCommand:
 
             assert exit_code == 1
             assert result.failed == 1
+
+    def test_fails_cleanly_outside_project(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        exit_code, result = doctor_command(DoctorOptions())
+
+        assert exit_code == 1
+        assert result.failed == 1
+        assert result.checks[0].name == "project_root"
+        assert "project root" in result.checks[0].message.lower()
 
 
 class TestFormatDoctorOutput:
@@ -247,6 +263,7 @@ class TestCheckAgentsStaleness:
     def test_warns_when_no_source_files(self, tmp_path, monkeypatch):
         """Should warn when no source files can be found."""
         monkeypatch.chdir(tmp_path)
+        (tmp_path / ".ontos").mkdir()
         # Only AGENTS.md, no config or context map
         (tmp_path / "AGENTS.md").write_text("# AGENTS.md")
         
@@ -275,3 +292,36 @@ def test_check_docs_directory_scope_library_includes_internal(tmp_path, monkeypa
     assert library_result.status == "pass"
     assert "1 documents" in docs_result.message
     assert "2 documents" in library_result.message
+
+
+def test_check_docs_directory_from_subdirectory_matches_project_root(tmp_path, monkeypatch):
+    (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "a.md").write_text("---\nid: a\ntype: atom\n---\n")
+    subdir = tmp_path / "docs" / "nested"
+    subdir.mkdir(parents=True)
+
+    monkeypatch.chdir(subdir)
+    result = check_docs_directory()
+
+    assert result.status == "pass"
+    assert "1 documents" in result.message
+
+
+def test_doctor_cli_outside_project_returns_nonzero(tmp_path):
+    """Outside-project doctor run should fail with explicit root-discovery message."""
+    project_root = Path(__file__).resolve().parents[2]
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(project_root)
+
+    result = subprocess.run(
+        [sys.executable, "-m", "ontos", "doctor"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 1
+    combined = (result.stdout + result.stderr).lower()
+    assert "project root" in combined or "not in an ontos project" in combined

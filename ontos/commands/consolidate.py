@@ -1,15 +1,14 @@
 """Native consolidate command implementation."""
 
-import os
 import re
-import shutil
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Tuple
 
 from ontos.core.context import SessionContext
-from ontos.io.files import find_project_root, scan_documents, load_documents, load_frontmatter
+from ontos.core.frontmatter import normalize_reference_list
+from ontos.io.files import find_project_root, load_documents
 from ontos.io.yaml import parse_frontmatter_content
 from ontos.ui.output import OutputHandler
 
@@ -152,6 +151,9 @@ def append_to_decision_history(
 
 def consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
     """Execute consolidate command."""
+    if not options.by_age and options.count < 1:
+        return 1, "count must be >= 1"
+
     root = find_project_root()
     output = OutputHandler(quiet=options.quiet)
     # Resolve paths relative to runtime project root
@@ -221,13 +223,15 @@ def consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
     
     ctx = SessionContext.from_repo(root)
     consolidated_count = 0
+    succeeded: List[str] = []
+    failed: List[Tuple[str, Path, str]] = []
     archive_dir = archive_logs_dir
     
     for path, doc_id, fm in logs_to_consolidate:
         date_str = path.name[:10]
         slug = path.name[11:-3] if len(path.name) > 14 else doc_id
         event_type = fm.get('event_type', 'chore')
-        impacts = fm.get('impacts', [])
+        impacts = normalize_reference_list(fm.get('impacts', []), "impacts")
         summary = extract_summary(path)
         
         if not summary and not options.all and not options.quiet:
@@ -268,29 +272,51 @@ def consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
                 output.info("Skipped.")
                 continue
 
-        # Archive
+        # Archive with per-log transactional boundary: history row and move are committed together.
         archive_dir.mkdir(parents=True, exist_ok=True)
         new_path = archive_dir / path.name
         rel_archive_path = new_path.relative_to(root)
-        
-        try:
-            # We use shutil.move for now, but SessionContext could handle moves too.
-            # However, SessionContext currently only buffers writes/deletes.
-            # For parity, we'll use shutil.move.
-            shutil.move(str(path), str(new_path))
-            
-            if append_to_decision_history(date_str, slug, event_type, summary, impacts, str(rel_archive_path), decision_history_path, ctx, output):
-                output.success("Archived and recorded in decision_history.md")
-                consolidated_count += 1
-            else:
-                output.warning("File archived but failed to update decision_history.md")
-        except Exception as e:
-            output.error(f"Error archiving {path.name}: {e}")
 
-    if not options.dry_run and consolidated_count > 0:
-        ctx.commit()
+        try:
+            if not append_to_decision_history(
+                date_str,
+                slug,
+                event_type,
+                summary,
+                impacts,
+                str(rel_archive_path),
+                decision_history_path,
+                ctx,
+                output,
+            ):
+                reason = "failed to update decision_history.md"
+                failed.append((slug, path, reason))
+                output.error(f"Failed to archive {path.name}: {reason}")
+                ctx.rollback()
+                continue
+
+            ctx.buffer_move(path, new_path)
+            ctx.commit()
+            output.success("Archived and recorded in decision_history.md")
+            consolidated_count += 1
+            succeeded.append(slug)
+        except Exception as e:
+            reason = str(e)
+            failed.append((slug, path, reason))
+            output.error(f"Error archiving {path.name}: {e}")
+            ctx.rollback()
 
     action = 'Would consolidate' if options.dry_run else 'Consolidated'
     output.info(f"{action} {consolidated_count} log(s).")
-    
+
+    if not options.dry_run and failed:
+        output.warning("Consolidation completed with failures.")
+        output.warning(f"Succeeded: {', '.join(succeeded) if succeeded else '(none)'}")
+        for slug, failed_path, reason in failed:
+            output.warning(f"Failed: {slug} [{failed_path}] ({reason})")
+        output.warning(
+            "Reconciliation: verify listed failed logs and decision history entries before re-running consolidate."
+        )
+        return 1, f"Consolidated {consolidated_count} logs with {len(failed)} failures"
+
     return 0, f"{action} {consolidated_count} logs"
