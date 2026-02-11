@@ -61,3 +61,49 @@ def test_validate_concepts_severity_override():
     
     assert len(orchestrator.errors) == 1
     assert orchestrator.errors[0].severity == "error"
+
+
+def test_validate_concepts_warns_on_unknown_vocabulary_items():
+    """Known vocabulary should trigger warnings for unknown concepts."""
+    docs = {
+        "log1": DocumentData(
+            id="log1",
+            type=DocumentType.LOG,
+            status=DocumentStatus.ACTIVE,
+            filepath=Path("log1.md"),
+            frontmatter={"concepts": ["valid", "unknown_xyz"]},
+            content=""
+        )
+    }
+
+    orchestrator = ValidationOrchestrator(
+        docs,
+        config={"known_concepts": {"valid"}},
+    )
+    orchestrator.validate_concepts()
+
+    assert any("Unknown concept: 'unknown_xyz'" in warning.message for warning in orchestrator.warnings)
+
+
+def test_impacts_and_describes_allow_severity_override():
+    """Callers can override impacts/describes severity per invocation."""
+    docs = {
+        "doc1": DocumentData(
+            id="doc1",
+            type=DocumentType.ATOM,
+            status=DocumentStatus.ACTIVE,
+            filepath=Path("doc1.md"),
+            frontmatter={},
+            content="",
+            impacts=["missing_impact"],
+            describes=["missing_describes"],
+        )
+    }
+
+    orchestrator = ValidationOrchestrator(docs)
+    orchestrator.validate_impacts(severity="error")
+    orchestrator.validate_describes(severity="error")
+
+    messages = [error.message for error in orchestrator.errors]
+    assert any("Impact reference 'missing_impact' not found" in message for message in messages)
+    assert any("describes 'missing_describes' not found" in message for message in messages)

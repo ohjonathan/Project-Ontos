@@ -66,6 +66,11 @@ def build_graph(
     graph = DependencyGraph()
     errors = []
     existing_ids = set(docs.keys())
+    depends_on_severity = severity_map.get(
+        "depends_on",
+        severity_map.get("broken_link", DEPENDS_ON_SEVERITY_DEFAULT),
+    )
+    circular_severity = severity_map.get("circular", depends_on_severity)
 
     for doc_id, doc in docs.items():
         depends_on = doc.depends_on if hasattr(doc, 'depends_on') else []
@@ -90,7 +95,7 @@ def build_graph(
                     filepath=str(doc.filepath),
                     message=f"Broken dependency: '{dep_id}' (declared in {doc_id}) does not exist",
                     fix_suggestion=fix_suggestion,
-                    severity=severity_map.get("circular", DEPENDS_ON_SEVERITY_DEFAULT) if dep_id == doc_id else severity_map.get("broken_link", DEPENDS_ON_SEVERITY_DEFAULT)
+                    severity=circular_severity if dep_id == doc_id else depends_on_severity
                 ))
 
     return graph, errors

@@ -21,6 +21,9 @@ from ontos.core.graph import (
     detect_cycles,
     detect_orphans,
     calculate_depths,
+    DEPENDS_ON_SEVERITY_DEFAULT,
+    IMPACTS_SEVERITY_DEFAULT,
+    DESCRIBES_SEVERITY_DEFAULT,
 )
 
 # SEVERITY RATIONALE (v3.3 Track A1)
@@ -29,10 +32,10 @@ from ontos.core.graph import (
 # - WARNING: Orphan documents, depth exceedance, or missing/invalid descriptive metadata.
 # - NOTE: depends_on is structural (error); impacts/describes are informational (warning).
 REFERENCE_SEVERITY_DEFAULT = {
-    "depends_on": "error",
-    "impacts": "warning",
-    "describes": "warning",
-    "circular": "error",
+    "depends_on": DEPENDS_ON_SEVERITY_DEFAULT,
+    "impacts": IMPACTS_SEVERITY_DEFAULT,
+    "describes": DESCRIBES_SEVERITY_DEFAULT,
+    "circular": DEPENDS_ON_SEVERITY_DEFAULT,
     "orphan": "warning",
     "depth": "warning",
     "schema": "warning",
@@ -43,7 +46,7 @@ REFERENCE_SEVERITY_DEFAULT = {
 def validate_describes_field(
     doc: DocumentData,
     valid_targets: Set[str],
-    severity: str = "warning"  # Default aligned with DESCRIBES_SEVERITY_DEFAULT
+    severity: str = DESCRIBES_SEVERITY_DEFAULT
 ) -> List[ValidationError]:
     """Validate describes field references valid targets (list-safe).
     
@@ -85,7 +88,10 @@ class ValidationOrchestrator:
         """
         self.docs = docs
         self.config = config or {}
-        self.severity_map = self.config.get("severity_map", REFERENCE_SEVERITY_DEFAULT)
+        self.severity_map = {
+            **REFERENCE_SEVERITY_DEFAULT,
+            **self.config.get("severity_map", {}),
+        }
         self.errors: List[ValidationError] = []
         self.warnings: List[ValidationError] = []
 
@@ -181,9 +187,18 @@ class ValidationOrchestrator:
                     severity="warning"
                 ))
 
-    def validate_impacts(self) -> None:
-        """Validate impacts[] references exist."""
+    def validate_impacts(self, severity: Optional[str] = None) -> None:
+        """Validate impacts[] references exist.
+
+        Args:
+            severity: Optional override ("error" or "warning"). Defaults to severity map.
+        """
         valid_ids = set(self.docs.keys())
+        effective_severity = (
+            severity
+            if severity is not None
+            else self.severity_map.get("impacts", IMPACTS_SEVERITY_DEFAULT)
+        )
 
         for doc_id, doc in self.docs.items():
             for impact in doc.impacts:
@@ -194,18 +209,27 @@ class ValidationOrchestrator:
                         filepath=str(doc.filepath),
                         message=f"Impact reference '{impact}' not found",
                         fix_suggestion=f"Remove '{impact}' or create the document",
-                        severity=self.severity_map.get("impacts", "warning")  # IMPACTS_SEVERITY_DEFAULT
+                        severity=effective_severity
                     ))
 
-    def validate_describes(self) -> None:
-        """Validate describes field references."""
+    def validate_describes(self, severity: Optional[str] = None) -> None:
+        """Validate describes field references.
+
+        Args:
+            severity: Optional override ("error" or "warning"). Defaults to severity map.
+        """
         valid_ids = set(self.docs.keys())
+        effective_severity = (
+            severity
+            if severity is not None
+            else self.severity_map.get("describes", DESCRIBES_SEVERITY_DEFAULT)
+        )
  
         for doc_id, doc in self.docs.items():
             errors = validate_describes_field(
                 doc, 
                 valid_ids, 
-                severity=self.severity_map.get("describes", "warning")
+                severity=effective_severity
             )
             for error in errors:
                 self._report(error)

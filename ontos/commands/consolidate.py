@@ -157,6 +157,7 @@ def append_to_decision_history(
 def consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
     """Execute consolidate command."""
     output = OutputHandler(quiet=options.quiet)
+    root = find_project_root()
     logs_dir = Path(get_logs_dir())
     if logs_dir.exists():
         load_result = load_documents(list(logs_dir.glob("*.md")), parse_frontmatter_content)

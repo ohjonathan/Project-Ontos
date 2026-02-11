@@ -8,6 +8,7 @@ Phase 2 Decomposition - Created from Phase2-Implementation-Spec.md Section 4.7
 """
 
 import os
+import warnings
 from fnmatch import fnmatch
 from datetime import datetime
 from pathlib import Path
@@ -134,23 +135,42 @@ def read_document(path: Path) -> str:
 
 def load_frontmatter(
     path: Path,
-    frontmatter_parser: Callable[[str], Tuple[Dict[str, Any], str]]
+    frontmatter_parser: Callable[[str], Tuple[Dict[str, Any], str]],
+    on_issue: Optional[Callable[[DocumentLoadIssue], None]] = None
 ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
     """Load and return frontmatter and body from a file.
 
     Args:
         path: Path to document
         frontmatter_parser: Function to parse frontmatter from content
+        on_issue: Optional callback for recording parse/IO issues
 
     Returns:
-        Tuple of (frontmatter_dict, body_string). Returns (None, None) if file not found.
+        Tuple of (frontmatter_dict, body_string). Returns (None, None) on parse/IO failure.
     """
     try:
         content = path.read_text(encoding="utf-8")
         return frontmatter_parser(content)
-    except (OSError, Exception):
-        # Align with load_documents contract: return (None, None) on failure
-        return None, None
+    except (ValueError, UnicodeDecodeError) as exc:
+        issue = DocumentLoadIssue(
+            code="parse_error",
+            path=path,
+            message=f"Error parsing {path.name}: {exc}"
+        )
+    except OSError as exc:
+        issue = DocumentLoadIssue(
+            code="io_error",
+            path=path,
+            message=f"IO error reading {path.name}: {exc}"
+        )
+
+    if on_issue is not None:
+        on_issue(issue)
+    else:
+        warnings.warn(issue.message, RuntimeWarning, stacklevel=2)
+
+    # Align with load_documents contract: parse/IO failures are non-fatal.
+    return None, None
 
 
 def load_documents(
