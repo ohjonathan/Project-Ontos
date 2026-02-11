@@ -78,7 +78,7 @@ def classify_documents(snapshot: DocumentSnapshot) -> MigrationReport:
     # Step 1: Identify all atoms
     atoms = set()
     for doc_id, doc in snapshot.documents.items():
-        doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
+        doc_type = doc.type.value
         if doc_type == "atom":
             atoms.add(doc_id)
 
@@ -87,7 +87,7 @@ def classify_documents(snapshot: DocumentSnapshot) -> MigrationReport:
     global_warnings: List[Dict[str, str]] = []
 
     for doc_id, doc in snapshot.documents.items():
-        doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
+        doc_type = doc.type.value
 
         # Find transitive atom dependencies
         atom_deps = list(_find_transitive_atom_deps(doc_id, snapshot.graph, atoms))

@@ -82,7 +82,7 @@ def query_health(files_data: Dict[str, DocumentData]) -> dict:
     
     by_type = defaultdict(int)
     for doc in files_data.values():
-        doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
+        doc_type = doc.type.value
         by_type[doc_type] += 1
     
     orphans = []
@@ -94,7 +94,7 @@ def query_health(files_data: Dict[str, DocumentData]) -> dict:
     
     empty_impacts = []
     for doc_id, doc in files_data.items():
-        if (doc.type.value if hasattr(doc.type, 'value') else str(doc.type)) == 'log':
+        if doc.type.value == 'log':
             if not doc.impacts:
                 empty_impacts.append(doc_id)
     
@@ -219,7 +219,7 @@ def query_command(options: QueryOptions) -> Tuple[int, str]:
         output.info("Document IDs:")
         for doc_id in sorted(files_data.keys()):
             doc = files_data[doc_id]
-            doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
+            doc_type = doc.type.value
             output.detail(f"{doc_id} ({doc_type})")
             
     return 0, "Query complete"

@@ -17,8 +17,12 @@ from typing import Any, Dict, List, Optional, Set
 # RE-EXPORTS (consolidate existing types here)
 # =============================================================================
 
-# Re-export CurationLevel from its canonical location
-from ontos.core.curation import CurationLevel
+# CurationLevel moved here to prevent circular imports
+class CurationLevel(IntEnum):
+    """Document curation levels."""
+    SCAFFOLD = 0  # Auto-generated placeholder
+    STUB = 1      # User provides goal only
+    FULL = 2      # Complete Ontos document
 
 # =============================================================================
 # ENUMS (new)

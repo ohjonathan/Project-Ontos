@@ -234,7 +234,9 @@ def scan_docs(root_dirs: list[str]) -> tuple[dict[str, dict], list[str]]:
                             continue
 
                         # Normalize fields to handle YAML null/empty values
-                        doc_type = normalize_type(frontmatter.get('type'))
+                        doc_type_val = normalize_type(frontmatter.get('type'))
+                        # Coerce to value if Enum (purgatory fix for v3.3 Track A1)
+                        doc_type = doc_type_val.value if hasattr(doc_type_val, 'value') else str(doc_type_val)
                         
                         # Deliverable 5: Auto-Normalization of v1.x Logs
                         # Treat legacy logs (type: atom, id: log_*) as v2.0 logs (type: log)
@@ -534,7 +536,8 @@ def validate_dependencies(files_data: dict[str, dict]) -> list[str]:
     type_rank = TYPE_HIERARCHY
 
     for doc_id, data in files_data.items():
-        my_type = normalize_type(data.get('type'))
+        my_type_val = normalize_type(data.get('type'))
+        my_type = my_type_val.value if hasattr(my_type_val, 'value') else str(my_type_val)
         my_rank = type_rank.get(my_type, 4)
 
         # Normalize depends_on in case it wasn't processed by scan_docs

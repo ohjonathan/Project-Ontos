@@ -69,8 +69,8 @@ def _snapshot_to_json(
         included_ids.add(doc_id)
         classification = report.classifications.get(doc_id)
 
-        doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
-        doc_status = doc.status.value if hasattr(doc.status, 'value') else str(doc.status)
+        doc_type = doc.type.value
+        doc_status = doc.status.value
 
         doc_dict = {
             "id": doc.id,
@@ -120,8 +120,8 @@ def _snapshot_to_json(
     by_status: Dict[str, int] = {}
     for doc_id in included_ids:
         doc = snapshot.documents[doc_id]
-        doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
-        doc_status = doc.status.value if hasattr(doc.status, 'value') else str(doc.status)
+        doc_type = doc.type.value
+        doc_status = doc.status.value
         by_type[doc_type] = by_type.get(doc_type, 0) + 1
         by_status[doc_status] = by_status.get(doc_status, 0) + 1
 

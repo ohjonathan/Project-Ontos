@@ -41,7 +41,7 @@ class DocumentSnapshot:
         """Group documents by type."""
         result: Dict[str, List[DocumentData]] = {}
         for doc in self.documents.values():
-            doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
+            doc_type = doc.type.value
             if doc_type not in result:
                 result[doc_type] = []
             result[doc_type].append(doc)
@@ -52,7 +52,7 @@ class DocumentSnapshot:
         """Group documents by status."""
         result: Dict[str, List[DocumentData]] = {}
         for doc in self.documents.values():
-            doc_status = doc.status.value if hasattr(doc.status, 'value') else str(doc.status)
+            doc_status = doc.status.value
             if doc_status not in result:
                 result[doc_status] = []
             result[doc_status].append(doc)
@@ -66,13 +66,13 @@ def matches_filter(doc: DocumentData, filters: Optional[SnapshotFilters]) -> boo
 
     # Type filter
     if filters.types:
-        doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
+        doc_type = doc.type.value
         if doc_type not in filters.types:
             return False
 
     # Status filter
     if filters.status:
-        doc_status = doc.status.value if hasattr(doc.status, 'value') else str(doc.status)
+        doc_status = doc.status.value
         if doc_status not in filters.status:
             return False
 

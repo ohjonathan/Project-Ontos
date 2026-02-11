@@ -15,11 +15,7 @@ from typing import Dict, List, Optional, Tuple, Any
 import re
 
 
-class CurationLevel(IntEnum):
-    """Document curation levels."""
-    SCAFFOLD = 0  # Auto-generated placeholder
-    STUB = 1      # User provides goal only
-    FULL = 2      # Complete Ontos document
+from ontos.core.types import CurationLevel
 
 
 @dataclass

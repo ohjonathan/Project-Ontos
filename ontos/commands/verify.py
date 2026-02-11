@@ -33,6 +33,7 @@ def find_stale_documents_list() -> List[dict]:
     
     root = find_project_root()
     ignore_patterns = load_ontosignore(root)
+    files = scan_documents([root], skip_patterns=ignore_patterns)
     load_result = load_documents(files, parse_frontmatter_content)
     if load_result.has_fatal_errors:
         return [] # Caller will handle empty and check if it needs to fail
@@ -155,11 +156,15 @@ def verify_all_interactive(verify_date: date, output: OutputHandler) -> int:
                 output.error(issue.message)
         return 1
 
-    stale_docs = find_stale_documents_list() # This re-loads, but it's safe for now.
+    stale_docs = find_stale_documents_list()
     
     if not stale_docs:
         output.success("No stale documents found.")
         return 0
+    
+    updated = 0
+    skipped = 0
+    ctx = SessionContext.from_repo(root)
     
     for i, doc in enumerate(stale_docs, 1):
         staleness = doc['staleness']

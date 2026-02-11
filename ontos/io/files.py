@@ -193,7 +193,8 @@ def load_documents(
                     raw_bytes = raw_bytes[3:]
                 content = raw_bytes.decode('utf-8', errors='replace').lstrip()
                 
-                doc = load_document_from_content(path, content, frontmatter_parser)
+                doc, doc_issues = load_document_from_content(path, content, frontmatter_parser)
+                issues.extend(doc_issues)
                 
                 if cache and mtime is not None:
                     cache.set(path, doc, mtime)
@@ -255,14 +256,15 @@ def load_document(
     if raw_bytes.startswith(b'\xef\xbb\xbf'):
         raw_bytes = raw_bytes[3:]
     content = raw_bytes.decode('utf-8', errors='replace').lstrip()
-    return load_document_from_content(path, content, frontmatter_parser)
+    doc, _ = load_document_from_content(path, content, frontmatter_parser)
+    return doc
 
 
 def load_document_from_content(
     path: Path,
     content: str,
     frontmatter_parser: Callable[[str], Tuple[Dict[str, Any], str]]
-) -> DocumentData:
+) -> Tuple[DocumentData, List[DocumentLoadIssue]]:
     """Load and normalize a document from provided content.
 
     Args:
@@ -271,7 +273,7 @@ def load_document_from_content(
         frontmatter_parser: Function to parse frontmatter from content
 
     Returns:
-        DocumentData with normalized types
+        Tuple of (DocumentData, List[DocumentLoadIssue])
     """
     from ontos.core.frontmatter import (
     normalize_depends_on, 
@@ -284,18 +286,36 @@ def load_document_from_content(
     from ontos.core.cache import DocumentCache # This import is not used in this function, but kept as per instruction.
     
     fm, body = frontmatter_parser(content)
-    
+    issues: List[DocumentLoadIssue] = []
+
+    def report_warning(msg: str):
+        issues.append(DocumentLoadIssue(
+            code="invalid_reference_type",
+            path=path,
+            message=msg,
+            doc_id=fm.get('id', path.stem)
+        ))
+
+    def report_enum_error(msg: str, val: Any, options: List[str]):
+        issues.append(DocumentLoadIssue(
+            code="invalid_enum",
+            path=path,
+            message=f"{msg}. Expected one of: {', '.join(options)}",
+            doc_id=fm.get('id', path.stem),
+            value=val
+        ))
+
     # Core fields (B1 Canonical Mapping)
     doc_id = fm.get('id', path.stem)
-    doc_type = normalize_type(fm.get('type'))
-    doc_status = normalize_status(fm.get('status'))
-    depends_on = normalize_depends_on(fm.get('depends_on'))
-    impacts = normalize_depends_on(fm.get('impacts'))
+    doc_type = normalize_type(fm.get('type'), on_error=report_enum_error)
+    doc_status = normalize_status(fm.get('status'), on_error=report_enum_error)
+    depends_on = normalize_depends_on(fm.get('depends_on'), on_warning=report_warning)
+    impacts = normalize_depends_on(fm.get('impacts'), on_warning=report_warning)
     tags = normalize_tags(fm)
     aliases = normalize_aliases(fm, doc_id)
-    describes = normalize_describes(fm.get('describes'))
+    describes = normalize_describes(fm.get('describes'), on_warning=report_warning)
 
-    return DocumentData(
+    doc_data = DocumentData(
         id=doc_id,
         type=doc_type,
         status=doc_status,
@@ -308,6 +328,8 @@ def load_document_from_content(
         aliases=aliases,
         describes=describes
     )
+    
+    return doc_data, issues
 
 
 def get_file_mtime(path: Path) -> Optional[datetime]:

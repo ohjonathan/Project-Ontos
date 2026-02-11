@@ -23,6 +23,19 @@ from ontos.core.graph import (
     calculate_depths,
 )
 
+# SEVERITY RATIONALE (v3.3 Track A1)
+# ---------------------------------
+# - ERROR: Circular dependencies or duplicate IDs (breaking graph integrity).
+# - WARNING: Orphan documents, depth exceedance, or missing/invalid descriptive metadata.
+# - NOTE: In Track B, these can be promoted to ERROR based on curation policy.
+REFERENCE_SEVERITY_DEFAULT = {
+    "circular": "error",
+    "orphan": "warning",
+    "depth": "warning",
+    "schema": "warning",
+    "concepts": "warning"
+}
+
 
 def validate_describes_field(
     doc: DocumentData,
@@ -68,8 +81,16 @@ class ValidationOrchestrator:
         """
         self.docs = docs
         self.config = config or {}
+        self.severity_map = self.config.get("severity_map", REFERENCE_SEVERITY_DEFAULT)
         self.errors: List[ValidationError] = []
         self.warnings: List[ValidationError] = []
+
+    def _report(self, error: ValidationError) -> None:
+        """Report an error or warning based on its severity."""
+        if error.severity == "error":
+            self.errors.append(error)
+        else:
+            self.warnings.append(error)
 
     def validate_all(self) -> ValidationResult:
         """Run all validations and return collected results.
@@ -90,8 +111,9 @@ class ValidationOrchestrator:
 
     def validate_graph(self) -> None:
         """Validate dependency graph: broken links, cycles, orphans, depth."""
-        graph, broken_link_errors = build_graph(self.docs)
-        self.errors.extend(broken_link_errors)
+        graph, broken_link_errors = build_graph(self.docs, severity_map=self.severity_map)
+        self.errors.extend([e for e in broken_link_errors if e.severity == "error"])
+        self.warnings.extend([e for e in broken_link_errors if e.severity == "warning"])
 
         # Detect cycles
         cycles = detect_cycles(graph)
@@ -140,7 +162,7 @@ class ValidationOrchestrator:
 
         for doc_id, doc in self.docs.items():
             # Handle both enum and string types
-            doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
+            doc_type = doc.type.value
             if doc_type != "log":
                 continue
 
@@ -181,14 +203,65 @@ class ValidationOrchestrator:
                 self.warnings.append(error)
 
     def validate_concepts(self) -> None:
-        """Validate concept field usage in logs items."""
+        """Validate concept field usage and structure (#42)."""
+        known_concepts = self.config.get("known_concepts", set())
+        
         for doc_id, doc in self.docs.items():
-            if doc.type.value == "log" and not doc.frontmatter.get("concepts"):
-                self.warnings.append(ValidationError(
+            concepts = doc.frontmatter.get("concepts")
+            
+            # Structural check: empty list
+            if isinstance(concepts, list) and not concepts:
+                self._report(ValidationError(
+                    error_type=ValidationErrorType.CURATION,
+                    doc_id=doc_id,
+                    filepath=str(doc.filepath),
+                    message="Empty 'concepts' list",
+                    fix_suggestion="Add concepts or remove the field",
+                    severity=self.severity_map.get("concepts", "warning")
+                ))
+
+            if concepts:
+                if not isinstance(concepts, list):
+                    self._report(ValidationError(
+                        error_type=ValidationErrorType.CURATION,
+                        doc_id=doc_id,
+                        filepath=str(doc.filepath),
+                        message=f"Invalid 'concepts' type: {type(concepts).__name__} (expected list)",
+                        fix_suggestion="Convert concepts to a YAML list",
+                        severity=self.severity_map.get("concepts", "warning")
+                    ))
+                else:
+                    # Structural check: non-string elements
+                    non_strings = [str(c) for c in concepts if not isinstance(c, str)]
+                    if non_strings:
+                        self._report(ValidationError(
+                            error_type=ValidationErrorType.CURATION,
+                            doc_id=doc_id,
+                            filepath=str(doc.filepath),
+                            message=f"Non-string items in concepts: {', '.join(non_strings)}",
+                            fix_suggestion="Ensure all concepts are strings",
+                            severity=self.severity_map.get("concepts", "warning")
+                        ))
+
+                    # Structural check: duplicates
+                    if len(concepts) != len(set(concepts)):
+                        dupes = [c for c in set(concepts) if concepts.count(c) > 1]
+                        self._report(ValidationError(
+                            error_type=ValidationErrorType.CURATION,
+                            doc_id=doc_id,
+                            filepath=str(doc.filepath),
+                            message=f"Duplicate concepts: {', '.join(map(str, dupes))}",
+                            fix_suggestion="Remove duplicate concepts",
+                            severity=self.severity_map.get("concepts", "warning")
+                        ))
+
+            # Role-based check: log requirement
+            if doc.type.value == "log" and concepts is None:
+                self._report(ValidationError(
                     error_type=ValidationErrorType.CURATION,
                     doc_id=doc_id,
                     filepath=str(doc.filepath),
                     message="Log document missing 'concepts' field (required at L2)",
                     fix_suggestion="Add a concepts: list to the frontmatter",
-                    severity="warning"
+                    severity=self.severity_map.get("concepts", "warning")
                 ))

@@ -45,15 +45,20 @@ class DependencyGraph:
             self.reverse_edges[dep].append(doc_id)
 
 
-def build_graph(docs: Dict[str, DocumentData]) -> Tuple[DependencyGraph, List[ValidationError]]:
+def build_graph(
+    docs: Dict[str, DocumentData],
+    severity_map: Optional[Dict[str, str]] = None
+) -> Tuple[DependencyGraph, List[ValidationError]]:
     """Build dependency graph from document dictionary.
 
     Args:
         docs: Dictionary mapping doc_id to DocumentData
+        severity_map: Optional mapping of error types to severities
 
     Returns:
         Tuple of (DependencyGraph, list of broken link errors)
     """
+    severity_map = severity_map or {}
     graph = DependencyGraph()
     errors = []
     existing_ids = set(docs.keys())
@@ -61,7 +66,7 @@ def build_graph(docs: Dict[str, DocumentData]) -> Tuple[DependencyGraph, List[Va
     for doc_id, doc in docs.items():
         depends_on = doc.depends_on if hasattr(doc, 'depends_on') else []
         # Handle enum types
-        doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
+        doc_type = doc.type.value
         graph.add_node(doc_id, doc_type, str(doc.filepath), depends_on)
 
         # Check for broken links
@@ -79,9 +84,9 @@ def build_graph(docs: Dict[str, DocumentData]) -> Tuple[DependencyGraph, List[Va
                     error_type=ValidationErrorType.BROKEN_LINK,
                     doc_id=doc_id,
                     filepath=str(doc.filepath),
-                    message=f"Broken dependency: '{dep_id}' does not exist",
+                    message=f"Broken dependency: '{dep_id}' (declared in {doc_id}) does not exist",
                     fix_suggestion=fix_suggestion,
-                    severity=REFERENCE_SEVERITY_DEFAULT
+                    severity=severity_map.get("circular", REFERENCE_SEVERITY_DEFAULT) if dep_id == doc_id else severity_map.get("broken_link", REFERENCE_SEVERITY_DEFAULT)
                 ))
 
     return graph, errors

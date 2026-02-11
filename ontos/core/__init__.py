@@ -107,7 +107,7 @@ from ontos.core.types import (
     ValidationResult,
     TEMPLATES,
     SECTION_TEMPLATES,
-    CurationLevel,  # Re-exported from curation.py
+    CurationLevel,
 )
 
 # Phase 2 additions: Token estimation

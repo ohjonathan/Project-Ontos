@@ -446,8 +446,12 @@ class DraftProposal:
 
 
 def _find_draft_proposals(ctx: MaintainContext) -> List[DraftProposal]:
-    proposal_dirs: List[Path] = []
+    from ontos.io.files import load_documents
+    from ontos.io.yaml import parse_frontmatter_content
 
+    proposal_dirs: List[Path] = []
+    
+    # ... Same directory detection logic ...
     contributor_dir = ctx.repo_root / ".ontos-internal" / "strategy" / "proposals"
     if contributor_dir.exists():
         proposal_dirs.append(contributor_dir)
@@ -456,41 +460,41 @@ def _find_draft_proposals(ctx: MaintainContext) -> List[DraftProposal]:
     if docs_dir.exists() and docs_dir not in proposal_dirs:
         proposal_dirs.append(docs_dir)
 
+    if not proposal_dirs:
+        return []
+
+    # Use canonical loader (#1)
+    all_files: List[Path] = []
+    for d in proposal_dirs:
+        all_files.extend(d.rglob("*.md"))
+    
+    load_result = load_documents(all_files, parse_frontmatter_content)
+    
     proposals: List[DraftProposal] = []
     version_pattern = re.compile(r"v?(\d+)[._-](\d+)")
 
-    for proposal_dir in proposal_dirs:
-        for path in proposal_dir.rglob("*.md"):
-            try:
-                frontmatter = parse_frontmatter(str(path)) or {}
-            except Exception:
-                continue
+    for doc in load_result.documents.values():
+        if doc.frontmatter.get("status") != "draft":
+            continue
 
-            if frontmatter.get("status") != "draft":
-                continue
+        version_match = version_pattern.search(str(doc.filepath)) or version_pattern.search(doc.id)
+        version = None
+        if version_match:
+            version = f"{version_match.group(1)}.{version_match.group(2)}"
 
-            proposal_id = str(frontmatter.get("id", path.stem)).strip()
-            if not proposal_id:
-                continue
+        current_version = ontos.__version__ or ""
+        matches_current = bool(version and current_version.startswith(version))
+        age_days = int(max(0, (time.time() - doc.filepath.stat().st_mtime) / 86400))
 
-            version_match = version_pattern.search(str(path)) or version_pattern.search(proposal_id)
-            version = None
-            if version_match:
-                version = f"{version_match.group(1)}.{version_match.group(2)}"
-
-            current_version = ontos.__version__ or ""
-            matches_current = bool(version and current_version.startswith(version))
-            age_days = int(max(0, (time.time() - path.stat().st_mtime) / 86400))
-
-            proposals.append(
-                DraftProposal(
-                    id=proposal_id,
-                    path=path,
-                    age_days=age_days,
-                    version=version,
-                    version_match=matches_current,
-                )
+        proposals.append(
+            DraftProposal(
+                id=doc.id,
+                path=doc.filepath,
+                age_days=age_days,
+                version=version,
+                version_match=matches_current,
             )
+        )
 
     proposals.sort(key=lambda p: (not p.version_match, -p.age_days, p.id))
     return proposals
@@ -551,17 +555,27 @@ def _task_check_links(ctx: MaintainContext) -> TaskResult:
             return _fail(f"No documents loaded. Found {load_issues} load issues.")
         return _ok("No documents found for link validation.", metrics={"broken_links": 0})
 
-    _, broken = build_graph(docs)
+    severity_map = {
+        "broken_link": "warning",
+        "concepts": "warning"
+    }
+    _, broken = build_graph(docs, severity_map=severity_map)
+    
+    # Filter for actual errors to determine task status
+    errors = [e for e in broken if e.severity == "error"]
+    error_count = len(errors)
     broken_count = len(broken)
     duplicate_count = len(load_result.duplicate_ids)
 
     details = []
     # Report load issues (parse errors, duplicates)
     for issue in load_result.issues:
+        label = "Error" if issue.code in {"duplicate_id", "parse_error", "io_error"} else "Warning"
         details.append(f"LOAD {issue.code.upper()}: {issue.message}")
 
     for error in broken[:5]:
-        details.append(f"BROKEN: {error.doc_id}: {error.message}")
+        label = "❌" if error.severity == "error" else "⚠️"
+        details.append(f"{label} {error.doc_id}: {error.message}")
     if broken_count > 5:
         details.append(f"... and {broken_count - 5} more")
 
@@ -571,14 +585,18 @@ def _task_check_links(ctx: MaintainContext) -> TaskResult:
         "duplicates": duplicate_count,
     }
 
-    if broken_count > 0 or duplicate_count > 0:
+    if error_count > 0 or duplicate_count > 0:
         return _fail(
-            f"Found {broken_count} broken link(s) and {duplicate_count} duplicate(s).",
+            f"Found {error_count} fatal errors, {broken_count - error_count} warnings, and {duplicate_count} duplicate(s).",
             details=details,
             metrics=metrics,
         )
 
-    return _ok("No broken dependency links found.", details=details if details else None, metrics=metrics)
+    return _ok(
+        f"Validation passed with {broken_count} warning(s).", 
+        details=details if details else None, 
+        metrics=metrics
+    )
 
 
 @register_maintain_task(

@@ -194,25 +194,27 @@ def normalize_reference_list(value: Any, field_name: str, on_warning: Optional[C
     return []
 
 
-def normalize_depends_on(value) -> List[str]:
+def normalize_depends_on(value, on_warning: Optional[Callable[[str], None]] = None) -> List[str]:
     """Normalize depends_on field to a list of strings.
 
     Delegates to the canonical normalize_reference_list utility.
 
     Args:
         value: Raw value from YAML frontmatter.
+        on_warning: Optional callback for warning messages.
 
     Returns:
         List of dependency IDs (empty list if none).
     """
-    return normalize_reference_list(value, "depends_on")
+    return normalize_reference_list(value, "depends_on", on_warning=on_warning)
 
 
-def normalize_type(value) -> Any:
+def normalize_type(value, on_error: Optional[Callable[[str, Any, List[str]], None]] = None) -> Any:
     """Normalize type field to DocumentType enum.
     
     Args:
         value: Raw value from YAML.
+        on_error: Optional callback (message, value, options) for failures.
         
     Returns:
         DocumentType enum (ATOM if invalid).
@@ -232,13 +234,17 @@ def normalize_type(value) -> Any:
     try:
         return DocumentType(type_str)
     except (ValueError, TypeError):
+        if on_error:
+            options = [t.value for t in DocumentType]
+            on_error(f"Invalid doc type '{type_str}'", type_str, options)
         return DocumentType.ATOM
 
-def normalize_status(value) -> Any:
+def normalize_status(value, on_error: Optional[Callable[[str, Any, List[str]], None]] = None) -> Any:
     """Normalize status field to DocumentStatus enum.
     
     Args:
         value: Raw value from YAML.
+        on_error: Optional callback (message, value, options) for failures.
         
     Returns:
         DocumentStatus enum (DRAFT if invalid).
@@ -258,6 +264,9 @@ def normalize_status(value) -> Any:
     try:
         return DocumentStatus(status_str)
     except (ValueError, TypeError):
+        if on_error:
+            options = [s.value for s in DocumentStatus]
+            on_error(f"Invalid doc status '{status_str}'", status_str, options)
         return DocumentStatus.DRAFT
 
 

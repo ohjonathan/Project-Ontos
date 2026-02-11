@@ -64,6 +64,10 @@ def generate_context_map(
     validator = ValidationOrchestrator(docs, {
         "max_dependency_depth": options.max_dependency_depth,
         "allowed_orphan_types": config.get("allowed_orphan_types", ["atom", "log"]),
+        "severity_map": {
+            "broken_link": "warning",
+            "concepts": "warning"
+        }
     })
     result = validator.validate_all()
 
@@ -168,7 +172,7 @@ def _generate_tier1_summary(
 
     # Recent Activity (from logs, limit to 3)
     log_lines = ["### Recent Activity"]
-    log_docs = [d for d in docs.values() if d.type.value == "log" or str(d.type) == "log"]
+    log_docs = [d for d in docs.values() if d.type.value == "log"]
     
     # Sort by date frontmatter (falling back to ID)
     def log_sort_key(doc):
@@ -183,7 +187,7 @@ def _generate_tier1_summary(
         log_lines.append("| Log | Status | Summary |")
         log_lines.append("|-----|--------|---------|")
         for doc in log_docs_sorted:
-            status = doc.status.value if hasattr(doc.status, 'value') else str(doc.status)
+            status = doc.status.value
             summary = doc.frontmatter.get("summary", "No summary")
             # B3: Escape pipes and remove newlines in summary
             summary_escaped = _escape_markdown_table_cell(summary).replace("\n", " ")
@@ -372,8 +376,8 @@ def _generate_document_table(
     sorted_docs = sorted(docs.values(), key=lambda d: str(d.filepath))
 
     for doc in sorted_docs:
-        doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
-        doc_status = doc.status.value if hasattr(doc.status, 'value') else str(doc.status)
+        doc_type = doc.type.value
+        doc_status = doc.status.value
         # Escape special characters to prevent table breakage
         filepath = _escape_markdown_table_cell(_format_rel_path(doc.filepath, root_path))
         doc_id_link = _format_doc_link(doc.id, doc.filepath, obsidian_mode)
@@ -447,7 +451,7 @@ def _generate_timeline(docs: Dict[str, DocumentData]) -> str:
     
     # Filter to logs only
     logs = [doc for doc in docs.values() 
-            if (doc.type.value if hasattr(doc.type, 'value') else str(doc.type)) == "log"]
+            if doc.type.value == "log"]
     
     if not logs:
         lines.append("\nNo session logs found.")
@@ -495,7 +499,7 @@ def _generate_lint_section(docs: Dict[str, DocumentData], result: ValidationResu
     lint_issues = []
 
     for doc in docs.values():
-        doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
+        doc_type = doc.type.value
 
         # Check for empty impacts on logs
         if doc_type == "log":
@@ -538,8 +542,8 @@ def _generate_compact_output(docs: Dict[str, Any], mode: CompactMode) -> str:
 
     lines = []
     for doc_id, doc in sorted(docs.items()):
-        doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
-        doc_status = doc.status.value if hasattr(doc.status, 'value') else str(doc.status)
+        doc_type = doc.type.value
+        doc_status = doc.status.value
 
         if mode == CompactMode.RICH:
             summary = str(doc.frontmatter.get('summary', ''))
@@ -630,8 +634,8 @@ def matches_filter(doc: Any, filters: list) -> bool:
     import fnmatch
 
     for f in filters:
-        doc_type = doc.type.value if hasattr(doc.type, 'value') else str(doc.type)
-        doc_status = doc.status.value if hasattr(doc.status, 'value') else str(doc.status)
+        doc_type = doc.type.value
+        doc_status = doc.status.value
 
         if f.field == 'type':
             if doc_type.lower() not in [v.lower() for v in f.values]:
