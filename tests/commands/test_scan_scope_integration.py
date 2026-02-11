@@ -95,6 +95,21 @@ def test_query_scope_library_includes_internal(tmp_path: Path) -> None:
     assert "internal_b" in library_result.stdout
 
 
+def test_query_uses_config_default_scope_library_without_cli_flag(tmp_path: Path) -> None:
+    (tmp_path / ".ontos.toml").write_text(
+        "[ontos]\nversion='3.2'\n[scanning]\ndefault_scope='library'\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "docs").mkdir(exist_ok=True)
+    _write_doc(tmp_path / "docs" / "a.md", "doc_a")
+    _write_doc(tmp_path / ".ontos-internal" / "b.md", "internal_b")
+
+    result = _run_ontos(tmp_path, "query", "--list-ids")
+    assert result.returncode == 0
+    assert "doc_a" in result.stdout
+    assert "internal_b" in result.stdout
+
+
 def test_verify_scope_library_detects_cross_scope_duplicate(tmp_path: Path) -> None:
     _init_repo(tmp_path)
     _write_doc(tmp_path / "docs" / "a.md", "dup_id")
@@ -180,6 +195,26 @@ def test_migration_report_scope_library_includes_internal(tmp_path: Path) -> Non
 
     assert len(default_payload["classifications"]) == 1
     assert len(library_payload["classifications"]) == 2
+
+
+def test_doctor_scope_library_integration(tmp_path: Path) -> None:
+    _init_repo(tmp_path)
+    _write_doc(tmp_path / "docs" / "a.md", "doc_a")
+    _write_doc(tmp_path / ".ontos-internal" / "b.md", "internal_b")
+
+    default_result = _run_ontos(tmp_path, "--json", "doctor")
+    library_result = _run_ontos(tmp_path, "--json", "doctor", "--scope", "library")
+
+    assert default_result.stdout
+    assert library_result.stdout
+    default_payload = json.loads(default_result.stdout)
+    library_payload = json.loads(library_result.stdout)
+
+    default_docs_check = next(c for c in default_payload["checks"] if c["name"] == "docs_directory")
+    library_docs_check = next(c for c in library_payload["checks"] if c["name"] == "docs_directory")
+
+    assert "1 documents" in default_docs_check["message"]
+    assert "2 documents" in library_docs_check["message"]
 
 
 def test_promote_scope_library_includes_internal(tmp_path: Path) -> None:

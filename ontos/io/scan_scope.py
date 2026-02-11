@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import warnings
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import List, Optional
@@ -16,6 +17,15 @@ class ScanScope(str, Enum):
 
     DOCS = "docs"
     LIBRARY = "library"
+
+
+@dataclass(frozen=True)
+class ScanScopePlan:
+    """Resolved scan plan for a command invocation."""
+
+    scope: ScanScope
+    roots: List[Path]
+    skip_patterns: List[str]
 
 
 _VALID_SCOPES = {ScanScope.DOCS.value, ScanScope.LIBRARY.value}
@@ -89,6 +99,28 @@ def collect_scoped_documents(
 ) -> List[Path]:
     """Collect markdown documents for a scope or explicit directory override."""
 
+    plan = build_scan_scope_plan(
+        repo_root,
+        config,
+        scope,
+        base_skip_patterns=base_skip_patterns,
+        extra_skip_patterns=extra_skip_patterns,
+        explicit_dirs=explicit_dirs,
+    )
+    return scan_documents(plan.roots, skip_patterns=plan.skip_patterns)
+
+
+def build_scan_scope_plan(
+    repo_root: Path,
+    config: OntosConfig,
+    scope: ScanScope,
+    *,
+    base_skip_patterns: Optional[List[str]] = None,
+    extra_skip_patterns: Optional[List[str]] = None,
+    explicit_dirs: Optional[List[Path]] = None,
+) -> ScanScopePlan:
+    """Build a full scan plan (scope, roots, skips) for command use."""
+
     if explicit_dirs:
         roots = []
         for directory in explicit_dirs:
@@ -102,4 +134,8 @@ def collect_scoped_documents(
     if extra_skip_patterns:
         skip_patterns.extend(extra_skip_patterns)
 
-    return scan_documents(roots, skip_patterns=skip_patterns)
+    return ScanScopePlan(
+        scope=scope,
+        roots=roots,
+        skip_patterns=skip_patterns,
+    )

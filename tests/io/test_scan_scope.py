@@ -7,6 +7,8 @@ import pytest
 from ontos.core.config import default_config
 from ontos.io.scan_scope import (
     ScanScope,
+    ScanScopePlan,
+    build_scan_scope_plan,
     build_scope_roots,
     collect_scoped_documents,
     resolve_scan_scope,
@@ -110,3 +112,31 @@ def test_collect_scoped_documents_respects_docs_path_override(tmp_path: Path):
     files = collect_scoped_documents(tmp_path, config, ScanScope.DOCS)
 
     assert [p.name for p in files] == ["a.md"]
+
+
+def test_build_scan_scope_plan_returns_dataclass(tmp_path: Path):
+    config = default_config()
+    plan = build_scan_scope_plan(
+        tmp_path,
+        config,
+        ScanScope.DOCS,
+        base_skip_patterns=["a/*"],
+        extra_skip_patterns=["b/*"],
+    )
+
+    assert isinstance(plan, ScanScopePlan)
+    assert plan.scope == ScanScope.DOCS
+    assert plan.skip_patterns == ["a/*", "b/*"]
+
+
+def test_build_scan_scope_plan_uses_explicit_dirs(tmp_path: Path):
+    config = default_config()
+    explicit = [Path("custom")]
+    plan = build_scan_scope_plan(
+        tmp_path,
+        config,
+        ScanScope.DOCS,
+        explicit_dirs=explicit,
+    )
+
+    assert plan.roots == [tmp_path / "custom"]
