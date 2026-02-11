@@ -276,8 +276,10 @@ class ValidationOrchestrator:
                         ))
 
                     # Structural check: duplicates
-                    if len(concepts) != len(set(concepts)):
-                        dupes = [c for c in set(concepts) if concepts.count(c) > 1]
+                    # Guard against unhashable members (dicts, lists) during set conversion (VUL-01)
+                    hashable_concepts = [c for c in concepts if isinstance(c, (str, int, float, bool))]
+                    if len(hashable_concepts) != len(set(hashable_concepts)):
+                        dupes = [c for c in set(hashable_concepts) if hashable_concepts.count(c) > 1]
                         self._report(ValidationError(
                             error_type=ValidationErrorType.CURATION,
                             doc_id=doc_id,

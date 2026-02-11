@@ -28,7 +28,7 @@ class CurationLevel(IntEnum):
 # ENUMS (new)
 # =============================================================================
 
-class DocumentType(Enum):
+class DocumentType(str, Enum):
     """Document types in the Ontos ontology."""
     KERNEL = "kernel"
     STRATEGY = "strategy"
@@ -36,9 +36,11 @@ class DocumentType(Enum):
     ATOM = "atom"
     LOG = "log"
     REFERENCE = "reference"
+    CONCEPT = "concept"
+    UNKNOWN = "unknown"
 
 
-class DocumentStatus(Enum):
+class DocumentStatus(str, Enum):
     """Document lifecycle status."""
     DRAFT = "draft"
     ACTIVE = "active"
@@ -48,6 +50,7 @@ class DocumentStatus(Enum):
     SCAFFOLD = "scaffold"
     PENDING_CURATION = "pending_curation"
     IN_PROGRESS = "in_progress"
+    UNKNOWN = "unknown"
 
 
 class ValidationErrorType(Enum):

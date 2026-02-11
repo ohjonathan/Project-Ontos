@@ -2,7 +2,7 @@
 id: ontology_spec
 type: kernel
 status: active
-depends_on: [mission]
+depends_on: []
 ---
 
 # Ontos Ontology Specification

@@ -153,7 +153,6 @@ def normalize_describes(value: Any, on_warning: Optional[Callable[[str], None]] 
             else:
                 if on_warning:
                     on_warning(f"Non-string member '{v}' in describes field dropped.")
-                results.append(str(v))
         return results
     
     if on_warning:

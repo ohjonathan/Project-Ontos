@@ -42,8 +42,8 @@ class DocumentLoadResult:
 
     @property
     def has_fatal_errors(self) -> bool:
-        """True if any fatal issues (duplicates, parse errors) were found."""
-        fatal_codes = {"duplicate_id", "parse_error", "io_error"}
+        """True if any fatal issues (parse/IO errors) were found. Duplicates are handled by commands."""
+        fatal_codes = {"parse_error", "io_error"}
         return any(issue.code in fatal_codes for issue in self.issues)
 
 

@@ -107,3 +107,23 @@ def test_impacts_and_describes_allow_severity_override():
     messages = [error.message for error in orchestrator.errors]
     assert any("Impact reference 'missing_impact' not found" in message for message in messages)
     assert any("describes 'missing_describes' not found" in message for message in messages)
+
+
+def test_validate_concepts_unhashable_items_no_crash():
+    """VUL-01: Concepts list containing unhashable items (dict) should not crash."""
+    docs = {
+        "log1": DocumentData(
+            id="log1",
+            type=DocumentType.LOG,
+            status=DocumentStatus.ACTIVE,
+            filepath=Path("log1.md"),
+            frontmatter={"concepts": [{"key": "val"}, "valid"]},
+            content=""
+        )
+    }
+
+    orchestrator = ValidationOrchestrator(docs)
+    # This should not raise TypeError: unhashable type: 'dict'
+    orchestrator.validate_concepts()
+
+    assert any("Non-string items in concepts: {'key': 'val'}" in warning.message for warning in orchestrator.warnings)

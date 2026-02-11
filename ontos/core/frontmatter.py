@@ -237,7 +237,7 @@ def normalize_type(value, on_error: Optional[Callable[[str, Any, List[str]], Non
         if on_error:
             options = [t.value for t in DocumentType]
             on_error(f"Invalid doc type '{type_str}'", type_str, options)
-        return DocumentType.ATOM
+        return DocumentType.UNKNOWN
 
 def normalize_status(value, on_error: Optional[Callable[[str, Any, List[str]], None]] = None) -> Any:
     """Normalize status field to DocumentStatus enum.
@@ -255,7 +255,7 @@ def normalize_status(value, on_error: Optional[Callable[[str, Any, List[str]], N
         return value
         
     # Standard string normalization
-    status_str = 'draft'
+    status_str = 'unknown'
     if isinstance(value, str):
         status_str = value.strip().lower()
     elif isinstance(value, list) and value:
@@ -267,7 +267,7 @@ def normalize_status(value, on_error: Optional[Callable[[str, Any, List[str]], N
         if on_error:
             options = [s.value for s in DocumentStatus]
             on_error(f"Invalid doc status '{status_str}'", status_str, options)
-        return DocumentStatus.DRAFT
+        return DocumentStatus.UNKNOWN
 
 
 def load_common_concepts(docs_dir: str = None) -> set:

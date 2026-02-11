@@ -54,3 +54,5 @@ Body content"""
     doc, issues = load_document_from_content(path, content, parse_frontmatter_content)
     
     assert any("Non-string member" in i.message for i in issues)
+    # VUL-02: Ensure non-string target '123' is dropped, not coerced to "123"
+    assert doc.describes == ["valid_atom"]

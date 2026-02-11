@@ -43,6 +43,11 @@ class GenerateMapOptions:
     compact: CompactMode = CompactMode.OFF
 
 
+# Helper to handle string/enum duality for type/status fields
+def _val(item: Any) -> str:
+    return item.value if hasattr(item, "value") else str(item)
+
+
 def generate_context_map(
     docs: Dict[str, DocumentData],
     config: Dict[str, Any],
@@ -182,7 +187,7 @@ def _generate_tier1_summary(
 
     # Recent Activity (from logs, limit to 3)
     log_lines = ["### Recent Activity"]
-    log_docs = [d for d in docs.values() if d.type.value == "log"]
+    log_docs = [d for d in docs.values() if _val(d.type) == "log"]
     
     # Sort by date frontmatter (falling back to ID)
     def log_sort_key(doc):
@@ -386,8 +391,8 @@ def _generate_document_table(
     sorted_docs = sorted(docs.values(), key=lambda d: str(d.filepath))
 
     for doc in sorted_docs:
-        doc_type = doc.type.value
-        doc_status = doc.status.value
+        doc_type = _val(doc.type)
+        doc_status = _val(doc.status)
         # Escape special characters to prevent table breakage
         filepath = _escape_markdown_table_cell(_format_rel_path(doc.filepath, root_path))
         doc_id_link = _format_doc_link(doc.id, doc.filepath, obsidian_mode)
@@ -509,7 +514,7 @@ def _generate_lint_section(docs: Dict[str, DocumentData], result: ValidationResu
     lint_issues = []
 
     for doc in docs.values():
-        doc_type = doc.type.value
+        doc_type = _val(doc.type)
 
         # Check for empty impacts on logs
         if doc_type == "log":
@@ -552,8 +557,8 @@ def _generate_compact_output(docs: Dict[str, Any], mode: CompactMode) -> str:
 
     lines = []
     for doc_id, doc in sorted(docs.items()):
-        doc_type = doc.type.value
-        doc_status = doc.status.value
+        doc_type = _val(doc.type)
+        doc_status = _val(doc.status)
 
         if mode == CompactMode.RICH:
             summary = str(doc.frontmatter.get('summary', ''))
@@ -644,14 +649,13 @@ def matches_filter(doc: Any, filters: list) -> bool:
     import fnmatch
 
     for f in filters:
-        doc_type = doc.type.value
-        doc_status = doc.status.value
-
         if f.field == 'type':
-            if doc_type.lower() not in [v.lower() for v in f.values]:
+            doc_type_str = _val(doc.type)
+            if doc_type_str.lower() not in [v.lower() for v in f.values]:
                 return False
         elif f.field == 'status':
-            if doc_status.lower() not in [v.lower() for v in f.values]:
+            doc_status_str = _val(doc.status)
+            if doc_status_str.lower() not in [v.lower() for v in f.values]:
                 return False
         elif f.field == 'concept':
             concepts = doc.frontmatter.get('concepts', [])
@@ -740,7 +744,7 @@ def map_command(options: MapOptions) -> int:
         if not options.quiet:
             print(f"{label}: {issue.message}")
 
-    if load_result.has_fatal_errors:
+    if load_result.has_fatal_errors or load_result.duplicate_ids:
         return 1
 
     # filter

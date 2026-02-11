@@ -164,9 +164,15 @@ def query_command(options: QueryOptions) -> Tuple[int, str]:
     load_result = scan_docs_for_query(search_dir)
     if load_result.has_fatal_errors:
         for issue in load_result.issues:
-            if issue.code in {"duplicate_id", "parse_error", "io_error"}:
+            if issue.code in {"parse_error", "io_error"}:
                 output.error(issue.message)
         return 1, "Document load failed"
+        
+    # Report duplicates as warnings for query
+    if load_result.duplicate_ids:
+        for issue in load_result.issues:
+            if issue.code == "duplicate_id":
+                output.warning(issue.message)
         
     files_data = load_result.documents
     if not files_data:
