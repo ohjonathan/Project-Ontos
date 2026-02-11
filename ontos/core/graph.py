@@ -14,9 +14,13 @@ from typing import Dict, List, Set, Optional, Tuple, Union
 from ontos.core.types import DocumentData, ValidationError, ValidationErrorType
 from ontos.core.suggestions import suggest_candidates_for_broken_ref
  
-# Standard severity for broken references.
-# Milestone 3 allows parameterizing this if needed by the caller.
-REFERENCE_SEVERITY_DEFAULT = "error"
+# SEVERITY RATIONALE (v3.3 Track A1)
+# ---------------------------------
+# - ERROR (depends_on): Structural, defines the graph integrity.
+# - WARNING (impacts/describes): Informational, broken links don't corrupt traversal.
+DEPENDS_ON_SEVERITY_DEFAULT = "error"
+IMPACTS_SEVERITY_DEFAULT = "warning"
+DESCRIBES_SEVERITY_DEFAULT = "warning"
 
 
 @dataclass
@@ -86,7 +90,7 @@ def build_graph(
                     filepath=str(doc.filepath),
                     message=f"Broken dependency: '{dep_id}' (declared in {doc_id}) does not exist",
                     fix_suggestion=fix_suggestion,
-                    severity=severity_map.get("circular", REFERENCE_SEVERITY_DEFAULT) if dep_id == doc_id else severity_map.get("broken_link", REFERENCE_SEVERITY_DEFAULT)
+                    severity=severity_map.get("circular", DEPENDS_ON_SEVERITY_DEFAULT) if dep_id == doc_id else severity_map.get("broken_link", DEPENDS_ON_SEVERITY_DEFAULT)
                 ))
 
     return graph, errors

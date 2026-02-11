@@ -27,8 +27,11 @@ from ontos.core.graph import (
 # ---------------------------------
 # - ERROR: Circular dependencies or duplicate IDs (breaking graph integrity).
 # - WARNING: Orphan documents, depth exceedance, or missing/invalid descriptive metadata.
-# - NOTE: In Track B, these can be promoted to ERROR based on curation policy.
+# - NOTE: depends_on is structural (error); impacts/describes are informational (warning).
 REFERENCE_SEVERITY_DEFAULT = {
+    "depends_on": "error",
+    "impacts": "warning",
+    "describes": "warning",
     "circular": "error",
     "orphan": "warning",
     "depth": "warning",
@@ -39,7 +42,8 @@ REFERENCE_SEVERITY_DEFAULT = {
 
 def validate_describes_field(
     doc: DocumentData,
-    valid_targets: Set[str]
+    valid_targets: Set[str],
+    severity: str = "warning"  # Default aligned with DESCRIBES_SEVERITY_DEFAULT
 ) -> List[ValidationError]:
     """Validate describes field references valid targets (list-safe).
     
@@ -60,7 +64,7 @@ def validate_describes_field(
                 filepath=str(doc.filepath),
                 message=f"describes '{target}' not found",
                 fix_suggestion=f"Update describes to valid target or remove",
-                severity="warning"
+                severity=severity
             ))
     return errors
 
@@ -184,13 +188,13 @@ class ValidationOrchestrator:
         for doc_id, doc in self.docs.items():
             for impact in doc.impacts:
                 if impact not in valid_ids:
-                    self.warnings.append(ValidationError(
+                    self._report(ValidationError(
                         error_type=ValidationErrorType.IMPACTS,
                         doc_id=doc_id,
                         filepath=str(doc.filepath),
                         message=f"Impact reference '{impact}' not found",
                         fix_suggestion=f"Remove '{impact}' or create the document",
-                        severity="warning"
+                        severity=self.severity_map.get("impacts", "warning")  # IMPACTS_SEVERITY_DEFAULT
                     ))
 
     def validate_describes(self) -> None:
@@ -198,9 +202,13 @@ class ValidationOrchestrator:
         valid_ids = set(self.docs.keys())
  
         for doc_id, doc in self.docs.items():
-            errors = validate_describes_field(doc, valid_ids)
+            errors = validate_describes_field(
+                doc, 
+                valid_ids, 
+                severity=self.severity_map.get("describes", "warning")
+            )
             for error in errors:
-                self.warnings.append(error)
+                self._report(error)
 
     def validate_concepts(self) -> None:
         """Validate concept field usage and structure (#42)."""
@@ -254,6 +262,19 @@ class ValidationOrchestrator:
                             fix_suggestion="Remove duplicate concepts",
                             severity=self.severity_map.get("concepts", "warning")
                         ))
+
+                    # Vocabulary check (#42)
+                    if known_concepts:
+                        unknown = [c for c in concepts if isinstance(c, str) and c not in known_concepts]
+                        for u in unknown:
+                            self._report(ValidationError(
+                                error_type=ValidationErrorType.CURATION,
+                                doc_id=doc_id,
+                                filepath=str(doc.filepath),
+                                message=f"Unknown concept: '{u}'",
+                                fix_suggestion=f"Add '{u}' to vocabulary or use an existing concept",
+                                severity=self.severity_map.get("concepts", "warning")
+                            ))
 
             # Role-based check: log requirement
             if doc.type.value == "log" and concepts is None:

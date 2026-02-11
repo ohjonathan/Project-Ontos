@@ -60,6 +60,15 @@ def generate_context_map(
     """
     options = options or GenerateMapOptions()
 
+    # Collect vocabulary for concepts validation (#42 / CC-16)
+    all_concepts = set()
+    for doc in docs.values():
+        concepts = doc.frontmatter.get("concepts")
+        if isinstance(concepts, list):
+            for c in concepts:
+                if isinstance(c, str):
+                    all_concepts.add(c)
+    
     # Run validation
     validator = ValidationOrchestrator(docs, {
         "max_dependency_depth": options.max_dependency_depth,
@@ -67,7 +76,8 @@ def generate_context_map(
         "severity_map": {
             "broken_link": "warning",
             "concepts": "warning"
-        }
+        },
+        "known_concepts": all_concepts
     })
     result = validator.validate_all()
 

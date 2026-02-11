@@ -704,7 +704,8 @@ def validate_v26_status(files_data: dict[str, dict]) -> tuple[list[str], list[st
     
     for doc_id, data in files_data.items():
         filepath = data['filepath']
-        doc_type = normalize_type(data.get('type'))
+        doc_type_val = normalize_type(data.get('type'))
+        doc_type = doc_type_val.value if hasattr(doc_type_val, 'value') else str(doc_type_val)
         status = data.get('status', 'unknown')
         
         # 1. Basic status validation (unknown status = warning)

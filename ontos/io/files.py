@@ -148,7 +148,8 @@ def load_frontmatter(
     try:
         content = path.read_text(encoding="utf-8")
         return frontmatter_parser(content)
-    except OSError:
+    except (OSError, Exception):
+        # Align with load_documents contract: return (None, None) on failure
         return None, None
 
 
