@@ -168,3 +168,64 @@ def test_link_check_uses_config_default_scope_without_cli(tmp_path: Path):
     assert result.returncode == 0
     assert payload["scope"] == "library"
     assert payload["summary"]["documents_loaded"] == 2
+
+
+def test_link_check_broken_impacts_frontmatter_exit_1_json(tmp_path: Path):
+    _init_repo(tmp_path)
+    _write_doc(
+        tmp_path / "docs" / "source.md",
+        "source_doc",
+        impacts="[missing_impacts_target]",
+    )
+
+    result = _run_ontos(tmp_path, "--json", "link-check")
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert payload["summary"]["broken_references"] >= 1
+    assert any(item["field"] == "impacts" for item in payload["broken_references"])
+
+
+def test_link_check_broken_describes_frontmatter_exit_1_json(tmp_path: Path):
+    _init_repo(tmp_path)
+    _write_doc(
+        tmp_path / "docs" / "source.md",
+        "source_doc",
+        describes="[missing_describes_target]",
+    )
+
+    result = _run_ontos(tmp_path, "--json", "link-check")
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert payload["summary"]["broken_references"] >= 1
+    assert any(item["field"] == "describes" for item in payload["broken_references"])
+
+
+def test_link_check_scope_library_includes_internal_docs_json(tmp_path: Path):
+    _init_repo(tmp_path)
+    _write_doc(tmp_path / "docs" / "docs_doc.md", "docs_doc")
+    _write_doc(tmp_path / ".ontos-internal" / "internal_doc.md", "internal_doc")
+
+    result = _run_ontos(tmp_path, "--json", "link-check", "--scope", "library")
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["scope"] == "library"
+    assert payload["summary"]["documents_loaded"] == 2
+
+
+def test_link_check_parse_failed_candidates_cli_json(tmp_path: Path):
+    _init_repo(tmp_path)
+    _write_doc(tmp_path / "docs" / "known.md", "known_doc")
+    (tmp_path / "docs" / "broken.md").write_text(
+        "---\nid: [\n---\nSee known_doc in body.\n",
+        encoding="utf-8",
+    )
+
+    result = _run_ontos(tmp_path, "--json", "link-check")
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["summary"]["parse_failed_candidates"] >= 1
+    assert payload["summary"]["broken_references"] == 0
