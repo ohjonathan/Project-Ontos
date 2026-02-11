@@ -65,7 +65,7 @@ class TestUnifiedCLI:
     # Test all v3.0 commands respond to --help
     @pytest.mark.parametrize("command", [
         'init', 'map', 'log', 'doctor', 'maintain', 'link-check', 'agents', 'export', 'hook', 'agent-export',
-        'verify', 'query', 'migrate', 'consolidate', 'promote', 'scaffold', 'stub', 'env',
+        'verify', 'query', 'migrate', 'consolidate', 'promote', 'scaffold', 'stub', 'env', 'rename',
         'tree', 'validate'
     ])
     def test_command_help(self, command):
@@ -73,6 +73,12 @@ class TestUnifiedCLI:
         result = self.run_cli(command, '--help')
         assert result.returncode == 0, f"Command '{command}' --help failed"
         assert 'usage:' in result.stdout.lower(), f"Command '{command}' didn't show usage"
+
+    def test_rename_help_mentions_dry_run_safety_note(self):
+        """rename help should include explicit dry-run safety note."""
+        result = self.run_cli('rename', '--help')
+        assert result.returncode == 0
+        assert 'Dry-run by default. Use --apply to write changes.' in result.stdout
 
 
 class TestCLIArgumentPassthrough:
@@ -144,7 +150,7 @@ class TestCLICommands:
         result = self.run_cli('--help')
         expected_commands = [
             'init', 'map', 'log', 'doctor', 'maintain', 'link-check', 'agents', 'export',
-            'verify', 'query', 'migrate', 'consolidate', 'promote', 'scaffold', 'stub', 'env'
+            'verify', 'query', 'migrate', 'consolidate', 'promote', 'scaffold', 'stub', 'env', 'rename'
         ]
         for cmd in expected_commands:
             assert cmd in result.stdout, f"Command '{cmd}' not in help output"

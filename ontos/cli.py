@@ -67,6 +67,7 @@ def create_parser(include_hidden: bool = True) -> argparse.ArgumentParser:
     _register_doctor(subparsers, global_parser)
     _register_maintain(subparsers, global_parser)
     _register_link_check(subparsers, global_parser)
+    _register_rename(subparsers, global_parser)
     _register_env(subparsers, global_parser)
     _register_agents(subparsers, global_parser)
     _register_export(subparsers, global_parser)
@@ -213,6 +214,29 @@ def _register_link_check(subparsers, parent):
     )
     _add_scope_argument(p)
     p.set_defaults(func=_cmd_link_check)
+
+
+def _register_rename(subparsers, parent):
+    """Register rename command."""
+    p = subparsers.add_parser(
+        "rename",
+        help="Plan or apply atomic ID rename across frontmatter and body references",
+        description=(
+            "Plan or apply atomic ID rename across frontmatter and body references.\n"
+            "Dry-run by default. Use --apply to write changes."
+        ),
+        epilog="Dry-run by default. Use --apply to write changes.",
+        parents=[parent],
+    )
+    p.add_argument("old_id", help="Existing document ID to rename")
+    p.add_argument("new_id", help="Replacement document ID")
+    p.add_argument(
+        "--apply",
+        action="store_true",
+        help="Apply changes (default: dry-run)",
+    )
+    _add_scope_argument(p)
+    p.set_defaults(func=_cmd_rename)
 
 
 def _register_env(subparsers, parent):
@@ -676,6 +700,21 @@ def _cmd_link_check(args) -> int:
         quiet=args.quiet,
     )
     return link_check_command(options)
+
+
+def _cmd_rename(args) -> int:
+    """Handle rename command."""
+    from ontos.commands.rename import RenameOptions, rename_command
+
+    options = RenameOptions(
+        old_id=args.old_id,
+        new_id=args.new_id,
+        apply=getattr(args, "apply", False),
+        scope=getattr(args, "scope", None),
+        json_output=args.json,
+        quiet=args.quiet,
+    )
+    return rename_command(options)
 
 
 def _cmd_env(args) -> int:
