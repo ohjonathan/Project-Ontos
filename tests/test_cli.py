@@ -64,7 +64,7 @@ class TestUnifiedCLI:
 
     # Test all v3.0 commands respond to --help
     @pytest.mark.parametrize("command", [
-        'init', 'map', 'log', 'doctor', 'maintain', 'agents', 'export', 'hook', 'agent-export',
+        'init', 'map', 'log', 'doctor', 'maintain', 'link-check', 'agents', 'export', 'hook', 'agent-export',
         'verify', 'query', 'migrate', 'consolidate', 'promote', 'scaffold', 'stub', 'env',
         'tree', 'validate'
     ])
@@ -143,7 +143,7 @@ class TestCLICommands:
         """All v3.0 commands should appear in --help output."""
         result = self.run_cli('--help')
         expected_commands = [
-            'init', 'map', 'log', 'doctor', 'maintain', 'agents', 'export',
+            'init', 'map', 'log', 'doctor', 'maintain', 'link-check', 'agents', 'export',
             'verify', 'query', 'migrate', 'consolidate', 'promote', 'scaffold', 'stub', 'env'
         ]
         for cmd in expected_commands:

@@ -17,7 +17,7 @@ from typing import Callable, Dict, List, Optional, Sequence, Tuple
 import ontos
 from ontos.core.config import OntosConfig
 from ontos.core.curation import CurationLevel, detect_curation_level
-from ontos.core.graph import build_graph
+from ontos.core.link_diagnostics import run_link_diagnostics
 from ontos.io.config import load_project_config
 from ontos.io.files import find_project_root
 from ontos.io.scan_scope import build_scope_roots, collect_scoped_documents, resolve_scan_scope
@@ -553,56 +553,77 @@ def _task_check_links(ctx: MaintainContext) -> TaskResult:
     if ctx.options.dry_run:
         return _ok("Would validate dependency links.")
 
-    load_result = _load_docs_for_graph(ctx)
-    docs = load_result.documents
-    
-    if not docs:
-        load_issues = len(load_result.issues)
-        if load_issues > 0:
-            return _fail(f"No documents loaded. Found {load_issues} load issues.")
-        return _ok("No documents found for link validation.", metrics={"broken_links": 0})
+    scope = resolve_scan_scope(ctx.options.scope, ctx.config.scanning.default_scope)
+    doc_paths = _scan_docs(ctx)
+    from ontos.io.files import load_documents
+    from ontos.io.yaml import parse_frontmatter_content
 
-    severity_map = {
-        "broken_link": "warning",
-        "concepts": "warning"
-    }
-    _, broken = build_graph(docs, severity_map=severity_map)
-    
-    # Filter for actual errors to determine task status
-    errors = [e for e in broken if e.severity == "error"]
-    error_count = len(errors)
-    broken_count = len(broken)
-    duplicate_count = len(load_result.duplicate_ids)
+    load_result = load_documents(doc_paths, parse_frontmatter_content)
 
-    details = []
-    # Report load issues (parse errors, duplicates)
-    for issue in load_result.issues:
-        label = "Error" if issue.code in {"duplicate_id", "parse_error", "io_error"} else "Warning"
+    diagnostics = run_link_diagnostics(
+        repo_root=ctx.repo_root,
+        config=ctx.config,
+        doc_paths=doc_paths,
+        scope=scope,
+        include_body=False,
+        include_external_scope_resolution=True,
+        include_suggestions=True,
+        load_result=load_result,
+    )
+
+    details: List[str] = []
+    for issue in diagnostics.load_warnings[:10]:
         details.append(f"LOAD {issue.code.upper()}: {issue.message}")
+    if len(diagnostics.load_warnings) > 10:
+        details.append(f"... and {len(diagnostics.load_warnings) - 10} more load warnings")
 
-    for error in broken[:5]:
-        label = "❌" if error.severity == "error" else "⚠️"
-        details.append(f"{label} {error.doc_id}: {error.message}")
-    if broken_count > 5:
-        details.append(f"... and {broken_count - 5} more")
+    for finding in diagnostics.broken_references[:10]:
+        details.append(f"❌ {finding.source_doc_id} [{finding.field}] -> {finding.value}")
+    if len(diagnostics.broken_references) > 10:
+        details.append(f"... and {len(diagnostics.broken_references) - 10} more broken references")
+
+    for duplicate_id, paths in list(sorted(diagnostics.duplicates.items()))[:5]:
+        details.append(f"❌ duplicate_id {duplicate_id}: {', '.join(str(path) for path in paths)}")
+    if len(diagnostics.duplicates) > 5:
+        details.append(f"... and {len(diagnostics.duplicates) - 5} more duplicate IDs")
 
     metrics = {
-        "broken_links": broken_count,
-        "load_issues": len(load_result.issues),
-        "duplicates": duplicate_count,
+        "broken_links": diagnostics.summary.broken_references,
+        "orphans": diagnostics.summary.orphans,
+        "external_refs": diagnostics.summary.external_references,
+        "duplicates": diagnostics.summary.duplicate_ids,
+        "load_issues": diagnostics.summary.load_warnings,
     }
 
-    if error_count > 0 or duplicate_count > 0:
+    if diagnostics.exit_code == 1:
         return _fail(
-            f"Found {error_count} fatal errors, {broken_count - error_count} warnings, and {duplicate_count} duplicate(s).",
+            (
+                "Found broken references or duplicate IDs "
+                f"(broken={diagnostics.summary.broken_references}, duplicates={diagnostics.summary.duplicate_ids})."
+            ),
+            details=details,
+            metrics=metrics,
+        )
+
+    if diagnostics.exit_code == 2:
+        details.extend(
+            [f"⚠️ orphan {orphan.doc_id} ({orphan.doc_type})" for orphan in diagnostics.orphans[:10]]
+        )
+        if len(diagnostics.orphans) > 10:
+            details.append(f"... and {len(diagnostics.orphans) - 10} more orphans")
+        return _ok(
+            (
+                f"No broken references or duplicates. Found {diagnostics.summary.orphans} "
+                "scope-relative orphan(s)."
+            ),
             details=details,
             metrics=metrics,
         )
 
     return _ok(
-        f"Validation passed with {broken_count} warning(s).", 
-        details=details if details else None, 
-        metrics=metrics
+        "No broken references, duplicates, or scope-relative orphans.",
+        details=details,
+        metrics=metrics,
     )
 
 
