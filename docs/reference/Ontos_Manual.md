@@ -109,14 +109,11 @@ ontos log -e feature -t "Session summary"
 
 **Automated Mode:** Sessions are auto-archived on push. One log per branch per day—subsequent pushes append to the same log.
 
-**Auto-generated logs:** Logs created by `--auto` are marked `status: auto-generated`. Enrich them with:
-```bash
-ontos log --enhance
-```
+**Auto-generated logs:** Logs created by `--auto` are marked `status: auto-generated`.
 
 **The "Left Behind" Paradox:** Auto-generated logs are created during push but aren't included in *that* push (Git limitation). They'll be in your next commit. To include immediately: `git add . && git commit --amend`
 
-Flags: `--auto` (hook mode), `--enhance` (enrich log), `--dry-run` (preview), `--list-concepts` (vocabulary)
+Flags: `--auto` (hook mode), `--dry-run` (preview)
 Event types: `feature`, `fix`, `refactor`, `exploration`, `chore`, `decision`
 
 ### Maintain Graph
@@ -125,14 +122,14 @@ Say **"Maintain Ontos"** weekly:
 ontos maintain
 ```
 This runs eight tasks:
-1. **Migrate** — Tag untagged files
-2. **Regenerate** — Regenerate context map
-3. **Health Check** — Run `ontos doctor`
-4. **Report** — Report curation stats (L0/L1/L2)
-5. **Consolidate** — Archive old logs (if `AUTO_CONSOLIDATE=True`)
-6. **Review Proposals** — Report draft proposals for manual graduation
-7. **Check Links** — Validate dependency links
-8. **Sync Agents** — Regenerate `AGENTS.md` when stale
+1. **migrate_untagged** — Tag untagged files
+2. **regenerate_map** — Regenerate context map
+3. **health_check** — Run `ontos doctor`
+4. **curation_stats** — Report curation stats (L0/L1/L2)
+5. **consolidate_logs** — Archive old logs (if `AUTO_CONSOLIDATE=True`)
+6. **review_proposals** — Report draft proposals for manual graduation
+7. **check_links** — Validate dependency links
+8. **sync_agents** — Regenerate `AGENTS.md` when stale
 
 Useful flags:
 - `--dry-run` — Preview tasks without executing
@@ -192,10 +189,7 @@ Answering `y` automatically:
 | `complete` | Finished work (reviews) |
 
 ### Viewing Rejected Proposals
-By default, rejected docs are excluded from context map. To recall:
-```bash
-ontos map --include-rejected
-```
+Rejected docs are excluded from context map by default.
 
 ---
 
@@ -215,24 +209,24 @@ To lower the barrier to adoption, Ontos v2.9 supports tiered validation.
 
 1. **Scaffold:** Generate placeholders for untagged files.
    ```bash
-   python3 ontos.py scaffold --apply
+   ontos scaffold --apply
    ```
 
 2. **Stub:** Identify the goal of a document.
    ```bash
-   python3 ontos.py stub --goal "Explain the payment flow" --type product
+   ontos stub --goal "Explain the payment flow" --type product
    ```
 
 3. **Promote:** Add dependencies and concepts to reach Level 2.
    ```bash
-   python3 ontos.py promote --check
-   python3 ontos.py promote docs/payments.md
+   ontos promote --check
+   ontos promote docs/payments.md
    ```
 
 ### Validation Modes
 
-- **Standard:** `python3 ontos.py map` (Includes L0/L1 documents)
-- **Strict:** `python3 ontos.py map --strict` (Fails if L0/L1 documents exist)
+- **Standard:** `ontos map` (Includes L0/L1 documents)
+- **Strict:** `ontos map --strict` (Fails if L0/L1 documents exist)
 
 Use strict mode in CI/CD to ensure your knowledge graph is fully curated.
 
@@ -259,7 +253,7 @@ ontos_schema: "2.2"  # Indicates v2.2 schema
 
 **Check Migration Status:**
 ```bash
-python3 ontos.py migrate --check
+ontos migrate --check
 ```
 
 ### Deprecation Warnings (v2.9.2)
@@ -451,7 +445,7 @@ rm -f Ontos_Context_Map.md CLAUDE.md
 Use the scaffold command to generate Level 0 frontmatter for all markdown files:
 
 ```bash
-python3 ontos.py scaffold --apply
+ontos scaffold --apply
 ```
 
 This replaces the old `ontos_migrate_frontmatter.py` workflow.
@@ -524,25 +518,10 @@ ontos <command> [options]
 | `maintain`  | Run maintenance tasks  | `python3 .ontos/scripts/ontos_maintain.py`           |
 | `consolidate` | Archive old logs     | `python3 .ontos/scripts/ontos_consolidate.py`        |
 | `query`     | Search documents       | `python3 .ontos/scripts/ontos_query.py`              |
-| `update`    | Update Ontos scripts   | `python3 .ontos/scripts/ontos_update.py`             |
 | `scaffold`  | Generate scaffolds     | `python3 .ontos/scripts/ontos_scaffold.py`           |
 | `stub`      | Create stub            | `python3 .ontos/scripts/ontos_stub.py`               |
 | `promote`   | Promote documents      | `python3 .ontos/scripts/ontos_promote.py`            |
 | `migrate`   | Migrate schema         | `python3 .ontos/scripts/ontos_migrate_schema.py`     |
-
-### Command Aliases
-
-For convenience, commands have short aliases:
-
-- `archive`, `session` → `log`
-- `context`, `generate` → `map`  
-- `check` → `verify`
-- `maintenance` → `maintain`
-- `archive-old` → `consolidate`
-- `search`, `find` → `query`
-- `upgrade` → `update`
-- `curate` → `scaffold`
-- `schema` → `migrate`
 
 ### Examples
 
@@ -603,20 +582,6 @@ Suggestions appear in:
 Example output:
 `❌ broken_doc: Broken dependency: 'auth_servidce' does not exist. Did you mean: auth_service?`
 
-> **Note:** The `python3 ontos.py` syntax is deprecated. Use `ontos <command>` directly.
-
----
-
-## 11. Updating Ontos
-
-```bash
-# Check for updates
-ontos doctor
-
-# Reinstall from pip
-pip install --upgrade ontos
-```
-
 ---
 
 ## 12. Scripts Reference
@@ -629,16 +594,15 @@ pip install --upgrade ontos
 | `ontos_maintain.py` | Run weekly maintenance workflow |
 | `ontos_consolidate.py` | Consolidate old logs into history |
 | `ontos_migrate_frontmatter.py` | Find untagged files |
-| `ontos_update.py` | Pull latest from GitHub |
 | `ontos_pre_push_check.py` | Pre-push hook logic |
 | `ontos_remove_frontmatter.py` | Strip YAML headers |
 | `ontos_verify.py` | Mark documentation as current (v2.7) |
 
 ### Common flags
-- `--strict` — Exit 1 on any issue
-- `--quiet` / `-q` — Suppress output
-- `--dry-run` — Preview without changes
-- `--version` / `-V` — Show version
+- `--quiet` / `-q` — Suppress output (global)
+- `--version` / `-V` — Show version (global)
+- `--strict` — Exit 1 on any issue (`map`)
+- `--dry-run` — Preview without changes (`maintain`, `consolidate`, `schema-migrate`)
 
 ---
 
@@ -712,5 +676,5 @@ Ontos v2.9 introduces explicit schema versioning to support future upgrades.
 
 To check your documents:
 ```bash
-python3 ontos.py migrate --check
+ontos migrate --check
 ```
