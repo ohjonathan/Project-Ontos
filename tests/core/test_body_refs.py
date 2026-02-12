@@ -220,3 +220,45 @@ class TestFalsePositiveScanning:
         ids = {m.normalized_id for m in scan.matches}
         assert "v3_2_4_proposal" in ids
         assert "auth_flow" in ids
+
+
+class TestKnownIdsBypassFilters:
+    """Tests that known_ids mode bypasses _looks_like_doc_id filters."""
+
+    def test_known_ids_mode_detects_version_like_and_field_name_ids(self):
+        """When known_ids is provided, version-like and field-name tokens that
+        would be rejected by _looks_like_doc_id ARE detected."""
+        body = "References v3.2 and depends_on in text."
+        scan = scan_body_references(
+            path=Path("docs/test.md"),
+            body=body,
+            known_ids={"v3.2", "depends_on"},
+            include_skipped=True,
+        )
+        ids = {m.normalized_id for m in scan.matches}
+        assert "v3.2" in ids
+        assert "depends_on" in ids
+
+    def test_generic_mode_filters_version_and_field_tokens(self):
+        """Without known_ids, version-like and field-name tokens are filtered."""
+        body = "References v3.2 and depends_on in text."
+        scan = scan_body_references(
+            path=Path("docs/test.md"),
+            body=body,
+            include_skipped=True,
+        )
+        ids = {m.normalized_id for m in scan.matches}
+        assert "v3.2" not in ids
+        assert "depends_on" not in ids
+
+    def test_known_ids_mode_detects_filename_like_id(self):
+        """A doc ID that looks like a filename is detected via known_ids."""
+        body = "See README.md for details."
+        scan = scan_body_references(
+            path=Path("docs/test.md"),
+            body=body,
+            known_ids={"README.md"},
+            include_skipped=True,
+        )
+        ids = {m.normalized_id for m in scan.matches}
+        assert "README.md" in ids

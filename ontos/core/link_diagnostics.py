@@ -321,12 +321,38 @@ def run_link_diagnostics(
 
     if include_body:
         for doc in docs.values():
-            body_scan = scan_body_references(
+            # Pass 1: Known-ID scan — bypasses _looks_like_doc_id filters,
+            # ensuring references to existing docs with filtered-pattern
+            # names (e.g., "v3.2", "depends_on") are always detected.
+            known_scan = scan_body_references(
+                path=doc.filepath,
+                body=doc.content,
+                known_ids=active_ids,
+                include_skipped=False,
+            )
+            # Pass 2: Generic unknown scan — finds references to IDs that
+            # don't exist (broken reference detection).  Uses the
+            # _looks_like_doc_id filter to suppress false positives.
+            generic_scan = scan_body_references(
                 path=doc.filepath,
                 body=doc.content,
                 include_skipped=False,
             )
-            for body_match in body_scan.matches:
+            # Merge both passes, deduplicating by position.
+            seen_positions: set[tuple[int, int]] = set()
+            all_body_matches = []
+            for body_match in known_scan.matches:
+                pos_key = (body_match.abs_start, body_match.abs_end)
+                if pos_key not in seen_positions:
+                    seen_positions.add(pos_key)
+                    all_body_matches.append(body_match)
+            for body_match in generic_scan.matches:
+                pos_key = (body_match.abs_start, body_match.abs_end)
+                if pos_key not in seen_positions:
+                    seen_positions.add(pos_key)
+                    all_body_matches.append(body_match)
+
+            for body_match in all_body_matches:
                 field = (
                     "body.markdown_link_target"
                     if body_match.match_type == MatchType.MARKDOWN_LINK_TARGET

@@ -587,7 +587,7 @@ ontos link-check --scope docs
 |------|---------|
 | `0`  | No issues found |
 | `1`  | Broken references or duplicates detected |
-| `2`  | Fatal error (e.g., no documents found) |
+| `2`  | Orphan-only findings (no broken references or duplicates) |
 
 ### 10.3 Rename (v3.3)
 

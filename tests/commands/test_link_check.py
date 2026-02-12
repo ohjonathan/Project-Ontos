@@ -229,3 +229,23 @@ def test_link_check_parse_failed_candidates_cli_json(tmp_path: Path):
     assert result.returncode == 0
     assert payload["summary"]["parse_failed_candidates"] >= 1
     assert payload["summary"]["broken_references"] == 0
+
+
+def test_link_check_version_like_doc_id_not_broken_with_body_ref(tmp_path: Path):
+    """A doc ID matching a filtered pattern (e.g., v3.2) referenced in body text
+    should NOT be reported as broken when the doc exists — the known-ID pass
+    ensures it is detected even though _looks_like_doc_id would reject it."""
+    _init_repo(tmp_path)
+    _write_doc(tmp_path / "docs" / "version_doc.md", "v3.2")
+    _write_doc(
+        tmp_path / "docs" / "referrer.md",
+        "referrer",
+        depends_on="[v3.2]",
+        body="This document references v3.2 in body text.",
+    )
+
+    result = _run_ontos(tmp_path, "--json", "link-check")
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["summary"]["broken_references"] == 0
