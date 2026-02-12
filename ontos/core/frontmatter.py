@@ -272,10 +272,10 @@ def normalize_status(value, on_error: Optional[Callable[[str, Any, List[str]], N
 
 def load_common_concepts(docs_dir: str = None) -> set:
     """Load known concepts from Common_Concepts.md if it exists.
-    
+
     Args:
         docs_dir: Documentation directory to search.
-    
+
     Returns:
         Set of known concept strings.
     """
@@ -285,22 +285,22 @@ def load_common_concepts(docs_dir: str = None) -> set:
             docs_dir = DOCS_DIR
         except ImportError:
             docs_dir = 'docs'
-    
+
     possible_paths = [
         os.path.join(docs_dir, 'reference', 'Common_Concepts.md'),
         os.path.join(docs_dir, 'Common_Concepts.md'),
         'docs/reference/Common_Concepts.md',
     ]
-    
+
     concepts_file = None
     for path in possible_paths:
         if os.path.exists(path):
             concepts_file = path
             break
-            
+
     if not concepts_file:
         return set()
-    
+
     concepts = set()
     try:
         with open(concepts_file, 'r', encoding='utf-8') as f:
@@ -309,7 +309,7 @@ def load_common_concepts(docs_dir: str = None) -> set:
         concepts.update(matches)
     except (IOError, OSError):
         pass
-    
+
     return concepts
 
 

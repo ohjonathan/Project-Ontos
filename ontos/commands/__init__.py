@@ -69,7 +69,6 @@ from ontos.commands.export import (
 from ontos.commands.verify import (
     verify_command,
     VerifyOptions,
-    verify_document,
     find_stale_documents_list,
 )
 

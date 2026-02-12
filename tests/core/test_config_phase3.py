@@ -82,14 +82,12 @@ class TestValidateTypes:
     def test_validate_types_rejects_string_for_bool(self):
         """Type validation rejects string for bool with ConfigError."""
         with pytest.raises(ConfigError, match="must be bool"):
-            _validate_types({"workflow": {"enforce_archive_before_push": "yes"}})
+            _validate_types({"hooks": {"pre_push": "yes"}})
 
     def test_validate_types_accepts_correct_types(self):
         """Type validation passes for correct types."""
         # Should not raise
         _validate_types({"workflow": {"log_retention_count": 50}})
-        _validate_types({"workflow": {"enforce_archive_before_push": True}})
-        _validate_types({"validation": {"strict": False}})
         _validate_types({"hooks": {"pre_push": True, "pre_commit": False}})
 
 
@@ -128,7 +126,6 @@ class TestDictToConfig:
             "workflow": {"log_retention_count": 50}
         })
         assert config.workflow.log_retention_count == 50
-        assert config.workflow.enforce_archive_before_push is True  # Default
 
     def test_dict_to_config_path_validation(self, tmp_path):
         """dict_to_config validates paths when repo_root provided."""

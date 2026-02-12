@@ -62,14 +62,11 @@ class ValidationConfig:
     """[validation] section."""
     max_dependency_depth: int = 5
     allowed_orphan_types: List[str] = field(default_factory=lambda: ["atom"])
-    strict: bool = False
 
 
 @dataclass
 class WorkflowConfig:
     """[workflow] section."""
-    enforce_archive_before_push: bool = True
-    require_source_in_logs: bool = True
     log_retention_count: int = 20  # Required by Roadmap
 
 
@@ -115,9 +112,6 @@ def _validate_types(data: dict) -> None:
     """Validate types in config data before dataclass instantiation."""
     type_requirements = {
         ("validation", "max_dependency_depth"): int,
-        ("validation", "strict"): bool,
-        ("workflow", "enforce_archive_before_push"): bool,
-        ("workflow", "require_source_in_logs"): bool,
         ("workflow", "log_retention_count"): int,
         ("hooks", "pre_push"): bool,
         ("hooks", "pre_commit"): bool,
