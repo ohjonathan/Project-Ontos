@@ -45,7 +45,7 @@ class TestCLIGlobalOptions:
             [sys.executable, "-m", "ontos"],
             capture_output=True, text=True
         )
-        assert result.returncode == 0
+        assert result.returncode == 2
 
 
 class TestCLICommands:
@@ -105,6 +105,74 @@ class TestCLICommands:
             capture_output=True, text=True
         )
         assert result.returncode == 0
+
+
+class TestCLIErrorRouting:
+    """Tests for typed error handling in cli.main()."""
+
+    def test_main_routes_ontos_user_error_json(self, monkeypatch, capsys):
+        """OntosUserError should return exit 2 with JSON envelope."""
+        import argparse
+        import ontos.cli as cli
+        from ontos.core.errors import OntosUserError
+
+        class _FakeParser:
+            def parse_args(self):
+                return argparse.Namespace(
+                    command="fake",
+                    version=False,
+                    json=True,
+                    quiet=False,
+                    func=lambda _args: (_ for _ in ()).throw(
+                        OntosUserError("bad input", code="E_USER_INPUT", details="detail")
+                    ),
+                )
+
+            def print_help(self):
+                pass
+
+        monkeypatch.setattr(cli, "_first_command", lambda _argv: "fake")
+        monkeypatch.setattr(cli, "create_parser", lambda include_hidden=True: _FakeParser())
+        monkeypatch.setattr(cli.sys, "argv", ["ontos", "--json", "fake"])
+
+        exit_code = cli.main()
+        captured = capsys.readouterr()
+        payload = json.loads(captured.out)
+
+        assert exit_code == 2
+        assert payload["status"] == "error"
+        assert payload["error"]["code"] == "E_USER_INPUT"
+        assert payload["error"]["details"] == "detail"
+
+    def test_main_routes_unexpected_error_json(self, monkeypatch, capsys):
+        """Unexpected errors should return exit 5 with E_INTERNAL envelope."""
+        import argparse
+        import ontos.cli as cli
+
+        class _FakeParser:
+            def parse_args(self):
+                return argparse.Namespace(
+                    command="fake",
+                    version=False,
+                    json=True,
+                    quiet=False,
+                    func=lambda _args: (_ for _ in ()).throw(RuntimeError("boom")),
+                )
+
+            def print_help(self):
+                pass
+
+        monkeypatch.setattr(cli, "_first_command", lambda _argv: "fake")
+        monkeypatch.setattr(cli, "create_parser", lambda include_hidden=True: _FakeParser())
+        monkeypatch.setattr(cli.sys, "argv", ["ontos", "--json", "fake"])
+
+        exit_code = cli.main()
+        captured = capsys.readouterr()
+        payload = json.loads(captured.out)
+
+        assert exit_code == 5
+        assert payload["status"] == "error"
+        assert payload["error"]["code"] == "E_INTERNAL"
 
 
 class TestCLIDoctorCommand:

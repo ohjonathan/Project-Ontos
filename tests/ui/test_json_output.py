@@ -10,6 +10,8 @@ import pytest
 
 from ontos.ui.json_output import (
     JsonOutputHandler,
+    emit_command_error,
+    emit_command_success,
     emit_error,
     emit_json,
     emit_result,
@@ -171,3 +173,50 @@ class TestValidateJsonOutput:
         assert validate_json_output('not json') is False
         assert validate_json_output('{key: value}') is False
         assert validate_json_output('') is False
+
+
+class TestCommandEnvelopeHelpers:
+    """Tests for command-level envelope helpers."""
+
+    def test_emit_command_success_schema(self, capsys):
+        """emit_command_success should emit required schema keys."""
+        emit_command_success(
+            command="query",
+            exit_code=0,
+            message="Query complete",
+            data={"count": 1},
+            warnings=["sample warning"],
+        )
+        captured = capsys.readouterr()
+        result = json.loads(captured.out)
+
+        assert result["schema_version"] == "3.3"
+        assert result["command"] == "query"
+        assert result["status"] == "success"
+        assert result["exit_code"] == 0
+        assert result["message"] == "Query complete"
+        assert result["data"] == {"count": 1}
+        assert result["warnings"] == ["sample warning"]
+        assert result["error"] is None
+
+    def test_emit_command_error_schema(self, capsys):
+        """emit_command_error should emit required schema keys and error object."""
+        emit_command_error(
+            command="maintain",
+            exit_code=2,
+            code="E_USER_INPUT",
+            message="Unknown task(s): foo",
+            details="Valid tasks: bar",
+            data={"known": ["bar"]},
+        )
+        captured = capsys.readouterr()
+        result = json.loads(captured.out)
+
+        assert result["schema_version"] == "3.3"
+        assert result["command"] == "maintain"
+        assert result["status"] == "error"
+        assert result["exit_code"] == 2
+        assert result["message"] == "Unknown task(s): foo"
+        assert result["data"] == {"known": ["bar"]}
+        assert result["warnings"] == []
+        assert result["error"] == {"code": "E_USER_INPUT", "details": "Valid tasks: bar"}

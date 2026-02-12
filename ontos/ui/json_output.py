@@ -113,6 +113,60 @@ def emit_result(data: Any, message: Optional[str] = None) -> None:
     JsonOutputHandler().result(data, message)
 
 
+def emit_command_success(
+    command: str,
+    exit_code: int,
+    message: str,
+    data: Optional[Any] = None,
+    warnings: Optional[List[str]] = None,
+    *,
+    schema_version: str = "3.3",
+) -> None:
+    """Emit command success envelope with stable top-level schema."""
+    emit_json(
+        {
+            "schema_version": schema_version,
+            "command": command,
+            "status": "success",
+            "exit_code": exit_code,
+            "message": message,
+            "data": to_json(data if data is not None else {}),
+            "warnings": warnings or [],
+            "error": None,
+        }
+    )
+
+
+def emit_command_error(
+    command: str,
+    exit_code: int,
+    code: str,
+    message: str,
+    details: Optional[str] = None,
+    data: Optional[Any] = None,
+    warnings: Optional[List[str]] = None,
+    *,
+    schema_version: str = "3.3",
+) -> None:
+    """Emit command error envelope with stable top-level schema."""
+    error_payload: Dict[str, Any] = {"code": code}
+    if details is not None:
+        error_payload["details"] = details
+
+    emit_json(
+        {
+            "schema_version": schema_version,
+            "command": command,
+            "status": "error",
+            "exit_code": exit_code,
+            "message": message,
+            "data": to_json(data if data is not None else {}),
+            "warnings": warnings or [],
+            "error": error_payload,
+        }
+    )
+
+
 def validate_json_output(output: str) -> bool:
     """
     Validate that a string is valid JSON.

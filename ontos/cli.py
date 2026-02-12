@@ -11,7 +11,8 @@ from pathlib import Path
 from typing import List, Optional, Sequence
 
 import ontos
-from ontos.ui.json_output import emit_json, emit_error, validate_json_output
+from ontos.core.errors import OntosInternalError, OntosUserError
+from ontos.ui.json_output import emit_command_error, emit_json, validate_json_output
 from ontos.commands.map import CompactMode
 
 
@@ -1138,21 +1139,55 @@ def main() -> int:
     # No command specified
     if not args.command:
         if args.json:
-            emit_error("No command specified", "E_NO_CMD")
+            emit_command_error(
+                command="ontos",
+                exit_code=2,
+                code="E_NO_COMMAND",
+                message="No command specified",
+            )
         else:
             parser.print_help()
-        return 0
+        return 2
 
     # Route to command handler
     try:
         return args.func(args)
+    except OntosUserError as e:
+        if args.json:
+            emit_command_error(
+                command=getattr(args, "command", "ontos"),
+                exit_code=2,
+                code=e.code,
+                message=str(e),
+                details=e.details,
+            )
+        else:
+            print(f"Error: {e}", file=sys.stderr)
+        return 2
+    except OntosInternalError as e:
+        if args.json:
+            emit_command_error(
+                command=getattr(args, "command", "ontos"),
+                exit_code=5,
+                code=e.code,
+                message=str(e),
+                details=e.details,
+            )
+        else:
+            print(f"Error: {e}", file=sys.stderr)
+        return 5
     except KeyboardInterrupt:
         if not args.quiet:
             print("\nInterrupted", file=sys.stderr)
         return 130
     except Exception as e:
         if args.json:
-            emit_error(f"Internal error: {e}", "E_INTERNAL")
+            emit_command_error(
+                command=getattr(args, "command", "ontos"),
+                exit_code=5,
+                code="E_INTERNAL",
+                message=f"Internal error: {e}",
+            )
         else:
             print(f"Error: {e}", file=sys.stderr)
         return 5

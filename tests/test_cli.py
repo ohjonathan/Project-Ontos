@@ -1,5 +1,6 @@
 """Tests for unified CLI dispatcher (v3.0)."""
 
+import json
 import subprocess
 import sys
 import pytest
@@ -40,8 +41,19 @@ class TestUnifiedCLI:
     def test_no_args_shows_help(self):
         """Running with no arguments should show help."""
         result = self.run_cli()
-        # argparse may return non-zero for no args, but should show usage
+        assert result.returncode == 2
         assert 'usage:' in result.stdout.lower() or 'usage:' in result.stderr.lower()
+
+    def test_no_args_json_returns_envelope(self):
+        """No command in JSON mode should return E_NO_COMMAND envelope."""
+        result = self.run_cli('--json')
+        assert result.returncode == 2
+        payload = result.stdout.strip()
+        assert payload
+        data = json.loads(payload)
+        assert data["status"] == "error"
+        assert data["exit_code"] == 2
+        assert data["error"]["code"] == "E_NO_COMMAND"
 
     def test_version_flag(self):
         """--version should show version and return 0."""
