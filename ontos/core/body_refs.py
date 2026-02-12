@@ -56,6 +56,19 @@ class BodyReferenceScan:
 _TOKEN_RE = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9_])?")
 _SCHEME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
 _WINDOWS_ABS_RE = re.compile(r"^[A-Za-z]:[\\/]")
+
+# False-positive filters for generic (no known_ids) scanning mode.
+_VERSION_RE = re.compile(r"^v?\d+(\.\d+)+$", re.IGNORECASE)
+_BARE_NUMBER_RE = re.compile(r"^\d{1,3}$")
+_FILE_EXTENSION_RE = re.compile(
+    r"\.(md|py|toml|yaml|yml|json|js|ts|tsx|jsx|css|html|txt|cfg|ini|sh|bash|rs|go|rb)$",
+    re.IGNORECASE,
+)
+_KNOWN_FIELD_NAMES = frozenset({
+    "depends_on", "status", "type", "id", "curation_level", "ontos_schema",
+    "describes", "describes_verified", "pending_curation", "update_policy",
+    "aliases", "scope", "rejected_reason", "rejected_date",
+})
 _REFERENCE_DEF_RE = re.compile(r"^\s*\[[^\]]+\]:")
 _REFERENCE_STYLE_RE = re.compile(r"\[[^\]]+\]\[[^\]]+\]")
 _WIKILINK_RE = re.compile(r"\[\[[^\]]+\]\]")
@@ -645,6 +658,18 @@ def _iter_generic_id_candidates(text: str) -> Iterable[Tuple[int, int, str]]:
 
 
 def _looks_like_doc_id(token: str) -> bool:
+    # Reject bare numbers (e.g. "1", "42", "100")
+    if _BARE_NUMBER_RE.match(token):
+        return False
+    # Reject version strings (e.g. "v3.2", "3.2.1", "v3.2.1")
+    if _VERSION_RE.match(token):
+        return False
+    # Reject known YAML/Ontos field names appearing in prose
+    if token in _KNOWN_FIELD_NAMES:
+        return False
+    # Reject tokens that look like filenames with extensions
+    if _FILE_EXTENSION_RE.search(token):
+        return False
     if "_" in token or "." in token:
         return True
     return any(ch.isdigit() for ch in token)

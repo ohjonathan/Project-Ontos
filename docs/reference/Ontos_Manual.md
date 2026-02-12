@@ -5,7 +5,7 @@ status: active
 depends_on: []
 ---
 
-# Ontos Manual v3.2
+# Ontos Manual v3.3
 
 *The complete reference for Project Ontos*
 
@@ -516,6 +516,8 @@ ontos <command> [options]
 | `env`       | Detect environment     | (New in v3.2)                                         |
 | `verify`    | Verify describes dates | `python3 .ontos/scripts/ontos_verify.py`             |
 | `maintain`  | Run maintenance tasks  | `python3 .ontos/scripts/ontos_maintain.py`           |
+| `link-check` | Scan for broken refs | (New in v3.3)                                         |
+| `rename`    | Rename a document ID   | (New in v3.3)                                         |
 | `consolidate` | Archive old logs     | `python3 .ontos/scripts/ontos_consolidate.py`        |
 | `query`     | Search documents       | `python3 .ontos/scripts/ontos_query.py`              |
 | `scaffold`  | Generate scaffolds     | `python3 .ontos/scripts/ontos_scaffold.py`           |
@@ -564,6 +566,48 @@ ontos env --write --force
 -   **Python:** `pyproject.toml` (Poetry/PDM/Pip), `requirements.txt`, `setup.py`, `environment.yml` (Conda)
 -   **Node.js:** `package.json`
 -   **Generic:** `.tool-versions` (asdf), `Makefile`, `Dockerfile`
+
+### 10.2 Link Check (v3.3)
+
+The `link-check` command scans all documents for broken references, duplicate IDs, and orphaned documents.
+
+```bash
+# Check for broken references
+ontos link-check
+
+# JSON output for CI
+ontos link-check --json
+
+# Limit scan scope
+ontos link-check --scope docs
+```
+
+**Exit codes:**
+| Code | Meaning |
+|------|---------|
+| `0`  | No issues found |
+| `1`  | Broken references or duplicates detected |
+| `2`  | Orphan-only findings (no broken references or duplicates) |
+
+### 10.3 Rename (v3.3)
+
+The `rename` command safely renames a document ID across the entire graph, updating all `depends_on` references.
+
+```bash
+# Dry-run (default) — preview changes without applying
+ontos rename old_id new_id
+
+# Apply the rename
+ontos rename old_id new_id --apply
+
+# JSON output
+ontos rename old_id new_id --json
+```
+
+**Safety features:**
+- Dry-run by default — requires `--apply` to write changes
+- Collision detection — refuses to rename if `new_id` already exists
+- Automatic `depends_on` propagation across all documents
 
 ---
 
