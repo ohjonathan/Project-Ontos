@@ -13,11 +13,8 @@ skip_patterns = ["_template.md", "archive/*"]
 [validation]
 max_dependency_depth = 5
 allowed_orphan_types = ["atom"]
-strict = false
 
 [workflow]
-enforce_archive_before_push = true
-require_source_in_logs = true
 log_retention_count = 20
 
 [hooks]

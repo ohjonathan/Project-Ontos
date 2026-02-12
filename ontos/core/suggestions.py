@@ -149,26 +149,6 @@ def validate_concepts(
     return valid, unknown
 
 
-def extract_doc_ids_from_text(text: str, valid_ids: Set[str]) -> List[str]:
-    """Extract document IDs mentioned in text.
-
-    Args:
-        text: Text to search (e.g., commit message, log content)
-        valid_ids: Set of valid document IDs to match against
-
-    Returns:
-        List of matches found in text
-    """
-    found = []
-    text_lower = text.lower()
-    
-    for doc_id in valid_ids:
-        if doc_id.lower() in text_lower:
-            found.append(doc_id)
-    
-    return found
-
-
 def suggest_candidates_for_broken_ref(
     broken_ref: str,
     all_docs: Dict[str, DocumentData],

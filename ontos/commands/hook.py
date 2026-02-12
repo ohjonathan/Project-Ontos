@@ -13,7 +13,11 @@ This is a deliberate safety choice:
 - Prefer allowing potentially invalid state over blocking legitimate work
 - Warnings are printed to stderr for visibility
 
-To enable blocking behavior, set strict mode in .ontos.toml (future feature).
+To enable blocking behavior, set strict mode in .ontos.toml.
+
+JSON OUTPUT: hook is a hidden/internal command (HIDDEN_COMMANDS in cli.py)
+and intentionally does not support --json output. It communicates via
+exit codes and stderr only.
 """
 
 import sys

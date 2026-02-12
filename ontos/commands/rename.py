@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import re
 import subprocess
 from dataclasses import dataclass, field
@@ -16,6 +15,7 @@ from ontos.io.config import load_project_config
 from ontos.io.files import DocumentLoadIssue, find_project_root, load_documents, scan_documents
 from ontos.io.scan_scope import ScanScope, collect_scoped_documents, resolve_scan_scope
 from ontos.io.yaml import parse_frontmatter_content
+from ontos.ui.json_output import emit_command_error, emit_command_success
 
 _ID_PATTERN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$")
 _RESERVED_YAML_WORDS = {"true", "false", "yes", "no", "null", "on", "off"}
@@ -1129,36 +1129,39 @@ def _rewrite_markdown_target(raw_target: str, *, old_id: str, new_id: str) -> st
 
 def _emit_noop(options: RenameOptions, plan: RenamePlan) -> None:
     if options.json_output:
-        payload = {
-            "mode": plan.mode,
-            "scope": plan.scope.value,
-            "old_id": plan.old_id,
-            "new_id": plan.new_id,
-            "status": "success",
-            "summary": _summary_to_json(plan.summary),
-            "files": [],
-            "warnings": [],
-            "message": "nothing_to_do",
-        }
-        print(json.dumps(payload))
+        emit_command_success(
+            command="rename",
+            exit_code=0,
+            message="nothing_to_do",
+            data={
+                "mode": plan.mode,
+                "scope": plan.scope.value,
+                "old_id": plan.old_id,
+                "new_id": plan.new_id,
+                "summary": _summary_to_json(plan.summary),
+                "files": [],
+            },
+        )
         return
     print("Rename no-op: old_id and new_id are identical (nothing_to_do).")
 
 
 def _emit_dry_run(options: RenameOptions, plan: RenamePlan) -> None:
     if options.json_output:
-        payload = {
-            "mode": "dry_run",
-            "scope": plan.scope.value,
-            "old_id": plan.old_id,
-            "new_id": plan.new_id,
-            "status": "success",
-            "summary": _summary_to_json(plan.summary),
-            "files": [_file_plan_to_json(item) for item in plan.files],
-            "warnings": [_warning_to_json(item) for item in plan.warnings],
-            "error": {"code": None, "message": None},
-        }
-        print(json.dumps(payload))
+        emit_command_success(
+            command="rename",
+            exit_code=0,
+            message="dry_run",
+            data={
+                "mode": "dry_run",
+                "scope": plan.scope.value,
+                "old_id": plan.old_id,
+                "new_id": plan.new_id,
+                "summary": _summary_to_json(plan.summary),
+                "files": [_file_plan_to_json(item) for item in plan.files],
+            },
+            warnings=[_warning_to_json(item) for item in plan.warnings],
+        )
         return
 
     header = (
@@ -1220,20 +1223,22 @@ def _emit_dry_run(options: RenameOptions, plan: RenamePlan) -> None:
 
 def _emit_apply_success(options: RenameOptions, plan: RenamePlan, modified_paths: Sequence[Path]) -> None:
     if options.json_output:
-        payload = {
-            "mode": "apply",
-            "scope": plan.scope.value,
-            "old_id": plan.old_id,
-            "new_id": plan.new_id,
-            "status": "success",
-            "summary": _summary_to_json(plan.summary, applied_files=len(modified_paths)),
-            "applied_paths": [str(path) for path in sorted(modified_paths)],
-            "warnings": [_warning_to_json(item) for item in plan.warnings],
-            "post_apply_warning": POST_APPLY_WARNING,
-            "partial_commit": {"detected": False, "message": None},
-            "error": {"code": None, "message": None},
-        }
-        print(json.dumps(payload))
+        emit_command_success(
+            command="rename",
+            exit_code=0,
+            message="apply",
+            data={
+                "mode": "apply",
+                "scope": plan.scope.value,
+                "old_id": plan.old_id,
+                "new_id": plan.new_id,
+                "summary": _summary_to_json(plan.summary, applied_files=len(modified_paths)),
+                "applied_paths": [str(path) for path in sorted(modified_paths)],
+                "post_apply_warning": POST_APPLY_WARNING,
+                "partial_commit": {"detected": False, "message": None},
+            },
+            warnings=[_warning_to_json(item) for item in plan.warnings],
+        )
         return
 
     print(
@@ -1260,36 +1265,39 @@ def _emit_error(
     summary: Optional[RenameSummary] = None,
 ) -> None:
     if options.json_output:
-        payload = {
-            "mode": mode,
-            "scope": scope.value,
-            "old_id": old_id,
-            "new_id": new_id,
-            "status": "error",
-            "summary": _summary_to_json(
-                summary
-                or RenameSummary(
-                    files_scanned=0,
-                    documents_loaded=0,
-                    planned_files=0,
-                    frontmatter_edits=0,
-                    body_edits=0,
-                    skipped_zone_sightings=0,
-                    warnings=len(warnings),
+        emit_command_error(
+            command="rename",
+            exit_code=1,
+            code=error.code,
+            message=error.message,
+            data={
+                "mode": mode,
+                "scope": scope.value,
+                "old_id": old_id,
+                "new_id": new_id,
+                "summary": _summary_to_json(
+                    summary
+                    or RenameSummary(
+                        files_scanned=0,
+                        documents_loaded=0,
+                        planned_files=0,
+                        frontmatter_edits=0,
+                        body_edits=0,
+                        skipped_zone_sightings=0,
+                        warnings=len(warnings),
+                    ),
+                    applied_files=len(applied_paths or []),
                 ),
-                applied_files=len(applied_paths or []),
-            ),
-            "files": [],
-            "warnings": [_warning_to_json(item) for item in warnings],
-            "applied_paths": list(applied_paths or []),
-            "post_apply_warning": POST_APPLY_WARNING if mode == "apply" else None,
-            "partial_commit": {
-                "detected": partial_commit,
-                "message": error.message if partial_commit else None,
+                "files": [],
+                "applied_paths": list(applied_paths or []),
+                "post_apply_warning": POST_APPLY_WARNING if mode == "apply" else None,
+                "partial_commit": {
+                    "detected": partial_commit,
+                    "message": error.message if partial_commit else None,
+                },
             },
-            "error": {"code": error.code, "message": error.message},
-        }
-        print(json.dumps(payload))
+            warnings=[_warning_to_json(item) for item in warnings],
+        )
         return
 
     print(f"Error [{error.code}]: {error.message}")

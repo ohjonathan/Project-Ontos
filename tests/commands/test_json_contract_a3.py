@@ -48,14 +48,25 @@ def test_json_envelope_keys_for_multiple_commands(tmp_path: Path) -> None:
     _init_project(tmp_path)
 
     command_sets = [
+        # Original A3 commands
         ("--json", "query", "--list-ids"),
         ("--json", "doctor"),
         ("--json", "export", "data"),
+        # A4 expansion
+        ("--json", "init", "--yes"),
+        ("--json", "agents"),
+        ("--json", "stub", "--goal", "test stub", "--type", "atom"),
+        ("--json", "scaffold"),
+        ("--json", "maintain", "--dry-run"),
+        ("--json", "rename", "sample", "sample_new"),
     ]
 
     for command in command_sets:
         result = _run_ontos(tmp_path, *command)
         assert result.stdout, f"missing stdout for command: {' '.join(command)}"
         payload = json.loads(result.stdout)
-        assert REQUIRED_KEYS.issubset(payload.keys()), payload
+        assert REQUIRED_KEYS.issubset(payload.keys()), (
+            f"Command {' '.join(command)} missing keys: "
+            f"{REQUIRED_KEYS - set(payload.keys())}"
+        )
 

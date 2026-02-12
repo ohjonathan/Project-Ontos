@@ -186,12 +186,13 @@ def test_rename_dry_run_json_includes_line_context_and_skipped_zones(tmp_path: P
     result = _run_ontos(tmp_path, "--json", "rename", "old_id", "new_id")
     assert result.returncode == 0
     payload = json.loads(result.stdout)
-    assert payload["mode"] == "dry_run"
+    data = payload["data"]
+    assert data["mode"] == "dry_run"
     assert payload["status"] == "success"
-    assert payload["summary"]["body_edits"] >= 2
-    assert payload["summary"]["skipped_zone_sightings"] >= 2
+    assert data["summary"]["body_edits"] >= 2
+    assert data["summary"]["skipped_zone_sightings"] >= 2
 
-    source_file = next(item for item in payload["files"] if item["path"].endswith("source.md"))
+    source_file = next(item for item in data["files"] if item["path"].endswith("source.md"))
     assert any(item["match_type"] == "bare_id_token" for item in source_file["body_edits"])
     assert any(item["match_type"] == "markdown_link_target" for item in source_file["body_edits"])
     skipped = [item for item in source_file["body_edits"] if not item["rewritable"]]
@@ -240,12 +241,13 @@ def test_rename_apply_json_schema_and_post_warning(tmp_path: Path):
     result = _run_ontos(tmp_path, "--json", "rename", "old_id", "new_id", "--apply")
     assert result.returncode == 0
     payload = json.loads(result.stdout)
-    assert payload["mode"] == "apply"
+    data = payload["data"]
+    assert data["mode"] == "apply"
     assert payload["status"] == "success"
-    assert payload["summary"]["applied_files"] >= 1
-    assert payload["partial_commit"]["detected"] is False
-    assert payload["error"]["code"] is None
-    assert "Derived artifacts may be stale" in payload["post_apply_warning"]
+    assert data["summary"]["applied_files"] >= 1
+    assert data["partial_commit"]["detected"] is False
+    assert payload["error"] is None
+    assert "Derived artifacts may be stale" in data["post_apply_warning"]
 
 
 def test_rename_unsupported_frontmatter_warns_in_dry_run_and_blocks_apply(tmp_path: Path):
@@ -285,7 +287,8 @@ def test_rename_body_only_rewrite_for_files_without_frontmatter(tmp_path: Path):
     result = _run_ontos(tmp_path, "--json", "rename", "old_id", "new_id")
     assert result.returncode == 0
     payload = json.loads(result.stdout)
-    notes = next(item for item in payload["files"] if item["path"].endswith("notes.md"))
+    data = payload["data"]
+    notes = next(item for item in data["files"] if item["path"].endswith("notes.md"))
     assert notes["frontmatter_edits"] == []
     assert len([item for item in notes["body_edits"] if item["rewritable"]]) >= 2
 
@@ -302,7 +305,8 @@ def test_rename_substring_ids_not_matched(tmp_path: Path):
     result = _run_ontos(tmp_path, "--json", "rename", "v3_2", "v4_0")
     assert result.returncode == 0
     payload = json.loads(result.stdout)
-    src = next(item for item in payload["files"] if item["path"].endswith("src.md"))
+    data = payload["data"]
+    src = next(item for item in data["files"] if item["path"].endswith("src.md"))
     rewritable = [item for item in src["body_edits"] if item["rewritable"]]
     assert len(rewritable) == 1
     assert rewritable[0]["old"] == "v3_2"
@@ -322,7 +326,8 @@ def test_rename_dot_id_regex_safety(tmp_path: Path):
     result = _run_ontos(tmp_path, "--json", "rename", old_id, new_id)
     assert result.returncode == 0
     payload = json.loads(result.stdout)
-    src = next(item for item in payload["files"] if item["path"].endswith("src.md"))
+    data = payload["data"]
+    src = next(item for item in data["files"] if item["path"].endswith("src.md"))
     rewritable = [item for item in src["body_edits"] if item["rewritable"]]
     assert len(rewritable) == 1
     assert rewritable[0]["old"] == old_id
