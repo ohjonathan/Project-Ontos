@@ -16,6 +16,7 @@ from ontos.commands.doctor import (
     check_configuration,
     check_git_hooks,
     check_python_version,
+    _run_doctor_command,
     doctor_command,
     format_doctor_output,
 )
@@ -123,7 +124,8 @@ class TestDoctorCommand:
                 )
 
             options = DoctorOptions()
-            exit_code, result = doctor_command(options)
+            assert isinstance(doctor_command(options), int)
+            exit_code, result = _run_doctor_command(options)
 
             assert exit_code == 0
             assert result.passed == 9
@@ -152,14 +154,14 @@ class TestDoctorCommand:
             )
 
             options = DoctorOptions()
-            exit_code, result = doctor_command(options)
+            exit_code, result = _run_doctor_command(options)
 
             assert exit_code == 1
             assert result.failed == 1
 
     def test_fails_cleanly_outside_project(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
-        exit_code, result = doctor_command(DoctorOptions())
+        exit_code, result = _run_doctor_command(DoctorOptions())
 
         assert exit_code == 1
         assert result.failed == 1

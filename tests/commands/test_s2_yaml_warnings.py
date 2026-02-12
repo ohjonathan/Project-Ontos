@@ -1,7 +1,11 @@
 import json
 import pytest
 from pathlib import Path
-from ontos.commands.export_data import export_data_command, ExportDataOptions
+from ontos.commands.export_data import (
+    ExportDataOptions,
+    _run_export_data_command,
+    export_data_command,
+)
 from ontos.io.files import find_project_root
 
 def test_export_data_yaml_warning(tmp_path):
@@ -32,7 +36,8 @@ def test_export_data_yaml_warning(tmp_path):
     old_cwd = os.getcwd()
     os.chdir(project_root)
     try:
-        exit_code, message = export_data_command(options)
+        assert isinstance(export_data_command(options), int)
+        exit_code, message = _run_export_data_command(options)
         assert exit_code == 0
     finally:
         os.chdir(old_cwd)

@@ -584,7 +584,7 @@ def _print_verbose_config(options: DoctorOptions, repo_root: Optional[Path] = No
         print()
 
 
-def doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
+def _run_doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
     """
     Run health checks and return results.
 
@@ -640,6 +640,12 @@ def doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
 
     exit_code = 1 if result.failed > 0 else 0
     return exit_code, result
+
+
+def doctor_command(options: DoctorOptions) -> int:
+    """Run health checks and return exit code only."""
+    exit_code, _ = _run_doctor_command(options)
+    return exit_code
 
 
 def format_doctor_output(result: DoctorResult, verbose: bool = False) -> str:

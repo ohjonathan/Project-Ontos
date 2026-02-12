@@ -69,7 +69,7 @@ def _validate_migrate_mode(options: MigrateOptions) -> Optional[str]:
     return None
 
 
-def migrate_command(options: MigrateOptions) -> Tuple[int, str]:
+def _run_migrate_command(options: MigrateOptions) -> Tuple[int, str]:
     """Execute migrate command."""
     output = OutputHandler(quiet=options.quiet)
     root = find_project_root()
@@ -225,3 +225,9 @@ def migrate_command(options: MigrateOptions) -> Tuple[int, str]:
     if errors > 0:
         return 1, f"Migration completed with {errors} errors"
     return 0, f"Migration completed successfully"
+
+
+def migrate_command(options: MigrateOptions) -> int:
+    """Run migration command and return exit code only."""
+    exit_code, _ = _run_migrate_command(options)
+    return exit_code

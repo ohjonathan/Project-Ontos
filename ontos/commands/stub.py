@@ -95,7 +95,7 @@ def write_stub_to_context(
         return False
 
 
-def stub_command(options: StubOptions) -> Tuple[int, str]:
+def _run_stub_command(options: StubOptions) -> Tuple[int, str]:
     """Execute stub command."""
     output = OutputHandler(quiet=options.quiet)
     root = find_project_root()
@@ -162,3 +162,9 @@ def stub_command(options: StubOptions) -> Tuple[int, str]:
         print("\n<!-- Add your content here -->")
         print("-" * 40)
         return 0, "Stub printed to stdout"
+
+
+def stub_command(options: StubOptions) -> int:
+    """Run stub command and return exit code only."""
+    exit_code, _ = _run_stub_command(options)
+    return exit_code

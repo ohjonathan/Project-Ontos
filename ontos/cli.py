@@ -584,7 +584,7 @@ def _register_validate_alias(subparsers, parent):
 
 def _cmd_init(args) -> int:
     """Handle init command."""
-    from ontos.commands.init import init_command, InitOptions
+    from ontos.commands.init import InitOptions, _run_init_command
 
     options = InitOptions(
         path=Path.cwd(),
@@ -594,7 +594,7 @@ def _cmd_init(args) -> int:
         scaffold=getattr(args, "scaffold", False),
         no_scaffold=getattr(args, "no_scaffold", False),
     )
-    code, msg = init_command(options)
+    code, msg = _run_init_command(options)
 
     if args.json:
         emit_json({
@@ -648,7 +648,11 @@ def _cmd_log(args) -> int:
 
 def _cmd_doctor(args) -> int:
     """Handle doctor command."""
-    from ontos.commands.doctor import doctor_command, DoctorOptions, format_doctor_output
+    from ontos.commands.doctor import (
+        DoctorOptions,
+        _run_doctor_command,
+        format_doctor_output,
+    )
     from ontos.ui.json_output import to_json
 
     options = DoctorOptions(
@@ -657,7 +661,7 @@ def _cmd_doctor(args) -> int:
         scope=getattr(args, "scope", None),
     )
 
-    exit_code, result = doctor_command(options)
+    exit_code, result = _run_doctor_command(options)
 
     if args.json:
         emit_json({
@@ -720,7 +724,7 @@ def _cmd_rename(args) -> int:
 
 def _cmd_env(args) -> int:
     """Handle env command."""
-    from ontos.commands.env import env_command, EnvOptions
+    from ontos.commands.env import EnvOptions, _run_env_command
 
     options = EnvOptions(
         path=Path.cwd(),
@@ -730,7 +734,7 @@ def _cmd_env(args) -> int:
         quiet=args.quiet,
     )
 
-    exit_code, output = env_command(options)
+    exit_code, output = _run_env_command(options)
 
     if args.json or options.format == "json":
         # Already JSON formatted
@@ -799,7 +803,7 @@ def _cmd_agent_export(args) -> int:
 
 def _cmd_export_data(args) -> int:
     """Handle export data command."""
-    from ontos.commands.export_data import export_data_command, ExportDataOptions
+    from ontos.commands.export_data import ExportDataOptions, _run_export_data_command
 
     options = ExportDataOptions(
         output_path=args.output,
@@ -814,7 +818,7 @@ def _cmd_export_data(args) -> int:
         scope=getattr(args, "scope", None),
     )
 
-    exit_code, message = export_data_command(options)
+    exit_code, message = _run_export_data_command(options)
 
     if exit_code == 0 and not args.output:
         # Output is JSON to stdout
@@ -833,7 +837,10 @@ def _cmd_export_data(args) -> int:
 
 def _cmd_export_claude(args) -> int:
     """Handle export claude command."""
-    from ontos.commands.export_claude import export_claude_command, ExportClaudeOptions
+    from ontos.commands.export_claude import (
+        ExportClaudeOptions,
+        _run_export_claude_command,
+    )
 
     options = ExportClaudeOptions(
         output_path=args.output,
@@ -842,7 +849,7 @@ def _cmd_export_claude(args) -> int:
         json_output=args.json,
     )
 
-    exit_code, message = export_claude_command(options)
+    exit_code, message = _run_export_claude_command(options)
 
     if args.json:
         emit_json({
@@ -904,7 +911,7 @@ def _cmd_export(args) -> int:
 
 def _cmd_schema_migrate(args) -> int:
     """Handle schema-migrate command."""
-    from ontos.commands.migrate import MigrateOptions, migrate_command
+    from ontos.commands.migrate import MigrateOptions, _run_migrate_command
 
     options = MigrateOptions(
         check=args.check,
@@ -915,13 +922,16 @@ def _cmd_schema_migrate(args) -> int:
         json_output=args.json,
         scope=getattr(args, "scope", None),
     )
-    exit_code, message = migrate_command(options)
+    exit_code, message = _run_migrate_command(options)
     return exit_code
 
 
 def _cmd_migration_report(args) -> int:
     """Handle migration-report command."""
-    from ontos.commands.migration_report import migration_report_command, MigrationReportOptions
+    from ontos.commands.migration_report import (
+        MigrationReportOptions,
+        _run_migration_report_command,
+    )
 
     options = MigrationReportOptions(
         output_path=args.output,
@@ -932,7 +942,7 @@ def _cmd_migration_report(args) -> int:
         scope=getattr(args, "scope", None),
     )
 
-    exit_code, message = migration_report_command(options)
+    exit_code, message = _run_migration_report_command(options)
 
     if exit_code == 0 and not args.output:
         # Output is report to stdout
@@ -951,7 +961,10 @@ def _cmd_migration_report(args) -> int:
 
 def _cmd_migrate_convenience(args) -> int:
     """Handle migrate convenience command."""
-    from ontos.commands.migrate_cmd import migrate_convenience_command, MigrateOptions
+    from ontos.commands.migrate_cmd import (
+        MigrateOptions,
+        _run_migrate_convenience_command,
+    )
 
     options = MigrateOptions(
         out_dir=args.out_dir,
@@ -961,7 +974,7 @@ def _cmd_migrate_convenience(args) -> int:
         scope=getattr(args, "scope", None),
     )
 
-    exit_code, message = migrate_convenience_command(options)
+    exit_code, message = _run_migrate_convenience_command(options)
 
     if args.json:
         emit_json({
@@ -997,7 +1010,7 @@ def _cmd_consolidate(args) -> int:
 
 def _cmd_stub(args) -> int:
     """Handle stub command."""
-    from ontos.commands.stub import StubOptions, stub_command
+    from ontos.commands.stub import StubOptions, _run_stub_command
 
     # Parse depends_on
     depends_on = None
@@ -1013,13 +1026,13 @@ def _cmd_stub(args) -> int:
         quiet=args.quiet,
         json_output=args.json,
     )
-    exit_code, message = stub_command(options)
+    exit_code, message = _run_stub_command(options)
     return exit_code
 
 
 def _cmd_promote(args) -> int:
     """Handle promote command."""
-    from ontos.commands.promote import PromoteOptions, promote_command
+    from ontos.commands.promote import PromoteOptions, _run_promote_command
 
     options = PromoteOptions(
         files=args.files,
@@ -1029,13 +1042,13 @@ def _cmd_promote(args) -> int:
         json_output=args.json,
         scope=getattr(args, "scope", None),
     )
-    exit_code, message = promote_command(options)
+    exit_code, message = _run_promote_command(options)
     return exit_code
 
 
 def _cmd_query(args) -> int:
     """Handle query command."""
-    from ontos.commands.query import QueryOptions, query_command
+    from ontos.commands.query import QueryOptions, _run_query_command
 
     options = QueryOptions(
         depends_on=args.depends_on,
@@ -1049,13 +1062,13 @@ def _cmd_query(args) -> int:
         json_output=args.json,
         scope=getattr(args, "scope", None),
     )
-    exit_code, message = query_command(options)
+    exit_code, message = _run_query_command(options)
     return exit_code
 
 
 def _cmd_verify(args) -> int:
     """Handle verify command."""
-    from ontos.commands.verify import VerifyOptions, verify_command
+    from ontos.commands.verify import VerifyOptions, _run_verify_command
 
     options = VerifyOptions(
         path=args.path,
@@ -1065,13 +1078,13 @@ def _cmd_verify(args) -> int:
         json_output=args.json,
         scope=getattr(args, "scope", None),
     )
-    exit_code, message = verify_command(options)
+    exit_code, message = _run_verify_command(options)
     return exit_code
 
 
 def _cmd_scaffold(args) -> int:
     """Handle scaffold command."""
-    from ontos.commands.scaffold import ScaffoldOptions, scaffold_command
+    from ontos.commands.scaffold import ScaffoldOptions, _run_scaffold_command
 
     options = ScaffoldOptions(
         paths=args.paths if args.paths else None,
@@ -1081,7 +1094,7 @@ def _cmd_scaffold(args) -> int:
         json_output=args.json,
         scope=getattr(args, "scope", None),
     )
-    exit_code, message = scaffold_command(options)
+    exit_code, message = _run_scaffold_command(options)
     return exit_code
 
 

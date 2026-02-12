@@ -9,6 +9,7 @@ from ontos.commands.agents import generate_agents_content
 from ontos.commands.claude_template import CLAUDE_MD_TEMPLATE
 from ontos.commands.export import (
     ExportOptions,
+    _run_export_command,
     export_command,
     find_repo_root,
 )
@@ -34,13 +35,22 @@ class TestExportOptions:
 class TestExportCommand:
     """Tests for export_command."""
 
+    def test_public_command_returns_exit_code(self, tmp_path, monkeypatch):
+        """Public export_command should return int exit code only."""
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
+        options = ExportOptions(output_path=tmp_path / "claude_public.md")
+        result = export_command(options)
+        assert isinstance(result, int)
+        assert result == 0
+
     def test_creates_claude_md(self, tmp_path, monkeypatch):
         """Should create CLAUDE.md in repo root."""
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
 
         options = ExportOptions()
-        exit_code, message = export_command(options)
+        exit_code, message = _run_export_command(options)
 
         assert exit_code == 0
         assert "Created" in message
@@ -53,7 +63,7 @@ class TestExportCommand:
         (tmp_path / "CLAUDE.md").write_text("existing content")
 
         options = ExportOptions(force=False)
-        exit_code, message = export_command(options)
+        exit_code, message = _run_export_command(options)
 
         assert exit_code == 1
         assert "already exists" in message
@@ -66,7 +76,7 @@ class TestExportCommand:
         (tmp_path / "CLAUDE.md").write_text("existing content")
 
         options = ExportOptions(force=True)
-        exit_code, message = export_command(options)
+        exit_code, message = _run_export_command(options)
 
         assert exit_code == 0
         assert (tmp_path / "CLAUDE.md").read_text() == CLAUDE_MD_TEMPLATE
@@ -85,7 +95,7 @@ class TestExportCommand:
         )
 
         options = ExportOptions(force=True)
-        exit_code, _ = export_command(options)
+        exit_code, _ = _run_export_command(options)
 
         assert exit_code == 0
         content = (tmp_path / "CLAUDE.md").read_text()
@@ -98,7 +108,7 @@ class TestExportCommand:
         (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
 
         options = ExportOptions(output_path=tmp_path.parent / "evil.md")
-        exit_code, message = export_command(options)
+        exit_code, message = _run_export_command(options)
 
         assert exit_code == 2
         assert "within repository root" in message
@@ -111,7 +121,7 @@ class TestExportCommand:
         subdir.mkdir()
 
         options = ExportOptions(output_path=subdir / "AI_INSTRUCTIONS.md")
-        exit_code, message = export_command(options)
+        exit_code, message = _run_export_command(options)
 
         assert exit_code == 0
         assert (subdir / "AI_INSTRUCTIONS.md").exists()

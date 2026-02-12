@@ -149,7 +149,7 @@ def apply_promotion(
         return False
 
 
-def promote_command(options: PromoteOptions) -> Tuple[int, str]:
+def _run_promote_command(options: PromoteOptions) -> Tuple[int, str]:
     """Execute promote command."""
     output = OutputHandler(quiet=options.quiet)
     root = find_project_root()
@@ -284,3 +284,9 @@ def promote_command(options: PromoteOptions) -> Tuple[int, str]:
     if success_count > 0:
         output.success(f"Promoted {success_count} document(s) to Level 2")
     return 0, f"Promoted {success_count} documents"
+
+
+def promote_command(options: PromoteOptions) -> int:
+    """Run promote command and return exit code only."""
+    exit_code, _ = _run_promote_command(options)
+    return exit_code

@@ -24,7 +24,7 @@ class ExportClaudeOptions:
     json_output: bool = False
 
 
-def export_claude_command(options: ExportClaudeOptions) -> Tuple[int, str]:
+def _run_export_claude_command(options: ExportClaudeOptions) -> Tuple[int, str]:
     """
     Generate CLAUDE.md file.
 
@@ -75,3 +75,9 @@ def export_claude_command(options: ExportClaudeOptions) -> Tuple[int, str]:
         return 2, f"An unexpected error occurred: {e}"
 
     return 0, f"Created {output_path}"
+
+
+def export_claude_command(options: ExportClaudeOptions) -> int:
+    """Generate CLAUDE.md and return exit code only."""
+    exit_code, _ = _run_export_claude_command(options)
+    return exit_code

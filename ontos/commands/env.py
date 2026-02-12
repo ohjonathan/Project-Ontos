@@ -528,7 +528,7 @@ def _step_comment(step: str) -> str:
 # Main Command
 # =============================================================================
 
-def env_command(options: EnvOptions) -> Tuple[int, str]:
+def _run_env_command(options: EnvOptions) -> Tuple[int, str]:
     """
     Detect environment manifests and generate documentation.
 
@@ -588,3 +588,9 @@ def env_command(options: EnvOptions) -> Tuple[int, str]:
         return 0, json_module.dumps(format_json_output(result), indent=2)
 
     return 0, format_text_output(result)
+
+
+def env_command(options: EnvOptions) -> int:
+    """Run env command and return exit code only."""
+    exit_code, _ = _run_env_command(options)
+    return exit_code

@@ -153,7 +153,7 @@ def _snapshot_to_json(
     return result
 
 
-def export_data_command(options: ExportDataOptions) -> Tuple[int, str]:
+def _run_export_data_command(options: ExportDataOptions) -> Tuple[int, str]:
     """
     Export documents as structured JSON.
 
@@ -204,3 +204,9 @@ def export_data_command(options: ExportDataOptions) -> Tuple[int, str]:
     else:
         # Print to stdout (handled by CLI layer)
         return 0, json_str
+
+
+def export_data_command(options: ExportDataOptions) -> int:
+    """Export structured data and return exit code only."""
+    exit_code, _ = _run_export_data_command(options)
+    return exit_code

@@ -32,7 +32,7 @@ def find_repo_root() -> Path:
     return current
 
 
-def export_command(options: ExportOptions) -> Tuple[int, str]:
+def _run_export_command(options: ExportOptions) -> Tuple[int, str]:
     """
     Generate CLAUDE.md file.
 
@@ -76,3 +76,9 @@ def export_command(options: ExportOptions) -> Tuple[int, str]:
         return 2, f"Error writing file: {e}"
 
     return 0, f"Created {output_path}"
+
+
+def export_command(options: ExportOptions) -> int:
+    """Generate CLAUDE.md and return exit code only."""
+    exit_code, _ = _run_export_command(options)
+    return exit_code

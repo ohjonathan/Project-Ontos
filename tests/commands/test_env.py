@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 import pytest
-from ontos.commands.env import env_command, EnvOptions, detect_manifests
+from ontos.commands.env import EnvOptions, _run_env_command, env_command, detect_manifests
 
 
 @pytest.fixture
@@ -80,7 +80,8 @@ def test_env_command_text_output(temp_workspace):
     (temp_workspace / "requirements.txt").write_text("requests\npytest")
     
     options = EnvOptions(path=temp_workspace, format="text")
-    exit_code, output = env_command(options)
+    assert isinstance(env_command(options), int)
+    exit_code, output = _run_env_command(options)
     
     assert exit_code == 0
     assert "Environment Manifest Detection" in output
@@ -93,7 +94,7 @@ def test_env_command_json_output(temp_workspace):
     (temp_workspace / "requirements.txt").write_text("requests")
     
     options = EnvOptions(path=temp_workspace, format="json")
-    exit_code, output = env_command(options)
+    exit_code, output = _run_env_command(options)
     
     assert exit_code == 0
     data = json.loads(output)
@@ -107,7 +108,7 @@ def test_env_command_write_creates_file(temp_workspace):
     (temp_workspace / ".tool-versions").write_text("python 3.9")
     
     options = EnvOptions(path=temp_workspace, write=True)
-    exit_code, output = env_command(options)
+    exit_code, output = _run_env_command(options)
     
     assert exit_code == 0
     env_md = temp_workspace / ".ontos" / "environment.md"
@@ -124,14 +125,14 @@ def test_env_command_write_force_overwrites(temp_workspace):
     
     # Try without force
     options = EnvOptions(path=temp_workspace, write=True, force=False)
-    exit_code, output = env_command(options)
+    exit_code, output = _run_env_command(options)
     assert exit_code == 1
     assert "already exists" in output
     assert env_md.read_text() == "original content"
     
     # Try with force
     options.force = True
-    exit_code, output = env_command(options)
+    exit_code, output = _run_env_command(options)
     assert exit_code == 0
     assert env_md.read_text() != "original content"
 
@@ -143,7 +144,7 @@ def test_parse_warnings_in_output(temp_workspace):
     pkg_json.write_text("{ malformed json }")
     
     options = EnvOptions(path=temp_workspace, format="text")
-    exit_code, output = env_command(options)
+    exit_code, output = _run_env_command(options)
     
     assert exit_code == 0
     assert "Parse Warnings:" in output
@@ -167,7 +168,7 @@ def test_invalid_workspace_path(temp_workspace):
     # Non-existent
     non_existent = temp_workspace / "ghost"
     options = EnvOptions(path=non_existent)
-    exit_code, output = env_command(options)
+    exit_code, output = _run_env_command(options)
     assert exit_code == 1
     assert "does not exist" in output
 
@@ -175,7 +176,7 @@ def test_invalid_workspace_path(temp_workspace):
     a_file = temp_workspace / "not_a_dir.txt"
     a_file.write_text("hello")
     options = EnvOptions(path=a_file)
-    exit_code, output = env_command(options)
+    exit_code, output = _run_env_command(options)
     assert exit_code == 1
     assert "not a directory" in output
 

@@ -52,26 +52,27 @@ def test_schema_migrate_fails_on_duplicates(tmp_path):
 
 
 def test_migrate_mode_guard_rejects_missing_mode(tmp_path, monkeypatch):
-    from ontos.commands.migrate import MigrateOptions, migrate_command
+    from ontos.commands.migrate import MigrateOptions, _run_migrate_command, migrate_command
 
     (tmp_path / ".ontos").mkdir()
     (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n", encoding="utf-8")
     monkeypatch.chdir(tmp_path)
 
-    exit_code, message = migrate_command(MigrateOptions())
+    assert isinstance(migrate_command(MigrateOptions(check=True)), int)
+    exit_code, message = _run_migrate_command(MigrateOptions())
 
     assert exit_code == 1
     assert "Select exactly one mode" in message
 
 
 def test_migrate_mode_guard_rejects_conflicting_mode(tmp_path, monkeypatch):
-    from ontos.commands.migrate import MigrateOptions, migrate_command
+    from ontos.commands.migrate import MigrateOptions, _run_migrate_command
 
     (tmp_path / ".ontos").mkdir()
     (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n", encoding="utf-8")
     monkeypatch.chdir(tmp_path)
 
-    exit_code, message = migrate_command(MigrateOptions(check=True, apply=True))
+    exit_code, message = _run_migrate_command(MigrateOptions(check=True, apply=True))
 
     assert exit_code == 1
     assert "Select exactly one mode" in message or "cannot be combined" in message

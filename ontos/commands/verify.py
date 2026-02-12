@@ -214,7 +214,7 @@ def verify_all_interactive(verify_date: date, output: OutputHandler, scope: Opti
     return 0
 
 
-def verify_command(options: VerifyOptions) -> Tuple[int, str]:
+def _run_verify_command(options: VerifyOptions) -> Tuple[int, str]:
     """Execute verify command."""
     output = OutputHandler(quiet=options.quiet)
     
@@ -262,3 +262,9 @@ def verify_command(options: VerifyOptions) -> Tuple[int, str]:
     else:
         output.error("Specify a file path or use --all")
         return 1, "No target specified"
+
+
+def verify_command(options: VerifyOptions) -> int:
+    """Run verify command and return exit code only."""
+    exit_code, _ = _run_verify_command(options)
+    return exit_code

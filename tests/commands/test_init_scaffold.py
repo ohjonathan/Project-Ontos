@@ -3,7 +3,7 @@ import pytest
 from pathlib import Path
 import subprocess
 
-from ontos.commands.init import init_command, InitOptions
+from ontos.commands.init import _run_init_command, init_command, InitOptions
 from ontos.commands.scaffold import DEFAULT_IGNORES
 
 
@@ -20,25 +20,25 @@ class TestInitDirectories:
     def test_init_creates_kernel_dir(self, git_repo):
         """Init creates docs/kernel/ directory."""
         options = InitOptions(path=git_repo, skip_hooks=True, no_scaffold=True)
-        init_command(options)
+        _run_init_command(options)
         assert (git_repo / "docs" / "kernel").is_dir()
 
     def test_init_creates_product_dir(self, git_repo):
         """Init creates docs/product/ directory."""
         options = InitOptions(path=git_repo, skip_hooks=True, no_scaffold=True)
-        init_command(options)
+        _run_init_command(options)
         assert (git_repo / "docs" / "product").is_dir()
 
     def test_init_creates_atom_dir(self, git_repo):
         """Init creates docs/atom/ directory."""
         options = InitOptions(path=git_repo, skip_hooks=True, no_scaffold=True)
-        init_command(options)
+        _run_init_command(options)
         assert (git_repo / "docs" / "atom").is_dir()
 
     def test_init_creates_all_type_hierarchy_dirs(self, git_repo):
         """Init creates complete type hierarchy."""
         options = InitOptions(path=git_repo, skip_hooks=True, no_scaffold=True)
-        init_command(options)
+        _run_init_command(options)
         for subdir in ['kernel', 'strategy', 'product', 'atom', 'logs', 'reference', 'archive']:
             assert (git_repo / "docs" / subdir).is_dir(), f"Missing docs/{subdir}/"
 
@@ -53,7 +53,7 @@ class TestScaffoldFlags:
 
         monkeypatch.setattr('sys.stdin.isatty', lambda: True)
         options = InitOptions(path=git_repo, skip_hooks=True, no_scaffold=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
 
         assert code in (0, 3)
         # File should NOT have frontmatter
@@ -68,7 +68,7 @@ class TestScaffoldFlags:
 
         monkeypatch.setattr('sys.stdin.isatty', lambda: True)
         options = InitOptions(path=git_repo, skip_hooks=True, scaffold=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
 
         assert code in (0, 3)
         content = (docs / "test.md").read_text()
@@ -82,7 +82,7 @@ class TestScaffoldFlags:
 
         monkeypatch.setattr('sys.stdin.isatty', lambda: False)
         options = InitOptions(path=git_repo, skip_hooks=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
 
         assert code in (0, 3)
         content = (docs / "test.md").read_text()
@@ -106,7 +106,7 @@ class TestScaffoldPrompt:
         monkeypatch.setattr('sys.stdin.isatty', lambda: True)
 
         options = InitOptions(path=git_repo, skip_hooks=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
         assert code in (0, 3)
         # Scaffold-related prompt should NOT have been called
         assert not any('scaffold' in p.lower() for p in input_called)
@@ -122,7 +122,7 @@ class TestScaffoldPrompt:
         monkeypatch.setattr('sys.stdin.isatty', lambda: True)
 
         options = InitOptions(path=git_repo, skip_hooks=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
         assert code in (0, 3)
         content = (docs / "test.md").read_text()
         assert "id:" not in content
@@ -138,7 +138,7 @@ class TestScaffoldPrompt:
         monkeypatch.setattr('sys.stdin.isatty', lambda: True)
 
         options = InitOptions(path=git_repo, skip_hooks=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
         assert code in (0, 3)
         content = (docs / "test.md").read_text()
         assert "id:" in content
@@ -156,7 +156,7 @@ class TestScaffoldPrompt:
         monkeypatch.setattr('sys.stdin.isatty', lambda: True)
 
         options = InitOptions(path=git_repo, skip_hooks=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
         assert code in (0, 3)
 
     def test_eof_skips_gracefully(self, git_repo, monkeypatch):
@@ -171,7 +171,7 @@ class TestScaffoldPrompt:
         monkeypatch.setattr('sys.stdin.isatty', lambda: True)
 
         options = InitOptions(path=git_repo, skip_hooks=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
         assert code in (0, 3)  # Init still succeeds
 
     def test_keyboard_interrupt_skips(self, git_repo, monkeypatch):
@@ -190,7 +190,7 @@ class TestScaffoldPrompt:
         monkeypatch.setattr('sys.stdin.isatty', lambda: True)
 
         options = InitOptions(path=git_repo, skip_hooks=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
         # Init should still succeed (scaffold skipped, not aborted)
         assert code in (0, 3)
 
@@ -212,7 +212,7 @@ class TestScaffoldPrompt:
         monkeypatch.setattr('sys.stdin.isatty', lambda: True)
         
         options = InitOptions(path=git_repo, skip_hooks=True)
-        init_command(options)
+        _run_init_command(options)
         
         captured = capsys.readouterr()
         # Should see prompt (not skip silently)
@@ -235,7 +235,7 @@ class TestScaffoldPrompt:
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
         monkeypatch.setattr('sys.stdin.isatty', lambda: True)
         
-        init_command(InitOptions(path=git_repo, skip_hooks=True))
+        _run_init_command(InitOptions(path=git_repo, skip_hooks=True))
         
         captured = capsys.readouterr()
         # Should see count of 70 and the "may take a moment" warning
@@ -261,7 +261,7 @@ class TestScaffoldSafety:
         monkeypatch.setattr('sys.stdin.isatty', lambda: True)
 
         options = InitOptions(path=git_repo, skip_hooks=True)
-        init_command(options)
+        _run_init_command(options)
 
         # node_modules file should NOT have frontmatter
         nm_content = (nm / "README.md").read_text()
@@ -282,7 +282,7 @@ class TestScaffoldSafety:
         monkeypatch.setattr('sys.stdin.isatty', lambda: True)
 
         options = InitOptions(path=git_repo, skip_hooks=True)
-        init_command(options)
+        _run_init_command(options)
 
         venv_content = (venv / "guide.md").read_text()
         assert "id:" not in venv_content
@@ -298,7 +298,7 @@ class TestScaffoldSafety:
         monkeypatch.setattr('sys.stdin.isatty', lambda: True)
 
         options = InitOptions(path=git_repo, skip_hooks=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
         # Init succeeds but scaffold is skipped
         assert code in (0, 3)
         content = (docs / "test.md").read_text()
@@ -315,7 +315,7 @@ class TestScaffoldSafety:
         monkeypatch.setattr('sys.stdin.isatty', lambda: True)
 
         options = InitOptions(path=git_repo, skip_hooks=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
         assert code in (0, 3)
         content = (docs / "test.md").read_text()
         assert "id:" not in content
@@ -331,7 +331,7 @@ class TestScaffoldSafety:
         monkeypatch.setattr('sys.stdin.isatty', lambda: True)
 
         options = InitOptions(path=git_repo, skip_hooks=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
         assert code in (0, 3)
         # Should still scaffold (defaulted to docs/)
         content = (docs / "test.md").read_text()
@@ -353,7 +353,7 @@ class TestScaffoldSafety:
         )
 
         options = InitOptions(path=git_repo, skip_hooks=True, scaffold=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
         # Init should still succeed despite scaffold failure
         assert code in (0, 3)
         assert (git_repo / ".ontos.toml").exists()

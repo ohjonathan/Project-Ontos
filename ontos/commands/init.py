@@ -181,7 +181,7 @@ def _run_scaffold(project_root: Path, paths) -> None:
     Note: Scaffold writes persist even if init is subsequently aborted.
     """
     try:
-        from ontos.commands.scaffold import ScaffoldOptions, scaffold_command
+        from ontos.commands.scaffold import ScaffoldOptions, _run_scaffold_command
 
         options = ScaffoldOptions(
             paths=paths,
@@ -189,7 +189,7 @@ def _run_scaffold(project_root: Path, paths) -> None:
             dry_run=False,
             quiet=True,
         )
-        exit_code, message = scaffold_command(options)
+        exit_code, message = _run_scaffold_command(options)
 
         if exit_code == 0:
             print("   Scaffold complete.", file=sys.stderr)
@@ -199,7 +199,7 @@ def _run_scaffold(project_root: Path, paths) -> None:
         print(f"Warning: Could not run scaffold: {e}", file=sys.stderr)
 
 
-def init_command(options: InitOptions) -> Tuple[int, str]:
+def _run_init_command(options: InitOptions) -> Tuple[int, str]:
     """
     Initialize a new Ontos project.
 
@@ -299,6 +299,12 @@ def init_command(options: InitOptions) -> Tuple[int, str]:
     msg += "Tip: Run 'ontos agents' to regenerate instruction files"
 
     return hooks_status, msg
+
+
+def init_command(options: InitOptions) -> int:
+    """Initialize Ontos project and return exit code only."""
+    exit_code, _ = _run_init_command(options)
+    return exit_code
 
 
 def _check_git_repo(project_root: Path) -> Optional[Tuple[int, str]]:

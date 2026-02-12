@@ -287,7 +287,11 @@ def _load_docs_for_graph(ctx: MaintainContext) -> "DocumentLoadResult":
     description="Migrate untagged markdown files",
 )
 def _task_migrate_untagged(ctx: MaintainContext) -> TaskResult:
-    from ontos.commands.scaffold import ScaffoldOptions, find_untagged_files, scaffold_command
+    from ontos.commands.scaffold import (
+        ScaffoldOptions,
+        _run_scaffold_command,
+        find_untagged_files,
+    )
 
     if ctx.options.dry_run:
         return _ok("Would migrate untagged markdown files.")
@@ -307,7 +311,7 @@ def _task_migrate_untagged(ctx: MaintainContext) -> TaskResult:
     if count > 5:
         details.append(f"... and {count - 5} more")
 
-    exit_code, message = scaffold_command(
+    exit_code, message = _run_scaffold_command(
         ScaffoldOptions(
             paths=untagged,
             apply=True,
@@ -362,9 +366,9 @@ def _task_health_check(ctx: MaintainContext) -> TaskResult:
     if ctx.options.dry_run:
         return _ok("Would run `ontos doctor`.")
 
-    from ontos.commands.doctor import DoctorOptions, doctor_command
+    from ontos.commands.doctor import DoctorOptions, _run_doctor_command
 
-    exit_code, result = doctor_command(
+    exit_code, result = _run_doctor_command(
         DoctorOptions(
             verbose=ctx.options.verbose,
             json_output=False,

@@ -166,7 +166,7 @@ def format_health(health: dict) -> str:
     return '\n'.join(lines)
 
 
-def query_command(options: QueryOptions) -> Tuple[int, str]:
+def _run_query_command(options: QueryOptions) -> Tuple[int, str]:
     """Execute query command."""
     output = OutputHandler(quiet=options.quiet)
     root = find_project_root()
@@ -243,3 +243,9 @@ def query_command(options: QueryOptions) -> Tuple[int, str]:
             output.detail(f"{doc_id} ({doc_type})")
             
     return 0, "Query complete"
+
+
+def query_command(options: QueryOptions) -> int:
+    """Run query command and return exit code only."""
+    exit_code, _ = _run_query_command(options)
+    return exit_code

@@ -138,7 +138,7 @@ def scaffold_file(path: Path, ctx: SessionContext, dry_run: bool = True) -> Tupl
         return False, None
 
 
-def scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
+def _run_scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
     """Execute scaffold command.
 
     Args:
@@ -240,3 +240,9 @@ def scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
         if not options.quiet:
             output.success(f"Scaffolded {success_count}/{len(untagged)} files")
         return (0 if success_count == len(untagged) else 1), f"Processed {success_count} files"
+
+
+def scaffold_command(options: ScaffoldOptions) -> int:
+    """Run scaffold command and return exit code only."""
+    exit_code, _ = _run_scaffold_command(options)
+    return exit_code
