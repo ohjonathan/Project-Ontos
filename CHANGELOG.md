@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.3.0] - 2026-02-11
+
+v3.3 ships 62 audit-derived hardening fixes plus 3 new commands across Track A (hardening) and Track B (features).
+
+### Added
+- **`ontos link-check`** — Scan for broken references, duplicate IDs, and orphaned documents with JSON output and exit codes `0/1/2`.
+- **`ontos rename <old_id> <new_id>`** — Safe ID renaming with dry-run default, `--apply`, collision detection, and automatic `depends_on` propagation.
+- **Unified scan scope** — `--scope docs|library` wired across all scanning commands for consistent document discovery.
+- **Canonical unified document loader** — Single `load_document()` path used by every command, eliminating parser inconsistencies.
+- **Unified JSON envelopes** — All commands emit `{ "status": "ok"|"error", "data": ... }` structured output.
+- **CLI typed error routing** — Consistent error handling and exit codes across all commands.
+- **JSON envelope helpers** — Shared utilities for command output formatting.
+- **New test coverage** — Graph primitives, schema validation, `log` command, and review gap closures.
+
+### Fixed
+- **Core contract ambiguity** — Parser/loader contract unified; frontmatter normalization, duplicate detection, and input validation standardized (Track A1).
+- **Path resolution** — `consolidate` and proposal paths now resolve relative to runtime root, not package installation directory.
+- **History write contract** — Restored correct behavior in consolidate pipeline.
+- **Command safety** — Transactional semantics and strict input handling for `consolidate`, `doctor`, `paths`, `migrate`, and config parsing (Track A2).
+- **Return contract normalization** — Every command returns typed results, not raw dicts (Track A3).
+- **Documentation drift** — `Ontos_Manual.md` realigned with implementation (Track A4).
+- **3 deferred items** from Track A3 review (NB-1, NB-2, NB-3) resolved.
+
+### Changed
+- **CLI surface normalization** — Consolidated instruction exports, normalized return contracts, unified command taxonomy (Track A3).
+- **Dead code removal** — Findings #54, #57, #59 cleaned up (Track A4).
+- Bumped version to `3.3.0`.
+
+### Removed
+- Dead code identified across findings #54, #57, #59.
+
 ## [3.2.3] - 2026-02-10
 
 Patch release to fix package/tag version alignment for PyPI publishing.

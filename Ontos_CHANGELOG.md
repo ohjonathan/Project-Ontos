@@ -21,6 +21,59 @@ All notable changes to **Project Ontos itself** (the protocol and tooling) will 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2026-02-11
+
+### Theme: "Full Spectrum Hardening"
+
+The largest release since v3.0 — ships all 62 findings from the triple-auditor review cycle (UX, Correctness, Architecture) plus 3 new commands, organized across 6 sub-tracks.
+
+### Added
+
+**Track B — Features (PRs #68, #69, #70)**
+- **Unified scan scope** — `--scope docs|library` wired across all scanning commands via shared scanner infrastructure.
+- **`ontos link-check`** — Shared body-link parser with zone-aware tokenization; reports broken refs, duplicate IDs, orphans; JSON output; exit codes `0/1/2`.
+- **`ontos rename <old_id> <new_id>`** — Dry-run default, `--apply` mode, collision detection, targeted `depends_on` propagation, post-rename regeneration warning.
+
+**Track A1 — Core Contracts & Graph Integrity (PR #67)**
+- **Canonical unified document loader** — Single `load_document()` parsing path across all commands.
+- 11 hardening items: runtime-root fallback warnings, history write contract, consolidate path resolution, regression tests.
+
+**Track A3 — CLI Surface & Output Contracts**
+- **Unified JSON envelopes** — `{ "status": "ok"|"error", "data": ... }` across all commands.
+- **CLI typed error routing** — Consistent error classes and exit codes.
+- **Consolidated instruction exports** — Single public export path for agent instruction generation.
+- **Normalized return contracts** — Every command returns typed results.
+
+**Track A4 — Tests & Coverage (PRs #74, #75)**
+- New test coverage for graph primitives, schema validation, and `log` command.
+- Resolved 3 deferred non-blocking items from Track A3 review (NB-1, NB-2, NB-3).
+
+### Fixed
+
+**Track A2 — Command Safety & State Integrity (PR #71)**
+- Transactional safety and strict input semantics for `consolidate`, `doctor`, `paths`, `migrate`, proposal/history parsing, config parsing.
+- Root/path correctness for runtime resolution.
+- Review non-blocking test gaps closed.
+
+**Track A1**
+- `consolidate` paths resolved relative to runtime root (not package install directory).
+- History write contract restored in consolidate pipeline.
+- Proposal path fallback warnings added.
+
+**Track A4**
+- Documentation drift fixed in `Ontos_Manual.md`.
+
+### Removed
+- Dead code from findings #54, #57, #59 (Track A4).
+
+### Changed
+- Version bumped to `3.3.0` in `pyproject.toml` and `ontos/__init__.py`.
+
+### Metrics
+- 36 commits, 9 PRs (#67–#75), 62 findings resolved, 3 new commands, 6 sub-tracks.
+
+---
+
 ## [3.2.3] - 2026-02-10
 
 ### Theme: "Publish Recovery"
