@@ -28,7 +28,8 @@ class TestCLIGlobalOptions:
         )
         assert result.returncode == 0
         data = json.loads(result.stdout)
-        assert "version" in data
+        assert data["status"] == "success"
+        assert data["data"]["version"]
 
     def test_help_flag(self):
         """--help should print help."""
@@ -197,7 +198,8 @@ class TestCLIDoctorCommand:
         )
         data = json.loads(result.stdout)
         assert "status" in data
-        assert "checks" in data
+        assert "data" in data
+        assert "checks" in data["data"]
 
 
 class TestCLIExportCommand:

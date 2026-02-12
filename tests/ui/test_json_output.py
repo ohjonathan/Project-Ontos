@@ -149,7 +149,7 @@ class TestConvenienceFunctions:
         captured = capsys.readouterr()
         result = json.loads(captured.out)
         assert result["status"] == "error"
-        assert result["error_code"] == "E999"
+        assert result["error"]["code"] == "E999"
 
     def test_emit_result(self, capsys):
         """emit_result should output success JSON."""

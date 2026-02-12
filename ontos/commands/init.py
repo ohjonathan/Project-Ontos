@@ -388,16 +388,17 @@ def _generate_agents_file(root: Path) -> None:
     Non-fatal on failure per spec v1.1 Section 4.3.1.
     """
     try:
-        from ontos.commands.agents import AgentsOptions, _run_agents_command
-        
-        options = AgentsOptions(
+        from ontos.core.instruction_artifacts import generate_agents_files
+
+        exit_code, message = generate_agents_files(
+            repo_root=root,
             output_path=root / "AGENTS.md",
             force=False,
             format="agents",
             all_formats=False,
+            scope=None,
         )
-        exit_code, message = _run_agents_command(options)
-        
+
         if exit_code == 0:
             print("   ✓ AGENTS.md generated", file=sys.stderr)
         elif exit_code == 1:

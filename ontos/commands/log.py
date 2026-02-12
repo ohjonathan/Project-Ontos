@@ -16,6 +16,8 @@ from typing import Dict, List, Optional, Any, Set, Tuple
 
 from ontos.core.suggestions import suggest_impacts, load_document_index, validate_concepts
 from ontos.core.types import TEMPLATES, SECTION_TEMPLATES
+from ontos.ui.json_output import emit_command_error, emit_command_success
+from ontos.ui.output import OutputHandler
 
 
 # Event type aliases for common shorthand names
@@ -44,7 +46,6 @@ class EndSessionOptions:
     concepts: List[str] = field(default_factory=list)
     impacts: List[str] = field(default_factory=list)
     branch: Optional[str] = None
-    dry_run: bool = False
 
 
 @dataclass
@@ -253,11 +254,20 @@ def log_command(options: LogOptions) -> int:
         get_changed_files_since_push,
     )
 
+    output = OutputHandler(quiet=options.quiet or options.json_output)
+
     # Get project root
     project_root = get_git_root()
     if not project_root:
-        if not options.quiet:
-            print("Error: Not in a git repository")
+        if options.json_output:
+            emit_command_error(
+                command="log",
+                exit_code=1,
+                code="E_COMMAND_FAILED",
+                message="Not in a git repository",
+            )
+        else:
+            output.error("Not in a git repository")
         return 1
 
     # Gather git info
@@ -293,14 +303,17 @@ def log_command(options: LogOptions) -> int:
 
     # Output result
     if options.json_output:
-        import json
-        print(json.dumps({
-            "status": "success",
-            "path": str(output_path),
-            "log_id": output_path.stem,
-        }))
+        emit_command_success(
+            command="log",
+            exit_code=0,
+            message="Session log created",
+            data={
+                "path": str(output_path),
+                "log_id": output_path.stem,
+            },
+        )
     elif not options.quiet:
-        print(f"Session log created: {output_path}")
+        output.success(f"Session log created: {output_path}")
 
     return 0
 

@@ -6,6 +6,7 @@ Per Roadmap 6.7: Consistent JSON output across all commands.
 
 import json
 import sys
+import warnings
 from dataclasses import fields, is_dataclass
 from enum import Enum
 from pathlib import Path
@@ -104,8 +105,22 @@ def emit_error(
     code: str,
     details: Optional[str] = None
 ) -> None:
-    """Emit error JSON to stdout."""
-    JsonOutputHandler().error(message, code, details)
+    """Emit error JSON to stdout.
+
+    Deprecated: prefer `emit_command_error()` for command envelopes.
+    """
+    warnings.warn(
+        "emit_error() is deprecated; use emit_command_error().",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    emit_command_error(
+        command="ontos",
+        exit_code=1,
+        code=code,
+        message=message,
+        details=details,
+    )
 
 
 def emit_result(data: Any, message: Optional[str] = None) -> None:

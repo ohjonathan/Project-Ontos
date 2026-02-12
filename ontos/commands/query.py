@@ -2,13 +2,13 @@
 
 import os
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, date
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 
 from ontos.core.types import DocumentData, DocumentType
-from ontos.core.graph import build_graph as core_build_graph
+from ontos.core.graph import build_graph as core_build_graph, detect_cycles
 from ontos.core.config import get_git_last_modified
 from ontos.io.git import get_file_mtime as git_mtime_provider
 from ontos.io.config import load_project_config
@@ -31,6 +31,7 @@ class QueryOptions:
     quiet: bool = False
     json_output: bool = False
     scope: Optional[str] = None
+    runtime_data: Dict[str, Any] = field(default_factory=dict)
 
 
 def scan_docs_for_query(root: Path, scope: Optional[str], explicit_dirs: Optional[List[Path]] = None) -> DocumentLoadResult:
@@ -90,6 +91,7 @@ def query_stale(files_data: Dict[str, DocumentData], days: int) -> List[Tuple[st
 def query_health(files_data: Dict[str, DocumentData]) -> dict:
     """Calculate graph health metrics using core graph primitives."""
     graph, _ = core_build_graph(files_data)
+    cycles = detect_cycles(graph)
     
     by_type = defaultdict(int)
     for doc in files_data.values():
@@ -133,6 +135,8 @@ def query_health(files_data: Dict[str, DocumentData]) -> dict:
         'empty_impact_ids': empty_impacts[:5],
         'connectivity': connectivity,
         'reachable_from_kernel': len(reachable),
+        'cycles': len(cycles),
+        'cycle_samples': cycles[:10],
     }
 
 
@@ -153,7 +157,17 @@ def format_health(health: dict) -> str:
         "",
         f"Connectivity: {health['connectivity']:.1f}% reachable from kernel",
         f"Orphans: {health['orphans']}",
+        f"Cycles: {health.get('cycles', 0)}",
     ])
+
+    if health.get('cycle_samples'):
+        sample_lines = []
+        for cycle in health['cycle_samples']:
+            if isinstance(cycle, list):
+                sample_lines.append(" -> ".join(str(node) for node in cycle))
+            else:
+                sample_lines.append(str(cycle))
+        lines.append(f"  → {'; '.join(sample_lines)}")
     
     if health['orphan_ids']:
         lines.append(f"  → {', '.join(health['orphan_ids'])}")
@@ -169,6 +183,7 @@ def format_health(health: dict) -> str:
 def _run_query_command(options: QueryOptions) -> Tuple[int, str]:
     """Execute query command."""
     output = OutputHandler(quiet=options.quiet)
+    options.runtime_data = {}
     root = find_project_root()
 
     explicit_dirs = [options.directory] if options.directory else None
@@ -196,6 +211,7 @@ def _run_query_command(options: QueryOptions) -> Tuple[int, str]:
     if options.depends_on:
         doc = files_data.get(options.depends_on)
         results = doc.depends_on if doc else []
+        options.runtime_data = {"depends_on": options.depends_on, "results": results}
         if results:
             output.info(f"{options.depends_on} depends on:")
             for r in results:
@@ -206,6 +222,7 @@ def _run_query_command(options: QueryOptions) -> Tuple[int, str]:
     elif options.depended_by:
         graph, _ = core_build_graph(files_data)
         results = graph.reverse_edges.get(options.depended_by, [])
+        options.runtime_data = {"depended_by": options.depended_by, "results": results}
         if results:
             output.info(f"Documents that depend on {options.depended_by}:")
             for r in results:
@@ -215,6 +232,7 @@ def _run_query_command(options: QueryOptions) -> Tuple[int, str]:
             
     elif options.concept:
         results = [doc_id for doc_id, doc in files_data.items() if options.concept in doc.frontmatter.get('concepts', [])]
+        options.runtime_data = {"concept": options.concept, "results": results}
         if results:
             output.info(f"Documents with concept '{options.concept}':")
             for r in results:
@@ -224,6 +242,10 @@ def _run_query_command(options: QueryOptions) -> Tuple[int, str]:
             
     elif options.stale is not None:
         results = query_stale(files_data, options.stale)
+        options.runtime_data = {
+            "stale_days": options.stale,
+            "results": [{"id": doc_id, "age_days": age} for doc_id, age in results],
+        }
         if results:
             output.info(f"Documents not updated in {options.stale}+ days:")
             for doc_id, age in results:
@@ -233,9 +255,11 @@ def _run_query_command(options: QueryOptions) -> Tuple[int, str]:
             
     elif options.health:
         health = query_health(files_data)
+        options.runtime_data = health
         output.plain(format_health(health))
         
     elif options.list_ids:
+        options.runtime_data = {"ids": sorted(files_data.keys())}
         output.info("Document IDs:")
         for doc_id in sorted(files_data.keys()):
             doc = files_data[doc_id]

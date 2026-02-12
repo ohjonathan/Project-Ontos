@@ -363,9 +363,9 @@ def test_maintain_json_reports_skipped_tasks(tmp_path, monkeypatch, capsys):
 
     captured = capsys.readouterr()
     payload = json.loads(captured.out)
-    assert payload["summary"]["skipped"] == 1
-    assert payload["tasks"][0]["status"] == "skipped"
-    assert "details" in payload["tasks"][0]
+    assert payload["data"]["summary"]["skipped"] == 1
+    assert payload["data"]["tasks"][0]["status"] == "skipped"
+    assert "details" in payload["data"]["tasks"][0]
 
 
 def test_maintain_skip_accepts_comma_separated_list(tmp_path, monkeypatch):
@@ -473,5 +473,5 @@ def test_maintain_invalid_task_status_becomes_failed(tmp_path, monkeypatch, caps
 
     assert exit_code == 1
     payload = json.loads(capsys.readouterr().out)
-    assert payload["tasks"][0]["status"] == "failed"
-    assert "invalid task status" in payload["tasks"][0]["details"][0]
+    assert payload["data"]["tasks"][0]["status"] == "failed"
+    assert "invalid task status" in payload["data"]["tasks"][0]["details"][0]

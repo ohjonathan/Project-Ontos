@@ -14,13 +14,14 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 from ontos.core.paths import resolve_project_root
+from ontos.ui.output import OutputHandler
 
 
 @dataclass
 class CheckResult:
     """Result of a single health check."""
     name: str
-    status: str  # "pass", "fail", "warn"
+    status: str  # "success", "failed", "warning"
     message: str
     details: Optional[str] = None
 
@@ -45,10 +46,10 @@ class DoctorResult:
     def status(self) -> str:
         """Overall status: pass, fail, or warn."""
         if self.failed > 0:
-            return "fail"
+            return "failed"
         elif self.warnings > 0:
-            return "warn"
-        return "pass"
+            return "warning"
+        return "success"
 
 
 def check_configuration(repo_root: Optional[Path] = None) -> CheckResult:
@@ -58,7 +59,7 @@ def check_configuration(repo_root: Optional[Path] = None) -> CheckResult:
     except FileNotFoundError as exc:
         return CheckResult(
             name="configuration",
-            status="fail",
+            status="failed",
             message="Could not resolve Ontos project root",
             details=str(exc),
         )
@@ -67,7 +68,7 @@ def check_configuration(repo_root: Optional[Path] = None) -> CheckResult:
     if not config_path.exists():
         return CheckResult(
             name="configuration",
-            status="fail",
+            status="failed",
             message=".ontos.toml not found",
             details="Run 'ontos init' to create configuration"
         )
@@ -77,13 +78,13 @@ def check_configuration(repo_root: Optional[Path] = None) -> CheckResult:
         load_project_config(repo_root=root)
         return CheckResult(
             name="configuration",
-            status="pass",
+            status="success",
             message=".ontos.toml valid"
         )
     except Exception as e:
         return CheckResult(
             name="configuration",
-            status="fail",
+            status="failed",
             message=".ontos.toml malformed",
             details=str(e)
         )
@@ -96,7 +97,7 @@ def check_git_hooks(repo_root: Optional[Path] = None) -> CheckResult:
     except FileNotFoundError as exc:
         return CheckResult(
             name="git_hooks",
-            status="warn",
+            status="warning",
             message="Not an Ontos project",
             details=str(exc),
         )
@@ -112,21 +113,21 @@ def check_git_hooks(repo_root: Optional[Path] = None) -> CheckResult:
         if result.returncode != 0:
             return CheckResult(
                 name="git_hooks",
-                status="fail",
+                status="failed",
                 message="Git not working properly",
                 details=result.stderr
             )
     except FileNotFoundError:
         return CheckResult(
             name="git_hooks",
-            status="fail",
+            status="failed",
             message="Git executable not found",
             details="Install git to enable hook functionality"
         )
     except subprocess.TimeoutExpired:
         return CheckResult(
             name="git_hooks",
-            status="warn",
+            status="warning",
             message="Git check timed out"
         )
 
@@ -135,7 +136,7 @@ def check_git_hooks(repo_root: Optional[Path] = None) -> CheckResult:
     if not git_dir.is_dir():
         return CheckResult(
             name="git_hooks",
-            status="warn",
+            status="warning",
             message="Not a git repository",
             details="Hooks are not applicable outside a git repository"
         )
@@ -154,7 +155,7 @@ def check_git_hooks(repo_root: Optional[Path] = None) -> CheckResult:
     if missing:
         return CheckResult(
             name="git_hooks",
-            status="warn",
+            status="warning",
             message=f"Hooks missing: {', '.join(missing)}",
             details="Run 'ontos init --force' to install hooks"
         )
@@ -170,14 +171,14 @@ def check_git_hooks(repo_root: Optional[Path] = None) -> CheckResult:
     if non_ontos:
         return CheckResult(
             name="git_hooks",
-            status="warn",
+            status="warning",
             message=f"Non-Ontos hooks: {', '.join(non_ontos)}",
             details="These hooks are not managed by Ontos"
         )
 
     return CheckResult(
         name="git_hooks",
-        status="pass",
+        status="success",
         message="pre-push, pre-commit installed"
     )
 
@@ -218,13 +219,13 @@ def check_python_version() -> CheckResult:
     if version >= (3, 9):
         return CheckResult(
             name="python_version",
-            status="pass",
+            status="success",
             message=f"{version_str} (>=3.9 required)"
         )
     else:
         return CheckResult(
             name="python_version",
-            status="fail",
+            status="failed",
             message=f"{version_str} (>=3.9 required)",
             details="Upgrade Python to 3.9 or later"
         )
@@ -244,7 +245,7 @@ def check_docs_directory(scope: Optional[str] = None, repo_root: Optional[Path] 
         if effective_scope == ScanScope.DOCS and not docs_dir.exists():
             return CheckResult(
                 name="docs_directory",
-                status="fail",
+                status="failed",
                 message=f"Docs directory not found: {docs_dir}",
                 details="Create the docs directory or update .ontos.toml"
             )
@@ -258,7 +259,7 @@ def check_docs_directory(scope: Optional[str] = None, repo_root: Optional[Path] 
     except Exception as e:
         return CheckResult(
             name="docs_directory",
-            status="warn",
+            status="warning",
             message="Docs directory check failed",
             details=str(e),
         )
@@ -266,14 +267,14 @@ def check_docs_directory(scope: Optional[str] = None, repo_root: Optional[Path] 
     if not md_files:
         return CheckResult(
             name="docs_directory",
-            status="warn",
+            status="warning",
             message=f"No .md files in selected scope ({scope or 'docs'})",
             details="Add documentation files to track"
         )
 
     return CheckResult(
         name="docs_directory",
-        status="pass",
+        status="success",
         message=f"{len(md_files)} documents in {docs_dir.name}/"
     )
 
@@ -292,7 +293,7 @@ def check_context_map(repo_root: Optional[Path] = None) -> CheckResult:
         except Exception as e:
             return CheckResult(
                 name="context_map",
-                status="warn",
+                status="warning",
                 message="Context map check failed",
                 details=str(e),
             )
@@ -300,7 +301,7 @@ def check_context_map(repo_root: Optional[Path] = None) -> CheckResult:
     if not context_map.exists():
         return CheckResult(
             name="context_map",
-            status="fail",
+            status="failed",
             message="Context map not found",
             details=f"Expected at {context_map}. Run 'ontos map' to generate."
         )
@@ -310,20 +311,20 @@ def check_context_map(repo_root: Optional[Path] = None) -> CheckResult:
         if not content.startswith("---"):
             return CheckResult(
                 name="context_map",
-                status="warn",
+                status="warning",
                 message="Context map missing frontmatter",
                 details="Run 'ontos map' to regenerate"
             )
 
         return CheckResult(
             name="context_map",
-            status="pass",
+            status="success",
             message="Context map valid"
         )
     except Exception as e:
         return CheckResult(
             name="context_map",
-            status="fail",
+            status="failed",
             message="Could not read context map",
             details=str(e)
         )
@@ -343,7 +344,7 @@ def check_validation(scope: Optional[str] = None, repo_root: Optional[Path] = No
         if effective_scope == ScanScope.DOCS and not docs_dir.exists():
             return CheckResult(
                 name="validation",
-                status="warn",
+                status="warning",
                 message="Cannot validate (no docs directory)"
             )
 
@@ -366,21 +367,21 @@ def check_validation(scope: Optional[str] = None, repo_root: Optional[Path] = No
         if issues > 0:
             return CheckResult(
                 name="validation",
-                status="warn",
+                status="warning",
                 message=f"{issues} potential issues found",
                 details="Run 'ontos map --strict' for full validation"
             )
 
         return CheckResult(
             name="validation",
-            status="pass",
+            status="success",
             message="No obvious issues"
         )
 
     except Exception as e:
         return CheckResult(
             name="validation",
-            status="warn",
+            status="warning",
             message="Validation check skipped",
             details=str(e)
         )
@@ -393,7 +394,7 @@ def check_cli_availability() -> CheckResult:
     if ontos_path:
         return CheckResult(
             name="cli_availability",
-            status="pass",
+            status="success",
             message=f"ontos available at {ontos_path}"
         )
 
@@ -408,7 +409,7 @@ def check_cli_availability() -> CheckResult:
         if result.returncode == 0:
             return CheckResult(
                 name="cli_availability",
-                status="pass",
+                status="success",
                 message="ontos available via 'python -m ontos'"
             )
     except Exception:
@@ -416,7 +417,7 @@ def check_cli_availability() -> CheckResult:
 
     return CheckResult(
         name="cli_availability",
-        status="warn",
+        status="warning",
         message="ontos not in PATH",
         details="Install with 'pip install ontos' or use 'python -m ontos'"
     )
@@ -429,7 +430,7 @@ def check_agents_staleness(repo_root: Optional[Path] = None) -> CheckResult:
     except Exception as e:
         return CheckResult(
             name="agents_staleness",
-            status="warn",
+            status="warning",
             message="Cannot determine AGENTS.md staleness",
             details=str(e),
         )
@@ -439,7 +440,7 @@ def check_agents_staleness(repo_root: Optional[Path] = None) -> CheckResult:
     if not agents_path.exists():
         return CheckResult(
             name="agents_staleness",
-            status="warn",
+            status="warning",
             message="AGENTS.md not found",
             details="Run 'ontos agents' to generate"
         )
@@ -484,7 +485,7 @@ def check_agents_staleness(repo_root: Optional[Path] = None) -> CheckResult:
         if not source_mtimes:
             return CheckResult(
                 name="agents_staleness",
-                status="warn",
+                status="warning",
                 message="Cannot determine AGENTS.md staleness - no source files found"
             )
         
@@ -493,20 +494,20 @@ def check_agents_staleness(repo_root: Optional[Path] = None) -> CheckResult:
         if agents_mtime < max_source_mtime:
             return CheckResult(
                 name="agents_staleness",
-                status="warn",
+                status="warning",
                 message="AGENTS.md may be stale. Run 'ontos agents' to regenerate."
             )
         
         return CheckResult(
             name="agents_staleness",
-            status="pass",
+            status="success",
             message="AGENTS.md up to date"
         )
     
     except Exception as e:
         return CheckResult(
             name="agents_staleness",
-            status="warn",
+            status="warning",
             message="Could not check AGENTS.md staleness",
             details=str(e)
         )
@@ -525,7 +526,7 @@ def check_environment_manifests(repo_root: Optional[Path] = None) -> CheckResult
             warning_msg = f"Detected {len(manifests)} manifests with {len(warnings)} parse warnings"
             return CheckResult(
                 name="environment",
-                status="warn",
+                status="warning",
                 message=warning_msg,
                 details="\n".join(warnings)
             )
@@ -533,7 +534,7 @@ def check_environment_manifests(repo_root: Optional[Path] = None) -> CheckResult
         if not manifests:
             return CheckResult(
                 name="environment",
-                status="warn",
+                status="warning",
                 message="No environment manifests detected",
                 details="Run 'ontos env' to see supported project types"
             )
@@ -541,13 +542,13 @@ def check_environment_manifests(repo_root: Optional[Path] = None) -> CheckResult
         manifest_names = [m.path.name for m in manifests]
         return CheckResult(
             name="environment",
-            status="pass",
+            status="success",
             message=f"Detected: {', '.join(manifest_names)}"
         )
     except Exception as e:
         return CheckResult(
             name="environment",
-            status="warn",
+            status="warning",
             message="Environment check failed",
             details=str(e)
         )
@@ -562,26 +563,25 @@ def _get_config_path(repo_root: Optional[Path] = None) -> Optional[Path]:
     return None
 
 
-def _print_verbose_config(options: DoctorOptions, repo_root: Optional[Path] = None) -> None:
-    """Print resolved configuration paths in verbose mode."""
-    if not options.verbose:
-        return
-
+def _format_verbose_config(repo_root: Optional[Path] = None) -> str:
+    """Build resolved configuration details for verbose output."""
     from ontos.io.config import load_project_config
 
     try:
         project_root = resolve_project_root(repo_root=repo_root)
         config = load_project_config(repo_root=project_root)
 
-        print("Configuration:")
-        print(f"  repo_root:    {project_root}")
-        print(f"  config_path:  {_get_config_path(project_root) or 'default'}")
-        print(f"  docs_dir:     {project_root / config.paths.docs_dir}")
-        print(f"  context_map:  {project_root / config.paths.context_map}")
-        print()
+        lines = [
+            "Configuration:",
+            f"  repo_root:    {project_root}",
+            f"  config_path:  {_get_config_path(project_root) or 'default'}",
+            f"  docs_dir:     {project_root / config.paths.docs_dir}",
+            f"  context_map:  {project_root / config.paths.context_map}",
+            "",
+        ]
+        return "\n".join(lines)
     except Exception as e:
-        print(f"Configuration: Unable to load ({e})")
-        print()
+        return f"Configuration: Unable to load ({e})\n"
 
 
 def _run_doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
@@ -599,7 +599,7 @@ def _run_doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
             checks=[
                 CheckResult(
                     name="project_root",
-                    status="fail",
+                    status="failed",
                     message="Could not resolve Ontos project root",
                     details=str(exc),
                 )
@@ -609,9 +609,6 @@ def _run_doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
             warnings=0,
         )
         return 1, result
-
-    # Print verbose config if requested
-    _print_verbose_config(options, repo_root)
 
     result = DoctorResult()
 
@@ -631,9 +628,9 @@ def _run_doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
         check_result = check_fn()
         result.checks.append(check_result)
 
-        if check_result.status == "pass":
+        if check_result.status == "success":
             result.passed += 1
-        elif check_result.status == "fail":
+        elif check_result.status == "failed":
             result.failed += 1
         else:
             result.warnings += 1
@@ -653,9 +650,9 @@ def format_doctor_output(result: DoctorResult, verbose: bool = False) -> str:
     lines = []
 
     for check in result.checks:
-        if check.status == "pass":
+        if check.status == "success":
             icon = "OK"
-        elif check.status == "fail":
+        elif check.status == "failed":
             icon = "FAIL"
         else:
             icon = "WARN"
@@ -672,3 +669,10 @@ def format_doctor_output(result: DoctorResult, verbose: bool = False) -> str:
     )
 
     return "\n".join(lines)
+
+
+def emit_verbose_config(options: DoctorOptions, output: OutputHandler, repo_root: Optional[Path] = None) -> None:
+    """Emit verbose configuration details via OutputHandler."""
+    if not options.verbose:
+        return
+    output.plain(_format_verbose_config(repo_root=repo_root))

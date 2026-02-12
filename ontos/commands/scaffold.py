@@ -1,6 +1,6 @@
 """Native scaffold command implementation."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -32,13 +32,14 @@ class ScaffoldOptions:
     quiet: bool = False
     json_output: bool = False
     scope: Optional[str] = None
+    runtime_failures: List[str] = field(default_factory=list)
 
 
-def find_untagged_files(
+def _find_untagged_files_with_failures(
     paths: Optional[List[Path]] = None,
     root: Optional[Path] = None,
     scope: Optional[str] = None,
-) -> List[Path]:
+) -> Tuple[List[Path], List[str]]:
     """Find markdown files without valid frontmatter.
 
     Args:
@@ -46,9 +47,10 @@ def find_untagged_files(
         root: Project root to use (falls back to search)
 
     Returns:
-        List of paths needing scaffolding
+        Tuple of (paths needing scaffolding, failure messages)
     """
     root = root or find_project_root()
+    failures: List[str] = []
     if paths:
         # Filter only existing markdown files from provided paths
         search_paths = []
@@ -76,7 +78,10 @@ def find_untagged_files(
     load_result = load_documents(files, parse_frontmatter_content)
     if load_result.has_fatal_errors:
         # We can't safely scaffold if the graph is broken
-        return [] 
+        for issue in load_result.issues:
+            if issue.code in {"parse_error", "io_error"}:
+                failures.append(f"{issue.path}: {issue.message}" if issue.path else issue.message)
+        return [], failures
     # Duplicate IDs are intentionally tolerated in scaffold context.
     # Scaffold creates new files and only needs the existing ID set for
     # collision avoidance — first-wins resolution is sufficient.
@@ -105,13 +110,28 @@ def find_untagged_files(
             
             if not fm or 'id' not in fm:
                 untagged.append(f)
-        except Exception:
+        except (OSError, UnicodeDecodeError, ValueError) as exc:
+            failures.append(f"{f}: {exc}")
             continue
-            
-    return untagged
+
+    return untagged, failures
 
 
-def scaffold_file(path: Path, ctx: SessionContext, dry_run: bool = True) -> Tuple[bool, Optional[dict]]:
+def find_untagged_files(
+    paths: Optional[List[Path]] = None,
+    root: Optional[Path] = None,
+    scope: Optional[str] = None,
+) -> List[Path]:
+    """Find markdown files without valid frontmatter."""
+    files, _ = _find_untagged_files_with_failures(paths=paths, root=root, scope=scope)
+    return files
+
+
+def scaffold_file(
+    path: Path,
+    ctx: SessionContext,
+    dry_run: bool = True,
+) -> Tuple[bool, Optional[dict], Optional[str]]:
     """Add scaffold frontmatter to a file.
 
     Args:
@@ -120,22 +140,22 @@ def scaffold_file(path: Path, ctx: SessionContext, dry_run: bool = True) -> Tupl
         dry_run: If True, return preview without modifying
 
     Returns:
-        (success, fm_dict) tuple
+        (success, fm_dict, error_message) tuple
     """
     try:
         content = path.read_text(encoding="utf-8")
         fm = create_scaffold(path, content)
         
         if dry_run:
-            return True, fm
+            return True, fm, None
             
         fm_yaml = serialize_frontmatter(fm)
         new_content = f"---\n{fm_yaml}\n---\n\n{content}"
         
         ctx.buffer_write(path, new_content)
-        return True, fm
-    except Exception:
-        return False, None
+        return True, fm, None
+    except (OSError, UnicodeDecodeError, ValueError) as exc:
+        return False, None, str(exc)
 
 
 def _run_scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
@@ -148,6 +168,7 @@ def _run_scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
         (exit_code, message) tuple
     """
     output = OutputHandler(quiet=options.quiet)
+    options.runtime_failures = []
 
     # 1. Find untagged files
     root = find_project_root()
@@ -185,11 +206,17 @@ def _run_scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
     # Check specifically for duplicates of paths we are trying to scaffold?
     # Actually, scan_documents already picked them up.
 
-    untagged = find_untagged_files(options.paths, scope=options.scope)
+    untagged, discovery_failures = _find_untagged_files_with_failures(
+        options.paths,
+        scope=options.scope,
+    )
+    options.runtime_failures.extend(discovery_failures)
     if not untagged:
         if not options.quiet:
             output.success("No files need scaffolding")
-        return 0, "No files need scaffolding"
+            for failure in discovery_failures:
+                output.error(f"Failed to inspect: {failure}")
+        return (1 if discovery_failures else 0), "No files need scaffolding"
 
     if not options.quiet:
         if options.dry_run:
@@ -202,6 +229,7 @@ def _run_scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
     root = find_project_root()
     ctx = SessionContext.from_repo(root)
     success_count = 0
+    failures: List[str] = []
 
     for path in untagged:
         try:
@@ -210,7 +238,7 @@ def _run_scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
             rel_path = path
 
         if options.dry_run:
-            success, fm = scaffold_file(path, ctx, dry_run=True)
+            success, fm, error = scaffold_file(path, ctx, dry_run=True)
             if success and fm:
                 if not options.quiet:
                     print(f"\n  {rel_path}")
@@ -218,28 +246,46 @@ def _run_scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
                     print(f"    type: {fm.get('type')}")
                     print(f"    status: scaffold")
                 success_count += 1
+            else:
+                failure = f"{rel_path}: {error or 'unknown error'}"
+                failures.append(failure)
+                if not options.quiet:
+                    output.error(f"Failed to scaffold {rel_path}: {error or 'unknown error'}")
         else:
-            success, _ = scaffold_file(path, ctx, dry_run=False)
+            success, _, error = scaffold_file(path, ctx, dry_run=False)
             if success:
                 output.success(f"Scaffolded: {rel_path}")
                 success_count += 1
             else:
-                output.error(f"Failed to scaffold {rel_path}")
+                failure = f"{rel_path}: {error or 'unknown error'}"
+                failures.append(failure)
+                output.error(f"Failed to scaffold {rel_path}: {error or 'unknown error'}")
 
     # 3. Commit if not dry run
     if not options.dry_run:
-        ctx.commit()
+        try:
+            ctx.commit()
+        except Exception as exc:
+            output.error(f"Failed to commit scaffold changes: {exc}")
+            failures.append(f"commit: {exc}")
+
+    options.runtime_failures.extend(failures)
 
     # 4. Summary
     if options.dry_run:
         if not options.quiet:
             print()
             output.info("Run with --apply to execute scaffolding")
-        return 0, f"Dry run: {success_count} files would be scaffolded"
+            for failure in failures:
+                output.error(f"Failed: {failure}")
+        exit_code = 0 if not failures else 1
+        return exit_code, f"Dry run: {success_count} files would be scaffolded"
     else:
         if not options.quiet:
             output.success(f"Scaffolded {success_count}/{len(untagged)} files")
-        return (0 if success_count == len(untagged) else 1), f"Processed {success_count} files"
+            for failure in failures:
+                output.error(f"Failed: {failure}")
+        return (0 if success_count == len(untagged) and not failures else 1), f"Processed {success_count} files"
 
 
 def scaffold_command(options: ScaffoldOptions) -> int:

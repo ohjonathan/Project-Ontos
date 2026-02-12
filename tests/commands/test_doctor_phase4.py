@@ -26,16 +26,16 @@ class TestCheckResult:
     """Tests for CheckResult dataclass."""
 
     def test_creates_with_required_fields(self):
-        result = CheckResult(name="test", status="pass", message="OK")
+        result = CheckResult(name="test", status="success", message="OK")
         assert result.name == "test"
-        assert result.status == "pass"
+        assert result.status == "success"
         assert result.message == "OK"
         assert result.details is None
 
     def test_creates_with_details(self):
         result = CheckResult(
             name="test",
-            status="fail",
+            status="failed",
             message="Failed",
             details="Extra info"
         )
@@ -47,15 +47,15 @@ class TestDoctorResult:
 
     def test_status_pass_when_no_failures(self):
         result = DoctorResult(passed=7, failed=0, warnings=0)
-        assert result.status == "pass"
+        assert result.status == "success"
 
     def test_status_fail_when_has_failures(self):
         result = DoctorResult(passed=5, failed=2, warnings=0)
-        assert result.status == "fail"
+        assert result.status == "failed"
 
     def test_status_warn_when_only_warnings(self):
         result = DoctorResult(passed=5, failed=0, warnings=2)
-        assert result.status == "warn"
+        assert result.status == "warning"
 
 
 class TestCheckPythonVersion:
@@ -64,7 +64,7 @@ class TestCheckPythonVersion:
     def test_passes_for_current_python(self):
         """Current Python should be >= 3.9."""
         result = check_python_version()
-        assert result.status == "pass"
+        assert result.status == "success"
         assert "3.9" in result.message
 
 
@@ -75,7 +75,7 @@ class TestCheckGitHooks:
         """Should warn when not in a git repo."""
         monkeypatch.chdir(tmp_path)
         result = check_git_hooks()
-        assert result.status in ("warn", "fail")
+        assert result.status in ("warning", "failed")
 
     def test_handles_git_not_installed(self, tmp_path, monkeypatch):
         """Should fail gracefully when git not installed."""
@@ -86,7 +86,7 @@ class TestCheckGitHooks:
             mock_run.side_effect = FileNotFoundError()
             result = check_git_hooks()
 
-        assert result.status == "fail"
+        assert result.status == "failed"
         assert "not found" in result.message.lower()
 
 
@@ -98,7 +98,7 @@ class TestCheckConfiguration:
         (tmp_path / ".ontos").mkdir()
         monkeypatch.chdir(tmp_path)
         result = check_configuration()
-        assert result.status == "fail"
+        assert result.status == "failed"
         assert "not found" in result.message.lower()
 
 
@@ -120,7 +120,7 @@ class TestDoctorCommand:
             for mock in [mock_config, mock_hooks, mock_python, mock_docs,
                         mock_map, mock_valid, mock_cli, mock_agents, mock_env]:
                 mock.return_value = CheckResult(
-                    name="test", status="pass", message="OK"
+                    name="test", status="success", message="OK"
                 )
 
             options = DoctorOptions()
@@ -146,11 +146,11 @@ class TestDoctorCommand:
             for mock in [mock_hooks, mock_python, mock_docs,
                         mock_map, mock_valid, mock_cli, mock_agents, mock_env]:
                 mock.return_value = CheckResult(
-                    name="test", status="pass", message="OK"
+                    name="test", status="success", message="OK"
                 )
 
             mock_config.return_value = CheckResult(
-                name="configuration", status="fail", message="Not found"
+                name="configuration", status="failed", message="Not found"
             )
 
             options = DoctorOptions()
@@ -175,8 +175,8 @@ class TestFormatDoctorOutput:
     def test_formats_passing_checks(self):
         result = DoctorResult(
             checks=[
-                CheckResult(name="test1", status="pass", message="OK"),
-                CheckResult(name="test2", status="pass", message="Good"),
+                CheckResult(name="test1", status="success", message="OK"),
+                CheckResult(name="test2", status="success", message="Good"),
             ],
             passed=2, failed=0, warnings=0
         )
@@ -188,7 +188,7 @@ class TestFormatDoctorOutput:
     def test_formats_failing_checks(self):
         result = DoctorResult(
             checks=[
-                CheckResult(name="test1", status="fail", message="Bad"),
+                CheckResult(name="test1", status="failed", message="Bad"),
             ],
             passed=0, failed=1, warnings=0
         )
@@ -200,7 +200,7 @@ class TestFormatDoctorOutput:
             checks=[
                 CheckResult(
                     name="test1",
-                    status="fail",
+                    status="failed",
                     message="Bad",
                     details="Extra info"
                 ),
@@ -222,7 +222,7 @@ class TestCheckAgentsStaleness:
         from ontos.commands.doctor import check_agents_staleness
         result = check_agents_staleness()
         
-        assert result.status == "warn"
+        assert result.status == "warning"
         assert "not found" in result.message.lower()
 
     def test_passes_when_agents_up_to_date(self, tmp_path, monkeypatch):
@@ -241,7 +241,7 @@ class TestCheckAgentsStaleness:
         from ontos.commands.doctor import check_agents_staleness
         result = check_agents_staleness()
         
-        assert result.status == "pass"
+        assert result.status == "success"
         assert "up to date" in result.message.lower()
 
     def test_warns_when_agents_stale(self, tmp_path, monkeypatch):
@@ -259,7 +259,7 @@ class TestCheckAgentsStaleness:
         from ontos.commands.doctor import check_agents_staleness
         result = check_agents_staleness()
         
-        assert result.status == "warn"
+        assert result.status == "warning"
         assert "stale" in result.message.lower()
 
     def test_warns_when_no_source_files(self, tmp_path, monkeypatch):
@@ -272,7 +272,7 @@ class TestCheckAgentsStaleness:
         from ontos.commands.doctor import check_agents_staleness
         result = check_agents_staleness()
         
-        assert result.status == "warn"
+        assert result.status == "warning"
         assert "no source files" in result.message.lower()
 
 
@@ -290,8 +290,8 @@ def test_check_docs_directory_scope_library_includes_internal(tmp_path, monkeypa
     docs_result = check_docs_directory()
     library_result = check_docs_directory("library")
 
-    assert docs_result.status == "pass"
-    assert library_result.status == "pass"
+    assert docs_result.status == "success"
+    assert library_result.status == "success"
     assert "1 documents" in docs_result.message
     assert "2 documents" in library_result.message
 
@@ -306,7 +306,7 @@ def test_check_docs_directory_from_subdirectory_matches_project_root(tmp_path, m
     monkeypatch.chdir(subdir)
     result = check_docs_directory()
 
-    assert result.status == "pass"
+    assert result.status == "success"
     assert "1 documents" in result.message
 
 

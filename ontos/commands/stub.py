@@ -2,13 +2,18 @@
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import List, Optional, Tuple
 
 from ontos.core.curation import create_stub, generate_id_from_path
 from ontos.core.schema import serialize_frontmatter
 from ontos.core.context import SessionContext
+from ontos.core.errors import OntosUserError
 from ontos.io.files import find_project_root
 from ontos.ui.output import OutputHandler
+
+_ID_PATTERN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$")
+_VALID_DOC_TYPES = {"kernel", "strategy", "product", "atom", "log"}
 
 
 @dataclass
@@ -114,8 +119,10 @@ def _run_stub_command(options: StubOptions) -> Tuple[int, str]:
             doc_id = generate_id_from_path(options.output)
             
         if not doc_id:
-            output.error("Document ID required (via --id or --output)")
-            return 1, "Missing ID"
+            raise OntosUserError(
+                "Document ID required (via --id or --output)",
+                code="E_USER_INPUT",
+            )
             
         params = {
             'id': doc_id,
@@ -124,6 +131,8 @@ def _run_stub_command(options: StubOptions) -> Tuple[int, str]:
             'depends_on': options.depends_on,
             'output': options.output
         }
+
+    _validate_stub_params(params)
 
     # Create stub frontmatter
     fm = create_stub(
@@ -140,7 +149,11 @@ def _run_stub_command(options: StubOptions) -> Tuple[int, str]:
             
         ctx = SessionContext.from_repo(root)
         if write_stub_to_context(dest, fm, ctx, output):
-            ctx.commit()
+            try:
+                ctx.commit()
+            except Exception as exc:
+                output.error(f"Failed to commit stub changes: {exc}")
+                return 1, f"Commit failed: {exc}"
             output.success(f"Created stub: {dest}")
             return 0, f"Created {dest}"
         else:
@@ -168,3 +181,31 @@ def stub_command(options: StubOptions) -> int:
     """Run stub command and return exit code only."""
     exit_code, _ = _run_stub_command(options)
     return exit_code
+
+
+def _validate_stub_params(params: dict) -> None:
+    """Validate non-interactive and interactive stub payload before create_stub."""
+    doc_id = str(params.get("id", "")).strip()
+    if not doc_id:
+        raise OntosUserError("Document ID is required.", code="E_USER_INPUT")
+    if not _ID_PATTERN.match(doc_id):
+        raise OntosUserError(
+            "Invalid --id. Expected ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$",
+            code="E_USER_INPUT",
+        )
+
+    doc_type = str(params.get("type", "")).strip().lower()
+    if doc_type not in _VALID_DOC_TYPES:
+        raise OntosUserError(
+            f"Invalid --type '{doc_type}'. Valid types: {', '.join(sorted(_VALID_DOC_TYPES))}",
+            code="E_USER_INPUT",
+        )
+
+    depends_on = params.get("depends_on")
+    if depends_on is None:
+        return
+    if not isinstance(depends_on, list):
+        raise OntosUserError("--depends-on must be a comma-separated list.", code="E_USER_INPUT")
+    for item in depends_on:
+        if not isinstance(item, str) or not item.strip():
+            raise OntosUserError("--depends-on contains an empty dependency.", code="E_USER_INPUT")
