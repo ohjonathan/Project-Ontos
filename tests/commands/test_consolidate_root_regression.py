@@ -155,7 +155,7 @@ def test_consolidate_warns_on_legacy_user_layout_fallbacks(tmp_path, monkeypatch
     paths_module._deprecation_warned.clear()
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        exit_code, _ = consolidate_module.consolidate_command(
+        exit_code, _ = consolidate_module._run_consolidate_command(
             consolidate_module.ConsolidateOptions(
                 by_age=True,
                 days=0,
@@ -195,7 +195,7 @@ def test_consolidate_rejects_count_zero(tmp_path, monkeypatch):
     project_root = _write_user_project(tmp_path)
     monkeypatch.chdir(project_root)
 
-    exit_code, message = consolidate_module.consolidate_command(
+    exit_code, message = consolidate_module._run_consolidate_command(
         consolidate_module.ConsolidateOptions(count=0, by_age=False, dry_run=True, all=True, quiet=True)
     )
 
@@ -221,7 +221,7 @@ def test_consolidate_append_failure_does_not_move_log(tmp_path, monkeypatch):
     monkeypatch.chdir(project_root)
     monkeypatch.setattr(consolidate_module, "append_to_decision_history", lambda *args, **kwargs: False)
 
-    exit_code, message = consolidate_module.consolidate_command(
+    exit_code, message = consolidate_module._run_consolidate_command(
         consolidate_module.ConsolidateOptions(by_age=True, days=0, dry_run=False, all=True, quiet=True)
     )
 
@@ -254,7 +254,7 @@ def test_consolidate_commit_failure_reports_partial_results(tmp_path, monkeypatc
 
     monkeypatch.setattr(consolidate_module.SessionContext, "commit", _flaky_commit)
 
-    exit_code, message = consolidate_module.consolidate_command(
+    exit_code, message = consolidate_module._run_consolidate_command(
         consolidate_module.ConsolidateOptions(by_age=True, days=0, dry_run=False, all=True, quiet=True)
     )
 
@@ -283,7 +283,7 @@ def test_consolidate_normalizes_scalar_impacts(tmp_path, monkeypatch):
 
     monkeypatch.chdir(project_root)
 
-    exit_code, _ = consolidate_module.consolidate_command(
+    exit_code, _ = consolidate_module._run_consolidate_command(
         consolidate_module.ConsolidateOptions(by_age=True, days=0, dry_run=False, all=True, quiet=True)
     )
 

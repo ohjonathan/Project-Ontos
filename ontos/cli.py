@@ -6,12 +6,14 @@ Full argparse implementation per Spec v1.1 Section 4.1.
 """
 
 import argparse
+import json
 import sys
 from pathlib import Path
 from typing import List, Optional, Sequence
 
 import ontos
-from ontos.ui.json_output import emit_json, emit_error, validate_json_output
+from ontos.core.errors import OntosInternalError, OntosUserError
+from ontos.ui.json_output import emit_command_error, emit_command_success
 from ontos.commands.map import CompactMode
 
 
@@ -26,6 +28,33 @@ def _first_command(argv: Sequence[str]) -> Optional[str]:
         if not token.startswith("-"):
             return token
     return None
+
+
+def _emit_handler_result_json(
+    *,
+    command: str,
+    exit_code: int,
+    message: str,
+    data: Optional[object] = None,
+    error_code: str = "E_COMMAND_FAILED",
+) -> None:
+    """Emit JSON result envelope for CLI handlers."""
+    if exit_code == 0:
+        emit_command_success(
+            command=command,
+            exit_code=exit_code,
+            message=message,
+            data=data if data is not None else {},
+        )
+        return
+
+    emit_command_error(
+        command=command,
+        exit_code=exit_code,
+        code=error_code,
+        message=message,
+        data=data if data is not None else {},
+    )
 
 
 def create_parser(include_hidden: bool = True) -> argparse.ArgumentParser:
@@ -131,12 +160,12 @@ def _register_map(subparsers, parent):
     p.add_argument("--output", "-o", type=Path,
                    help="Output path (default: Ontos_Context_Map.md)")
     p.add_argument("--obsidian", action="store_true",
-                   help="Enable Obsidian-compatible output (wikilinks, tags)")
+                   help="Enable Obsidian-compatible output (wikilinks only)")
     p.add_argument("--compact", nargs="?", const="basic", default="off",
                    choices=["basic", "rich"],
                    help="Compact output: 'basic' (default) or 'rich' (with summaries)")
-    p.add_argument("--filter", "-f", metavar="EXPR",
-                   help="Filter documents by expression (e.g., 'type:strategy')")
+    p.add_argument("--filter", "-F", "-f", metavar="EXPR",
+                   help="Filter documents by expression (e.g., 'type:strategy'). Use -F; -f is deprecated.")
     p.add_argument("--no-cache", action="store_true",
                    help="Bypass document cache (for debugging)")
     p.add_argument("--sync-agents", action="store_true",
@@ -158,7 +187,7 @@ def _register_log(subparsers, parent):
                    help="(Deprecated) Alias for --source")
     p.add_argument("--title", "-t",
                    help="Log entry title (overrides positional topic)")
-    p.add_argument("--auto", action="store_true",
+    p.add_argument("--auto", "--yes", dest="auto", action="store_true",
                    help="Skip confirmation prompt")
     p.set_defaults(func=_cmd_log)
 
@@ -260,7 +289,7 @@ def _register_env(subparsers, parent):
         "--format", "-f",
         choices=["text", "json"],
         default="text",
-        help="Output format (default: text)"
+        help="Output format (default: text). Short flag -f is deprecated."
     )
     p.set_defaults(func=_cmd_env)
 
@@ -295,9 +324,20 @@ def _register_export(subparsers, parent):
     """Register export command with subcommands."""
     export_parser = subparsers.add_parser(
         "export",
-        help="Export documents (use 'export data' or 'export claude')",
+        help="Export documents or instruction artifacts",
         parents=[parent]
     )
+    export_parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Generate AGENTS.md, .cursorrules, and CLAUDE.md in one run",
+    )
+    export_parser.add_argument(
+        "--force", "-f",
+        action="store_true",
+        help="Overwrite existing files where applicable",
+    )
+    _add_scope_argument(export_parser)
     export_subparsers = export_parser.add_subparsers(
         dest="export_command",
         title="export commands",
@@ -456,7 +496,7 @@ def _register_consolidate(subparsers, parent):
         help="Preview changes without applying"
     )
     p.add_argument(
-        "--all", "-a",
+        "--all", "-a", "--yes",
         action="store_true",
         help="Process all logs without prompting"
     )
@@ -473,6 +513,7 @@ def _register_promote(subparsers, parent):
     p.add_argument("files", nargs="*", type=Path, help="Specific files to promote")
     p.add_argument("--check", action="store_true", help="Show promotable documents")
     p.add_argument("--all-ready", action="store_true", help="Promote all ready documents")
+    p.add_argument("--yes", action="store_true", help="Auto-confirm interactive prompts")
     _add_scope_argument(p)
     p.set_defaults(func=_cmd_promote)
 
@@ -482,7 +523,7 @@ def _register_scaffold(subparsers, parent):
     p = subparsers.add_parser(
         "scaffold",
         help="Add frontmatter to markdown files",
-        description="Add frontmatter to markdown files",
+        description="Add frontmatter to markdown files. Dry-run by default. Use --apply to write.",
         parents=[parent]
     )
     p.add_argument(
@@ -491,15 +532,16 @@ def _register_scaffold(subparsers, parent):
         type=Path,
         help="File(s) or directory to scaffold (default: scan all)"
     )
-    p.add_argument(
+    mode_group = p.add_mutually_exclusive_group()
+    mode_group.add_argument(
         "--apply",
         action="store_true",
         help="Apply scaffolding (default: dry-run)"
     )
-    p.add_argument(
+    mode_group.add_argument(
         "--dry-run",
         action="store_true",
-        help="Preview changes without modifying files"
+        help="Preview changes without modifying files (default)"
     )
     _add_scope_argument(p)
     p.set_defaults(func=_cmd_scaffold)
@@ -583,7 +625,7 @@ def _register_validate_alias(subparsers, parent):
 
 def _cmd_init(args) -> int:
     """Handle init command."""
-    from ontos.commands.init import init_command, InitOptions
+    from ontos.commands.init import InitOptions, _run_init_command
 
     options = InitOptions(
         path=Path.cwd(),
@@ -593,14 +635,14 @@ def _cmd_init(args) -> int:
         scaffold=getattr(args, "scaffold", False),
         no_scaffold=getattr(args, "no_scaffold", False),
     )
-    code, msg = init_command(options)
+    code, msg = _run_init_command(options)
 
     if args.json:
-        emit_json({
-            "status": "success" if code == 0 else "error",
-            "message": msg,
-            "exit_code": code
-        })
+        _emit_handler_result_json(
+            command="init",
+            exit_code=code,
+            message=msg,
+        )
     elif not args.quiet:
         print(msg)
 
@@ -623,6 +665,8 @@ def _cmd_map(args) -> int:
         sync_agents=getattr(args, 'sync_agents', False),
         scope=getattr(args, "scope", None),
     )
+    if "-f" in sys.argv and "--filter" not in sys.argv and "-F" not in sys.argv:
+        print("Warning: map -f is deprecated; use -F.", file=sys.stderr)
 
     return map_command(options)
 
@@ -647,29 +691,44 @@ def _cmd_log(args) -> int:
 
 def _cmd_doctor(args) -> int:
     """Handle doctor command."""
-    from ontos.commands.doctor import doctor_command, DoctorOptions, format_doctor_output
+    from ontos.commands.doctor import (
+        DoctorOptions,
+        _run_doctor_command,
+        emit_verbose_config,
+        format_doctor_output,
+    )
     from ontos.ui.json_output import to_json
+    from ontos.ui.output import OutputHandler
 
     options = DoctorOptions(
         verbose=args.verbose,
         json_output=args.json,
         scope=getattr(args, "scope", None),
     )
+    output = OutputHandler(quiet=args.quiet or args.json)
 
-    exit_code, result = doctor_command(options)
+    emit_verbose_config(options, output)
+
+    exit_code, result = _run_doctor_command(options)
 
     if args.json:
-        emit_json({
+        payload = {
             "status": result.status,
             "checks": [to_json(c) for c in result.checks],
             "summary": {
                 "passed": result.passed,
                 "failed": result.failed,
                 "warnings": result.warnings
-            }
-        })
+            },
+        }
+        _emit_handler_result_json(
+            command="doctor",
+            exit_code=exit_code,
+            message="Health check complete" if exit_code == 0 else "Health check failed",
+            data=payload,
+        )
     elif not args.quiet:
-        print(format_doctor_output(result, verbose=args.verbose))
+        output.plain(format_doctor_output(result, verbose=args.verbose))
 
     return exit_code
 
@@ -719,20 +778,34 @@ def _cmd_rename(args) -> int:
 
 def _cmd_env(args) -> int:
     """Handle env command."""
-    from ontos.commands.env import env_command, EnvOptions
+    from ontos.commands.env import EnvOptions, _run_env_command
 
     options = EnvOptions(
         path=Path.cwd(),
         write=getattr(args, "write", False),
         force=getattr(args, "force", False),  # v1.1: --force flag
         format=getattr(args, "format", "text"),
-        quiet=args.quiet,
+        quiet=args.quiet or args.json,
     )
+    if "-f" in sys.argv and "--format" not in sys.argv:
+        print("Warning: env -f is deprecated; use --format.", file=sys.stderr)
 
-    exit_code, output = env_command(options)
+    exit_code, output = _run_env_command(options)
 
-    if args.json or options.format == "json":
-        # Already JSON formatted
+    if args.json:
+        parsed: object = {}
+        if output:
+            try:
+                parsed = json.loads(output)
+            except Exception:
+                parsed = {"output": output}
+        _emit_handler_result_json(
+            command="env",
+            exit_code=exit_code,
+            message="Environment detection complete" if exit_code == 0 else output,
+            data=parsed,
+        )
+    elif options.format == "json":
         if output:
             print(output)
     elif not args.quiet and output:
@@ -743,7 +816,7 @@ def _cmd_env(args) -> int:
 
 def _cmd_agents(args) -> int:
     """Handle agents command."""
-    from ontos.commands.agents import agents_command, AgentsOptions
+    from ontos.commands.agents import AgentsOptions, _run_agents_command
 
     options = AgentsOptions(
         output_path=args.output,
@@ -753,14 +826,14 @@ def _cmd_agents(args) -> int:
         scope=getattr(args, "scope", None),
     )
 
-    exit_code, message = agents_command(options)
+    exit_code, message = _run_agents_command(options)
 
     if args.json:
-        emit_json({
-            "status": "success" if exit_code == 0 else "error",
-            "message": message,
-            "exit_code": exit_code
-        })
+        _emit_handler_result_json(
+            command="agents",
+            exit_code=exit_code,
+            message=message,
+        )
     elif not args.quiet:
         print(message)
 
@@ -772,7 +845,7 @@ def _cmd_agent_export(args) -> int:
     import sys
     print("Warning: 'ontos agent-export' is deprecated. Use 'ontos agents' instead.", file=sys.stderr)
     
-    from ontos.commands.agents import agents_command, AgentsOptions
+    from ontos.commands.agents import AgentsOptions, _run_agents_command
 
     options = AgentsOptions(
         output_path=args.output,
@@ -782,14 +855,15 @@ def _cmd_agent_export(args) -> int:
         scope=getattr(args, "scope", None),
     )
 
-    exit_code, message = agents_command(options)
+    exit_code, message = _run_agents_command(options)
 
     if args.json:
-        emit_json({
-            "status": "success" if exit_code == 0 else "error",
-            "message": message,
-            "exit_code": exit_code
-        })
+        _emit_handler_result_json(
+            command="agent-export",
+            exit_code=exit_code,
+            message=message,
+            data={"deprecated": True},
+        )
     elif not args.quiet:
         print(message)
 
@@ -798,7 +872,7 @@ def _cmd_agent_export(args) -> int:
 
 def _cmd_export_data(args) -> int:
     """Handle export data command."""
-    from ontos.commands.export_data import export_data_command, ExportDataOptions
+    from ontos.commands.export_data import ExportDataOptions, _run_export_data_command
 
     options = ExportDataOptions(
         output_path=args.output,
@@ -808,22 +882,30 @@ def _cmd_export_data(args) -> int:
         no_content=args.no_content,
         deterministic=args.deterministic,
         force=args.force,
-        quiet=args.quiet,
+        quiet=args.quiet or args.json,
         json_output=args.json,
         scope=getattr(args, "scope", None),
     )
 
-    exit_code, message = export_data_command(options)
+    exit_code, message = _run_export_data_command(options)
 
-    if exit_code == 0 and not args.output:
-        # Output is JSON to stdout
+    if args.json:
+        data = {}
+        if exit_code == 0 and not args.output and message:
+            try:
+                data = json.loads(message)
+            except Exception:
+                data = {"output": message}
+        elif args.output:
+            data = {"output_path": str(args.output)}
+        _emit_handler_result_json(
+            command="export-data",
+            exit_code=exit_code,
+            message=message if args.output else "Exported to stdout",
+            data=data,
+        )
+    elif exit_code == 0 and not args.output:
         print(message)
-    elif args.json:
-        emit_json({
-            "status": "success" if exit_code == 0 else "error",
-            "message": message if args.output else "Exported to stdout",
-            "exit_code": exit_code
-        })
     elif not args.quiet:
         print(message)
 
@@ -832,7 +914,10 @@ def _cmd_export_data(args) -> int:
 
 def _cmd_export_claude(args) -> int:
     """Handle export claude command."""
-    from ontos.commands.export_claude import export_claude_command, ExportClaudeOptions
+    from ontos.commands.export_claude import (
+        ExportClaudeOptions,
+        _run_export_claude_command,
+    )
 
     options = ExportClaudeOptions(
         output_path=args.output,
@@ -841,14 +926,15 @@ def _cmd_export_claude(args) -> int:
         json_output=args.json,
     )
 
-    exit_code, message = export_claude_command(options)
+    exit_code, message = _run_export_claude_command(options)
 
     if args.json:
-        emit_json({
-            "status": "success" if exit_code == 0 else "error",
-            "message": message,
-            "exit_code": exit_code
-        })
+        _emit_handler_result_json(
+            command="export-claude",
+            exit_code=exit_code,
+            message=message,
+            data={"output_path": str(args.output) if args.output else None},
+        )
     elif not args.quiet:
         print(message)
 
@@ -857,6 +943,52 @@ def _cmd_export_claude(args) -> int:
 
 def _cmd_export_deprecated(args) -> int:
     """Handle deprecated bare export command."""
+    if getattr(args, "all", False):
+        from ontos.core.instruction_artifacts import (
+            find_repo_root,
+            generate_all_instruction_exports,
+        )
+
+        repo_root = find_repo_root()
+        if repo_root is None:
+            if args.json:
+                _emit_handler_result_json(
+                    command="export",
+                    exit_code=2,
+                    message="Error: No repository found. Run from within a git repository or Ontos project.",
+                    error_code="E_USER_INPUT",
+                )
+            elif not args.quiet:
+                print("Error: No repository found. Run from within a git repository or Ontos project.")
+            return 2
+
+        exit_code, results = generate_all_instruction_exports(
+            repo_root=repo_root,
+            force=getattr(args, "force", False),
+            scope=getattr(args, "scope", None),
+        )
+        artifacts = {
+            name: {
+                "path": item.path,
+                "created": item.created,
+                "message": item.message,
+            }
+            for name, item in results.items()
+        }
+        message = "Export all completed" if exit_code == 0 else "Export all completed with failures"
+        if args.json:
+            _emit_handler_result_json(
+                command="export",
+                exit_code=exit_code,
+                message=message,
+                data={"artifacts": artifacts},
+            )
+        elif not args.quiet:
+            print(message)
+            for name, item in artifacts.items():
+                print(f"  - {name}: {item['message']}")
+        return exit_code
+
     import sys
     print("Warning: 'ontos export' is deprecated. Use 'ontos export claude' or 'ontos export data'.", file=sys.stderr)
     print("This alias will be removed in v3.4.", file=sys.stderr)
@@ -876,7 +1008,7 @@ def _cmd_export(args) -> int:
     import sys
     print("Warning: 'ontos export' is deprecated. Use 'ontos agents' instead.", file=sys.stderr)
 
-    from ontos.commands.agents import agents_command, AgentsOptions
+    from ontos.commands.agents import AgentsOptions, _run_agents_command
 
     options = AgentsOptions(
         output_path=args.output,
@@ -885,14 +1017,15 @@ def _cmd_export(args) -> int:
         all_formats=False,
     )
 
-    exit_code, message = agents_command(options)
+    exit_code, message = _run_agents_command(options)
 
     if args.json:
-        emit_json({
-            "status": "success" if exit_code == 0 else "error",
-            "message": message,
-            "exit_code": exit_code
-        })
+        _emit_handler_result_json(
+            command="export",
+            exit_code=exit_code,
+            message=message,
+            data={"deprecated": True},
+        )
     elif not args.quiet:
         print(message)
 
@@ -903,45 +1036,62 @@ def _cmd_export(args) -> int:
 
 def _cmd_schema_migrate(args) -> int:
     """Handle schema-migrate command."""
-    from ontos.commands.migrate import MigrateOptions, migrate_command
+    from ontos.commands.migrate import MigrateOptions, _run_migrate_command
 
     options = MigrateOptions(
         check=args.check,
         dry_run=args.dry_run,
         apply=args.apply,
         dirs=args.dirs,
-        quiet=args.quiet,
+        quiet=args.quiet or args.json,
         json_output=args.json,
         scope=getattr(args, "scope", None),
     )
-    exit_code, message = migrate_command(options)
+    exit_code, message = _run_migrate_command(options)
+    if args.json:
+        _emit_handler_result_json(
+            command="schema-migrate",
+            exit_code=exit_code,
+            message=message,
+        )
     return exit_code
 
 
 def _cmd_migration_report(args) -> int:
     """Handle migration-report command."""
-    from ontos.commands.migration_report import migration_report_command, MigrationReportOptions
+    from ontos.commands.migration_report import (
+        MigrationReportOptions,
+        _run_migration_report_command,
+    )
 
     options = MigrationReportOptions(
         output_path=args.output,
         format=args.format,
         force=args.force,
-        quiet=args.quiet,
+        quiet=args.quiet or args.json,
         json_output=args.json,
         scope=getattr(args, "scope", None),
     )
 
-    exit_code, message = migration_report_command(options)
+    exit_code, message = _run_migration_report_command(options)
 
-    if exit_code == 0 and not args.output:
-        # Output is report to stdout
+    if args.json:
+        data = {}
+        if exit_code == 0 and not args.output and args.format == "json" and message:
+            try:
+                data = json.loads(message)
+            except Exception:
+                data = {"output": message}
+        elif args.output:
+            data = {"output_path": str(args.output)}
+        _emit_handler_result_json(
+            command="migration-report",
+            exit_code=exit_code,
+            message=message if args.output else "Report output to stdout",
+            data=data,
+        )
+    elif exit_code == 0 and not args.output:
         print(message)
-    elif args.json:
-        emit_json({
-            "status": "success" if exit_code == 0 else "error",
-            "message": message if args.output else "Report output to stdout",
-            "exit_code": exit_code
-        })
     elif not args.quiet:
         print(message)
 
@@ -950,24 +1100,28 @@ def _cmd_migration_report(args) -> int:
 
 def _cmd_migrate_convenience(args) -> int:
     """Handle migrate convenience command."""
-    from ontos.commands.migrate_cmd import migrate_convenience_command, MigrateOptions
+    from ontos.commands.migrate_cmd import (
+        MigrateOptions,
+        _run_migrate_convenience_command,
+    )
 
     options = MigrateOptions(
         out_dir=args.out_dir,
         force=args.force,
-        quiet=args.quiet,
+        quiet=args.quiet or args.json,
         json_output=args.json,
         scope=getattr(args, "scope", None),
     )
 
-    exit_code, message = migrate_convenience_command(options)
+    exit_code, message = _run_migrate_convenience_command(options)
 
     if args.json:
-        emit_json({
-            "status": "success" if exit_code == 0 else "error",
-            "message": message,
-            "exit_code": exit_code
-        })
+        _emit_handler_result_json(
+            command="migrate",
+            exit_code=exit_code,
+            message=message,
+            data={"out_dir": str(args.out_dir)},
+        )
     elif not args.quiet:
         print(message)
 
@@ -976,24 +1130,33 @@ def _cmd_migrate_convenience(args) -> int:
 
 def _cmd_consolidate(args) -> int:
     """Handle consolidate command."""
-    from ontos.commands.consolidate import ConsolidateOptions, consolidate_command
+    from ontos.commands.consolidate import (
+        ConsolidateOptions,
+        _run_consolidate_command,
+    )
 
     options = ConsolidateOptions(
         count=args.count,
         by_age=args.by_age,
         days=args.days,
         dry_run=args.dry_run,
-        quiet=args.quiet,
+        quiet=args.quiet or args.json,
         all=args.all,
         json_output=args.json,
     )
-    exit_code, message = consolidate_command(options)
+    exit_code, message = _run_consolidate_command(options)
+    if args.json:
+        _emit_handler_result_json(
+            command="consolidate",
+            exit_code=exit_code,
+            message=message,
+        )
     return exit_code
 
 
 def _cmd_stub(args) -> int:
     """Handle stub command."""
-    from ontos.commands.stub import StubOptions, stub_command
+    from ontos.commands.stub import StubOptions, _run_stub_command
 
     # Parse depends_on
     depends_on = None
@@ -1006,32 +1169,45 @@ def _cmd_stub(args) -> int:
         id=args.id,
         output=args.output,
         depends_on=depends_on,
-        quiet=args.quiet,
+        quiet=args.quiet or args.json,
         json_output=args.json,
     )
-    exit_code, message = stub_command(options)
+    exit_code, message = _run_stub_command(options)
+    if args.json:
+        _emit_handler_result_json(
+            command="stub",
+            exit_code=exit_code,
+            message=message,
+        )
     return exit_code
 
 
 def _cmd_promote(args) -> int:
     """Handle promote command."""
-    from ontos.commands.promote import PromoteOptions, promote_command
+    from ontos.commands.promote import PromoteOptions, _run_promote_command
 
     options = PromoteOptions(
         files=args.files,
         check=args.check,
         all_ready=args.all_ready,
-        quiet=args.quiet,
+        quiet=args.quiet or args.json,
         json_output=args.json,
+        yes=getattr(args, "yes", False),
         scope=getattr(args, "scope", None),
     )
-    exit_code, message = promote_command(options)
+    exit_code, message = _run_promote_command(options)
+    if args.json:
+        _emit_handler_result_json(
+            command="promote",
+            exit_code=exit_code,
+            message=message,
+        )
     return exit_code
 
 
 def _cmd_query(args) -> int:
     """Handle query command."""
-    from ontos.commands.query import QueryOptions, query_command
+    from ontos.commands.query import QueryOptions, _run_query_command
 
     options = QueryOptions(
         depends_on=args.depends_on,
@@ -1041,43 +1217,63 @@ def _cmd_query(args) -> int:
         health=args.health,
         list_ids=args.list_ids,
         directory=args.dir,
-        quiet=args.quiet,
+        quiet=args.quiet or args.json,
         json_output=args.json,
         scope=getattr(args, "scope", None),
     )
-    exit_code, message = query_command(options)
+    exit_code, message = _run_query_command(options)
+    if args.json:
+        _emit_handler_result_json(
+            command="query",
+            exit_code=exit_code,
+            message=message,
+            data=options.runtime_data if options.runtime_data else {},
+        )
     return exit_code
 
 
 def _cmd_verify(args) -> int:
     """Handle verify command."""
-    from ontos.commands.verify import VerifyOptions, verify_command
+    from ontos.commands.verify import VerifyOptions, _run_verify_command
 
     options = VerifyOptions(
         path=args.path,
         all=args.all,
         date=args.date,
-        quiet=args.quiet,
+        quiet=args.quiet or args.json,
         json_output=args.json,
         scope=getattr(args, "scope", None),
     )
-    exit_code, message = verify_command(options)
+    exit_code, message = _run_verify_command(options)
+    if args.json:
+        _emit_handler_result_json(
+            command="verify",
+            exit_code=exit_code,
+            message=message,
+        )
     return exit_code
 
 
 def _cmd_scaffold(args) -> int:
     """Handle scaffold command."""
-    from ontos.commands.scaffold import ScaffoldOptions, scaffold_command
+    from ontos.commands.scaffold import ScaffoldOptions, _run_scaffold_command
 
     options = ScaffoldOptions(
         paths=args.paths if args.paths else None,
         apply=args.apply,
-        dry_run=not args.apply,  # Default to dry-run
-        quiet=args.quiet,
+        dry_run=(args.dry_run or not args.apply),
+        quiet=args.quiet or args.json,
         json_output=args.json,
         scope=getattr(args, "scope", None),
     )
-    exit_code, message = scaffold_command(options)
+    exit_code, message = _run_scaffold_command(options)
+    if args.json:
+        _emit_handler_result_json(
+            command="scaffold",
+            exit_code=exit_code,
+            message=message,
+            data={"failures": options.runtime_failures},
+        )
     return exit_code
 
 
@@ -1130,7 +1326,12 @@ def main() -> int:
     # Handle --version
     if args.version:
         if args.json:
-            emit_json({"version": ontos.__version__})
+            emit_command_success(
+                command="ontos",
+                exit_code=0,
+                message="Version",
+                data={"version": ontos.__version__},
+            )
         else:
             print(f"ontos {ontos.__version__}")
         return 0
@@ -1138,21 +1339,55 @@ def main() -> int:
     # No command specified
     if not args.command:
         if args.json:
-            emit_error("No command specified", "E_NO_CMD")
+            emit_command_error(
+                command="ontos",
+                exit_code=2,
+                code="E_NO_COMMAND",
+                message="No command specified",
+            )
         else:
             parser.print_help()
-        return 0
+        return 2
 
     # Route to command handler
     try:
         return args.func(args)
+    except OntosUserError as e:
+        if args.json:
+            emit_command_error(
+                command=getattr(args, "command", "ontos"),
+                exit_code=2,
+                code=e.code,
+                message=str(e),
+                details=e.details,
+            )
+        else:
+            print(f"Error: {e}", file=sys.stderr)
+        return 2
+    except OntosInternalError as e:
+        if args.json:
+            emit_command_error(
+                command=getattr(args, "command", "ontos"),
+                exit_code=5,
+                code=e.code,
+                message=str(e),
+                details=e.details,
+            )
+        else:
+            print(f"Error: {e}", file=sys.stderr)
+        return 5
     except KeyboardInterrupt:
         if not args.quiet:
             print("\nInterrupted", file=sys.stderr)
         return 130
     except Exception as e:
         if args.json:
-            emit_error(f"Internal error: {e}", "E_INTERNAL")
+            emit_command_error(
+                command=getattr(args, "command", "ontos"),
+                exit_code=5,
+                code="E_INTERNAL",
+                message=f"Internal error: {e}",
+            )
         else:
             print(f"Error: {e}", file=sys.stderr)
         return 5

@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 
 from ontos.commands.init import (
+    _run_init_command,
     init_command,
     InitOptions,
     ONTOS_HOOK_MARKER,
@@ -20,12 +21,12 @@ def git_repo(tmp_path):
 
 
 class TestInitCommand:
-    """Tests for init_command() function."""
+    """Tests for _run_init_command() function."""
 
     def test_init_empty_directory(self, git_repo):
         """Init in empty git repo creates .ontos.toml."""
         options = InitOptions(path=git_repo, no_scaffold=True)
-        code, msg = init_command(options)
+        code, msg = _run_init_command(options)
 
         # Exit code 0 (success) or 3 (hooks skipped) are both valid
         assert code in (0, 3)
@@ -34,7 +35,7 @@ class TestInitCommand:
     def test_init_creates_directory_structure(self, git_repo):
         """Init creates the full type hierarchy directory structure."""
         options = InitOptions(path=git_repo, no_scaffold=True)
-        init_command(options)
+        _run_init_command(options)
 
         assert (git_repo / "docs").is_dir()
         assert (git_repo / "docs" / "logs").is_dir()
@@ -50,7 +51,7 @@ class TestInitCommand:
         (git_repo / ".ontos.toml").write_text("[ontos]\n")
 
         options = InitOptions(path=git_repo)
-        code, msg = init_command(options)
+        code, msg = _run_init_command(options)
 
         assert code == 0  # v3.0.0: LLM-friendly exit code
         assert "Already initialized" in msg
@@ -60,7 +61,7 @@ class TestInitCommand:
         (git_repo / ".ontos.toml").write_text("[ontos]\nversion = 'old'\n")
 
         options = InitOptions(path=git_repo, force=True)
-        code, msg = init_command(options)
+        code, msg = _run_init_command(options)
 
         # Should succeed (0) or have hooks skipped (3)
         assert code in (0, 3)
@@ -72,7 +73,7 @@ class TestInitCommand:
     def test_init_not_git_repo(self, tmp_path):
         """Init fails with exit code 2 if not git repo."""
         options = InitOptions(path=tmp_path)
-        code, msg = init_command(options)
+        code, msg = _run_init_command(options)
 
         assert code == 2
         assert "Not a git repository" in msg
@@ -124,7 +125,7 @@ class TestHookInstallation:
     def test_hooks_installed(self, git_repo):
         """Init installs hooks in .git/hooks."""
         options = InitOptions(path=git_repo, no_scaffold=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
 
         if code == 0:  # Only check if hooks weren't skipped
             assert (git_repo / ".git" / "hooks" / "pre-commit").exists()
@@ -133,7 +134,7 @@ class TestHookInstallation:
     def test_skip_hooks_option(self, git_repo):
         """--skip-hooks option prevents hook installation."""
         options = InitOptions(path=git_repo, skip_hooks=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
 
         assert code == 0
         # Hooks directory exists but our hooks should not be there
@@ -152,7 +153,7 @@ class TestHookInstallation:
         foreign_hook.write_text("#!/bin/sh\necho 'foreign hook'\n")
 
         options = InitOptions(path=git_repo, no_scaffold=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
 
         # Should exit with code 3 (hooks skipped)
         assert code == 3
@@ -171,7 +172,7 @@ class TestHookInstallation:
         foreign_hook.write_text("#!/bin/sh\necho 'foreign hook'\n")
 
         options = InitOptions(path=git_repo, force=True, yes=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
 
         # Should succeed
         assert code == 0
@@ -187,7 +188,7 @@ class TestHookConfirmation:
     def test_skip_hooks_flag_skips_confirmation(self, git_repo):
         """--skip-hooks bypasses confirmation entirely."""
         options = InitOptions(path=git_repo, skip_hooks=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
 
         assert code == 0
         # No hooks should be installed
@@ -198,7 +199,7 @@ class TestHookConfirmation:
     def test_yes_flag_skips_confirmation(self, git_repo):
         """--yes installs hooks without prompting."""
         options = InitOptions(path=git_repo, yes=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
 
         assert code in (0, 3)  # 0 success, 3 if collision
         # In clean repo, hooks should be installed
@@ -210,7 +211,7 @@ class TestHookConfirmation:
     def test_skip_hooks_wins_over_yes(self, git_repo):
         """--skip-hooks takes precedence over --yes."""
         options = InitOptions(path=git_repo, skip_hooks=True, yes=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
 
         assert code == 0
         pre_commit = git_repo / ".git" / "hooks" / "pre-commit"
@@ -226,7 +227,7 @@ class TestHookConfirmation:
         monkeypatch.setattr('sys.stdin.isatty', lambda: True)
 
         options = InitOptions(path=git_repo)
-        code, msg = init_command(options)
+        code, msg = _run_init_command(options)
 
         # Should return SIGINT exit code
         assert code == 130
@@ -246,7 +247,7 @@ class TestHookConfirmation:
         monkeypatch.setattr('sys.stdin.isatty', lambda: True)
 
         options = InitOptions(path=git_repo)
-        code, msg = init_command(options)
+        code, msg = _run_init_command(options)
 
         assert code == 0
         assert (git_repo / ".ontos.toml").exists()
@@ -260,7 +261,7 @@ class TestHookConfirmation:
         monkeypatch.setattr('sys.stdin.isatty', lambda: False)
         
         options = InitOptions(path=git_repo, no_scaffold=True)
-        code, _ = init_command(options)
+        code, _ = _run_init_command(options)
 
         assert code == 0
         assert (git_repo / ".git" / "hooks" / "pre-commit").exists()

@@ -8,8 +8,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Tuple
 
-from ontos.commands.export_data import export_data_command, ExportDataOptions
-from ontos.commands.migration_report import migration_report_command, MigrationReportOptions
+from ontos.commands.export_data import ExportDataOptions, _run_export_data_command
+from ontos.commands.migration_report import (
+    MigrationReportOptions,
+    _run_migration_report_command,
+)
 from ontos.io.files import find_project_root
 
 
@@ -23,7 +26,7 @@ class MigrateOptions:
     scope: Optional[str] = None
 
 
-def migrate_convenience_command(options: MigrateOptions) -> Tuple[int, str]:
+def _run_migrate_convenience_command(options: MigrateOptions) -> Tuple[int, str]:
     """
     Run export data + migration-report together.
 
@@ -56,7 +59,7 @@ def migrate_convenience_command(options: MigrateOptions) -> Tuple[int, str]:
         quiet=True,
         scope=options.scope,
     )
-    export_code, export_msg = export_data_command(export_options)
+    export_code, export_msg = _run_export_data_command(export_options)
     if export_code != 0:
         return export_code, f"Export failed: {export_msg}"
 
@@ -68,8 +71,14 @@ def migrate_convenience_command(options: MigrateOptions) -> Tuple[int, str]:
         quiet=True,
         scope=options.scope,
     )
-    report_code, report_msg = migration_report_command(report_options)
+    report_code, report_msg = _run_migration_report_command(report_options)
     if report_code != 0:
         return report_code, f"Report failed: {report_msg}"
 
     return 0, f"Migration artifacts created in {out_dir}/\n  - snapshot.json\n  - analysis.md"
+
+
+def migrate_convenience_command(options: MigrateOptions) -> int:
+    """Run convenience migration pipeline and return exit code only."""
+    exit_code, _ = _run_migrate_convenience_command(options)
+    return exit_code

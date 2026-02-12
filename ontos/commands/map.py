@@ -8,7 +8,6 @@ Phase 2 Decomposition - Created from Phase2-Implementation-Spec.md Section 4.10
 """
 
 from __future__ import annotations
-import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
@@ -18,6 +17,7 @@ from typing import Dict, List, Optional, Any, Tuple
 from ontos.core.validation import ValidationOrchestrator
 from ontos.core.tokens import estimate_tokens, format_token_count
 from ontos.core.types import DocumentData, DocumentStatus, ValidationResult
+from ontos.ui.json_output import emit_command_error, emit_command_success
 
 
 class CompactMode(Enum):
@@ -36,7 +36,6 @@ class GenerateMapOptions:
     include_timeline: bool = True
     include_lint: bool = False
     max_dependency_depth: int = 5
-    dry_run: bool = False
     json_output: bool = False  # Phase 4: JSON output support
     quiet: bool = False  # Phase 4: Quiet mode
     obsidian: bool = False
@@ -733,7 +732,12 @@ def map_command(options: MapOptions) -> int:
         project_root = find_project_root()
     except FileNotFoundError as e:
         if options.json_output:
-            print(json.dumps({"status": "error", "message": str(e)}))
+            emit_command_error(
+                command="map",
+                exit_code=1,
+                code="E_COMMAND_FAILED",
+                message=str(e),
+            )
         elif not options.quiet:
             print(f"Error: {e}")
         return 1
@@ -743,7 +747,12 @@ def map_command(options: MapOptions) -> int:
         config = load_project_config(repo_root=project_root)
     except Exception as e:
         if options.json_output:
-            print(json.dumps({"status": "error", "message": f"Config error: {e}"}))
+            emit_command_error(
+                command="map",
+                exit_code=1,
+                code="E_COMMAND_FAILED",
+                message=f"Config error: {e}",
+            )
         elif not options.quiet:
             print(f"Config error: {e}")
         return 1
@@ -827,8 +836,18 @@ def map_command(options: MapOptions) -> int:
             if agents_path.exists():
                 if not options.quiet:
                     print("Syncing AGENTS.md...")
-                from ontos.commands.agents import agents_command, AgentsOptions
-                agents_command(AgentsOptions(force=True))
+                from ontos.core.instruction_artifacts import generate_agents_files
+
+                code, msg = generate_agents_files(
+                    repo_root=repo_root,
+                    output_path=agents_path,
+                    force=True,
+                    format="agents",
+                    all_formats=False,
+                    scope=options.scope,
+                )
+                if code != 0 and not options.quiet:
+                    print(f"⚠ AGENTS.md sync warning: {msg}")
                 if not options.quiet:
                     print("✓ AGENTS.md synced")
             else:
@@ -847,13 +866,27 @@ def map_command(options: MapOptions) -> int:
 
     # Output result
     if options.json_output:
-        print(json.dumps({
-            "status": "success" if exit_code == 0 else "error",
+        payload = {
             "path": str(output_path),
             "documents": len(docs),
             "errors": len(result.errors),
             "warnings": len(result.warnings),
-        }))
+        }
+        if exit_code == 0:
+            emit_command_success(
+                command="map",
+                exit_code=0,
+                message="Context map generated",
+                data=payload,
+            )
+        else:
+            emit_command_error(
+                command="map",
+                exit_code=exit_code,
+                code="E_COMMAND_FAILED",
+                message="Context map generated with issues",
+                data=payload,
+            )
     elif not options.quiet:
         print(f"Context map generated: {output_path}")
         print(f"  Documents: {len(docs)}")

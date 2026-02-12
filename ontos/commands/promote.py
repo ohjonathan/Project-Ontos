@@ -3,8 +3,6 @@
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple
-
-from pathlib import Path
 from ontos.core.schema import serialize_frontmatter
 from ontos.core.types import DocumentData, DocumentType
 from ontos.core.curation import (
@@ -28,6 +26,7 @@ class PromoteOptions:
     files: Optional[List[Path]] = None
     check: bool = False
     all_ready: bool = False
+    yes: bool = False
     quiet: bool = False
     json_output: bool = False
     scope: Optional[str] = None
@@ -149,7 +148,7 @@ def apply_promotion(
         return False
 
 
-def promote_command(options: PromoteOptions) -> Tuple[int, str]:
+def _run_promote_command(options: PromoteOptions) -> Tuple[int, str]:
     """Execute promote command."""
     output = OutputHandler(quiet=options.quiet)
     root = find_project_root()
@@ -201,18 +200,19 @@ def promote_command(options: PromoteOptions) -> Tuple[int, str]:
     # 3. Handle --check
     if options.check:
         output.info(f"Found {len(promotable)} document(s) that can be promoted:\n")
-        root_resolved = root.resolve()
-        for f, fm, info in promotable:
-            try:
-                rel = f.resolve().relative_to(root_resolved)
-            except ValueError:
-                rel = f # Fallback to absolute if not under root
-            marker = level_marker(info.level)
-            ready = "✓ ready" if info.promotable else "○ needs work"
-            print(f"  {marker} {fm.get('id'):<30} {ready}")
-            if not info.promotable:
-                for blocker in info.promotion_blockers[:2]:
-                    print(f"      → {blocker}")
+        if not options.quiet:
+            root_resolved = root.resolve()
+            for f, fm, info in promotable:
+                try:
+                    rel = f.resolve().relative_to(root_resolved)
+                except ValueError:
+                    rel = f # Fallback to absolute if not under root
+                marker = level_marker(info.level)
+                ready = "✓ ready" if info.promotable else "○ needs work"
+                print(f"  {marker} {fm.get('id'):<30} {ready}")
+                if not info.promotable:
+                    for blocker in info.promotion_blockers[:2]:
+                        print(f"      → {blocker}")
         return 0, f"{len(promotable)} documents find"
 
     ctx = SessionContext.from_repo(root)
@@ -229,7 +229,12 @@ def promote_command(options: PromoteOptions) -> Tuple[int, str]:
         for f, fm, info in ready_docs:
             if apply_promotion(f, fm, fm.get('depends_on'), fm.get('concepts'), ctx, output):
                 success_count += 1
-        ctx.commit()
+        if success_count > 0:
+            try:
+                ctx.commit()
+            except Exception as exc:
+                output.error(f"Failed to commit promoted documents: {exc}")
+                return 1, f"Commit failed: {exc}"
         return 0, f"Promoted {success_count} documents"
 
     # 5. Interactive Mode
@@ -267,11 +272,14 @@ def promote_command(options: PromoteOptions) -> Tuple[int, str]:
                 output.warning("  concepts required for logs. Skipping.")
                 continue
         
-        try:
-            confirm = input("\n  Promote this document? [Y/n]: ").strip().lower()
-        except (EOFError, KeyboardInterrupt):
-            print("\n  Cancelled.")
-            break
+        if options.yes:
+            confirm = "y"
+        else:
+            try:
+                confirm = input("\n  Promote this document? [Y/n]: ").strip().lower()
+            except (EOFError, KeyboardInterrupt):
+                print("\n  Cancelled.")
+                break
             
         if confirm in ('n', 'no'):
             output.info("  Skipped.")
@@ -280,7 +288,18 @@ def promote_command(options: PromoteOptions) -> Tuple[int, str]:
         if apply_promotion(f, fm, depends_on, concepts, ctx, output):
             success_count += 1
 
-    ctx.commit()
+    if success_count > 0:
+        try:
+            ctx.commit()
+        except Exception as exc:
+            output.error(f"Failed to commit promoted documents: {exc}")
+            return 1, f"Commit failed: {exc}"
     if success_count > 0:
         output.success(f"Promoted {success_count} document(s) to Level 2")
     return 0, f"Promoted {success_count} documents"
+
+
+def promote_command(options: PromoteOptions) -> int:
+    """Run promote command and return exit code only."""
+    exit_code, _ = _run_promote_command(options)
+    return exit_code

@@ -212,8 +212,12 @@ def test_doctor_scope_library_integration(tmp_path: Path) -> None:
     default_payload = json.loads(default_result.stdout)
     library_payload = json.loads(library_result.stdout)
 
-    default_docs_check = next(c for c in default_payload["checks"] if c["name"] == "docs_directory")
-    library_docs_check = next(c for c in library_payload["checks"] if c["name"] == "docs_directory")
+    default_docs_check = next(
+        c for c in default_payload["data"]["checks"] if c["name"] == "docs_directory"
+    )
+    library_docs_check = next(
+        c for c in library_payload["data"]["checks"] if c["name"] == "docs_directory"
+    )
 
     assert "1 documents" in default_docs_check["message"]
     assert "2 documents" in library_docs_check["message"]

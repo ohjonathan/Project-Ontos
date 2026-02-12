@@ -7,6 +7,7 @@ import pytest
 
 from ontos.commands.agents import (
     AgentsOptions,
+    _run_agents_command,
     agents_command,
     find_repo_root,
     generate_agents_content,
@@ -41,6 +42,16 @@ class TestAgentsOptions:
 class TestAgentsCommand:
     """Tests for agents_command."""
 
+    def test_public_command_returns_exit_code(self, tmp_path, monkeypatch):
+        """agents_command should return int exit code only."""
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
+        (tmp_path / ".ontos-internal").mkdir()
+        options = AgentsOptions()
+        result = agents_command(options)
+        assert isinstance(result, int)
+        assert result == 0
+
     def test_creates_agents_md(self, tmp_path, monkeypatch):
         """Should create AGENTS.md in repo root."""
         monkeypatch.chdir(tmp_path)
@@ -48,7 +59,7 @@ class TestAgentsCommand:
         (tmp_path / ".ontos-internal").mkdir()
 
         options = AgentsOptions()
-        exit_code, message = agents_command(options)
+        exit_code, message = _run_agents_command(options)
 
         assert exit_code == 0
         assert "Created" in message
@@ -61,7 +72,7 @@ class TestAgentsCommand:
         (tmp_path / "AGENTS.md").write_text("existing content")
 
         options = AgentsOptions(force=False)
-        exit_code, message = agents_command(options)
+        exit_code, message = _run_agents_command(options)
 
         assert exit_code == 1
         assert "already exists" in message
@@ -75,7 +86,7 @@ class TestAgentsCommand:
         (tmp_path / "AGENTS.md").write_text("existing content")
 
         options = AgentsOptions(force=True)
-        exit_code, message = agents_command(options)
+        exit_code, message = _run_agents_command(options)
 
         assert exit_code == 0
         # Backup should exist
@@ -91,7 +102,7 @@ class TestAgentsCommand:
         (tmp_path / ".ontos-internal").mkdir()
 
         options = AgentsOptions(format="cursor")
-        exit_code, message = agents_command(options)
+        exit_code, message = _run_agents_command(options)
 
         assert exit_code == 0
         assert (tmp_path / ".cursorrules").exists()
@@ -105,7 +116,7 @@ class TestAgentsCommand:
         (tmp_path / ".ontos-internal").mkdir()
 
         options = AgentsOptions(all_formats=True)
-        exit_code, message = agents_command(options)
+        exit_code, message = _run_agents_command(options)
 
         assert exit_code == 0
         assert (tmp_path / "AGENTS.md").exists()
@@ -117,7 +128,7 @@ class TestAgentsCommand:
         (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
 
         options = AgentsOptions(output_path=tmp_path.parent / "evil.md")
-        exit_code, message = agents_command(options)
+        exit_code, message = _run_agents_command(options)
 
         assert exit_code == 2
         assert "within repository root" in message
@@ -129,7 +140,7 @@ class TestAgentsCommand:
 
         # Attempt path traversal
         options = AgentsOptions(output_path=Path("../../etc/passwd"))
-        exit_code, message = agents_command(options)
+        exit_code, message = _run_agents_command(options)
 
         assert exit_code == 2
         assert "within repository root" in message
@@ -143,7 +154,7 @@ class TestAgentsCommand:
         subdir.mkdir()
 
         options = AgentsOptions(output_path=subdir / "AI_INSTRUCTIONS.md")
-        exit_code, message = agents_command(options)
+        exit_code, message = _run_agents_command(options)
 
         assert exit_code == 0
         assert (subdir / "AI_INSTRUCTIONS.md").exists()

@@ -146,7 +146,10 @@ def verify_document(path: Path, verify_date: str) -> Tuple[bool, str]:
         
     success = update_describes_verified(p, dt, ctx, output)
     if success:
-        ctx.commit()
+        try:
+            ctx.commit()
+        except Exception as exc:
+            return False, f"Commit failed: {exc}"
         return True, "Verified"
     return False, "Failed"
 
@@ -208,13 +211,17 @@ def verify_all_interactive(verify_date: date, output: OutputHandler, scope: Opti
             skipped += 1
             
     if updated > 0:
-        ctx.commit()
+        try:
+            ctx.commit()
+        except Exception as exc:
+            output.error(f"Failed to commit verify updates: {exc}")
+            return 1
         
     output.info(f"Done. Updated: {updated}, Skipped: {skipped}")
     return 0
 
 
-def verify_command(options: VerifyOptions) -> Tuple[int, str]:
+def _run_verify_command(options: VerifyOptions) -> Tuple[int, str]:
     """Execute verify command."""
     output = OutputHandler(quiet=options.quiet)
     
@@ -248,7 +255,11 @@ def verify_command(options: VerifyOptions) -> Tuple[int, str]:
             return 0, "Nothing to verify"
             
         if update_describes_verified(options.path, verify_date, ctx, output):
-            ctx.commit()
+            try:
+                ctx.commit()
+            except Exception as exc:
+                output.error(f"Failed to commit verify updates: {exc}")
+                return 1, f"Commit failed: {exc}"
             output.success(f"Updated describes_verified to {verify_date}")
             return 0, "Success"
         else:
@@ -262,3 +273,9 @@ def verify_command(options: VerifyOptions) -> Tuple[int, str]:
     else:
         output.error("Specify a file path or use --all")
         return 1, "No target specified"
+
+
+def verify_command(options: VerifyOptions) -> int:
+    """Run verify command and return exit code only."""
+    exit_code, _ = _run_verify_command(options)
+    return exit_code

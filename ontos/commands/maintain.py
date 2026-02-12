@@ -6,7 +6,6 @@ steps can be extended without rewriting command orchestration.
 
 from __future__ import annotations
 
-import json
 import os
 import re
 import time
@@ -18,10 +17,12 @@ from typing import Callable, Dict, List, Literal, Optional, Sequence, Tuple, cas
 import ontos
 from ontos.core.config import OntosConfig
 from ontos.core.curation import CurationLevel, detect_curation_level
+from ontos.core.errors import OntosUserError
 from ontos.core.link_diagnostics import run_link_diagnostics
 from ontos.io.config import load_project_config
 from ontos.io.files import find_project_root
 from ontos.io.scan_scope import build_scope_roots, collect_scoped_documents, resolve_scan_scope
+from ontos.ui.json_output import emit_command_error, emit_command_success
 from ontos.ui.output import OutputHandler
 
 STATUS_SUCCESS = "success"
@@ -287,7 +288,11 @@ def _load_docs_for_graph(ctx: MaintainContext) -> "DocumentLoadResult":
     description="Migrate untagged markdown files",
 )
 def _task_migrate_untagged(ctx: MaintainContext) -> TaskResult:
-    from ontos.commands.scaffold import ScaffoldOptions, find_untagged_files, scaffold_command
+    from ontos.commands.scaffold import (
+        ScaffoldOptions,
+        _run_scaffold_command,
+        find_untagged_files,
+    )
 
     if ctx.options.dry_run:
         return _ok("Would migrate untagged markdown files.")
@@ -307,7 +312,7 @@ def _task_migrate_untagged(ctx: MaintainContext) -> TaskResult:
     if count > 5:
         details.append(f"... and {count - 5} more")
 
-    exit_code, message = scaffold_command(
+    exit_code, message = _run_scaffold_command(
         ScaffoldOptions(
             paths=untagged,
             apply=True,
@@ -362,9 +367,9 @@ def _task_health_check(ctx: MaintainContext) -> TaskResult:
     if ctx.options.dry_run:
         return _ok("Would run `ontos doctor`.")
 
-    from ontos.commands.doctor import DoctorOptions, doctor_command
+    from ontos.commands.doctor import DoctorOptions, _run_doctor_command
 
-    exit_code, result = doctor_command(
+    exit_code, result = _run_doctor_command(
         DoctorOptions(
             verbose=ctx.options.verbose,
             json_output=False,
@@ -450,9 +455,12 @@ def _task_consolidate_logs(ctx: MaintainContext) -> TaskResult:
             metrics={"retention_count": retention_count},
         )
 
-    from ontos.commands.consolidate import ConsolidateOptions, consolidate_command
+    from ontos.commands.consolidate import (
+        ConsolidateOptions,
+        _run_consolidate_command,
+    )
 
-    exit_code, message = consolidate_command(
+    exit_code, message = _run_consolidate_command(
         ConsolidateOptions(
             count=retention_count,
             by_age=False,
@@ -664,9 +672,16 @@ def _task_sync_agents(ctx: MaintainContext) -> TaskResult:
     if ctx.options.dry_run:
         return _ok("Would run `ontos agents --force`.")
 
-    from ontos.commands.agents import AgentsOptions, agents_command
+    from ontos.core.instruction_artifacts import generate_agents_files
 
-    exit_code, message = agents_command(AgentsOptions(force=True))
+    exit_code, message = generate_agents_files(
+        repo_root=ctx.repo_root,
+        output_path=ctx.repo_root / "AGENTS.md",
+        force=True,
+        format="agents",
+        all_formats=False,
+        scope=ctx.options.scope,
+    )
     if exit_code == 0:
         return _ok(message or "AGENTS.md synchronized.")
     return _fail(message or "AGENTS.md synchronization failed.")
@@ -700,9 +715,9 @@ def _emit_task_line(ctx: MaintainContext, execution: TaskExecution) -> None:
             ctx.output.detail(f"duration: {execution.duration_ms}ms")
 
 
-def _json_summary(executions: List[TaskExecution], unknown_skips: List[str], dry_run: bool) -> str:
+def _json_summary(executions: List[TaskExecution], unknown_skips: List[str], dry_run: bool) -> Dict[str, object]:
     status = STATUS_FAILED if any(e.status == STATUS_FAILED for e in executions) else STATUS_SUCCESS
-    payload = {
+    return {
         "status": status,
         "dry_run": dry_run,
         "tasks": [
@@ -723,7 +738,6 @@ def _json_summary(executions: List[TaskExecution], unknown_skips: List[str], dry
             STATUS_SKIPPED: sum(1 for e in executions if e.status == STATUS_SKIPPED),
         },
     }
-    return json.dumps(payload)
 
 
 def maintain_command(options: MaintainOptions, registry: Optional[MaintainTaskRegistry] = None) -> int:
@@ -736,7 +750,12 @@ def maintain_command(options: MaintainOptions, registry: Optional[MaintainTaskRe
         repo_root = find_project_root()
     except FileNotFoundError as exc:
         if options.json_output:
-            print(json.dumps({"status": STATUS_FAILED, "message": str(exc)}))
+            emit_command_error(
+                command="maintain",
+                exit_code=1,
+                code="E_COMMAND_FAILED",
+                message=str(exc),
+            )
         elif not options.quiet:
             output.error(str(exc))
         return 1
@@ -745,7 +764,12 @@ def maintain_command(options: MaintainOptions, registry: Optional[MaintainTaskRe
         config = load_project_config(repo_root=repo_root)
     except Exception as exc:
         if options.json_output:
-            print(json.dumps({"status": STATUS_FAILED, "message": f"Config error: {exc}"}))
+            emit_command_error(
+                command="maintain",
+                exit_code=1,
+                code="E_COMMAND_FAILED",
+                message=f"Config error: {exc}",
+            )
         elif not options.quiet:
             output.error(f"Config error: {exc}")
         return 1
@@ -760,15 +784,19 @@ def maintain_command(options: MaintainOptions, registry: Optional[MaintainTaskRe
     skip_names = set(_normalize_skip(options.skip))
     known_names = set(active_registry.names())
     unknown_skips = sorted(skip_names - known_names)
+    if unknown_skips:
+        known_label = ", ".join(active_registry.names())
+        raise OntosUserError(
+            f"Unknown task(s): {', '.join(unknown_skips)}. Valid tasks: {known_label}",
+            code="E_USER_INPUT",
+            details=known_label,
+        )
 
     executions: List[TaskExecution] = []
 
     if not quiet:
         mode_label = "dry-run" if options.dry_run else "live"
         output.info(f"Running Ontos maintenance ({mode_label})...")
-
-    if unknown_skips and not quiet:
-        output.warning(f"Ignoring unknown task(s): {', '.join(unknown_skips)}")
 
     for task in active_registry.ordered_tasks():
         start = time.perf_counter()
@@ -836,8 +864,24 @@ def maintain_command(options: MaintainOptions, registry: Optional[MaintainTaskRe
     failure_count = sum(1 for execution in executions if execution.status == STATUS_FAILED)
     skipped_count = sum(1 for execution in executions if execution.status == STATUS_SKIPPED)
 
+    exit_code = 1 if failure_count > 0 else 0
     if options.json_output:
-        print(_json_summary(executions, unknown_skips, options.dry_run))
+        payload = _json_summary(executions, unknown_skips, options.dry_run)
+        if exit_code == 0:
+            emit_command_success(
+                command="maintain",
+                exit_code=0,
+                message="Maintenance run complete",
+                data=payload,
+            )
+        else:
+            emit_command_error(
+                command="maintain",
+                exit_code=1,
+                code="E_COMMAND_FAILED",
+                message="Maintenance run completed with failures",
+                data=payload,
+            )
     elif not options.quiet:
         output.plain("")
         summary = f"Maintenance summary: {success_count} succeeded, {failure_count} failed, {skipped_count} skipped"
@@ -846,4 +890,4 @@ def maintain_command(options: MaintainOptions, registry: Optional[MaintainTaskRe
         else:
             output.success(summary)
 
-    return 1 if failure_count > 0 else 0
+    return exit_code

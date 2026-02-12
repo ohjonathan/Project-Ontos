@@ -181,7 +181,7 @@ def _run_scaffold(project_root: Path, paths) -> None:
     Note: Scaffold writes persist even if init is subsequently aborted.
     """
     try:
-        from ontos.commands.scaffold import ScaffoldOptions, scaffold_command
+        from ontos.commands.scaffold import ScaffoldOptions, _run_scaffold_command
 
         options = ScaffoldOptions(
             paths=paths,
@@ -189,7 +189,7 @@ def _run_scaffold(project_root: Path, paths) -> None:
             dry_run=False,
             quiet=True,
         )
-        exit_code, message = scaffold_command(options)
+        exit_code, message = _run_scaffold_command(options)
 
         if exit_code == 0:
             print("   Scaffold complete.", file=sys.stderr)
@@ -199,7 +199,7 @@ def _run_scaffold(project_root: Path, paths) -> None:
         print(f"Warning: Could not run scaffold: {e}", file=sys.stderr)
 
 
-def init_command(options: InitOptions) -> Tuple[int, str]:
+def _run_init_command(options: InitOptions) -> Tuple[int, str]:
     """
     Initialize a new Ontos project.
 
@@ -301,6 +301,12 @@ def init_command(options: InitOptions) -> Tuple[int, str]:
     return hooks_status, msg
 
 
+def init_command(options: InitOptions) -> int:
+    """Initialize Ontos project and return exit code only."""
+    exit_code, _ = _run_init_command(options)
+    return exit_code
+
+
 def _check_git_repo(project_root: Path) -> Optional[Tuple[int, str]]:
     """Check if path is a valid git repository (handles worktrees)."""
     git_path = project_root / ".git"
@@ -382,16 +388,17 @@ def _generate_agents_file(root: Path) -> None:
     Non-fatal on failure per spec v1.1 Section 4.3.1.
     """
     try:
-        from ontos.commands.agents import agents_command, AgentsOptions
-        
-        options = AgentsOptions(
+        from ontos.core.instruction_artifacts import generate_agents_files
+
+        exit_code, message = generate_agents_files(
+            repo_root=root,
             output_path=root / "AGENTS.md",
             force=False,
             format="agents",
             all_formats=False,
+            scope=None,
         )
-        exit_code, message = agents_command(options)
-        
+
         if exit_code == 0:
             print("   ✓ AGENTS.md generated", file=sys.stderr)
         elif exit_code == 1:
