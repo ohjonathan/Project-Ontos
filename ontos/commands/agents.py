@@ -315,7 +315,7 @@ def create_backup(path: Path) -> None:
         backup_path.write_text(path.read_text(encoding='utf-8'), encoding='utf-8')
 
 
-def agents_command(options: AgentsOptions) -> Tuple[int, str]:
+def _run_agents_command(options: AgentsOptions) -> Tuple[int, str]:
     """
     Generate AGENTS.md and/or .cursorrules files.
     
@@ -396,3 +396,9 @@ def agents_command(options: AgentsOptions) -> Tuple[int, str]:
                 return 2, f"Error writing .cursorrules: {e}"
     
     return 0, '\n'.join(messages) if messages else "No files generated"
+
+
+def agents_command(options: AgentsOptions) -> int:
+    """Generate AGENTS.md and/or .cursorrules files and return exit code."""
+    exit_code, _ = _run_agents_command(options)
+    return exit_code

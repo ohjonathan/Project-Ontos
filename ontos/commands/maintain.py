@@ -450,9 +450,12 @@ def _task_consolidate_logs(ctx: MaintainContext) -> TaskResult:
             metrics={"retention_count": retention_count},
         )
 
-    from ontos.commands.consolidate import ConsolidateOptions, consolidate_command
+    from ontos.commands.consolidate import (
+        ConsolidateOptions,
+        _run_consolidate_command,
+    )
 
-    exit_code, message = consolidate_command(
+    exit_code, message = _run_consolidate_command(
         ConsolidateOptions(
             count=retention_count,
             by_age=False,
@@ -664,9 +667,9 @@ def _task_sync_agents(ctx: MaintainContext) -> TaskResult:
     if ctx.options.dry_run:
         return _ok("Would run `ontos agents --force`.")
 
-    from ontos.commands.agents import AgentsOptions, agents_command
+    from ontos.commands.agents import AgentsOptions, _run_agents_command
 
-    exit_code, message = agents_command(AgentsOptions(force=True))
+    exit_code, message = _run_agents_command(AgentsOptions(force=True))
     if exit_code == 0:
         return _ok(message or "AGENTS.md synchronized.")
     return _fail(message or "AGENTS.md synchronization failed.")

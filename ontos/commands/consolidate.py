@@ -149,7 +149,7 @@ def append_to_decision_history(
     return True
 
 
-def consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
+def _run_consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
     """Execute consolidate command."""
     if not options.by_age and options.count < 1:
         return 1, "count must be >= 1"
@@ -320,3 +320,9 @@ def consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
         return 1, f"Consolidated {consolidated_count} logs with {len(failed)} failures"
 
     return 0, f"{action} {consolidated_count} logs"
+
+
+def consolidate_command(options: ConsolidateOptions) -> int:
+    """Execute consolidate command and return exit code."""
+    exit_code, _ = _run_consolidate_command(options)
+    return exit_code

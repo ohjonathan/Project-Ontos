@@ -744,7 +744,7 @@ def _cmd_env(args) -> int:
 
 def _cmd_agents(args) -> int:
     """Handle agents command."""
-    from ontos.commands.agents import agents_command, AgentsOptions
+    from ontos.commands.agents import AgentsOptions, _run_agents_command
 
     options = AgentsOptions(
         output_path=args.output,
@@ -754,7 +754,7 @@ def _cmd_agents(args) -> int:
         scope=getattr(args, "scope", None),
     )
 
-    exit_code, message = agents_command(options)
+    exit_code, message = _run_agents_command(options)
 
     if args.json:
         emit_json({
@@ -773,7 +773,7 @@ def _cmd_agent_export(args) -> int:
     import sys
     print("Warning: 'ontos agent-export' is deprecated. Use 'ontos agents' instead.", file=sys.stderr)
     
-    from ontos.commands.agents import agents_command, AgentsOptions
+    from ontos.commands.agents import AgentsOptions, _run_agents_command
 
     options = AgentsOptions(
         output_path=args.output,
@@ -783,7 +783,7 @@ def _cmd_agent_export(args) -> int:
         scope=getattr(args, "scope", None),
     )
 
-    exit_code, message = agents_command(options)
+    exit_code, message = _run_agents_command(options)
 
     if args.json:
         emit_json({
@@ -877,7 +877,7 @@ def _cmd_export(args) -> int:
     import sys
     print("Warning: 'ontos export' is deprecated. Use 'ontos agents' instead.", file=sys.stderr)
 
-    from ontos.commands.agents import agents_command, AgentsOptions
+    from ontos.commands.agents import AgentsOptions, _run_agents_command
 
     options = AgentsOptions(
         output_path=args.output,
@@ -886,7 +886,7 @@ def _cmd_export(args) -> int:
         all_formats=False,
     )
 
-    exit_code, message = agents_command(options)
+    exit_code, message = _run_agents_command(options)
 
     if args.json:
         emit_json({
@@ -977,7 +977,10 @@ def _cmd_migrate_convenience(args) -> int:
 
 def _cmd_consolidate(args) -> int:
     """Handle consolidate command."""
-    from ontos.commands.consolidate import ConsolidateOptions, consolidate_command
+    from ontos.commands.consolidate import (
+        ConsolidateOptions,
+        _run_consolidate_command,
+    )
 
     options = ConsolidateOptions(
         count=args.count,
@@ -988,7 +991,7 @@ def _cmd_consolidate(args) -> int:
         all=args.all,
         json_output=args.json,
     )
-    exit_code, message = consolidate_command(options)
+    exit_code, message = _run_consolidate_command(options)
     return exit_code
 
 
