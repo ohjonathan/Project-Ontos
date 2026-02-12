@@ -1,9 +1,15 @@
 """Tests for zone-aware body reference scanning."""
 
+import pytest
 from pathlib import Path
 from typing import Optional
 
-from ontos.core.body_refs import MatchType, ZoneType, scan_body_references
+from ontos.core.body_refs import (
+    MatchType,
+    ZoneType,
+    _looks_like_doc_id,
+    scan_body_references,
+)
 
 
 def _scan(body: str, *, rename_target: Optional[str] = None):
@@ -130,3 +136,87 @@ def test_unsupported_markdown_forms_are_ignored():
     )
     scan = _scan(body)
     assert scan.matches == []
+
+
+# --- False-positive filter tests ---
+
+
+class TestLooksLikeDocIdFilters:
+    """Tests for _looks_like_doc_id false-positive rejection."""
+
+    @pytest.mark.parametrize("token", ["1", "2", "42", "100", "0", "999"])
+    def test_bare_numbers_rejected(self, token):
+        assert _looks_like_doc_id(token) is False
+
+    @pytest.mark.parametrize("token", ["1000", "12345"])
+    def test_large_numbers_still_accepted(self, token):
+        """Numbers with 4+ digits pass — they're unusual enough to flag."""
+        assert _looks_like_doc_id(token) is True
+
+    @pytest.mark.parametrize("token", [
+        "v3.0", "v3.2", "v3.2.1", "v3.2.3", "v3.3",
+        "3.0", "3.2.1", "2.0.0",
+        "V3.2",
+    ])
+    def test_version_strings_rejected(self, token):
+        assert _looks_like_doc_id(token) is False
+
+    @pytest.mark.parametrize("token", [
+        "v3.0.4_Code_Review_Claude",  # version + underscore suffix = real doc ID
+        "v3_2_4_proposal",
+        "v3_2",  # underscore version = looks like an ID
+    ])
+    def test_real_doc_ids_accepted(self, token):
+        assert _looks_like_doc_id(token) is True
+
+    @pytest.mark.parametrize("token", [
+        "depends_on", "status", "type", "id", "pending_curation",
+        "update_policy", "curation_level", "ontos_schema",
+    ])
+    def test_known_field_names_rejected(self, token):
+        assert _looks_like_doc_id(token) is False
+
+    @pytest.mark.parametrize("token", [
+        "AGENTS.md", "README.md", "config.toml", "schema.yaml",
+        "body_refs.py", "index.js", "app.tsx", "styles.css",
+    ])
+    def test_filenames_with_extensions_rejected(self, token):
+        assert _looks_like_doc_id(token) is False
+
+    def test_underscore_id_without_digits_accepted(self):
+        assert _looks_like_doc_id("auth_flow") is True
+
+    def test_dot_id_without_version_pattern_accepted(self):
+        assert _looks_like_doc_id("config.main_settings") is True
+
+
+class TestFalsePositiveScanning:
+    """Integration tests: false positives should not appear in scan output."""
+
+    def test_bare_numbers_not_in_scan(self):
+        scan = _scan("Items: 1, 2, 3, 4, 5")
+        ids = {m.normalized_id for m in scan.matches}
+        assert "1" not in ids
+        assert "2" not in ids
+
+    def test_version_strings_not_in_scan(self):
+        scan = _scan("Upgraded from v3.2 to v3.3.0 today.")
+        ids = {m.normalized_id for m in scan.matches}
+        assert "v3.2" not in ids
+        assert "v3.3.0" not in ids
+
+    def test_field_names_not_in_scan(self):
+        scan = _scan("The depends_on field links documents.")
+        ids = {m.normalized_id for m in scan.matches}
+        assert "depends_on" not in ids
+
+    def test_filenames_not_in_scan(self):
+        scan = _scan("See AGENTS.md for details.")
+        ids = {m.normalized_id for m in scan.matches}
+        assert "AGENTS.md" not in ids
+
+    def test_real_doc_ids_still_detected(self):
+        scan = _scan("See v3_2_4_proposal and auth_flow for details.")
+        ids = {m.normalized_id for m in scan.matches}
+        assert "v3_2_4_proposal" in ids
+        assert "auth_flow" in ids

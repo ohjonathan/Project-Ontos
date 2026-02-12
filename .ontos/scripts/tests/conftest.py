@@ -1,6 +1,8 @@
-"""Pytest configuration for scripts tests."""
+"""Pytest configuration for legacy scripts tests."""
 
 import warnings
+
+import pytest
 
 
 def pytest_configure(config):
@@ -11,7 +13,7 @@ def pytest_configure(config):
         category=FutureWarning,
         module=r"ontos.*"
     )
-    
+
     # Suppress the ontos_lib deprecation warning in tests
     # (tests may intentionally import from ontos_lib to test the shim)
     warnings.filterwarnings(
@@ -19,3 +21,10 @@ def pytest_configure(config):
         message="Importing from 'ontos_lib' is deprecated",
         category=FutureWarning,
     )
+
+
+def pytest_collection_modifyitems(items):
+    """Auto-mark all tests in this directory as legacy."""
+    legacy_marker = pytest.mark.legacy
+    for item in items:
+        item.add_marker(legacy_marker)

@@ -14,7 +14,7 @@ authors = [
 ]
 keywords = ["documentation", "ai", "context", "llm", "developer-tools"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
@@ -55,10 +55,13 @@ include = ["ontos", "ontos.*"]
 "ontos._hooks" = ["*"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests", ".ontos/scripts/tests"]
+testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
+markers = [
+    "legacy: tests for pre-v3.0 legacy script compatibility layer (.ontos/scripts/tests/)",
+]
 
 [tool.coverage.run]
 source = ["ontos"]

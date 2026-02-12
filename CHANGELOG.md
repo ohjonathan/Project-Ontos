@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
+> For the full historical changelog with Ontos frontmatter (from v0.1.0), see [`Ontos_CHANGELOG.md`](Ontos_CHANGELOG.md).
+
 ## [3.3.0] - 2026-02-11
 
 v3.3 ships 62 audit-derived hardening fixes plus 3 new commands across Track A (hardening) and Track B (features).
