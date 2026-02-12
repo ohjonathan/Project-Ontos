@@ -22,7 +22,7 @@ mission (kernel)
 ## Try It
 
 ```bash
-python3 .ontos/scripts/ontos_generate_context_map.py --dir docs
+ontos map
 ```
 
 ## Files Content
