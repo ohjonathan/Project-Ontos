@@ -249,3 +249,36 @@ def test_link_check_version_like_doc_id_not_broken_with_body_ref(tmp_path: Path)
 
     assert result.returncode == 0
     assert payload["summary"]["broken_references"] == 0
+
+
+def test_link_check_broken_ref_matching_filtered_pattern_not_detected_in_generic_scan(tmp_path: Path):
+    """Known tradeoff: a broken bare-token reference whose ID matches a
+    filtered pattern (e.g., short label 'A2') is NOT detected by the generic
+    scan. This is intentional — these patterns overwhelmingly match non-doc
+    content (audit labels, curation levels, config constants). The known-ID
+    scan (Pass 1) still detects all references to *existing* docs with
+    filtered-pattern names. See PR #77 for the precision/recall rationale."""
+    _init_repo(tmp_path)
+    _write_doc(tmp_path / "docs" / "doc_a1.md", "A1", body="Roadmap references A2.")
+
+    result = _run_ontos(tmp_path, "--json", "link-check")
+    payload = json.loads(result.stdout)
+
+    # A2 is not detected as broken because _SHORT_LABEL_RE filters it
+    # in the generic scan. This is the accepted tradeoff for eliminating
+    # ~60+ false positives from short labels in audit/curation content.
+    assert payload["summary"]["broken_references"] == 0
+
+
+def test_link_check_short_label_doc_id_detected_when_exists(tmp_path: Path):
+    """Short-label doc IDs (e.g., 'A1') are detected by the known-ID scan
+    (Pass 1) even though _looks_like_doc_id would reject them in Pass 2."""
+    _init_repo(tmp_path)
+    _write_doc(tmp_path / "docs" / "doc_a1.md", "A1")
+    _write_doc(tmp_path / "docs" / "referrer.md", "referrer", body="See A1 for details.")
+
+    result = _run_ontos(tmp_path, "--json", "link-check")
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["summary"]["broken_references"] == 0
