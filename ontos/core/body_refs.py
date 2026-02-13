@@ -58,7 +58,7 @@ _SCHEME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
 _WINDOWS_ABS_RE = re.compile(r"^[A-Za-z]:[\\/]")
 
 # False-positive filters for generic (no known_ids) scanning mode.
-_VERSION_RE = re.compile(r"^v?\d+(\.\d+)+$", re.IGNORECASE)
+_VERSION_RE = re.compile(r"^v?\d+(\.\d+)+[a-z]?$", re.IGNORECASE)
 _BARE_NUMBER_RE = re.compile(r"^\d{1,3}$")
 _FILE_EXTENSION_RE = re.compile(
     r"\.(md|py|toml|yaml|yml|json|js|ts|tsx|jsx|css|html|txt|cfg|ini|sh|bash|rs|go|rb)$",
@@ -69,6 +69,9 @@ _KNOWN_FIELD_NAMES = frozenset({
     "describes", "describes_verified", "pending_curation", "update_policy",
     "aliases", "scope", "rejected_reason", "rejected_date",
 })
+_SHORT_LABEL_RE = re.compile(r"^[A-Z]{1,2}-?[A-Z]?\d{1,2}$")
+_ALL_CAPS_RE = re.compile(r"^[A-Z][A-Z_]+[A-Z]$")
+_VERSION_WILDCARD_RE = re.compile(r"^v?\d+(\.\d+)*\.x$", re.IGNORECASE)
 _REFERENCE_DEF_RE = re.compile(r"^\s*\[[^\]]+\]:")
 _REFERENCE_STYLE_RE = re.compile(r"\[[^\]]+\]\[[^\]]+\]")
 _WIKILINK_RE = re.compile(r"\[\[[^\]]+\]\]")
@@ -669,6 +672,15 @@ def _looks_like_doc_id(token: str) -> bool:
         return False
     # Reject tokens that look like filenames with extensions
     if _FILE_EXTENSION_RE.search(token):
+        return False
+    # Reject short alphanumeric labels (e.g. "A1", "B2", "X-H1", "NB-1", "L0")
+    if _SHORT_LABEL_RE.match(token):
+        return False
+    # Reject ALL_CAPS config constants (e.g. "AUTO_CONSOLIDATE")
+    if _ALL_CAPS_RE.match(token):
+        return False
+    # Reject version wildcards (e.g. "v2.x", "v3.2.x")
+    if _VERSION_WILDCARD_RE.match(token):
         return False
     if "_" in token or "." in token:
         return True

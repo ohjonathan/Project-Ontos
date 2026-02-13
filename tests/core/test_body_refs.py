@@ -183,6 +183,25 @@ class TestLooksLikeDocIdFilters:
     def test_filenames_with_extensions_rejected(self, token):
         assert _looks_like_doc_id(token) is False
 
+    @pytest.mark.parametrize("token", [
+        "A1", "A3", "B2", "L0", "L1", "L2", "L3",
+        "M-2", "B-2", "NB-1", "NB-2", "NB-3", "X-H1", "X-H2",
+    ])
+    def test_short_labels_rejected(self, token):
+        assert _looks_like_doc_id(token) is False
+
+    @pytest.mark.parametrize("token", [
+        "AUTO_CONSOLIDATE", "MY_CONFIG", "SOME_SETTING",
+    ])
+    def test_all_caps_constants_rejected(self, token):
+        assert _looks_like_doc_id(token) is False
+
+    @pytest.mark.parametrize("token", [
+        "v3.2.1b", "v2.x", "v3.2.x", "3.2.1a",
+    ])
+    def test_version_adjacent_rejected(self, token):
+        assert _looks_like_doc_id(token) is False
+
     def test_underscore_id_without_digits_accepted(self):
         assert _looks_like_doc_id("auth_flow") is True
 
@@ -214,6 +233,23 @@ class TestFalsePositiveScanning:
         scan = _scan("See AGENTS.md for details.")
         ids = {m.normalized_id for m in scan.matches}
         assert "AGENTS.md" not in ids
+
+    def test_short_labels_not_in_scan(self):
+        scan = _scan("Finding A1 and issue NB-1 resolved.")
+        ids = {m.normalized_id for m in scan.matches}
+        assert "A1" not in ids
+        assert "NB-1" not in ids
+
+    def test_all_caps_constants_not_in_scan(self):
+        scan = _scan("Set AUTO_CONSOLIDATE to true.")
+        ids = {m.normalized_id for m in scan.matches}
+        assert "AUTO_CONSOLIDATE" not in ids
+
+    def test_version_wildcards_not_in_scan(self):
+        scan = _scan("Supports v2.x and v3.2.1b releases.")
+        ids = {m.normalized_id for m in scan.matches}
+        assert "v2.x" not in ids
+        assert "v3.2.1b" not in ids
 
     def test_real_doc_ids_still_detected(self):
         scan = _scan("See v3_2_4_proposal and auth_flow for details.")
