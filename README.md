@@ -128,6 +128,21 @@ Pass a project to another developer or agency. Because you own your context, eve
 ### Documentation Health
 CI validation catches broken links, circular dependencies, and architectural violations before they become tribal knowledge buried in someone's head.
 
+### Re-Architecture & Decision Extraction
+Rewriting an app in a new stack? Export your entire knowledge graph as structured JSON and feed it to an LLM:
+
+```bash
+ontos export data --json > project_export.json
+```
+
+The export includes every document's content, dependencies, type hierarchy, and graph edges. Decisions live in the document bodies (`## Key Decisions`, `## Alternatives Considered`), not in separate metadata fields—so the full reasoning context travels with the export.
+
+Give the JSON to any LLM with a prompt like:
+
+> *"Extract all key decisions, alternatives rejected, and their rationale from these documents. Group by component. Flag any decisions that would need to be revisited for a migration from [current stack] to [target stack]."*
+
+Your atoms get rewritten. Your decisions don't have to.
+
 ---
 
 ## Quick Start
