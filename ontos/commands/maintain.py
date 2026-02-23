@@ -441,6 +441,32 @@ def _task_curation_stats(ctx: MaintainContext) -> TaskResult:
 
 
 @register_maintain_task(
+    name="promote_check",
+    order=45,
+    description="Report documents ready for promotion",
+)
+def _task_promote_check(ctx: MaintainContext) -> TaskResult:
+    if ctx.options.dry_run:
+        return _ok("Would run `ontos promote --check`.")
+
+    from ontos.commands.promote import PromoteOptions, _run_promote_command
+
+    exit_code, message = _run_promote_command(
+        PromoteOptions(
+            check=True,
+            quiet=True,
+            json_output=False,
+            scope=ctx.options.scope,
+            repo_root=ctx.repo_root,
+        )
+    )
+
+    if exit_code == 0:
+        return _ok(message or "No documents to promote.")
+    return _fail(message or "Promote check failed.")
+
+
+@register_maintain_task(
     name="consolidate_logs",
     order=50,
     description="Consolidate logs when AUTO_CONSOLIDATE is enabled",

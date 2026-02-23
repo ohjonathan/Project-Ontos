@@ -27,7 +27,7 @@ def test_promote_absolute_path_no_crash(tmp_path):
     )
     
     # Should not crash
-    assert "Found 1 document(s) that can be promoted" in result.stdout
+    assert "Found 1 candidate" in result.stdout
     assert "test_b2" not in result.stdout # Ensure it didn't find the other test file if any
     assert result.returncode == 0
     assert "relative_to" not in result.stderr

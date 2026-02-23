@@ -20,6 +20,7 @@ from ontos.commands.maintain import (
     _scan_docs,
     _task_check_links,
     _task_curation_stats,
+    _task_promote_check,
     _task_review_proposals,
     list_registered_tasks,
     maintain_command,
@@ -62,6 +63,7 @@ def test_default_registry_has_expected_order():
         "regenerate_map",
         "health_check",
         "curation_stats",
+        "promote_check",
         "consolidate_logs",
         "review_proposals",
         "check_links",
@@ -475,3 +477,102 @@ def test_maintain_invalid_task_status_becomes_failed(tmp_path, monkeypatch, caps
     payload = json.loads(capsys.readouterr().out)
     assert payload["data"]["tasks"][0]["status"] == "failed"
     assert "invalid task status" in payload["data"]["tasks"][0]["details"][0]
+
+
+def test_promote_check_task_reports_promotable_docs(tmp_path, monkeypatch):
+    _init_project(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    docs = tmp_path / "docs"
+    # L0 scaffold document — not promotable (missing depends_on for atom)
+    (docs / "scaffold.md").write_text(
+        "---\nid: scaffold_doc\ntype: atom\nstatus: scaffold\n---\n",
+        encoding="utf-8",
+    )
+    # L2 full document — not a candidate
+    (docs / "full.md").write_text(
+        "---\nid: full_doc\ntype: atom\nstatus: active\ndepends_on: [scaffold_doc]\n---\n",
+        encoding="utf-8",
+    )
+
+    ctx = _build_context(tmp_path, quiet=True)
+    result = _task_promote_check(ctx)
+
+    assert result.status == "success"
+    assert "1 candidates" in result.message
+
+
+def test_promote_check_dry_run_skips_scan(tmp_path, monkeypatch):
+    _init_project(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    ctx = _build_context(tmp_path, quiet=True, dry_run=True)
+
+    monkeypatch.setattr(
+        "ontos.commands.promote._run_promote_command",
+        lambda _opts: (_ for _ in ()).throw(AssertionError("dry-run should not call promote")),
+    )
+    result = _task_promote_check(ctx)
+
+    assert result.status == "success"
+    assert "would run" in result.message.lower()
+
+
+def test_promote_check_reports_failure(tmp_path, monkeypatch):
+    _init_project(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    ctx = _build_context(tmp_path, quiet=True)
+    monkeypatch.setattr(
+        "ontos.commands.promote._run_promote_command",
+        lambda _opts: (1, "Document load failed"),
+    )
+    result = _task_promote_check(ctx)
+    assert result.status == "failed"
+    assert "Document load failed" in result.message
+
+
+def test_promote_check_uses_repo_root_not_cwd(tmp_path, monkeypatch):
+    """Regression: promote_check must use ctx.repo_root, not process CWD."""
+    _init_project(tmp_path)
+    docs = tmp_path / "docs"
+    (docs / "candidate.md").write_text(
+        "---\nid: candidate\ntype: atom\nstatus: scaffold\n---\n",
+        encoding="utf-8",
+    )
+
+    # Set CWD to a completely different directory
+    other_dir = tmp_path / "elsewhere"
+    other_dir.mkdir()
+    monkeypatch.chdir(other_dir)
+
+    ctx = _build_context(tmp_path, quiet=True)
+    result = _task_promote_check(ctx)
+
+    # Should succeed scanning tmp_path, not fail looking for project at other_dir
+    assert result.status == "success"
+    assert "candidates" in result.message
+
+
+def test_promote_check_excludes_non_ready_from_ready_count(tmp_path, monkeypatch):
+    """Non-promotable L0/L1 docs should not be counted as 'ready'."""
+    _init_project(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    docs = tmp_path / "docs"
+
+    # L0 atom without depends_on — NOT ready (has blocker)
+    (docs / "blocked.md").write_text(
+        "---\nid: blocked\ntype: atom\nstatus: scaffold\n---\n",
+        encoding="utf-8",
+    )
+    # L1 kernel — ready (kernels don't need depends_on)
+    (docs / "ready_kernel.md").write_text(
+        "---\nid: ready_kernel\ntype: kernel\nstatus: pending_curation\n---\n",
+        encoding="utf-8",
+    )
+
+    ctx = _build_context(tmp_path, quiet=True)
+    result = _task_promote_check(ctx)
+
+    assert result.status == "success"
+    # Should report 1 ready out of 2 candidates
+    assert "1 ready for promotion" in result.message
+    assert "2 candidates" in result.message
+
