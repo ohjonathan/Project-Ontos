@@ -43,7 +43,7 @@ def test_promote_check_parity(tmp_path):
     )
 
     assert result.returncode == 0
-    assert "Found 1 document" in result.stdout
+    assert "Found 1 candidate" in result.stdout
     assert "scaffold_doc" in result.stdout
     assert "[L0]" in result.stdout
 

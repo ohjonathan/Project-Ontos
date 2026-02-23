@@ -126,7 +126,7 @@ This runs nine tasks:
 2. **regenerate_map** — Regenerate context map
 3. **health_check** — Run `ontos doctor`
 4. **curation_stats** — Report curation stats (L0/L1/L2)
-5. **promote_check** — Report documents ready for promotion
+5. **promote_check** — Report documents ready for promotion (ready count)
 6. **consolidate_logs** — Archive old logs (if `AUTO_CONSOLIDATE=True`)
 7. **review_proposals** — Report draft proposals for manual graduation
 8. **check_links** — Validate dependency links

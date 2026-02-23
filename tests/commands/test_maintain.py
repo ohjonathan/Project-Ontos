@@ -483,12 +483,12 @@ def test_promote_check_task_reports_promotable_docs(tmp_path, monkeypatch):
     _init_project(tmp_path)
     monkeypatch.chdir(tmp_path)
     docs = tmp_path / "docs"
-    # L0 scaffold document — promotable
+    # L0 scaffold document — not promotable (missing depends_on for atom)
     (docs / "scaffold.md").write_text(
         "---\nid: scaffold_doc\ntype: atom\nstatus: scaffold\n---\n",
         encoding="utf-8",
     )
-    # L2 full document — not promotable
+    # L2 full document — not a candidate
     (docs / "full.md").write_text(
         "---\nid: full_doc\ntype: atom\nstatus: active\ndepends_on: [scaffold_doc]\n---\n",
         encoding="utf-8",
@@ -498,7 +498,7 @@ def test_promote_check_task_reports_promotable_docs(tmp_path, monkeypatch):
     result = _task_promote_check(ctx)
 
     assert result.status == "success"
-    assert "1 documents found" in result.message
+    assert "1 candidates" in result.message
 
 
 def test_promote_check_dry_run_skips_scan(tmp_path, monkeypatch):
@@ -527,3 +527,52 @@ def test_promote_check_reports_failure(tmp_path, monkeypatch):
     result = _task_promote_check(ctx)
     assert result.status == "failed"
     assert "Document load failed" in result.message
+
+
+def test_promote_check_uses_repo_root_not_cwd(tmp_path, monkeypatch):
+    """Regression: promote_check must use ctx.repo_root, not process CWD."""
+    _init_project(tmp_path)
+    docs = tmp_path / "docs"
+    (docs / "candidate.md").write_text(
+        "---\nid: candidate\ntype: atom\nstatus: scaffold\n---\n",
+        encoding="utf-8",
+    )
+
+    # Set CWD to a completely different directory
+    other_dir = tmp_path / "elsewhere"
+    other_dir.mkdir()
+    monkeypatch.chdir(other_dir)
+
+    ctx = _build_context(tmp_path, quiet=True)
+    result = _task_promote_check(ctx)
+
+    # Should succeed scanning tmp_path, not fail looking for project at other_dir
+    assert result.status == "success"
+    assert "candidates" in result.message
+
+
+def test_promote_check_excludes_non_ready_from_ready_count(tmp_path, monkeypatch):
+    """Non-promotable L0/L1 docs should not be counted as 'ready'."""
+    _init_project(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    docs = tmp_path / "docs"
+
+    # L0 atom without depends_on — NOT ready (has blocker)
+    (docs / "blocked.md").write_text(
+        "---\nid: blocked\ntype: atom\nstatus: scaffold\n---\n",
+        encoding="utf-8",
+    )
+    # L1 kernel — ready (kernels don't need depends_on)
+    (docs / "ready_kernel.md").write_text(
+        "---\nid: ready_kernel\ntype: kernel\nstatus: pending_curation\n---\n",
+        encoding="utf-8",
+    )
+
+    ctx = _build_context(tmp_path, quiet=True)
+    result = _task_promote_check(ctx)
+
+    assert result.status == "success"
+    # Should report 1 ready out of 2 candidates
+    assert "1 ready for promotion" in result.message
+    assert "2 candidates" in result.message
+

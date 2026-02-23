@@ -30,6 +30,7 @@ class PromoteOptions:
     quiet: bool = False
     json_output: bool = False
     scope: Optional[str] = None
+    repo_root: Optional[Path] = None
 
 
 def fuzzy_match_ids(query: str, all_ids: List[str]) -> List[str]:
@@ -151,7 +152,7 @@ def apply_promotion(
 def _run_promote_command(options: PromoteOptions) -> Tuple[int, str]:
     """Execute promote command."""
     output = OutputHandler(quiet=options.quiet)
-    root = find_project_root()
+    root = options.repo_root if options.repo_root is not None else find_project_root()
     
     # 1. Gather files
     if options.files:
@@ -199,7 +200,8 @@ def _run_promote_command(options: PromoteOptions) -> Tuple[int, str]:
 
     # 3. Handle --check
     if options.check:
-        output.info(f"Found {len(promotable)} document(s) that can be promoted:\n")
+        ready_count = sum(1 for _, _, info in promotable if info.promotable)
+        output.info(f"Found {len(promotable)} candidate(s), {ready_count} ready for promotion:\n")
         if not options.quiet:
             root_resolved = root.resolve()
             for f, fm, info in promotable:
@@ -213,7 +215,7 @@ def _run_promote_command(options: PromoteOptions) -> Tuple[int, str]:
                 if not info.promotable:
                     for blocker in info.promotion_blockers[:2]:
                         print(f"      → {blocker}")
-        return 0, f"{len(promotable)} documents found"
+        return 0, f"{ready_count} ready for promotion ({len(promotable)} candidates)"
 
     ctx = SessionContext.from_repo(root)
     success_count = 0

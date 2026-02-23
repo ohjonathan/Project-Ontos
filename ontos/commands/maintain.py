@@ -457,6 +457,7 @@ def _task_promote_check(ctx: MaintainContext) -> TaskResult:
             quiet=True,
             json_output=False,
             scope=ctx.options.scope,
+            repo_root=ctx.repo_root,
         )
     )
 

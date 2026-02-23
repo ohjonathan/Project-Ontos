@@ -88,7 +88,7 @@ Event types: `feature`, `fix`, `refactor`, `exploration`, `chore`, `decision`
    - Regenerate context map
    - Run health checks (`ontos doctor`)
    - Report curation stats (L0/L1/L2)
-   - Report documents ready for promotion (`ontos promote --check`)
+   - Report documents ready for promotion (`ontos promote --check`, ready count)
    - Consolidate old logs (if `AUTO_CONSOLIDATE=True`)
    - Review draft proposals (reports candidates for manual graduation)
    - Validate dependency links
