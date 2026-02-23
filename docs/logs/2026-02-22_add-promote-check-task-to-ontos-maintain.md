@@ -14,7 +14,7 @@ impacts: [ontos_manual, ontos_agent_instructions]
 
 ## Summary
 
-Added `promote_check` (order 45) as the 9th task in the `ontos maintain` pipeline. Runs `ontos promote --check` non-interactively to surface documents eligible for promotion from L0/L1 to L2 during weekly maintenance.
+Added `promote_check` (order 45) as the 9th task in the `ontos maintain` pipeline. After review, applied root correctness (decoupled from CWD via `repo_root`), ready semantics (`--check` reports ready count vs total candidates), and artifact consistency fixes. Squash-merged as PR #78.
 
 ## 1. Goal
 
@@ -25,6 +25,8 @@ Include scaffold and promote workflows under "Maintain Ontos" so weekly maintena
 - **Scaffold not added separately** — `migrate_untagged` (order 10) already calls `find_untagged_files` + `_run_scaffold_command(apply=True)`, making a separate scaffold task redundant.
 - **promote_check uses `--check` mode** — Non-interactive, read-only. Reports promotable docs without mutating anything.
 - **Order 45** — Placed between `curation_stats` (40) and `consolidate_logs` (50), keeping the curation-related tasks grouped.
+- **Root correctness** — Added `repo_root` to `PromoteOptions` so maintain passes `ctx.repo_root`, decoupling from CWD.
+- **Ready semantics** — `--check` reports "N ready for promotion (M candidates)" where ready = `info.promotable == True`.
 
 ## 3. Alternatives Considered
 
@@ -33,9 +35,9 @@ Include scaffold and promote workflows under "Maintain Ontos" so weekly maintena
 
 ## Testing
 
-- 22/22 maintain tests pass
-- New tests: `test_promote_check_task_reports_promotable_docs`, `test_promote_check_dry_run_skips_scan`
+- 29/29 tests pass across `test_maintain.py`, `test_promote_parity.py`, `test_b2_promote_absolute_path.py`
+- Key new tests: `test_promote_check_uses_repo_root_not_cwd`, `test_promote_check_excludes_non_ready_from_ready_count`
 
 ## Documentation
 
-- Updated `Ontos_Manual.md` and `Ontos_Agent_Instructions.md` (8 → 9 tasks)
+- Updated `Ontos_Manual.md` and `Ontos_Agent_Instructions.md` (8 → 9 tasks, ready count semantics)
