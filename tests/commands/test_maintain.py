@@ -20,6 +20,7 @@ from ontos.commands.maintain import (
     _scan_docs,
     _task_check_links,
     _task_curation_stats,
+    _task_promote_check,
     _task_review_proposals,
     list_registered_tasks,
     maintain_command,
@@ -62,6 +63,7 @@ def test_default_registry_has_expected_order():
         "regenerate_map",
         "health_check",
         "curation_stats",
+        "promote_check",
         "consolidate_logs",
         "review_proposals",
         "check_links",
@@ -475,3 +477,37 @@ def test_maintain_invalid_task_status_becomes_failed(tmp_path, monkeypatch, caps
     payload = json.loads(capsys.readouterr().out)
     assert payload["data"]["tasks"][0]["status"] == "failed"
     assert "invalid task status" in payload["data"]["tasks"][0]["details"][0]
+
+
+def test_promote_check_task_reports_promotable_docs(tmp_path):
+    _init_project(tmp_path)
+    docs = tmp_path / "docs"
+    # L0 scaffold document — promotable
+    (docs / "scaffold.md").write_text(
+        "---\nid: scaffold_doc\ntype: atom\nstatus: scaffold\n---\n",
+        encoding="utf-8",
+    )
+    # L2 full document — not promotable
+    (docs / "full.md").write_text(
+        "---\nid: full_doc\ntype: atom\nstatus: active\ndepends_on: [scaffold_doc]\n---\n",
+        encoding="utf-8",
+    )
+
+    ctx = _build_context(tmp_path, quiet=True)
+    result = _task_promote_check(ctx)
+
+    assert result.status == "success"
+
+
+def test_promote_check_dry_run_skips_scan(tmp_path, monkeypatch):
+    _init_project(tmp_path)
+    ctx = _build_context(tmp_path, quiet=True, dry_run=True)
+
+    def _should_not_run(_options):
+        raise AssertionError("dry-run should not call promote")
+
+    monkeypatch.setattr("ontos.commands.maintain._task_promote_check.__wrapped__", _should_not_run, raising=False)
+    result = _task_promote_check(ctx)
+
+    assert result.status == "success"
+    assert "would run" in result.message.lower()

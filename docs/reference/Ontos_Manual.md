@@ -121,15 +121,16 @@ Say **"Maintain Ontos"** weekly:
 ```bash
 ontos maintain
 ```
-This runs eight tasks:
-1. **migrate_untagged** — Tag untagged files
+This runs nine tasks:
+1. **migrate_untagged** — Tag untagged files (includes scaffold)
 2. **regenerate_map** — Regenerate context map
 3. **health_check** — Run `ontos doctor`
 4. **curation_stats** — Report curation stats (L0/L1/L2)
-5. **consolidate_logs** — Archive old logs (if `AUTO_CONSOLIDATE=True`)
-6. **review_proposals** — Report draft proposals for manual graduation
-7. **check_links** — Validate dependency links
-8. **sync_agents** — Regenerate `AGENTS.md` when stale
+5. **promote_check** — Report documents ready for promotion
+6. **consolidate_logs** — Archive old logs (if `AUTO_CONSOLIDATE=True`)
+7. **review_proposals** — Report draft proposals for manual graduation
+8. **check_links** — Validate dependency links
+9. **sync_agents** — Regenerate `AGENTS.md` when stale
 
 Useful flags:
 - `--dry-run` — Preview tasks without executing

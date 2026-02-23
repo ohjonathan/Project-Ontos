@@ -83,11 +83,12 @@ Event types: `feature`, `fix`, `refactor`, `exploration`, `chore`, `decision`
 
 ### "Maintain Ontos" (Weekly)
 1. `ontos maintain`
-2. This runs eight tasks:
-   - Migrate untagged files
+2. This runs nine tasks:
+   - Migrate untagged files (includes scaffold)
    - Regenerate context map
    - Run health checks (`ontos doctor`)
    - Report curation stats (L0/L1/L2)
+   - Report documents ready for promotion (`ontos promote --check`)
    - Consolidate old logs (if `AUTO_CONSOLIDATE=True`)
    - Review draft proposals (reports candidates for manual graduation)
    - Validate dependency links
