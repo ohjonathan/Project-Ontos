@@ -213,7 +213,7 @@ def _run_promote_command(options: PromoteOptions) -> Tuple[int, str]:
                 if not info.promotable:
                     for blocker in info.promotion_blockers[:2]:
                         print(f"      → {blocker}")
-        return 0, f"{len(promotable)} documents find"
+        return 0, f"{len(promotable)} documents found"
 
     ctx = SessionContext.from_repo(root)
     success_count = 0

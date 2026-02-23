@@ -479,8 +479,9 @@ def test_maintain_invalid_task_status_becomes_failed(tmp_path, monkeypatch, caps
     assert "invalid task status" in payload["data"]["tasks"][0]["details"][0]
 
 
-def test_promote_check_task_reports_promotable_docs(tmp_path):
+def test_promote_check_task_reports_promotable_docs(tmp_path, monkeypatch):
     _init_project(tmp_path)
+    monkeypatch.chdir(tmp_path)
     docs = tmp_path / "docs"
     # L0 scaffold document — promotable
     (docs / "scaffold.md").write_text(
@@ -497,17 +498,32 @@ def test_promote_check_task_reports_promotable_docs(tmp_path):
     result = _task_promote_check(ctx)
 
     assert result.status == "success"
+    assert "1 documents found" in result.message
 
 
 def test_promote_check_dry_run_skips_scan(tmp_path, monkeypatch):
     _init_project(tmp_path)
+    monkeypatch.chdir(tmp_path)
     ctx = _build_context(tmp_path, quiet=True, dry_run=True)
 
-    def _should_not_run(_options):
-        raise AssertionError("dry-run should not call promote")
-
-    monkeypatch.setattr("ontos.commands.maintain._task_promote_check.__wrapped__", _should_not_run, raising=False)
+    monkeypatch.setattr(
+        "ontos.commands.promote._run_promote_command",
+        lambda _opts: (_ for _ in ()).throw(AssertionError("dry-run should not call promote")),
+    )
     result = _task_promote_check(ctx)
 
     assert result.status == "success"
     assert "would run" in result.message.lower()
+
+
+def test_promote_check_reports_failure(tmp_path, monkeypatch):
+    _init_project(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    ctx = _build_context(tmp_path, quiet=True)
+    monkeypatch.setattr(
+        "ontos.commands.promote._run_promote_command",
+        lambda _opts: (1, "Document load failed"),
+    )
+    result = _task_promote_check(ctx)
+    assert result.status == "failed"
+    assert "Document load failed" in result.message
