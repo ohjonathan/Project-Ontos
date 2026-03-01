@@ -48,6 +48,18 @@ def _val(item: Any) -> str:
     return item.value if hasattr(item, "value") else str(item)
 
 
+def _log_date_sort_key(doc: Any) -> str:
+    """Sort key for log documents: date frontmatter first, then ID.
+
+    Used by _generate_tier1_summary() and _generate_tiered_compact_output()
+    to ensure consistent log ordering.
+    """
+    date_str = doc.frontmatter.get("date")
+    if date_str:
+        return str(date_str)
+    return doc.id
+
+
 def _load_known_concepts(root: Path) -> set:
     """Load known concept vocabulary from Common_Concepts.md.
 
@@ -114,6 +126,8 @@ def generate_context_map(
     result = validator.validate_all()
 
     # Compact output (if enabled)
+    # ORDERING: TIERED must be checked first because it needs `config` for Tier 1 prose.
+    # BASIC/RICH do an early return without config access.
     if options.compact == CompactMode.TIERED:
         return _generate_tiered_compact_output(docs, config, options), result
     elif options.compact != CompactMode.OFF:
@@ -219,13 +233,7 @@ def _generate_tier1_summary(
     log_docs = [d for d in docs.values() if _val(d.type) == "log"]
     
     # Sort by date frontmatter (falling back to ID)
-    def log_sort_key(doc):
-        date_str = doc.frontmatter.get("date")
-        if date_str:
-            return str(date_str)
-        return doc.id
-
-    log_docs_sorted = sorted(log_docs, key=log_sort_key, reverse=True)[:3]
+    log_docs_sorted = sorted(log_docs, key=_log_date_sort_key, reverse=True)[:3]
 
     if log_docs_sorted:
         log_lines.append("| Log | Status | Summary |")
@@ -624,7 +632,7 @@ def _generate_tiered_compact_output(
     top_level: Dict[str, DocumentData] = {}
     detail_level: Dict[str, DocumentData] = {}
     other_level: Dict[str, DocumentData] = {}
-    log_docs: list = []
+    log_docs: List[DocumentData] = []
 
     for doc_id, doc in sorted(docs.items()):
         doc_type = _val(doc.type)
@@ -640,17 +648,9 @@ def _generate_tiered_compact_output(
         else:
             other_level[doc_id] = doc
 
-    # Log summary: count + latest
-    # Sort matches _generate_tier1_summary() (map.py:219-223) exactly
-    def _log_sort_key(doc):
-        date_str = doc.frontmatter.get("date")
-        if date_str:
-            return str(date_str)
-        return doc.id
-
     log_lines = [f"logs:{len(log_docs)}"]
     if log_docs:
-        log_docs_sorted = sorted(log_docs, key=_log_sort_key, reverse=True)
+        log_docs_sorted = sorted(log_docs, key=_log_date_sort_key, reverse=True)
         latest = log_docs_sorted[0]
         log_lines.append(f"latest:{latest.id}:{_val(latest.status)}")
 

@@ -87,10 +87,10 @@ def test_tiered_output_partitions_by_rank():
     opts = GenerateMapOptions()
     output = _generate_tiered_compact_output(docs, _MINIMAL_CONFIG, opts)
 
-    # Kernel + Strategy section should contain kernel/strategy IDs in RICH format
+    # Kernel + Strategy section should contain kernel/strategy IDs in RICH format (with summaries)
     assert "### Kernel + Strategy" in output
-    assert "kern1:kernel:active" in output
-    assert "strat1:strategy:active" in output
+    assert 'kern1:kernel:active:"Core kernel"' in output
+    assert 'strat1:strategy:active:"Growth plan"' in output
 
     # Product + Atom section should contain product/atom IDs in BASIC format
     assert "### Product + Atom" in output
