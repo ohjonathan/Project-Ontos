@@ -25,6 +25,7 @@ class CompactMode(Enum):
     OFF = "off"
     BASIC = "basic"
     RICH = "rich"
+    TIERED = "tiered"
 
 
 @dataclass
@@ -113,7 +114,9 @@ def generate_context_map(
     result = validator.validate_all()
 
     # Compact output (if enabled)
-    if options.compact != CompactMode.OFF:
+    if options.compact == CompactMode.TIERED:
+        return _generate_tiered_compact_output(docs, config, options), result
+    elif options.compact != CompactMode.OFF:
         return _generate_compact_output(docs, options.compact), result
 
     # Ensure project_root exists in config (fallback to CWD for standalone usage)
@@ -601,6 +604,73 @@ def _generate_compact_output(docs: Dict[str, Any], mode: CompactMode) -> str:
             lines.append(f'{doc_id}:{doc_type}:{doc_status}')
 
     return '\n'.join(lines)
+
+
+def _generate_tiered_compact_output(
+    docs: Dict[str, DocumentData],
+    config: Dict[str, Any],
+    options: GenerateMapOptions,
+) -> str:
+    """Generate tiered compact context map.
+
+    Combines Tier 1 prose summary with type-ranked compact lines:
+    - Kernel + Strategy (rank 0-1): RICH format (with summaries)
+    - Product + Atom (rank 2-3): BASIC format (id:type:status)
+    - Logs (rank 4): count + latest ID only
+    """
+    from ontos.core.ontology import TYPE_DEFINITIONS
+
+    # Partition by type rank
+    top_level: Dict[str, DocumentData] = {}
+    detail_level: Dict[str, DocumentData] = {}
+    other_level: Dict[str, DocumentData] = {}
+    log_docs: list = []
+
+    for doc_id, doc in sorted(docs.items()):
+        doc_type = _val(doc.type)
+        type_def = TYPE_DEFINITIONS.get(doc_type)
+        rank = type_def.rank if type_def else None
+
+        if rank in (0, 1):
+            top_level[doc_id] = doc
+        elif rank in (2, 3):
+            detail_level[doc_id] = doc
+        elif rank == 4:
+            log_docs.append(doc)
+        else:
+            other_level[doc_id] = doc
+
+    # Log summary: count + latest
+    # Sort matches _generate_tier1_summary() (map.py:219-223) exactly
+    def _log_sort_key(doc):
+        date_str = doc.frontmatter.get("date")
+        if date_str:
+            return str(date_str)
+        return doc.id
+
+    log_lines = [f"logs:{len(log_docs)}"]
+    if log_docs:
+        log_docs_sorted = sorted(log_docs, key=_log_sort_key, reverse=True)
+        latest = log_docs_sorted[0]
+        log_lines.append(f"latest:{latest.id}:{_val(latest.status)}")
+
+    # Assemble sections — reuse existing rendering functions
+    sections = [
+        _generate_tier1_summary(docs, config, options),
+        "",
+        "### Kernel + Strategy",
+        _generate_compact_output(top_level, CompactMode.RICH) if top_level else "(none)",
+        "",
+        "### Product + Atom",
+        _generate_compact_output(detail_level, CompactMode.BASIC) if detail_level else "(none)",
+        "",
+        "### Other",
+        _generate_compact_output(other_level, CompactMode.BASIC) if other_level else "(none)",
+        "",
+        "### Logs",
+        "\n".join(log_lines),
+    ]
+    return "\n".join(sections)
 
 
 def _format_doc_link(doc_id: str, doc_path: Path, obsidian_mode: bool) -> str:
