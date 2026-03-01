@@ -97,10 +97,11 @@ def test_tiered_output_partitions_by_rank():
     assert "prod1:product:active" in output
     assert "atom1:atom:active" in output
 
-    # Logs section
+    # Logs section — contract: count + latest ID only (no status)
     assert "### Logs" in output
     assert "logs:1" in output
-    assert "latest:log1:active" in output
+    assert "latest:log1" in output
+    assert "latest:log1:" not in output  # no status appended
 
 
 def test_tiered_output_empty_partitions():
@@ -130,7 +131,8 @@ def test_tiered_log_ordering():
 
     assert "logs:3" in output
     # Most recent date is 2026-03-15 => log_b
-    assert "latest:log_b:active" in output
+    assert "latest:log_b" in output
+    assert "latest:log_b:" not in output  # no status appended
 
 
 def test_tiered_unknown_type_goes_to_other():
@@ -172,3 +174,75 @@ def test_generate_context_map_dispatches_tiered():
     assert "## Tier 2: Document Index" not in content
     assert "| Path | ID | Type | Status |" not in content
 
+
+def test_tiered_output_empty_docs():
+    """S3: True zero-doc case — every section should be empty/none."""
+    docs = {}
+    opts = GenerateMapOptions()
+    output = _generate_tiered_compact_output(docs, _MINIMAL_CONFIG, opts)
+
+    assert "### Kernel + Strategy" in output
+    assert "### Product + Atom" in output
+    assert "### Other" in output
+    assert "### Logs" in output
+    # All ranked sections should show (none)
+    ks_section = output.split("### Kernel + Strategy")[1].split("### Product")[0]
+    assert "(none)" in ks_section
+    pa_section = output.split("### Product + Atom")[1].split("### Other")[0]
+    assert "(none)" in pa_section
+    other_section = output.split("### Other")[1].split("### Logs")[0]
+    assert "(none)" in other_section
+    assert "logs:0" in output
+
+
+def test_tiered_log_ordering_mixed_dated_undated():
+    """B2: Dated logs must always sort above undated logs."""
+    docs = {
+        "z_undated": _make_doc("z_undated", "log"),  # no date, ID sorts high
+        "a_undated": _make_doc("a_undated", "log"),  # no date, ID sorts low
+        "dated_old": _make_doc("dated_old", "log", date="2025-01-01"),
+        "dated_new": _make_doc("dated_new", "log", date="2026-06-01"),
+    }
+    opts = GenerateMapOptions()
+    output = _generate_tiered_compact_output(docs, _MINIMAL_CONFIG, opts)
+
+    assert "logs:4" in output
+    # The dated entry with the newest date must be latest, not z_undated
+    assert "latest:dated_new" in output
+
+
+def test_tiered_non_string_summary_no_crash():
+    """S1: Non-string summary in Tier 1 must not crash."""
+    docs = {
+        "kern1": _make_doc("kern1", "kernel"),
+    }
+    # Inject non-string summary into frontmatter
+    docs["kern1"].frontmatter["summary"] = ["list", "summary"]
+    opts = GenerateMapOptions()
+    # Should not raise
+    output = _generate_tiered_compact_output(docs, _MINIMAL_CONFIG, opts)
+    assert "### Kernel + Strategy" in output
+
+
+def test_cli_parser_compact_default_is_basic():
+    """S2: --compact bare defaults to 'basic'."""
+    from ontos.cli import create_parser
+    parser = create_parser()
+    args = parser.parse_args(["map", "--compact"])
+    assert args.compact == "basic"
+
+
+def test_cli_parser_compact_tiered_accepted():
+    """S2: --compact tiered is accepted by map parser."""
+    from ontos.cli import create_parser
+    parser = create_parser()
+    args = parser.parse_args(["map", "--compact", "tiered"])
+    assert args.compact == "tiered"
+
+
+def test_cli_parser_tree_compact_tiered_accepted():
+    """S2: --compact tiered is accepted by deprecated tree parser."""
+    from ontos.cli import create_parser
+    parser = create_parser(include_hidden=True)
+    args = parser.parse_args(["tree", "--compact", "tiered"])
+    assert args.compact == "tiered"

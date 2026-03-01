@@ -48,16 +48,20 @@ def _val(item: Any) -> str:
     return item.value if hasattr(item, "value") else str(item)
 
 
-def _log_date_sort_key(doc: Any) -> str:
-    """Sort key for log documents: date frontmatter first, then ID.
+def _log_date_sort_key(doc: Any) -> tuple:
+    """Sort key for log documents: dated entries first, then undated by ID.
+
+    Returns a tuple (priority, value) so dated and undated entries never
+    mix lexicographically. Dated entries get priority 1 (sorts higher in
+    reverse), undated get priority 0.
 
     Used by _generate_tier1_summary() and _generate_tiered_compact_output()
     to ensure consistent log ordering.
     """
     date_str = doc.frontmatter.get("date")
     if date_str:
-        return str(date_str)
-    return doc.id
+        return (1, str(date_str))
+    return (0, doc.id)
 
 
 def _load_known_concepts(root: Path) -> set:
@@ -240,7 +244,7 @@ def _generate_tier1_summary(
         log_lines.append("|-----|--------|---------|")
         for doc in log_docs_sorted:
             status = doc.status.value
-            summary = doc.frontmatter.get("summary", "No summary")
+            summary = str(doc.frontmatter.get("summary", "No summary"))
             # B3: Escape pipes and remove newlines in summary
             summary_escaped = _escape_markdown_table_cell(summary).replace("\n", " ")
             log_lines.append(f"| {doc.id} | {status} | {summary_escaped} |")
@@ -652,7 +656,7 @@ def _generate_tiered_compact_output(
     if log_docs:
         log_docs_sorted = sorted(log_docs, key=_log_date_sort_key, reverse=True)
         latest = log_docs_sorted[0]
-        log_lines.append(f"latest:{latest.id}:{_val(latest.status)}")
+        log_lines.append(f"latest:{latest.id}")
 
     # Assemble sections — reuse existing rendering functions
     sections = [
