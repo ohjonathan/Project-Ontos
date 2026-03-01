@@ -212,16 +212,17 @@ def test_tiered_log_ordering_mixed_dated_undated():
 
 
 def test_tiered_non_string_summary_no_crash():
-    """S1: Non-string summary in Tier 1 must not crash."""
+    """Non-string summary in a kernel doc must not crash tiered RICH rendering."""
     docs = {
         "kern1": _make_doc("kern1", "kernel"),
     }
-    # Inject non-string summary into frontmatter
+    # Inject non-string summary into frontmatter — exercises compact RICH path
     docs["kern1"].frontmatter["summary"] = ["list", "summary"]
     opts = GenerateMapOptions()
-    # Should not raise
+    # Should not raise — the RICH compact renderer handles non-string summaries
     output = _generate_tiered_compact_output(docs, _MINIMAL_CONFIG, opts)
     assert "### Kernel + Strategy" in output
+    assert "kern1:kernel:active" in output
 
 
 def test_cli_parser_compact_default_is_basic():

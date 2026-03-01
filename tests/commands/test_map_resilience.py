@@ -143,7 +143,7 @@ def test_tier1_token_capping(mock_docs):
     mock_docs["arch_1"].frontmatter["summary"] = large_summary
     mock_docs["ref_1"].frontmatter["summary"] = large_summary
     
-    # Add more logs with recent dates so they sort above existing fixture logs
+    # Add more logs
     for i in range(10, 20):
         log_id = f"log_large_{i}"
         mock_docs[log_id] = DocumentData(
@@ -151,7 +151,7 @@ def test_tier1_token_capping(mock_docs):
             filepath=Path(f"logs/{log_id}.md"),
             type=DocumentType.LOG,
             status=DocumentStatus.ACTIVE,
-            frontmatter={"summary": large_summary, "date": f"2026-02-{i:02d}"},
+            frontmatter={"summary": large_summary},
             content=large_summary,
             depends_on=[]
         )
