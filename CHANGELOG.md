@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 > For the full historical changelog with Ontos frontmatter (from v0.1.0), see [`Ontos_CHANGELOG.md`](Ontos_CHANGELOG.md).
 
+## [3.3.1] - 2026-02-28
+
+Patch release shipping external review remediation, link-check false positive reduction, and `promote_check` maintenance task.
+
+### Added
+- **`promote_check` maintenance task** — `ontos maintain` now runs `ontos promote --check` non-interactively to report documents ready for promotion (order 45, 9 total tasks).
+- 26 new test cases for link-check false positive filters (short labels, ALL_CAPS, version-adjacent patterns).
+- 2 new integration tests documenting the precision/recall tradeoff of FP filtering.
+
+### Fixed
+- **link-check false positives reduced from 408 → 45** (89% reduction). Added pre-classification filters for bare numbers, version strings, known YAML field names, file extensions, short labels (`A1`, `NB-1`), ALL_CAPS constants, and version wildcards (`v2.x`).
+- `SECURITY.md` updated from stale v0.4.x references to current v3.3.x surface.
+- README roadmap updated: v3.3.0 is now "Current".
+- `Ontos_Manual.md` updated to v3.3 with `link-check` and `rename` subsections added.
+- `examples/minimal/` populated with 3 runnable doc files.
+- Legacy test isolation: `.ontos/scripts/tests/` excluded from default `testpaths`.
+- `promote.py` typo fix: "documents find" → "documents found".
+
+### Changed
+- `pyproject.toml` classifier bumped from `Development Status :: 3 - Alpha` to `Development Status :: 4 - Beta`.
+- `CHANGELOG.md` cross-reference to `Ontos_CHANGELOG.md` added.
+- `.cursorrules` and `AGENTS.md` regenerated to reflect v3.3.0 metadata.
+- Bumped version to `3.3.1`.
+
 ## [3.3.0] - 2026-02-11
 
 v3.3 ships 62 audit-derived hardening fixes plus 3 new commands across Track A (hardening) and Track B (features).
