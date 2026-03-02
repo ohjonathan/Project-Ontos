@@ -162,8 +162,8 @@ def _register_map(subparsers, parent):
     p.add_argument("--obsidian", action="store_true",
                    help="Enable Obsidian-compatible output (wikilinks only)")
     p.add_argument("--compact", nargs="?", const="basic", default="off",
-                   choices=["basic", "rich"],
-                   help="Compact output: 'basic' (default) or 'rich' (with summaries)")
+                   choices=["basic", "rich", "tiered"],
+                   help="Compact output: 'basic' (default), 'rich' (with summaries), or 'tiered' (prose + ranked compact)")
     p.add_argument("--filter", "-F", "-f", metavar="EXPR",
                    help="Filter documents by expression (e.g., 'type:strategy'). Use -F; -f is deprecated.")
     p.add_argument("--no-cache", action="store_true",
@@ -602,7 +602,7 @@ def _register_tree_alias(subparsers, parent):
     p.add_argument("--output", "-o", type=Path, help="Output path")
     p.add_argument("--obsidian", action="store_true", help="Enable Obsidian output")
     p.add_argument("--compact", nargs="?", const="basic", default="off",
-                   choices=["basic", "rich"], help="Compact output")
+                   choices=["basic", "rich", "tiered"], help="Compact output")
     p.add_argument("--filter", "-f", metavar="EXPR", help="Filter documents")
     p.add_argument("--no-cache", action="store_true", help="Bypass cache")
     _add_scope_argument(p)
