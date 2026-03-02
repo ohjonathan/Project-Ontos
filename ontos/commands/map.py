@@ -245,7 +245,9 @@ def _generate_tier1_summary(
         log_lines.append("|-----|--------|---------|")
         for doc in log_docs_sorted:
             status = doc.status.value
-            summary = doc.frontmatter.get("summary") or "No summary"
+            summary = doc.frontmatter.get("summary", "No summary")
+            if summary is None:
+                summary = "No summary"
             if not isinstance(summary, str):
                 summary = str(summary)
             # B3: Escape pipes and remove newlines in summary
@@ -516,8 +518,8 @@ def _generate_timeline(docs: Dict[str, DocumentData]) -> str:
         lines.append("\nNo session logs found.")
         return "\n".join(lines)
     
-    # Sort by date (extract from ID if possible)
-    sorted_logs = sorted(logs, key=lambda d: d.id, reverse=True)[:10]
+    # Keep timeline ordering aligned with Tier 1 Recent Activity.
+    sorted_logs = sorted(logs, key=_log_date_sort_key, reverse=True)[:10]
     
     lines.append("")
     for log in sorted_logs:

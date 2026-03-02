@@ -212,6 +212,20 @@ def test_tiered_null_summary_renders_fallback():
     assert "None" not in output.split("### Recent Activity")[1].split("### Kernel")[0]
 
 
+def test_tiered_empty_string_summary_is_preserved():
+    """An explicit empty-string summary should stay empty, not become fallback text."""
+    docs = {
+        "log1": _make_doc("log1", "log", date="2026-01-01"),
+    }
+    docs["log1"].frontmatter["summary"] = ""
+    opts = GenerateMapOptions()
+    output = _generate_tiered_compact_output(docs, _MINIMAL_CONFIG, opts)
+
+    activity = output.split("### Recent Activity")[1].split("### Kernel")[0]
+    assert "| log1 | active |  |" in activity
+    assert "No summary" not in activity
+
+
 def test_tiered_output_empty_docs():
     """S3: True zero-doc case — every section should be empty/none."""
     docs = {}
@@ -253,6 +267,25 @@ def test_tiered_log_ordering_mixed_dated_undated():
     assert "dated_new" in activity
     # z_undated should NOT appear in Tier 1 top-3 (dated entries take priority)
     assert "z_undated" not in activity
+
+
+def test_full_map_timeline_uses_date_aware_log_ordering():
+    """Full map timeline should stay aligned with Tier 1 log ordering."""
+    docs = {
+        "z_undated": _make_doc("z_undated", "log"),
+        "a_undated": _make_doc("a_undated", "log"),
+        "dated_old": _make_doc("dated_old", "log", date="2025-01-01"),
+        "dated_mid": _make_doc("dated_mid", "log", date="2025-06-15"),
+        "dated_new": _make_doc("dated_new", "log", date="2026-06-01"),
+    }
+    config = dict(_MINIMAL_CONFIG)
+    config["allowed_orphan_types"] = ["atom", "log"]
+
+    content, _ = generate_context_map(docs, config, GenerateMapOptions())
+
+    timeline = content.rsplit("## Recent Activity", 1)[1]
+    timeline_lines = [line for line in timeline.splitlines() if line.startswith("- `")]
+    assert timeline_lines[0] == "- `dated_new`"
 
 
 def test_tiered_non_string_summary_no_crash():
