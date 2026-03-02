@@ -55,7 +55,8 @@ def _log_date_sort_key(doc: Any) -> tuple:
     mix lexicographically. Dated entries get priority 1 (sorts higher in
     reverse), undated get priority 0.
 
-    Used by _generate_tiered_compact_output() only.
+    Used by _generate_tier1_summary() and _generate_tiered_compact_output()
+    to ensure consistent log ordering.
     """
     date_str = doc.frontmatter.get("date")
     if date_str:
@@ -235,21 +236,15 @@ def _generate_tier1_summary(
     log_lines = ["### Recent Activity"]
     log_docs = [d for d in docs.values() if _val(d.type) == "log"]
     
-    # Sort by date frontmatter (falling back to ID)
-    def log_sort_key(doc):
-        date_str = doc.frontmatter.get("date")
-        if date_str:
-            return str(date_str)
-        return doc.id
-
-    log_docs_sorted = sorted(log_docs, key=log_sort_key, reverse=True)[:3]
+    # Sort by date frontmatter (falling back to ID) — shared helper
+    log_docs_sorted = sorted(log_docs, key=_log_date_sort_key, reverse=True)[:3]
 
     if log_docs_sorted:
         log_lines.append("| Log | Status | Summary |")
         log_lines.append("|-----|--------|---------|")
         for doc in log_docs_sorted:
             status = doc.status.value
-            summary = doc.frontmatter.get("summary", "No summary")
+            summary = str(doc.frontmatter.get("summary", "No summary"))
             # B3: Escape pipes and remove newlines in summary
             summary_escaped = _escape_markdown_table_cell(summary).replace("\n", " ")
             log_lines.append(f"| {doc.id} | {status} | {summary_escaped} |")

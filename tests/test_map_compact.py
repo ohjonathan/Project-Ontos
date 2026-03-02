@@ -196,33 +196,42 @@ def test_tiered_output_empty_docs():
 
 
 def test_tiered_log_ordering_mixed_dated_undated():
-    """B2: Dated logs must always sort above undated logs."""
+    """Dated logs must always sort above undated logs in both Tier 1 and footer."""
     docs = {
         "z_undated": _make_doc("z_undated", "log"),  # no date, ID sorts high
         "a_undated": _make_doc("a_undated", "log"),  # no date, ID sorts low
         "dated_old": _make_doc("dated_old", "log", date="2025-01-01"),
+        "dated_mid": _make_doc("dated_mid", "log", date="2025-06-15"),
         "dated_new": _make_doc("dated_new", "log", date="2026-06-01"),
     }
     opts = GenerateMapOptions()
     output = _generate_tiered_compact_output(docs, _MINIMAL_CONFIG, opts)
 
-    assert "logs:4" in output
-    # The dated entry with the newest date must be latest, not z_undated
+    assert "logs:5" in output
+    # Tiered footer: the dated entry with the newest date must be latest
     assert "latest:dated_new" in output
+    # Tier 1 Recent Activity: dated_new must appear first in the log table
+    assert "### Recent Activity" in output
+    activity = output.split("### Recent Activity")[1].split("### Kernel")[0]
+    assert "dated_new" in activity
+    # z_undated should NOT appear in Tier 1 top-3 (dated entries take priority)
+    assert "z_undated" not in activity
 
 
 def test_tiered_non_string_summary_no_crash():
-    """Non-string summary in a kernel doc must not crash tiered RICH rendering."""
+    """Non-string log summary must not crash Tier 1 log table rendering."""
     docs = {
-        "kern1": _make_doc("kern1", "kernel"),
+        "log1": _make_doc("log1", "log", date="2026-01-01"),
     }
-    # Inject non-string summary into frontmatter — exercises compact RICH path
-    docs["kern1"].frontmatter["summary"] = ["list", "summary"]
+    # Inject non-string summary into frontmatter — exercises Tier 1 log table path
+    docs["log1"].frontmatter["summary"] = ["list", "summary"]
     opts = GenerateMapOptions()
-    # Should not raise — the RICH compact renderer handles non-string summaries
+    # Should not raise — str() coercion prevents .replace() crash
     output = _generate_tiered_compact_output(docs, _MINIMAL_CONFIG, opts)
-    assert "### Kernel + Strategy" in output
-    assert "kern1:kernel:active" in output
+    assert "### Recent Activity" in output
+    assert "log1" in output
+    # The stringified list summary should appear somewhere in Tier 1
+    assert "['list', 'summary']" in output
 
 
 def test_cli_parser_compact_default_is_basic():
