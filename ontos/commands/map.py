@@ -129,6 +129,12 @@ def generate_context_map(
     })
     result = validator.validate_all()
 
+    # Ensure project_root exists in config (fallback to CWD for standalone usage)
+    # Must happen before compact dispatch so all modes see normalized config.
+    if "project_root" not in config:
+        config = dict(config)
+        config["project_root"] = str(Path.cwd())
+
     # Compact output (if enabled)
     # ORDERING: TIERED must be checked first because it needs `config` for Tier 1 prose.
     # BASIC/RICH do an early return without config access.
@@ -136,11 +142,6 @@ def generate_context_map(
         return _generate_tiered_compact_output(docs, config, options), result
     elif options.compact != CompactMode.OFF:
         return _generate_compact_output(docs, options.compact), result
-
-    # Ensure project_root exists in config (fallback to CWD for standalone usage)
-    if "project_root" not in config:
-        config = dict(config)
-        config["project_root"] = str(Path.cwd())
 
     # Generate context map with 3 tiers
     root_path = _get_root_path(config)
@@ -244,7 +245,9 @@ def _generate_tier1_summary(
         log_lines.append("|-----|--------|---------|")
         for doc in log_docs_sorted:
             status = doc.status.value
-            summary = str(doc.frontmatter.get("summary", "No summary"))
+            summary = doc.frontmatter.get("summary") or "No summary"
+            if not isinstance(summary, str):
+                summary = str(summary)
             # B3: Escape pipes and remove newlines in summary
             summary_escaped = _escape_markdown_table_cell(summary).replace("\n", " ")
             log_lines.append(f"| {doc.id} | {status} | {summary_escaped} |")

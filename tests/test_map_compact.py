@@ -175,6 +175,43 @@ def test_generate_context_map_dispatches_tiered():
     assert "| Path | ID | Type | Status |" not in content
 
 
+def test_tiered_project_root_fallback():
+    """Tiered mode must see normalized config (project_root fallback)."""
+    docs = {
+        "kern1": _make_doc("kern1", "kernel", summary="Core doc"),
+    }
+    # Config WITHOUT project_root — must still work like full mode
+    config = {
+        "project_name": "Test",
+        "docs_dir": "nonexistent_docs",
+        "logs_dir": "nonexistent_logs",
+        "allowed_orphan_types": ["atom", "log"],
+    }
+    opts = GenerateMapOptions(compact=CompactMode.TIERED)
+
+    content, result = generate_context_map(docs, config, opts)
+
+    # Critical Paths should still render (project_root falls back to CWD)
+    assert "### Critical Paths" in content
+    # The nonexistent dirs should be marked missing
+    assert "(missing)" in content
+
+
+def test_tiered_null_summary_renders_fallback():
+    """summary: null in frontmatter should render as 'No summary', not 'None'."""
+    docs = {
+        "log1": _make_doc("log1", "log", date="2026-01-01"),
+    }
+    # Inject None summary (simulates YAML `summary: null` or `summary:`)
+    docs["log1"].frontmatter["summary"] = None
+    opts = GenerateMapOptions()
+    output = _generate_tiered_compact_output(docs, _MINIMAL_CONFIG, opts)
+
+    assert "### Recent Activity" in output
+    assert "No summary" in output
+    assert "None" not in output.split("### Recent Activity")[1].split("### Kernel")[0]
+
+
 def test_tiered_output_empty_docs():
     """S3: True zero-doc case — every section should be empty/none."""
     docs = {}
