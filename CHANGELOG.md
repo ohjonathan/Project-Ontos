@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 > For the full historical changelog with Ontos frontmatter (from v0.1.0), see [`Ontos_CHANGELOG.md`](Ontos_CHANGELOG.md).
 
+## [3.4.0] - 2026-04-04
+
+Ships `--compact tiered` context maps — a prose summary plus type-ranked compact output for token-constrained agents.
+
+### Added
+- **`--compact tiered` mode** — `ontos map --compact tiered` produces three-section output: prose project summary (Tier 1), type-ranked compact listing (Tier 2), and full ID index (Tier 3). PR #79.
+
+### Fixed
+- Consistent Tier 1 log ordering by date descending.
+- `project_root` normalization before compact dispatch (crash fix on relative paths).
+- Shared `_sort_key` across all compact modes for deterministic output.
+- Log contract enforcement in tiered summary generation.
+- Reverted anti-scope violations in `_generate_tier1_summary()`.
+- Final tiered review debt removed (spec cleanup).
+
+### Changed
+- README updated with `--compact` sub-command documentation.
+- Bumped version to `3.4.0`.
+
 ## [3.3.1] - 2026-02-28
 
 Patch release shipping external review remediation, link-check false positive reduction, and `promote_check` maintenance task.

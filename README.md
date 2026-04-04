@@ -218,7 +218,18 @@ ontos scaffold     # Auto-tag docs with YAML frontmatter
 ontos map          # Generate/update context map
 ontos log          # Create a session log
 ontos doctor       # Check graph health
+ontos maintain     # Run weekly maintenance (9 tasks)
+ontos link-check   # Scan for broken references
+ontos rename       # Safe ID rename across graph
+ontos promote      # Promote docs to Level 2
 ontos agents       # Regenerate AGENTS.md and .cursorrules
+```
+
+Compact context maps for token-constrained agents:
+```bash
+ontos map --compact           # Minimal one-line-per-doc output
+ontos map --compact rich      # With summaries
+ontos map --compact tiered    # Prose summary + type-ranked compact
 ```
 
 **Update:** `pipx upgrade ontos` or `pip install --upgrade ontos`
@@ -260,11 +271,10 @@ Version 3 is when Ontos became public. The earlier versions live on in the desig
 
 | Version | Status | Highlights |
 |---------|--------|------------|
-| **v3.3.0** | ✅ Current | Full spectrum hardening, `link-check`, `rename`, unified scan scope, canonical document loader |
-| **v3.4** | Next | Decision capture, typed dependencies, import capability |
-| **v4.0** | Vision | MCP as primary interface, full template system, daemon mode |
+| **v3.4.0** | ✅ Current | `--compact tiered` context maps for token-constrained agents |
+| **v4.0** | Next | MCP as primary interface, full template system, daemon mode |
 
-v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python. v3.2 added re-architecture support, environment detection, and activation resilience. v3.3 ships 62 audit-derived hardening fixes plus `link-check`, `rename`, unified JSON envelopes, and a canonical document loader.
+v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python. v3.2 added re-architecture support, environment detection, and activation resilience. v3.3 ships 62 audit-derived hardening fixes plus `link-check`, `rename`, unified JSON envelopes, and a canonical document loader. v3.3.1 reduced link-check false positives by 89% and added `promote_check` to the maintenance pipeline. v3.4 adds `--compact tiered` context maps for token-constrained agents.
 
 ---
 
