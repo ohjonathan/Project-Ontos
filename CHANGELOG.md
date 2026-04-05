@@ -12,7 +12,7 @@ Ships MCP server mode — a stdio MCP server that exposes the Ontos knowledge gr
 - **`ontos serve` command** — Starts a stdio MCP server for a single workspace, enabling native AI IDE integration via the Model Context Protocol.
 - **8 MCP tools**: `workspace_overview`, `context_map`, `get_document`, `list_documents`, `export_graph`, `query`, `health`, `refresh`.
 - **`ontos/mcp/` package** — `server.py` (FastMCP bootstrap), `tools.py` (tool adapters), `cache.py` (snapshot cache with file-mtime invalidation), `schemas.py` (Pydantic response models).
-- **Optional dependency extra** — `pip install ontos[mcp]` adds `mcp>=1.2` and `pydantic>=2.0`. Base install unchanged.
+- **Optional dependency extra** — `pip install 'ontos[mcp]'` adds `mcp>=1.2` and `pydantic>=2.0`. Base install unchanged.
 - **File-mtime fingerprint cache** — Automatic staleness detection via `(path, st_mtime_ns, st_size)` fingerprints. Catches edits, new files, deletions, and renames.
 - **`[mcp]` config section** in `.ontos.toml` — `usage_logging` and `usage_log_path` settings.
 - **Pydantic response schemas** — Typed output validation for all MCP tool responses with structured error envelopes.

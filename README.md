@@ -131,7 +131,11 @@ Run `ontos serve` to start an MCP server that exposes your knowledge graph direc
 ```json
 {
   "mcpServers": {
-    "ontos": { "command": "ontos", "args": ["serve"] }
+    "ontos": {
+      "command": "ontos",
+      "args": ["serve"],
+      "cwd": "/path/to/your/project"
+    }
   }
 }
 ```
@@ -177,7 +181,7 @@ pip install ontos
 ```
 
 > [!TIP]
-> **For MCP server mode** (native AI IDE integration): `pipx install ontos[mcp]` or `pip install ontos[mcp]`.
+> **For MCP server mode** (native AI IDE integration): `pipx install 'ontos[mcp]'` or `pip install 'ontos[mcp]'`.
 > Requires Python 3.10+. See the [Migration Guide v3→v4](docs/reference/Migration_v3_to_v4.md).
 
 > [!NOTE]

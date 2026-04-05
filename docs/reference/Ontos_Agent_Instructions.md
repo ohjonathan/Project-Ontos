@@ -57,7 +57,7 @@ If the IDE supports MCP and the Ontos server is configured:
 ontos serve                    # Serve current directory
 ontos serve --workspace /path  # Serve specific workspace
 ```
-Starts a stdio MCP server. Configure in your IDE's MCP settings. Requires `pip install ontos[mcp]`.
+Starts a stdio MCP server. Configure in your IDE's MCP settings. Requires `pip install 'ontos[mcp]'`.
 
 ### "Ontos" (Activate via CLI)
 1. Check for `Ontos_Context_Map.md`

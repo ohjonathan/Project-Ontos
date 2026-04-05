@@ -39,8 +39,8 @@ ontos serve --workspace /path  # Serve a specific project
 
 MCP support is opt-in. The base package is unchanged:
 ```bash
-pip install ontos          # Same as before — no new dependencies
-pip install ontos[mcp]     # Adds mcp>=1.2 and pydantic>=2.0
+pip install ontos            # Same as before — no new dependencies
+pip install 'ontos[mcp]'    # Adds mcp>=1.2 and pydantic>=2.0
 ```
 
 > **Note:** MCP requires Python 3.10+. All other Ontos commands continue to work on Python 3.9+.
@@ -90,12 +90,14 @@ Everything else works the same:
 
 ### 1. Upgrade the Package
 
+**If you installed with pip:**
 ```bash
-# pipx (recommended)
-pipx upgrade ontos
-
-# pip
 pip install --upgrade ontos
+```
+
+**If you installed with pipx:**
+```bash
+pipx upgrade ontos
 ```
 
 ### 2. Verify
@@ -107,10 +109,20 @@ ontos doctor     # Check graph health
 
 ### 3. Enable MCP (Optional)
 
+Requires Python 3.10+.
+
+**If you installed with pip:**
 ```bash
-pip install ontos[mcp]
-# Requires Python 3.10+
+pip install 'ontos[mcp]'
 ```
+
+**If you installed with pipx:**
+```bash
+pipx install 'ontos[mcp]'
+```
+> This reinstalls with the MCP extra. If you previously installed without it,
+> `pipx upgrade` alone will not add the new dependencies — use `pipx install` to
+> pick up the extra.
 
 Test the server:
 ```bash

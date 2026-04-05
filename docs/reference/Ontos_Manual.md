@@ -24,7 +24,7 @@ ontos init
 
 ```bash
 # Install with MCP server support (Python 3.10+)
-pip install ontos[mcp]
+pip install 'ontos[mcp]'
 ontos serve
 ```
 
@@ -396,14 +396,14 @@ If untagged markdown files exist in `docs/`, init prompts:
 To enable MCP server mode for IDE integration:
 
 ```bash
-pip install ontos[mcp]
+pip install 'ontos[mcp]'
 ```
 
 This adds `mcp>=1.2` and `pydantic>=2.0` as dependencies. Python 3.10+ is required.
 
 For pipx users:
 ```bash
-pipx install ontos[mcp]
+pipx install 'ontos[mcp]'
 ```
 
 ### Upgrading
@@ -711,7 +711,7 @@ No document content is logged — only tool names and timestamps.
 - **Read-only tools only** — Write tools deferred to v4.1
 - **Single workspace per server** — One `ontos serve` process per project
 - **Stdio transport only** — HTTP/SSE transport deferred to v4.1
-- **Python 3.10+** required — Install with `pip install ontos[mcp]`
+- **Python 3.10+** required — Install with `pip install 'ontos[mcp]'`
 
 ---
 
