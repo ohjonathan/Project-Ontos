@@ -1,14 +1,14 @@
 # Ontos v4.0 MCP Proposal
 
 **Date:** 2026-04-04
-**Revised:** 2026-04-04 (v3 — responding to second review round)
+**Revised:** 2026-04-04 (v4 — responding to third review round)
 **Author:** Claude (synthesized from prior research and board decisions)
 **Status:** PROPOSAL — requires review and decision by Johnny
 **Audience:** Johnny (project owner), LLMs reviewing for correctness and gaps
 
-**Revision notes (v3):** Third draft, responding to second review round. Key changes from v2: (1) "Why Now" reframed from Claude Code convenience to MCP ecosystem interoperability — addresses the CLI Paradox challenge; (2) cache invalidation fixed — replaced broken directory `st_mtime` with `max(file.st_mtime)` across tracked docs; (3) `workspace_id` removed from v4.0.0 tool inputs — workspace is implicit in single-server model; (4) asyncio lock added for concurrent rebuild protection; (5) serialization parity with existing `--json` CLI output specified.
+**Revision notes (v4):** Fourth draft, responding to third review round. Key changes from v3: (1) `context_map()` contract corrected — v3 falsely claimed parity with `ontos map --json` (a tiny status envelope); now correctly specified to use `create_snapshot()` + `_snapshot_to_json()` pipeline (parity with `ontos export data`); (2) cache fingerprint fully specified — uses set of `(path, st_mtime_ns, st_size)` tuples, not just `max(mtime)`; (3) consumer argument reframed as honest strategic bet on MCP convergence, not stretched pain-point claim; (4) tool priority hierarchy added (P0/P1) to clarify MVP core.
 
-**Prior revision notes (v2):** Consumer priority flipped from JohnnyOS to Claude Code; explicit v4.0.0 / v4.1 scope split; context bundle algorithm, SQLite portfolio index, FTS, undocumented-project fallbacks all deferred to v4.1; formal workspace identity definition added.
+**Prior revisions:** v3: CLI Paradox reframe, file-mtime invalidation, implicit workspace, asyncio lock. v2: consumer flip to Claude Code, v4.0.0/v4.1 split, deferred SQLite/FTS/bundles. v1: initial proposal.
 
 ---
 
@@ -20,9 +20,13 @@ Ontos v4.0 is a phased initiative to expose the Ontos knowledge graph via the Mo
 
 ## 2. Why Now
 
-**The CLI Paradox — and why MCP is still the right move.** A fair challenge to v4.0.0 is that Claude Code can already run `ontos query --json` via shell. If the primary consumer has native CLI access, why build a protocol layer? The answer is that MCP's value is not CLI convenience for one agent — it's **ecosystem interoperability**. Claude Code is one MCP client. Cursor, Windsurf, Cline, and every future MCP-compatible IDE or agent framework are others. Building an MCP server makes Ontos accessible to all of them without per-client integration work. Shipping a CLI wrapper for Claude Code alone would be a `.clauderc` instruction set; shipping an MCP server is a protocol adapter that serves the entire ecosystem.
+**An honest framing: this is a strategic bet, not a burning pain-point.** Claude Code can already run `ontos query --json` via shell. The existing `AGENTS.md` + `ontos export data --json` workflow is functional. v4.0.0 does not fix a broken workflow — it bets that MCP will become the standard interface between agents and developer tools, and positions Ontos to be accessible through that standard before it matters.
 
-MCP also provides capabilities that CLI shelling cannot: **schema auto-discovery** (agents see available tools and their typed signatures automatically via `tools/list`, rather than needing documentation or instructions to know what queries exist), **structured typed responses** (no parsing of text output or shell exit codes), and **persistent process state** (the server holds a cached snapshot across calls, avoiding cold-start rebuilds on every invocation).
+The bet is grounded in three observations: (1) Claude Code, Cursor, Windsurf, Cline, and every major IDE agent framework now support MCP servers natively — this is where tool integration is converging; (2) shipping an MCP server makes Ontos accessible to all of them without per-client integration work, whereas CLI shelling only serves tools that can execute shell commands; (3) the architecture was designed for this (see below), so the implementation cost is low relative to the positioning value.
+
+MCP also provides concrete capabilities that CLI shelling cannot: **schema auto-discovery** (agents see available tools and their typed signatures via `tools/list`, without needing `AGENTS.md` or prompt instructions), **structured typed responses** (no text parsing or exit code interpretation), and **persistent process state** (the server holds a cached snapshot across calls, avoiding cold-start rebuilds on every CLI invocation).
+
+If this bet is wrong — if MCP doesn't converge as expected, or if Ontos's user base remains Claude Code-only — the cost is a small `ontos/mcp/` package that wraps existing capabilities. The CLI remains fully functional regardless.
 
 **The architecture was designed for this.** The v3.0 architecture explicitly prepared for MCP. The core/IO separation (documented in `.ontos-internal/analysis/Ontos-Technical-Architecture-Map-Codex.md`, Section 11) reserves `ontos/mcp/` as an extension point. All CLI commands emit structured JSON via `--json` flags. The graph engine (`ontos/core/graph.py`) builds dependency graphs with cycle detection and depth calculation. The `ontos export data` command produces a complete graph export in `ontos-export-v1` schema. The plumbing exists; what's missing is the protocol layer.
 
@@ -101,16 +105,18 @@ Total tracked documents across documented projects: ~396. 5-6 projects are activ
 
 **Tools it needs (v4.0.0 — single-project scope):**
 
-All tools operate on the server's configured workspace. No `workspace_id` parameter is needed — the workspace is implicit (see D9).
+All tools operate on the server's configured workspace. No `workspace_id` parameter is needed — the workspace is implicit (see D9). Tools are split into P0 (core retrieval — the minimum viable MCP surface) and P1 (operational — included but droppable if testing shows they're unused).
 
-| Tool | Input | Output Shape | Frequency | Cacheable |
-|------|-------|-------------|-----------|-----------|
-| `context_map()` | None | `{graph: {nodes, edges, depths}, validation: {errors, warnings}, tier1_summary}` | At session start, during planning | Yes (file-mtime-invalidated) |
-| `query(entity_id)` | `entity_id: str` | `{id, type, status, depends_on, depended_by, depth, last_updated, content_hash}` | Ad-hoc during task assembly | No |
-| `get_document(document_id)` | `document_id: str` or `path: str` | `{id, type, status, frontmatter, content, metadata: {content_hash, word_count, depended_by}}` | Interactive, on-demand | No |
-| `list_documents(kind?, status?)` | Optional filters | `[{id, type, status, path}]` | Interactive, on-demand | No |
-| `health()` | None | `{server_uptime, workspace, doc_count, last_indexed, ontos_version}` | Diagnostics | No |
-| `refresh()` | None | `{refreshed: true, doc_count, duration_ms}` | After known file changes | N/A |
+| Priority | Tool | Input | Output Shape | Frequency |
+|----------|------|-------|-------------|-----------|
+| **P0** | `context_map()` | None | `ontos-export-v1` schema: `{summary, documents: [{id, type, status, path, depends_on, content_hash}], graph: {nodes, edges}}` | At session start, during planning |
+| **P0** | `query(entity_id)` | `entity_id: str` | `{id, type, status, depends_on, depended_by, depth, last_updated, content_hash}` | Ad-hoc during task assembly |
+| **P0** | `get_document(document_id)` | `document_id: str` or `path: str` | `{id, type, status, frontmatter, content, metadata: {content_hash, word_count, depended_by}}` | Interactive, on-demand |
+| **P1** | `list_documents(kind?, status?)` | Optional filters | `[{id, type, status, path}]` | Interactive, on-demand |
+| **P1** | `health()` | None | `{server_uptime, workspace, doc_count, last_indexed, ontos_version}` | Diagnostics |
+| **P1** | `refresh()` | None | `{refreshed: true, doc_count, duration_ms}` | After known file changes |
+
+**Why 6 tools is not heavy for a "thin bridge":** Each tool is a thin wrapper around an existing core function (`create_snapshot()`, graph lookup, file read). The marginal implementation cost per tool is ~20 lines of handler code. All 6 can be dropped to the 3 P0 tools pre-release if testing shows the P1 surface is unused.
 
 **What it does NOT need from Ontos:**
 - Cross-project queries (works on one project at a time)
@@ -158,7 +164,9 @@ Plus all v4.0.0 tools.
 
 **Dependency Graph** — structural relationships between documents: `depends_on`, `impacts`, `describes` edges. Cycle detection, orphan detection, depth calculation, reverse edge traversal. Exposed via `query` (per-entity) and `context_map` (full graph).
 
-**Context Map Generation** — the existing tiered context map (Tier 1/2/3) served as a tool response instead of a file. The `context_map` tool wraps the existing `ontos map --json` pipeline — no new algorithm, no new ranking. This is a thin exposure of proven functionality.
+**Context Map Generation** — the `context_map` tool calls `create_snapshot()` (from `ontos/io/snapshot.py`) and formats the response using `_snapshot_to_json()` (from `ontos/commands/export_data.py`) — the same pipeline that `ontos export data` uses to produce the `ontos-export-v1` schema. This returns the full document list with metadata, the dependency graph with edges, and a summary with type/status breakdowns.
+
+Note: this is NOT parity with `ontos map --json`. The `ontos map --json` command emits only a small status envelope (`{path, documents: count, errors, warnings}`) — it does not return the graph or document data. The MCP `context_map()` tool is equivalent to `ontos export data` in structured output, not `ontos map`.
 
 **Staleness Detection** — `describes`/`describes_verified` field tracking, content hash comparison, stale document warnings. Surfaced in `context_map` validation section and `query` responses.
 
@@ -287,17 +295,28 @@ SQLite is deferred to v4.1 because: (1) v4.0.0 has no cross-project queries that
 
 > **v2 flaw acknowledged:** The v2 proposal checked `os.stat(docs_dir).st_mtime` (directory mtime). On POSIX systems, directory `st_mtime` only updates when directory entries are added or removed — NOT when existing file content changes. This means editing a document mid-session would be silently missed. The mechanism below corrects this.
 
-The server tracks a **snapshot fingerprint**: `max(os.stat(f).st_mtime for f in tracked_doc_files)` — the most recent modification time across all tracked markdown files. This is computed at snapshot build time and stored alongside the cached snapshot.
+The server tracks a **snapshot fingerprint**: a set of `(relative_path, st_mtime_ns, st_size)` tuples for every tracked document file, computed at snapshot build time. Using nanosecond-resolution mtime (`st_mtime_ns`) and file size together makes false negatives vanishingly unlikely on modern filesystems (APFS, ext4).
 
-On each tool call:
+**Exact staleness check procedure (runs on every tool call):**
 
-1. Walk the workspace's doc paths (the same file list the snapshot was built from) and compute `current_max_mtime = max(os.stat(f).st_mtime for f in tracked_doc_files)`.
-2. If `current_max_mtime == snapshot_fingerprint`: serve from cache.
-3. If `current_max_mtime != snapshot_fingerprint`, OR if the file count has changed (new/deleted files): rebuild snapshot, update fingerprint, serve fresh data.
+1. Walk the workspace's configured doc paths (same scan logic as `create_snapshot()`).
+2. For each file found, record `(relative_path, os.stat(f).st_mtime_ns, os.stat(f).st_size)`.
+3. Compare the resulting set against the stored fingerprint.
+4. If identical: serve from cache.
+5. If different (any file added, removed, renamed, or modified): rebuild snapshot, replace fingerprint, serve fresh data.
 
-**Cost of the staleness check:** For a workspace with 50-100 tracked files, the walk is ~50-100 `stat()` syscalls. On macOS APFS this completes in <1ms. This runs on every tool call — negligible compared to the tool response itself.
+**What this catches:**
+- **Content edit** (most common): file's `st_mtime_ns` changes. Detected.
+- **New file created**: new path appears in the set. Detected.
+- **File deleted**: path disappears from the set. Detected.
+- **File renamed** (`mv old.md new.md`): old path disappears, new path appears. Detected.
+- **Atomic replace** (write to temp, `os.rename()` over original): new file gets new `st_mtime_ns`. Detected.
 
-**Why not directory mtime:** As noted above, directory `st_mtime` misses content edits to existing files. The file-walk approach is correct for all modification types: content edits, new files, deleted files, and renamed files.
+**Theoretical edge case:** A file replaced with identical `st_mtime_ns` AND identical `st_size` would be missed. On APFS (nanosecond mtime resolution), this requires a replacement to complete within the same nanosecond with identical byte count. This is not a practical concern.
+
+**Cost:** For 50-100 files, the walk is ~50-100 `stat()` syscalls. On macOS APFS this completes in <1ms — negligible compared to the tool response itself.
+
+**Why not directory mtime:** As noted above, directory `st_mtime` only updates when entries are added or removed, not when existing file content changes. The file-walk approach is correct for all modification types.
 
 **Concurrent rebuild protection:** The MCP server runs on an asyncio event loop. Although stdio is inherently sequential, the `mcp` SDK may dispatch tool calls concurrently. To prevent duplicate rebuilds when two calls detect staleness simultaneously, the rebuild is guarded by an `asyncio.Lock`. The first caller acquires the lock and rebuilds; any concurrent callers wait for the lock and then serve from the freshly rebuilt cache.
 
@@ -371,7 +390,7 @@ This aligns with the board's 4/5 consensus on defense-in-depth (`.ontos-internal
 - `[mcp]` section support in `.ontos.toml` (optional, no required fields)
 - `pip install ontos[mcp]` with `mcp>=1.0` and `pydantic>=2.0` as extras
 - In-memory snapshot cache with file-mtime invalidation (see D4)
-- **Serialization parity:** MCP tool responses use the same JSON structures as existing `--json` CLI output. No new serialization layer — the MCP tools call core functions and format responses through the existing `OutputHandler` / `ontos-export-v1` pipeline. This guarantees that `context_map()` via MCP returns the same data as `ontos map --json` via CLI.
+- **Serialization parity with `ontos export data`:** The `context_map()` tool uses the same `create_snapshot()` → `_snapshot_to_json()` pipeline that `ontos export data` uses, producing the `ontos-export-v1` schema. This is NOT parity with `ontos map --json` (which only emits a status envelope). The `query()` and `get_document()` tools format responses from the same `DocumentData` and `DependencyGraph` structures that the core uses internally — no new serialization layer.
 
 **v4.0.0 explicitly does NOT ship:**
 - Portfolio-level index (SQLite)
@@ -460,9 +479,9 @@ Even though v4.0.0 is a thin bridge, it introduces a fundamentally new interacti
 
 Ontos v4.0.0 is done when all of the following are true:
 
-1. **`ontos serve` launches and responds.** Running `ontos serve` in a project directory starts an stdio MCP server that responds to the MCP `initialize` handshake and lists all 6 tools via `tools/list` (`context_map`, `query`, `get_document`, `list_documents`, `health`, `refresh`). Tool descriptions dynamically include the workspace name.
+1. **`ontos serve` launches and responds.** Running `ontos serve` in a project directory starts an stdio MCP server that responds to the MCP `initialize` handshake and lists at minimum the 3 P0 tools via `tools/list` (`context_map`, `query`, `get_document`), plus P1 tools (`list_documents`, `health`, `refresh`) if included. Tool descriptions dynamically include the workspace name.
 
-2. **`context_map()` returns the project graph.** The response includes the Tier 1 summary (project name, doc count, recent activity, key documents), the full document index, and validation warnings. Content matches what `ontos map --json` produces (serialization parity).
+2. **`context_map()` returns the `ontos-export-v1` schema.** The response includes the full document list with metadata (id, type, status, path, depends_on, content_hash), the dependency graph (nodes and edges), and a summary (total docs, by_type, by_status). Content matches what `ontos export data` produces — NOT what `ontos map --json` produces (which is only a status envelope).
 
 3. **`query("ontos_manual")` returns correct metadata.** For Ontos-dev's manual document: returns `type: "kernel"`, correct `depends_on` and `depended_by` lists, accurate `depth`, and valid `content_hash`.
 
