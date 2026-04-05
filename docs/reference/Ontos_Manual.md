@@ -401,9 +401,14 @@ pip install 'ontos[mcp]'
 
 This adds `mcp>=1.2` and `pydantic>=2.0` as dependencies. Python 3.10+ is required.
 
-For pipx users:
+For pipx users (fresh install):
 ```bash
 pipx install 'ontos[mcp]'
+```
+
+If you already have `ontos` installed via pipx, inject the dependencies instead:
+```bash
+pipx inject ontos mcp pydantic
 ```
 
 ### Upgrading
