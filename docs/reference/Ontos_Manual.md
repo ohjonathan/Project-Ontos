@@ -408,7 +408,7 @@ pipx install 'ontos[mcp]'
 
 If you already have `ontos` installed via pipx, inject the dependencies instead:
 ```bash
-pipx inject ontos mcp pydantic
+pipx inject ontos 'mcp>=1.2' 'pydantic>=2.0'
 ```
 
 ### Upgrading

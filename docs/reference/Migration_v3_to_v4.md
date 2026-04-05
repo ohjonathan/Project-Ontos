@@ -118,10 +118,11 @@ pip install 'ontos[mcp]'
 
 **If you installed with pipx:**
 ```bash
-pipx inject ontos mcp pydantic
+pipx inject ontos 'mcp>=1.2' 'pydantic>=2.0'
 ```
 > `pipx inject` adds packages into an existing pipx-managed environment.
 > `pipx upgrade` alone will not add the new MCP dependencies.
+> Pass `--force` if the packages were previously injected and need updating.
 
 Test the server:
 ```bash
