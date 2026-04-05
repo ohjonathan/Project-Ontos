@@ -79,6 +79,13 @@ class HooksConfig:
 
 
 @dataclass
+class McpConfig:
+    """[mcp] section."""
+    usage_logging: bool = False
+    usage_log_path: Optional[str] = None
+
+
+@dataclass
 class OntosConfig:
     """Root configuration object."""
     ontos: OntosSection = field(default_factory=OntosSection)
@@ -87,6 +94,7 @@ class OntosConfig:
     validation: ValidationConfig = field(default_factory=ValidationConfig)
     workflow: WorkflowConfig = field(default_factory=WorkflowConfig)
     hooks: HooksConfig = field(default_factory=HooksConfig)
+    mcp: McpConfig = field(default_factory=McpConfig)
 
 
 def default_config() -> OntosConfig:
@@ -115,11 +123,15 @@ def _validate_types(data: dict) -> None:
         ("workflow", "log_retention_count"): int,
         ("hooks", "pre_push"): bool,
         ("hooks", "pre_commit"): bool,
+        ("mcp", "usage_logging"): bool,
+        ("mcp", "usage_log_path"): str,
     }
 
     for (section, key), expected_type in type_requirements.items():
         if section in data and key in data[section]:
             value = data[section][key]
+            if section == "mcp" and key == "usage_log_path" and value is None:
+                continue
             if not isinstance(value, expected_type):
                 raise ConfigError(
                     f"{section}.{key} must be {expected_type.__name__}, "
@@ -149,6 +161,7 @@ def dict_to_config(data: dict, repo_root: Optional[Path] = None) -> OntosConfig:
     validation = ValidationConfig(**data.get("validation", {}))
     workflow = WorkflowConfig(**data.get("workflow", {}))
     hooks = HooksConfig(**data.get("hooks", {}))
+    mcp = McpConfig(**data.get("mcp", {}))
 
     return OntosConfig(
         ontos=ontos,
@@ -157,6 +170,7 @@ def dict_to_config(data: dict, repo_root: Optional[Path] = None) -> OntosConfig:
         validation=validation,
         workflow=workflow,
         hooks=hooks,
+        mcp=mcp,
     )
 
 
