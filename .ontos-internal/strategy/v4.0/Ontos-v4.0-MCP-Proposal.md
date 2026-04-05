@@ -1,14 +1,14 @@
 # Ontos v4.0 MCP Proposal
 
 **Date:** 2026-04-04
-**Revised:** 2026-04-04 (v5 — final contract cleanup)
+**Revised:** 2026-04-04 (v6 — tool naming, query honesty, vocabulary alignment)
 **Author:** Claude (synthesized from prior research and board decisions)
 **Status:** PROPOSAL — requires review and decision by Johnny
 **Audience:** Johnny (project owner), LLMs reviewing for correctness and gaps
 
-**Revision notes (v5):** Fifth draft, fixing three contract inconsistencies flagged in round 4: (1) removed last stale reference to `ontos map --json` in D5 section — `context_map()` uses the `ontos export data` pipeline everywhere now; (2) acknowledged that `_snapshot_to_json()` does not currently serialize validation results — Phase A must extend the serializer with a `validation` field (~20 lines); (3) replaced overclaim of "no new serialization layer" for `query()`/`get_document()` — these require new MCP adapter code (~50-100 lines per tool) that reads from core structures but formats tool-specific responses.
+**Revision notes (v6):** Sixth draft, fixing three spec/implementation mismatches: (1) renamed `context_map()` → `export_graph()` — the tool returns the full `ontos-export-v1` graph dump, not the Tier 1 orientation artifact; calling it "context map" was incoherent with what it actually does; (2) acknowledged that `query(entity_id)` is new adapter code, not a CLI wrapper — the existing `ontos query` CLI only supports relation/health/list modes, not single-entity lookup by ID; (3) replaced `kind` parameter with `type` to match `SnapshotFilters` canonical vocabulary.
 
-**Prior revisions:** v4: context_map contract fix, fingerprint tightened, P0/P1 tool priority, honest strategic bet framing. v3: CLI Paradox reframe, file-mtime invalidation, implicit workspace. v2: consumer flip, v4.0.0/v4.1 split, deferred SQLite/FTS/bundles. v1: initial proposal.
+**Prior revisions:** v5: removed last stale `ontos map --json` reference, acknowledged validation serializer gap, fixed "no new layer" overclaim. v4: context_map contract fix, fingerprint tightened, P0/P1 tool priority, honest strategic bet framing. v3: CLI Paradox reframe, file-mtime invalidation, implicit workspace. v2: consumer flip, v4.0.0/v4.1 split, deferred SQLite/FTS/bundles. v1: initial proposal.
 
 ---
 
@@ -109,14 +109,18 @@ All tools operate on the server's configured workspace. No `workspace_id` parame
 
 | Priority | Tool | Input | Output Shape | Frequency |
 |----------|------|-------|-------------|-----------|
-| **P0** | `context_map()` | None | `ontos-export-v1` schema: `{summary, documents: [{id, type, status, path, depends_on, content_hash}], graph: {nodes, edges}}` | At session start, during planning |
+| **P0** | `export_graph()` | None | `ontos-export-v1` schema: `{summary, documents: [{id, type, status, path, depends_on, content_hash}], graph: {nodes, edges}, validation: {errors, warnings}}` | At session start, during planning |
 | **P0** | `query(entity_id)` | `entity_id: str` | `{id, type, status, depends_on, depended_by, depth, last_updated, content_hash}` | Ad-hoc during task assembly |
 | **P0** | `get_document(document_id)` | `document_id: str` or `path: str` | `{id, type, status, frontmatter, content, metadata: {content_hash, word_count, depended_by}}` | Interactive, on-demand |
-| **P1** | `list_documents(kind?, status?)` | Optional filters | `[{id, type, status, path}]` | Interactive, on-demand |
+| **P1** | `list_documents(type?, status?)` | Optional filters | `[{id, type, status, path}]` | Interactive, on-demand |
 | **P1** | `health()` | None | `{server_uptime, workspace, doc_count, last_indexed, ontos_version}` | Diagnostics |
 | **P1** | `refresh()` | None | `{refreshed: true, doc_count, duration_ms}` | After known file changes |
 
-**Why 6 tools is not heavy for a "thin bridge":** Each tool is a thin wrapper around an existing core function (`create_snapshot()`, graph lookup, file read). The marginal implementation cost per tool is ~20 lines of handler code. All 6 can be dropped to the 3 P0 tools pre-release if testing shows the P1 surface is unused.
+**Tool naming note:** The previous drafts called the graph tool `context_map()`. This was misleading — the tool returns the full `ontos-export-v1` graph dump (document list + edges + validation), not the Tier 1 orientation summary that `ontos map` produces. Renamed to `export_graph()` to match what it actually does. If a lighter Tier 1 summary tool is needed, it can be added later.
+
+**`query(entity_id)` implementation note:** The existing `ontos query` CLI only supports relation/health/list modes (`--depends-on ID`, `--depended-by ID`, `--concept TAG`, `--stale DAYS`, `--health`, `--list-ids`). It does not have a "look up entity by ID and return its metadata" mode. The MCP `query()` tool requires **new adapter code** that reads from `snapshot.documents[entity_id]` and `snapshot.graph.reverse_edges[entity_id]` to assemble the response. The underlying data is available in the snapshot — the adapter is ~50 lines, not a new capability — but it is not a direct CLI wrapper.
+
+**Why 6 tools is not heavy for a "thin bridge":** Each tool reads from the in-memory snapshot built by `create_snapshot()`. P0 tools require new adapter code (~50-100 lines each). P1 tools are thinner. All 6 can be dropped to the 3 P0 tools pre-release if testing shows the P1 surface is unused.
 
 **What it does NOT need from Ontos:**
 - Cross-project queries (works on one project at a time)
@@ -162,13 +166,13 @@ Plus all v4.0.0 tools.
 
 **Document Management** — the 5-type document ontology (kernel, strategy, product, atom, log) with YAML frontmatter parsing, curation levels (L0/L1/L2), status lifecycle, and content hashing. Exposed via `get_document`, `list_documents`, and `query` tools.
 
-**Dependency Graph** — structural relationships between documents: `depends_on`, `impacts`, `describes` edges. Cycle detection, orphan detection, depth calculation, reverse edge traversal. Exposed via `query` (per-entity) and `context_map` (full graph).
+**Dependency Graph** — structural relationships between documents: `depends_on`, `impacts`, `describes` edges. Cycle detection, orphan detection, depth calculation, reverse edge traversal. Exposed via `query` (per-entity) and `export_graph` (full graph).
 
-**Context Map Generation** — the `context_map` tool calls `create_snapshot()` (from `ontos/io/snapshot.py`) and formats the response using `_snapshot_to_json()` (from `ontos/commands/export_data.py`) — the same pipeline that `ontos export data` uses to produce the `ontos-export-v1` schema. This returns the full document list with metadata, the dependency graph with edges, and a summary with type/status breakdowns.
+**Graph Export** — the `export_graph` tool calls `create_snapshot()` (from `ontos/io/snapshot.py`) and formats the response using `_snapshot_to_json()` (from `ontos/commands/export_data.py`) — the same pipeline that `ontos export data` uses to produce the `ontos-export-v1` schema. This returns the full document list with metadata, the dependency graph with edges, a summary with type/status breakdowns, and validation results (see Staleness Detection below).
 
-Note: this is NOT parity with `ontos map --json`. The `ontos map --json` command emits only a small status envelope (`{path, documents: count, errors, warnings}`) — it does not return the graph or document data. The MCP `context_map()` tool is equivalent to `ontos export data` in structured output, not `ontos map`.
+Note: this tool was called `context_map()` in earlier drafts. It was renamed to `export_graph()` because it returns the full graph dump, not the Tier 1 orientation summary that `ontos map` produces. The `ontos map --json` command emits only a small status envelope (`{path, documents: count, errors, warnings}`) — it does not return the graph or document data.
 
-**Staleness Detection** — `describes`/`describes_verified` field tracking, content hash comparison, stale document warnings. The `create_snapshot()` function in `ontos/io/snapshot.py` already computes a `validation_result` (via `ValidationOrchestrator`) that includes staleness warnings. However, the existing `_snapshot_to_json()` serializer in `export_data.py` does not include this validation result in its output — it only emits parse warnings from the scan phase. **Phase A must extend the serializer** to include `validation_result.errors` and `validation_result.warnings` in the `context_map()` response, likely as a top-level `validation` field alongside the existing `summary`, `documents`, and `graph` fields. This is a small addition (~20 lines) to the existing pipeline, not a new serialization layer.
+**Staleness Detection** — `describes`/`describes_verified` field tracking, content hash comparison, stale document warnings. The `create_snapshot()` function in `ontos/io/snapshot.py` already computes a `validation_result` (via `ValidationOrchestrator`) that includes staleness warnings. However, the existing `_snapshot_to_json()` serializer in `export_data.py` does not include this validation result in its output — it only emits parse warnings from the scan phase. **Phase A must extend the serializer** to include `validation_result.errors` and `validation_result.warnings` in the `export_graph()` response, likely as a top-level `validation` field alongside the existing `summary`, `documents`, and `graph` fields. This is a small addition (~20 lines) to the existing pipeline, not a new serialization layer.
 
 **Workspace Identity** — see Section 8, D9 for the formal definition. In v4.0.0, the workspace is implicit — determined by the server's configured project root. No `workspace_id` parameter on tool inputs. The agent discovers the workspace via `health()` or via tool descriptions that dynamically include the workspace name.
 
@@ -341,7 +345,7 @@ The v1 proposal presented a 5-signal scoring algorithm (type rank, in-degree cen
 - **The algorithm doesn't handle focused queries.** The v1 proposal acknowledged this limitation but didn't address it.
 - **Tier 1 already exists.** The context map's Tier 1 section (~2k tokens) is a hand-tuned, production-proven context bundle. It selects key documents by in-degree, includes recent activity, and respects a hard token cap. It's not perfect, but it's real.
 
-**v4.0.0 approach:** The `context_map` tool calls `create_snapshot()` and serializes the result using the `_snapshot_to_json()` pipeline from `ontos/commands/export_data.py`, producing the `ontos-export-v1` schema. This is the same data `ontos export data` produces — the full document list, dependency graph, and summary. It is NOT the same as `ontos map --json`, which only emits a status envelope. No new ranking or selection algorithm is needed.
+**v4.0.0 approach:** The `export_graph` tool calls `create_snapshot()` and serializes the result using the `_snapshot_to_json()` pipeline from `ontos/commands/export_data.py`, producing the `ontos-export-v1` schema. This is the same data `ontos export data` produces — the full document list, dependency graph, and summary. No new ranking or selection algorithm is needed.
 
 **v4.1 approach:** Implement the bundle algorithm after collecting real usage data from v4.0.0. Specifically:
 - Instrument v4.0.0 tool calls to measure which tools agents call, how often, and what data they request after receiving the context map.
@@ -364,7 +368,7 @@ v4.0.0 operates on a single workspace. Undocumented project handling is a cross-
 
 **Recommendation: (B) Read-only default for v4.0.0.**
 
-The v4.0.0 tools (`context_map`, `query`, `get_document`, `list_documents`, `health`, `refresh`) are ALL read operations, plus one cache-management operation (`refresh`). No tool modifies files, creates documents, or alters the graph.
+The v4.0.0 tools (`export_graph`, `query`, `get_document`, `list_documents`, `health`, `refresh`) are ALL read operations, plus one cache-management operation (`refresh`). No tool modifies files, creates documents, or alters the graph.
 
 **v4.0.0 security model (stdio):**
 - All tools are read-only. The server reads only from the configured workspace root.
@@ -385,12 +389,12 @@ This aligns with the board's 4/5 consensus on defense-in-depth (`.ontos-internal
 
 **v4.0.0 ships exactly:**
 - `ontos serve` command (stdio MCP server, single workspace)
-- 6 tools total: `context_map`, `query`, `get_document`, `list_documents`, `health`, `refresh`
+- 6 tools total: `export_graph`, `query`, `get_document`, `list_documents`, `health`, `refresh`
 - No `workspace_id` parameter on any tool — workspace is implicit (see D9)
 - `[mcp]` section support in `.ontos.toml` (optional, no required fields)
 - `pip install ontos[mcp]` with `mcp>=1.0` and `pydantic>=2.0` as extras
 - In-memory snapshot cache with file-mtime invalidation (see D4)
-- **Serialization approach:** The `context_map()` tool reuses the existing `create_snapshot()` → `_snapshot_to_json()` pipeline from `ontos export data`, producing the `ontos-export-v1` schema (extended with a `validation` field — see Section 5). This is NOT parity with `ontos map --json` (which only emits a status envelope). The `query()` and `get_document()` tools require **new MCP adapter code** that reads from the same `DocumentData` and `DependencyGraph` core structures but formats them into tool-specific response shapes. This is lightweight (~50-100 lines of adapter code per tool, no new data model), but it is new code — not a zero-work reuse of existing CLI output.
+- **Serialization approach:** The `export_graph()` tool reuses the existing `create_snapshot()` → `_snapshot_to_json()` pipeline from `ontos export data`, producing the `ontos-export-v1` schema (extended with a `validation` field — see Section 5). The `query()` and `get_document()` tools require **new MCP adapter code** that reads from the same `DocumentData` and `DependencyGraph` core structures but formats them into tool-specific response shapes. This is lightweight (~50-100 lines of adapter code per tool, no new data model), but it is new code — not a zero-work reuse of existing CLI output.
 
 **v4.0.0 explicitly does NOT ship:**
 - Portfolio-level index (SQLite)
@@ -479,15 +483,15 @@ Even though v4.0.0 is a thin bridge, it introduces a fundamentally new interacti
 
 Ontos v4.0.0 is done when all of the following are true:
 
-1. **`ontos serve` launches and responds.** Running `ontos serve` in a project directory starts an stdio MCP server that responds to the MCP `initialize` handshake and lists at minimum the 3 P0 tools via `tools/list` (`context_map`, `query`, `get_document`), plus P1 tools (`list_documents`, `health`, `refresh`) if included. Tool descriptions dynamically include the workspace name.
+1. **`ontos serve` launches and responds.** Running `ontos serve` in a project directory starts an stdio MCP server that responds to the MCP `initialize` handshake and lists at minimum the 3 P0 tools via `tools/list` (`export_graph`, `query`, `get_document`), plus P1 tools (`list_documents`, `health`, `refresh`) if included. Tool descriptions dynamically include the workspace name.
 
-2. **`context_map()` returns the `ontos-export-v1` schema.** The response includes the full document list with metadata (id, type, status, path, depends_on, content_hash), the dependency graph (nodes and edges), and a summary (total docs, by_type, by_status). Content matches what `ontos export data` produces — NOT what `ontos map --json` produces (which is only a status envelope).
+2. **`export_graph()` returns the `ontos-export-v1` schema plus validation.** The response includes the full document list with metadata (id, type, status, path, depends_on, content_hash), the dependency graph (nodes and edges), a summary (total docs, by_type, by_status), and a `validation` field with errors and warnings from `ValidationOrchestrator`. Content matches what `ontos export data` produces, extended with the validation field.
 
 3. **`query("ontos_manual")` returns correct metadata.** For Ontos-dev's manual document: returns `type: "kernel"`, correct `depends_on` and `depended_by` lists, accurate `depth`, and valid `content_hash`.
 
 4. **`get_document("ontos_manual")` returns full content.** Returns complete markdown content, full frontmatter, word count, and relationship metadata.
 
-5. **`list_documents(kind="kernel")` returns filtered results.** Returns only kernel-type documents from the workspace.
+5. **`list_documents(type="kernel")` returns filtered results.** Returns only kernel-type documents from the workspace.
 
 6. **`list_documents()` returns all documents.** Returns all 50+ documents with id, type, status, and path.
 
