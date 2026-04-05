@@ -36,16 +36,14 @@ class QueryOptions:
 
 def scan_docs_for_query(root: Path, scope: Optional[str], explicit_dirs: Optional[List[Path]] = None) -> DocumentLoadResult:
     """Scan documentation files for query operations using canonical loader."""
-    from ontos.core.curation import load_ontosignore
-
     config = load_project_config(repo_root=root)
     effective_scope = resolve_scan_scope(scope, config.scanning.default_scope)
-    ignore_patterns = load_ontosignore(root)
+    skip_patterns = config.scanning.skip_patterns if config.scanning else ["_template.md", "archive/*"]
     files = collect_scoped_documents(
         root,
         config,
         effective_scope,
-        base_skip_patterns=ignore_patterns,
+        base_skip_patterns=skip_patterns,
         explicit_dirs=explicit_dirs,
     )
 

@@ -50,7 +50,10 @@ def detect_implemented_proposal(branch: str, impacts: list) -> Optional[dict]:
     Returns:
         Dict with proposal info if detected, None otherwise.
     """
-    proposals_dir = get_proposals_dir()
+    try:
+        proposals_dir = get_proposals_dir()
+    except FileNotFoundError:
+        return None
     if not proposals_dir or not os.path.exists(proposals_dir):
         return None
 
@@ -222,7 +225,10 @@ def add_graduation_to_ledger(proposal: dict, new_path: str, ctx: SessionContext 
     if _owns_ctx:
         ctx = SessionContext.from_repo(Path.cwd())
     
-    history_path = get_decision_history_path()
+    try:
+        history_path = get_decision_history_path()
+    except FileNotFoundError:
+        return
     if not history_path or not os.path.exists(history_path):
         return
 

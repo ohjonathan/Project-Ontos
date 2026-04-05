@@ -90,7 +90,10 @@ def find_project_root(start_path: Path = None) -> Path:
 
 def scan_documents(
     dirs: List[Path],
-    skip_patterns: List[str] = None
+    skip_patterns: List[str] = None,
+    *,
+    workspace_root: Optional[Path] = None,
+    exclude_transient: bool = False,
 ) -> List[Path]:
     """Recursively find markdown files.
 
@@ -103,11 +106,14 @@ def scan_documents(
     """
     skip_patterns = skip_patterns or []
     results = set()
+    workspace_resolved = workspace_root.resolve() if workspace_root is not None else None
 
     for dir_path in dirs:
         if not dir_path.exists():
             continue
         for md_file in dir_path.rglob("*.md"):
+            if exclude_transient and _is_transient_markdown_candidate(md_file):
+                continue
             # Check skip patterns against full path for robust matching
             skip = False
             path_str = str(md_file)
@@ -116,9 +122,17 @@ def scan_documents(
                     skip = True
                     break
             if not skip:
-                results.add(md_file.resolve())
+                resolved = md_file.resolve()
+                if workspace_resolved is not None and not resolved.is_relative_to(workspace_resolved):
+                    continue
+                results.add(resolved)
 
     return sorted(list(results))
+
+
+def _is_transient_markdown_candidate(path: Path) -> bool:
+    name = path.name
+    return name.startswith(".") or name.startswith("#") or name.endswith("~")
 
 
 def read_document(path: Path) -> str:
