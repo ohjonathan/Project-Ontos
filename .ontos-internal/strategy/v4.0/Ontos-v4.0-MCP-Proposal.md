@@ -1,14 +1,14 @@
 # Ontos v4.0 MCP Proposal
 
 **Date:** 2026-04-04
-**Revised:** 2026-04-04 (v6 — tool naming, query honesty, vocabulary alignment)
+**Revised:** 2026-04-04 (v7 — pick one story: retrieval-first P0, graph-query P1)
 **Author:** Claude (synthesized from prior research and board decisions)
 **Status:** PROPOSAL — requires review and decision by Johnny
 **Audience:** Johnny (project owner), LLMs reviewing for correctness and gaps
 
-**Revision notes (v6):** Sixth draft, fixing three spec/implementation mismatches: (1) renamed `context_map()` → `export_graph()` — the tool returns the full `ontos-export-v1` graph dump, not the Tier 1 orientation artifact; calling it "context map" was incoherent with what it actually does; (2) acknowledged that `query(entity_id)` is new adapter code, not a CLI wrapper — the existing `ontos query` CLI only supports relation/health/list modes, not single-entity lookup by ID; (3) replaced `kind` parameter with `type` to match `SnapshotFilters` canonical vocabulary.
+**Revision notes (v7):** Seventh draft, resolving the "two stories" problem. The proposal now cleanly separates P0 (retrieval-first, wrapping existing CLI outputs) from P1 (new graph-query APIs). P0 = `context_map(compact?)` calling `generate_context_map()` and returning the proven Tier 1/2/3 markdown, `get_document()`, `list_documents()`. P1 = `export_graph()` (full JSON dump via `_snapshot_to_json()`), `query(entity_id)` (net-new single-entity lookup), `health()`, `refresh()`. The thin bridge story is now coherent: P0 wraps existing outputs; P1 is honestly new.
 
-**Prior revisions:** v5: removed last stale `ontos map --json` reference, acknowledged validation serializer gap, fixed "no new layer" overclaim. v4: context_map contract fix, fingerprint tightened, P0/P1 tool priority, honest strategic bet framing. v3: CLI Paradox reframe, file-mtime invalidation, implicit workspace. v2: consumer flip, v4.0.0/v4.1 split, deferred SQLite/FTS/bundles. v1: initial proposal.
+**Prior revisions:** v6: renamed context_map→export_graph, acknowledged query is new, kind→type. v5: stale map-json ref, validation gap, "no new layer" overclaim. v4: fingerprint, P0/P1, strategic bet. v3: CLI Paradox, file-mtime, implicit workspace. v2: consumer flip, scope split. v1: initial.
 
 ---
 
@@ -105,22 +105,23 @@ Total tracked documents across documented projects: ~396. 5-6 projects are activ
 
 **Tools it needs (v4.0.0 — single-project scope):**
 
-All tools operate on the server's configured workspace. No `workspace_id` parameter is needed — the workspace is implicit (see D9). Tools are split into P0 (core retrieval — the minimum viable MCP surface) and P1 (operational — included but droppable if testing shows they're unused).
+All tools operate on the server's configured workspace. No `workspace_id` parameter is needed — the workspace is implicit (see D9).
 
-| Priority | Tool | Input | Output Shape | Frequency |
-|----------|------|-------|-------------|-----------|
-| **P0** | `export_graph()` | None | `ontos-export-v1` schema: `{summary, documents: [{id, type, status, path, depends_on, content_hash}], graph: {nodes, edges}, validation: {errors, warnings}}` | At session start, during planning |
-| **P0** | `query(entity_id)` | `entity_id: str` | `{id, type, status, depends_on, depended_by, depth, last_updated, content_hash}` | Ad-hoc during task assembly |
-| **P0** | `get_document(document_id)` | `document_id: str` or `path: str` | `{id, type, status, frontmatter, content, metadata: {content_hash, word_count, depended_by}}` | Interactive, on-demand |
-| **P1** | `list_documents(type?, status?)` | Optional filters | `[{id, type, status, path}]` | Interactive, on-demand |
-| **P1** | `health()` | None | `{server_uptime, workspace, doc_count, last_indexed, ontos_version}` | Diagnostics |
-| **P1** | `refresh()` | None | `{refreshed: true, doc_count, duration_ms}` | After known file changes |
+Tools are split into two tiers with a clear design rationale:
+- **P0 (retrieval-first):** Wrap existing CLI outputs. These are the thin bridge — they expose validated, production-proven capabilities via MCP.
+- **P1 (new capabilities):** Add graph-query APIs that don't exist in the current CLI. These are honest extensions, not CLI wrappers. Included in v4.0.0 because the underlying data is in the snapshot and the adapter code is small, but droppable if the MVP needs to be smaller.
 
-**Tool naming note:** The previous drafts called the graph tool `context_map()`. This was misleading — the tool returns the full `ontos-export-v1` graph dump (document list + edges + validation), not the Tier 1 orientation summary that `ontos map` produces. Renamed to `export_graph()` to match what it actually does. If a lighter Tier 1 summary tool is needed, it can be added later.
+| Priority | Tool | Input | Output Shape | Wraps |
+|----------|------|-------|-------------|-------|
+| **P0** | `context_map(compact?)` | `compact?: str` (optional: `"basic"`, `"rich"`, `"tiered"`) | Markdown string: the same Tier 1/2/3 context map that `ontos map` writes to `Ontos_Context_Map.md`, plus a `validation` object with errors/warnings | `generate_context_map()` in `map.py` — existing function, proven output |
+| **P0** | `get_document(document_id)` | `document_id: str` or `path: str` | `{id, type, status, frontmatter, content, metadata: {content_hash, word_count, depended_by}}` | Reads from `snapshot.documents[id]` — new adapter (~50 lines) but data is in existing structures |
+| **P0** | `list_documents(type?, status?)` | Optional filters | `[{id, type, status, path}]` | Filters `snapshot.documents` — thin adapter |
+| **P1** | `export_graph()` | None | `ontos-export-v1` JSON schema: `{summary, documents, graph: {nodes, edges}, validation}` | `_snapshot_to_json()` in `export_data.py` — existing serializer, extended with validation field |
+| **P1** | `query(entity_id)` | `entity_id: str` | `{id, type, status, depends_on, depended_by, depth, content_hash}` | **Net-new adapter.** Current `ontos query` CLI only supports `--depends-on`/`--depended-by`/`--concept`/`--stale`/`--health`/`--list-ids`, not single-entity lookup. Data is in `snapshot.documents[id]` + `snapshot.graph.reverse_edges[id]`; adapter is ~50 lines. |
+| **P1** | `health()` | None | `{server_uptime, workspace, doc_count, last_indexed, ontos_version}` | New — no CLI equivalent |
+| **P1** | `refresh()` | None | `{refreshed: true, doc_count, duration_ms}` | New — triggers cache rebuild |
 
-**`query(entity_id)` implementation note:** The existing `ontos query` CLI only supports relation/health/list modes (`--depends-on ID`, `--depended-by ID`, `--concept TAG`, `--stale DAYS`, `--health`, `--list-ids`). It does not have a "look up entity by ID and return its metadata" mode. The MCP `query()` tool requires **new adapter code** that reads from `snapshot.documents[entity_id]` and `snapshot.graph.reverse_edges[entity_id]` to assemble the response. The underlying data is available in the snapshot — the adapter is ~50 lines, not a new capability — but it is not a direct CLI wrapper.
-
-**Why 6 tools is not heavy for a "thin bridge":** Each tool reads from the in-memory snapshot built by `create_snapshot()`. P0 tools require new adapter code (~50-100 lines each). P1 tools are thinner. All 6 can be dropped to the 3 P0 tools pre-release if testing shows the P1 surface is unused.
+**Why `context_map()` is P0 and `export_graph()` is P1:** The primary orientation use case is an agent joining a session and asking "what is this project?" The Tier 1 context map (~2k tokens) answers that — it's the proven, token-capped summary with key documents, recent activity, and critical paths. The full `ontos-export-v1` JSON dump is useful for structured graph queries, but it's not what an agent needs for orientation. By making `context_map()` the P0 entry point, the thin bridge story is coherent: P0 wraps existing CLI outputs; P1 adds new structured APIs.
 
 **What it does NOT need from Ontos:**
 - Cross-project queries (works on one project at a time)
@@ -168,9 +169,9 @@ Plus all v4.0.0 tools.
 
 **Dependency Graph** — structural relationships between documents: `depends_on`, `impacts`, `describes` edges. Cycle detection, orphan detection, depth calculation, reverse edge traversal. Exposed via `query` (per-entity) and `export_graph` (full graph).
 
-**Graph Export** — the `export_graph` tool calls `create_snapshot()` (from `ontos/io/snapshot.py`) and formats the response using `_snapshot_to_json()` (from `ontos/commands/export_data.py`) — the same pipeline that `ontos export data` uses to produce the `ontos-export-v1` schema. This returns the full document list with metadata, the dependency graph with edges, a summary with type/status breakdowns, and validation results (see Staleness Detection below).
+**Context Map Generation (P0)** — the `context_map` tool calls `generate_context_map()` from `ontos/commands/map.py` and returns the resulting markdown string — the same Tier 1/2/3 content that `ontos map` writes to `Ontos_Context_Map.md`. This is the proven, production-validated orientation artifact. The optional `compact` parameter maps to existing compact modes (`basic`, `rich`, `tiered`). The response also includes the `ValidationResult` from `generate_context_map()` as a structured `validation` object.
 
-Note: this tool was called `context_map()` in earlier drafts. It was renamed to `export_graph()` because it returns the full graph dump, not the Tier 1 orientation summary that `ontos map` produces. The `ontos map --json` command emits only a small status envelope (`{path, documents: count, errors, warnings}`) — it does not return the graph or document data.
+**Graph Export (P1)** — the `export_graph` tool calls `create_snapshot()` and formats the response using `_snapshot_to_json()` from `ontos/commands/export_data.py` — the same pipeline that `ontos export data` uses to produce the `ontos-export-v1` schema. This is a full structured JSON dump for agents that need graph data programmatically, not the orientation artifact.
 
 **Staleness Detection** — `describes`/`describes_verified` field tracking, content hash comparison, stale document warnings. The `create_snapshot()` function in `ontos/io/snapshot.py` already computes a `validation_result` (via `ValidationOrchestrator`) that includes staleness warnings. However, the existing `_snapshot_to_json()` serializer in `export_data.py` does not include this validation result in its output — it only emits parse warnings from the scan phase. **Phase A must extend the serializer** to include `validation_result.errors` and `validation_result.warnings` in the `export_graph()` response, likely as a top-level `validation` field alongside the existing `summary`, `documents`, and `graph` fields. This is a small addition (~20 lines) to the existing pipeline, not a new serialization layer.
 
@@ -345,7 +346,7 @@ The v1 proposal presented a 5-signal scoring algorithm (type rank, in-degree cen
 - **The algorithm doesn't handle focused queries.** The v1 proposal acknowledged this limitation but didn't address it.
 - **Tier 1 already exists.** The context map's Tier 1 section (~2k tokens) is a hand-tuned, production-proven context bundle. It selects key documents by in-degree, includes recent activity, and respects a hard token cap. It's not perfect, but it's real.
 
-**v4.0.0 approach:** The `export_graph` tool calls `create_snapshot()` and serializes the result using the `_snapshot_to_json()` pipeline from `ontos/commands/export_data.py`, producing the `ontos-export-v1` schema. This is the same data `ontos export data` produces — the full document list, dependency graph, and summary. No new ranking or selection algorithm is needed.
+**v4.0.0 approach:** The P0 `context_map(compact?)` tool calls `generate_context_map()` and returns the existing Tier 1/2/3 markdown — the same content `ontos map` produces and writes to `Ontos_Context_Map.md`. Tier 1 is already a hand-tuned, token-capped (~2k tokens) orientation bundle that selects key documents by in-degree and includes recent activity. No new ranking or selection algorithm is needed. The P1 `export_graph()` tool separately provides the full structured JSON dump for agents that need graph data.
 
 **v4.1 approach:** Implement the bundle algorithm after collecting real usage data from v4.0.0. Specifically:
 - Instrument v4.0.0 tool calls to measure which tools agents call, how often, and what data they request after receiving the context map.
@@ -368,7 +369,7 @@ v4.0.0 operates on a single workspace. Undocumented project handling is a cross-
 
 **Recommendation: (B) Read-only default for v4.0.0.**
 
-The v4.0.0 tools (`export_graph`, `query`, `get_document`, `list_documents`, `health`, `refresh`) are ALL read operations, plus one cache-management operation (`refresh`). No tool modifies files, creates documents, or alters the graph.
+The v4.0.0 tools (`context_map`, `get_document`, `list_documents`, `export_graph`, `query`, `health`, `refresh`) are ALL read operations, plus one cache-management operation (`refresh`). No tool modifies files, creates documents, or alters the graph.
 
 **v4.0.0 security model (stdio):**
 - All tools are read-only. The server reads only from the configured workspace root.
@@ -389,12 +390,12 @@ This aligns with the board's 4/5 consensus on defense-in-depth (`.ontos-internal
 
 **v4.0.0 ships exactly:**
 - `ontos serve` command (stdio MCP server, single workspace)
-- 6 tools total: `export_graph`, `query`, `get_document`, `list_documents`, `health`, `refresh`
+- 7 tools total — P0: `context_map`, `get_document`, `list_documents`; P1: `export_graph`, `query`, `health`, `refresh`
 - No `workspace_id` parameter on any tool — workspace is implicit (see D9)
 - `[mcp]` section support in `.ontos.toml` (optional, no required fields)
 - `pip install ontos[mcp]` with `mcp>=1.0` and `pydantic>=2.0` as extras
 - In-memory snapshot cache with file-mtime invalidation (see D4)
-- **Serialization approach:** The `export_graph()` tool reuses the existing `create_snapshot()` → `_snapshot_to_json()` pipeline from `ontos export data`, producing the `ontos-export-v1` schema (extended with a `validation` field — see Section 5). The `query()` and `get_document()` tools require **new MCP adapter code** that reads from the same `DocumentData` and `DependencyGraph` core structures but formats them into tool-specific response shapes. This is lightweight (~50-100 lines of adapter code per tool, no new data model), but it is new code — not a zero-work reuse of existing CLI output.
+- **Serialization approach:** P0 tools wrap existing outputs: `context_map()` calls `generate_context_map()` and returns its markdown string; `get_document()` and `list_documents()` require new adapter code (~50 lines each) that reads from `DocumentData` structures. P1 tools: `export_graph()` reuses the `_snapshot_to_json()` pipeline from `ontos export data` (extended with a `validation` field); `query()` requires ~50 lines of new adapter code for single-entity lookup. All adapters are lightweight, but `query()` and the per-tool response shapes are new code — not zero-work CLI reuse.
 
 **v4.0.0 explicitly does NOT ship:**
 - Portfolio-level index (SQLite)
@@ -483,9 +484,9 @@ Even though v4.0.0 is a thin bridge, it introduces a fundamentally new interacti
 
 Ontos v4.0.0 is done when all of the following are true:
 
-1. **`ontos serve` launches and responds.** Running `ontos serve` in a project directory starts an stdio MCP server that responds to the MCP `initialize` handshake and lists at minimum the 3 P0 tools via `tools/list` (`export_graph`, `query`, `get_document`), plus P1 tools (`list_documents`, `health`, `refresh`) if included. Tool descriptions dynamically include the workspace name.
+1. **`ontos serve` launches and responds.** Running `ontos serve` in a project directory starts an stdio MCP server that responds to the MCP `initialize` handshake and lists the 3 P0 tools via `tools/list` (`context_map`, `get_document`, `list_documents`), plus P1 tools (`export_graph`, `query`, `health`, `refresh`) if included. Tool descriptions dynamically include the workspace name.
 
-2. **`export_graph()` returns the `ontos-export-v1` schema plus validation.** The response includes the full document list with metadata (id, type, status, path, depends_on, content_hash), the dependency graph (nodes and edges), a summary (total docs, by_type, by_status), and a `validation` field with errors and warnings from `ValidationOrchestrator`. Content matches what `ontos export data` produces, extended with the validation field.
+2. **`context_map()` returns the Tier 1/2/3 markdown.** The response is the same markdown content that `ontos map` writes to `Ontos_Context_Map.md`, plus a structured `validation` object with errors and warnings. Tier 1 (~2k tokens) includes the project summary, key documents, and recent activity. Calling `context_map(compact="tiered")` returns the compact tiered format.
 
 3. **`query("ontos_manual")` returns correct metadata.** For Ontos-dev's manual document: returns `type: "kernel"`, correct `depends_on` and `depended_by` lists, accurate `depth`, and valid `content_hash`.
 
