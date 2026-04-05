@@ -98,6 +98,7 @@ def create_parser(include_hidden: bool = True) -> argparse.ArgumentParser:
     _register_link_check(subparsers, global_parser)
     _register_rename(subparsers, global_parser)
     _register_env(subparsers, global_parser)
+    _register_serve(subparsers, global_parser)
     _register_agents(subparsers, global_parser)
     _register_export(subparsers, global_parser)
     _register_verify(subparsers, global_parser)
@@ -292,6 +293,21 @@ def _register_env(subparsers, parent):
         help="Output format (default: text). Short flag -f is deprecated."
     )
     p.set_defaults(func=_cmd_env)
+
+
+def _register_serve(subparsers, parent):
+    """Register serve command."""
+    p = subparsers.add_parser(
+        "serve",
+        help="Start the Ontos MCP server",
+        parents=[parent],
+    )
+    p.add_argument(
+        "--workspace",
+        type=Path,
+        help="Workspace path to serve (defaults to the current working directory)",
+    )
+    p.set_defaults(func=_cmd_serve)
 
 
 def _register_agents(subparsers, parent):
@@ -838,6 +854,46 @@ def _cmd_agents(args) -> int:
         print(message)
 
     return exit_code
+
+
+def _cmd_serve(args) -> int:
+    """Handle MCP server startup."""
+    from ontos.io.files import find_project_root
+
+    start_path = args.workspace or Path.cwd()
+    resolved_start = start_path.expanduser().resolve()
+    if not resolved_start.exists():
+        raise OntosUserError(
+            f"Workspace path does not exist: {start_path}",
+            code="E_WORKSPACE_NOT_FOUND",
+        )
+
+    try:
+        workspace_root = find_project_root(start_path=resolved_start)
+    except FileNotFoundError as exc:
+        raise OntosUserError(str(exc), code="E_WORKSPACE_NOT_FOUND") from exc
+
+    sys.stdout = sys.stderr
+
+    try:
+        from ontos.mcp import serve
+        return serve(workspace_root)
+    except ModuleNotFoundError as exc:
+        if exc.name and (
+            exc.name == "mcp"
+            or exc.name.startswith("mcp.")
+            or exc.name == "pydantic"
+            or exc.name.startswith("pydantic.")
+        ):
+            raise OntosUserError(
+                "MCP support is not installed. Run 'pip install ontos[mcp]' and retry.",
+                code="E_MCP_NOT_INSTALLED",
+            ) from exc
+        raise
+    except OntosUserError:
+        raise
+    except Exception as exc:
+        raise OntosInternalError(str(exc), code="E_MCP_STARTUP") from exc
 
 
 def _cmd_agent_export(args) -> int:
