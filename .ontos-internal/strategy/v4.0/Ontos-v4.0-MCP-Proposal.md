@@ -1,14 +1,14 @@
 # Ontos v4.0 MCP Proposal
 
 **Date:** 2026-04-04
-**Revised:** 2026-04-04 (v4 — responding to third review round)
+**Revised:** 2026-04-04 (v5 — final contract cleanup)
 **Author:** Claude (synthesized from prior research and board decisions)
 **Status:** PROPOSAL — requires review and decision by Johnny
 **Audience:** Johnny (project owner), LLMs reviewing for correctness and gaps
 
-**Revision notes (v4):** Fourth draft, responding to third review round. Key changes from v3: (1) `context_map()` contract corrected — v3 falsely claimed parity with `ontos map --json` (a tiny status envelope); now correctly specified to use `create_snapshot()` + `_snapshot_to_json()` pipeline (parity with `ontos export data`); (2) cache fingerprint fully specified — uses set of `(path, st_mtime_ns, st_size)` tuples, not just `max(mtime)`; (3) consumer argument reframed as honest strategic bet on MCP convergence, not stretched pain-point claim; (4) tool priority hierarchy added (P0/P1) to clarify MVP core.
+**Revision notes (v5):** Fifth draft, fixing three contract inconsistencies flagged in round 4: (1) removed last stale reference to `ontos map --json` in D5 section — `context_map()` uses the `ontos export data` pipeline everywhere now; (2) acknowledged that `_snapshot_to_json()` does not currently serialize validation results — Phase A must extend the serializer with a `validation` field (~20 lines); (3) replaced overclaim of "no new serialization layer" for `query()`/`get_document()` — these require new MCP adapter code (~50-100 lines per tool) that reads from core structures but formats tool-specific responses.
 
-**Prior revisions:** v3: CLI Paradox reframe, file-mtime invalidation, implicit workspace, asyncio lock. v2: consumer flip to Claude Code, v4.0.0/v4.1 split, deferred SQLite/FTS/bundles. v1: initial proposal.
+**Prior revisions:** v4: context_map contract fix, fingerprint tightened, P0/P1 tool priority, honest strategic bet framing. v3: CLI Paradox reframe, file-mtime invalidation, implicit workspace. v2: consumer flip, v4.0.0/v4.1 split, deferred SQLite/FTS/bundles. v1: initial proposal.
 
 ---
 
@@ -168,7 +168,7 @@ Plus all v4.0.0 tools.
 
 Note: this is NOT parity with `ontos map --json`. The `ontos map --json` command emits only a small status envelope (`{path, documents: count, errors, warnings}`) — it does not return the graph or document data. The MCP `context_map()` tool is equivalent to `ontos export data` in structured output, not `ontos map`.
 
-**Staleness Detection** — `describes`/`describes_verified` field tracking, content hash comparison, stale document warnings. Surfaced in `context_map` validation section and `query` responses.
+**Staleness Detection** — `describes`/`describes_verified` field tracking, content hash comparison, stale document warnings. The `create_snapshot()` function in `ontos/io/snapshot.py` already computes a `validation_result` (via `ValidationOrchestrator`) that includes staleness warnings. However, the existing `_snapshot_to_json()` serializer in `export_data.py` does not include this validation result in its output — it only emits parse warnings from the scan phase. **Phase A must extend the serializer** to include `validation_result.errors` and `validation_result.warnings` in the `context_map()` response, likely as a top-level `validation` field alongside the existing `summary`, `documents`, and `graph` fields. This is a small addition (~20 lines) to the existing pipeline, not a new serialization layer.
 
 **Workspace Identity** — see Section 8, D9 for the formal definition. In v4.0.0, the workspace is implicit — determined by the server's configured project root. No `workspace_id` parameter on tool inputs. The agent discovers the workspace via `health()` or via tool descriptions that dynamically include the workspace name.
 
@@ -341,7 +341,7 @@ The v1 proposal presented a 5-signal scoring algorithm (type rank, in-degree cen
 - **The algorithm doesn't handle focused queries.** The v1 proposal acknowledged this limitation but didn't address it.
 - **Tier 1 already exists.** The context map's Tier 1 section (~2k tokens) is a hand-tuned, production-proven context bundle. It selects key documents by in-degree, includes recent activity, and respects a hard token cap. It's not perfect, but it's real.
 
-**v4.0.0 approach:** The `context_map` tool serves the existing Tier 1/2/3 context map output (the same content `ontos map --json` produces). Agents receive the proven Tier 1 summary and can request deeper tiers as needed. This is not a new algorithm — it's exposing an existing, validated capability.
+**v4.0.0 approach:** The `context_map` tool calls `create_snapshot()` and serializes the result using the `_snapshot_to_json()` pipeline from `ontos/commands/export_data.py`, producing the `ontos-export-v1` schema. This is the same data `ontos export data` produces — the full document list, dependency graph, and summary. It is NOT the same as `ontos map --json`, which only emits a status envelope. No new ranking or selection algorithm is needed.
 
 **v4.1 approach:** Implement the bundle algorithm after collecting real usage data from v4.0.0. Specifically:
 - Instrument v4.0.0 tool calls to measure which tools agents call, how often, and what data they request after receiving the context map.
@@ -390,7 +390,7 @@ This aligns with the board's 4/5 consensus on defense-in-depth (`.ontos-internal
 - `[mcp]` section support in `.ontos.toml` (optional, no required fields)
 - `pip install ontos[mcp]` with `mcp>=1.0` and `pydantic>=2.0` as extras
 - In-memory snapshot cache with file-mtime invalidation (see D4)
-- **Serialization parity with `ontos export data`:** The `context_map()` tool uses the same `create_snapshot()` → `_snapshot_to_json()` pipeline that `ontos export data` uses, producing the `ontos-export-v1` schema. This is NOT parity with `ontos map --json` (which only emits a status envelope). The `query()` and `get_document()` tools format responses from the same `DocumentData` and `DependencyGraph` structures that the core uses internally — no new serialization layer.
+- **Serialization approach:** The `context_map()` tool reuses the existing `create_snapshot()` → `_snapshot_to_json()` pipeline from `ontos export data`, producing the `ontos-export-v1` schema (extended with a `validation` field — see Section 5). This is NOT parity with `ontos map --json` (which only emits a status envelope). The `query()` and `get_document()` tools require **new MCP adapter code** that reads from the same `DocumentData` and `DependencyGraph` core structures but formats them into tool-specific response shapes. This is lightweight (~50-100 lines of adapter code per tool, no new data model), but it is new code — not a zero-work reuse of existing CLI output.
 
 **v4.0.0 explicitly does NOT ship:**
 - Portfolio-level index (SQLite)
