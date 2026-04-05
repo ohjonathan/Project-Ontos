@@ -95,10 +95,18 @@ Everything else works the same:
 pip install --upgrade ontos
 ```
 
-**If you installed with pipx:**
+**If you installed with pipx (without MCP):**
 ```bash
 pipx upgrade ontos
 ```
+
+**If you installed with pipx (with MCP):**
+```bash
+pipx install --force 'ontos[mcp]'
+```
+> `pipx upgrade` does not add new extras. Use `pipx install --force` to
+> reinstall with the `[mcp]` extra. This also ensures future `pipx upgrade`
+> calls will keep MCP installed. Requires Python 3.10+ in the pipx venv.
 
 ### 2. Verify
 
@@ -107,22 +115,19 @@ ontos --version  # Should show 4.0.0
 ontos doctor     # Check graph health
 ```
 
-### 3. Enable MCP (Optional)
+### 3. Enable MCP on an Existing Install (Optional)
 
-Requires Python 3.10+.
+If you upgraded without MCP in step 1 and want to add it later:
 
-**If you installed with pip:**
+**pip:**
 ```bash
-pip install 'ontos[mcp]'
+pip install 'ontos[mcp]'    # Requires Python 3.10+
 ```
 
-**If you installed with pipx:**
+**pipx:**
 ```bash
-pipx inject ontos 'mcp>=1.2' 'pydantic>=2.0'
+pipx install --force 'ontos[mcp]'
 ```
-> `pipx inject` adds packages into an existing pipx-managed environment.
-> `pipx upgrade` alone will not add the new MCP dependencies.
-> Pass `--force` if the packages were previously injected and need updating.
 
 Test the server:
 ```bash

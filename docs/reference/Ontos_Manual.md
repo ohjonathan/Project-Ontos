@@ -406,9 +406,9 @@ For pipx users (fresh install):
 pipx install 'ontos[mcp]'
 ```
 
-If you already have `ontos` installed via pipx, inject the dependencies instead:
+If you already have `ontos` installed via pipx, reinstall with the extra:
 ```bash
-pipx inject ontos 'mcp>=1.2' 'pydantic>=2.0'
+pipx install --force 'ontos[mcp]'
 ```
 
 ### Upgrading
