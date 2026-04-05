@@ -96,6 +96,20 @@ def test_get_document_requires_exactly_one_identifier(tmp_path):
     assert result.isError is True
 
 
+def test_usage_logging_failure_does_not_block_tool_execution(tmp_path):
+    cache = build_cache(create_workspace(tmp_path, usage_logging=True))
+
+    with patch("ontos.mcp.server._log_usage", side_effect=PermissionError("denied")):
+        result = invoke_tool(
+            "health",
+            cache,
+            tools.health,
+        )
+
+    assert result.isError is False
+    assert result.structuredContent["doc_count"] == 8
+
+
 def test_help_and_stdout_safety_paths(tmp_path):
     root = create_workspace(tmp_path)
 

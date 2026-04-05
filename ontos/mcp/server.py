@@ -260,6 +260,9 @@ def _invoke_tool(
 ) -> Union[Dict[str, Any], CallToolResult]:
     try:
         _log_usage(cache, tool_name)
+    except Exception:
+        traceback.print_exc(file=sys.stderr)
+    try:
         if ensure_fresh:
             cache.get_fresh_snapshot()
         payload = tool_fn(cache, **kwargs)

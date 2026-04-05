@@ -1,6 +1,6 @@
 """Integration tests for the MCP server (spec Section 7)."""
 
-from tests.mcp import build_cache, build_server, create_workspace, list_tools
+from tests.mcp import build_cache, build_server, create_workspace, list_tools, write_file
 
 
 def test_server_lists_all_eight_tools_with_correct_annotations(tmp_path):
@@ -59,13 +59,25 @@ def test_instructions_contain_workspace_identity(tmp_path):
 
 
 def test_instructions_not_mutated_on_rebuild(tmp_path):
+    from ontos.mcp.server import create_server
+
     root = create_workspace(tmp_path)
     cache = build_cache(root)
-    server = build_server(root)
+    server = create_server(cache)
     instructions_before = server.instructions
 
-    # Force a cache rebuild
+    # Mutate workspace so the rebuild produces different doc_count
+    write_file(root / "docs/extra.md", """
+    ---
+    id: extra_doc
+    type: atom
+    status: active
+    ---
+    Extra body.
+    """)
     cache.force_refresh()
 
-    # Instructions are startup-time only; they should not change
+    # Instructions are startup-time only; they should not change even
+    # though doc_count increased after rebuild
+    assert cache.canonical_view.total_count > 8
     assert server.instructions == instructions_before
