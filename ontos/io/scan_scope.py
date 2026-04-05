@@ -107,7 +107,13 @@ def collect_scoped_documents(
         extra_skip_patterns=extra_skip_patterns,
         explicit_dirs=explicit_dirs,
     )
-    return scan_documents(plan.roots, skip_patterns=plan.skip_patterns)
+    workspace_root = None if explicit_dirs else repo_root
+    return scan_documents(
+        plan.roots,
+        skip_patterns=plan.skip_patterns,
+        workspace_root=workspace_root,
+        exclude_transient=True,
+    )
 
 
 def build_scan_scope_plan(

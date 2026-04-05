@@ -55,7 +55,10 @@ class OntosFastMCP(FastMCP):
 def serve(workspace_root: Path) -> int:
     """Build the cache and start the stdio MCP runtime."""
     workspace_root = workspace_root.resolve()
-    config = load_project_config(repo_root=workspace_root)
+    config = load_project_config(
+        config_path=workspace_root / ".ontos.toml",
+        repo_root=workspace_root,
+    )
     snapshot = create_snapshot(
         root=workspace_root,
         include_content=True,
@@ -168,7 +171,13 @@ def create_server(cache: SnapshotCache) -> FastMCP:
         return _invoke_tool("health", cache, tool_impl.health)
 
     def handle_refresh() -> CallToolResult:
-        return _invoke_tool("refresh", cache, tool_impl.refresh, ensure_fresh=False)
+        return _invoke_tool(
+            "refresh",
+            cache,
+            tool_impl.refresh,
+            ensure_fresh=False,
+            use_live_cache=True,
+        )
 
     register(
         name="workspace_overview",
@@ -256,6 +265,7 @@ def _invoke_tool(
     tool_fn: Callable[..., Dict[str, Any]],
     *,
     ensure_fresh: bool = True,
+    use_live_cache: bool = False,
     **kwargs: Any,
 ) -> Union[Dict[str, Any], CallToolResult]:
     try:
@@ -263,9 +273,12 @@ def _invoke_tool(
     except Exception:
         traceback.print_exc(file=sys.stderr)
     try:
+        tool_input = cache.current_view()
         if ensure_fresh:
-            cache.get_fresh_snapshot()
-        payload = tool_fn(cache, **kwargs)
+            tool_input = cache.get_fresh_view()
+        if use_live_cache:
+            tool_input = cache
+        payload = tool_fn(tool_input, **kwargs)
         validated = validate_success_payload(tool_name, payload)
         return _tool_success_result(validated)
     except OntosUserError as exc:

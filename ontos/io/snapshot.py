@@ -36,7 +36,7 @@ def create_snapshot(
         Immutable DocumentSnapshot
     """
     # Load config
-    config = load_project_config(repo_root=root)
+    config = load_project_config(config_path=root / ".ontos.toml", repo_root=root)
 
     # Scan documents
     skip_patterns = config.scanning.skip_patterns if config.scanning else ["_template.md", "archive/*"]

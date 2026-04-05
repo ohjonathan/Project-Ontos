@@ -1,5 +1,7 @@
 """Integration tests for the MCP server (spec Section 7)."""
 
+from pathlib import Path
+
 from tests.mcp import build_cache, build_server, create_workspace, list_tools, write_file
 
 
@@ -81,3 +83,72 @@ def test_instructions_not_mutated_on_rebuild(tmp_path):
     # though doc_count increased after rebuild
     assert cache.canonical_view.total_count > 8
     assert server.instructions == instructions_before
+
+
+def test_serve_binds_config_to_workspace_across_cwd(tmp_path, monkeypatch):
+    from ontos.mcp import server as mcp_server
+
+    launch_root = create_workspace(tmp_path / "launch")
+    target_root = tmp_path / "target"
+    target_root.mkdir(parents=True)
+    write_file(
+        target_root / ".ontos.toml",
+        """
+        [ontos]
+        version = "4.0"
+
+        [paths]
+        docs_dir = "knowledge"
+
+        [scanning]
+        skip_patterns = ["_template.md", "archive/*"]
+
+        [mcp]
+        usage_logging = false
+        """,
+    )
+    write_file(
+        target_root / "knowledge/primary.md",
+        """
+        ---
+        id: primary_doc
+        type: atom
+        status: active
+        ---
+        Primary body.
+        """,
+    )
+    captured = {}
+
+    class DummyServer:
+        def run(self, transport: str) -> None:
+            captured["transport"] = transport
+
+    def fake_create_server(cache):
+        captured["docs_dir"] = cache.config.paths.docs_dir
+        captured["initial_count"] = cache.canonical_view.total_count
+        write_file(
+            target_root / "knowledge/extra.md",
+            """
+            ---
+            id: extra_doc
+            type: atom
+            status: active
+            ---
+            Extra body.
+            """,
+        )
+        cache.force_refresh()
+        captured["refreshed_count"] = cache.canonical_view.total_count
+        return DummyServer()
+
+    monkeypatch.chdir(launch_root)
+    monkeypatch.setattr(mcp_server, "create_server", fake_create_server)
+
+    exit_code = mcp_server.serve(Path(target_root))
+
+    assert exit_code == 0
+    assert captured["transport"] == "stdio"
+    assert captured["docs_dir"] == "knowledge"
+    assert captured["initial_count"] == 1
+    assert captured["refreshed_count"] == 2

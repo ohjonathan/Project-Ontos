@@ -1,3 +1,7 @@
+import json
+import io
+import sys
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from tests.mcp import build_cache, build_server, create_workspace, invoke_tool, run_base_cli, run_mcp_cli
@@ -121,3 +125,48 @@ def test_help_and_stdout_safety_paths(tmp_path):
     assert "usage: ontos serve" in help_result.stdout
     assert runtime_result.stdout == ""
     assert "workspace_overview" in server.instructions
+
+
+def test_cmd_serve_redirects_stdout_before_project_root_lookup(tmp_path, monkeypatch):
+    from ontos import cli
+    import ontos.mcp
+
+    root = create_workspace(tmp_path)
+    stdout = io.StringIO()
+    stderr = io.StringIO()
+
+    def noisy_find_project_root(start_path):
+        print("lookup noise")
+        return root
+
+    monkeypatch.setattr(sys, "stdout", stdout)
+    monkeypatch.setattr(sys, "stderr", stderr)
+    monkeypatch.setattr("ontos.io.files.find_project_root", noisy_find_project_root)
+    monkeypatch.setattr(ontos.mcp, "serve", lambda workspace_root: 0)
+
+    exit_code = cli._cmd_serve(SimpleNamespace(workspace=root))
+
+    assert exit_code == 0
+    assert stdout.getvalue() == ""
+    assert "lookup noise" in stderr.getvalue()
+
+
+def test_json_serve_startup_error_stays_on_stdout(tmp_path):
+    launch_root = create_workspace(tmp_path / "launch")
+    non_project = tmp_path / "non-project"
+    non_project.mkdir(parents=True)
+
+    result = run_base_cli(
+        launch_root,
+        "--json",
+        "serve",
+        "--workspace",
+        str(non_project),
+    )
+
+    assert result.returncode == 2
+    assert result.stderr == ""
+    payload = json.loads(result.stdout)
+    assert payload["status"] == "error"
+    assert payload["command"] == "serve"
+    assert payload["error"]["code"] == "E_WORKSPACE_NOT_FOUND"

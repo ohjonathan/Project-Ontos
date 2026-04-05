@@ -3,7 +3,7 @@ import pytest
 from ontos.core.errors import OntosUserError
 from ontos.mcp import tools
 
-from tests.mcp import build_cache, create_workspace
+from tests.mcp import build_cache, create_workspace, invoke_tool
 
 
 def test_get_document_by_id_and_path(tmp_path):
@@ -25,3 +25,18 @@ def test_get_document_rejects_outside_path(tmp_path):
 
     with pytest.raises(OntosUserError):
         tools.get_document(cache, path="../outside.md")
+
+
+def test_get_document_metadata_only_omits_content_through_wrapper(tmp_path):
+    cache = build_cache(create_workspace(tmp_path))
+
+    result = invoke_tool(
+        "get_document",
+        cache,
+        tools.get_document,
+        path="docs/atom.md",
+        include_content=False,
+    )
+
+    assert result.isError is False
+    assert "content" not in result.structuredContent

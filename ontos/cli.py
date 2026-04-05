@@ -858,8 +858,6 @@ def _cmd_agents(args) -> int:
 
 def _cmd_serve(args) -> int:
     """Handle MCP server startup."""
-    from ontos.io.files import find_project_root
-
     start_path = args.workspace or Path.cwd()
     resolved_start = start_path.expanduser().resolve()
     if not resolved_start.exists():
@@ -868,16 +866,16 @@ def _cmd_serve(args) -> int:
             code="E_WORKSPACE_NOT_FOUND",
         )
 
-    try:
-        workspace_root = find_project_root(start_path=resolved_start)
-    except FileNotFoundError as exc:
-        raise OntosUserError(str(exc), code="E_WORKSPACE_NOT_FOUND") from exc
-
+    original_stdout = sys.stdout
     sys.stdout = sys.stderr
-
     try:
+        from ontos.io.files import find_project_root
+
+        workspace_root = find_project_root(start_path=resolved_start)
         from ontos.mcp import serve
         return serve(workspace_root)
+    except FileNotFoundError as exc:
+        raise OntosUserError(str(exc), code="E_WORKSPACE_NOT_FOUND") from exc
     except ModuleNotFoundError as exc:
         if exc.name and (
             exc.name == "mcp"
@@ -894,6 +892,8 @@ def _cmd_serve(args) -> int:
         raise
     except Exception as exc:
         raise OntosInternalError(str(exc), code="E_MCP_STARTUP") from exc
+    finally:
+        sys.stdout = original_stdout
 
 
 def _cmd_agent_export(args) -> int:

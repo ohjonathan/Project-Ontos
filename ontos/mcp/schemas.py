@@ -209,7 +209,10 @@ def validate_success_payload(tool_name: str, payload: Dict[str, Any]) -> Dict[st
         return validated.model_dump(mode="json", by_alias=True)
     model = TOOL_SUCCESS_MODELS[tool_name]
     validated = model.model_validate(payload)
-    return validated.model_dump(mode="json", by_alias=True)
+    normalized = validated.model_dump(mode="json", by_alias=True)
+    if tool_name == "get_document" and "content" not in payload:
+        normalized.pop("content", None)
+    return normalized
 
 
 def output_schema_for(tool_name: str) -> Dict[str, Any]:
