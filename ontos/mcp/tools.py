@@ -27,9 +27,6 @@ TYPE_RANKS = {
     "unknown": 7,
 }
 OVERVIEW_TYPES = ("kernel", "strategy", "product", "atom", "log")
-DEFAULT_USAGE_LOG_PATH = "~/.config/ontos/usage.jsonl"
-
-
 @dataclass(frozen=True)
 class CanonicalDocumentRow:
     id: str
@@ -404,11 +401,6 @@ def _resolve_workspace_path(workspace_root: Path, raw_path: str) -> tuple[Path, 
 
 def _workspace_relative_path(path: Path, workspace_root: Path) -> str:
     return path.resolve(strict=False).relative_to(workspace_root.resolve()).as_posix()
-
-
-def default_usage_log_path() -> Path:
-    """Return the default usage log path with user expansion deferred to runtime."""
-    return Path(DEFAULT_USAGE_LOG_PATH).expanduser()
 
 
 def _to_utc_z(value: datetime) -> str:

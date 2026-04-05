@@ -1,0 +1,71 @@
+"""Integration tests for the MCP server (spec Section 7)."""
+
+from tests.mcp import build_cache, build_server, create_workspace, list_tools
+
+
+def test_server_lists_all_eight_tools_with_correct_annotations(tmp_path):
+    root = create_workspace(tmp_path)
+    server = build_server(root)
+    tool_map = {tool.name: tool for tool in list_tools(server)}
+
+    assert len(tool_map) == 8
+    expected_tools = {
+        "workspace_overview",
+        "context_map",
+        "get_document",
+        "list_documents",
+        "export_graph",
+        "query",
+        "health",
+        "refresh",
+    }
+    assert set(tool_map.keys()) == expected_tools
+
+    # export_graph and refresh must be non-read-only
+    assert tool_map["export_graph"].annotations.readOnlyHint is False
+    assert tool_map["refresh"].annotations.readOnlyHint is False
+    assert tool_map["refresh"].annotations.idempotentHint is False
+
+    # All other tools must be read-only
+    for name in ("workspace_overview", "context_map", "get_document",
+                 "list_documents", "query", "health"):
+        assert tool_map[name].annotations.readOnlyHint is True, f"{name} should be readOnly"
+
+
+def test_tool_descriptions_include_workspace_name(tmp_path):
+    root = create_workspace(tmp_path)
+    server = build_server(root)
+    tool_map = {tool.name: tool for tool in list_tools(server)}
+    workspace_name = root.name
+
+    for name, tool in tool_map.items():
+        assert workspace_name in tool.description, (
+            f"Tool '{name}' description should include workspace name '{workspace_name}'"
+        )
+
+
+def test_instructions_mention_workspace_overview(tmp_path):
+    root = create_workspace(tmp_path)
+    server = build_server(root)
+
+    assert "workspace_overview" in server.instructions
+
+
+def test_instructions_contain_workspace_identity(tmp_path):
+    root = create_workspace(tmp_path)
+    server = build_server(root)
+
+    assert root.name in server.instructions
+
+
+def test_instructions_not_mutated_on_rebuild(tmp_path):
+    root = create_workspace(tmp_path)
+    cache = build_cache(root)
+    server = build_server(root)
+    instructions_before = server.instructions
+
+    # Force a cache rebuild
+    cache.force_refresh()
+
+    # Instructions are startup-time only; they should not change
+    assert server.instructions == instructions_before

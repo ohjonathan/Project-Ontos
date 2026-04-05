@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from tests.mcp import build_cache, build_server, create_workspace, invoke_tool, run_base_cli, run_mcp_cli
 
 from ontos.mcp import tools
@@ -36,6 +38,62 @@ def test_invalid_compact_and_outside_path_errors(tmp_path):
 
     assert compact_result.isError is True
     assert path_result.isError is True
+
+
+def test_query_missing_entity_returns_error(tmp_path):
+    cache = build_cache(create_workspace(tmp_path))
+
+    result = invoke_tool(
+        "query",
+        cache,
+        tools.query,
+        entity_id="nonexistent_doc",
+    )
+
+    assert result.isError is True
+    assert "not found" in result.structuredContent["content"][0]["text"].lower()
+
+
+def test_export_graph_outside_workspace_returns_error(tmp_path):
+    cache = build_cache(create_workspace(tmp_path))
+
+    result = invoke_tool(
+        "export_graph",
+        cache,
+        tools.export_graph,
+        export_to_file="../escape.json",
+    )
+
+    assert result.isError is True
+
+
+def test_generic_exception_returns_error_not_crash(tmp_path):
+    cache = build_cache(create_workspace(tmp_path))
+
+    def failing_tool(cache, **kwargs):
+        raise RuntimeError("unexpected internal failure")
+
+    result = invoke_tool(
+        "workspace_overview",
+        cache,
+        failing_tool,
+    )
+
+    assert result.isError is True
+    assert "internal error" in result.structuredContent["content"][0]["text"].lower()
+
+
+def test_get_document_requires_exactly_one_identifier(tmp_path):
+    cache = build_cache(create_workspace(tmp_path))
+
+    # Neither document_id nor path
+    result = invoke_tool(
+        "get_document",
+        cache,
+        tools.get_document,
+    )
+
+    assert result.isError is True
 
 
 def test_help_and_stdout_safety_paths(tmp_path):

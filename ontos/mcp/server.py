@@ -258,8 +258,8 @@ def _invoke_tool(
     ensure_fresh: bool = True,
     **kwargs: Any,
 ) -> Union[Dict[str, Any], CallToolResult]:
-    _log_usage(cache, tool_name)
     try:
+        _log_usage(cache, tool_name)
         if ensure_fresh:
             cache.get_fresh_snapshot()
         payload = tool_fn(cache, **kwargs)
@@ -316,13 +316,25 @@ def _render_instructions(cache: SnapshotCache) -> str:
     doc_count = cache.canonical_view.total_count
     last_indexed_relative = _relative_time(cache.last_indexed)
     return (
-        f"Ontos is the documentation knowledge graph for {workspace_name} "
+        f"Ontos is a documentation knowledge graph for {workspace_name} "
         f"({doc_count} documents, last indexed {last_indexed_relative}). "
-        "Start with workspace_overview for structured orientation. Use context_map "
-        "for markdown narrative, get_document to read one document, list_documents "
-        "to browse, query for dependencies, export_graph for structured export, "
-        "health for runtime status, and refresh to rebuild the in-memory cache. "
-        "All tools are local-only and deterministic."
+        "It tracks architecture docs, strategy decisions, and technical "
+        "specifications as a typed dependency graph with 5 document types: "
+        "kernel (foundational principles), strategy (goals and roadmap), "
+        "product (user-facing specs), atom (technical implementation docs), "
+        "and log (session history). All tools are deterministic, local-only, "
+        "and fast (<100ms cached after warmup). "
+        "Start with `workspace_overview` for project orientation \u2014 it returns "
+        "deterministic IDs, key documents, graph stats, and warnings in a "
+        "structured response under ~1KB. "
+        "Use `context_map` when you need the full human-readable markdown narrative. "
+        "Use `get_document` to read a specific document's content. "
+        "Use `list_documents` to browse the full document set with optional "
+        "type/status filters. "
+        "Use `query` for single-entity dependency lookups. "
+        "Use `export_graph` for structured graph export; `export_to_file` writes "
+        "a JSON dump inside the workspace. "
+        "Use `health` to check server status and index freshness."
     )
 
 
