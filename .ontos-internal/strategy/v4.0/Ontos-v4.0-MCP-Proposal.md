@@ -109,7 +109,7 @@ All tools operate on the server's configured workspace. No `workspace_id` parame
 
 Tools are split into two tiers with a clear design rationale:
 - **P0 (retrieval-first):** Wrap existing CLI outputs. These are the thin bridge — they expose validated, production-proven capabilities via MCP.
-- **P1 (new capabilities):** Add graph-query APIs that don't exist in the current CLI. These are honest extensions, not CLI wrappers. Included in v4.0.0 because the underlying data is in the snapshot and the adapter code is small, but droppable if the MVP needs to be smaller.
+- **P1 (new capabilities):** Add graph-query APIs that don't exist in the current CLI. These are honest extensions, not CLI wrappers. They are still part of the v4.0.0 shipped surface; the P1 label means lower implementation and validation priority than P0, not optional scope.
 
 | Priority | Tool | Input | Output Shape | Wraps |
 |----------|------|-------|-------------|-------|
@@ -484,7 +484,7 @@ Even though v4.0.0 is a thin bridge, it introduces a fundamentally new interacti
 
 Ontos v4.0.0 is done when all of the following are true:
 
-1. **`ontos serve` launches and responds.** Running `ontos serve` in a project directory starts an stdio MCP server that responds to the MCP `initialize` handshake and lists the 3 P0 tools via `tools/list` (`context_map`, `get_document`, `list_documents`), plus P1 tools (`export_graph`, `query`, `health`, `refresh`) if included. Tool descriptions dynamically include the workspace name.
+1. **`ontos serve` launches and responds.** Running `ontos serve` in a project directory starts an stdio MCP server that responds to the MCP `initialize` handshake and lists all 7 tools via `tools/list`: P0 (`context_map`, `get_document`, `list_documents`) and P1 (`export_graph`, `query`, `health`, `refresh`). Tool descriptions dynamically include the workspace name.
 
 2. **`context_map()` returns the Tier 1/2/3 markdown.** The response is the same markdown content that `ontos map` writes to `Ontos_Context_Map.md`, plus a structured `validation` object with errors and warnings. Tier 1 (~2k tokens) includes the project summary, key documents, and recent activity. Calling `context_map(compact="tiered")` returns the compact tiered format.
 
