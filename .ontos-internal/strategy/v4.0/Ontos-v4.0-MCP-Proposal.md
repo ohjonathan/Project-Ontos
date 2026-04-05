@@ -1,29 +1,32 @@
 # Ontos v4.0 MCP Proposal
 
 **Date:** 2026-04-04
+**Revised:** 2026-04-04 (v2 — responding to review feedback)
 **Author:** Claude (synthesized from prior research and board decisions)
 **Status:** PROPOSAL — requires review and decision by Johnny
 **Audience:** Johnny (project owner), LLMs reviewing for correctness and gaps
+
+**Revision notes:** This is the second draft, revised in response to two-reviewer feedback (one product, one technical). Key changes from v1: (1) consumer priority flipped from JohnnyOS to Claude Code; (2) explicit v4.0.0 / v4.1 scope split; (3) context bundle algorithm deferred to v4.1; (4) SQLite portfolio index deferred to v4.1; (5) formal workspace identity definition added; (6) invalidation semantics tightened; (7) FTS deferred to v4.1; (8) undocumented-project fallback bundles removed from v4.0.0.
 
 ---
 
 ## 1. What Is This
 
-Ontos v4.0 MCP is a Model Context Protocol server that wraps the existing Ontos v3.x knowledge graph, exposing it as a set of queryable tools for LLM agents. Where v3.x produces static files that agents must read in full (burning context window tokens on orientation), v4.0 lets agents ask targeted questions — "what are the key documents in canary.work?", "show me all stale docs across the portfolio", "give me a sized context bundle for this workspace" — and receive precisely scoped responses. It adds a portfolio-level index spanning all 23 projects in `~/Dev/`, a deterministic full-text search capability, and a context bundle generator that assembles right-sized context packages using graph centrality and document type ranking. The CLI remains fully functional; v4.0 is additive, not a replacement.
+Ontos v4.0 is a phased initiative to expose the Ontos knowledge graph via the Model Context Protocol (MCP). **v4.0.0** is a thin MCP bridge: it wraps existing single-project Ontos capabilities as MCP tools so that Claude Code, Cursor, and other MCP-compatible clients can query a project's documentation graph programmatically instead of reading static files. It adds no new data structures, no new storage layer, and no cross-project capabilities — it exposes what Ontos v3.4.0 already does through a protocol that agents can call as tools. **v4.1** (planned, not specified here) extends the MCP server with a portfolio-level index, cross-project search, and a context bundle algorithm for multi-workspace orchestration. The CLI remains fully functional in both phases; MCP is additive.
 
 ---
 
 ## 2. Why Now
 
-**The file-based approach has hit its ceiling.** Every agent session begins by reading `Ontos_Context_Map.md` — a file that is 87KB for Ontos-dev alone. Across 10 documented projects with ~396 documents, there is no way for an agent to ask "which projects have stale documentation?" without manually parsing `projects.json`, which is itself a manually-maintained snapshot that was 13 days stale at time of writing (generated 2026-03-22). Cross-project queries — the bread and butter of the JohnnyOS orchestrator's routing model — simply cannot be done with the current architecture.
+**The primary consumer exists today.** Claude Code is used daily across 5-6 actively developed projects. Every session begins with `ontos map` followed by the agent reading `Ontos_Context_Map.md` — a file that is 87KB for Ontos-dev alone. The agent pays the full token cost of orientation, even when it only needs the dependency graph or a single document's metadata. An MCP server lets the agent ask for what it needs: "what documents exist in this project?", "what depends on the PRD?", "show me the kernel doc." These are queries Ontos can already answer via CLI — the missing piece is a protocol interface.
 
-**JohnnyOS requires it.** The Mac Mini orchestrator needs to call `project_registry()` 20-50 times per day to route incoming tasks to the right workspace. It needs `get_context_bundle(workspace_id)` on every routing decision. These are tool calls, not file reads. Without MCP, JohnnyOS cannot use Ontos programmatically — it would have to shell out to `ontos map --json`, parse the output, and manage its own caching. That's a fragile integration that duplicates logic Ontos already owns.
+**The architecture was designed for this.** The v3.0 architecture explicitly prepared for MCP. The core/IO separation (documented in `.ontos-internal/analysis/Ontos-Technical-Architecture-Map-Codex.md`, Section 11) reserves `ontos/mcp/` as an extension point. All CLI commands emit structured JSON via `--json` flags. The graph engine (`ontos/core/graph.py`) builds dependency graphs with cycle detection and depth calculation. The `ontos export data` command produces a complete graph export in `ontos-export-v1` schema. The plumbing exists; what's missing is the protocol layer.
 
-**The architecture is ready.** The v3.0 architecture was explicitly designed for this moment. The core/IO separation (documented in `.ontos-internal/analysis/Ontos-Technical-Architecture-Map-Codex.md`, Section 11) reserves `ontos/mcp/` as an extension point. All CLI commands already emit structured JSON via `--json` flags. The `ontos export data` command produces a complete graph export in `ontos-export-v1` schema. The graph engine (`ontos/core/graph.py`) builds dependency graphs with cycle detection and depth calculation. The plumbing exists; what's missing is the protocol layer.
+**The MCP ecosystem has matured.** When the 5-LLM review board assessed MCP in January 2026 (`.ontos-internal/archive/v3.0-planning/V3.0-Board-Review-Analysis.md`), they noted "installation UX is bad," "security model inadequate," and "Python is second-class." Three months later: the official Python MCP SDK is stable, Claude Code and Cursor both support MCP servers natively, and the ecosystem has crossed critical adoption thresholds. The "wait for maturity" rationale from the board's deferral has been satisfied.
 
-**The MCP ecosystem has matured.** When the 5-LLM review board assessed MCP in January 2026 (`.ontos-internal/archive/v3.0-planning/V3.0-Board-Review-Analysis.md`), they noted "installation UX is bad," "security model inadequate," and "Python is second-class." Three months later: the official Python MCP SDK is stable, Claude Code and Cursor both support MCP servers natively, and the ecosystem has 8M+ npm downloads with 2,000+ community servers. The "wait for maturity" rationale from the board's deferral has been satisfied.
+**JohnnyOS will need this, but it doesn't drive the timeline.** The Mac Mini orchestrator is planned but has no concrete artifacts in the workspace today. When JohnnyOS is built, it will need cross-project capabilities (portfolio registry, context bundles, cross-repo search) — those are v4.1 scope. v4.0.0 is justified entirely by the Claude Code use case, which is real and daily.
 
-**Competitive pressure is real but secondary.** CTX, Claude Code memory, and Cursor context are shipping MCP integrations. Ontos's differentiation is its deterministic, graph-based approach — no vector search, no stochastic retrieval failures. But differentiation only matters if the tool is accessible. An MCP server makes Ontos accessible to every MCP-compatible client without custom integration work.
+**Competitive pressure is real but secondary.** CTX, Claude Code memory, and Cursor context are shipping MCP integrations. Ontos's differentiation is its deterministic, graph-based approach. But differentiation only matters if the tool is accessible. An MCP server makes Ontos accessible to every MCP-compatible client without custom integration.
 
 ---
 
@@ -49,7 +52,6 @@ CLI commands: `map`, `log`, `doctor`, `agents`, `query`, `hook`, `verify`, `migr
 - No full-text search — `ontos query` supports structured queries (by ID, dependency, staleness) but not free-text
 - No persistent index — the graph is rebuilt from the filesystem on every command invocation
 - No subscription or notification model — agents cannot be notified when context changes
-- No portfolio-level view — no single tool can answer "what projects exist and what state are they in?"
 
 ### The 23-Project Portfolio
 
@@ -61,28 +63,14 @@ The `~/Dev/` directory contains 23 projects tracked by `.dev-hub/registry/projec
 | **Partial** (README only or context map only) | 5 | Vibing, ohjonathan.com, NPOLabDev |
 | **Undocumented** (neither) | 8 | Career, agent-skills, claude-code-monitoring, engineering-strategy, strategy-eng |
 
-Total tracked documents across documented projects: ~396.
+Total tracked documents across documented projects: ~396. 5-6 projects are actively developed.
 
-5-6 projects are actively developed: canary.work, role-evaluator-bot, finance-engine-2.0, folio.love, Ontos-dev, ohjonathan.com. The remaining documented projects (Personal-ERP, Project-Ontos-OLD, oh.gold) have older v1-format context maps with limited metadata.
-
-### Current Cross-Project Orchestration
-
-The `.dev-hub/` directory (documented in `.dev-hub/README.md`) is a lightweight, read-only index:
-
-- `registry/projects.json` — manually generated snapshot of all 23 projects with status classification, doc counts, and tags
-- `registry/schema.json` — JSON Schema for project entries
-- `snapshots/` — reserved directory for future Tier 1 caches (currently empty)
-
-**Limitations that block v4.0 consumers:**
-- The registry is a static JSON file with no automated refresh. It was 13 days stale at time of writing.
-- No cross-project dependency tracking exists.
-- No search capability across projects.
-- No programmatic access — agents must read and parse the JSON file directly.
+**Cross-project orchestration today** is handled by `.dev-hub/` — a manually-maintained, read-only index (`registry/projects.json`) with no automated refresh, no search, and no programmatic access. This is a ceiling that v4.1 will address. v4.0.0 does not attempt to solve the cross-project problem.
 
 ### Architectural Readiness
 
 **In place:**
-- Core/IO separation validated across v3.0-v3.4 (documented in `.ontos-internal/analysis/Ontos-Technical-Architecture-Map-Codex.md`). The core layer (~3,812 LOC, 16 files) is pure logic with zero external dependencies.
+- Core/IO separation validated across v3.0-v3.4. The core layer (~3,812 LOC, 16 files) is pure logic with zero external dependencies.
 - Extension point reserved at `ontos/mcp/` (architectural map lists it; directory not yet created on disk).
 - JSON output on all CLI commands via `--json` flag and `OutputHandler` pattern.
 - `ontos-export-v1` JSON schema with content hashing and deterministic output.
@@ -99,21 +87,53 @@ The `.dev-hub/` directory (documented in `.dev-hub/README.md`) is a lightweight,
 
 ## 4. Consumer Requirements
 
-### Consumer 1: JohnnyOS Orchestrator
+### Consumer 1: Claude Code / Codex CLI / Manual Sessions (Primary — v4.0.0)
 
-**What it is:** A daemon running on a Mac Mini that routes incoming tasks to workspace-specific supervisors. It is the primary consumer of Ontos v4.0 MCP.
+**What it is:** Interactive agent sessions where Johnny works with an LLM on a specific project. The LLM needs project context to be effective. This is the primary consumer because it is the only one that exists and is used daily.
 
-**How it connects:** MCP client calling Ontos MCP server over stdio (initial) or local socket (when HTTP/SSE transport is added in v4.0.x). Runs on the same machine as the Ontos server.
+**How it connects:** MCP client in the IDE or terminal, connected via stdio. Human-in-the-loop — responses must be <1s for cached queries.
 
-**Tools it calls:**
+**What it replaces:** Today, the agent reads `Ontos_Context_Map.md` (up to 87KB) and `AGENTS.md` at session start. With MCP, the agent can query specific aspects of the project graph without loading the full context map.
+
+**Tools it needs (v4.0.0 — single-project scope):**
 
 | Tool | Input | Output Shape | Frequency | Cacheable |
 |------|-------|-------------|-----------|-----------|
-| `project_registry()` | None | `{project_count, projects: [{slug, status, doc_count, last_updated, tags}], summary: {documented, partial, undocumented}}` | 20-50x/day | Yes (TTL 5min) |
-| `get_context_bundle(workspace_id)` | `workspace_id: str` (e.g., `"canary-work"`) | `{workspace_id, context_text, token_estimate, warnings, stale_docs, generated_at}` | 5-20x/day per workspace | Yes (mtime-invalidated) |
+| `context_map(workspace_id)` | `workspace_id: str` | `{graph: {nodes, edges, depths}, validation: {errors, warnings}, tier1_summary}` | At session start, during planning | Yes (mtime-invalidated) |
 | `query(entity_id)` | `entity_id: str` | `{id, type, status, depends_on, depended_by, depth, last_updated, content_hash}` | Ad-hoc during task assembly | No |
-| `context_map(workspace_id)` | `workspace_id: str` | `{graph: {nodes, edges, depths}, validation: {errors, warnings}}` | During feature planning | No |
+| `get_document(document_id)` | `document_id: str` or `path: str` | `{id, type, status, frontmatter, content, metadata: {content_hash, word_count, depended_by}}` | Interactive, on-demand | No |
+| `list_documents(workspace_id, kind?, status?)` | `workspace_id: str`, optional filters | `[{id, type, status, path}]` | Interactive, on-demand | No |
+| `health()` | None | `{server_uptime, workspace_id, doc_count, last_indexed, ontos_version}` | Diagnostics | No |
+
+**What it does NOT need from Ontos:**
+- Cross-project queries (works on one project at a time)
+- Context bundles (the agent assembles its own context from the tools above)
+- Full-text search (uses `query` for structured lookups; grep/glob for text search)
+- Task state, runtime state, prompt templates
+
+### Consumer 2: Vibing MCP (Secondary — v4.0.0)
+
+**What it is:** A separate MCP server for spec generation that uses Ontos as a context source during its own development.
+
+**How it connects:** MCP client during development sessions, connected via stdio. Same interaction pattern as Consumer 1.
+
+**Tools it needs:** Same as Consumer 1. No special requirements.
+
+### Consumer 3: JohnnyOS Orchestrator (Future — v4.1)
+
+**What it is:** A planned daemon running on a Mac Mini that routes incoming tasks to workspace-specific supervisors. No concrete JohnnyOS artifact exists in the workspace today.
+
+**How it connects:** MCP client calling Ontos MCP server over stdio (initially) or local socket (when HTTP/SSE transport is added).
+
+**Tools it will need (v4.1 scope — cross-project):**
+
+| Tool | Input | Output Shape | Frequency | Cacheable |
+|------|-------|-------------|-----------|-----------|
+| `project_registry()` | None | `{project_count, projects: [{slug, status, doc_count, last_updated, tags}], summary}` | 20-50x/day | Yes (TTL-based) |
+| `get_context_bundle(workspace_id)` | `workspace_id: str` | `{workspace_id, context_text, token_estimate, warnings, stale_docs}` | 5-20x/day per workspace | Yes (mtime-invalidated) |
 | `search(query_string)` | `query_string: str`, optional `workspace_id: str` | `[{doc_id, workspace, type, path, snippet, matched_fields}]` | Ad-hoc | No |
+
+Plus all v4.0.0 tools.
 
 **What it does NOT need from Ontos:**
 - Task state (blocked PRs, review queues) — owned by JohnnyOS Workflow Ledger
@@ -121,141 +141,33 @@ The `.dev-hub/` directory (documented in `.dev-hub/README.md`) is a lightweight,
 - Raw activity (session transcripts, event streams) — owned by JohnnyOS Artifact Store
 - Prompt templates (playbook content, reviewer instructions) — owned by Vibing MCP
 
-### Consumer 2: Claude Code / Codex CLI / Manual Sessions
-
-**What it is:** Interactive agent sessions where Johnny works with an LLM on a specific project. The LLM needs project context to be effective.
-
-**How it connects:** MCP client in the IDE or terminal, connected via stdio. Human-in-the-loop — responses must be <1s for cached queries.
-
-**Tools it calls:** All tools from Consumer 1, plus:
-
-| Tool | Input | Output Shape | Frequency | Cacheable |
-|------|-------|-------------|-----------|-----------|
-| `get_document(document_id)` | `document_id: str` or `path: str` | `{id, type, status, frontmatter, content, metadata: {content_hash, word_count, depended_by}}` | Interactive, on-demand | No |
-| `list_documents(workspace_id, kind?, status?)` | `workspace_id: str`, optional filters | `[{id, type, status, path}]` | Interactive, on-demand | No |
-
-**What it does NOT need:** Nothing beyond the 7 tools. The full tool set serves this consumer.
-
-### Consumer 3: Vibing MCP
-
-**What it is:** A separate MCP server for spec generation that uses Ontos as a context source during its own development.
-
-**How it connects:** MCP client during development sessions, connected via stdio. Same interaction pattern as Consumer 2.
-
-**Tools it calls:** Same as Consumer 2. No special requirements beyond what Claude Code needs.
-
-**What it does NOT need from Ontos:**
-- Spec generation logic — that's Vibing's own domain
-- Template rendering — Vibing owns its own output format
-
 ---
 
 ## 5. What Ontos v4.0 Must Own
 
-### Workspace and Entity Indexing
+### v4.0.0 Scope (Single-Project MCP Bridge)
 
-Ontos owns the canonical index of all workspaces in the portfolio. This means:
-- Scanning `~/Dev/` for project directories
-- Detecting Ontos coverage (`.ontos.toml`, `Ontos_Context_Map.md`, `README.md`)
-- Extracting Tier 1 metadata from context maps (project name, doc count, last updated)
-- Maintaining the portfolio-level index with per-project status classification
+**Document Management** — the 5-type document ontology (kernel, strategy, product, atom, log) with YAML frontmatter parsing, curation levels (L0/L1/L2), status lifecycle, and content hashing. Exposed via `get_document`, `list_documents`, and `query` tools.
 
-### Document Management
+**Dependency Graph** — structural relationships between documents: `depends_on`, `impacts`, `describes` edges. Cycle detection, orphan detection, depth calculation, reverse edge traversal. Exposed via `query` (per-entity) and `context_map` (full graph).
 
-Ontos owns the 5-type document ontology (kernel, strategy, product, atom, log) with:
-- YAML frontmatter parsing and validation
-- Three-tier curation levels (L0/L1/L2)
-- Status lifecycle (draft, active, deprecated, archived, scaffold, pending_curation)
-- Content hashing for change detection
+**Context Map Generation** — the existing tiered context map (Tier 1/2/3) served as a tool response instead of a file. The `context_map` tool wraps the existing `ontos map --json` pipeline — no new algorithm, no new ranking. This is a thin exposure of proven functionality.
 
-### Dependency Graph
+**Staleness Detection** — `describes`/`describes_verified` field tracking, content hash comparison, stale document warnings. Surfaced in `context_map` validation section and `query` responses.
 
-Ontos owns the structural relationships between documents:
-- `depends_on` edges (enforced by type hierarchy — atoms can depend on products, not vice versa)
-- `impacts` edges (log-specific — what documents a session affected)
-- `describes` edges (atom-specific — what source files a doc covers)
-- Cycle detection, orphan detection, depth calculation
-- Reverse edge traversal (who depends on this document?)
+**Workspace Identity** — see Section 8, D9 for the formal definition. In v4.0.0, `workspace_id` is resolved from the MCP server's configured project root. The server operates on a single workspace.
 
-### Context Bundle Generation
+### v4.1 Scope (Portfolio Authority — Planned, Not Specified Here)
 
-This is the highest-value capability in v4.0 and the primary reason the MCP server exists.
+The following capabilities are deferred to v4.1. They are listed here to show the intended evolution, not to define their implementation.
 
-**The intellectual problem:** Given a `workspace_id`, assemble a context package that gives an LLM sufficient understanding of the project to do useful work — without vector search, without embeddings, using only the deterministic signals already present in the knowledge graph.
+**Portfolio-Level Index** — a persistent, queryable index spanning all workspaces in `~/Dev/`. Requires a storage backend (SQLite is the likely candidate — see Section 7), a scan strategy, and a refresh mechanism. Exposed via `project_registry()`.
 
-**The algorithm: Priority-Weighted Graph Traversal with Token Budget**
+**Context Bundle Generation** — a scoring algorithm that assembles right-sized context packages from a workspace's document graph. The v1 proposal described a 5-signal scoring function (type rank, in-degree centrality, status freshness, recency, curation level). This algorithm is the highest-value and least-proven component. It must be validated against real usage data before committing to a specific implementation. See Section 8, D5 for the deferral rationale.
 
-The algorithm scores every document in a workspace using five deterministic signals, then greedily selects documents by score until the token budget is exhausted.
+**Cross-Project Search** — deterministic full-text search across the portfolio via SQLite FTS5. Requires the portfolio index to exist first. Exposed via `search()`.
 
-**Scoring function (5 signals):**
-
-1. **Type rank weight** — derived from the document type hierarchy in `ontos/core/ontology.py`. Higher-ranked types are more architecturally central:
-   - kernel (rank 0): 50 points
-   - strategy (rank 1): 40 points
-   - product (rank 2): 30 points
-   - atom (rank 3): 20 points
-   - log (rank 4): 5 points
-
-2. **In-degree centrality** — the number of other documents that depend on this document, computed from `DependencyGraph.reverse_edges`. The context map's "Key Documents" section (Tier 1) already uses this signal to identify structurally central docs.
-   - Score contribution: `in_degree * 10`
-   - Example: canary.work's `soul` doc has 6 dependents = 60 points
-
-3. **Status freshness** — documents that are actively being worked on are more relevant than stable or deprecated ones:
-   - `in_progress`: +15
-   - `active`: +10
-   - `draft`: +5
-   - `scaffold`: -10
-   - `deprecated`: -20
-   - `archived`: -30
-
-4. **Recency** (logs only) — recent session logs capture current work context. Older logs are historical noise:
-   - Score contribution: `max(0, 30 - age_in_days)`
-   - Only the 3 most recent logs are eligible for inclusion (matching Tier 1's "Recent Activity" pattern)
-   - Logs older than 30 days score 0 on this signal
-
-5. **Curation level** — higher curation means more human investment and more reliable content:
-   - L2 (full): +10
-   - L1 (stub): +5
-   - L0 (scaffold): +0
-
-**Composite score:** `type_weight + (in_degree * 10) + status_score + recency_score + curation_score`
-
-**Selection process:**
-
-1. Build workspace snapshot (reuse existing `create_snapshot()` from `ontos/io/snapshot.py`)
-2. Score every document
-3. Sort by composite score descending
-4. Iterate through ranked list, adding documents until token budget is hit:
-   - If the full document fits within remaining budget: include with full content
-   - If only metadata fits: include as metadata-only (frontmatter fields, no body)
-   - If neither fits: skip, but record in `excluded_high_value` list
-5. Assemble the bundle with a summary header, included documents, graph edges between included documents, and the excluded list
-
-**Token budget:** Default 8,000 tokens (~32KB). This fits comfortably in any modern context window (128k-200k) while leaving ample room for the task prompt and agent reasoning. Configurable via `.ontos.toml`:
-
-```toml
-[mcp]
-context_bundle_token_budget = 8000
-```
-
-**Why this works without vector search:** The 5 signals are all structural properties of the knowledge graph, not semantic properties of content. Type rank captures architectural importance. In-degree captures structural centrality. Status and recency capture temporal relevance. Curation captures quality. Together, they reliably select the documents an agent needs to understand a project — kernel docs (mission, values), high-centrality product docs (PRDs that many atoms depend on), and recent logs (what's actively happening).
-
-**Known limitation:** This algorithm does not handle focused queries ("show me context relevant to authentication"). The initial `get_context_bundle` returns a general-purpose bundle. A `focus` parameter (e.g., `get_context_bundle("canary-work", focus="authentication")`) that filters by concept tags or dependency subgraph is a natural extension but is deferred from the initial implementation.
-
-### Staleness Detection
-
-Ontos owns the determination of whether documentation is current:
-- `describes`/`describes_verified` field tracking
-- Content hash comparison across snapshots
-- Stale document warnings in context bundles and health checks
-
-### Cross-Project Search
-
-Ontos owns deterministic full-text search across the portfolio:
-- Indexed on document `id`, `concepts`, and content (first 500 characters)
-- Deterministic ranking (no stochastic retrieval)
-- Scoped to single workspace or across entire portfolio
-- Implementation via SQLite FTS5 in the portfolio database (see Section 7)
+**Undocumented Project Handling** — thin metadata entries for projects without Ontos coverage (the 13 partial/undocumented projects). Deferred because it depends on the portfolio index and adds scope without serving v4.0.0's primary consumer.
 
 ---
 
@@ -263,74 +175,47 @@ Ontos owns deterministic full-text search across the portfolio:
 
 | Excluded Responsibility | Owner | Rationale |
 |------------------------|-------|-----------|
-| **Task state** (blocked features, PR reviews, sprint status) | JohnnyOS Workflow Ledger | Task lifecycle is JohnnyOS's domain. Ontos tracks documentation, not work items. Mixing them creates coupling that breaks Ontos's independence constraint. |
-| **Runtime state** (service health, cron job status, deployment state) | JohnnyOS Runtime Registry | Ontos is a documentation system. It has no visibility into whether services are running, healthy, or deployed. |
-| **Raw activity** (session transcripts, chat logs, event streams) | JohnnyOS Artifact Store | Ontos captures structured session logs (`ontos log`), not raw transcripts. The distinction matters: logs are curated artifacts in the knowledge graph; transcripts are ephemeral records. |
-| **Prompt templates** (playbook content, reviewer instructions, system prompts) | Vibing MCP / consumer-specific | Ontos exposes context; consumers decide how to prompt with it. Embedding prompt templates in Ontos creates consumer-specific coupling. |
-| **Vector / semantic search** | Excluded from v4.0 entirely | The consumer brief explicitly bans vector search in v1 (JohnnyOS D6: "Deterministic retrieval only"). Ontos uses graph traversal and FTS. This is a feature, not a limitation — deterministic retrieval has no stochastic failure modes. |
-| **Code intelligence** (AST parsing, symbol resolution, type checking) | IDE / language servers | Ontos documents are markdown with YAML frontmatter. It indexes documentation about code, not the code itself. |
+| **Task state** (blocked features, PR reviews, sprint status) | JohnnyOS Workflow Ledger | Task lifecycle is JohnnyOS's domain. Ontos tracks documentation, not work items. |
+| **Runtime state** (service health, cron job status, deployment state) | JohnnyOS Runtime Registry | Ontos has no visibility into whether services are running or deployed. |
+| **Raw activity** (session transcripts, chat logs, event streams) | JohnnyOS Artifact Store | Ontos captures structured session logs (`ontos log`), not raw transcripts. |
+| **Prompt templates** (playbook content, reviewer instructions) | Vibing MCP / consumer-specific | Ontos exposes context; consumers decide how to prompt with it. |
+| **Vector / semantic search** | Excluded entirely | Deterministic retrieval only. Graph traversal and (in v4.1) FTS. No stochastic failure modes. |
+| **Code intelligence** (AST parsing, symbol resolution) | IDE / language servers | Ontos indexes documentation about code, not the code itself. |
 
 ---
 
 ## 7. The Cross-Project Indexing Problem
 
-### Why This Is Architecturally Distinct
+> **Scope note:** This section describes architecture for **v4.1**, not v4.0.0. It is included because the cross-project problem shaped the original proposal and must be understood to draw the v4.0.0/v4.1 boundary correctly.
 
-Ontos v3.x is fundamentally single-project. Every command takes a `project_root` path and operates within it. The graph engine builds a `DependencyGraph` from one project's documents. The context map is generated for one project. The configuration is read from one `.ontos.toml`.
+### Why This Is Architecturally Distinct from v4.0.0
 
-The v4.0 consumer requirements are fundamentally cross-project. `project_registry()` returns all 23 workspaces. `get_context_bundle(workspace_id)` requires knowing where workspace "canary-work" lives on disk. `search(query_string)` must search across all documented projects. These cannot be implemented by "wrapping CLI commands in MCP" — there is no CLI command that operates across projects.
+Ontos v3.x is fundamentally single-project. Every command takes a `project_root` path and operates within it. The graph engine builds a `DependencyGraph` from one project's documents. v4.0.0 preserves this model — the MCP server serves one workspace at a time, just like the CLI.
 
-This gap requires a new architectural component: a **portfolio-level index**.
+The cross-project capabilities that JohnnyOS needs (`project_registry()`, cross-repo search, `get_context_bundle(workspace_id)` with portfolio-aware routing) require a **portfolio-level index** that does not exist and cannot be built by "wrapping CLI commands in MCP."
 
 ### What a Portfolio-Level Index Requires
 
-1. **A persistent store** — the index must survive process restarts. Rebuilding it from scratch on every MCP server startup means scanning 23 project directories, parsing frontmatter in ~396 documents, and building graphs. This takes seconds, not milliseconds, and violates the <1s response time requirement for cached queries.
+1. **A persistent store** — the index must survive process restarts. Rebuilding from scratch means scanning 23 project directories and parsing ~396 documents.
+2. **A scan strategy** — detection of which directories are projects, how to extract metadata, what constitutes "coverage."
+3. **A refresh mechanism** — detecting when project state has changed. See Section 8, D4 for invalidation semantics.
+4. **A query interface** — list all projects, filter by status/tags, full-text search, look up a workspace by slug.
 
-2. **A scan strategy** — the index must know which directories under `~/Dev/` are projects, how to detect Ontos coverage, and how to extract metadata without running a full `ontos map` in each project.
+### Storage Recommendation: SQLite (for v4.1)
 
-3. **A refresh mechanism** — the index must detect when project state has changed and update accordingly, without requiring a manual re-run.
+Keep per-project storage as filesystem (the current model). Add a single SQLite database (`~/.config/ontos/portfolio.db`) for the portfolio-level index only.
 
-4. **A query interface** — the index must support the queries consumers need: list all projects, filter by status/tags, full-text search across documents, look up a workspace by slug.
+**Why SQLite:** `sqlite3` is Python stdlib (zero new dependencies). Supports concurrent readers via WAL mode. FTS5 provides full-text search without additional libraries. Makes `project_registry()` a constant-time indexed query instead of a filesystem scan.
 
-### Storage Recommendation: SQLite
+**Why NOT full SQLite for per-project data:** The filesystem is the authoritative source for individual projects. Duplicating it in SQLite creates a synchronization problem. Per-project graph builds are already fast (<500ms for 100 docs).
 
-**Recommendation:** Keep per-project storage as filesystem (the current model). Add a single SQLite database for the portfolio-level index only, stored at `~/.config/ontos/portfolio.db`.
+**SQLite's role:** The portfolio database is a **rebuildable cache**, not a source of truth. It can be deleted and reconstructed from disk at any time. `.dev-hub/registry/projects.json` remains the human-readable reference during the v4.0.0 period.
 
-**Why SQLite, not a filesystem index:**
+### Authority Transition: `.dev-hub` During Migration
 
-- The portfolio has 23 projects and ~396 documents. Scanning all project directories on every `project_registry()` call is O(projects * docs_per_project) in filesystem reads. With `project_registry()` called 20-50x/day by JohnnyOS (even cached, the first call and every cache miss would be expensive), this is unacceptable.
-- SQLite makes `project_registry()` a single indexed query: `SELECT * FROM projects`. Constant time, regardless of how many documents exist on disk.
-- Full-text search (`search(query_string)`) requires an inverted index. SQLite FTS5 provides this with no additional dependencies — `sqlite3` is part of Python's standard library.
-- Concurrent readers are handled natively by SQLite's WAL mode. Multiple MCP clients (JohnnyOS + Claude Code + Vibing) can read simultaneously without corruption or blocking.
-
-**Why NOT full SQLite for per-project data:**
-
-- Per-project document storage in SQLite would duplicate the filesystem as source of truth, creating a synchronization problem.
-- The filesystem IS the database for individual projects — this is a core Ontos principle. The graph is built from markdown files on disk. Adding SQLite as a parallel store creates two sources of truth.
-- Per-project graph builds are already fast: <500ms for 100 docs, <2s for 100-500 docs (documented performance baselines). Caching the in-memory snapshot with mtime invalidation is sufficient.
-
-**Portfolio database schema (conceptual, not DDL):**
-
-- **projects table:** slug (primary key), path, status (documented/partial/undocumented), has_readme, has_context_map, doc_count, last_updated, tags (JSON array), notes, indexed_at, docs_dir_mtime
-- **project_documents table:** project_slug + doc_id (composite primary key), doc_type, doc_status, filepath, content_hash, depends_on (JSON array), concepts (JSON array), summary (first ~200 chars of content)
-- **FTS5 virtual table:** indexed on doc_id, concepts, and summary for full-text search
-
-### How Existing Context Maps Relate to the Portfolio Index
-
-The portfolio index does NOT replace per-project context maps. The relationship is:
-
-- **Context maps** are generated artifacts (`Ontos_Context_Map.md`) — human-readable, tiered, produced by `ontos map`. They remain the primary output for human consumption and for agents that read files directly.
-- **The portfolio index** is a machine-queryable cache of metadata extracted from context maps and project directories. It enables cross-project queries that no single context map can answer.
-- On initial seeding, the portfolio index reads from the existing `.dev-hub/registry/projects.json` data.
-- On subsequent updates, the MCP server maintains the portfolio index independently via mtime-based change detection on each project's `docs/` directory and `.ontos.toml`.
-
-### Relationship to `.dev-hub/`
-
-The `.dev-hub/registry/projects.json` file currently serves as the manual cross-project index. With v4.0:
-
-- The portfolio database (`~/.config/ontos/portfolio.db`) becomes the authoritative cross-project index.
-- `projects.json` becomes a human-readable export — regenerated from the database on demand, but no longer the source of truth.
-- The `.dev-hub/` directory continues to exist for human reference but is not a runtime dependency of the MCP server.
+- **v4.0.0:** `.dev-hub/registry/projects.json` remains the authoritative cross-project index. Ontos does not read or write it. Cross-project queries are not in scope.
+- **v4.1:** The portfolio database (`~/.config/ontos/portfolio.db`) becomes the authoritative cross-project index, seeded from `projects.json` on first run. `projects.json` becomes a human-readable export, regenerated from the database on demand.
+- **Transition criterion:** `.dev-hub` authority transfers to Ontos only when v4.1 ships and the portfolio database is proven correct against `projects.json` for all 23 projects.
 
 ---
 
@@ -338,175 +223,188 @@ The `.dev-hub/registry/projects.json` file currently serves as the manual cross-
 
 ### D1: MCP Transport
 
-**Options:**
-- (A) stdio only
-- (B) HTTP/SSE only
-- (C) stdio first, HTTP/SSE added in v4.0.x
+**Options:** (A) stdio only, (B) HTTP/SSE only, (C) stdio first, HTTP/SSE in v4.1+
 
-**Recommendation: (C) stdio first, HTTP/SSE in v4.0.x.**
+**Recommendation: (C) stdio first, HTTP/SSE deferred.**
 
-All three consumers (JohnnyOS, Claude Code, Vibing) can use stdio — it's the standard MCP transport for local tools. Claude Code and Cursor connect to MCP servers via stdio natively. JohnnyOS, while architecturally a daemon, is not yet built; when it is, it can initially connect via stdio by spawning the Ontos MCP server as a child process.
+All v4.0.0 consumers (Claude Code, Vibing) connect via stdio — it's the standard MCP transport for local tools. Claude Code and Cursor connect to MCP servers via stdio natively. No port management, no auth needed.
 
-HTTP/SSE adds port management, auth token handling, and CORS configuration. These are meaningful for process-to-process communication when JohnnyOS runs as a persistent daemon on the Mac Mini. But shipping HTTP/SSE in v4.0.0 means building and testing infrastructure for a consumer that doesn't exist yet.
+HTTP/SSE adds complexity (port binding, auth tokens, CORS) that only matters for process-to-process communication. JohnnyOS is the consumer that needs it, and JohnnyOS is a v4.1 concern. Even then, JohnnyOS can initially connect via stdio by spawning Ontos as a child process.
 
-The prior board decision (`.ontos-internal/archive/v3.0-planning/V3.0-Board-Review-Analysis.md`) recommended "JSON-RPC 2.0 over stdio (local) and HTTP+SSE (remote)." This recommendation stands — both transports are needed eventually. The question is sequencing. stdio first unblocks all current consumers immediately. HTTP/SSE follows in v4.0.x when JohnnyOS daemon mode is built.
+The prior board decision (`.ontos-internal/archive/v3.0-planning/V3.0-Board-Review-Analysis.md`) recommended both transports. This recommendation stands for the full v4.x lifecycle; the question is sequencing.
 
-**Implication:** `ontos serve` launches an stdio MCP server. Future `ontos serve --http --port 8400` adds HTTP/SSE transport.
+**Implication:** `ontos serve` launches an stdio MCP server. HTTP/SSE is a v4.1+ feature.
 
 ### D2: Manifest Format
 
-**Options:**
-- (A) Adopt `.johnny-os.yaml` as the workspace manifest
-- (B) Extend `.ontos.toml` with an `[mcp]` section
-- (C) Create a new `ontos-mcp.toml` file
+**Options:** (A) Adopt `.johnny-os.yaml`, (B) Extend `.ontos.toml` with `[mcp]` section, (C) New `ontos-mcp.toml`
 
-**Recommendation: (B) Extend `.ontos.toml` with an `[mcp]` section.**
+**Recommendation: (B) Extend `.ontos.toml`.**
 
-`.ontos.toml` already exists in 6+ projects. It is the canonical configuration file, parsed by `ontos/io/config.py` and mapped to the `OntosConfig` dataclass. Adding an `[mcp]` section is the minimal-friction path.
+`.ontos.toml` already exists in 6+ projects. It is the canonical configuration file, parsed by `ontos/io/config.py`. Adding an `[mcp]` section is minimal-friction.
 
-Adopting `.johnny-os.yaml` creates a coupling between Ontos and JohnnyOS that contradicts the architectural independence constraint. The consumer brief (`.ontos-internal/strategy/v4.0/ontos-v4-mcp-consumer-brief.md`) states: "Independent service with own repo, versioning, process lifecycle." If Ontos reads JohnnyOS's manifest format, it cannot function when JohnnyOS is down or absent. The consumer brief also states: "Must survive JohnnyOS being down."
+Adopting `.johnny-os.yaml` creates coupling that contradicts the architectural independence constraint. The consumer brief states: "Independent service with own repo, versioning, process lifecycle" and "Must survive JohnnyOS being down."
 
-A separate `ontos-mcp.toml` adds configuration sprawl for no benefit. MCP config belongs in the existing Ontos config file.
-
-For the portfolio-level index, a separate `~/.config/ontos/portfolio.toml` lists the workspace scan root(s):
-
+**v4.0.0 config surface:**
 ```toml
-[portfolio]
-scan_roots = ["~/Dev"]
+[mcp]
+# No required fields. Presence of section enables MCP features.
+# All values below are optional with sensible defaults.
 ```
 
-**Implication:** Ontos reads `.johnny-os.yaml` only as a data source for undocumented projects (extracting metadata like project name and tags). It never treats it as its own configuration.
+Portfolio-level configuration (`scan_roots`, etc.) is deferred to v4.1 since v4.0.0 operates on a single workspace.
+
+**Implication:** Ontos reads `.johnny-os.yaml` only as a data source (extracting metadata for undocumented projects in v4.1). It never treats it as its own configuration.
 
 ### D3: Storage Backend
 
-**Options:**
-- (A) Pure filesystem — rebuild index from disk on every query
-- (B) SQLite for portfolio index + filesystem for per-project data
-- (C) Full SQLite for everything
+**Options:** (A) Pure filesystem, (B) SQLite for portfolio index + filesystem for per-project, (C) Full SQLite
 
-**Recommendation: (B) SQLite for portfolio index, filesystem for per-project data.**
+**Recommendation: (A) Pure filesystem for v4.0.0. (B) for v4.1.**
 
-Full rationale in Section 7. Summary: per-project rebuilds are fast (<1s) and the filesystem is the authoritative source; cross-project queries need an indexed, persistent store; SQLite's `sqlite3` module is Python stdlib, adding zero new dependencies.
+v4.0.0 is a single-project MCP bridge. It reads from the same filesystem the CLI reads, using the same `create_snapshot()` path. No persistent store is needed — the in-memory snapshot is rebuilt on server startup and invalidated via mtime checks (see D4).
 
-**Implication:** New file at `~/.config/ontos/portfolio.db`. Per-project data continues to be read from the filesystem via existing `create_snapshot()` path. The SQLite database is a cache that can be rebuilt from disk at any time.
+SQLite is deferred to v4.1 because: (1) v4.0.0 has no cross-project queries that require an index; (2) introducing SQLite in a "thin bridge" release adds architecture and failure modes that the primary consumer (Claude Code) doesn't need; (3) the filesystem-only approach can be shipped and validated faster.
 
-### D4: Indexing Strategy
+**Implication:** v4.0.0 adds zero new storage infrastructure. The MCP server holds an in-memory cache of the current workspace's snapshot, rebuilt from disk when stale.
 
-**Options:**
-- (A) Full rescan of all projects on MCP server startup
-- (B) Filesystem watcher (watchdog/fsnotify) for incremental updates
-- (C) Manual re-index command + mtime-based cache invalidation
+### D4: Indexing and Invalidation Strategy
 
-**Recommendation: (C) Manual re-index + mtime cache invalidation.**
+**Options:** (A) Full rescan on startup, (B) Filesystem watcher, (C) Startup scan + mtime-based cache invalidation
 
-The access pattern is 5-50 calls/day. This does not justify a persistent filesystem watcher, which adds a background process with OS-specific edge cases (macOS FSEvents quirks, high-churn directories, recursive watch limits).
+**Recommendation: (C) Startup scan + mtime cache invalidation.**
 
-The existing `DocumentCache` pattern in the codebase uses mtime-based invalidation — a proven approach within Ontos. The same pattern extends to the portfolio level:
+**Startup behavior:** On `ontos serve`, the server calls `create_snapshot()` for the configured workspace, building the in-memory document graph. This is the cold-start cost (~500ms for typical projects). The snapshot is the single source of truth for all tool responses.
 
-- **Per-project:** On first `get_context_bundle(workspace_id)` call, build snapshot, cache in memory with mtime of `docs/` directory and `.ontos.toml`. On subsequent calls, check mtimes. If unchanged, return cached snapshot. If changed, rebuild.
-- **Portfolio level:** On `project_registry()`, check SQLite cache. If any project's `docs_dir_mtime` has changed (checked via a lightweight `os.stat()` call per project), re-index that project only.
-- **Manual override:** `ontos serve --refresh` forces a full re-index. A `refresh()` tool (MCP-callable) allows agents to trigger re-indexing when they know state has changed.
+**Invalidation semantics (tightened from v1):**
 
-**Implication:** No background processes, no filesystem watchers. The MCP server is reactive, not proactive. This matches Ontos's existing philosophy: deterministic, user-controlled, no magic.
+The server maintains a cached snapshot with a recorded `snapshot_mtime` (the `os.stat().st_mtime` of the workspace's `docs/` directory at snapshot build time). On each tool call:
+
+1. Check `os.stat(docs_dir).st_mtime` against `snapshot_mtime`.
+2. If unchanged: serve from cache. Cost: one `stat()` syscall (~microseconds).
+3. If changed: rebuild snapshot from filesystem. Cost: <500ms for <100 docs. Block the current request until rebuild completes. Return fresh data.
+
+**Concurrent access model (single-process, single-workspace):**
+
+v4.0.0 runs as a single-process stdio server serving one workspace. The MCP protocol over stdio is inherently sequential (one request at a time). There is no concurrent access to the in-memory snapshot — each request is processed serially.
+
+If multiple Claude Code sessions need Ontos MCP for different projects, each session spawns its own `ontos serve` process (each configured for its own workspace). There is no shared state between processes, so no locking or coordination is needed.
+
+**Why not a filesystem watcher:** The access pattern (one request at a time over stdio, typically a few calls per session) does not justify a persistent watcher. The mtime check adds negligible latency and is sufficient.
+
+**Manual refresh:** A `refresh()` tool is exposed to let the agent explicitly trigger a rescan if it knows it has modified files (e.g., after running `ontos log`).
+
+**v4.1 extension:** When the portfolio index (SQLite) is introduced, the invalidation model extends to per-project mtime tracking in the database. SQLite WAL mode handles concurrent reads from multiple processes. Write-side (re-indexing a project) uses SQLite's built-in transaction model — a write lock during re-index, with reads blocked only for the brief commit window. The full concurrency model for v4.1 will be specified in the v4.1 proposal.
 
 ### D5: Context Bundle Algorithm
 
-Fully described in Section 5 under "Context Bundle Generation." Summary of the recommendation:
+**Recommendation: Defer to v4.1.**
 
-- **Scoring function:** 5 deterministic signals (type rank, in-degree centrality, status freshness, recency, curation level)
-- **Selection:** Greedy by score, with fallback to metadata-only for documents that don't fit in full
-- **Token budget:** 8,000 tokens default, configurable
-- **Output:** JSON bundle with summary, included documents (full or metadata-only), graph edges, and `excluded_high_value` list
+The v1 proposal presented a 5-signal scoring algorithm (type rank, in-degree centrality, status freshness, recency, curation level) as the highest-value capability. Both reviewers flagged it as the weakest and most speculative component:
 
-**Implication:** This is the most complex new code in v4.0. It requires a new module (`ontos/mcp/bundle.py`) that calls into the existing core for graph building and document loading, then applies the scoring and selection algorithm.
+- **No validation data.** There is no dataset or A/B test showing that the proposed scoring function produces better bundles than simply serving the existing Tier 1 context map.
+- **Token budget assumptions are untested.** The 8k default was chosen by heuristic, not measurement. Different projects may need very different budgets.
+- **The algorithm doesn't handle focused queries.** The v1 proposal acknowledged this limitation but didn't address it.
+- **Tier 1 already exists.** The context map's Tier 1 section (~2k tokens) is a hand-tuned, production-proven context bundle. It selects key documents by in-degree, includes recent activity, and respects a hard token cap. It's not perfect, but it's real.
+
+**v4.0.0 approach:** The `context_map` tool serves the existing Tier 1/2/3 context map output (the same content `ontos map --json` produces). Agents receive the proven Tier 1 summary and can request deeper tiers as needed. This is not a new algorithm — it's exposing an existing, validated capability.
+
+**v4.1 approach:** Implement the bundle algorithm after collecting real usage data from v4.0.0. Specifically:
+- Instrument v4.0.0 tool calls to measure which tools agents call, how often, and what data they request after receiving the context map.
+- Use this data to calibrate the scoring function weights and token budget.
+- Define a calibration dataset: for each documented workspace, what documents should a well-formed bundle include? Validate the algorithm against this dataset before shipping.
+
+The v1 proposal's 5-signal scoring function remains a reasonable starting point for v4.1. The signals (type rank, in-degree, status, recency, curation) are structurally sound. What's missing is evidence that the specific weights and selection strategy produce useful results.
 
 ### D6: The 13 Undocumented Projects
 
-**Options:**
-- (A) Bootstrap from `.johnny-os.yaml` manifests (lightweight metadata only)
-- (B) Require full Ontos onboarding before inclusion in the registry
-- (C) Include as "visible but empty" — thin entries with slug, path, and filesystem metadata
+**Recommendation: Defer to v4.1.**
 
-**Recommendation: (C) Visible but empty, with (A) as enrichment where available.**
+v4.0.0 operates on a single workspace. Undocumented project handling is a cross-project concern that depends on the portfolio index. Including it in v4.0.0 adds scope (fallback bundle generation, language detection from file extensions, README parsing) for a consumer (JohnnyOS) that doesn't exist yet.
 
-The portfolio index should include all 23 projects regardless of Ontos coverage. Undocumented projects appear in `project_registry()` with `status: "undocumented"`, `doc_count: null`, and whatever metadata can be derived without Ontos:
-- `slug` (directory name)
-- `path` (filesystem path)
-- `has_readme` (boolean)
-- `tags` (from `.johnny-os.yaml` if present, else empty)
-- `notes` (from `projects.json` if present, else null)
-
-For `get_context_bundle()` on an undocumented project: return a minimal bundle containing the README.md content (if it exists) plus filesystem metadata (file count, primary language inferred from file extensions, last git commit message/date). This is useful without requiring full Ontos adoption.
-
-Requiring full onboarding (option B) creates a chicken-and-egg problem: the orchestrator can't route to a project it can't see, but onboarding requires focused attention on each project. Option C makes all projects visible immediately.
-
-**Implication:** The portfolio database stores entries for all 23 projects. The `project_documents` table is empty for undocumented projects. The `get_context_bundle` tool has a fallback path for projects without Ontos coverage.
+**v4.1 approach:** When the portfolio index ships, undocumented projects appear in `project_registry()` as thin entries: `status: "undocumented"`, `slug`, `path`, `has_readme`. No fallback bundles — `get_context_bundle()` on an undocumented project returns an error directing the user to run `ontos init`. This avoids the scope expansion of generating bundles from README.md content and filesystem metadata, which is weakly specified and hard to validate.
 
 ### D7: Security Model
 
-**Options:**
-- (A) No security (trust the local environment)
-- (B) Read-only default with opt-in write tools
-- (C) Full defense-in-depth (auth tokens, audit logging, path allowlists)
+**Options:** (A) No security, (B) Read-only default + opt-in write, (C) Full defense-in-depth
 
-**Recommendation: (B) Read-only default, with elements of (C) for HTTP transport.**
+**Recommendation: (B) Read-only default for v4.0.0.**
 
-The 7 specified MCP tools are ALL read operations. No consumer brief requires write access via MCP. The consumer brief explicitly states: "Read-only from consumers' perspective. Writes happen via filesystem (promotion pipeline)." JohnnyOS "never writes to Ontos directly."
+The v4.0.0 tools (`context_map`, `query`, `get_document`, `list_documents`, `health`, `refresh`) are ALL read operations, plus one cache-management operation (`refresh`). No tool modifies files, creates documents, or alters the graph.
 
 **v4.0.0 security model (stdio):**
-- All 7 tools are read-only. No tool can modify files, create documents, or alter the graph.
-- The MCP server reads only from directories under configured `scan_roots` (default: `~/Dev/`). It cannot access files outside this scope.
-- Write-capable tools (`log_session`, `scaffold`, `rename`, `promote`) exist in the CLI but are NOT exposed as MCP tools in v4.0.0.
-- If write tools are added in a future version, they require explicit opt-in via `.ontos.toml`:
-  ```toml
-  [mcp.security]
-  allow_write_tools = ["log_session"]
-  ```
+- All tools are read-only. The server reads only from the configured workspace root.
+- Write-capable tools (`log_session`, `scaffold`, `rename`, `promote`) exist in the CLI but are NOT exposed as MCP tools.
+- `refresh()` triggers a cache rebuild from the filesystem — it re-reads existing files, not writes.
+- The stdio transport inherently limits access to the spawning process. No network exposure, no authentication needed.
 
-**v4.0.x security model (HTTP/SSE transport, when added):**
-- Localhost binding only (127.0.0.1) — prevents network exposure
-- Bearer token authentication — token stored at `~/.config/ontos/auth.token`, required for every HTTP request
-- Audit logging — all operations logged to `~/.config/ontos/audit.log` (append-only, JSON lines)
-- Rate limiting — configurable per-tool call rate to prevent runaway agents
+**v4.1 security model (when HTTP/SSE is added):**
+- Localhost binding only (127.0.0.1)
+- Bearer token authentication (token at `~/.config/ontos/auth.token`)
+- Audit logging (append-only JSON lines at `~/.config/ontos/audit.log`)
+- Rate limiting per-tool
+- Write tools require explicit `[mcp.security] allow_write_tools = [...]` opt-in
 
-This aligns with the board's 4/5 consensus on defense-in-depth (`.ontos-internal/archive/v3.0-planning/V3.0-Board-Review-Analysis.md`, Q9) while being pragmatic about what's needed for stdio transport (where the client is a trusted local process).
-
-**Implication:** v4.0.0 ships with zero security configuration required. The server is read-only over stdio. Security complexity is added only when HTTP transport introduces a network attack surface.
+This aligns with the board's 4/5 consensus on defense-in-depth (`.ontos-internal/archive/v3.0-planning/V3.0-Board-Review-Analysis.md`, Q9) while being pragmatic about stdio-only scope.
 
 ### D8: Version Scope
 
-**Options:**
-- (A) MCP server only (7 tools + portfolio index + stdio transport)
-- (B) MCP server + daemon mode
-- (C) MCP server + daemon + template system + lazy loading + auto-configuration
+**v4.0.0 ships exactly:**
+- `ontos serve` command (stdio MCP server, single workspace)
+- 5 MCP tools: `context_map`, `query`, `get_document`, `list_documents`, `health`
+- 1 cache-management tool: `refresh`
+- `[mcp]` section support in `.ontos.toml` (optional, no required fields)
+- `pip install ontos[mcp]` with `mcp>=1.0` and `pydantic>=2.0` as extras
+- In-memory snapshot cache with mtime-based invalidation
 
-**Recommendation: (A) MCP server only.**
-
-The v3.0 roadmap (`.ontos-internal/strategy/v3.0/V3.0-Implementation-Roadmap.md`, Section 10) explicitly deferred daemon mode, template system, lazy loading, and auto-configuration to v4.0+. But "v4.0+" does not mean "v4.0.0." These are distinct features that can ship independently.
-
-The MCP server running via `ontos serve` IS effectively a daemon — it's a long-lived process. There is no need for a separate "daemon mode" abstraction. The template system (export formats beyond markdown/JSON) and lazy loading (URI-based document loading via `ontos://atom/{id}`) are valuable but orthogonal to the core MCP capability.
-
-Auto-configuration (patching `claude_desktop_config.json`, `.cursor/mcp.json`) is a polish feature that can ship in v4.0.1 after the core server is stable.
-
-Scope for v4.0.0:
-- `ontos serve` command (stdio MCP server)
-- 7 MCP tools (get_context_bundle, query, context_map, project_registry, search, get_document, list_documents)
-- Portfolio index (SQLite, seeded from `projects.json`)
+**v4.0.0 explicitly does NOT ship:**
+- Portfolio-level index (SQLite)
+- Cross-project tools (`project_registry`, `search`, `get_context_bundle`)
 - Context bundle algorithm
-- Full-text search via FTS5
-- `[mcp]` section in `.ontos.toml`
-- `pip install ontos[mcp]` with pydantic dependency
-
-Not in v4.0.0 (deferred to v4.0.x or v4.1):
+- Full-text search
 - HTTP/SSE transport
 - Write-capable MCP tools
-- Auto-configuration of MCP clients
+- Auto-configuration of MCP clients (`claude_desktop_config.json`, `.cursor/mcp.json`)
 - `ontos://` URI scheme for lazy loading
 - MCP Resource/Prompt primitives (v4.0.0 uses Tools only)
-- Template system for custom export formats
-- Subscription/notification model for context changes
+- Undocumented project handling
 
-**Implication:** Tight scope, deliverable as a single release. The deferred items are planned, not abandoned — they have clear extension points in the v4.0.0 architecture.
+**v4.1 planned scope (for separate proposal):**
+- Portfolio index (SQLite at `~/.config/ontos/portfolio.db`)
+- `project_registry()`, `search()`, `get_context_bundle()` tools
+- Context bundle algorithm (calibrated from v4.0.0 usage data)
+- FTS via SQLite FTS5
+- Undocumented project thin entries
+- HTTP/SSE transport (if JohnnyOS needs it)
+
+**Rationale for the split:** Both reviewers agreed that v4.0.0 as originally proposed was too large. The split draws the line at "wrapping existing capabilities" (v4.0.0) vs. "building new capabilities" (v4.1). Every tool in v4.0.0 maps directly to an existing CLI command or core function. Nothing in v4.0.0 requires new algorithms, new storage, or new data structures.
+
+### D9: Workspace Identity (New — Responding to Review)
+
+**The problem:** Tools take a `workspace_id` parameter, but the proposal did not formally define what a workspace ID is, how it resolves to a filesystem path, or what happens with ambiguous names.
+
+**v4.0.0 definition (single-workspace model):**
+
+In v4.0.0, the MCP server is configured for a single workspace at startup:
+```
+ontos serve                          # uses current directory as workspace
+ontos serve --workspace ~/Dev/canary.work  # explicit workspace path
+```
+
+The `workspace_id` parameter in tool calls is validated against the configured workspace. If the tool receives a `workspace_id` that doesn't match the server's workspace, it returns an error. This eliminates all identity resolution ambiguity — there is exactly one workspace, and the server knows where it is.
+
+The workspace's identity is its **directory name** (the slug). For `~/Dev/canary.work`, the `workspace_id` is `canary-work` (dots replaced with hyphens for URL-safety). This is the same `slug` field used in `.dev-hub/registry/projects.json`.
+
+**v4.1 definition (multi-workspace model):**
+
+When the portfolio index ships, `workspace_id` resolution becomes:
+1. Look up `slug` in the portfolio database `projects` table.
+2. If found, resolve `path` to the filesystem location.
+3. If not found, return an error with a list of known slugs.
+
+**No aliases in v4.0.0 or v4.1.** Each workspace has exactly one canonical slug (its directory name, slugified). Aliases add complexity for marginal convenience at 23 projects. If the portfolio grows beyond a point where slugs are unwieldy, alias support can be added as a non-breaking extension.
+
+**Slugification rule:** Directory name, lowercased, with dots and spaces replaced by hyphens. `canary.work` → `canary-work`. `finance-engine-2.0` → `finance-engine-2-0`. `ohjonathan.com-sandbox` → `ohjonathan-com-sandbox`.
 
 ---
 
@@ -514,78 +412,78 @@ Not in v4.0.0 (deferred to v4.0.x or v4.1):
 
 ### What Stays the Same
 
-- **CLI is fully preserved.** Every existing command (`ontos map`, `ontos doctor`, `ontos log`, etc.) works identically. The MCP server is a new entry point, not a replacement.
-- **`pip install ontos` (without extras) is unchanged.** No new dependencies. The package installs exactly as v3.4.0 does today.
-- **`.ontos.toml` without an `[mcp]` section works as before.** The section is optional and ignored by the CLI.
+- **CLI is fully preserved.** Every existing command works identically. The MCP server is a new entry point.
+- **`pip install ontos` (without extras) is unchanged.** No new dependencies.
+- **`.ontos.toml` without an `[mcp]` section works as before.** The section is optional.
 - **`ontos-export-v1` JSON schema is stable.** The MCP server uses it internally but does not alter the format.
-- **Per-project document storage is unchanged.** Markdown files with YAML frontmatter in `docs/`. No migration of existing documents required.
-- **Context map generation is unchanged.** `Ontos_Context_Map.md` continues to be produced by `ontos map` with the same tiered format.
+- **Per-project document storage is unchanged.** Markdown files with YAML frontmatter.
+- **Context map generation is unchanged.** `Ontos_Context_Map.md` continues to be produced by `ontos map`.
 
 ### What Changes
 
-- **New package extra:** `pip install ontos[mcp]` adds `mcp>=1.0` and `pydantic>=2.0` as dependencies.
+- **New package extra:** `pip install ontos[mcp]` adds `mcp>=1.0` and `pydantic>=2.0`.
 - **New command:** `ontos serve` launches the MCP server (requires `ontos[mcp]` install).
-- **New config section:** Optional `[mcp]` in `.ontos.toml` for server-specific configuration (token budget, scan roots, security settings).
-- **New files at `~/.config/ontos/`:** `portfolio.toml` (scan root configuration), `portfolio.db` (SQLite index). Created automatically on first `ontos serve` run.
-- **New package directory:** `ontos/mcp/` containing server, tools, portfolio index, and bundle algorithm modules.
-
-### How Existing Coverage Is Preserved
-
-The MCP server's portfolio index is seeded from the existing `.dev-hub/registry/projects.json` on first run. Every project currently documented in the registry appears in the portfolio database with the same slug, path, status, and metadata.
-
-Per-project data is read directly from the filesystem — the same files the CLI reads. No data migration is required. The MCP server calls the same core functions (`create_snapshot()`, `build_graph()`, etc.) that the CLI uses.
+- **New config section:** Optional `[mcp]` in `.ontos.toml`.
+- **New package directory:** `ontos/mcp/` containing server and tool handler modules.
 
 ### Why v4.0 and Not v3.5
 
 The v3.0 roadmap and board review consistently frame MCP as a major version boundary:
-- "v4.0: Agents primary, humans secondary" — a fundamental persona shift (`.ontos-internal/analysis/Ontos-Technical-Architecture-Map-Codex.md`)
+- "v4.0: Agents primary, humans secondary" — a persona shift (`.ontos-internal/analysis/Ontos-Technical-Architecture-Map-Codex.md`)
 - "MCP as primary interface" is listed under "Deferred to v4.0" (`.ontos-internal/strategy/v3.0/V3.0-Implementation-Roadmap.md`, Section 10)
-- The addition of a portfolio-level index, SQLite storage, and pydantic dependency constitute meaningful architectural additions beyond a point release
 
-Semver justification: v4.0 adds new capabilities (MCP tools, portfolio index, FTS) without breaking existing ones. The CLI is backward-compatible. A strict reading of semver might argue this is a minor version (no breaking changes). But the project's convention treats major versions as capability milestones, and the shift to agent-first interaction is significant enough to warrant v4.0.
+Even though v4.0.0 is a thin bridge, it introduces a fundamentally new interaction model (agents calling tools instead of reading files). That justifies the major version bump per the project's convention of treating major versions as capability milestones.
 
 ---
 
 ## 10. Acceptance Criteria
 
-Ontos v4.0 MCP is done when all of the following are true:
+### v4.0.0 Acceptance Criteria
 
-1. **`ontos serve` launches and responds.** Running `ontos serve` starts an stdio MCP server that responds to the MCP `initialize` handshake and lists all 7 tools via `tools/list`.
+Ontos v4.0.0 is done when all of the following are true:
 
-2. **`get_context_bundle("canary-work")` returns coherent, sized context.** The response includes `context_text` (readable prose with document content), `token_estimate` (within 8,000 default budget), `warnings` (any stale docs or graph issues), and `stale_docs` (list). The context text includes canary.work's kernel doc (`soul`), its highest-centrality product docs, and the 3 most recent logs.
+1. **`ontos serve` launches and responds.** Running `ontos serve` in a project directory starts an stdio MCP server that responds to the MCP `initialize` handshake and lists all 6 tools via `tools/list` (`context_map`, `query`, `get_document`, `list_documents`, `health`, `refresh`).
 
-3. **`get_context_bundle("role-evaluator-bot")` returns coherent context.** Same as above, but for role-evaluator-bot. The `prd` document (28 dependents — the highest in-degree doc in any documented project) appears in the bundle. The context reflects the project's 76 documents.
+2. **`context_map("ontos-dev")` returns the project graph.** The response includes the Tier 1 summary (project name, doc count, recent activity, key documents), the full document index, and validation warnings. Content matches what `ontos map --json` produces.
 
-4. **`project_registry()` returns all 23 workspaces.** The response includes all projects from `~/Dev/` with correct status classification (documented/partial/undocumented), doc counts for documented projects, and tags. The 10 documented projects show accurate `doc_count` and `last_updated` values.
+3. **`query("ontos_manual")` returns correct metadata.** For Ontos-dev's manual document: returns `type: "kernel"`, correct `depends_on` and `depended_by` lists, accurate `depth`, and valid `content_hash`.
 
-5. **`search("simhash")` returns relevant results.** A search for a term known to exist in at least one documented project returns matching documents with `doc_id`, `workspace`, `path`, and `snippet` showing the matching context. Results are ranked deterministically.
+4. **`get_document("ontos_manual")` returns full content.** Returns complete markdown content, full frontmatter, word count, and relationship metadata.
 
-6. **`query("soul")` returns correct metadata.** For canary.work's `soul` document: returns `type: "kernel"`, correct `depends_on` and `depended_by` lists, accurate `depth`, and valid `content_hash`.
+5. **`list_documents("ontos-dev", kind="kernel")` returns filtered results.** Returns only kernel-type documents from the Ontos-dev workspace.
 
-7. **`get_document("prd")` returns full content.** For role-evaluator-bot's PRD: returns the complete markdown content, full frontmatter, word count, and list of documents that depend on it.
+6. **`list_documents("ontos-dev")` returns all documents.** Returns all 50+ documents with id, type, status, and path.
 
-8. **`list_documents("ontos-dev", kind="kernel")` returns filtered results.** Returns only kernel-type documents from the Ontos-dev workspace.
+7. **`health()` returns server status.** Returns server uptime, configured workspace ID, document count, last index time, and Ontos version.
 
-9. **Concurrent reads succeed without corruption.** Two MCP clients connected simultaneously (e.g., Claude Code + a test harness) can both call `project_registry()` and `get_context_bundle()` without blocking, deadlocking, or returning inconsistent results.
+8. **`refresh()` triggers cache rebuild.** After modifying a document on disk, calling `refresh()` causes subsequent tool calls to reflect the change.
 
-10. **The server runs as a persistent process with health reporting.** The server stays alive between tool calls (does not exit after each response). A `health` tool returns server uptime, portfolio index age, and count of indexed workspaces.
+9. **`pip install ontos` (without `[mcp]`) still works identically to v3.4.0.** All CLI commands pass existing test suite. No new dependencies for the base install.
 
-11. **`pip install ontos` (without `[mcp]`) still works identically to v3.4.0.** All CLI commands pass existing test suite. No new dependencies introduced for the base install.
+10. **The server runs as a persistent process.** The server stays alive between tool calls (does not exit after each response).
 
-12. **Portfolio index survives server restart.** Stop and restart `ontos serve`. The second startup reads from `portfolio.db` and responds to `project_registry()` without a full rescan (unless mtimes have changed).
+11. **Mismatched `workspace_id` returns a clear error.** Calling `context_map("wrong-project")` when the server is configured for `ontos-dev` returns an error message naming the configured workspace, not a crash.
 
-13. **Undocumented projects appear in the registry.** The 8 undocumented projects (Career, agent-skills, claude-code-monitoring, etc.) appear in `project_registry()` with `status: "undocumented"` and whatever metadata is available (has_readme, path).
+### v4.1 Acceptance Criteria (Provisional — For Planning Only)
+
+These criteria will be refined in a separate v4.1 proposal after v4.0.0 ships and provides usage data.
+
+1. `project_registry()` returns all 23 workspaces with correct status classification.
+2. `get_context_bundle("canary-work")` returns coherent, token-budgeted context.
+3. `search("simhash")` returns relevant results via FTS across documented projects.
+4. Portfolio index survives server restart (reads from `portfolio.db`).
+5. Undocumented projects appear with `status: "undocumented"` in the registry.
 
 ---
 
 ## 11. Open Questions
 
-**Q1: Portfolio scan root configuration.** The proposal assumes `~/Dev/` as the single scan root. Should the portfolio support multiple scan roots (e.g., `~/Dev/` + `~/Work/`)? This affects the `portfolio.toml` design and the `project_registry()` output. Johnny to decide based on actual directory layout.
+**Q1: MCP SDK choice.** The official `mcp` Python SDK (Anthropic) vs. FastMCP (higher-level wrapper). The official SDK is more stable; FastMCP may offer faster development. This is an implementation decision that doesn't affect architecture. **Recommendation:** Use the official SDK for long-term stability; evaluate FastMCP if it significantly reduces implementation time.
 
-**Q2: `workspace_id` resolution for projects with non-slug names.** The proposal defines `workspace_id` as the directory name (slug). canary.work's directory is `canary.work` but the `ontos_project_name` in the registry is also `canary.work`. For projects where the directory name and project name differ (e.g., `ohjonathan.com-sandbox` vs. the site it represents), should the MCP server support alias resolution? This is a convenience feature that may not be needed at 23 projects but could matter if the portfolio grows.
+**Q2: Token estimation for v4.1 bundles.** When the context bundle algorithm ships in v4.1, should it use a character-count heuristic (1 token per ~4 chars) or a proper tokenizer (tiktoken)? The trade-off is accuracy vs. adding a dependency. **Recommendation:** Start with the heuristic; switch to tiktoken if the heuristic produces bundles that consistently over- or under-shoot the budget by >20%.
 
-**Q3: Token estimation accuracy.** The context bundle algorithm relies on token estimation to enforce the budget. The current `estimate_tokens()` function (if it exists in the codebase) may use a simple character-count heuristic. For v4.0, should the MCP server use a proper tokenizer (tiktoken or similar) for accurate estimation? The trade-off is accuracy vs. adding a dependency. A character-count heuristic (1 token per ~4 characters) may be sufficient given the 8k budget has margin.
+**Q3: v4.0.0 tool call instrumentation.** To calibrate the v4.1 bundle algorithm, v4.0.0 should log tool call patterns (which tools, how often, what parameters). Should this be opt-in logging, always-on, or deferred until v4.1 planning begins? **Recommendation:** Always-on, lightweight logging to `~/.config/ontos/usage.jsonl` — tool name, workspace_id, and timestamp per call. No content logged.
 
-**Q4: MCP SDK choice.** The proposal assumes the official `mcp` Python SDK (maintained by Anthropic). An alternative is FastMCP, a higher-level wrapper. The official SDK is more stable and has better long-term support guarantees. FastMCP may offer faster development. This is an implementation decision that doesn't affect the proposal's architecture — either SDK produces the same MCP-compatible server.
+**Q4: Multi-workspace v4.0.0.** The proposal specifies single-workspace per server instance. Should v4.0.0 support a `--multi` flag that accepts calls for any workspace under `~/Dev/`? This would make v4.0.0 more useful for sessions that span projects, at the cost of introducing identity resolution before the portfolio index exists. **Recommendation:** No. Keep v4.0.0 single-workspace. If an agent needs multiple workspaces, it connects to multiple `ontos serve` instances. This is simple, correct, and avoids premature identity resolution.
 
-**Q5: Log retention in context bundles.** The algorithm includes the 3 most recent logs. For projects with high session frequency (multiple sessions per day), this may be insufficient. For projects with low frequency (sessions weeks apart), 3 logs may include irrelevant historical content. Should the log count be configurable per project, or should the algorithm use a time window (e.g., "logs from the last 7 days") instead of a count? This can be determined during implementation based on testing with real project data.
+**Q5: Log retention policy for v4.1 bundles.** The v1 algorithm included the 3 most recent logs. Should this be count-based (N most recent), time-window-based (logs from last 7 days), or configurable? **Recommendation:** Defer to v4.1 proposal. Instrument v4.0.0 to measure log access patterns first.
