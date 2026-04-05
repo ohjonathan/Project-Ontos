@@ -125,6 +125,21 @@ Built a demo in Streamlit? When you rewrite in FastAPI or Next.js, your atoms ar
 ### Project Handoffs
 Pass a project to another developer or agency. Because you own your context, everything travels with `git clone`—session logs, context map, decision history. No export wizard, no platform migration, no 2-hour call.
 
+### Native IDE Integration (MCP)
+Run `ontos serve` to start an MCP server that exposes your knowledge graph directly to AI agents. Claude Desktop, Cursor, and other MCP-compatible IDEs connect natively — no CLI parsing, no context map re-reads, just structured tool calls with live cache invalidation.
+
+```json
+{
+  "mcpServers": {
+    "ontos": {
+      "command": "ontos",
+      "args": ["serve"],
+      "cwd": "/path/to/your/project"
+    }
+  }
+}
+```
+
 ### Documentation Health
 CI validation catches broken links, circular dependencies, and architectural violations before they become tribal knowledge buried in someone's head.
 
@@ -164,6 +179,10 @@ pipx install ontos
 ```bash
 pip install ontos
 ```
+
+> [!TIP]
+> **For MCP server mode** (native AI IDE integration): `pipx install 'ontos[mcp]'` or `pip install 'ontos[mcp]'`.
+> Requires Python 3.10+. See the [Migration Guide v3→v4](docs/reference/Migration_v3_to_v4.md).
 
 > [!NOTE]
 > **"command not found: ontos"?** Your Python scripts directory may not be on PATH.
@@ -223,6 +242,7 @@ ontos link-check   # Scan for broken references
 ontos rename       # Safe ID rename across graph
 ontos promote      # Promote docs to Level 2
 ontos agents       # Regenerate AGENTS.md and .cursorrules
+ontos serve        # Start MCP server for IDE integration
 ```
 
 Compact context maps for token-constrained agents:
@@ -271,10 +291,10 @@ Version 3 is when Ontos became public. The earlier versions live on in the desig
 
 | Version | Status | Highlights |
 |---------|--------|------------|
-| **v3.4.0** | ✅ Current | `--compact tiered` context maps for token-constrained agents |
-| **v4.0** | Next | MCP as primary interface, full template system, daemon mode |
+| **v4.0.0** | ✅ Current | MCP server mode — 8 tools for native AI IDE integration |
+| **v4.1** | Next | Portfolio index, cross-project tools, HTTP/SSE transport |
 
-v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python. v3.2 added re-architecture support, environment detection, and activation resilience. v3.3 ships 62 audit-derived hardening fixes plus `link-check`, `rename`, unified JSON envelopes, and a canonical document loader. v3.3.1 reduced link-check false positives by 89% and added `promote_check` to the maintenance pipeline. v3.4 adds `--compact tiered` context maps for token-constrained agents.
+v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python. v3.2 added re-architecture support, environment detection, and activation resilience. v3.3 ships 62 audit-derived hardening fixes plus `link-check`, `rename`, unified JSON envelopes, and a canonical document loader. v3.3.1 reduced link-check false positives by 89% and added `promote_check` to the maintenance pipeline. v3.4 adds `--compact tiered` context maps for token-constrained agents. v4.0 adds an MCP server mode with 8 read-only tools, enabling native integration with AI IDEs like Claude Desktop and Cursor without CLI overhead.
 
 ---
 
@@ -284,6 +304,7 @@ v3.0 transformed Ontos from repo-injected scripts into a pip-installable package
 
 - **[Ontos Manual](https://github.com/ohjonathan/Project-Ontos/blob/main/docs/reference/Ontos_Manual.md)**: Complete reference—installation, workflow, configuration, errors
 - **[Agent Instructions](https://github.com/ohjonathan/Project-Ontos/blob/main/docs/reference/Ontos_Agent_Instructions.md)**: Commands for AI agents
+- **[Migration Guide v3→v4](https://github.com/ohjonathan/Project-Ontos/blob/main/docs/reference/Migration_v3_to_v4.md)**: Upgrading from v3.x — what's new and how to enable MCP
 - **[Migration Guide v2→v3](https://github.com/ohjonathan/Project-Ontos/blob/main/docs/reference/Migration_v2_to_v3.md)**: Upgrading from v2.x
 - **[Minimal Example](https://github.com/ohjonathan/Project-Ontos/blob/main/examples/minimal/README.md)**: 3-file quick start
 - **[Changelog](https://github.com/ohjonathan/Project-Ontos/blob/main/Ontos_CHANGELOG.md)**: Version history

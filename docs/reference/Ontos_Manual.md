@@ -5,7 +5,7 @@ status: active
 depends_on: []
 ---
 
-# Ontos Manual v3.3
+# Ontos Manual v4.0
 
 *The complete reference for Project Ontos*
 
@@ -22,7 +22,13 @@ ontos init
 # Tell your AI: "Ontos"
 ```
 
-> **v3.0 Note:** Ontos is now a proper Python package. See the [Migration Guide](Migration_v2_to_v3.md) for v2.x users.
+```bash
+# Install with MCP server support (Python 3.10+)
+pip install 'ontos[mcp]'
+ontos serve
+```
+
+> **v4.0 Note:** v4.0 adds MCP server mode for native AI IDE integration. See the [Migration Guide v3→v4](Migration_v3_to_v4.md). For v2.x users, see [Migration v2→v3](Migration_v2_to_v3.md).
 
 ---
 
@@ -332,7 +338,7 @@ Uses OAuth2 with JWT tokens.
 ## 6. Installation
 
 ### Prerequisites
-- Python 3.9+
+- Python 3.9+ (3.10+ for MCP server features)
 - Git
 
 ### Standard Install (v3.0+)
@@ -385,9 +391,30 @@ If untagged markdown files exist in `docs/`, init prompts:
 **Safety:** The following directories are never scaffolded:
 `node_modules`, `.venv`, `venv`, `vendor`, `__pycache__`, `.pytest_cache`, `.mypy_cache`, `dist`, `build`, `.tox`, `.eggs`
 
-### Upgrading from v2.x
+### MCP Server Install (v4.0)
 
-See the [Migration Guide](Migration_v2_to_v3.md) for step-by-step instructions.
+To enable MCP server mode for IDE integration:
+
+```bash
+pip install 'ontos[mcp]'
+```
+
+This adds `mcp>=1.2` and `pydantic>=2.0` as dependencies. Python 3.10+ is required.
+
+For pipx users (fresh install):
+```bash
+pipx install 'ontos[mcp]'
+```
+
+If you already have `ontos` installed via pipx, reinstall with the extra:
+```bash
+pipx install --force 'ontos[mcp]'
+```
+
+### Upgrading
+
+- **From v3.x:** See the [Migration Guide v3→v4](Migration_v3_to_v4.md) for what's new.
+- **From v2.x:** See the [Migration Guide v2→v3](Migration_v2_to_v3.md) for step-by-step instructions.
 
 ### Configuration
 
@@ -525,6 +552,7 @@ ontos <command> [options]
 | `stub`      | Create stub            | `python3 .ontos/scripts/ontos_stub.py`               |
 | `promote`   | Promote documents      | `python3 .ontos/scripts/ontos_promote.py`            |
 | `migrate`   | Migrate schema         | `python3 .ontos/scripts/ontos_migrate_schema.py`     |
+| `serve`     | Start MCP server       | (New in v4.0)                                         |
 
 ### Examples
 
@@ -609,6 +637,86 @@ ontos rename old_id new_id --json
 - Dry-run by default — requires `--apply` to write changes
 - Collision detection — refuses to rename if `new_id` already exists
 - Automatic `depends_on` propagation across all documents
+
+### 10.4 MCP Server Mode (v4.0)
+
+The `serve` command starts a stdio MCP server that exposes the Ontos knowledge graph to AI agents and IDEs via the Model Context Protocol.
+
+#### Starting the Server
+
+```bash
+ontos serve                    # Serve current directory
+ontos serve --workspace /path  # Serve a specific project
+```
+
+The server runs in the foreground and communicates via stdin/stdout. Press Ctrl+C to stop.
+
+#### IDE Configuration
+
+**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "ontos": {
+      "command": "ontos",
+      "args": ["serve"],
+      "cwd": "/path/to/your/project"
+    }
+  }
+}
+```
+
+**Cursor** (`.cursor/mcp.json` in your project):
+```json
+{
+  "mcpServers": {
+    "ontos": {
+      "command": "ontos",
+      "args": ["serve"]
+    }
+  }
+}
+```
+
+#### Available Tools
+
+| Tool | Description | Key Parameters |
+|------|-------------|----------------|
+| `workspace_overview` | Structured orientation — key documents, graph stats, top warnings | — |
+| `context_map` | Full context map markdown | `compact`: basic, rich, tiered, or full |
+| `get_document` | Read one document with full frontmatter and metadata | `document_id` or `path`, `include_content` |
+| `list_documents` | Paginated listing of canonical documents | `type`, `status`, `offset`, `limit` |
+| `export_graph` | Structured graph export (nodes, edges, summary) | `summary_only`, `export_to_file` |
+| `query` | Dependency details for a single document | `entity_id` |
+| `health` | Server uptime, document count, index freshness | — |
+| `refresh` | Force cache rebuild | — |
+
+All tools return structured JSON. Start with `workspace_overview` for project orientation, then use `get_document` or `context_map` as needed.
+
+#### Cache Behavior
+
+The server uses file-mtime fingerprinting to detect document changes automatically. On each tool call, it compares `(path, st_mtime_ns, st_size)` fingerprints against the cached state. If any file has changed, the snapshot is rebuilt transparently.
+
+Use `refresh` to force a manual cache rebuild after bulk changes (e.g., `git pull`).
+
+#### Configuration
+
+Add an optional `[mcp]` section to `.ontos.toml`:
+
+```toml
+[mcp]
+usage_logging = true                              # Log tool invocations
+usage_log_path = "~/.config/ontos/usage.jsonl"    # Default path
+```
+
+No document content is logged — only tool names and timestamps.
+
+#### Limitations (v4.0)
+
+- **Read-only tools only** — Write tools deferred to v4.1
+- **Single workspace per server** — One `ontos serve` process per project
+- **Stdio transport only** — HTTP/SSE transport deferred to v4.1
+- **Python 3.10+** required — Install with `pip install 'ontos[mcp]'`
 
 ---
 
