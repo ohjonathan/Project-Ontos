@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 > For the full historical changelog with Ontos frontmatter (from v0.1.0), see [`Ontos_CHANGELOG.md`](Ontos_CHANGELOG.md).
 
+## [4.0.0] - 2026-04-05
+
+Ships MCP server mode — a stdio MCP server that exposes the Ontos knowledge graph to AI agents and IDEs via 8 structured tools. PR #81.
+
+### Added
+- **`ontos serve` command** — Starts a stdio MCP server for a single workspace, enabling native AI IDE integration via the Model Context Protocol.
+- **8 MCP tools**: `workspace_overview`, `context_map`, `get_document`, `list_documents`, `export_graph`, `query`, `health`, `refresh`.
+- **`ontos/mcp/` package** — `server.py` (FastMCP bootstrap), `tools.py` (tool adapters), `cache.py` (snapshot cache with file-mtime invalidation), `schemas.py` (Pydantic response models).
+- **Optional dependency extra** — `pip install ontos[mcp]` adds `mcp>=1.2` and `pydantic>=2.0`. Base install unchanged.
+- **File-mtime fingerprint cache** — Automatic staleness detection via `(path, st_mtime_ns, st_size)` fingerprints. Catches edits, new files, deletions, and renames.
+- **`[mcp]` config section** in `.ontos.toml` — `usage_logging` and `usage_log_path` settings.
+- **Pydantic response schemas** — Typed output validation for all MCP tool responses with structured error envelopes.
+
+### Changed
+- Python 3.10+ required for MCP features (base package remains 3.9+).
+- Bumped version to `4.0.0`.
+
+### Notes
+- No breaking changes — all existing CLI commands preserved.
+- All MCP tools are read-only (write tools deferred to v4.1).
+- Single-workspace per server instance, stdio transport only.
+
 ## [3.4.0] - 2026-04-04
 
 Ships `--compact tiered` context maps — a prose summary plus type-ranked compact output for token-constrained agents.

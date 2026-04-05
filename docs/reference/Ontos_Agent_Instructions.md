@@ -7,7 +7,8 @@ depends_on: [ontos_manual]
 
 # Ontos Agent Instructions
 
-> **v3.0 CLI:** All commands use `ontos <command>` (package installed via pip).
+> **v4.0:** All CLI commands use `ontos <command>` (package installed via pip).
+> Agents can also connect via MCP server (`ontos serve`) for native integration.
 > Use `python3 -m ontos <command>` if not installed globally.
 > See [Ontos Manual](Ontos_Manual.md) for details.
 
@@ -28,7 +29,37 @@ ontos init --scaffold    # Auto-add metadata to docs/
 ontos init --no-scaffold # Skip scaffold prompt
 ```
 
-### "Ontos" (Activate)
+### "Ontos" via MCP (v4.0)
+
+If the IDE supports MCP and the Ontos server is configured:
+
+1. The IDE connects to `ontos serve` automatically on startup
+2. Use `workspace_overview` to get project orientation (key documents, graph stats)
+3. Use `get_document` to read specific documents by ID
+4. Use `context_map` for the full context narrative
+5. Use `query` to explore dependencies for a single document
+
+**MCP vs CLI:** MCP tools return structured JSON and support live cache invalidation. Use MCP when available; fall back to CLI when MCP is not configured.
+
+| Tool | Purpose |
+|------|---------|
+| `workspace_overview` | Project orientation (key docs, stats, warnings) |
+| `context_map` | Full context map (supports compact modes) |
+| `get_document` | Read one document by ID or path |
+| `list_documents` | Browse documents with type/status filters |
+| `export_graph` | Structured graph export |
+| `query` | Dependency details for one document |
+| `health` | Server health and index freshness |
+| `refresh` | Force cache rebuild after bulk changes |
+
+### "Start MCP Server" (v4.0)
+```bash
+ontos serve                    # Serve current directory
+ontos serve --workspace /path  # Serve specific workspace
+```
+Starts a stdio MCP server. Configure in your IDE's MCP settings. Requires `pip install ontos[mcp]`.
+
+### "Ontos" (Activate via CLI)
 1. Check for `Ontos_Context_Map.md`
 2. If missing: `ontos map`
 3. Read map, identify relevant IDs for user's request
