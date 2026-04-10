@@ -25,6 +25,7 @@
 - [Who Ontos Is For](#who-ontos-is-for)
 - [Use Cases](#use-cases)
 - [Quick Start](#quick-start)
+- [MCP Setup](#mcp-setup)
 - [Workflow](#workflow)
 - [Best Practices](#best-practices)
 - [What Ontos Is NOT](#what-ontos-is-not)
@@ -181,8 +182,7 @@ pip install ontos
 ```
 
 > [!TIP]
-> **For MCP server mode** (native AI IDE integration): `pipx install 'ontos[mcp]'` or `pip install 'ontos[mcp]'`.
-> Requires Python 3.10+. See the [Migration Guide v3→v4](docs/reference/Migration_v3_to_v4.md).
+> **Want native AI IDE integration?** See [MCP Setup](#mcp-setup) below to enable `ontos serve` for Claude Desktop, Cursor, and other MCP-compatible tools.
 
 > [!NOTE]
 > **"command not found: ontos"?** Your Python scripts directory may not be on PATH.
@@ -216,6 +216,89 @@ ontos init --no-scaffold # Skip scaffold prompt entirely
 > **"Ontos"** (or "Activate Ontos")
 
 If configured, the agent reads `AGENTS.md`, regenerates the context map, loads relevant files, and confirms what context it has.
+
+---
+
+## MCP Setup
+
+**New in v4.0.** Ontos can run as an MCP (Model Context Protocol) server, exposing your knowledge graph directly to AI agents. Instead of agents shelling out to CLI commands and parsing text, they connect to a persistent `ontos serve` process and call structured tools — with live cache invalidation when your docs change.
+
+### 1. Install with MCP
+
+```bash
+# pipx (recommended)
+pipx install 'ontos[mcp]'
+
+# or pip
+pip install 'ontos[mcp]'
+```
+
+> [!NOTE]
+> MCP requires **Python 3.10+**. The base `pip install ontos` (without the extra) remains Python 3.9+ and does not include MCP dependencies.
+>
+> Already have Ontos installed? Upgrading:
+> - **pip:** `pip install --upgrade 'ontos[mcp]'`
+> - **pipx:** `pipx install --force 'ontos[mcp]'` (pipx upgrade does not add new extras)
+
+### 2. Start the Server
+
+```bash
+ontos serve                    # Serve current directory
+ontos serve --workspace /path  # Serve a specific project
+```
+
+The server runs over stdio — your IDE manages the process lifecycle.
+
+### 3. Configure Your IDE
+
+**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "ontos": {
+      "command": "ontos",
+      "args": ["serve"],
+      "cwd": "/path/to/your/project"
+    }
+  }
+}
+```
+
+**Cursor** (`.cursor/mcp.json` in your project):
+```json
+{
+  "mcpServers": {
+    "ontos": {
+      "command": "ontos",
+      "args": ["serve"]
+    }
+  }
+}
+```
+
+### 4. Available Tools
+
+The MCP server exposes 8 read-only tools:
+
+| Tool | Purpose |
+|------|---------|
+| `workspace_overview` | Project orientation — key documents, graph stats, warnings |
+| `context_map` | Full context map (supports compact modes) |
+| `get_document` | Read one document by ID or path |
+| `list_documents` | Paginated listing with type/status filters |
+| `query` | Dependency details for a single document |
+| `export_graph` | Structured graph export (summary or full) |
+| `health` | Server uptime, document count, version |
+| `refresh` | Force cache rebuild after bulk changes |
+
+### 5. Verify
+
+```bash
+ontos --version   # Should show 4.0.0
+ontos serve       # Should start without errors (Ctrl+C to stop)
+```
+
+For the full migration guide, including optional usage logging and known limitations, see [Migration Guide v3→v4](docs/reference/Migration_v3_to_v4.md).
 
 ---
 
