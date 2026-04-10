@@ -264,6 +264,13 @@ The server runs over stdio — your IDE manages the process lifecycle.
 }
 ```
 
+> [!TIP]
+> **`ontos` not found?** Desktop apps may not inherit your shell PATH. Use the absolute path instead:
+> ```bash
+> which ontos   # Find the path, e.g. /Users/you/.local/bin/ontos
+> ```
+> Then set `"command": "/Users/you/.local/bin/ontos"` in the config above. Alternatively, use `"command": "python3"` with `"args": ["-m", "ontos", "serve"]`.
+
 **Cursor** (`.cursor/mcp.json` in your project):
 ```json
 {
@@ -278,18 +285,20 @@ The server runs over stdio — your IDE manages the process lifecycle.
 
 ### 4. Available Tools
 
-The MCP server exposes 8 read-only tools:
+The MCP server exposes 8 tools (6 read-only, 2 write-capable):
 
-| Tool | Purpose |
-|------|---------|
-| `workspace_overview` | Project orientation — key documents, graph stats, warnings |
-| `context_map` | Full context map (supports compact modes) |
-| `get_document` | Read one document by ID or path |
-| `list_documents` | Paginated listing with type/status filters |
-| `query` | Dependency details for a single document |
-| `export_graph` | Structured graph export (summary or full) |
-| `health` | Server uptime, document count, version |
-| `refresh` | Force cache rebuild after bulk changes |
+| Tool | Purpose | Read-only |
+|------|---------|:---------:|
+| `workspace_overview` | Project orientation — key documents, graph stats, warnings | ✅ |
+| `context_map` | Full context map (supports compact modes) | ✅ |
+| `get_document` | Read one document by ID or path | ✅ |
+| `list_documents` | Paginated listing with type/status filters | ✅ |
+| `query` | Dependency details for a single document | ✅ |
+| `health` | Server uptime, document count, version | ✅ |
+| `export_graph` | Structured graph export (optional file output) | ⚠️ |
+| `refresh` | Force cache rebuild after bulk changes | ⚠️ |
+
+`export_graph` can write a file within the workspace root. `refresh` rebuilds the internal cache. Both are safe but not strictly read-only.
 
 ### 5. Verify
 
