@@ -269,7 +269,7 @@ The server runs over stdio — your IDE manages the process lifecycle.
 > ```bash
 > which ontos   # Find the path, e.g. /Users/you/.local/bin/ontos
 > ```
-> Then set `"command": "/Users/you/.local/bin/ontos"` in the config above. Alternatively, use `"command": "python3"` with `"args": ["-m", "ontos", "serve"]`.
+> Then set `"command": "/Users/you/.local/bin/ontos"` in the config above. Alternatively, use `"command": "python"` with `"args": ["-m", "ontos", "serve"]`.
 
 **Cursor** (`.cursor/mcp.json` in your project):
 ```json
@@ -283,6 +283,9 @@ The server runs over stdio — your IDE manages the process lifecycle.
 }
 ```
 
+> [!NOTE]
+> Cursor launches the MCP server from your project root by default. If your project is elsewhere, add `"--workspace", "/path/to/your/project"` to the `args` array.
+
 ### 4. Available Tools
 
 The MCP server exposes 8 tools (6 read-only, 2 write-capable):
@@ -293,9 +296,9 @@ The MCP server exposes 8 tools (6 read-only, 2 write-capable):
 | `context_map` | Full context map (supports compact modes) | ✅ |
 | `get_document` | Read one document by ID or path | ✅ |
 | `list_documents` | Paginated listing with type/status filters | ✅ |
+| `export_graph` | Structured graph export (optional file output) | ⚠️ |
 | `query` | Dependency details for a single document | ✅ |
 | `health` | Server uptime, document count, version | ✅ |
-| `export_graph` | Structured graph export (optional file output) | ⚠️ |
 | `refresh` | Force cache rebuild after bulk changes | ⚠️ |
 
 `export_graph` can write a file within the workspace root. `refresh` rebuilds the internal cache. Both are safe but not strictly read-only.
@@ -304,8 +307,11 @@ The MCP server exposes 8 tools (6 read-only, 2 write-capable):
 
 ```bash
 ontos --version   # Should show 4.0.0
-ontos serve       # Should start without errors (Ctrl+C to stop)
+ontos serve       # Starts the stdio server (Ctrl+C to stop)
 ```
+
+> [!NOTE]
+> The server communicates over stdio (JSON-RPC), so it won't print a "ready" message — silence is normal. To verify it's working, connect through your IDE and call a tool like `health`.
 
 For the full migration guide, including optional usage logging and known limitations, see [Migration Guide v3→v4](docs/reference/Migration_v3_to_v4.md).
 
