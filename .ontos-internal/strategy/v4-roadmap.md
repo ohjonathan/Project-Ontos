@@ -32,25 +32,61 @@ Thin stdio MCP bridge wrapping single-project CLI capabilities as 8 read-only to
 
 ---
 
-## v4.1.0 -- Portfolio Authority (PROPOSED)
+## v4.1.0 -- Write Tools + Read-Only Discovery (PROPOSED)
 
-**Proposal:** `.ontos-internal/strategy/proposals/v4.1/Ontos-v4.1-Proposal.md` (v3)
+**Proposal:** `.ontos-internal/strategy/proposals/v4.1/Ontos-v4.1-Proposal.md`
 **Research:** `.ontos-internal/strategy/proposals/v4.1/ontos-v4.1-research-consolidated.md`
 **PR:** #84
-**Review status:** Re-scoped per review verdict. Awaiting CA decision.
+**Review status:** Re-scoped twice per review. Awaiting CA decision on v4 revision.
 
-Extends the MCP server with portfolio indexing, cross-project search, write tools, and simple context bundling -- all over stdio.
+Adds two write tools and read-only project discovery to the existing stdio MCP server. Minimal scope -- no new storage, no new dependencies beyond MCP SDK pin bump.
 
 | Capability | Detail |
 |-----------|--------|
-| 7 new MCP tools | `project_registry`, `search`, `get_context_bundle`, `scaffold_document`, `rename_document`, `log_session`, `promote_document` |
-| Transport | Stdio only (HTTP deferred to v4.2) |
-| Scope | Multi-workspace via `--portfolio` flag; single-workspace backward compatible |
-| Storage | SQLite portfolio index (`~/.config/ontos/portfolio.db`) + FTS5 search |
-| Bundle | Simple: kernel + in-degree + recent logs, greedy knapsack |
+| 2 new write tools | `scaffold_document` (wraps `scaffold --apply`), `log_session` (wraps `log --auto`) |
+| 1 new read tool | `project_registry()` -- reads directly from `.dev-hub/registry/projects.json`, no SQLite |
+| Transport | Stdio only |
+| Scope | Single-workspace (write tools) + read-only multi-project discovery |
+| Storage | None new -- reads existing `projects.json` |
 | Install | `pip install ontos[mcp]` (mcp>=1.27.0,<2.0) |
 
-**Sequencing rationale:** Delivers the highest-value features (write tools, portfolio search) to today's consumers (Claude Code, Cursor) without the operational burden of HTTP transport, security model, and daemon management. Generates real usage data to validate whether the advanced bundle algorithm is needed.
+**Write tool contracts (verified against CLI):**
+- `scaffold_document`: Always-apply (MCP tools are imperative). Wraps `scaffold --apply`. No git precondition.
+- `log_session`: Wraps `log --auto`. Maps `summary` to topic, `branch` auto-detected. Requires git repo.
+- `--read-only` startup flag strips write tools from MCP surface entirely.
+
+**Success metric:** Justified if `scaffold_document` + `log_session` are called >5x/week within 4 weeks of release.
+
+---
+
+## v4.1.1 -- Search + Complex Write Tools (PLANNED)
+
+**Proposal:** Not yet written. Triggered by v4.1.0 usage validation.
+
+Adds FTS5 cross-project search and the two write tools that need contract decisions before implementation.
+
+| Capability | Detail |
+|-----------|--------|
+| 2 new write tools | `rename_document`, `promote_document` |
+| 1 new read tool | `search(query_string, workspace_id?)` via SQLite FTS5 |
+| Storage | `~/.config/ontos/portfolio.db` -- non-authoritative rebuildable cache. `.dev-hub` remains sole authority. |
+| FTS config | Contentless FTS5 (`content=''`), porter+unicode61 tokenizer, title 10x / concepts 3x / body 1x persistent rank, `prefix='2,3'` |
+
+**Write tool contract decisions needed (CA):**
+
+`rename_document` -- the CLI (`ontos rename --apply`) requires a clean git working tree. MCP agents may not have clean state. Options:
+- **(a)** Enforce clean git: check state, return error if dirty (safest, matches CLI)
+- **(b)** Skip git check: MCP agents operate in their own context (most permissive)
+- **(c)** Add `force: bool` parameter: default checks git, `force=true` skips (explicit opt-out)
+
+`promote_document` -- the CLI is interactive by default (prompts for missing `depends_on`, `concepts`). MCP cannot be interactive. Options:
+- **(a)** Read-only only: expose `--check` mode, report readiness but never modify (safest)
+- **(b)** Non-interactive batch: wraps `--all-ready --yes`, promotes everything that's ready
+- **(c)** Require fields as input: MCP tool accepts `depends_on` and `concepts` as parameters, filling what the interactive prompt would ask
+
+**Trigger criteria:**
+1. v4.1.0 ships and `scaffold_document` + `log_session` are validated by usage
+2. CA decides the rename/promote contract questions above
 
 ---
 
@@ -67,9 +103,11 @@ Adds Streamable HTTP transport, security model, and persistent daemon mode for p
 | Security | Bearer token (macOS Keychain), DNS rebinding protection (Origin/Host validation per CVE-2025-66414), CORS, security headers, audit logging, rate limiting. |
 | Daemon mode | Long-running portfolio server with background indexer (60s polling). launchd plist for macOS. |
 | Memory management | 7-day uptime watchdog (launchd auto-restart). TTLCache, tracemalloc monitoring, 1.5GB RSS threshold. |
-| Advanced bundles | 5-signal scoring (type rank, Personalized PageRank, status freshness, recency, curation level). Calibrated from v4.1 usage data. Nested granularity (full/summary/title-only). |
+| Context bundles | `get_context_bundle()` tool -- only if v4.1 usage shows agents consistently requesting docs NOT in the tiered context map. Kill criterion: if `context_map(compact="tiered")` is sufficient after 4 weeks of v4.1 usage, this is not built. |
+| Advanced ranking | 5-signal scoring (type rank, Personalized PageRank, status freshness, recency, curation level). Calibrated from v4.1 usage data. Nested granularity (full/summary/title-only). |
 | New dependencies | `starlette`, `uvicorn`, `cachetools` |
-| Write tool auth | `[mcp.security] allow_write_tools` opt-in for HTTP. `--read-only` flag already in v4.1. |
+| Write tool auth | `[mcp.security] allow_write_tools` opt-in for HTTP. `--read-only` flag from v4.1. |
+| Authority transition | `portfolio.db` becomes authoritative for cross-project index, `.dev-hub/registry/projects.json` becomes a generated export. Only after zero discrepancies for 2 consecutive weeks. |
 
 **Trigger criteria** (any one is sufficient):
 1. JohnnyOS development begins and requires HTTP transport for process-to-process communication
@@ -85,17 +123,19 @@ Adds Streamable HTTP transport, security model, and persistent daemon mode for p
 
 ---
 
-## Version Sequencing Rationale
+## Version Sequencing
 
 ```
-v4.0.0 (shipped)     v4.1.0 (proposed)       v4.2.0 (planned)
-───────────────      ─────────────────       ─────────────────
-Single workspace  →  Portfolio index       →  Background indexer
-Read-only tools   →  Write tools           →  Write auth (HTTP)
-Stdio only        →  Stdio only            →  + Streamable HTTP
-No search         →  FTS5 search           →  (preserved)
-No bundles        →  Simple bundling       →  Calibrated 5-signal
-No security       →  --read-only flag      →  Full security model
+v4.0.0 (shipped)     v4.1.0 (proposed)       v4.1.1 (planned)        v4.2.0 (planned)
+───────────────      ─────────────────       ─────────────────       ─────────────────
+Single workspace  →  + project discovery  →  + FTS5 search         →  Background indexer
+Read-only tools   →  + scaffold, log      →  + rename, promote     →  Write auth (HTTP)
+Stdio only        →  Stdio only           →  Stdio only            →  + Streamable HTTP
+No search         →  (no search)          →  FTS5 search           →  (preserved)
+No bundles        →  (no bundles)         →  (no bundles)          →  Context bundles (if needed)
+No security       →  --read-only flag     →  (preserved)           →  Full security model
 ```
 
-The split between v4.1 and v4.2 was decided in the PR #84 review (2026-04-11). R1 (adversarial/product lens) identified that HTTP transport, security model, and daemon management are downstream of a consumer (JohnnyOS) that does not yet exist. Building supply-side infrastructure for projected demand is a sequencing risk. R2 (alignment/technical lens) confirmed the architecture is sound regardless of how it's sequenced. The decision: ship validated features first (v4.1), add operational infrastructure when demand materializes (v4.2).
+**Sequencing rationale:** Each version is gated on validated demand from the previous. v4.1.0 is the minimum viable write surface. v4.1.1 adds search and the write tools that need contract work. v4.2 adds operational infrastructure when a concrete consumer (JohnnyOS) needs it.
+
+The v4.1.0/v4.1.1 split was decided in the PR #84 Round 2 review (2026-04-11). Reviewers identified that even the v3 proposal bundled portfolio authority, search, and context bundles without evidence that they materially improve daily workflows. The narrowing: ship the two simplest write tools first, validate demand, then build up.
