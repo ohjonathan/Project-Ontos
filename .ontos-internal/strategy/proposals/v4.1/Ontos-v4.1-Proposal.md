@@ -8,10 +8,12 @@ depends_on: [ontos_manual]
 # Ontos v4.1 Proposal: Portfolio Authority
 
 **Date:** 2026-04-10
-**Revised:** 2026-04-10 (v1 -- initial draft)
+**Revised:** 2026-04-10 (v2 -- research corrections applied: Streamable HTTP, ASGI mounting, SQLite PRAGMAs, FTS5 tuning, bundle algorithm refinements, DNS rebinding mitigations, Python 3.10+ requirement, Claude Desktop limitation)
 **Author:** Claude (synthesized from v4.0 deferred scope, consumer brief, and codebase analysis)
 **Status:** PROPOSAL -- requires review and decision by Johnny
 **Audience:** Johnny (project owner), LLMs reviewing for correctness and gaps
+
+**Research:** See [ontos-v4.1-research-consolidated.md](ontos-v4.1-research-consolidated.md) -- consolidated findings from 3 parallel deep-research runs (Models A, G, O) validating design decisions against MCP ecosystem best practices.
 
 ---
 
@@ -24,7 +26,7 @@ Concretely, v4.1 adds:
 - **Portfolio index** -- a SQLite database (`~/.config/ontos/portfolio.db`) spanning all workspaces, with FTS5 full-text search
 - **3 new portfolio tools** -- `project_registry()`, `search()`, `get_context_bundle()`
 - **4 new write tools** -- `scaffold_document()`, `rename_document()`, `log_session()`, `promote_document()`
-- **HTTP/SSE transport** -- alongside stdio, for process-to-process communication (JohnnyOS)
+- **Streamable HTTP transport** -- alongside stdio, for process-to-process communication (JohnnyOS)
 - **Context bundle algorithm** -- a 5-signal scoring function that assembles right-sized context packages per workspace
 - **Undocumented project handling** -- thin metadata entries for the 13 projects without Ontos coverage
 - **Security model** -- bearer token auth, audit logging, rate limiting for the HTTP transport
@@ -50,10 +52,11 @@ Claude Code and Cursor users currently spawn one `ontos serve` process per proje
 ### The MCP Ecosystem Has Matured Further
 
 Since v4.0 shipped:
-- HTTP/SSE transport is stable in the Python MCP SDK
-- FastMCP (already used in v4.0's `OntosFastMCP` subclass) supports dual transport configuration
-- Multiple production MCP servers now expose write tools with safety patterns (dry-run, confirmation)
-- The MCP auth specification has progressed, with bearer token patterns becoming the de facto standard for local servers
+- Streamable HTTP transport is stable in the Python MCP SDK (`mcp >= 1.27.0`, April 2026). The 2025-03-26 spec revision deprecated the legacy HTTP+SSE transport in favor of Streamable HTTP.
+- FastMCP (already used in v4.0's `OntosFastMCP` subclass) supports `transport="streamable-http"` and ASGI mounting for middleware integration
+- Multiple production MCP servers now expose write tools with safety patterns (dry-run, confirmation, `--read-only` startup flag)
+- The MCP auth specification has adopted OAuth 2.1 + PKCE (RFC 9728) for remote servers; bearer token remains the pragmatic baseline for single-user local servers
+- **Python 3.10+ is mandatory** for the MCP SDK (confirmed across all SDK releases). Python 3.11+ is recommended for `asyncio.TaskGroup`, which simplifies the portfolio indexer's concurrent scan/serve architecture
 
 ### Competitive Pressure
 
@@ -74,7 +77,7 @@ Ontos v4.0.0 (tagged, released on PyPI) is a thin MCP bridge wrapping single-pro
 | In-memory cache | `SnapshotCache` with file-mtime fingerprint invalidation |
 | Single workspace | One `ontos serve` process per project |
 | Read-only tools | No file creation, modification, or deletion via MCP |
-| Optional dependency | `pip install ontos[mcp]` adds `mcp>=1.2`, `pydantic>=2.0` |
+| Optional dependency | `pip install ontos[mcp]` adds `mcp>=1.2`, `pydantic>=2.0` (v4.1 will pin `mcp>=1.27.0` for Streamable HTTP support; Python 3.10+ required, 3.11+ recommended) |
 | Usage logging | Tool name + timestamp to `~/.config/ontos/usage.jsonl` |
 | Output schemas | `OntosFastMCP` subclass advertises JSON Schema per tool |
 
@@ -89,7 +92,7 @@ These are the explicit v4.1 deferrals from the v4.0 proposal (Sections 5, 7, 8):
 | No context bundle algorithm | D5 |
 | No full-text search | D8 |
 | No write-capable MCP tools | D7, D8 |
-| No HTTP/SSE transport | D1 |
+| No Streamable HTTP transport | D1 |
 | No undocumented project handling | D6 |
 | No multi-workspace identity | D9 (v4.1 definition) |
 | No security beyond stdio isolation | D7 (v4.1 security model) |
@@ -130,7 +133,7 @@ Key patterns established in v4.0 that v4.1 must preserve:
 
 ### Consumer 1: JohnnyOS Orchestrator (Primary -- v4.1)
 
-**How it connects:** MCP client running on Mac Mini, calling Ontos v4.1 over HTTP/SSE (persistent daemon) or stdio (child process fallback).
+**How it connects:** MCP client running on Mac Mini, calling Ontos v4.1 over Streamable HTTP (persistent daemon) or stdio (child process fallback).
 
 **Tools it expects to call:**
 
@@ -152,7 +155,7 @@ Key patterns established in v4.0 that v4.1 must preserve:
 
 ### Consumer 2: Claude Code / Cursor / IDE Agents (Enhanced -- v4.1)
 
-**How it connects:** MCP client via stdio (same as v4.0). May optionally connect to a running HTTP/SSE server if one is available.
+**How it connects:** MCP client via stdio (same as v4.0). May optionally connect to a running Streamable HTTP server if one is available.
 
 **New tools beyond v4.0:**
 
@@ -211,7 +214,7 @@ Full-text search across the portfolio or a single workspace.
 | **Cacheable** | No |
 | **Annotations** | `readOnlyHint=true, idempotentHint=true` |
 
-**Search targets:** Document title (from frontmatter `id`), body content, concepts, type, status. Weighted: title 5x, concepts 3x, body 1x.
+**Search targets:** Document title (from frontmatter `id`), body content, concepts, type, status. Weighted: title 10x, concepts 3x, body 1x (persistent rank via `INSERT INTO fts_content(fts_content, rank) VALUES('rank', 'bm25(10.0, 3.0, 1.0)')`).
 
 **Ranking:** SQLite FTS5 BM25. Results sorted by score descending. Snippet extraction via FTS5 `snippet()` function with `<mark>` delimiters.
 
@@ -300,7 +303,26 @@ Promotes a document's curation level.
 
 **Role:** Rebuildable cache, not source of truth. Can be deleted and reconstructed from the filesystem at any time. The filesystem remains authoritative for per-project document content.
 
-**WAL mode enabled** for concurrent reader access. Multiple MCP server processes can read from the same database simultaneously (JohnnyOS + Claude Code).
+**Connection PRAGMA block** (applied on every connection open):
+
+```sql
+PRAGMA journal_mode = WAL;            -- concurrent readers
+PRAGMA synchronous = NORMAL;          -- safe in WAL mode, much faster than FULL
+PRAGMA cache_size = -16000;           -- 16 MB page cache
+PRAGMA mmap_size = 67108864;          -- 64 MB memory-mapped I/O
+PRAGMA temp_store = MEMORY;           -- temp tables in memory
+PRAGMA busy_timeout = 5000;           -- 5s wait on lock contention
+```
+
+Run `PRAGMA optimize = 0x10002` on connection open; run `PRAGMA optimize` periodically.
+
+**Critical concurrency rules:**
+- **`BEGIN IMMEDIATE` for ALL write transactions.** Deferred transactions that upgrade from read to write cause instant `SQLITE_BUSY` regardless of `busy_timeout`. This is the #1 source of SQLite concurrency bugs.
+- Serialize writes through an application-level lock (Python `asyncio.Lock`).
+- Disable `wal_autocheckpoint` on the writer process (`PRAGMA wal_autocheckpoint = 0`), run `PRAGMA wal_checkpoint(PASSIVE)` every 5 minutes to avoid latency spikes.
+- **Do not use connection pooling** -- SQLite connections take microseconds to open; pooling adds no value at this scale.
+
+Multiple MCP server processes can read from the same database simultaneously (JohnnyOS + Claude Code) thanks to WAL mode.
 
 #### Schema
 
@@ -343,8 +365,15 @@ CREATE VIRTUAL TABLE fts_content USING fts5(
     concepts,
     content=documents,
     content_rowid=rowid,
-    tokenize='porter unicode61'
+    tokenize='porter unicode61',
+    prefix='2,3'
 );
+
+-- Persistent BM25 rank configuration (title 10x, concepts 3x, body 1x)
+INSERT INTO fts_content(fts_content, rank) VALUES('rank', 'bm25(10.0, 3.0, 1.0)');
+
+-- Run after bulk inserts to optimize the FTS index
+-- INSERT INTO fts_content(fts_content) VALUES('optimize');
 
 -- Dependency edges (cross-workspace possible in future)
 CREATE TABLE edges (
@@ -451,15 +480,17 @@ Documents are ranked by ontological type. Higher types are structurally more imp
 | atom | 0.4 | Technical implementation -- detail-level |
 | log | 0.2 | Session history -- recent activity signal |
 
-#### Signal 2: In-Degree Centrality
+#### Signal 2: Graph Centrality
 
-How many other documents depend on this document. Normalized to [0, 1] by dividing by the maximum in-degree in the workspace.
+**Base implementation:** In-degree centrality -- how many other documents depend on this document. Normalized to [0, 1] by dividing by the maximum in-degree in the workspace.
 
 ```
 centrality(doc) = in_degree(doc) / max_in_degree(workspace)
 ```
 
 Documents with high in-degree are structural hubs -- many other docs reference them. This is already computed by `SnapshotCache.depths` and `snapshot.graph.reverse_edges`.
+
+**Planned enhancement: Personalized PageRank.** For query-dependent scoring (when the agent requests a bundle focused on a specific topic), use Personalized PageRank seeded from the query-matched document. For broad "give me the project context" queries, fall back to global PageRank. Research confirms this outperforms raw in-degree for topic-focused retrieval. Additionally, HITS (hubs/authorities) maps naturally to the Ontos document taxonomy -- authorities = definitive reference docs (kernel), hubs = docs that link many others together (strategy). Betweenness centrality can identify bridge documents across topic clusters.
 
 #### Signal 3: Status Freshness
 
@@ -511,12 +542,15 @@ Where `half_life = 30` days (configurable). A document modified today scores 1.0
 
 After scoring, documents are selected for the bundle using a greedy knapsack approach:
 
-1. Sort documents by composite score descending
-2. Estimate token count per document: `tokens = len(content) / 4` (character heuristic, switchable to tiktoken if accuracy matters -- see D4)
-3. Greedily add documents until the budget is exhausted
-4. Always include: the workspace's top-ranked kernel document (even if it exceeds 50% of the budget)
-5. For each included document, render a section with: `## {title} ({type}, {status})\n\n{content}`
-6. Append a metadata footer: included document count, total score, excluded count, stale document warnings
+1. **Reserve kernel budget first.** The workspace's top-ranked kernel document is always included, even if it exceeds 50% of the total budget. Reserve its token cost before packing other documents.
+2. Sort remaining documents by `score / token_count` (value density) descending.
+3. Estimate token count per document: `tokens = len(content) / 4` (character heuristic, switchable to tiktoken if accuracy matters -- see D4).
+4. Greedily add documents until the budget is exhausted.
+5. **Lost-in-the-middle ordering:** When rendering the final bundle, place the highest-scored documents at the **beginning and end** of the assembled text. Stanford TACL 2024 and Chroma 2025 confirmed across 18 frontier models that LLMs attend most to the start and end of their context window. Mid-ranked documents go in the middle.
+6. For each included document, render a section with: `## {title} ({type}, {status})\n\n{content}`
+7. Append a metadata footer: included document count, total score, excluded count, stale document warnings.
+
+**Planned enhancement: Nested granularity.** Instead of including each document as full-content-or-nothing, generate multiple knapsack items per document at different sizes: full content, summary (first 200 words + heading structure), or title-only. This allows the packer to include more documents at lower fidelity when the budget is tight. The Qodo pattern demonstrates this approach in production. Deferred to post-v4.1.0 -- the base greedy knapsack ships first.
 
 ### 7.5 Bundle Format
 
@@ -545,7 +579,7 @@ After scoring, documents are selected for the bundle using a greedy knapsack app
 
 ### 8.1 Dual Transport
 
-v4.1 supports both stdio and HTTP/SSE transports:
+v4.1 supports both stdio and Streamable HTTP transports:
 
 **Stdio (preserved from v4.0):**
 ```bash
@@ -555,9 +589,9 @@ ontos serve --workspace ~/Dev/foo   # stdio, specific workspace
 
 Behavior is identical to v4.0. Single workspace, spawned as a child process by the IDE client.
 
-**HTTP/SSE (new in v4.1):**
+**Streamable HTTP (new in v4.1):**
 ```bash
-ontos serve --http                  # HTTP/SSE on 127.0.0.1:9400
+ontos serve --http                  # Streamable HTTP on http://127.0.0.1:9400/mcp
 ontos serve --http --port 9401      # custom port
 ontos serve --http --portfolio      # portfolio mode: all workspaces indexed
 ```
@@ -569,30 +603,42 @@ The `--portfolio` flag is the key differentiator. Without it, the HTTP server se
 - **HTTP + portfolio:** One long-running daemon serving all workspaces. This is the JohnnyOS deployment mode.
 - **HTTP without portfolio:** One process per workspace, reachable over HTTP. For cases where JohnnyOS needs to connect to a specific project without the full portfolio.
 
+**Client compatibility (Streamable HTTP):**
+- **Claude Code:** `--transport http` (v1.0.27+). Full support.
+- **Cursor:** Auto-detects transport (v0.50+). Full support.
+- **VS Code Copilot:** v1.102+. Full support.
+- **Claude Desktop:** Cannot connect to local HTTP MCP servers via `claude_desktop_config.json` -- it only supports remote Streamable HTTP via the paid Integrations UI. **Workaround:** Ship an `mcp-remote` bridge configuration that proxies the local HTTP server for Claude Desktop users. Alternatively, Claude Desktop users continue to use stdio transport (single-workspace mode).
+- **MCP Inspector:** All transports supported, but has known `Last-Event-ID` resume bugs. Useful for development, not sufficient for transport validation.
+
 ### 8.2 Security Model
 
 **Stdio transport (unchanged):** No authentication needed. Stdio is inherently limited to the spawning process. All v4.0 security properties are preserved.
 
 **HTTP transport (new):**
 
+> **Threat context:** CVE-2025-66414 (CVSS 7.6) demonstrated DNS rebinding against the MCP TypeScript SDK -- malicious websites could hit any localhost MCP server by resolving an attacker-controlled domain to 127.0.0.1. **Localhost is not a security boundary.** The mitigations below are defense-in-depth, not optional hardening.
+
 | Layer | Mechanism |
 |-------|-----------|
 | **Network binding** | `127.0.0.1` only. No external network exposure. Binding to `0.0.0.0` requires explicit `--bind 0.0.0.0` flag with a warning. |
-| **Authentication** | Bearer token. Token stored at `~/.config/ontos/auth.token`. Generated on first `ontos serve --http` if not present. Clients pass `Authorization: Bearer <token>` header. |
-| **Write tool authorization** | Write tools (`scaffold_document`, `rename_document`, `log_session`, `promote_document`) require `[mcp.security] allow_write_tools = true` in the workspace's `.ontos.toml`. Default is `false` for HTTP. Stdio always allows write tools (user has local access). |
-| **Audit logging** | Append-only JSON lines at `~/.config/ontos/audit.log`. Logs: timestamp, tool name, workspace_id, client IP, auth status, duration_ms. No document content logged. |
+| **DNS rebinding protection** | Validate **both** `Origin` and `Host` headers on every HTTP request. Reject requests where `Host` is not `localhost` or `127.0.0.1` with HTTP 403. This is now mandated by the MCP specification. |
+| **Authentication** | Bearer token. Token generated via `secrets.token_urlsafe(32)` on first `ontos serve --http`. **Stored in macOS Keychain** (`security add-generic-password -a ontos -s ontos-mcp-token -w "$TOKEN"`), not as a plaintext file. Retrieved at startup via `security find-generic-password -a ontos -s ontos-mcp-token -w`. Clients pass `Authorization: Bearer <token>` header. |
+| **CORS** | Restrict origins to specific localhost ports. Include `Mcp-Session-Id` in `Access-Control-Expose-Headers`. |
+| **Security headers** | `X-Frame-Options: DENY`, `Content-Security-Policy: frame-ancestors 'none'` on all responses. Prevents iframe-based attacks. |
+| **Write tool authorization** | Write tools (`scaffold_document`, `rename_document`, `log_session`, `promote_document`) require `[mcp.security] allow_write_tools = true` in the workspace's `.ontos.toml`. Default is `false` for HTTP. Stdio always allows write tools (user has local access). Additionally, a `--read-only` startup flag strips write tools from the MCP surface entirely (strongest safety primitive, following the GitHub MCP server pattern). |
+| **Audit logging** | Append-only JSON lines at `~/.config/ontos/audit.log` (`chmod 0600`). Fields: timestamp, event_type, tool_name, parameters (redacted), outcome, duration_ms, session_id, correlation_id. No document content logged. |
 | **Rate limiting** | Per-tool, configurable. Default: 60 calls/min for read tools, 10 calls/min for write tools. Implemented as a token bucket per tool name. |
 
 **HTTP auth integration with `_invoke_tool()`:** The v4.0 `_invoke_tool()` function handles logging, freshness, and error enveloping. For HTTP transport, auth is handled as **middleware outside the MCP tool layer**, not inside `_invoke_tool()`. The request pipeline is:
 
-1. HTTP request arrives at FastMCP's SSE endpoint
+1. HTTP request arrives at the ASGI application (Streamable HTTP endpoint)
 2. **Auth middleware** extracts and validates the bearer token. Rejects with 401 if invalid.
 3. **Audit middleware** logs the request (timestamp, tool name, client IP, auth status).
 4. **Rate limit middleware** checks per-tool token bucket. Rejects with 429 if exceeded.
 5. **Write authorization middleware** (for write tools only) checks `[mcp.security] allow_write_tools` in the target workspace's `.ontos.toml`. Rejects with 403 if not enabled.
 6. Request reaches the MCP tool handler, which calls `_invoke_tool()` unchanged from v4.0.
 
-This preserves the v4.0 tool handler code without modification. Auth context (client identity, workspace permissions) is resolved before the tool layer sees the request. The middleware stack is implemented as ASGI middleware wrapping FastMCP's HTTP handler.
+This preserves the v4.0 tool handler code without modification. Auth context (client identity, workspace permissions) is resolved before the tool layer sees the request. The middleware stack is implemented as ASGI middleware wrapping the mounted MCP application (see D6 for the ASGI architecture).
 
 ### 8.3 Configuration
 
@@ -700,20 +746,57 @@ MCP tools are called by agents that can inspect the response and take corrective
 
 ### D6: HTTP Transport Implementation
 
-**Options:** (A) Implement from scratch with aiohttp, (B) Use FastMCP's built-in HTTP/SSE support, (C) Use the official MCP SDK's HTTP transport
+**Options:** (A) Implement from scratch with aiohttp, (B) Use `server.run(transport="streamable-http")`, (C) Mount MCP server into an ASGI app with middleware
 
-**Recommendation: (B) Use FastMCP's built-in HTTP/SSE support.**
+**Recommendation: (C) ASGI mounting with middleware.**
 
-v4.0 already uses FastMCP (via the `OntosFastMCP` subclass in `server.py`). FastMCP supports `server.run(transport="sse")` for HTTP/SSE. The implementation is:
+Using `server.run()` directly does not allow inserting auth, audit, rate limiting, or `/health` middleware. Instead, mount the MCP server as an ASGI application and wrap it with middleware layers. This is the pattern recommended by all three research models (A, G, O) and is how production MCP servers handle cross-cutting concerns.
+
+**Architecture:** One shared tool registry, two thin entrypoints:
 
 ```python
-if args.http:
-    server.run(transport="sse", host=bind, port=port)
-else:
+from starlette.applications import Starlette
+from starlette.routing import Mount
+
+# Shared tool registry (same OntosFastMCP as v4.0)
+server = create_server(cache)
+
+# Stdio entrypoint (v4.0 behavior, unchanged)
+if args.stdio:
     server.run(transport="stdio")
+
+# Streamable HTTP entrypoint (v4.1)
+if args.http:
+    mcp_app = server.streamable_http_app()
+    app = Starlette(routes=[Mount("/mcp", app=mcp_app)])
+    app.add_middleware(BearerTokenAuthMiddleware, token=load_token())
+    app.add_middleware(AuditLogMiddleware, log_path=audit_path)
+    app.add_middleware(RateLimitMiddleware, config=rate_config)
+    # Custom /health endpoint outside MCP
+    app.add_route("/health", health_endpoint)
+    uvicorn.run(app, host=bind, port=port)
 ```
 
-This minimizes new code and leverages the same SDK already in use. The bearer token auth and rate limiting are implemented as middleware in the request pipeline.
+**Why not `server.run()`:** It starts its own event loop and HTTP server with no middleware hooks. Auth, logging, and rate limiting would have to be implemented inside tool handlers, violating the v4.0 pattern where `_invoke_tool()` is transport-agnostic.
+
+**Known SDK issues to mitigate:**
+- SDK issue #1076: unbounded memory growth under continuous tool calls. Mitigate with 7-day uptime watchdog (launchd auto-restarts).
+- SDK issue #756: `StreamableHTTPSessionManager._task` list grows in stateless mode. Same mitigation.
+- FastMCP issue #514: SSE transport fails to shut down on signal after processing a request. Mitigate with explicit `asyncio.get_event_loop().add_signal_handler()` registration.
+
+**Lifecycle management:** Use FastMCP's `lifespan` async context manager for startup/shutdown resource management (DB connections, background tasks):
+
+```python
+@asynccontextmanager
+async def app_lifespan(server: FastMCP) -> AsyncIterator[dict]:
+    db = await init_portfolio_db()
+    indexer = start_background_indexer(db)
+    try:
+        yield {"db": db, "indexer": indexer}
+    finally:
+        indexer.cancel()
+        await db.close()
+```
 
 ### D7: FTS Configuration
 
@@ -723,7 +806,7 @@ This minimizes new code and leverages the same SDK already in use. The bearer to
 
 Porter stemming handles English morphology (searching "documenting" matches "documentation"). Unicode61 handles non-ASCII characters. Both are built into SQLite FTS5 -- no additional dependencies.
 
-**Column weights:** Title 5x, concepts 3x, body 1x (see Section 5.1 `search()` spec). Implemented via FTS5's `bm25()` rank function with column weights.
+**Column weights:** Title 10x, concepts 3x, body 1x. Configured via FTS5 persistent rank: `INSERT INTO fts_content(fts_content, rank) VALUES('rank', 'bm25(10.0, 3.0, 1.0)')`. Results **must** be sorted by `ORDER BY rank` -- any other sort order forces a temp B-tree sort that is 10-50x slower. Add `prefix='2,3'` to the FTS5 table definition for prefix-search/autocomplete support. Run `INSERT INTO fts_content(fts_content) VALUES('optimize')` after bulk index operations.
 
 ### D8: Background Refresh Strategy
 
@@ -764,7 +847,7 @@ Filesystem watchers (fsevents) are more responsive but add complexity and platfo
 
 - **New portfolio config:** `~/.config/ontos/portfolio.toml` for portfolio-level settings (scan roots, server config, bundle weights).
 - **New database:** `~/.config/ontos/portfolio.db` created on first portfolio-mode run.
-- **New auth file:** `~/.config/ontos/auth.token` created on first HTTP-mode run.
+- **New auth token:** Bearer token stored in macOS Keychain on first HTTP-mode run (key: `ontos-mcp-token`).
 - **New CLI flags:** `ontos serve --http`, `--port`, `--portfolio`, `--bind`.
 - **New tools:** 7 new tools (3 portfolio + 4 write) added to the MCP surface.
 - **Optional `workspace_id` parameter:** Added to all tools but ignored in single-workspace mode.
@@ -834,9 +917,9 @@ Ontos v4.1.0 is done when all of the following are true:
 
 ### Transport and Security
 
-10. **`ontos serve --http` starts an HTTP/SSE server** on `127.0.0.1:9400` that responds to MCP tool calls from an HTTP client.
+10. **`ontos serve --http` starts a Streamable HTTP server** on `http://127.0.0.1:9400/mcp` that responds to MCP tool calls from an HTTP client. Clients POST JSON-RPC messages; server responds with JSON or opens an SSE stream per-response.
 
-11. **Bearer token authentication works.** Requests without a valid `Authorization: Bearer <token>` header receive a 401 response. The token is auto-generated on first run.
+11. **Bearer token authentication works.** Requests without a valid `Authorization: Bearer <token>` header receive a 401 response. The token is auto-generated via `secrets.token_urlsafe(32)` on first run and stored in macOS Keychain. DNS rebinding protection rejects requests with non-localhost `Host` headers.
 
 12. **Audit log captures tool calls.** After calling tools via HTTP, `~/.config/ontos/audit.log` contains entries with timestamp, tool name, and auth status.
 
@@ -884,7 +967,7 @@ The following prompt is designed to be run in a separate deep-research session. 
 
 ### Research Prompt: MCP Ecosystem Best Practices for Ontos v4.1
 
-**Context:** Ontos is a local-first documentation management system that exposes a knowledge graph via the Model Context Protocol (MCP). Version 4.0 shipped as a thin stdio MCP bridge with 8 read-only tools wrapping single-project CLI capabilities (context map, document retrieval, graph export, health). Version 4.1 will extend this into a portfolio-level server with cross-project search, write tools, HTTP/SSE transport, and a context bundle algorithm.
+**Context:** Ontos is a local-first documentation management system that exposes a knowledge graph via the Model Context Protocol (MCP). Version 4.0 shipped as a thin stdio MCP bridge with 8 read-only tools wrapping single-project CLI capabilities (context map, document retrieval, graph export, health). Version 4.1 will extend this into a portfolio-level server with cross-project search, write tools, Streamable HTTP transport, and a context bundle algorithm.
 
 The codebase is Python 3.9+ (MCP requires 3.10+), uses FastMCP (a wrapper around the official `mcp` Python SDK), Pydantic for response schemas, and SQLite (stdlib) for the planned portfolio index. The deployment target is a single Mac Mini serving 23 projects with ~400 total documents.
 
@@ -894,11 +977,11 @@ The codebase is Python 3.9+ (MCP requires 3.10+), uses FastMCP (a wrapper around
 
 #### Area 1: MCP SDK and Transport State (April 2026)
 
-1. What is the current state of the Python MCP SDK's HTTP/SSE transport? Is it production-stable or still experimental? Are there known issues with long-running SSE connections (memory leaks, reconnection handling)?
+1. What is the current state of the Python MCP SDK's Streamable HTTP transport? Is it production-stable or still experimental? Are there known issues with long-running SSE connections (memory leaks, reconnection handling)?
 2. How does FastMCP's `server.run(transport="sse")` compare to using the official SDK's HTTP transport directly? Are there feature gaps (auth middleware, request logging, graceful shutdown)?
-3. What is the client compatibility matrix for HTTP/SSE transport? Specifically: does Claude Code connect to HTTP/SSE MCP servers? Does Cursor? Does the official MCP Inspector?
+3. What is the client compatibility matrix for Streamable HTTP transport? Specifically: does Claude Code connect to Streamable HTTP MCP servers? Does Cursor? Does the official MCP Inspector?
 4. Has the MCP specification stabilized its auth model? What is the current state of the MCP auth specification -- is bearer token the recommended pattern, or has OAuth/PKCE been adopted?
-5. Is there a standard MCP pattern for dual-transport servers (stdio + HTTP/SSE from the same codebase)?
+5. Is there a standard MCP pattern for dual-transport servers (stdio + Streamable HTTP from the same codebase)?
 
 #### Area 2: Write Tool Patterns in Production MCP Servers
 
