@@ -7,10 +7,11 @@ Per v2.8 implementation plan, SessionContext:
 - Is the single source of truth for repository configuration
 - Buffers file operations for later commit
 - Provides atomic writes via two-phase commit
-- Uses file locking with stale detection
+- Uses file locking with flock
 """
 
 from dataclasses import dataclass, field
+import fcntl
 from pathlib import Path
 from typing import Dict, List, Optional
 from enum import Enum
@@ -60,6 +61,7 @@ class SessionContext:
     pending_writes: List[PendingWrite] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
+    _lock_handle: Optional[object] = field(default=None, init=False, repr=False)
 
     @classmethod
     def from_repo(cls, repo_root: Path) -> 'SessionContext':
@@ -145,7 +147,7 @@ class SessionContext:
         if not self.pending_writes:
             return []
 
-        lock_path = self.repo_root / '.ontos' / 'write.lock'
+        lock_path = self.repo_root / ".ontos.lock"
         if not self._acquire_lock(lock_path):
             raise RuntimeError(
                 "Could not acquire write lock. "
@@ -222,41 +224,19 @@ class SessionContext:
         self.errors.append(message)
 
     def _acquire_lock(self, lock_path: Path, timeout: float = 5.0) -> bool:
-        """Acquire a simple file lock with stale detection.
-
-        Uses atomic file creation (O_CREAT | O_EXCL). If a stale lock
-        is detected (holding process is dead), it is automatically removed.
-
-        Args:
-            lock_path: Path to lock file
-            timeout: Maximum seconds to wait
-
-        Returns:
-            True if lock acquired, False if timeout
-        """
+        """Acquire an exclusive flock lock for this workspace."""
         lock_path.parent.mkdir(parents=True, exist_ok=True)
-        start = time.time()
+        start = time.monotonic()
+        handle = lock_path.open("a+", encoding="utf-8")
 
-        while time.time() - start < timeout:
+        while time.monotonic() - start < timeout:
             try:
-                fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-                os.write(fd, str(os.getpid()).encode())
-                os.close(fd)
+                fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                self._lock_handle = handle
                 return True
-            except FileExistsError:
-                # Check if holding process is still alive
-                try:
-                    pid = int(lock_path.read_text().strip())
-                    os.kill(pid, 0)  # Raises if process doesn't exist
-                except (ProcessLookupError, ValueError, OSError):
-                    # Stale lock - process is dead, remove it
-                    try:
-                        lock_path.unlink()
-                    except FileNotFoundError:
-                        pass
-                    continue
+            except BlockingIOError:
                 time.sleep(0.1)
-
+        handle.close()
         return False
 
     def _release_lock(self, lock_path: Path) -> None:
@@ -265,7 +245,13 @@ class SessionContext:
         Args:
             lock_path: Path to lock file.
         """
+        _ = lock_path
+        if self._lock_handle is None:
+            return
         try:
-            lock_path.unlink()
-        except FileNotFoundError:
-            pass  # Already released
+            fcntl.flock(self._lock_handle.fileno(), fcntl.LOCK_UN)
+        except OSError:
+            pass
+        finally:
+            self._lock_handle.close()
+            self._lock_handle = None

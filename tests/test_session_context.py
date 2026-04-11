@@ -2,16 +2,24 @@
 
 Tests the v2.8 refactoring deliverables:
 - SessionContext buffer/commit/rollback operations
-- File locking with stale detection
+- File locking with flock
 - Backwards compatibility (old imports reference same objects as new)
 """
 
-import os
-import pytest
+import fcntl
+from multiprocessing import Event, Process
 from pathlib import Path
-from unittest.mock import patch
+import pytest
 
 from ontos.core.context import SessionContext, FileOperation, PendingWrite
+
+
+def _hold_lock(lock_path: str, ready: Event, release: Event) -> None:
+    with Path(lock_path).open("a+", encoding="utf-8") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        ready.set()
+        release.wait(timeout=5.0)
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
 
 class TestSessionContext:
@@ -82,24 +90,32 @@ class TestFileLocking:
     def test_acquire_lock_success(self, tmp_path):
         """Should successfully acquire lock when none exists."""
         ctx = SessionContext(repo_root=tmp_path, config={})
-        lock_path = tmp_path / '.ontos' / 'write.lock'
-        lock_path.parent.mkdir(parents=True)
+        lock_path = tmp_path / ".ontos.lock"
         
         assert ctx._acquire_lock(lock_path)
         assert lock_path.exists()
-        assert lock_path.read_text() == str(os.getpid())
+        assert ctx._lock_handle is not None
         ctx._release_lock(lock_path)
-        assert not lock_path.exists()
+        assert ctx._lock_handle is None
 
-    def test_stale_lock_detection(self, tmp_path):
-        """Lock held by dead process should be removed."""
-        lock_path = tmp_path / '.ontos' / 'write.lock'
-        lock_path.parent.mkdir(parents=True)
-        lock_path.write_text('99999999')  # Non-existent PID
+    def test_acquire_lock_timeout_when_busy(self, tmp_path):
+        """Lock acquisition should timeout while another process holds flock."""
+        lock_path = tmp_path / ".ontos.lock"
+        ready = Event()
+        release = Event()
+        proc = Process(target=_hold_lock, args=(str(lock_path), ready, release))
+        proc.start()
+        try:
+            assert ready.wait(timeout=2.0)
 
-        ctx = SessionContext(repo_root=tmp_path, config={})
-        assert ctx._acquire_lock(lock_path, timeout=1.0)
-        ctx._release_lock(lock_path)
+            ctx = SessionContext(repo_root=tmp_path, config={})
+            assert ctx._acquire_lock(lock_path, timeout=0.2) is False
+        finally:
+            release.set()
+            proc.join(timeout=2.0)
+            if proc.is_alive():
+                proc.terminate()
+                proc.join(timeout=1.0)
 
 
 class TestNewImportPaths:
