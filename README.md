@@ -236,9 +236,13 @@ pip install 'ontos[mcp]'
 > [!NOTE]
 > MCP requires **Python 3.10+**. The base `pip install ontos` (without the extra) remains Python 3.9+ and does not include MCP dependencies.
 >
-> Already have Ontos installed? Upgrading:
-> - **pip:** `pip install --upgrade 'ontos[mcp]'`
-> - **pipx:** `pipx install --force 'ontos[mcp]'` (pipx upgrade does not add new extras)
+> **Already using Ontos?** Your existing documents, context map, and logs work immediately — the MCP server reads the same files as the CLI. No data migration or format conversion required:
+> ```bash
+> pip install --upgrade 'ontos[mcp]'
+> cd your-project
+> ontos serve
+> ```
+> Using pipx? Run `pipx install --force 'ontos[mcp]'` (pipx upgrade does not add new extras).
 
 ### 2. Start the Server
 
