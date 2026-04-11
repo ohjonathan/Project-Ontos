@@ -44,3 +44,4 @@ env/
 
 # Pytest cache
 .pytest_cache/
+build/
