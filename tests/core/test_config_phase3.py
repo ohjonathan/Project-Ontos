@@ -139,3 +139,22 @@ class TestDictToConfig:
         """dict_to_config validates types."""
         with pytest.raises(ConfigError, match="must be int"):
             dict_to_config({"workflow": {"log_retention_count": "bad"}})
+
+    def test_dict_to_config_maps_legacy_validation_strict_to_hooks(self):
+        """Legacy validation.strict is accepted and preserved via hooks.strict."""
+        config = dict_to_config({"validation": {"strict": True}})
+
+        assert config.hooks.strict is True
+
+    def test_dict_to_config_ignores_unknown_section_keys(self):
+        """Unknown keys do not break config loading for mixed-version projects."""
+        config = dict_to_config(
+            {
+                "workflow": {
+                    "log_retention_count": 30,
+                    "enforce_archive_before_push": True,
+                }
+            }
+        )
+
+        assert config.workflow.log_retention_count == 30

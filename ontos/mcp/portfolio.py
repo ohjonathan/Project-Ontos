@@ -54,13 +54,18 @@ class PortfolioIndex:
         """No-op API for compatibility with context-managed callers."""
         self._opened = False
 
-    def rebuild_all(self, scan_roots: list[Path], exclude: list[str]) -> None:
+    def rebuild_all(
+        self,
+        scan_roots: list[Path],
+        exclude: list[str],
+        registry_path: Path | None = None,
+    ) -> None:
         """Rebuild all discovered workspaces from scratch."""
         self.open()
         projects = discover_projects(
             scan_roots=scan_roots,
             exclude=exclude,
-            registry_path=None,
+            registry_path=registry_path,
         )
 
         with self._write_lock:
@@ -217,18 +222,16 @@ class PortfolioIndex:
                 raise
 
         return {
-            "total_count": int(total_count),
-            "offset": offset,
+            "total_hits": int(total_count),
             "results": [
                 {
-                    "workspace": row["workspace"],
-                    "id": row["id"],
+                    "doc_id": row["id"],
+                    "workspace_slug": row["workspace"],
                     "type": row["type"],
                     "status": row["status"],
                     "path": row["path"],
-                    "title": row["title"],
-                    "rank": float(row["rank"]) if row["rank"] is not None else 0.0,
                     "snippet": row["snippet"] or "",
+                    "score": float(row["rank"]) if row["rank"] is not None else 0.0,
                 }
                 for row in rows
             ],

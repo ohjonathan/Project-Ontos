@@ -7,7 +7,7 @@ name = "ontos"
 version = "4.0.0"
 description = "Local-first documentation management for AI-assisted development"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = "Apache-2.0"
 authors = [
     {name = "Ontos Project", email = "ohjonathan@users.noreply.github.com"}
@@ -19,7 +19,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -38,7 +37,7 @@ dev = [
     "pre-commit>=3.0,<5.0",
 ]
 mcp = [
-    "mcp>=1.2",
+    "mcp>=1.27.0,<2.0",
     "pydantic>=2.0",
 ]
 [project.scripts]

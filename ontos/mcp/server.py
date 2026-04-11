@@ -1,4 +1,4 @@
-"""FastMCP bootstrap, registration, and shared tool wrapper for Ontos."""
+"""FastMCP bootstrap, registration, and shared tool wrappers for Ontos."""
 
 from __future__ import annotations
 
@@ -23,6 +23,17 @@ from ontos.mcp import tools as tool_impl
 
 
 DEFAULT_USAGE_LOG_PATH = "~/.config/ontos/usage.jsonl"
+DEFAULT_PORTFOLIO_DB_PATH = Path.home() / ".config" / "ontos" / "portfolio.db"
+CORE_TOOL_NAMES = {
+    "workspace_overview",
+    "context_map",
+    "get_document",
+    "list_documents",
+    "export_graph",
+    "query",
+    "health",
+    "refresh",
+}
 
 
 class OntosFastMCP(FastMCP):
@@ -52,38 +63,60 @@ class OntosFastMCP(FastMCP):
         ]
 
 
-def serve(workspace_root: Path) -> int:
-    """Build the cache and start the stdio MCP runtime."""
+def serve(
+    workspace_root: Path,
+    *,
+    portfolio: bool = False,
+    read_only: bool = False,
+) -> int:
+    """Build cache/index state and start the stdio MCP runtime."""
+    _ = read_only
     workspace_root = workspace_root.resolve()
-    config = load_project_config(
-        config_path=workspace_root / ".ontos.toml",
-        repo_root=workspace_root,
-    )
-    snapshot = create_snapshot(
-        root=workspace_root,
-        include_content=True,
-        filters=None,
-        git_commit_provider=_git_commit_provider(workspace_root),
-        scope=None,
-    )
-    cache = SnapshotCache(
-        workspace_root,
-        config,
-        snapshot,
-        git_commit_provider=_git_commit_provider(workspace_root),
-        started_at=datetime.now(timezone.utc),
-    )
-    server = create_server(cache)
-    server.run(transport="stdio")
-    return 0
+    cache = _build_cache(workspace_root)
+
+    portfolio_index: Any = None
+    try:
+        if portfolio:
+            portfolio_index = _build_portfolio_index()
+        server = create_server(
+            cache,
+            portfolio_index=portfolio_index,
+            read_only=read_only,
+            include_bundle_tool=True,
+        )
+        server.run(transport="stdio")
+        return 0
+    finally:
+        if portfolio_index is not None:
+            close = getattr(portfolio_index, "close", None)
+            if callable(close):
+                close()
 
 
-def create_server(cache: SnapshotCache) -> FastMCP:
-    """Create and register the Ontos MCP server for one workspace."""
+def create_server(
+    cache: SnapshotCache,
+    *,
+    portfolio_index: Any = None,
+    read_only: bool = False,
+    include_bundle_tool: bool = False,
+) -> FastMCP:
+    """Create and register the Ontos MCP server."""
+    _ = read_only
     workspace_name = cache.workspace_root.name
+    portfolio_mode = portfolio_index is not None
+
+    # Tool implementations infer scope behavior from these cache attributes.
+    setattr(cache, "portfolio_mode", portfolio_mode)
+    setattr(cache, "portfolio_index", portfolio_index)
+    setattr(cache, "primary_workspace_slug", _workspace_slug(cache.workspace_root))
+
     server = OntosFastMCP(
         name="Ontos",
-        instructions=_render_instructions(cache),
+        instructions=_render_instructions(
+            cache,
+            portfolio_mode=portfolio_mode,
+            include_bundle_tool=include_bundle_tool,
+        ),
         log_level="ERROR",
     )
 
@@ -106,29 +139,71 @@ def create_server(cache: SnapshotCache) -> FastMCP:
         )(handler)
         server.set_output_schema(name, output_schema_for(name))
 
-    def handle_workspace_overview() -> CallToolResult:
-        return _invoke_tool("workspace_overview", cache, tool_impl.workspace_overview)
+    _register_core_tools(
+        cache=cache,
+        workspace_name=workspace_name,
+        register_fn=register,
+    )
 
-    def handle_context_map(compact: str = "tiered") -> CallToolResult:
-        return _invoke_tool(
+    if portfolio_index is not None:
+        _register_portfolio_tools(
+            cache=cache,
+            portfolio_index=portfolio_index,
+            register_fn=register,
+        )
+
+    if include_bundle_tool:
+        _register_bundle_tool(
+            cache=cache,
+            portfolio_index=portfolio_index,
+            register_fn=register,
+        )
+
+    return server
+
+
+def _register_core_tools(
+    *,
+    cache: SnapshotCache,
+    workspace_name: str,
+    register_fn: Callable[..., None],
+) -> None:
+    def handle_workspace_overview(
+        workspace_id: str | None = None,
+    ) -> CallToolResult:
+        return _invoke_read_tool(
+            "workspace_overview",
+            cache,
+            tool_impl.workspace_overview,
+            workspace_id=workspace_id,
+        )
+
+    def handle_context_map(
+        compact: str = "tiered",
+        workspace_id: str | None = None,
+    ) -> CallToolResult:
+        return _invoke_read_tool(
             "context_map",
             cache,
             tool_impl.context_map,
             compact=compact,
+            workspace_id=workspace_id,
         )
 
     def handle_get_document(
         document_id: str | None = None,
         path: str | None = None,
         include_content: bool = True,
+        workspace_id: str | None = None,
     ) -> CallToolResult:
-        return _invoke_tool(
+        return _invoke_read_tool(
             "get_document",
             cache,
             tool_impl.get_document,
             document_id=document_id,
             path=path,
             include_content=include_content,
+            workspace_id=workspace_id,
         )
 
     def handle_list_documents(
@@ -136,8 +211,9 @@ def create_server(cache: SnapshotCache) -> FastMCP:
         status: str | None = None,
         offset: int = 0,
         limit: int = 100,
+        workspace_id: str | None = None,
     ) -> CallToolResult:
-        return _invoke_tool(
+        return _invoke_read_tool(
             "list_documents",
             cache,
             tool_impl.list_documents,
@@ -145,41 +221,54 @@ def create_server(cache: SnapshotCache) -> FastMCP:
             status=status,
             offset=offset,
             limit=limit,
+            workspace_id=workspace_id,
         )
 
     def handle_export_graph(
         summary_only: bool = True,
         export_to_file: str | None = None,
+        workspace_id: str | None = None,
     ) -> CallToolResult:
-        return _invoke_tool(
+        return _invoke_read_tool(
             "export_graph",
             cache,
             tool_impl.export_graph,
             summary_only=summary_only,
             export_to_file=export_to_file,
+            workspace_id=workspace_id,
         )
 
-    def handle_query(entity_id: str) -> CallToolResult:
-        return _invoke_tool(
+    def handle_query(
+        entity_id: str,
+        workspace_id: str | None = None,
+    ) -> CallToolResult:
+        return _invoke_read_tool(
             "query",
             cache,
             tool_impl.query,
             entity_id=entity_id,
+            workspace_id=workspace_id,
         )
 
-    def handle_health() -> CallToolResult:
-        return _invoke_tool("health", cache, tool_impl.health)
+    def handle_health(workspace_id: str | None = None) -> CallToolResult:
+        return _invoke_read_tool(
+            "health",
+            cache,
+            tool_impl.health,
+            workspace_id=workspace_id,
+        )
 
-    def handle_refresh() -> CallToolResult:
-        return _invoke_tool(
+    def handle_refresh(workspace_id: str | None = None) -> CallToolResult:
+        return _invoke_read_tool(
             "refresh",
             cache,
             tool_impl.refresh,
             ensure_fresh=False,
             use_live_cache=True,
+            workspace_id=workspace_id,
         )
 
-    register(
+    register_fn(
         name="workspace_overview",
         title="Workspace Overview",
         description=f"Returns a structured overview of the {workspace_name} workspace.",
@@ -187,7 +276,7 @@ def create_server(cache: SnapshotCache) -> FastMCP:
         annotations=_readonly_annotations(),
         meta={"anthropic/maxResultSizeChars": 4000},
     )
-    register(
+    register_fn(
         name="context_map",
         title="Context Map",
         description=f"Returns the context map for the {workspace_name} workspace.",
@@ -195,7 +284,7 @@ def create_server(cache: SnapshotCache) -> FastMCP:
         annotations=_readonly_annotations(),
         meta={"anthropic/maxResultSizeChars": 64000},
     )
-    register(
+    register_fn(
         name="get_document",
         title="Get Document",
         description=f"Returns a canonical Ontos document from the {workspace_name} workspace.",
@@ -203,7 +292,7 @@ def create_server(cache: SnapshotCache) -> FastMCP:
         annotations=_readonly_annotations(),
         meta={"anthropic/maxResultSizeChars": 120000},
     )
-    register(
+    register_fn(
         name="list_documents",
         title="List Documents",
         description=f"Lists canonical Ontos documents from the {workspace_name} workspace.",
@@ -211,7 +300,7 @@ def create_server(cache: SnapshotCache) -> FastMCP:
         annotations=_readonly_annotations(),
         meta={"anthropic/maxResultSizeChars": 32000},
     )
-    register(
+    register_fn(
         name="export_graph",
         title="Export Graph",
         description=f"Exports the canonical Ontos graph for the {workspace_name} workspace.",
@@ -224,15 +313,17 @@ def create_server(cache: SnapshotCache) -> FastMCP:
         ),
         meta={"anthropic/maxResultSizeChars": 200000},
     )
-    register(
+    register_fn(
         name="query",
         title="Query Document",
-        description=f"Returns dependency details for one canonical document in the {workspace_name} workspace.",
+        description=(
+            f"Returns dependency details for one canonical document in the {workspace_name} workspace."
+        ),
         handler=handle_query,
         annotations=_readonly_annotations(),
         meta={"anthropic/maxResultSizeChars": 8000},
     )
-    register(
+    register_fn(
         name="health",
         title="Server Health",
         description=f"Returns cache and runtime health for the {workspace_name} workspace.",
@@ -240,10 +331,7 @@ def create_server(cache: SnapshotCache) -> FastMCP:
         annotations=_readonly_annotations(),
         meta={"anthropic/maxResultSizeChars": 4000},
     )
-    # Keep these hints false: refresh mutates observable server state
-    # (`snapshot_revision`, `last_indexed`, and cached snapshot contents)
-    # even though it does not write workspace files.
-    register(
+    register_fn(
         name="refresh",
         title="Refresh Cache",
         description=f"Rebuilds the in-memory Ontos snapshot for the {workspace_name} workspace.",
@@ -256,10 +344,123 @@ def create_server(cache: SnapshotCache) -> FastMCP:
         ),
         meta={"anthropic/maxResultSizeChars": 4000},
     )
-    return server
 
 
-def _invoke_tool(
+def _register_portfolio_tools(
+    *,
+    cache: SnapshotCache,
+    portfolio_index: Any,
+    register_fn: Callable[..., None],
+) -> None:
+    def handle_project_registry(workspace_id: str | None = None) -> CallToolResult:
+        _ = workspace_id
+        return _invoke_portfolio_tool(
+            "project_registry",
+            portfolio_index,
+            tool_impl.project_registry,
+            cache=cache,
+        )
+
+    def handle_search(
+        query_string: str,
+        workspace_id: str | None = None,
+        offset: int = 0,
+        limit: int = 20,
+    ) -> CallToolResult:
+        return _invoke_portfolio_tool(
+            "search",
+            portfolio_index,
+            tool_impl.search,
+            cache=cache,
+            query_string=query_string,
+            workspace_id=workspace_id,
+            offset=offset,
+            limit=limit,
+        )
+
+    register_fn(
+        name="project_registry",
+        title="Project Registry",
+        description="Returns indexed portfolio project metadata.",
+        handler=handle_project_registry,
+        annotations=_readonly_annotations(),
+        meta={"anthropic/maxResultSizeChars": 32000},
+    )
+    register_fn(
+        name="search",
+        title="Search Portfolio",
+        description="Searches indexed portfolio documents using full-text search.",
+        handler=handle_search,
+        annotations=_readonly_annotations(),
+        meta={"anthropic/maxResultSizeChars": 120000},
+    )
+
+
+def _register_bundle_tool(
+    *,
+    cache: SnapshotCache,
+    portfolio_index: Any,
+    register_fn: Callable[..., None],
+) -> None:
+    if portfolio_index is None:
+        def handle_get_context_bundle(
+            workspace_id: str | None = None,
+            token_budget: int = 8192,
+        ) -> CallToolResult:
+            return _invoke_read_tool(
+                "get_context_bundle",
+                cache,
+                _get_context_bundle_single_workspace,
+                ensure_fresh=False,
+                use_live_cache=True,
+                workspace_id=workspace_id,
+                token_budget=token_budget,
+            )
+    else:
+        def handle_get_context_bundle(
+            workspace_id: str | None = None,
+            token_budget: int = 8192,
+        ) -> CallToolResult:
+            return _invoke_portfolio_tool(
+                "get_context_bundle",
+                portfolio_index,
+                tool_impl.get_context_bundle,
+                cache=cache,
+                cache_input=cache,
+                workspace_id=workspace_id,
+                token_budget=token_budget,
+            )
+
+    register_fn(
+        name="get_context_bundle",
+        title="Get Context Bundle",
+        description="Returns a token-budgeted context package for a workspace.",
+        handler=handle_get_context_bundle,
+        annotations=ToolAnnotations(
+            readOnlyHint=True,
+            destructiveHint=False,
+            idempotentHint=False,
+            openWorldHint=False,
+        ),
+        meta={"anthropic/maxResultSizeChars": 200000},
+    )
+
+
+def _get_context_bundle_single_workspace(
+    cache: SnapshotCache,
+    *,
+    workspace_id: str | None = None,
+    token_budget: int = 8192,
+) -> dict[str, Any]:
+    return tool_impl.get_context_bundle(
+        None,
+        cache,
+        workspace_id=workspace_id,
+        token_budget=token_budget,
+    )
+
+
+def _invoke_read_tool(
     tool_name: str,
     cache: SnapshotCache,
     tool_fn: Callable[..., Dict[str, Any]],
@@ -272,8 +473,17 @@ def _invoke_tool(
         _log_usage(cache, tool_name)
     except Exception:
         traceback.print_exc(file=sys.stderr)
+
+    workspace_id = kwargs.get("workspace_id")
+    if _is_cross_workspace_read(tool_name, cache, workspace_id):
+        return _tool_error_result(
+            "E_CROSS_WORKSPACE_NOT_SUPPORTED: Cross-workspace reads are not "
+            "supported for this tool. Start a separate `ontos serve` in the "
+            "target workspace."
+        )
+
     try:
-        tool_input = cache.current_view()
+        tool_input: Any = cache.current_view()
         if ensure_fresh:
             tool_input = cache.get_fresh_view()
         if use_live_cache:
@@ -291,6 +501,65 @@ def _invoke_tool(
     except Exception:
         traceback.print_exc(file=sys.stderr)
         return _tool_error_result(f"Internal error in {tool_name}")
+
+
+def _invoke_portfolio_tool(
+    tool_name: str,
+    portfolio_index: Any,
+    tool_fn: Callable[..., Dict[str, Any]],
+    *,
+    cache: SnapshotCache | None = None,
+    **kwargs: Any,
+) -> Union[Dict[str, Any], CallToolResult]:
+    if portfolio_index is None:
+        return _tool_error_result(
+            "E_PORTFOLIO_REQUIRED: Tool is available only in portfolio mode."
+        )
+
+    try:
+        if cache is not None:
+            _log_usage(cache, tool_name)
+    except Exception:
+        traceback.print_exc(file=sys.stderr)
+
+    try:
+        cache_input = kwargs.pop("cache_input", None)
+        if cache_input is None:
+            payload = tool_fn(portfolio_index, **kwargs)
+        else:
+            payload = tool_fn(portfolio_index, cache_input, **kwargs)
+        validated = validate_success_payload(tool_name, payload)
+        return _tool_success_result(validated)
+    except OntosUserError as exc:
+        return _tool_error_result(str(exc))
+    except OntosInternalError as exc:
+        print(f"[ontos-mcp] {exc.code}: {exc}", file=sys.stderr)
+        if exc.details:
+            print(exc.details, file=sys.stderr)
+        return _tool_error_result(f"Internal error: {exc}")
+    except Exception:
+        traceback.print_exc(file=sys.stderr)
+        return _tool_error_result(f"Internal error in {tool_name}")
+
+
+def _invoke_tool(
+    tool_name: str,
+    cache: SnapshotCache,
+    tool_fn: Callable[..., Dict[str, Any]],
+    *,
+    ensure_fresh: bool = True,
+    use_live_cache: bool = False,
+    **kwargs: Any,
+) -> Union[Dict[str, Any], CallToolResult]:
+    """Legacy wrapper retained for existing tests and imports."""
+    return _invoke_read_tool(
+        tool_name,
+        cache,
+        tool_fn,
+        ensure_fresh=ensure_fresh,
+        use_live_cache=use_live_cache,
+        **kwargs,
+    )
 
 
 def _tool_error_result(message: str) -> CallToolResult:
@@ -327,11 +596,16 @@ def _readonly_annotations() -> ToolAnnotations:
     )
 
 
-def _render_instructions(cache: SnapshotCache) -> str:
+def _render_instructions(
+    cache: SnapshotCache,
+    *,
+    portfolio_mode: bool,
+    include_bundle_tool: bool,
+) -> str:
     workspace_name = cache.workspace_root.name
     doc_count = cache.canonical_view.total_count
     last_indexed_relative = _relative_time(cache.last_indexed)
-    return (
+    instructions = (
         f"Ontos is a documentation knowledge graph for {workspace_name} "
         f"({doc_count} documents, last indexed {last_indexed_relative}). "
         "It tracks architecture docs, strategy decisions, and technical "
@@ -340,18 +614,24 @@ def _render_instructions(cache: SnapshotCache) -> str:
         "product (user-facing specs), atom (technical implementation docs), "
         "and log (session history). All tools are deterministic, local-only, "
         "and fast (<100ms cached after warmup). "
-        "Start with `workspace_overview` for project orientation \u2014 it returns "
-        "deterministic IDs, key documents, graph stats, and warnings in a "
-        "structured response under ~1KB. "
-        "Use `context_map` when you need the full human-readable markdown narrative. "
-        "Use `get_document` to read a specific document's content. "
-        "Use `list_documents` to browse the full document set with optional "
-        "type/status filters. "
-        "Use `query` for single-entity dependency lookups. "
-        "Use `export_graph` for structured graph export; `export_to_file` writes "
-        "a JSON dump inside the workspace. "
+        "Start with `workspace_overview` for project orientation. "
+        "Use `context_map` for the full markdown narrative. "
+        "Use `get_document` to read one document. "
+        "Use `list_documents` to browse by type/status. "
+        "Use `query` for dependency lookups. "
+        "Use `export_graph` for structured graph export. "
         "Use `health` to check server status and index freshness."
     )
+    if include_bundle_tool:
+        instructions += (
+            " Use `get_context_bundle` to assemble a token-budgeted context bundle."
+        )
+    if portfolio_mode:
+        instructions += (
+            " Portfolio mode also enables `project_registry` and `search` for "
+            "cross-workspace discovery."
+        )
+    return instructions
 
 
 def _relative_time(value: datetime) -> str:
@@ -398,3 +678,71 @@ def _git_commit_provider(workspace_root: Path) -> Callable[[], Optional[str]]:
         return result.stdout.strip() or None
 
     return provider
+
+
+def _build_cache(workspace_root: Path) -> SnapshotCache:
+    config = load_project_config(
+        config_path=workspace_root / ".ontos.toml",
+        repo_root=workspace_root,
+    )
+    snapshot = create_snapshot(
+        root=workspace_root,
+        include_content=True,
+        filters=None,
+        git_commit_provider=_git_commit_provider(workspace_root),
+        scope=None,
+    )
+    return SnapshotCache(
+        workspace_root,
+        config,
+        snapshot,
+        git_commit_provider=_git_commit_provider(workspace_root),
+        started_at=datetime.now(timezone.utc),
+    )
+
+
+def _build_portfolio_index() -> Any:
+    from ontos.mcp.portfolio import PortfolioIndex
+    from ontos.mcp.portfolio_config import load_portfolio_config
+
+    config = load_portfolio_config()
+    scan_roots = [Path(path).expanduser() for path in config.scan_roots]
+    registry_path = (
+        Path(config.registry_path).expanduser()
+        if config.registry_path
+        else None
+    )
+    index = PortfolioIndex(DEFAULT_PORTFOLIO_DB_PATH)
+    index.open()
+    index.rebuild_all(
+        scan_roots=scan_roots,
+        exclude=list(config.exclude),
+        registry_path=registry_path,
+    )
+    return index
+
+
+def _workspace_slug(workspace_root: Path) -> str:
+    try:
+        from ontos.mcp.scanner import slugify
+    except Exception:
+        slugify = None
+    if slugify is not None:
+        return slugify(workspace_root.name)
+    lowered = workspace_root.name.strip().lower()
+    parts = [char if char.isalnum() else "-" for char in lowered]
+    return "".join(parts).strip("-") or "workspace"
+
+
+def _is_cross_workspace_read(
+    tool_name: str,
+    cache: SnapshotCache,
+    workspace_id: Any,
+) -> bool:
+    if workspace_id is None:
+        return False
+    if tool_name not in CORE_TOOL_NAMES:
+        return False
+    if not getattr(cache, "portfolio_mode", False):
+        return False
+    return str(workspace_id) != _workspace_slug(cache.workspace_root)

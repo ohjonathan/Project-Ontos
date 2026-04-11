@@ -1,10 +1,12 @@
 """Native verify command implementation."""
 
+import json
 import re
+import sqlite3
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
-from typing import Optional, Tuple, List
+from typing import Any, Optional, Tuple, List
 
 from ontos.core.staleness import (
     normalize_describes,
@@ -279,3 +281,239 @@ def verify_command(options: VerifyOptions) -> int:
     """Run verify command and return exit code only."""
     exit_code, _ = _run_verify_command(options)
     return exit_code
+
+
+def verify_portfolio(
+    *,
+    portfolio_db_path: Path,
+    registry_path: Path,
+    json_output: bool = False,
+) -> int:
+    """Compare portfolio DB projects against the dev-hub registry."""
+    if not portfolio_db_path.exists():
+        message = "Portfolio DB not found. Run `ontos serve --portfolio` first."
+        _emit_verify_portfolio_result(
+            clean=False,
+            missing_in_db=[],
+            missing_in_json=[],
+            field_mismatches=[],
+            summary=message,
+            json_output=json_output,
+            exit_code=2,
+        )
+        return 2
+
+    if not registry_path.exists():
+        message = (
+            f"Registry file not found at {registry_path}. "
+            "Check portfolio.toml registry_path."
+        )
+        _emit_verify_portfolio_result(
+            clean=False,
+            missing_in_db=[],
+            missing_in_json=[],
+            field_mismatches=[],
+            summary=message,
+            json_output=json_output,
+            exit_code=2,
+        )
+        return 2
+
+    try:
+        db_projects = _load_portfolio_db_projects(portfolio_db_path)
+        registry_projects = _load_registry_projects(registry_path)
+    except (sqlite3.DatabaseError, OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        _emit_verify_portfolio_result(
+            clean=False,
+            missing_in_db=[],
+            missing_in_json=[],
+            field_mismatches=[],
+            summary=f"Portfolio verification failed: {exc}",
+            json_output=json_output,
+            exit_code=2,
+        )
+        return 2
+
+    db_slugs = set(db_projects.keys())
+    registry_slugs = set(registry_projects.keys())
+    missing_in_db = sorted(registry_slugs - db_slugs)
+    missing_in_json = sorted(db_slugs - registry_slugs)
+
+    field_mismatches: list[dict[str, Any]] = []
+    for slug in sorted(db_slugs & registry_slugs):
+        db_row = db_projects[slug]
+        registry_row = registry_projects[slug]
+        for field in ("path", "status", "has_ontos"):
+            db_value = db_row.get(field)
+            registry_value = registry_row.get(field)
+            if db_value != registry_value:
+                field_mismatches.append(
+                    {
+                        "slug": slug,
+                        "field": field,
+                        "db_value": db_value,
+                        "json_value": registry_value,
+                    }
+                )
+
+    discrepancies = len(missing_in_db) + len(missing_in_json) + len(field_mismatches)
+    clean = discrepancies == 0
+    summary = "No discrepancies found." if clean else f"{discrepancies} discrepancies found."
+    exit_code = 0 if clean else 1
+    _emit_verify_portfolio_result(
+        clean=clean,
+        missing_in_db=missing_in_db,
+        missing_in_json=missing_in_json,
+        field_mismatches=field_mismatches,
+        summary=summary,
+        json_output=json_output,
+        exit_code=exit_code,
+    )
+    return exit_code
+
+
+def _load_portfolio_db_projects(portfolio_db_path: Path) -> dict[str, dict[str, Any]]:
+    connection = sqlite3.connect(str(portfolio_db_path))
+    connection.row_factory = sqlite3.Row
+    try:
+        rows = connection.execute(
+            "SELECT slug, path, status, has_ontos FROM projects"
+        ).fetchall()
+    finally:
+        connection.close()
+
+    projects: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        slug = str(row["slug"])
+        projects[slug] = {
+            "path": _normalize_path(row["path"]),
+            "status": str(row["status"]),
+            "has_ontos": bool(row["has_ontos"]),
+        }
+    return projects
+
+
+def _load_registry_projects(registry_path: Path) -> dict[str, dict[str, Any]]:
+    raw = json.loads(registry_path.read_text(encoding="utf-8"))
+    registry_root = _registry_root(raw, registry_path.parent)
+    if isinstance(raw, dict):
+        records = raw.get("projects", [])
+    else:
+        records = raw
+    if not isinstance(records, list):
+        raise ValueError("Registry JSON must contain a list of project objects.")
+
+    projects: dict[str, dict[str, Any]] = {}
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        path_value = record.get("path")
+        if not isinstance(path_value, str) or not path_value.strip():
+            continue
+        normalized_path = _normalize_registry_path(path_value, registry_root)
+        slug = _slugify_path_name(normalized_path)
+        status = str(record.get("status", "unknown"))
+        has_ontos = _registry_has_ontos(record, normalized_path)
+        projects[slug] = {
+            "path": normalized_path,
+            "status": status,
+            "has_ontos": has_ontos,
+        }
+    return projects
+
+
+def _normalize_path(path_value: Any) -> str:
+    return str(Path(str(path_value)).expanduser().resolve(strict=False))
+
+
+def _normalize_registry_path(path_value: Any, registry_root: Path) -> str:
+    path = Path(str(path_value)).expanduser()
+    if not path.is_absolute():
+        path = registry_root / path
+    return str(path.resolve(strict=False))
+
+
+def _registry_root(raw: object, default_root: Path) -> Path:
+    if isinstance(raw, dict):
+        dev_root = raw.get("dev_root")
+        if isinstance(dev_root, str) and dev_root.strip():
+            return Path(dev_root).expanduser().resolve(strict=False)
+    return default_root.resolve(strict=False)
+
+
+def _registry_has_ontos(record: dict[str, Any], normalized_path: str) -> bool:
+    if "has_ontos" in record:
+        return bool(record.get("has_ontos"))
+    return (Path(normalized_path) / ".ontos.toml").exists()
+
+
+def _slugify_path_name(path_value: str) -> str:
+    path_name = Path(path_value).name
+    try:
+        from ontos.mcp.scanner import slugify
+    except Exception:
+        slugify = None
+    if slugify is not None:
+        return slugify(path_name)
+    lowered = path_name.strip().lower()
+    result: list[str] = []
+    previous_dash = False
+    for char in lowered:
+        if char.isalnum():
+            result.append(char)
+            previous_dash = False
+            continue
+        if not previous_dash:
+            result.append("-")
+        previous_dash = True
+    slug = "".join(result).strip("-")
+    return slug or "workspace"
+
+
+def _emit_verify_portfolio_result(
+    *,
+    clean: bool,
+    missing_in_db: list[str],
+    missing_in_json: list[str],
+    field_mismatches: list[dict[str, Any]],
+    summary: str,
+    json_output: bool,
+    exit_code: int,
+) -> None:
+    if json_output:
+        payload: dict[str, Any] = {
+            "clean": clean,
+            "missing_in_db": missing_in_db,
+            "missing_in_json": missing_in_json,
+            "field_mismatches": field_mismatches,
+            "summary": summary,
+        }
+        if exit_code == 2:
+            payload["error"] = True
+        print(json.dumps(payload, ensure_ascii=True))
+        return
+
+    if clean:
+        print(summary)
+        return
+    if exit_code == 2:
+        print(summary)
+        return
+
+    print(summary)
+    if missing_in_db:
+        print("Missing in portfolio DB:")
+        for slug in missing_in_db:
+            print(f"  - {slug}")
+    if missing_in_json:
+        print("Missing in projects.json:")
+        for slug in missing_in_json:
+            print(f"  - {slug}")
+    if field_mismatches:
+        print("Field mismatches:")
+        for mismatch in field_mismatches:
+            print(
+                "  - "
+                f"{mismatch['slug']} {mismatch['field']}: "
+                f"db={mismatch['db_value']!r} json={mismatch['json_value']!r}"
+            )

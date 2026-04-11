@@ -151,6 +151,7 @@ def _load_registry_records(registry_path: Path | None) -> list[_RegistryRecord]:
     except (OSError, ValueError):
         return []
 
+    registry_root = _registry_root(raw, expanded.parent)
     items = _extract_registry_items(raw)
     results: list[_RegistryRecord] = []
     for item in items:
@@ -159,9 +160,11 @@ def _load_registry_records(registry_path: Path | None) -> list[_RegistryRecord]:
         path_text = _first_string(item, "path", "workspace", "root", "repo_root", "repoPath")
         if not path_text:
             continue
-        path = Path(path_text).expanduser().resolve(strict=False)
+        path = Path(path_text).expanduser()
         if not path.is_absolute():
-            path = (expanded.parent / path).resolve(strict=False)
+            path = (registry_root / path).resolve(strict=False)
+        else:
+            path = path.resolve(strict=False)
 
         status = item.get("status")
         tags = item.get("tags")
@@ -186,6 +189,14 @@ def _load_registry_records(registry_path: Path | None) -> list[_RegistryRecord]:
             )
         )
     return results
+
+
+def _registry_root(raw: object, default_root: Path) -> Path:
+    if isinstance(raw, dict):
+        dev_root = raw.get("dev_root")
+        if isinstance(dev_root, str) and dev_root.strip():
+            return Path(dev_root).expanduser().resolve(strict=False)
+    return default_root.resolve(strict=False)
 
 
 def _extract_registry_items(raw: object) -> list[object]:
@@ -260,4 +271,3 @@ def _allocate_slug(base_slug: str, used_slugs: dict[str, int]) -> str:
         return base_slug
     used_slugs[base_slug] += 1
     return f"{base_slug}-{used_slugs[base_slug]}"
-

@@ -26,6 +26,7 @@ def test_verify_help_parity(golden_help):
     )
     assert "--all" in result.stdout
     assert "--date" in result.stdout
+    assert "--portfolio" in result.stdout
     assert "verify" in result.stdout.lower()
 
 

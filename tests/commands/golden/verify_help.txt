@@ -1,16 +1,19 @@
-usage: ontos_verify.py [-h] [--all] [--date DATE] [--version] [filepath]
-
-Verify documentation as current (update describes_verified)
+usage: ontos verify [-h] [--quiet] [--json] [--all] [--date DATE]
+                    [--portfolio] [--scope {docs,library}]
+                    [path]
 
 positional arguments:
-  filepath       Path to document to verify
+  path                  Specific file to verify
 
-optional arguments:
-  -h, --help     show this help message and exit
-  --all          Interactively verify all stale documents
-  --date DATE    Set specific date (YYYY-MM-DD), default: today
-  --version, -V  show program's version number and exit
-
-Examples: python3 ontos_verify.py docs/reference/Ontos_Manual.md # Single file
-python3 ontos_verify.py --all # Interactive: all stale docs python3
-ontos_verify.py docs/manual.md --date 2025-12-15 # Backdate
+options:
+  -h, --help            show this help message and exit
+  --quiet, -q           Suppress non-essential output
+  --json                Output in JSON format
+  --all, -a             Verify all stale documents interactively (use --scope
+                        library to include .ontos-internal)
+  --date, -d DATE       Verification date (YYYY-MM-DD, default: today)
+  --portfolio           Compare portfolio DB against projects.json and report
+                        discrepancies
+  --scope {docs,library}
+                        Scan scope: docs (default) or library (includes
+                        .ontos-internal)
