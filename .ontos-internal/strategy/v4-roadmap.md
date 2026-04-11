@@ -72,17 +72,13 @@ Adds FTS5 cross-project search and the two write tools that need contract decisi
 | Storage | `~/.config/ontos/portfolio.db` -- non-authoritative rebuildable cache. `.dev-hub` remains sole authority. |
 | FTS config | Contentless FTS5 (`content=''`), porter+unicode61 tokenizer, title 10x / concepts 3x / body 1x persistent rank, `prefix='2,3'` |
 
-**Write tool contract decisions needed (CA):**
+**Write tool contract decisions (CA direction, 2026-04-11 -- open for discussion during v4.1.1 spec):**
 
-`rename_document` -- the CLI (`ontos rename --apply`) requires a clean git working tree. MCP agents may not have clean state. Options:
-- **(a)** Enforce clean git: check state, return error if dirty (safest, matches CLI)
-- **(b)** Skip git check: MCP agents operate in their own context (most permissive)
-- **(c)** Add `force: bool` parameter: default checks git, `force=true` skips (explicit opt-out)
+`rename_document` -- the CLI (`ontos rename --apply`) requires a clean git working tree. MCP agents may not have clean state.
+- **Current direction: (a) Enforce clean git.** Check state, return error if dirty. Safest, matches CLI behavior. Agents can commit or stash before calling.
 
-`promote_document` -- the CLI is interactive by default (prompts for missing `depends_on`, `concepts`). MCP cannot be interactive. Options:
-- **(a)** Read-only only: expose `--check` mode, report readiness but never modify (safest)
-- **(b)** Non-interactive batch: wraps `--all-ready --yes`, promotes everything that's ready
-- **(c)** Require fields as input: MCP tool accepts `depends_on` and `concepts` as parameters, filling what the interactive prompt would ask
+`promote_document` -- the CLI is interactive by default (prompts for missing `depends_on`, `concepts`). MCP cannot be interactive.
+- **Current direction: (c) Require fields as input.** MCP tool accepts `depends_on` and `concepts` as parameters, filling what the interactive prompt would ask. Agent supplies the values; tool validates and applies.
 
 **Trigger criteria:**
 1. v4.1.0 ships and `scaffold_document` + `log_session` are validated by usage
