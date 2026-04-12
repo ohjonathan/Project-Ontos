@@ -691,6 +691,23 @@ The server runs in the foreground and communicates via stdin/stdout. Press Ctrl+
 | `health` | Server uptime, document count, index freshness | — |
 | `refresh` | Force cache rebuild | — |
 
+#### Write Tools (v4.1)
+
+When the server runs in mutable mode, it may also expose:
+
+| Tool | Description | Key Parameters |
+|------|-------------|----------------|
+| `scaffold_document` | Create a new markdown document with scaffold frontmatter | `path`, `content`, `workspace_id` |
+| `log_session` | Create a dated log entry in the workspace logs directory | `title`, `event_type`, `source`, `branch`, `body`, `workspace_id` |
+| `promote_document` | Change a document `curation_level` without renaming or moving it | `document_id`, `new_level`, `workspace_id` |
+| `rename_document` | Rename one document ID and rewrite references across the served workspace | `document_id`, `new_id`, `workspace_id` |
+
+Write-tool contracts:
+- `read_only=True` omits write tools from discovery.
+- `workspace_id` is optional and defaults to the served workspace.
+- Cross-workspace writes are not supported; start a separate `ontos serve` in the target workspace.
+- `rename_document` always uses library scope.
+
 All tools return structured JSON. Start with `workspace_overview` for project orientation, then use `get_document` or `context_map` as needed.
 
 #### Cache Behavior
@@ -711,10 +728,10 @@ usage_log_path = "~/.config/ontos/usage.jsonl"    # Default path
 
 No document content is logged — only tool names and timestamps.
 
-#### Limitations (v4.0)
+#### Limitations (v4.0+)
 
-- **Read-only tools only** — Write tools deferred to v4.1
 - **Single workspace per server** — One `ontos serve` process per project
+- **No cross-workspace writes** — Write tools target the served workspace only
 - **Stdio transport only** — HTTP/SSE transport deferred to v4.1
 - **Python 3.10+** required — Install with `pip install 'ontos[mcp]'`
 

@@ -18,6 +18,7 @@ from mcp.types import CallToolResult, TextContent, Tool as MCPTool, ToolAnnotati
 from ontos.core.errors import OntosInternalError, OntosUserError
 from ontos.io.config import load_project_config
 from ontos.io.snapshot import create_snapshot
+from ontos.mcp._types import PortfolioIndexLike
 from ontos.mcp.cache import SnapshotCache
 from ontos.mcp.scanner import slugify
 from ontos.mcp.schemas import ToolErrorEnvelope, output_schema_for, validate_success_payload
@@ -86,11 +87,10 @@ def serve(
     read_only: bool = False,
 ) -> int:
     """Build cache/index state and start the stdio MCP runtime."""
-    _ = read_only
     workspace_root = workspace_root.resolve()
     cache = _build_cache(workspace_root)
 
-    portfolio_index: Any = None
+    portfolio_index: Optional[PortfolioIndexLike] = None
     try:
         if portfolio:
             portfolio_index = _build_portfolio_index()
@@ -112,12 +112,11 @@ def serve(
 def create_server(
     cache: SnapshotCache,
     *,
-    portfolio_index: Any = None,
+    portfolio_index: Optional[PortfolioIndexLike] = None,
     read_only: bool = False,
     include_bundle_tool: bool = False,
 ) -> FastMCP:
     """Create and register the Ontos MCP server."""
-    _ = read_only
     workspace_name = cache.workspace_root.name
     portfolio_mode = portfolio_index is not None
 
@@ -125,6 +124,7 @@ def create_server(
     setattr(cache, "portfolio_mode", portfolio_mode)
     setattr(cache, "portfolio_index", portfolio_index)
     setattr(cache, "primary_workspace_slug", _workspace_slug(cache.workspace_root))
+    setattr(cache, "read_only", read_only)
 
     server = OntosFastMCP(
         name="Ontos",
@@ -160,6 +160,15 @@ def create_server(
         workspace_name=workspace_name,
         register_fn=register,
     )
+
+    if not read_only:
+        _register_write_tools(
+            cache=cache,
+            workspace_name=workspace_name,
+            portfolio_index=portfolio_index,
+            read_only=read_only,
+            register_fn=register,
+        )
 
     if portfolio_index is not None:
         _register_portfolio_tools(
@@ -362,10 +371,188 @@ def _register_core_tools(
     )
 
 
+def _register_write_tools(
+    *,
+    cache: SnapshotCache,
+    workspace_name: str,
+    portfolio_index: Any,
+    read_only: bool,
+    register_fn: Callable[..., None],
+) -> None:
+    """Register the v4.1 Track B single-file write tools (Dev 2) and the
+    multi-file ``rename_document`` tool (Dev 3)."""
+    from ontos.mcp import writes as write_impl
+    from ontos.mcp import rename_tool as rename_impl
+
+    def handle_scaffold_document(
+        path: str,
+        content: str = "",
+        workspace_id: Optional[str] = None,
+    ) -> CallToolResult:
+        return _invoke_write_tool(
+            "scaffold_document",
+            cache,
+            write_impl.scaffold_document,
+            portfolio_index=portfolio_index,
+            read_only=read_only,
+            path=path,
+            content=content,
+            workspace_id=workspace_id,
+        )
+
+    def handle_log_session(
+        title: str,
+        event_type: str = "chore",
+        source: str = "mcp",
+        branch: str = "unknown",
+        body: str = "",
+        workspace_id: Optional[str] = None,
+    ) -> CallToolResult:
+        return _invoke_write_tool(
+            "log_session",
+            cache,
+            write_impl.log_session,
+            portfolio_index=portfolio_index,
+            read_only=read_only,
+            title=title,
+            event_type=event_type,
+            source=source,
+            branch=branch,
+            body=body,
+            workspace_id=workspace_id,
+        )
+
+    def handle_promote_document(
+        document_id: str,
+        new_level: int,
+        workspace_id: Optional[str] = None,
+    ) -> CallToolResult:
+        return _invoke_write_tool(
+            "promote_document",
+            cache,
+            write_impl.promote_document,
+            portfolio_index=portfolio_index,
+            read_only=read_only,
+            document_id=document_id,
+            new_level=new_level,
+            workspace_id=workspace_id,
+        )
+
+    def handle_rename_document(
+        document_id: str,
+        new_id: str,
+        workspace_id: Optional[str] = None,
+    ) -> CallToolResult:
+        return _invoke_write_tool(
+            "rename_document",
+            cache,
+            rename_impl.rename_document,
+            portfolio_index=portfolio_index,
+            read_only=read_only,
+            document_id=document_id,
+            new_id=new_id,
+            workspace_id=workspace_id,
+        )
+
+    write_annotations = ToolAnnotations(
+        readOnlyHint=False,
+        destructiveHint=False,
+        idempotentHint=False,
+        openWorldHint=False,
+    )
+
+    register_fn(
+        name="scaffold_document",
+        title="Scaffold Document",
+        description=(
+            f"Creates a new scaffolded Markdown document in the {workspace_name} "
+            "workspace."
+        ),
+        handler=handle_scaffold_document,
+        annotations=write_annotations,
+        meta={"anthropic/maxResultSizeChars": 4000},
+    )
+    register_fn(
+        name="log_session",
+        title="Log Session",
+        description=(
+            f"Creates a dated session log under logs_dir in the {workspace_name} "
+            "workspace."
+        ),
+        handler=handle_log_session,
+        annotations=write_annotations,
+        meta={"anthropic/maxResultSizeChars": 4000},
+    )
+    register_fn(
+        name="promote_document",
+        title="Promote Document",
+        description=(
+            f"Updates a document's curation_level frontmatter in the "
+            f"{workspace_name} workspace."
+        ),
+        handler=handle_promote_document,
+        annotations=write_annotations,
+        meta={"anthropic/maxResultSizeChars": 4000},
+    )
+    register_fn(
+        name="rename_document",
+        title="Rename Document",
+        description=(
+            f"Renames a document ID in the {workspace_name} workspace and "
+            "rewrites every referencing file. Requires a clean git working "
+            "tree; on commit failure the workspace is rolled back via "
+            "`git checkout -- .`."
+        ),
+        handler=handle_rename_document,
+        annotations=write_annotations,
+        meta={"anthropic/maxResultSizeChars": 8000},
+    )
+
+
+def _invoke_write_tool(
+    tool_name: str,
+    cache: SnapshotCache,
+    tool_fn: Callable[..., CallToolResult],
+    *,
+    portfolio_index: Any,
+    read_only: bool,
+    **kwargs: Any,
+) -> CallToolResult:
+    """Shared write-tool invoker.
+
+    Write tool implementations own their own locking (workspace_lock + A3
+    rebuild path), schema validation, and error envelope construction. This
+    wrapper records usage telemetry, guards against unexpected exceptions
+    above the tool body, and surfaces them as structured MCP errors.
+    """
+    try:
+        _log_usage(cache, tool_name)
+    except Exception:
+        traceback.print_exc(file=sys.stderr)
+
+    try:
+        return tool_fn(
+            cache,
+            portfolio_index=portfolio_index,
+            read_only=read_only,
+            **kwargs,
+        )
+    except OntosUserError as exc:
+        return _tool_error_result(str(exc))
+    except OntosInternalError as exc:
+        print(f"[ontos-mcp] {exc.code}: {exc}", file=sys.stderr)
+        if exc.details:
+            print(exc.details, file=sys.stderr)
+        return _tool_error_result(f"Internal error: {exc}")
+    except Exception:
+        traceback.print_exc(file=sys.stderr)
+        return _tool_error_result(f"Internal error in {tool_name}")
+
+
 def _register_portfolio_tools(
     *,
     cache: SnapshotCache,
-    portfolio_index: Any,
+    portfolio_index: PortfolioIndexLike,
     register_fn: Callable[..., None],
 ) -> None:
     def handle_project_registry(workspace_id: str | None = None) -> CallToolResult:
@@ -415,13 +602,13 @@ def _register_portfolio_tools(
 def _register_bundle_tool(
     *,
     cache: SnapshotCache,
-    portfolio_index: Any,
+    portfolio_index: Optional[PortfolioIndexLike],
     register_fn: Callable[..., None],
 ) -> None:
     if portfolio_index is None:
         def handle_get_context_bundle(
             workspace_id: str | None = None,
-            token_budget: int = 8192,
+            token_budget: Optional[int] = None,
         ) -> CallToolResult:
             return _invoke_read_tool(
                 "get_context_bundle",
@@ -435,7 +622,7 @@ def _register_bundle_tool(
     else:
         def handle_get_context_bundle(
             workspace_id: str | None = None,
-            token_budget: int = 8192,
+            token_budget: Optional[int] = None,
         ) -> CallToolResult:
             return _invoke_portfolio_tool(
                 "get_context_bundle",
@@ -466,7 +653,7 @@ def _get_context_bundle_single_workspace(
     cache: SnapshotCache,
     *,
     workspace_id: str | None = None,
-    token_budget: int = 8192,
+    token_budget: Optional[int] = None,
 ) -> dict[str, Any]:
     return tool_impl.get_context_bundle(
         None,
@@ -521,7 +708,7 @@ def _invoke_read_tool(
 
 def _invoke_portfolio_tool(
     tool_name: str,
-    portfolio_index: Any,
+    portfolio_index: Optional[PortfolioIndexLike],
     tool_fn: Callable[..., Dict[str, Any]],
     *,
     cache: SnapshotCache | None = None,
@@ -717,10 +904,13 @@ def _build_cache(workspace_root: Path) -> SnapshotCache:
     )
 
 
-def _build_portfolio_index() -> Any:
+def _build_portfolio_index() -> PortfolioIndexLike:
     from ontos.mcp.portfolio import PortfolioIndex
-    from ontos.mcp.portfolio_config import load_portfolio_config
+    from ontos.mcp.portfolio_config import ensure_portfolio_config, load_portfolio_config
 
+    # Initialize the on-disk config if absent (side-effectful write), then load
+    # it with the pure read path. See m-9 in Track A/D verdict.
+    ensure_portfolio_config()
     config = load_portfolio_config()
     scan_roots = [Path(path).expanduser() for path in config.scan_roots]
     registry_path = (

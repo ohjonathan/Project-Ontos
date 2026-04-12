@@ -64,6 +64,20 @@ AGENTS_PROJECT_STATS_TEMPLATE = """## Project Stats
 - Doc Count: {doc_count}
 - Last Updated: {last_updated}"""
 
+AGENTS_MCP_WRITE_TOOLS_TEMPLATE = """## MCP Write Tools
+
+When the server runs without `--read-only`, MCP may expose:
+- `scaffold_document`
+- `log_session`
+- `promote_document`
+- `rename_document`
+
+Write-tool contracts:
+- `read_only=True` omits the write tools from discovery.
+- `workspace_id` is optional and defaults to the served workspace.
+- `rename_document` always uses library scope.
+"""
+
 
 def find_repo_root() -> Optional[Path]:
     """Find the repository root using Ontos and git markers."""
@@ -204,6 +218,7 @@ def generate_agents_content(existing_content: Optional[str] = None, scope: Optio
         doc_count=stats["doc_count"],
         last_updated=stats["last_updated"],
     )
+    mcp_write_tools = AGENTS_MCP_WRITE_TOOLS_TEMPLATE
     activation_tail = render_activation_protocol_tail(AGENTS_PROTOCOL_CONFIG)
 
     content = "\n\n".join(
@@ -213,6 +228,7 @@ def generate_agents_content(existing_content: Optional[str] = None, scope: Optio
             current_project_state,
             activation_head,
             project_stats,
+            mcp_write_tools,
             activation_tail,
         ]
     ) + "\n"
@@ -252,6 +268,7 @@ def transform_to_cursorrules(agents_content: str) -> str:
                 "Re-Activation Trigger",
                 "After Context Compaction (/compact)",
                 "Quick Reference",
+                "MCP Write Tools",
                 "Project Stats",
                 "Core Invariants",
                 "Staleness",

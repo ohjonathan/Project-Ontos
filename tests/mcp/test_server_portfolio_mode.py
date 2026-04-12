@@ -18,6 +18,13 @@ CORE_TOOLS = {
     "refresh",
 }
 
+WRITE_TOOLS = {
+    "scaffold_document",
+    "log_session",
+    "promote_document",
+    "rename_document",
+}
+
 
 class FakePortfolioIndex:
     def get_projects(self):
@@ -44,8 +51,8 @@ def test_create_server_includes_bundle_tool_in_single_workspace_mode(tmp_path):
     server = build_server(root, include_bundle_tool=True)
     tool_map = {tool.name: tool for tool in list_tools(server)}
 
-    assert set(tool_map) == CORE_TOOLS | {"get_context_bundle"}
-    assert len(tool_map) == 9
+    assert set(tool_map) == CORE_TOOLS | WRITE_TOOLS | {"get_context_bundle"}
+    assert len(tool_map) == 13
     assert tool_map["get_context_bundle"].annotations.readOnlyHint is True
     assert "workspace_id" in tool_map["get_context_bundle"].inputSchema["properties"]
     assert "token_budget" in tool_map["get_context_bundle"].inputSchema["properties"]
@@ -61,10 +68,14 @@ def test_create_server_registers_track_a_portfolio_matrix(tmp_path):
     )
     tool_map = {tool.name: tool for tool in list_tools(server)}
 
-    expected = CORE_TOOLS | {"project_registry", "search", "get_context_bundle"}
+    expected = (
+        CORE_TOOLS
+        | WRITE_TOOLS
+        | {"project_registry", "search", "get_context_bundle"}
+    )
 
     assert set(tool_map) == expected
-    assert len(tool_map) == 11
+    assert len(tool_map) == 15
     assert tool_map["project_registry"].annotations.readOnlyHint is True
     assert tool_map["search"].annotations.readOnlyHint is True
     assert tool_map["get_context_bundle"].annotations.readOnlyHint is True

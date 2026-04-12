@@ -10,12 +10,14 @@ import sqlite3
 from typing import Any, Dict, Optional
 
 import ontos
-from ontos.commands.export_data import _compute_content_hash, _snapshot_to_json
+from ontos.commands.export_data import _snapshot_to_json
 from ontos.commands.map import CompactMode, GenerateMapOptions, generate_context_map
+from ontos.core.content_hash import compute_content_hash
 from ontos.core.errors import OntosUserError
 from ontos.core.snapshot import DocumentSnapshot
 from ontos.core.types import DocumentData, ValidationResult
 from ontos.io.snapshot import create_snapshot
+from ontos.mcp._types import PortfolioIndexLike
 from ontos.mcp.scanner import slugify
 
 
@@ -205,7 +207,7 @@ def get_document(
     if doc is None:
         raise OntosUserError("Document not found.", code="E_DOCUMENT_NOT_FOUND")
 
-    content_hash = _compute_content_hash(doc.content) if doc.content else None
+    content_hash = compute_content_hash(doc.content) if doc.content else None
     payload = {
         "id": doc.id,
         "type": doc.type.value,
@@ -310,7 +312,7 @@ def query(cache: Any, *, entity_id: str, workspace_id: Optional[str] = None) -> 
         "depends_on": list(doc.depends_on),
         "depended_by": sorted(cache.snapshot.graph.reverse_edges.get(doc.id, [])),
         "depth": cache.depths.get(doc.id, 0),
-        "content_hash": _compute_content_hash(doc.content) if doc.content else None,
+        "content_hash": compute_content_hash(doc.content) if doc.content else None,
     }
 
 
@@ -341,7 +343,7 @@ def refresh(cache: Any, *, workspace_id: Optional[str] = None) -> dict[str, Any]
     }
 
 
-def project_registry(portfolio_index: Any) -> dict[str, Any]:
+def project_registry(portfolio_index: Optional[PortfolioIndexLike]) -> dict[str, Any]:
     """Return the complete project inventory from the portfolio index."""
     if portfolio_index is None:
         raise OntosUserError(
@@ -368,7 +370,7 @@ def project_registry(portfolio_index: Any) -> dict[str, Any]:
 
 
 def search(
-    portfolio_index: Any,
+    portfolio_index: Optional[PortfolioIndexLike],
     *,
     query_string: str,
     workspace_id: Optional[str] = None,
@@ -409,21 +411,47 @@ def search(
 
 
 def get_context_bundle(
-    portfolio_index: Any,
+    portfolio_index: Optional[PortfolioIndexLike],
     cache: Any,
     *,
     workspace_id: Optional[str] = None,
-    token_budget: int = 8192,
+    token_budget: Optional[int] = None,
 ) -> dict[str, Any]:
-    """Return a token-budgeted context package for a workspace."""
-    from ontos.mcp.bundler import build_context_bundle
+    """Return a token-budgeted context package for a workspace.
 
-    if token_budget < 1024:
+    Bundle shape is governed by three fields on the loaded
+    :class:`PortfolioConfig` (SF-3 / addendum A4):
+
+    - ``bundle_token_budget`` — hard cap on total bundle token count
+      (tail-first truncation drops older logs first when exceeded).
+    - ``bundle_max_logs`` — cap on the number of log entries included.
+    - ``bundle_log_window_days`` — exclude logs older than N days.
+
+    The caller may still override ``token_budget`` explicitly (preserving the
+    MCP tool surface). ``max_logs`` and ``log_window_days`` are always
+    sourced from the portfolio config.
+    """
+    from ontos.mcp.bundler import build_context_bundle
+    from ontos.mcp.portfolio_config import PortfolioConfig, load_portfolio_config
+
+    # Load the portfolio config for bundle-shape defaults. Fall back to the
+    # dataclass defaults if the config file is absent — the config's *write*
+    # path is owned by the server bootstrap (or explicit init), not by read
+    # tools (see m-9).
+    try:
+        portfolio_config = load_portfolio_config()
+    except FileNotFoundError:
+        portfolio_config = PortfolioConfig()
+
+    effective_budget: int = (
+        token_budget if token_budget is not None else portfolio_config.bundle_token_budget
+    )
+    if effective_budget < 1024:
         raise OntosUserError(
             "token_budget must be at least 1024.",
             code="E_INVALID_BUDGET",
         )
-    if token_budget > 128000:
+    if effective_budget > 128000:
         raise OntosUserError(
             "token_budget must be at most 128000.",
             code="E_INVALID_BUDGET",
@@ -468,7 +496,9 @@ def get_context_bundle(
         snapshot,
         workspace_root,
         slug,
-        token_budget=token_budget,
+        token_budget=effective_budget,
+        max_logs=portfolio_config.bundle_max_logs,
+        log_window_days=portfolio_config.bundle_log_window_days,
     )
 
 
@@ -491,23 +521,18 @@ def _parse_project_tags(raw: Any) -> list[str]:
     return []
 
 
-def _validate_workspace_id(portfolio_index: Any, workspace_id: str) -> None:
-    """Validate workspace_id exists in portfolio. Raise OntosUserError if not."""
-    if portfolio_index is None:
-        raise OntosUserError(
-            "workspace_id requires portfolio mode.",
-            code="E_PORTFOLIO_REQUIRED",
-        )
-    projects = portfolio_index.get_projects()
-    slugs = [project["slug"] for project in projects]
-    if workspace_id not in slugs:
-        sorted_slugs = ", ".join(sorted(slugs))
-        raise OntosUserError(
-            f"Unknown workspace '{workspace_id}'. "
-            f"Valid workspace slugs: {sorted_slugs}. "
-            "Use project_registry() to discover available workspaces.",
-            code="E_UNKNOWN_WORKSPACE",
-        )
+def _validate_workspace_id(
+    portfolio_index: Optional[PortfolioIndexLike],
+    workspace_id: Optional[str],
+) -> None:
+    """Validate workspace_id exists in portfolio. Raise OntosUserError if not.
+
+    Delegates to the shared helper in ``ontos.mcp._validation`` so the read
+    and write paths use a single implementation (closes m-8 / m-14).
+    """
+    from ontos.mcp._validation import validate_workspace_id as _shared
+
+    _shared(portfolio_index, workspace_id)
 
 
 def _enforce_workspace_scope(cache: Any, workspace_id: Optional[str]) -> None:
