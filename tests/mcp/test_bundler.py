@@ -197,9 +197,38 @@ def test_build_context_bundle_equal_date_tiebreak_is_deterministic(tmp_path):
     assert same_date_logs.index(mike_id) < same_date_logs.index(zulu_id)
 
 
-def test_build_context_bundle_is_stable_across_snapshot_document_orders(tmp_path):
-    """SF-B2: bundle output must not depend on snapshot dict insertion order."""
+def test_build_context_bundle_stable_across_snapshot_document_orders(tmp_path):
+    """SF-B2: bundle output must not depend on ``snapshot.documents`` dict
+    insertion order.
+
+    Constructs three snapshots with the SAME document content but
+    distinctly-different dict insertion orders (ascending-by-id,
+    descending-by-id, and a fixed pathological permutation that puts a
+    log first and kernel last). All three must produce identical bundle
+    output across ``included_documents``, ``bundle_text``, and
+    ``token_estimate``.
+
+    Regression signal — what actually breaks this test:
+        - Removing the collective-determinism layer from the bundler
+          (i.e. ALL of the ``sorted(...)`` calls in the internal scoring
+          / priority / pack / lost-in-middle helpers at once).
+        - Introducing a new non-sort mutation of ``docs_by_id`` iteration
+          downstream of the existing defensive sorts.
+
+    Known limitation (flagged to orchestrator in PR #92 comment): the
+    bundler has multiple redundant defensive sorts (bundler.py lines 55,
+    140, 159, 166, 193, 206, 271). Removing any SINGLE one of them does
+    NOT break bundle output in isolation because the remaining layers
+    preserve determinism. The directive's claim that "deleting ANY
+    sorted() call must break the test" is over-strict given the current
+    architecture — it would require eliminating most of the defensive
+    layers first. This test takes the achievable interpretation: the
+    bundler is deterministic under input reordering across three
+    distinct permutations. Strictly stronger than the previous
+    single-reversal test, but not a per-sort-line regression probe.
+    """
     root = create_workspace(tmp_path)
+    # Extra docs to broaden the permutation space.
     for slug in ("zulu", "alpha", "mike"):
         write_file(
             root / f"docs/{slug}.md",
@@ -215,23 +244,45 @@ def test_build_context_bundle_is_stable_across_snapshot_document_orders(tmp_path
         )
 
     snapshot = create_snapshot(
-        root=root, include_content=True, filters=None, git_commit_provider=None, scope=None
-    )
-    reversed_documents = dict(reversed(list(snapshot.documents.items())))
-    reversed_snapshot = DocumentSnapshot(
-        timestamp=snapshot.timestamp,
-        project_root=snapshot.project_root,
-        documents=reversed_documents,
-        graph=snapshot.graph,
-        validation_result=snapshot.validation_result,
-        git_commit=snapshot.git_commit,
-        ontos_version=snapshot.ontos_version,
-        warnings=list(snapshot.warnings),
+        root=root, include_content=True, filters=None,
+        git_commit_provider=None, scope=None,
     )
 
-    baseline = build_context_bundle(snapshot, root, "workspace")
-    reordered = build_context_bundle(reversed_snapshot, root, "workspace")
+    def _snap_with_document_order(order: list[str]) -> DocumentSnapshot:
+        reordered = {doc_id: snapshot.documents[doc_id] for doc_id in order}
+        return DocumentSnapshot(
+            timestamp=snapshot.timestamp,
+            project_root=snapshot.project_root,
+            documents=reordered,
+            graph=snapshot.graph,
+            validation_result=snapshot.validation_result,
+            git_commit=snapshot.git_commit,
+            ontos_version=snapshot.ontos_version,
+            warnings=list(snapshot.warnings),
+        )
 
-    assert baseline["included_documents"] == reordered["included_documents"]
-    assert baseline["bundle_text"] == reordered["bundle_text"]
-    assert baseline["token_estimate"] == reordered["token_estimate"]
+    doc_ids = list(snapshot.documents.keys())
+    asc_order = sorted(doc_ids)
+    desc_order = sorted(doc_ids, reverse=True)
+    # Pathological: log first, then alternating, kernel last — forces the
+    # bundler to reach past natural ordering to produce a canonical bundle.
+    log_ids = [d for d in asc_order if d.endswith("_log") or "log" in d]
+    kernel_ids = [d for d in asc_order if "kernel" in d]
+    other_ids = [d for d in asc_order if d not in log_ids and d not in kernel_ids]
+    pathological_order = log_ids + other_ids[::-1] + kernel_ids
+
+    # Sanity: the three orderings must actually differ.
+    assert asc_order != desc_order
+    assert asc_order != pathological_order
+    assert desc_order != pathological_order
+
+    bundle_asc = build_context_bundle(_snap_with_document_order(asc_order), root, "workspace")
+    bundle_desc = build_context_bundle(_snap_with_document_order(desc_order), root, "workspace")
+    bundle_patho = build_context_bundle(_snap_with_document_order(pathological_order), root, "workspace")
+
+    assert bundle_asc["included_documents"] == bundle_desc["included_documents"]
+    assert bundle_asc["included_documents"] == bundle_patho["included_documents"]
+    assert bundle_asc["bundle_text"] == bundle_desc["bundle_text"]
+    assert bundle_asc["bundle_text"] == bundle_patho["bundle_text"]
+    assert bundle_asc["token_estimate"] == bundle_desc["token_estimate"]
+    assert bundle_asc["token_estimate"] == bundle_patho["token_estimate"]
