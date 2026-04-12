@@ -87,7 +87,6 @@ def serve(
     read_only: bool = False,
 ) -> int:
     """Build cache/index state and start the stdio MCP runtime."""
-    _ = read_only
     workspace_root = workspace_root.resolve()
     cache = _build_cache(workspace_root)
 
@@ -118,7 +117,6 @@ def create_server(
     include_bundle_tool: bool = False,
 ) -> FastMCP:
     """Create and register the Ontos MCP server."""
-    _ = read_only
     workspace_name = cache.workspace_root.name
     portfolio_mode = portfolio_index is not None
 
@@ -126,6 +124,7 @@ def create_server(
     setattr(cache, "portfolio_mode", portfolio_mode)
     setattr(cache, "portfolio_index", portfolio_index)
     setattr(cache, "primary_workspace_slug", _workspace_slug(cache.workspace_root))
+    setattr(cache, "read_only", read_only)
 
     server = OntosFastMCP(
         name="Ontos",
@@ -159,6 +158,14 @@ def create_server(
     _register_core_tools(
         cache=cache,
         workspace_name=workspace_name,
+        register_fn=register,
+    )
+
+    _register_write_tools(
+        cache=cache,
+        workspace_name=workspace_name,
+        portfolio_index=portfolio_index,
+        read_only=read_only,
         register_fn=register,
     )
 
@@ -361,6 +368,184 @@ def _register_core_tools(
         ),
         meta={"anthropic/maxResultSizeChars": 4000},
     )
+
+
+def _register_write_tools(
+    *,
+    cache: SnapshotCache,
+    workspace_name: str,
+    portfolio_index: Any,
+    read_only: bool,
+    register_fn: Callable[..., None],
+) -> None:
+    """Register the v4.1 Track B single-file write tools (Dev 2) and the
+    multi-file ``rename_document`` tool (Dev 3)."""
+    from ontos.mcp import writes as write_impl
+    from ontos.mcp import rename_tool as rename_impl
+
+    def handle_scaffold_document(
+        path: str,
+        content: str = "",
+        workspace_id: Optional[str] = None,
+    ) -> CallToolResult:
+        return _invoke_write_tool(
+            "scaffold_document",
+            cache,
+            write_impl.scaffold_document,
+            portfolio_index=portfolio_index,
+            read_only=read_only,
+            path=path,
+            content=content,
+            workspace_id=workspace_id,
+        )
+
+    def handle_log_session(
+        title: str,
+        event_type: str = "chore",
+        source: str = "mcp",
+        branch: str = "unknown",
+        body: str = "",
+        workspace_id: Optional[str] = None,
+    ) -> CallToolResult:
+        return _invoke_write_tool(
+            "log_session",
+            cache,
+            write_impl.log_session,
+            portfolio_index=portfolio_index,
+            read_only=read_only,
+            title=title,
+            event_type=event_type,
+            source=source,
+            branch=branch,
+            body=body,
+            workspace_id=workspace_id,
+        )
+
+    def handle_promote_document(
+        document_id: str,
+        new_level: int,
+        workspace_id: Optional[str] = None,
+    ) -> CallToolResult:
+        return _invoke_write_tool(
+            "promote_document",
+            cache,
+            write_impl.promote_document,
+            portfolio_index=portfolio_index,
+            read_only=read_only,
+            document_id=document_id,
+            new_level=new_level,
+            workspace_id=workspace_id,
+        )
+
+    def handle_rename_document(
+        document_id: str,
+        new_id: str,
+        workspace_id: Optional[str] = None,
+    ) -> CallToolResult:
+        return _invoke_write_tool(
+            "rename_document",
+            cache,
+            rename_impl.rename_document,
+            portfolio_index=portfolio_index,
+            read_only=read_only,
+            document_id=document_id,
+            new_id=new_id,
+            workspace_id=workspace_id,
+        )
+
+    write_annotations = ToolAnnotations(
+        readOnlyHint=False,
+        destructiveHint=False,
+        idempotentHint=False,
+        openWorldHint=False,
+    )
+
+    register_fn(
+        name="scaffold_document",
+        title="Scaffold Document",
+        description=(
+            f"Creates a new scaffolded Markdown document in the {workspace_name} "
+            "workspace."
+        ),
+        handler=handle_scaffold_document,
+        annotations=write_annotations,
+        meta={"anthropic/maxResultSizeChars": 4000},
+    )
+    register_fn(
+        name="log_session",
+        title="Log Session",
+        description=(
+            f"Creates a dated session log under logs_dir in the {workspace_name} "
+            "workspace."
+        ),
+        handler=handle_log_session,
+        annotations=write_annotations,
+        meta={"anthropic/maxResultSizeChars": 4000},
+    )
+    register_fn(
+        name="promote_document",
+        title="Promote Document",
+        description=(
+            f"Updates a document's curation_level frontmatter in the "
+            f"{workspace_name} workspace."
+        ),
+        handler=handle_promote_document,
+        annotations=write_annotations,
+        meta={"anthropic/maxResultSizeChars": 4000},
+    )
+    register_fn(
+        name="rename_document",
+        title="Rename Document",
+        description=(
+            f"Renames a document ID in the {workspace_name} workspace and "
+            "rewrites every referencing file. Requires a clean git working "
+            "tree; on commit failure the workspace is rolled back via "
+            "`git checkout -- .`."
+        ),
+        handler=handle_rename_document,
+        annotations=write_annotations,
+        meta={"anthropic/maxResultSizeChars": 8000},
+    )
+
+
+def _invoke_write_tool(
+    tool_name: str,
+    cache: SnapshotCache,
+    tool_fn: Callable[..., CallToolResult],
+    *,
+    portfolio_index: Any,
+    read_only: bool,
+    **kwargs: Any,
+) -> CallToolResult:
+    """Shared write-tool invoker.
+
+    Write tool implementations own their own locking (workspace_lock + A3
+    rebuild path), schema validation, and error envelope construction. This
+    wrapper records usage telemetry, guards against unexpected exceptions
+    above the tool body, and surfaces them as structured MCP errors.
+    """
+    try:
+        _log_usage(cache, tool_name)
+    except Exception:
+        traceback.print_exc(file=sys.stderr)
+
+    try:
+        return tool_fn(
+            cache,
+            portfolio_index=portfolio_index,
+            read_only=read_only,
+            **kwargs,
+        )
+    except OntosUserError as exc:
+        return _tool_error_result(str(exc))
+    except OntosInternalError as exc:
+        print(f"[ontos-mcp] {exc.code}: {exc}", file=sys.stderr)
+        if exc.details:
+            print(exc.details, file=sys.stderr)
+        return _tool_error_result(f"Internal error: {exc}")
+    except Exception:
+        traceback.print_exc(file=sys.stderr)
+        return _tool_error_result(f"Internal error in {tool_name}")
 
 
 def _register_portfolio_tools(

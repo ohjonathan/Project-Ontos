@@ -57,6 +57,15 @@ class SessionContext:
     cwd: Path = field(default_factory=Path.cwd)
     env: Dict[str, str] = field(default_factory=lambda: dict(os.environ))
 
+    # Lock ownership (v4.1 A1 — single-lock discipline).
+    # When True (default), commit() acquires and releases an flock on
+    # <repo_root>/.ontos.lock around the critical section. When False,
+    # commit() assumes the caller already holds that flock (for example,
+    # via an outer workspace-lock context manager) and _acquire_lock /
+    # _release_lock become no-ops. See the v4.1 spec addendum A1 for
+    # the full contract.
+    owns_lock: bool = True
+
     # Mutable state (changes during session)
     pending_writes: List[PendingWrite] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
@@ -225,28 +234,54 @@ class SessionContext:
         self.errors.append(message)
 
     def _acquire_lock(self, lock_path: Path, timeout: float = 5.0) -> bool:
-        """Acquire an exclusive flock lock for this workspace."""
+        """Acquire an exclusive flock lock for this workspace.
+
+        When ``self.owns_lock`` is False the caller is expected to hold
+        the flock on the workspace lockfile (acquired by an outer
+        workspace-lock context manager) and this method is a no-op —
+        see v4.1 spec addendum A1.
+        """
+        if not self.owns_lock:
+            return True
+
         lock_path.parent.mkdir(parents=True, exist_ok=True)
         start = time.monotonic()
         handle = lock_path.open("a+", encoding="utf-8")
 
-        while time.monotonic() - start < timeout:
-            try:
-                fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:
+            while time.monotonic() - start < timeout:
+                try:
+                    fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except BlockingIOError:
+                    time.sleep(0.1)
+                    continue
+                # flock succeeded — hand ownership of the handle to the
+                # instance so _release_lock can close it.
                 self._lock_handle = handle
                 return True
-            except BlockingIOError:
-                time.sleep(0.1)
+        except BaseException:
+            # m-12: any non-BlockingIOError raised between open() and a
+            # successful flock (signals, OSError from sleep, etc.) must
+            # not leak the file handle. Close and re-raise.
+            handle.close()
+            raise
+
+        # Timed out waiting for the lock — close the handle and report.
         handle.close()
         return False
 
     def _release_lock(self, lock_path: Path) -> None:
         """Release the file lock.
-        
+
+        When ``self.owns_lock`` is False this is a no-op — the caller owns
+        the outer flock and is responsible for releasing it.
+
         Args:
             lock_path: Path to lock file.
         """
         _ = lock_path
+        if not self.owns_lock:
+            return
         if self._lock_handle is None:
             return
         try:

@@ -5,12 +5,11 @@ from pathlib import Path
 from tests.mcp import build_cache, build_server, create_workspace, list_tools, write_file
 
 
-def test_server_lists_all_eight_tools_with_correct_annotations(tmp_path):
+def test_server_lists_all_tools_with_correct_annotations(tmp_path):
     root = create_workspace(tmp_path)
     server = build_server(root)
     tool_map = {tool.name: tool for tool in list_tools(server)}
 
-    assert len(tool_map) == 8
     expected_tools = {
         "workspace_overview",
         "context_map",
@@ -20,15 +19,25 @@ def test_server_lists_all_eight_tools_with_correct_annotations(tmp_path):
         "query",
         "health",
         "refresh",
+        # v4.1 Track B (Dev 2) — single-file write tools.
+        "scaffold_document",
+        "log_session",
+        "promote_document",
+        # v4.1 Track B (Dev 3) — multi-file write tool.
+        "rename_document",
     }
     assert set(tool_map.keys()) == expected_tools
+    assert len(tool_map) == len(expected_tools)
 
-    # export_graph and refresh must be non-read-only
-    assert tool_map["export_graph"].annotations.readOnlyHint is False
-    assert tool_map["refresh"].annotations.readOnlyHint is False
+    # export_graph, refresh, and the write tools are non-read-only
+    for name in ("export_graph", "refresh", "scaffold_document",
+                 "log_session", "promote_document", "rename_document"):
+        assert tool_map[name].annotations.readOnlyHint is False, (
+            f"{name} must not be readOnly"
+        )
     assert tool_map["refresh"].annotations.idempotentHint is False
 
-    # All other tools must be read-only
+    # Read-only tools
     for name in ("workspace_overview", "context_map", "get_document",
                  "list_documents", "query", "health"):
         assert tool_map[name].annotations.readOnlyHint is True, f"{name} should be readOnly"

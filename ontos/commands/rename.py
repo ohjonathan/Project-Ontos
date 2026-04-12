@@ -275,21 +275,49 @@ class _PreparedPlan:
     scope_data: _LoadedScope
 
 
-def _prepare_plan(options: RenameOptions, *, mode: str) -> Tuple[Optional[_PreparedPlan], Optional[RenameError]]:
-    old_id = options.old_id.strip()
-    new_id = options.new_id.strip()
+def build_rename_plan(
+    *,
+    repo_root: Path,
+    config,
+    scope: ScanScope,
+    docs: Dict[str, DocumentData],
+    load_issues: Optional[Sequence[DocumentLoadIssue]] = None,
+    old_id: str,
+    new_id: str,
+    mode: str,
+    check_git: bool = True,
+) -> Tuple[Optional[RenamePlan], Optional[RenameError]]:
+    """Shared rename-plan orchestrator used by both the CLI and the MCP tool.
 
-    try:
-        repo_root = find_project_root()
-    except FileNotFoundError as exc:
-        return None, RenameError(code="project_root_not_found", message=str(exc))
+    The caller supplies the already-loaded ``docs`` dictionary (and optional
+    ``load_issues`` sequence). This function performs the 11 validation +
+    collision + file-plan steps that used to live inside ``_prepare_plan``:
 
-    try:
-        config = load_project_config(repo_root=repo_root)
-    except Exception as exc:  # pragma: no cover - configuration failure path
-        return None, RenameError(code="config_error", message=f"Config error: {exc}")
+    1. Strip ``old_id`` / ``new_id``.
+    2. Same-ID no-op → return empty ``RenamePlan``.
+    3. ``_ID_PATTERN`` regex validation of ``new_id``.
+    4. ``_RESERVED_YAML_WORDS`` guard.
+    5. Optional git clean-state check (CLI enforces here; MCP enforces
+       before acquiring ``workspace_lock()`` and passes ``check_git=False``).
+    6. ``old_id`` must exist exactly once as an explicit frontmatter id.
+    7. ``new_id`` must not already exist in scope.
+    8. Cross-scope collision check when ``scope == ScanScope.DOCS``.
+    9. ``load_issues`` parse-failed-sighting check (skipped when ``None``).
+    10. Per-document ``_build_file_plan`` loop (sorted by filepath).
+    11. Summary + ``RenamePlan`` assembly.
 
-    scope = resolve_scan_scope(options.scope, config.scanning.default_scope)
+    ``check_git=False`` exists because MCP validates git-clean ex-ante —
+    ``workspace_lock()`` materialises ``.ontos.lock`` as an untracked file,
+    so a post-lock check would false-positive for callers that don't ignore
+    the lock file.
+
+    ``load_issues=None`` allows the MCP caller to skip the parse-failed
+    sightings check, because the live snapshot doesn't carry per-doc parse
+    issues. This is a documented limitation, not a regression.
+    """
+
+    old_id = old_id.strip()
+    new_id = new_id.strip()
 
     if old_id == new_id:
         empty_plan = RenamePlan(
@@ -310,17 +338,7 @@ def _prepare_plan(options: RenameOptions, *, mode: str) -> Tuple[Optional[_Prepa
             warnings=[],
             no_op=True,
         )
-        return _PreparedPlan(
-            scope=scope,
-            plan=empty_plan,
-            scope_data=_LoadedScope(
-                repo_root=repo_root,
-                scope=scope,
-                doc_paths=[],
-                load_result=None,
-                docs={},
-            ),
-        ), None
+        return empty_plan, None
 
     if not _ID_PATTERN.match(new_id):
         return None, RenameError(
@@ -336,7 +354,7 @@ def _prepare_plan(options: RenameOptions, *, mode: str) -> Tuple[Optional[_Prepa
             ),
         )
 
-    if mode == "apply":
+    if check_git and mode == "apply":
         clean, git_error = _check_clean_git_state(repo_root)
         if not clean:
             return None, RenameError(
@@ -344,25 +362,6 @@ def _prepare_plan(options: RenameOptions, *, mode: str) -> Tuple[Optional[_Prepa
                 message=git_error
                 or "Git working tree must be clean for --apply.",
             )
-
-    doc_paths = collect_scoped_documents(
-        repo_root,
-        config,
-        scope,
-        base_skip_patterns=list(config.scanning.skip_patterns),
-    )
-    load_result = load_documents(doc_paths, parse_frontmatter_content)
-    docs = load_result.documents
-
-    if load_result.duplicate_ids:
-        details = []
-        for doc_id, paths in sorted(load_result.duplicate_ids.items()):
-            joined = ", ".join(str(path) for path in paths)
-            details.append(f"{doc_id}: {joined}")
-        return None, RenameError(
-            code="duplicate_ids",
-            message="Duplicate IDs detected in scope: " + "; ".join(details),
-        )
 
     old_docs = [
         doc
@@ -395,19 +394,20 @@ def _prepare_plan(options: RenameOptions, *, mode: str) -> Tuple[Optional[_Prepa
                 ),
             )
 
-    sightings = _scan_parse_failed_files_for_target(
-        issues=load_result.issues,
-        old_id=old_id,
-    )
-    if sightings:
-        first = sightings[0]
-        return None, RenameError(
-            code="parse_failed_target_sighting",
-            message=(
-                "Found target ID in parse-failed file(s), cannot guarantee safe rewrite: "
-                f"{first.path}:{first.line} ({first.match_type})."
-            ),
+    if load_issues is not None:
+        sightings = _scan_parse_failed_files_for_target(
+            issues=load_issues,
+            old_id=old_id,
         )
+        if sightings:
+            first = sightings[0]
+            return None, RenameError(
+                code="parse_failed_target_sighting",
+                message=(
+                    "Found target ID in parse-failed file(s), cannot guarantee safe rewrite: "
+                    f"{first.path}:{first.line} ({first.match_type})."
+                ),
+            )
 
     file_plans: List[FilePlan] = []
     all_warnings: List[RenameWarning] = []
@@ -423,7 +423,7 @@ def _prepare_plan(options: RenameOptions, *, mode: str) -> Tuple[Optional[_Prepa
         all_warnings.extend(file_plan.warnings)
 
     summary = RenameSummary(
-        files_scanned=len(doc_paths),
+        files_scanned=len(docs),
         documents_loaded=len(docs),
         planned_files=len([item for item in file_plans if item.has_changes]),
         frontmatter_edits=sum(len(item.frontmatter_edits) for item in file_plans),
@@ -446,6 +446,109 @@ def _prepare_plan(options: RenameOptions, *, mode: str) -> Tuple[Optional[_Prepa
         summary=summary,
         files=file_plans,
         warnings=all_warnings,
+    )
+
+    return plan, None
+
+
+def _prepare_plan(options: RenameOptions, *, mode: str) -> Tuple[Optional[_PreparedPlan], Optional[RenameError]]:
+    try:
+        repo_root = find_project_root()
+    except FileNotFoundError as exc:
+        return None, RenameError(code="project_root_not_found", message=str(exc))
+
+    try:
+        config = load_project_config(repo_root=repo_root)
+    except Exception as exc:  # pragma: no cover - configuration failure path
+        return None, RenameError(code="config_error", message=f"Config error: {exc}")
+
+    scope = resolve_scan_scope(options.scope, config.scanning.default_scope)
+
+    # Same-ID no-op short-circuit — avoid scanning the filesystem entirely.
+    # The orchestrator also handles this, but the CLI wrapper skips the scan
+    # to preserve the prior zero-IO behaviour for no-ops.
+    old_id = options.old_id.strip()
+    new_id = options.new_id.strip()
+    if old_id == new_id:
+        plan, error = build_rename_plan(
+            repo_root=repo_root,
+            config=config,
+            scope=scope,
+            docs={},
+            load_issues=None,
+            old_id=old_id,
+            new_id=new_id,
+            mode=mode,
+        )
+        assert error is None and plan is not None
+        return _PreparedPlan(
+            scope=scope,
+            plan=plan,
+            scope_data=_LoadedScope(
+                repo_root=repo_root,
+                scope=scope,
+                doc_paths=[],
+                load_result=None,
+                docs={},
+            ),
+        ), None
+
+    doc_paths = collect_scoped_documents(
+        repo_root,
+        config,
+        scope,
+        base_skip_patterns=list(config.scanning.skip_patterns),
+    )
+    load_result = load_documents(doc_paths, parse_frontmatter_content)
+    docs = load_result.documents
+
+    # Duplicate-ID detection is a CLI-only error path (MCP operates on the
+    # live snapshot, which de-duplicates by id automatically). Kept in the
+    # wrapper per plan §"Design — _prepare_plan becomes thin wrapper".
+    if load_result.duplicate_ids:
+        details = []
+        for doc_id, paths in sorted(load_result.duplicate_ids.items()):
+            joined = ", ".join(str(path) for path in paths)
+            details.append(f"{doc_id}: {joined}")
+        return None, RenameError(
+            code="duplicate_ids",
+            message="Duplicate IDs detected in scope: " + "; ".join(details),
+        )
+
+    plan, error = build_rename_plan(
+        repo_root=repo_root,
+        config=config,
+        scope=scope,
+        docs=docs,
+        load_issues=load_result.issues,
+        old_id=old_id,
+        new_id=new_id,
+        mode=mode,
+    )
+    if error is not None:
+        return None, error
+    assert plan is not None
+
+    # Refresh files_scanned with the real scan count (the orchestrator only
+    # sees len(docs), not the scan pre-filter count).
+    refreshed_summary = RenameSummary(
+        files_scanned=len(doc_paths),
+        documents_loaded=plan.summary.documents_loaded,
+        planned_files=plan.summary.planned_files,
+        frontmatter_edits=plan.summary.frontmatter_edits,
+        body_edits=plan.summary.body_edits,
+        skipped_zone_sightings=plan.summary.skipped_zone_sightings,
+        warnings=plan.summary.warnings,
+    )
+    plan = RenamePlan(
+        mode=plan.mode,
+        scope=plan.scope,
+        old_id=plan.old_id,
+        new_id=plan.new_id,
+        summary=refreshed_summary,
+        files=plan.files,
+        warnings=plan.warnings,
+        no_op=plan.no_op,
     )
 
     return _PreparedPlan(
