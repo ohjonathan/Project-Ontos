@@ -7,8 +7,8 @@ depends_on: [ontos_manual]
 
 # Ontos Agent Instructions
 
-> **v4.0:** All CLI commands use `ontos <command>` (package installed via pip).
-> Agents can also connect via MCP server (`ontos serve`) for native integration.
+> **v4.1:** All CLI commands use `ontos <command>` (package installed via pip).
+> Agents can also connect via MCP server (`ontos serve`) for native integration — 15 tools including 4 write tools and portfolio search.
 > Use `python3 -m ontos <command>` if not installed globally.
 > See [Ontos Manual](Ontos_Manual.md) for details.
 
@@ -41,6 +41,8 @@ If the IDE supports MCP and the Ontos server is configured:
 
 **MCP vs CLI:** MCP tools return structured JSON and support live cache invalidation. Use MCP when available; fall back to CLI when MCP is not configured.
 
+**Core tools:**
+
 | Tool | Purpose |
 |------|---------|
 | `workspace_overview` | Project orientation (key docs, stats, warnings) |
@@ -52,10 +54,28 @@ If the IDE supports MCP and the Ontos server is configured:
 | `health` | Server health and index freshness |
 | `refresh` | Force cache rebuild after bulk changes |
 
+**Portfolio tools (v4.1):**
+
+| Tool | Purpose |
+|------|---------|
+| `project_registry` | Inventory of all known workspaces |
+| `search_portfolio` | FTS5 full-text search across workspaces |
+| `get_context_bundle` | Token-budgeted context bundle for a workspace |
+
+**Write tools (v4.1, mutable mode only):**
+
+| Tool | Purpose |
+|------|---------|
+| `scaffold_document` | Create a new markdown file with scaffold frontmatter |
+| `log_session` | Create a dated session log |
+| `promote_document` | Change curation level without moving the file |
+| `rename_document` | Rename an ID across all referencing files |
+
 ### "Start MCP Server" (v4.0)
 ```bash
 ontos serve                    # Serve current directory
 ontos serve --workspace /path  # Serve specific workspace
+ontos serve --read-only        # Read + portfolio tools only (no write tools)
 ```
 Starts a stdio MCP server. Configure in your IDE's MCP settings. Requires `pip install 'ontos[mcp]'`.
 

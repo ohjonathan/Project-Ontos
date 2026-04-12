@@ -5,9 +5,9 @@ status: active
 depends_on: [ontos_manual]
 ---
 
-# Migration Guide: v3.x → v4.0
+# Migration Guide: v3.x → v4.x
 
-This guide covers the new capabilities in Ontos v4.0 and how to enable them. **There are no breaking changes** — all existing CLI commands, configuration, and frontmatter schemas are preserved.
+This guide covers the new capabilities in Ontos v4.0 and v4.1 and how to enable them. **There are no breaking changes** — all existing CLI commands, configuration, and frontmatter schemas are preserved.
 
 ## What's New in v4.0
 
@@ -45,7 +45,7 @@ pip install 'ontos[mcp]'    # Adds mcp>=1.2 and pydantic>=2.0
 
 > **Note:** MCP requires Python 3.10+. All other Ontos commands continue to work on Python 3.9+.
 
-### 8 MCP Tools
+### 8 Core MCP Tools (v4.0)
 
 | Tool | Purpose |
 |------|---------|
@@ -58,7 +58,28 @@ pip install 'ontos[mcp]'    # Adds mcp>=1.2 and pydantic>=2.0
 | `health` | Server uptime, document count, index freshness, version |
 | `refresh` | Force cache rebuild after bulk changes |
 
-All tools are read-only (except `export_graph` with `export_to_file`, which writes within the workspace root).
+### 7 New MCP Tools (v4.1)
+
+**Portfolio tools (always available):**
+
+| Tool | Purpose |
+|------|---------|
+| `project_registry` | Inventory of all known workspaces |
+| `search_portfolio` | FTS5 full-text search across workspaces |
+| `get_context_bundle` | Token-budgeted context bundle for a workspace |
+
+**Write tools (mutable mode only — omitted when `--read-only`):**
+
+| Tool | Purpose |
+|------|---------|
+| `scaffold_document` | Create a new markdown file with scaffold frontmatter |
+| `log_session` | Create a dated session log |
+| `promote_document` | Change curation level without moving the file |
+| `rename_document` | Rename an ID across all referencing files |
+
+All write tools use advisory flock locking (`workspace_lock()`) for cross-process safety and perform rollback-then-rebuild recovery on commit failure.
+
+All tools are read-only except `export_graph` with `export_to_file` (writes within workspace root) and the four write tools above.
 
 ### File-Mtime Cache Invalidation
 
@@ -111,7 +132,7 @@ pipx install --force 'ontos[mcp]'
 ### 2. Verify
 
 ```bash
-ontos --version  # Should show 4.0.0
+ontos --version  # Should show 4.1.0
 ontos doctor     # Check graph health
 ```
 
@@ -134,6 +155,41 @@ Test the server:
 ontos serve
 # Press Ctrl+C to stop
 ```
+
+## What's New in v4.1
+
+### Portfolio Index
+
+v4.1 introduces a per-session SQLite portfolio index with FTS5 full-text search. Three new MCP tools (`project_registry`, `search_portfolio`, `get_context_bundle`) let agents discover and search across workspaces.
+
+Configure in `~/.config/ontos/portfolio.toml`:
+```toml
+[portfolio]
+scan_roots = ["~/Dev"]
+exclude = ["~/Dev/.dev-hub", "~/Dev/archive"]
+registry_path = "~/Dev/.dev-hub/registry/projects.json"
+
+[bundle]
+token_budget = 8000
+max_logs = 20
+log_window_days = 30
+```
+
+### Write Tools
+
+Four write-capable MCP tools ship in v4.1: `scaffold_document`, `log_session`, `promote_document`, and `rename_document`. They are registered only when the server runs without `--read-only`.
+
+### Advisory Flock Locking
+
+All write paths (CLI and MCP) now use `workspace_lock()` with advisory flock on `<workspace>/.ontos.lock`. Ensure `.ontos.lock` is in your `.gitignore`.
+
+### Verify Subcommand
+
+`ontos verify --portfolio` audits portfolio consistency (slug collisions, malformed TOML).
+
+### Shared Rename Orchestrator
+
+`build_rename_plan` is now the single plan-builder used by both `ontos rename --apply` and MCP `rename_document`.
 
 ### 4. Configure Your IDE (Optional)
 
@@ -172,13 +228,14 @@ usage_logging = true
 
 Tool invocations are logged to `~/.config/ontos/usage.jsonl`. No document content is logged.
 
-## Known Limitations (v4.0)
+## Known Limitations (v4.1)
 
-- **Read-only tools only** — Write tools (scaffold, rename) deferred to v4.1
+- ~~**Read-only tools only** — Write tools (scaffold, rename) deferred to v4.1~~ ✅ Shipped in v4.1
 - **Single workspace per server** — Each `ontos serve` process serves one project
-- **Stdio transport only** — HTTP/SSE transport deferred to v4.1
+- **Stdio transport only** — HTTP/SSE transport deferred to a future release
 - **Python 3.10+** required for MCP (base package remains 3.9+)
-- **No cross-project search** — Portfolio index deferred to v4.1
+- ~~**No cross-project search** — Portfolio index deferred to v4.1~~ ✅ Shipped in v4.1
+- **No cross-workspace writes** — Write tools target the served workspace only
 
 ## Getting Help
 

@@ -5,7 +5,7 @@ status: active
 depends_on: []
 ---
 
-# Ontos Manual v4.0
+# Ontos Manual v4.1
 
 *The complete reference for Project Ontos*
 
@@ -28,7 +28,7 @@ pip install 'ontos[mcp]'
 ontos serve
 ```
 
-> **v4.0 Note:** v4.0 adds MCP server mode for native AI IDE integration. See the [Migration Guide v3→v4](Migration_v3_to_v4.md). For v2.x users, see [Migration v2→v3](Migration_v2_to_v3.md).
+> **v4.1 Note:** v4.0 added MCP server mode for native AI IDE integration. v4.1 adds write tools, portfolio index, and advisory flock locking. See the [Migration Guide v3→v4](Migration_v3_to_v4.md). For v2.x users, see [Migration v2→v3](Migration_v2_to_v3.md).
 
 ---
 
@@ -399,7 +399,7 @@ To enable MCP server mode for IDE integration:
 pip install 'ontos[mcp]'
 ```
 
-This adds `mcp>=1.2` and `pydantic>=2.0` as dependencies. Python 3.10+ is required.
+This adds `mcp>=1.27.0` and `pydantic>=2.0` as dependencies. Python 3.10+ is required.
 
 For pipx users (fresh install):
 ```bash
@@ -728,11 +728,11 @@ usage_log_path = "~/.config/ontos/usage.jsonl"    # Default path
 
 No document content is logged — only tool names and timestamps.
 
-#### Limitations (v4.0+)
+#### Limitations (v4.1)
 
 - **Single workspace per server** — One `ontos serve` process per project
 - **No cross-workspace writes** — Write tools target the served workspace only
-- **Stdio transport only** — HTTP/SSE transport deferred to v4.1
+- **Stdio transport only** — HTTP/SSE transport deferred to a future release
 - **Python 3.10+** required — Install with `pip install 'ontos[mcp]'`
 
 ---

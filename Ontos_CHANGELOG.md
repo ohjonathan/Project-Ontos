@@ -21,6 +21,106 @@ All notable changes to **Project Ontos itself** (the protocol and tooling) will 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0] - 2026-04-12
+
+### Theme: "Portfolio Authority"
+
+Major release shipping portfolio-scoped MCP with read AND write tools, a portfolio index with FTS5 search, advisory flock locking, wired bundle configuration, and a shared rename orchestrator.
+
+### Added
+
+- **4 MCP write tools** — `scaffold_document`, `log_session`, `promote_document`, `rename_document`. All respect `read_only` at registration time and wrap mutations in `workspace_lock()`.
+- **3 MCP portfolio tools** — `project_registry`, `search_portfolio`, `get_context_bundle` over a per-session SQLite portfolio index with FTS5 full-text search.
+- **`ontos verify --portfolio`** — Audits portfolio consistency (slug collisions, malformed TOML).
+- **Bundle config** — `bundle_token_budget`, `bundle_max_logs`, `bundle_log_window_days` in `~/.config/ontos/portfolio.toml` now reach `build_context_bundle()`.
+- **Shared rename orchestrator** — `build_rename_plan` used by both CLI and MCP.
+- **Advisory flock locking** — `workspace_lock()` on `<workspace>/.ontos.lock` for cross-process mutual exclusion.
+- **Rollback-then-rebuild recovery** — Write tools revert partial file state on commit failure before rebuilding portfolio index.
+
+### Changed
+
+- MCP tool count: 8 → 15 (8 core + 3 portfolio + 4 write).
+- `read_only=True` now omits write tools from `list_tools()` entirely (previously returned `E_READ_ONLY` on invocation).
+
+### Metrics
+
+- ~40 commits (Track A + Track B + fix cycles), 5 PRs merged, 1133 tests passed.
+
+---
+
+## [4.0.0] - 2026-04-05
+
+### Theme: "MCP Server Mode"
+
+Major release adding an MCP (Model Context Protocol) server for native AI IDE integration.
+
+### Added
+
+- **`ontos serve` command** — Starts a stdio MCP server exposing the knowledge graph to AI agents.
+- **8 MCP tools** — `workspace_overview`, `context_map`, `get_document`, `list_documents`, `export_graph`, `query`, `health`, `refresh`.
+- **File-mtime cache invalidation** — Automatic snapshot rebuild when documents change.
+- **`[mcp]` config section** — Optional usage logging in `.ontos.toml`.
+- **`ontos[mcp]` optional dependency** — `mcp>=1.27.0` and `pydantic>=2.0` (Python 3.10+).
+
+### Changed
+
+- Version bumped to `4.0.0` in `pyproject.toml` and `ontos/__init__.py`.
+- CI matrix updated: Python 3.10+ installs `[mcp]` extra; Python 3.9 stays on base package.
+
+### Metrics
+
+- 8 MCP tools, stdio transport, Python 3.9+ base compatibility preserved.
+
+---
+
+## [3.4.0] - 2026-04-04
+
+### Theme: "Tiered Context"
+
+Minor release shipping `--compact tiered` context maps for token-constrained agents.
+
+### Added
+
+- **`--compact tiered` mode** — Three-section output: prose project summary (Tier 1), type-ranked compact listing (Tier 2), and full ID index (Tier 3).
+
+### Fixed
+
+- Consistent Tier 1 log ordering by date descending.
+- `project_root` normalization before compact dispatch (crash fix on relative paths).
+- Shared `_sort_key` across all compact modes for deterministic output.
+
+### Metrics
+
+- 7 commits, 1 PR (#79), compact modes: 2 → 3 (`plain`, `rich`, `tiered`).
+
+---
+
+## [3.3.1] - 2026-02-28
+
+### Theme: "Review Remediation"
+
+Patch release shipping link-check false positive reduction and a new `promote_check` maintenance task.
+
+### Added
+
+- **`promote_check` maintenance task** — 9th task in `ontos maintain`; reports documents ready for promotion.
+
+### Fixed
+
+- **link-check FP reduction: 408 → 45** — Two rounds of pre-classification filters eliminate 89% of false positives.
+
+### Changed
+
+- `SECURITY.md` rewritten for v3.3.x surface.
+- `pyproject.toml` classifier bumped: `Alpha` → `Beta`.
+- README roadmap and Manual updated to v3.3.
+
+### Metrics
+
+- 11 commits, 3 PRs (#76, #77, #78), 920+ tests passed.
+
+---
+
 ## [3.3.0] - 2026-02-11
 
 ### Theme: "Full Spectrum Hardening"
