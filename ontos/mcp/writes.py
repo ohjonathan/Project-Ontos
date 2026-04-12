@@ -17,10 +17,15 @@ Cross-cutting behavior (addendum v1.2):
 * **A2 slugifier binding.** Workspace identity slugs use
   ``ontos.mcp.scanner.slugify``; titles that become filename components
   use ``ontos.commands.log._slugify``. No third slugifier is introduced.
-* **A3 post-commit-failure rebuild.** If ``ctx.commit()`` raises, the DB
-  may be out of sync with the filesystem. The exception path re-invokes
-  ``rebuild_workspace(slug, root)`` on a best-effort basis. Rebuild
-  errors are recorded but never mask the original exception.
+* **A3 post-commit-failure rollback-then-rebuild (SF-B7).** If
+  ``ctx.commit()`` raises, the target path is first rolled back via
+  ``ontos.core.git.rollback_path`` (which does ``git checkout --`` for
+  tracked paths and unlinks untracked partial writes), *then* the
+  portfolio index is rebuilt so the DB re-converges with the reverted
+  filesystem. Previously this path did rebuild-only, which left the DB
+  pointing at file content that had been partially clobbered. Rollback
+  and rebuild failures are both recorded via ``ctx.error(...)`` but
+  never mask the original commit exception.
 * **read_only enforcement.** Every write tool checks the server-level
   ``read_only`` flag and returns a structured
   ``WriteToolErrorEnvelope`` when mutations are disallowed. This closes
@@ -44,6 +49,7 @@ from ontos.commands.log import _slugify as slugify_title
 from ontos.core.context import SessionContext
 from ontos.core.curation import create_scaffold
 from ontos.core.errors import OntosInternalError, OntosUserError
+from ontos.core.git import rollback_path
 from ontos.core.schema import serialize_frontmatter
 from ontos.io.yaml import parse_frontmatter_content
 from ontos.mcp._validation import resolve_workspace_slug, validate_workspace_id
@@ -170,20 +176,37 @@ def _rebuild_safely(
         traceback.print_exc(file=sys.stderr)
 
 
-def _commit_with_a3_recovery(
+def _commit_with_a3_rollback_and_rebuild(
     ctx: SessionContext,
     portfolio_index: Any,
     slug: str,
     workspace_root: Path,
+    target_path: Path,
 ) -> List[Path]:
-    """Commit the session. On failure, run the A3 rebuild-on-error path.
+    """Commit, or rollback-then-rebuild on failure (addendum v1.2 §A3, SF-B7).
 
-    The A3 rebuild is swallowed so it cannot mask the original commit
-    exception. See addendum v1.2 §A3.
+    On ``ctx.commit()`` exception:
+      1. Roll back the ``target_path`` — ``git checkout --`` for tracked
+         paths, ``unlink`` for untracked partial writes. Scoped rollback
+         avoids clobbering unrelated dirty state in the worktree.
+      2. Call ``rebuild_workspace(slug, root)`` so the portfolio DB
+         re-converges with the reverted filesystem.
+      3. Re-raise the original commit exception.
+
+    Rollback and rebuild failures are both recorded via ``ctx.error(...)``
+    but never mask the original exception.
+
+    Mirrors the pattern at ``rename_tool.py::_commit_with_a3_rollback_and_rebuild``
+    but uses scoped rollback because single-file write tools do NOT require
+    a clean-worktree precondition, so whole-workspace ``git checkout -- .``
+    would be destructive to unrelated uncommitted state.
     """
     try:
         return ctx.commit()
     except Exception:
+        reason = rollback_path(workspace_root, target_path)
+        if reason is not None:
+            ctx.error(f"Post-commit rollback failed: {reason}")
         _rebuild_safely(portfolio_index, slug, workspace_root)
         raise
 
@@ -374,8 +397,8 @@ def _scaffold_document_impl(
         owns_lock=False,
     )
     ctx.buffer_write(resolved, document)
-    _commit_with_a3_recovery(
-        ctx, portfolio_index, plan.slug, plan.workspace_root
+    _commit_with_a3_rollback_and_rebuild(
+        ctx, portfolio_index, plan.slug, plan.workspace_root, resolved
     )
     _rebuild_safely(portfolio_index, plan.slug, plan.workspace_root)
 
@@ -455,8 +478,8 @@ def _log_session_impl(
         owns_lock=False,
     )
     ctx.buffer_write(target, document)
-    _commit_with_a3_recovery(
-        ctx, portfolio_index, plan.slug, plan.workspace_root
+    _commit_with_a3_rollback_and_rebuild(
+        ctx, portfolio_index, plan.slug, plan.workspace_root, target
     )
     _rebuild_safely(portfolio_index, plan.slug, plan.workspace_root)
 
@@ -526,8 +549,8 @@ def _promote_document_impl(
         owns_lock=False,
     )
     ctx.buffer_write(target, document)
-    _commit_with_a3_recovery(
-        ctx, portfolio_index, plan.slug, plan.workspace_root
+    _commit_with_a3_rollback_and_rebuild(
+        ctx, portfolio_index, plan.slug, plan.workspace_root, target
     )
     _rebuild_safely(portfolio_index, plan.slug, plan.workspace_root)
 

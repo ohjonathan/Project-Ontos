@@ -614,12 +614,37 @@ def test_a3_rebuild_failure_does_not_mask_original_exception(monkeypatch, tmp_pa
     assert len(portfolio.rebuild_calls) == 1
 
 
-def test_a3_single_file_rebuild_on_error_does_not_rollback_partial_write(monkeypatch, tmp_path):
-    """Single-file write tools rebuild on error but do not rollback."""
+def test_a3_single_file_rollback_then_rebuild_reverts_partial_write(monkeypatch, tmp_path):
+    """SF-B7: single-file write tools roll back the partial write BEFORE
+    rebuilding the portfolio index (addendum A3).
+
+    Synthetic failure scenario: ``SessionContext.commit`` is monkeypatched
+    to write a partial payload to the target path and then raise. Pre-SF-B7
+    code left that partial file on disk and called rebuild — the DB then
+    pointed at content the commit never successfully applied. Post-SF-B7,
+    ``rollback_path`` unlinks the untracked partial write (the target is
+    new, not in HEAD), and THEN rebuild runs against a reverted filesystem.
+
+    Assertions:
+      * The partial write is gone from disk.
+      * ``rebuild_workspace`` was invoked exactly once (the recovery path).
+      * The original commit exception propagates — rollback/rebuild
+        failures must not mask it.
+
+    Regression signal: remove the ``rollback_path`` call from
+    ``writes._commit_with_a3_rollback_and_rebuild`` and the
+    ``target.exists()`` assertion below flips — the file survives because
+    rebuild-only doesn't touch the filesystem.
+    """
+    import subprocess
+
     from ontos.core.context import SessionContext
     from ontos.mcp import writes as write_impl
 
     root = create_workspace(tmp_path)
+    # rollback_path uses git; give it a real repo so ``git checkout --`` has
+    # somewhere to report "did not match any file" for our new target path.
+    _git_init_clean(root)
     cache = build_cache(root)
     portfolio = RecordingPortfolioIndex()
     target = root / "docs" / "partial_commit.md"
@@ -640,8 +665,53 @@ def test_a3_single_file_rebuild_on_error_does_not_rollback_partial_write(monkeyp
 
     assert result.isError is True
     assert "induced commit failure after partial write" in result.content[0].text
-    assert target.exists()
-    assert target.read_text(encoding="utf-8") == "partially applied\n"
+    # Rollback deleted the untracked partial write.
+    assert not target.exists(), (
+        "SF-B7: rollback must unlink untracked partial writes before rebuild"
+    )
+    # Rebuild ran exactly once — the A3 recovery invocation.
+    assert len(portfolio.rebuild_calls) == 1
+
+
+def test_a3_single_file_rollback_reverts_tracked_path_to_head(monkeypatch, tmp_path):
+    """SF-B7 complement: ``promote_document`` mutates an EXISTING file.
+    Commit failure must leave the file at its HEAD content, not the partial
+    mutation. Covers the tracked-path branch of ``rollback_path``.
+    """
+    from ontos.core.context import SessionContext
+    from ontos.mcp import writes as write_impl
+
+    root = create_workspace(tmp_path)
+    _git_init_clean(root)
+
+    # kernel.md is seeded by create_workspace + committed by _git_init_clean.
+    kernel = root / "docs" / "kernel.md"
+    head_content = kernel.read_text(encoding="utf-8")
+    assert "id: kernel_doc" in head_content
+
+    cache = build_cache(root)
+    portfolio = RecordingPortfolioIndex()
+
+    def partially_writing_commit(self):
+        # Simulate commit writing a corrupted version before raising.
+        kernel.write_text("CORRUPTED PARTIAL WRITE\n", encoding="utf-8")
+        raise IOError("induced commit failure after partial mutation")
+
+    monkeypatch.setattr(SessionContext, "commit", partially_writing_commit)
+
+    result = write_impl.promote_document(
+        cache,
+        portfolio_index=portfolio,
+        read_only=False,
+        document_id="kernel_doc",
+        new_level=1,
+    )
+
+    assert result.isError is True
+    # Rollback restored HEAD content for the tracked file.
+    assert kernel.read_text(encoding="utf-8") == head_content, (
+        "SF-B7: rollback must ``git checkout --`` tracked paths to HEAD"
+    )
     assert len(portfolio.rebuild_calls) == 1
 
 
