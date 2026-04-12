@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
+import threading
+import time
 
 import pytest
 
@@ -34,13 +36,24 @@ def test_open_creates_schema_and_sets_user_version(tmp_path):
 
 def test_open_recovers_from_corrupt_database(tmp_path):
     db_path = tmp_path / "portfolio.db"
+    wal_path = tmp_path / "portfolio.db-wal"
+    shm_path = tmp_path / "portfolio.db-shm"
     db_path.write_text("not a sqlite database", encoding="utf-8")
+    wal_path.write_text("stale wal", encoding="utf-8")
+    shm_path.write_text("stale shm", encoding="utf-8")
 
     index = PortfolioIndex(db_path)
     index.open()
 
     with sqlite3.connect(db_path) as conn:
         assert conn.execute("PRAGMA user_version;").fetchone()[0] == 1
+    expected_markers = {
+        wal_path: "stale wal",
+        shm_path: "stale shm",
+    }
+    for sidecar, marker in expected_markers.items():
+        if sidecar.exists():
+            assert sidecar.read_text(encoding="utf-8", errors="ignore") != marker
 
 
 def test_rebuild_workspace_indexes_documents_and_projects(tmp_path):
@@ -105,6 +118,120 @@ def test_search_fts_rejects_malformed_queries(tmp_path):
         index.search_fts('"unterminated', workspace=None, offset=0, limit=10)
 
     assert exc_info.value.code == "E_INVALID_QUERY"
+
+
+def test_connect_uses_nonzero_timeout(tmp_path, monkeypatch):
+    db_path = tmp_path / "portfolio.db"
+    index = PortfolioIndex(db_path)
+
+    captured: dict[str, float | None] = {"timeout": None}
+    real_connect = sqlite3.connect
+
+    def recording_connect(*args, **kwargs):
+        captured["timeout"] = kwargs.get("timeout")
+        return real_connect(*args, **kwargs)
+
+    monkeypatch.setattr("ontos.mcp.portfolio.sqlite3.connect", recording_connect)
+
+    with index._connect() as conn:
+        conn.execute("SELECT 1;")
+
+    assert isinstance(captured["timeout"], (int, float))
+    assert float(captured["timeout"]) > 0.0
+
+
+def test_search_fts_waits_for_concurrent_writer_and_succeeds(tmp_path):
+    workspace_root = create_workspace(tmp_path)
+    db_path = tmp_path / "portfolio.db"
+    index = PortfolioIndex(db_path)
+    index.rebuild_workspace("workspace", workspace_root)
+
+    holder_started = threading.Event()
+    release_writer = threading.Event()
+    outcome: dict[str, object] = {}
+
+    def hold_writer_lock() -> None:
+        locker = sqlite3.connect(db_path)
+        try:
+            locker.execute("BEGIN IMMEDIATE;")
+            locker.execute(
+                "UPDATE projects SET status = status WHERE slug = ?",
+                ("workspace",),
+            )
+            holder_started.set()
+            release_writer.wait(timeout=2.0)
+            locker.rollback()
+        finally:
+            locker.close()
+
+    def run_search() -> None:
+        try:
+            outcome["value"] = index.search_fts("Atom", workspace="workspace", offset=0, limit=10)
+        except Exception as exc:  # pragma: no cover - assertion below validates no exception
+            outcome["error"] = exc
+
+    writer = threading.Thread(target=hold_writer_lock, daemon=True)
+    reader = threading.Thread(target=run_search, daemon=True)
+    writer.start()
+    assert holder_started.wait(timeout=1.0)
+    reader.start()
+    time.sleep(0.1)
+    release_writer.set()
+    writer.join(timeout=2.0)
+    reader.join(timeout=2.0)
+    assert not writer.is_alive()
+    assert not reader.is_alive()
+
+    assert "error" not in outcome
+    payload = outcome.get("value")
+    assert isinstance(payload, dict)
+    assert payload["total_hits"] >= 1
+
+
+def test_search_fts_translates_busy_errors_to_user_error(tmp_path, monkeypatch):
+    workspace_root = create_workspace(tmp_path)
+    db_path = tmp_path / "portfolio.db"
+    index = PortfolioIndex(db_path)
+    index.rebuild_workspace("workspace", workspace_root)
+
+    class FakeBusyConnection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def execute(self, statement, params=()):  # noqa: ARG002
+            if "fts_content MATCH ?" in statement:
+                raise sqlite3.OperationalError("database is locked")
+            if statement == "BEGIN;":
+                return None
+
+            class _Cursor:
+                @staticmethod
+                def fetchone():
+                    return [1]
+
+                @staticmethod
+                def fetchall():
+                    return []
+
+            return _Cursor()
+
+        @staticmethod
+        def rollback():
+            return None
+
+        @staticmethod
+        def commit():
+            return None
+
+    monkeypatch.setattr(index, "_connect", lambda: FakeBusyConnection())
+
+    with pytest.raises(OntosUserError) as exc_info:
+        index.search_fts("Atom", workspace="workspace", offset=0, limit=10)
+
+    assert exc_info.value.code == "E_PORTFOLIO_BUSY"
 
 
 def test_rebuild_workspace_keeps_fts_row_parity(tmp_path):

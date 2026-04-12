@@ -21,6 +21,7 @@ class PortfolioIndex:
     """SQLite-backed portfolio index for cross-project queries."""
 
     SCHEMA_VERSION = 1
+    CONNECT_TIMEOUT_SECONDS = 5.0
     PRAGMA_BLOCK = """
         PRAGMA journal_mode = WAL;
         PRAGMA synchronous = NORMAL;
@@ -216,6 +217,11 @@ class PortfolioIndex:
                 conn.rollback()
                 if self._is_invalid_fts_query(exc):
                     raise OntosUserError("Malformed full-text query.", code="E_INVALID_QUERY") from exc
+                if self._is_busy_error(exc):
+                    raise OntosUserError(
+                        "Portfolio index is busy. Please retry.",
+                        code="E_PORTFOLIO_BUSY",
+                    ) from exc
                 raise
             except Exception:
                 conn.rollback()
@@ -418,7 +424,10 @@ class PortfolioIndex:
                 conn.execute("PRAGMA wal_checkpoint(PASSIVE);")
 
     def _connect(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(str(self.db_path))
+        conn = sqlite3.connect(
+            str(self.db_path),
+            timeout=self.CONNECT_TIMEOUT_SECONDS,
+        )
         conn.row_factory = sqlite3.Row
         self._apply_pragmas(conn)
         conn.execute("PRAGMA wal_autocheckpoint = 0;")
@@ -507,10 +516,16 @@ class PortfolioIndex:
         )
 
     def _reset_db_file(self) -> None:
-        try:
-            self.db_path.unlink()
-        except FileNotFoundError:
-            return
+        candidates = (
+            self.db_path,
+            self.db_path.with_name(f"{self.db_path.name}-wal"),
+            self.db_path.with_name(f"{self.db_path.name}-shm"),
+        )
+        for path in candidates:
+            try:
+                path.unlink()
+            except FileNotFoundError:
+                continue
 
     def _apply_pragmas(self, conn: sqlite3.Connection) -> None:
         for statement in self.PRAGMA_BLOCK.splitlines():
@@ -581,6 +596,11 @@ class PortfolioIndex:
             or "unterminated string" in message
             or "unknown special query" in message
         )
+
+    @staticmethod
+    def _is_busy_error(exc: sqlite3.OperationalError) -> bool:
+        message = str(exc).lower()
+        return "database is locked" in message or "database table is locked" in message
 
     @staticmethod
     def _stat_fingerprint(path: Path) -> tuple[int, int] | None:
