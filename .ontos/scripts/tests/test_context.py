@@ -2,7 +2,7 @@
 
 This test suite validates the core SessionContext functionality:
 - Buffer operations (write/delete/move)
-- Two-phase commit with atomicity
+- Staged commit behavior for buffered writes
 - Rollback behavior
 - Lock acquisition and timeout
 - Factory initialization
@@ -29,6 +29,19 @@ def _hold_flock(lock_path: str, ready, release) -> None:
         fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
         ready.set()
         release.wait(timeout=5.0)
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+def _try_flock_once(lock_path: str, acquired) -> None:
+    """Try to acquire the lock once and immediately release it."""
+    path = Path(lock_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a+", encoding="utf-8") as handle:
+        try:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return
+        acquired.set()
         fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
 
@@ -75,7 +88,7 @@ class TestBufferOperations:
 
 
 class TestCommit:
-    """Tests for commit() method - file creation and atomicity."""
+    """Tests for commit() method - file creation and staged updates."""
 
     def test_commit_empty_buffer_returns_empty(self, tmp_path):
         """Commit with no pending writes returns empty list."""
@@ -252,13 +265,21 @@ class TestLocking:
         """Commit properly acquires and releases lock."""
         ctx = SessionContext(repo_root=tmp_path, config={})
         ctx.buffer_write(tmp_path / "test.txt", "content")
-        
-        lock_file = tmp_path / ".ontos" / "write.lock"
-        
+
         ctx.commit()
-        
-        # Lock should be released after commit
-        assert not lock_file.exists()
+
+        lock_file = tmp_path / ".ontos.lock"
+        assert lock_file.exists()
+
+        acquired = Event()
+        proc = Process(target=_try_flock_once, args=(str(lock_file), acquired))
+        proc.start()
+        proc.join(timeout=5.0)
+        if proc.is_alive():
+            proc.terminate()
+            proc.join(timeout=1.0)
+
+        assert acquired.is_set(), "Lock remained held after commit"
 
 
 class TestFromRepo:
