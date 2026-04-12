@@ -616,3 +616,96 @@ def test_rename_document_output_schema_exposed():
         "success", "old_id", "new_id", "path",
         "references_updated", "updated_files",
     }
+
+
+# ---------------------------------------------------------------------------
+# Shared-orchestrator cross-scope collision (gained in the Dev 3 follow-up).
+# ---------------------------------------------------------------------------
+
+
+def test_rename_rejects_cross_scope_collision_docs_scope(tmp_path):
+    """Seed a doc with ``id: strategy_doc`` inside ``.ontos-internal/`` and
+    attempt to rename the docs-scope ``strategy_doc`` → ``renamed_strategy``.
+    The shared orchestrator's docs-scope external-IDs check must refuse it.
+
+    This path was silently allowed before the shared-orchestrator refactor:
+    the MCP tool had its own ID validation + collision checks that never
+    consulted ``_load_external_ids``. Asserts a new regression line.
+    """
+    root = create_workspace(tmp_path)
+    # Seed .ontos-internal/ with a colliding id BEFORE git init so the
+    # baseline commit is clean.
+    internal_doc = root / ".ontos-internal" / "collision.md"
+    internal_doc.parent.mkdir(parents=True, exist_ok=True)
+    internal_doc.write_text(
+        "---\n"
+        "id: strategy_doc\n"
+        "type: atom\n"
+        "status: active\n"
+        "---\n\n"
+        "Internal body.\n",
+        encoding="utf-8",
+    )
+    _git_init_clean(root)
+
+    server = build_server(root)
+    result = _call(
+        server,
+        "rename_document",
+        {"document_id": "strategy_doc", "new_id": "renamed_strategy"},
+    )
+
+    assert result.isError is True
+    assert (
+        result.structuredContent["error"]["error_code"]
+        == "E_CROSS_SCOPE_COLLISION"
+    )
+
+
+def test_rename_library_scope_allows_ids_in_ontos_internal(tmp_path):
+    """Complement: when ``scanning.default_scope = "library"``, the snapshot
+    includes ``.ontos-internal/`` and the cross-scope check is skipped.
+
+    The rename must succeed — library scope treats internal docs as first
+    class participants rather than hidden siblings.
+    """
+    root = create_workspace(tmp_path)
+    # Flip the workspace into library scope — the [scanning] section
+    # already exists from create_workspace, so we append a key under it
+    # via string replacement rather than declaring the table twice.
+    ontos_toml = root / ".ontos.toml"
+    existing = ontos_toml.read_text(encoding="utf-8")
+    assert "[scanning]" in existing
+    ontos_toml.write_text(
+        existing.replace(
+            "[scanning]",
+            '[scanning]\ndefault_scope = "library"',
+            1,
+        ),
+        encoding="utf-8",
+    )
+    # Internal doc that does NOT collide — rename should proceed cleanly.
+    internal_doc = root / ".ontos-internal" / "neighbour.md"
+    internal_doc.parent.mkdir(parents=True, exist_ok=True)
+    internal_doc.write_text(
+        "---\n"
+        "id: internal_neighbour\n"
+        "type: atom\n"
+        "status: active\n"
+        "---\n\n"
+        "Internal body.\n",
+        encoding="utf-8",
+    )
+    _git_init_clean(root)
+
+    server = build_server(root)
+    result = _call(
+        server,
+        "rename_document",
+        {"document_id": "strategy_doc", "new_id": "renamed_strategy"},
+    )
+
+    assert result.isError is False, result.content[0].text
+    payload = result.structuredContent
+    assert payload["success"] is True
+    assert payload["new_id"] == "renamed_strategy"

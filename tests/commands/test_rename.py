@@ -521,3 +521,95 @@ def test_rename_quiet_mode_suppresses_per_file_details(tmp_path: Path):
     assert result.returncode == 0
     assert "Summary" in result.stdout
     assert "File:" not in result.stdout
+
+
+def test_build_rename_plan_equivalence_cli_vs_injected_docs(tmp_path: Path):
+    """Regression guard: the CLI path (``_prepare_plan``) and a direct call
+    to ``build_rename_plan`` with the SAME docs dict must produce identical
+    ``RenamePlan`` output.
+
+    This locks in the shared-orchestrator contract — if a future change
+    CWD-drifts one path but not the other, this test fails before the
+    CB-6-style divergence ships.
+    """
+    import os
+
+    from ontos.commands.rename import (
+        RenameOptions,
+        _prepare_plan,
+        build_rename_plan,
+    )
+
+    # Build a small workspace with three docs and one body reference.
+    _init_repo(tmp_path)
+    _write_doc(tmp_path / "docs" / "target.md", "old_id", doc_type="strategy")
+    _write_doc(
+        tmp_path / "docs" / "source.md",
+        "source_doc",
+        doc_type="atom",
+        depends_on="[old_id]",
+        body="See old_id inline.",
+    )
+    _write_doc(
+        tmp_path / "docs" / "other.md",
+        "unrelated_doc",
+        doc_type="atom",
+        body="Plain body.",
+    )
+
+    # Run the CLI path — _prepare_plan walks find_project_root, so we have
+    # to chdir into the workspace.
+    prev_cwd = Path.cwd()
+    os.chdir(tmp_path)
+    try:
+        prepared, error = _prepare_plan(
+            RenameOptions(old_id="old_id", new_id="new_id"),
+            mode="dry_run",
+        )
+    finally:
+        os.chdir(prev_cwd)
+
+    assert error is None
+    assert prepared is not None
+    cli_plan = prepared.plan
+
+    # Call build_rename_plan directly with the same docs the CLI loaded.
+    scope_data = prepared.scope_data
+    injected_plan, injected_error = build_rename_plan(
+        repo_root=scope_data.repo_root,
+        config=__import__(
+            "ontos.io.config", fromlist=["load_project_config"]
+        ).load_project_config(repo_root=scope_data.repo_root),
+        scope=scope_data.scope,
+        docs=scope_data.docs,
+        load_issues=scope_data.load_result.issues,
+        old_id="old_id",
+        new_id="new_id",
+        mode="dry_run",
+    )
+    assert injected_error is None
+    assert injected_plan is not None
+
+    # Same file plans, sorted by path.
+    cli_paths = [str(fp.path) for fp in cli_plan.files]
+    inj_paths = [str(fp.path) for fp in injected_plan.files]
+    assert cli_paths == inj_paths
+
+    # Edit-level equality — frontmatter + body rewrites must match exactly.
+    for cli_fp, inj_fp in zip(cli_plan.files, injected_plan.files):
+        assert cli_fp.new_content == inj_fp.new_content
+        assert cli_fp.frontmatter_edits == inj_fp.frontmatter_edits
+        assert cli_fp.body_edits == inj_fp.body_edits
+
+    # Summary counts (ignoring files_scanned — the CLI wrapper refreshes
+    # that with the pre-scan count, a deliberate divergence because the
+    # orchestrator can't know the scan count).
+    assert cli_plan.summary.documents_loaded == injected_plan.summary.documents_loaded
+    assert cli_plan.summary.planned_files == injected_plan.summary.planned_files
+    assert cli_plan.summary.frontmatter_edits == injected_plan.summary.frontmatter_edits
+    assert cli_plan.summary.body_edits == injected_plan.summary.body_edits
+    assert cli_plan.summary.skipped_zone_sightings == injected_plan.summary.skipped_zone_sightings
+    assert cli_plan.summary.warnings == injected_plan.summary.warnings
+
+    # Warnings list parity.
+    assert list(cli_plan.warnings) == list(injected_plan.warnings)

@@ -45,12 +45,14 @@ from typing import Any, Dict, List, Optional
 from mcp.types import CallToolResult, TextContent
 
 from ontos.commands.rename import (
-    FilePlan,
-    _build_file_plan,
+    RenameError,
+    build_rename_plan,
 )
 from ontos.core.context import SessionContext
 from ontos.core.errors import OntosInternalError, OntosUserError
 from ontos.core.git import is_workspace_clean
+from ontos.io.config import load_project_config
+from ontos.io.scan_scope import resolve_scan_scope
 from ontos.mcp._validation import validate_workspace_id
 from ontos.mcp.cache import SnapshotCache
 from ontos.mcp.locking import workspace_lock
@@ -63,11 +65,35 @@ from ontos.mcp.schemas import (
 )
 
 
-# Same ID regex the CLI rename command uses. Kept here so we don't import a
-# private module-level constant.
-import re as _re
-_ID_PATTERN = _re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$")
-_RESERVED_YAML_WORDS = {"true", "false", "yes", "no", "null", "on", "off"}
+# Mapping from shared-orchestrator ``RenameError.code`` to the MCP
+# write-tool error taxonomy. The orchestrator is source-of-truth for
+# validation + collision logic; this helper preserves the stable MCP
+# envelope codes the existing tests assert.
+_RENAME_ERROR_TO_USER_CODE: Dict[str, str] = {
+    "invalid_new_id": "E_INVALID_ID",
+    "reserved_new_id": "E_INVALID_ID",
+    "old_id_not_found": "E_DOCUMENT_NOT_FOUND",
+    "new_id_exists": "E_DUPLICATE_ID",
+    "cross_scope_collision": "E_CROSS_SCOPE_COLLISION",
+    "duplicate_ids": "E_DUPLICATE_ID",
+    "parse_failed_target_sighting": "E_UNSUPPORTED_TARGET_FORMAT",
+    "config_error": "E_CONFIG_ERROR",
+    "dirty_git_state": "E_DIRTY_WORKSPACE",
+    "project_root_not_found": "E_PROJECT_ROOT_NOT_FOUND",
+}
+
+
+def _rename_error_to_user_exc(error: RenameError) -> OntosUserError:
+    """Translate a shared ``RenameError`` into an ``OntosUserError``.
+
+    Unknown codes fall back to ``E_USER_INPUT`` (the ``OntosUserError``
+    default) so new orchestrator codes surface as user errors by default
+    rather than crashing the MCP dispatcher.
+    """
+    return OntosUserError(
+        error.message,
+        code=_RENAME_ERROR_TO_USER_CODE.get(error.code, "E_USER_INPUT"),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -382,16 +408,53 @@ def _rename_document_impl(
             code="E_INVALID_ID",
         )
 
-    # No-op rename: report success without touching files.
-    if old_id == target_id:
-        snapshot = cache.get_fresh_snapshot()
+    # Route through the shared orchestrator. It performs ID validation,
+    # old/new collision checks, the docs-scope cross-scope guard, and the
+    # sorted per-file plan loop. The CLI and MCP now share this single
+    # plan-builder — closing the CB-6-style divergence risk where each
+    # call site had its own hand-rolled orchestration loop.
+    snapshot = cache.get_fresh_snapshot()
+    try:
+        config = load_project_config(repo_root=plan.workspace_root)
+    except Exception as exc:  # pragma: no cover - config failure path
+        raise OntosUserError(
+            f"Config error: {exc}",
+            code="E_CONFIG_ERROR",
+        )
+    # Use the same scope resolution the snapshot cache used, so the docs
+    # dict and the scope parameter stay consistent. This keeps MCP's
+    # pre-refactor behaviour (whatever scope the snapshot was built with)
+    # while gaining the docs-scope cross-scope collision check whenever
+    # the effective scope is DOCS.
+    scope = resolve_scan_scope(None, config.scanning.default_scope)
+
+    rename_plan, error = build_rename_plan(
+        repo_root=plan.workspace_root,
+        config=config,
+        scope=scope,
+        docs=snapshot.documents,
+        load_issues=None,
+        old_id=old_id,
+        new_id=target_id,
+        mode="apply",
+        # Git clean-state was already enforced by ``_preflight`` before
+        # we acquired ``workspace_lock()``. Re-checking here would
+        # false-positive because ``.ontos.lock`` is now an untracked file.
+        check_git=False,
+    )
+    if error is not None:
+        raise _rename_error_to_user_exc(error)
+    assert rename_plan is not None
+
+    # No-op rename: report success without touching files or acquiring any
+    # further write-side state.
+    if rename_plan.no_op:
         doc = snapshot.documents.get(old_id)
-        if doc is None:
-            raise OntosUserError(
-                f"Document not found: {old_id}",
-                code="E_DOCUMENT_NOT_FOUND",
-            )
-        rel = _rel_to_workspace(plan.workspace_root, Path(doc.filepath))
+        rel = (
+            _rel_to_workspace(plan.workspace_root, Path(doc.filepath))
+            if doc is not None
+            else ""
+        )
         return {
             "success": True,
             "old_id": old_id,
@@ -401,57 +464,12 @@ def _rename_document_impl(
             "updated_files": [],
         }
 
-    if not _ID_PATTERN.match(target_id):
-        raise OntosUserError(
-            "new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$",
-            code="E_INVALID_ID",
-        )
-    if target_id.lower() in _RESERVED_YAML_WORDS:
-        raise OntosUserError(
-            "new_id cannot be a YAML reserved word: "
-            + ", ".join(sorted(_RESERVED_YAML_WORDS)),
-            code="E_INVALID_ID",
-        )
-
-    # Workspace-scoped lookup: the MCP tool operates on the live snapshot
-    # rather than re-invoking the CLI's scope resolver. This avoids the
-    # find_project_root/cwd dependency that _prepare_plan carries.
-    snapshot = cache.get_fresh_snapshot()
-    documents = snapshot.documents
-
-    if old_id not in documents:
-        raise OntosUserError(
-            f"Document not found: {old_id}",
-            code="E_DOCUMENT_NOT_FOUND",
-        )
-
-    if target_id in documents:
-        raise OntosUserError(
-            f"new_id already exists: {target_id}",
-            code="E_DUPLICATE_ID",
-        )
-
-    target_doc = documents[old_id]
+    target_doc = snapshot.documents[old_id]
     target_rel = _rel_to_workspace(plan.workspace_root, Path(target_doc.filepath))
 
-    # Build per-file edit plans. ``_build_file_plan`` is pure (path + ids)
-    # and returns None for files that need no edits — perfect for reuse.
-    file_plans: List[FilePlan] = []
-    for doc in sorted(documents.values(), key=lambda item: str(item.filepath)):
-        file_plan = _build_file_plan(
-            path=Path(doc.filepath),
-            old_id=old_id,
-            new_id=target_id,
-        )
-        if file_plan is None:
-            continue
-        file_plans.append(file_plan)
-
-    # Fail if any file plan raised a blocking warning (unsupported
-    # frontmatter format). This mirrors the CLI's blocking_warnings gate.
-    blocking = []
-    for fp in file_plans:
-        blocking.extend(w for w in fp.warnings if w.blocking)
+    # Blocking-warning gate (unsupported frontmatter formats). Mirrors the
+    # CLI's ``plan.blocking_warnings()`` check.
+    blocking = rename_plan.blocking_warnings()
     if blocking:
         first = blocking[0]
         raise OntosUserError(
@@ -460,11 +478,9 @@ def _rename_document_impl(
             code="E_UNSUPPORTED_TARGET_FORMAT",
         )
 
-    files_to_apply = [fp for fp in file_plans if fp.has_changes]
+    files_to_apply = [fp for fp in rename_plan.files if fp.has_changes]
     if not files_to_apply:
-        # Target exists but no references anywhere — still a valid rename
-        # even though we shouldn't reach here (target_doc has its own
-        # `id:` field which must change). Treat as a no-op.
+        # Target exists but no references anywhere — treat as a no-op.
         return {
             "success": True,
             "old_id": old_id,
