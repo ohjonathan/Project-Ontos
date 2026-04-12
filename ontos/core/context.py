@@ -7,7 +7,7 @@ Per v2.8 implementation plan, SessionContext:
 - Is the single source of truth for repository configuration
 - Buffers file operations for later commit
 - Applies buffered writes sequentially during commit
-- Uses file locking with flock
+- Uses flock-based locking to serialize commit attempts
 """
 
 from dataclasses import dataclass, field
