@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 
+from ontos.core.snapshot import DocumentSnapshot
 from ontos.io.snapshot import create_snapshot
 from ontos.mcp.bundler import build_context_bundle
 
@@ -194,3 +195,43 @@ def test_build_context_bundle_equal_date_tiebreak_is_deterministic(tmp_path):
     zulu_id = f"{same_date.replace('-', '_')}_zulu"
     assert same_date_logs.index(alpha_id) < same_date_logs.index(mike_id)
     assert same_date_logs.index(mike_id) < same_date_logs.index(zulu_id)
+
+
+def test_build_context_bundle_is_stable_across_snapshot_document_orders(tmp_path):
+    """SF-B2: bundle output must not depend on snapshot dict insertion order."""
+    root = create_workspace(tmp_path)
+    for slug in ("zulu", "alpha", "mike"):
+        write_file(
+            root / f"docs/{slug}.md",
+            f"""
+            ---
+            id: {slug}_doc
+            type: atom
+            status: active
+            depends_on: [kernel_doc]
+            ---
+            Body for {slug}.
+            """,
+        )
+
+    snapshot = create_snapshot(
+        root=root, include_content=True, filters=None, git_commit_provider=None, scope=None
+    )
+    reversed_documents = dict(reversed(list(snapshot.documents.items())))
+    reversed_snapshot = DocumentSnapshot(
+        timestamp=snapshot.timestamp,
+        project_root=snapshot.project_root,
+        documents=reversed_documents,
+        graph=snapshot.graph,
+        validation_result=snapshot.validation_result,
+        git_commit=snapshot.git_commit,
+        ontos_version=snapshot.ontos_version,
+        warnings=list(snapshot.warnings),
+    )
+
+    baseline = build_context_bundle(snapshot, root, "workspace")
+    reordered = build_context_bundle(reversed_snapshot, root, "workspace")
+
+    assert baseline["included_documents"] == reordered["included_documents"]
+    assert baseline["bundle_text"] == reordered["bundle_text"]
+    assert baseline["token_estimate"] == reordered["token_estimate"]

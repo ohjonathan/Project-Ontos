@@ -521,7 +521,10 @@ def _parse_project_tags(raw: Any) -> list[str]:
     return []
 
 
-def _validate_workspace_id(portfolio_index: Optional[PortfolioIndexLike], workspace_id: str) -> None:
+def _validate_workspace_id(
+    portfolio_index: Optional[PortfolioIndexLike],
+    workspace_id: Optional[str],
+) -> None:
     """Validate workspace_id exists in portfolio. Raise OntosUserError if not.
 
     Delegates to the shared helper in ``ontos.mcp._validation`` so the read

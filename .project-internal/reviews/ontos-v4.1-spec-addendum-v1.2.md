@@ -56,7 +56,8 @@ v1.1 claim "No gap for inconsistency" is factually incorrect. The sequence `comm
 **Resolution in spec:**
 - Acknowledge the gap explicitly. Files are authoritative; portfolio DB is a derived index.
 - Recovery path: on crash between commit and rebuild, the next `rebuild_workspace(slug)` call (triggered by any subsequent write, or by `verify --portfolio`, or by explicit user action) fully reconciles.
-- **Post-rollback recovery:** after `git checkout -- .` rollback of failed writes, Track B tools MUST re-invoke `rebuild_workspace(slug, root)` to resync the DB. Dev prompt specifies this as a required step in the error path of every write tool.
+- **Post-rollback recovery:** after `git checkout -- .` rollback of failed writes, `rename_document` MUST re-invoke `rebuild_workspace(slug, root)` to resync the DB.
+- **Single-file write tools:** `scaffold_document`, `log_session`, and `promote_document` use rebuild-on-error recovery only. They do not attempt a filesystem rollback before the rebuild.
 
 **Not required:** Two-phase commit, transactional wrapping of DB+files, or any atomicity guarantee between the two. The inconsistency window is bounded and self-healing.
 

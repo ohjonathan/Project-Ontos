@@ -16,6 +16,7 @@ References: addendum v1.2 §A1/§A2/§A3, C.0 findings Q1+Q3, verdict m-2/m-7/m-
 from __future__ import annotations
 
 import asyncio
+import subprocess
 import time
 from multiprocessing import Event, Process, Queue
 from pathlib import Path
@@ -24,6 +25,7 @@ from typing import Any
 import pytest
 from mcp.types import CallToolResult
 
+from ontos.mcp.portfolio import PortfolioIndex
 from tests.mcp import build_cache, build_server, create_workspace, list_tools
 
 
@@ -54,6 +56,55 @@ class RecordingPortfolioIndex:
         self.rebuild_calls.append((slug, str(root)))
         if self.raise_on_rebuild:
             raise RuntimeError("induced rebuild failure")
+
+
+def _git_init_clean(root: Path) -> None:
+    """Initialise a git repo with a clean tree for write-tool tests."""
+    (root / ".gitignore").write_text(".ontos.lock\n", encoding="utf-8")
+    subprocess.run(
+        ["git", "init", "--initial-branch=main"],
+        cwd=str(root),
+        capture_output=True,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"],
+        cwd=str(root), capture_output=True, check=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Test"],
+        cwd=str(root), capture_output=True, check=True,
+    )
+    subprocess.run(
+        ["git", "config", "commit.gpgsign", "false"],
+        cwd=str(root), capture_output=True, check=True,
+    )
+    subprocess.run(
+        ["git", "add", "-A"], cwd=str(root), capture_output=True, check=True,
+    )
+    subprocess.run(
+        ["git", "commit", "-m", "init"],
+        cwd=str(root),
+        capture_output=True,
+        check=True,
+    )
+
+
+def _build_same_basename_portfolio(tmp_path: Path) -> tuple[Path, Path, PortfolioIndex]:
+    left_parent = tmp_path / "left"
+    right_parent = tmp_path / "right"
+    left_root = create_workspace(left_parent)
+    right_root = create_workspace(right_parent)
+    _git_init_clean(left_root)
+    _git_init_clean(right_root)
+
+    index = PortfolioIndex(tmp_path / "portfolio.db")
+    index.rebuild_all(
+        scan_roots=[left_parent, right_parent],
+        exclude=[],
+        registry_path=None,
+    )
+    return left_root, right_root, index
 
 
 # ---------------------------------------------------------------------------
@@ -116,6 +167,34 @@ def test_scaffold_document_rejects_path_outside_workspace(tmp_path):
 
     assert result.isError is True
     assert result.structuredContent["error"]["error_code"] == "E_PATH_OUTSIDE_WORKSPACE"
+
+
+def test_scaffold_document_rebuild_uses_canonical_slug_under_basename_collision(tmp_path):
+    left_root, right_root, index = _build_same_basename_portfolio(tmp_path)
+
+    before_left_ids = {doc["id"] for doc in index.get_workspace_documents("workspace")}
+    before_right_ids = {doc["id"] for doc in index.get_workspace_documents("workspace-2")}
+    assert index.is_workspace_stale("workspace") is False
+    assert index.is_workspace_stale("workspace-2") is False
+
+    server = build_server(right_root, portfolio_index=index)
+    result = _call(
+        server,
+        "scaffold_document",
+        {"path": "docs/second_only.md", "content": ""},
+    )
+
+    assert result.isError is False, result.content[0].text
+    assert (right_root / "docs" / "second_only.md").exists()
+
+    after_left_ids = {doc["id"] for doc in index.get_workspace_documents("workspace")}
+    after_right_ids = {doc["id"] for doc in index.get_workspace_documents("workspace-2")}
+
+    assert after_left_ids == before_left_ids
+    assert after_right_ids == before_right_ids | {"second_only"}
+    assert "second_only" not in after_left_ids
+    assert index.is_workspace_stale("workspace") is False
+    assert index.is_workspace_stale("workspace-2") is False
 
 
 # ---------------------------------------------------------------------------
@@ -306,6 +385,64 @@ def test_write_tool_rejects_cross_workspace_id(tmp_path):
     assert result.structuredContent["error"]["error_code"] == "E_PORTFOLIO_REQUIRED"
 
 
+def test_write_tool_without_workspace_id_targets_served_workspace_in_portfolio_mode(tmp_path):
+    left_root, right_root, index = _build_same_basename_portfolio(tmp_path)
+    server = build_server(right_root, portfolio_index=index)
+
+    before_left_ids = {doc["id"] for doc in index.get_workspace_documents("workspace")}
+    before_right_ids = {doc["id"] for doc in index.get_workspace_documents("workspace-2")}
+
+    result = _call(
+        server,
+        "scaffold_document",
+        {"path": "docs/current_workspace_only.md", "content": ""},
+    )
+
+    assert result.isError is False, result.content[0].text
+    assert (right_root / "docs" / "current_workspace_only.md").exists()
+
+    after_left_ids = {doc["id"] for doc in index.get_workspace_documents("workspace")}
+    after_right_ids = {doc["id"] for doc in index.get_workspace_documents("workspace-2")}
+    assert after_left_ids == before_left_ids
+    assert after_right_ids == before_right_ids | {"current_workspace_only"}
+    assert "current_workspace_only" not in after_left_ids
+    assert not (left_root / "docs" / "current_workspace_only.md").exists()
+
+
+def test_write_tool_rejects_unknown_workspace_id_in_portfolio_mode(tmp_path):
+    _, right_root, index = _build_same_basename_portfolio(tmp_path)
+    server = build_server(right_root, portfolio_index=index)
+
+    result = _call(
+        server,
+        "scaffold_document",
+        {
+            "path": "docs/nope.md",
+            "workspace_id": "missing-workspace",
+        },
+    )
+
+    assert result.isError is True
+    assert result.structuredContent["error"]["error_code"] == "E_UNKNOWN_WORKSPACE"
+
+
+def test_write_tool_rejects_cross_workspace_id_in_portfolio_mode(tmp_path):
+    _, right_root, index = _build_same_basename_portfolio(tmp_path)
+    server = build_server(right_root, portfolio_index=index)
+
+    result = _call(
+        server,
+        "scaffold_document",
+        {
+            "path": "docs/nope.md",
+            "workspace_id": "workspace",
+        },
+    )
+
+    assert result.isError is True
+    assert result.structuredContent["error"]["error_code"] == "E_CROSS_WORKSPACE_NOT_SUPPORTED"
+
+
 # ---------------------------------------------------------------------------
 # A1 — workspace_lock contention inside the write tool.
 # ---------------------------------------------------------------------------
@@ -365,6 +502,35 @@ def test_write_tool_under_contention_returns_structured_error(tmp_path):
         if holder.is_alive():  # pragma: no cover
             holder.terminate()
             holder.join(timeout=2.0)
+
+
+# ---------------------------------------------------------------------------
+# Py 3.14 catch-inside-lock regression.
+# ---------------------------------------------------------------------------
+
+
+def test_write_tool_preserves_user_error_code_when_raised_inside_lock(monkeypatch, tmp_path):
+    from ontos.core.errors import OntosUserError
+    from ontos.mcp import writes as write_impl
+
+    root = create_workspace(tmp_path)
+    cache = build_cache(root)
+
+    def exploding_impl(**kwargs):
+        raise OntosUserError("forced inside lock", code="E_FORCED_INSIDE_LOCK")
+
+    monkeypatch.setattr(write_impl, "_scaffold_document_impl", exploding_impl)
+
+    result = write_impl.scaffold_document(
+        cache,
+        portfolio_index=None,
+        read_only=False,
+        path="docs/unused.md",
+        content="",
+    )
+
+    assert result.isError is True
+    assert result.structuredContent["error"]["error_code"] == "E_FORCED_INSIDE_LOCK"
 
 
 # ---------------------------------------------------------------------------
@@ -445,6 +611,37 @@ def test_a3_rebuild_failure_does_not_mask_original_exception(monkeypatch, tmp_pa
 
     assert result.isError is True
     assert "induced commit failure" in result.content[0].text
+    assert len(portfolio.rebuild_calls) == 1
+
+
+def test_a3_single_file_rebuild_on_error_does_not_rollback_partial_write(monkeypatch, tmp_path):
+    """Single-file write tools rebuild on error but do not rollback."""
+    from ontos.core.context import SessionContext
+    from ontos.mcp import writes as write_impl
+
+    root = create_workspace(tmp_path)
+    cache = build_cache(root)
+    portfolio = RecordingPortfolioIndex()
+    target = root / "docs" / "partial_commit.md"
+
+    def partially_writing_commit(self):
+        target.write_text("partially applied\n", encoding="utf-8")
+        raise IOError("induced commit failure after partial write")
+
+    monkeypatch.setattr(SessionContext, "commit", partially_writing_commit)
+
+    result = write_impl.scaffold_document(
+        cache,
+        portfolio_index=portfolio,
+        read_only=False,
+        path="docs/partial_commit.md",
+        content="",
+    )
+
+    assert result.isError is True
+    assert "induced commit failure after partial write" in result.content[0].text
+    assert target.exists()
+    assert target.read_text(encoding="utf-8") == "partially applied\n"
     assert len(portfolio.rebuild_calls) == 1
 
 

@@ -179,7 +179,7 @@ known_ids, include_skipped)`).
 | Contention | Another writer holds `.ontos.lock`; caller returns a structured "locked" error. |
 | Partial-commit recovery | Temp file present, final not renamed; §6 cleanup path applies; no index rebuild needed because no prior record was touched. |
 | `read_only` refusal | If the workspace is configured read-only, return a refusal code before any buffer_write. |
-| Missing `workspace_id` | Return structured error; do not fall back to a default workspace. |
+| Missing `workspace_id` | Fall back to the served workspace; explicit `workspace_id` values are still validated. |
 
 ### 10.2 `log_session` (single-file)
 

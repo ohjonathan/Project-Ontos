@@ -46,10 +46,9 @@ from ontos.core.curation import create_scaffold
 from ontos.core.errors import OntosInternalError, OntosUserError
 from ontos.core.schema import serialize_frontmatter
 from ontos.io.yaml import parse_frontmatter_content
-from ontos.mcp._validation import validate_workspace_id
+from ontos.mcp._validation import resolve_workspace_slug, validate_workspace_id
 from ontos.mcp.cache import SnapshotCache
 from ontos.mcp.locking import workspace_lock
-from ontos.mcp.scanner import slugify as slugify_workspace_identity
 from ontos.mcp.schemas import (
     ToolErrorTextItem,
     WriteToolError,
@@ -143,7 +142,7 @@ def _preflight(
     validate_workspace_id(portfolio_index, workspace_id)
 
     workspace_root = cache.workspace_root
-    slug = slugify_workspace_identity(workspace_root.name)
+    slug = resolve_workspace_slug(workspace_root, portfolio_index)
     if workspace_id is not None and workspace_id != slug:
         # Write tools mutate the workspace served by this MCP process.
         # Cross-workspace writes are not supported — addendum keeps the

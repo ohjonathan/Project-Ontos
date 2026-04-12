@@ -33,6 +33,7 @@ from typing import Any, List
 import pytest
 from mcp.types import CallToolResult
 
+from ontos.mcp.portfolio import PortfolioIndex
 from tests.mcp import build_cache, build_server, create_workspace
 
 
@@ -112,6 +113,23 @@ def _git_init_clean(root: Path) -> None:
 
 def _call(server, name: str, args: dict[str, Any]) -> CallToolResult:
     return asyncio.run(server.call_tool(name, args))
+
+
+def _build_same_basename_portfolio(tmp_path: Path) -> tuple[Path, Path, PortfolioIndex]:
+    left_parent = tmp_path / "left"
+    right_parent = tmp_path / "right"
+    left_root = create_workspace(left_parent)
+    right_root = create_workspace(right_parent)
+    _git_init_clean(left_root)
+    _git_init_clean(right_root)
+
+    index = PortfolioIndex(tmp_path / "portfolio.db")
+    index.rebuild_all(
+        scan_roots=[left_parent, right_parent],
+        exclude=[],
+        registry_path=None,
+    )
+    return left_root, right_root, index
 
 
 # ---------------------------------------------------------------------------
@@ -206,6 +224,33 @@ def test_rename_document_happy_path_rewrites_frontmatter_and_body(tmp_path):
     # No stale occurrences survived.
     assert "strategy_doc" not in product_text
     assert "strategy_doc" not in text
+
+
+def test_rename_document_rebuild_uses_canonical_slug_under_basename_collision(tmp_path):
+    left_root, right_root, index = _build_same_basename_portfolio(tmp_path)
+
+    before_left_ids = {doc["id"] for doc in index.get_workspace_documents("workspace")}
+    before_right_ids = {doc["id"] for doc in index.get_workspace_documents("workspace-2")}
+    assert index.is_workspace_stale("workspace") is False
+    assert index.is_workspace_stale("workspace-2") is False
+
+    server = build_server(right_root, portfolio_index=index)
+    result = _call(
+        server,
+        "rename_document",
+        {"document_id": "kernel_doc", "new_id": "renamed_kernel"},
+    )
+
+    assert result.isError is False, result.content[0].text
+
+    after_left_ids = {doc["id"] for doc in index.get_workspace_documents("workspace")}
+    after_right_ids = {doc["id"] for doc in index.get_workspace_documents("workspace-2")}
+
+    assert after_left_ids == before_left_ids
+    assert after_right_ids == (before_right_ids - {"kernel_doc"}) | {"renamed_kernel"}
+    assert "renamed_kernel" not in after_left_ids
+    assert index.is_workspace_stale("workspace") is False
+    assert index.is_workspace_stale("workspace-2") is False
 
 
 def test_rename_document_noop_same_id(tmp_path):
@@ -404,6 +449,67 @@ def test_rename_document_rejects_cross_workspace_id(tmp_path):
     assert result.structuredContent["error"]["error_code"] == "E_PORTFOLIO_REQUIRED"
 
 
+def test_rename_document_without_workspace_id_targets_served_workspace_in_portfolio_mode(tmp_path):
+    left_root, right_root, index = _build_same_basename_portfolio(tmp_path)
+    server = build_server(right_root, portfolio_index=index)
+
+    before_left_ids = {doc["id"] for doc in index.get_workspace_documents("workspace")}
+    before_right_ids = {doc["id"] for doc in index.get_workspace_documents("workspace-2")}
+
+    result = _call(
+        server,
+        "rename_document",
+        {"document_id": "strategy_doc", "new_id": "renamed_strategy"},
+    )
+
+    assert result.isError is False, result.content[0].text
+
+    after_left_ids = {doc["id"] for doc in index.get_workspace_documents("workspace")}
+    after_right_ids = {doc["id"] for doc in index.get_workspace_documents("workspace-2")}
+    assert after_left_ids == before_left_ids
+    assert after_right_ids == (before_right_ids - {"strategy_doc"}) | {"renamed_strategy"}
+    assert "renamed_strategy" not in after_left_ids
+    assert "strategy_doc" in after_left_ids
+    assert "id: renamed_strategy" in (right_root / "docs" / "strategy.md").read_text(encoding="utf-8")
+    assert "id: strategy_doc" in (left_root / "docs" / "strategy.md").read_text(encoding="utf-8")
+
+
+def test_rename_document_rejects_unknown_workspace_id_in_portfolio_mode(tmp_path):
+    _, right_root, index = _build_same_basename_portfolio(tmp_path)
+    server = build_server(right_root, portfolio_index=index)
+
+    result = _call(
+        server,
+        "rename_document",
+        {
+            "document_id": "strategy_doc",
+            "new_id": "renamed_strategy",
+            "workspace_id": "missing-workspace",
+        },
+    )
+
+    assert result.isError is True
+    assert result.structuredContent["error"]["error_code"] == "E_UNKNOWN_WORKSPACE"
+
+
+def test_rename_document_rejects_cross_workspace_id_in_portfolio_mode(tmp_path):
+    _, right_root, index = _build_same_basename_portfolio(tmp_path)
+    server = build_server(right_root, portfolio_index=index)
+
+    result = _call(
+        server,
+        "rename_document",
+        {
+            "document_id": "strategy_doc",
+            "new_id": "renamed_strategy",
+            "workspace_id": "workspace",
+        },
+    )
+
+    assert result.isError is True
+    assert result.structuredContent["error"]["error_code"] == "E_CROSS_WORKSPACE_NOT_SUPPORTED"
+
+
 # ---------------------------------------------------------------------------
 # A1 — workspace_lock contention inside the write tool.
 # ---------------------------------------------------------------------------
@@ -459,6 +565,36 @@ def test_rename_document_under_contention_returns_structured_error(tmp_path):
         if holder.is_alive():  # pragma: no cover
             holder.terminate()
             holder.join(timeout=2.0)
+
+
+# ---------------------------------------------------------------------------
+# Py 3.14 catch-inside-lock regression.
+# ---------------------------------------------------------------------------
+
+
+def test_rename_document_preserves_user_error_code_when_raised_inside_lock(monkeypatch, tmp_path):
+    from ontos.core.errors import OntosUserError
+    from ontos.mcp import rename_tool
+
+    root = create_workspace(tmp_path)
+    _git_init_clean(root)
+    cache = build_cache(root)
+
+    def exploding_impl(**kwargs):
+        raise OntosUserError("forced rename failure", code="E_FORCED_RENAME_INSIDE_LOCK")
+
+    monkeypatch.setattr(rename_tool, "_rename_document_impl", exploding_impl)
+
+    result = rename_tool.rename_document(
+        cache,
+        portfolio_index=None,
+        read_only=False,
+        document_id="strategy_doc",
+        new_id="renamed_strategy",
+    )
+
+    assert result.isError is True
+    assert result.structuredContent["error"]["error_code"] == "E_FORCED_RENAME_INSIDE_LOCK"
 
 
 # ---------------------------------------------------------------------------
@@ -624,6 +760,61 @@ def test_rename_document_output_schema_exposed():
         "success", "old_id", "new_id", "path",
         "references_updated", "updated_files",
     }
+
+
+def test_rename_document_matches_cli_plan_via_mcp_dispatch(tmp_path, monkeypatch):
+    """MCP dispatch must realize the same file edits the CLI plan predicts."""
+    import os
+
+    from ontos.commands.rename import RenameOptions, _prepare_plan
+
+    root = create_workspace(tmp_path)
+    _git_init_clean(root)
+    extra = root / "docs" / "bridge.md"
+    extra.write_text(
+        "---\n"
+        "id: bridge_doc\n"
+        "type: atom\n"
+        "status: active\n"
+        "depends_on: [strategy_doc]\n"
+        "---\n\n"
+        "Bridge body references strategy_doc inline.\n",
+        encoding="utf-8",
+    )
+    subprocess.run(["git", "add", "-A"], cwd=str(root), capture_output=True, check=True)
+    subprocess.run(["git", "commit", "-m", "bridge"], cwd=str(root), capture_output=True, check=True)
+
+    prev_cwd = Path.cwd()
+    monkeypatch.chdir(root)
+    try:
+        prepared, error = _prepare_plan(
+            RenameOptions(old_id="strategy_doc", new_id="renamed_strategy"),
+            mode="apply",
+        )
+    finally:
+        os.chdir(prev_cwd)
+
+    assert error is None
+    assert prepared is not None
+    planned_files = {
+        file_plan.path.relative_to(root).as_posix(): file_plan.new_content
+        for file_plan in prepared.plan.files
+        if file_plan.has_changes
+    }
+
+    server = build_server(root)
+    result = _call(
+        server,
+        "rename_document",
+        {"document_id": "strategy_doc", "new_id": "renamed_strategy"},
+    )
+
+    assert result.isError is False, result.content[0].text
+    payload = result.structuredContent
+    assert set(payload["updated_files"]) == set(planned_files)
+    for rel_path, expected_content in planned_files.items():
+        actual_content = (root / rel_path).read_text(encoding="utf-8")
+        assert actual_content == expected_content
 
 
 # CB-B3 spec correction: rename_document now uses ScanScope.LIBRARY

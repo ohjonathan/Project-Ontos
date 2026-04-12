@@ -247,6 +247,11 @@ class TestClaudeMdTemplate:
                 normalized,
             )
             normalized = re.sub(
+                r"\n## MCP Write Tools\n(?:.*(?:\n|$))+?(?=\n## |\Z)",
+                "\n",
+                normalized,
+            )
+            normalized = re.sub(
                 r"^\| `<COMMAND>` \| .*sync <INSTRUCTION_FILE> \|\n?",
                 "",
                 normalized,
