@@ -343,18 +343,26 @@ def test_rename_document_refuses_untracked_files(tmp_path):
 
 
 def test_rename_document_refuses_when_read_only(tmp_path):
+    """Under CB-B2, rename_document is NOT REGISTERED when read_only=True —
+    invocation raises ``ToolError`` rather than returning an E_READ_ONLY
+    envelope. Workspace files must remain untouched.
+
+    See tests/mcp/test_read_only_registration.py for the
+    registration-absence check.
+    """
+    from mcp.server.fastmcp.exceptions import ToolError
+
     root = create_workspace(tmp_path)
     _git_init_clean(root)
     server = build_server(root, read_only=True)
 
-    result = _call(
-        server,
-        "rename_document",
-        {"document_id": "strategy_doc", "new_id": "renamed_strategy"},
-    )
+    with pytest.raises(ToolError, match="rename_document"):
+        _call(
+            server,
+            "rename_document",
+            {"document_id": "strategy_doc", "new_id": "renamed_strategy"},
+        )
 
-    assert result.isError is True
-    assert result.structuredContent["error"]["error_code"] == "E_READ_ONLY"
     # Unchanged on disk.
     text = (root / "docs" / "strategy.md").read_text(encoding="utf-8")
     assert "id: strategy_doc" in text

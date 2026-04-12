@@ -242,42 +242,45 @@ def test_promote_document_rejects_invalid_level(tmp_path):
 
 
 def test_read_only_refuses_scaffold_document(tmp_path):
+    """Under CB-B2, write tools are NOT REGISTERED when read_only=True — the
+    client can no longer invoke them. Invoking raises ``ToolError`` (unknown
+    tool). The filesystem must remain untouched.
+
+    See also tests/mcp/test_read_only_registration.py for the
+    registration-absence check.
+    """
+    from mcp.server.fastmcp.exceptions import ToolError
+
     root = create_workspace(tmp_path)
     server = build_server(root, read_only=True)
 
-    result = _call(
-        server,
-        "scaffold_document",
-        {"path": "docs/should_not_exist.md"},
-    )
-
-    assert result.isError is True
-    assert result.structuredContent["error"]["error_code"] == "E_READ_ONLY"
+    with pytest.raises(ToolError, match="scaffold_document"):
+        _call(server, "scaffold_document", {"path": "docs/should_not_exist.md"})
     assert not (root / "docs" / "should_not_exist.md").exists()
 
 
 def test_read_only_refuses_log_session(tmp_path):
+    """Counterpart of test_read_only_refuses_scaffold_document — log_session
+    is also unregistered under read_only=True (CB-B2).
+    """
+    from mcp.server.fastmcp.exceptions import ToolError
+
     root = create_workspace(tmp_path)
     server = build_server(root, read_only=True)
 
-    result = _call(server, "log_session", {"title": "banned write"})
-
-    assert result.isError is True
-    assert result.structuredContent["error"]["error_code"] == "E_READ_ONLY"
+    with pytest.raises(ToolError, match="log_session"):
+        _call(server, "log_session", {"title": "banned write"})
 
 
 def test_read_only_refuses_promote_document(tmp_path):
+    """Counterpart — promote_document unregistered under read_only=True (CB-B2)."""
+    from mcp.server.fastmcp.exceptions import ToolError
+
     root = create_workspace(tmp_path)
     server = build_server(root, read_only=True)
 
-    result = _call(
-        server,
-        "promote_document",
-        {"document_id": "kernel_doc", "new_level": 2},
-    )
-
-    assert result.isError is True
-    assert result.structuredContent["error"]["error_code"] == "E_READ_ONLY"
+    with pytest.raises(ToolError, match="promote_document"):
+        _call(server, "promote_document", {"document_id": "kernel_doc", "new_level": 2})
 
 
 # ---------------------------------------------------------------------------
