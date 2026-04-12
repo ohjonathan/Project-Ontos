@@ -33,26 +33,40 @@ def build_context_bundle(
     workspace_root: Path,
     workspace_slug: str,
     *,
-    token_budget: int = 8192,
-    max_logs: int = 5,
-    log_window_days: int = 14,
+    token_budget: int = 8000,
+    max_logs: int = 20,
+    log_window_days: int = 30,
 ) -> dict[str, Any]:
-    """Build a token-budgeted context bundle from a workspace snapshot."""
+    """Build a token-budgeted context bundle from a workspace snapshot.
+
+    Defaults mirror the addendum v1.2 §A4 bundle values; the MCP tool layer
+    passes the values loaded from :class:`PortfolioConfig` explicitly.
+
+    SF-9 (deterministic input ordering): every point where the bundler
+    iterates ``snapshot.documents`` is sorted by document ID before any
+    downstream sort. Python dict iteration order is insertion-order since
+    3.7, but the snapshot loader's insertion order is influenced by
+    ``os.listdir``/glob output and so cannot be relied upon for stable
+    bundle output. An explicit sort here decouples bundle determinism from
+    filesystem iteration quirks.
+    """
     docs_by_id = snapshot.documents
+    # SF-9: deterministic iteration — sort doc IDs before consuming dict order.
+    sorted_doc_ids = sorted(docs_by_id)
     in_degree = {
         doc_id: len(snapshot.graph.reverse_edges.get(doc_id, []))
-        for doc_id in docs_by_id
+        for doc_id in sorted_doc_ids
     }
     non_kernel_degrees = [
-        value
-        for doc_id, value in in_degree.items()
+        in_degree[doc_id]
+        for doc_id in sorted_doc_ids
         if docs_by_id[doc_id].type.value != "kernel"
     ]
     max_non_kernel_indegree = max(non_kernel_degrees) if non_kernel_degrees else 0
 
     scored_docs = [
-        _to_bundle_doc(doc, in_degree[doc.id], max_non_kernel_indegree)
-        for doc in docs_by_id.values()
+        _to_bundle_doc(docs_by_id[doc_id], in_degree[doc_id], max_non_kernel_indegree)
+        for doc_id in sorted_doc_ids
     ]
     priority_docs = _build_priority_order(
         scored_docs,
@@ -134,7 +148,14 @@ def _build_priority_order(
     )
     recent_log_ids = {doc.id for doc in recent_logs}
 
-    non_kernel = [doc for doc in docs if doc.type != "kernel" and doc.id not in recent_log_ids]
+    # SF-3 / addendum A4: treat ``max_logs`` and ``log_window_days`` as hard
+    # caps on the log entries in the bundle. Logs only enter the bundle via
+    # the recent-logs pool (scored at 0.3). Stale logs or logs beyond the
+    # ``max_logs`` cap are excluded entirely — otherwise a workspace with
+    # dozens of stale logs would blow past ``max_logs`` by re-entering
+    # through the ``remaining`` bucket (and would also be silently upgraded
+    # to a higher non-kernel score).
+    non_kernel = [doc for doc in docs if doc.type != "kernel" and doc.type != "log"]
     high_indegree = sorted(
         non_kernel,
         key=lambda doc: (-in_degree.get(doc.id, 0), doc.id),
@@ -167,7 +188,9 @@ def _recent_logs(
     cutoff = date.today() - timedelta(days=log_window_days)
     dated_logs: list[tuple[date, BundleDocument]] = []
 
-    for bundle_doc in docs:
+    # SF-9: iterate docs in ID order so the walk that builds `dated_logs`
+    # does not depend on upstream dict order before the explicit sort.
+    for bundle_doc in sorted(docs, key=lambda d: d.id):
         if bundle_doc.type != "log":
             continue
         source = docs_by_id[bundle_doc.id]
@@ -176,7 +199,11 @@ def _recent_logs(
             continue
         dated_logs.append((log_date, replace(bundle_doc, score=0.3)))
 
-    dated_logs.sort(key=lambda item: (item[0], item[1].id), reverse=True)
+    # SF-4: equal-date tiebreak is *ascending* ID (spec v1.1 §4.2 — "sort
+    # alphabetically by document ID" — for LLM-prompt-cache stability).
+    # `reverse=True` on a tuple key would reverse both fields, so we sort by
+    # (-date_ordinal, id) ascending to get newest-first + alpha-tiebreak.
+    dated_logs.sort(key=lambda item: (-item[0].toordinal(), item[1].id))
     return [doc for _, doc in dated_logs[:max_logs]]
 
 

@@ -222,9 +222,20 @@ def _extract_registry_items(raw: object) -> list[object]:
             if isinstance(value, list):
                 return value
 
+        # m-1: the dict fallback previously walked every key at the top
+        # level, which meant any top-level metadata dict (for example a
+        # nested ``metadata`` block, schema info, or a generator note that
+        # happened to be a mapping) was silently coerced into a project
+        # entry. Restrict this path to keys whose values resolve to
+        # project-shaped payloads (path-like field present) and explicitly
+        # skip reserved top-level metadata names.
         dict_items: list[object] = []
         for slug, payload in raw.items():
+            if slug in _REGISTRY_RESERVED_KEYS:
+                continue
             if not isinstance(payload, dict):
+                continue
+            if not _looks_like_project_payload(payload):
                 continue
             merged = dict(payload)
             merged.setdefault("slug", slug)
@@ -232,6 +243,39 @@ def _extract_registry_items(raw: object) -> list[object]:
         return dict_items
 
     return []
+
+
+_REGISTRY_RESERVED_KEYS: frozenset[str] = frozenset(
+    {
+        "dev_root",
+        "generated_at",
+        "generator",
+        "metadata",
+        "projects",
+        "schema",
+        "schema_version",
+        "version",
+        "workspaces",
+        "entries",
+        "items",
+    }
+)
+
+_REGISTRY_PROJECT_PATH_KEYS: tuple[str, ...] = (
+    "path",
+    "workspace",
+    "root",
+    "repo_root",
+    "repoPath",
+)
+
+
+def _looks_like_project_payload(payload: dict[str, Any]) -> bool:
+    """True when the dict payload carries a path-like field identifying a project."""
+    return any(
+        isinstance(payload.get(key), str) and payload.get(key)
+        for key in _REGISTRY_PROJECT_PATH_KEYS
+    )
 
 
 def _first_string(item: dict[str, Any], *keys: str) -> str | None:

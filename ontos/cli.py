@@ -890,9 +890,9 @@ def _cmd_serve(args) -> int:
         from ontos.mcp import serve
         portfolio = bool(getattr(args, "portfolio", False))
         read_only = bool(getattr(args, "read_only", False))
-        if portfolio or read_only:
-            return serve(workspace_root, portfolio=portfolio, read_only=read_only)
-        return serve(workspace_root)
+        # m-3: always forward the same kwargs, regardless of truthiness, so
+        # behavior is uniform and there is a single call path to reason about.
+        return serve(workspace_root, portfolio=portfolio, read_only=read_only)
     except FileNotFoundError as exc:
         raise OntosUserError(str(exc), code="E_WORKSPACE_NOT_FOUND") from exc
     except ModuleNotFoundError as exc:
@@ -1311,9 +1311,11 @@ def _cmd_verify(args) -> int:
     """Handle verify command."""
     if getattr(args, "portfolio", False):
         from ontos.commands.verify import verify_portfolio
-        from ontos.mcp.portfolio_config import load_portfolio_config
+        from ontos.mcp.portfolio_config import ensure_portfolio_config, load_portfolio_config
 
         try:
+            # Write-then-read: init the config on first use, then read it.
+            ensure_portfolio_config()
             config = load_portfolio_config()
         except (OSError, ValueError, TypeError) as exc:
             message = f"Invalid portfolio config: {exc}"

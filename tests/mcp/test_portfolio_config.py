@@ -8,19 +8,38 @@ import ontos.mcp.portfolio_config as portfolio_config_module
 from ontos.mcp.portfolio_config import ensure_portfolio_config, load_portfolio_config
 
 
-def test_load_portfolio_config_creates_defaults_when_missing(tmp_path, monkeypatch):
+def test_load_portfolio_config_raises_when_missing(tmp_path, monkeypatch):
+    """m-9: load_portfolio_config() is now a pure read path.
+
+    It must never write to disk. If the config file is absent the caller is
+    expected to invoke ensure_portfolio_config() explicitly (init flow).
+    """
     config_path = tmp_path / ".config" / "ontos" / "portfolio.toml"
     monkeypatch.setattr(portfolio_config_module, "PORTFOLIO_CONFIG_PATH", config_path)
 
+    with pytest.raises(FileNotFoundError):
+        load_portfolio_config()
+
+    # And it must not have been created as a side effect.
+    assert not config_path.exists()
+
+
+def test_ensure_portfolio_config_then_load_returns_addendum_defaults(tmp_path, monkeypatch):
+    """m-9 + addendum A4 defaults: init path writes, load path reads."""
+    config_path = tmp_path / ".config" / "ontos" / "portfolio.toml"
+    monkeypatch.setattr(portfolio_config_module, "PORTFOLIO_CONFIG_PATH", config_path)
+
+    ensure_portfolio_config()
     cfg = load_portfolio_config()
 
     assert config_path.exists()
     assert cfg.scan_roots == ["~/Dev"]
     assert cfg.exclude == ["~/Dev/.dev-hub", "~/Dev/archive"]
     assert cfg.registry_path == "~/Dev/.dev-hub/registry/projects.json"
-    assert cfg.bundle_token_budget == 8192
-    assert cfg.bundle_max_logs == 5
-    assert cfg.bundle_log_window_days == 14
+    # Addendum v1.2 §A4 default values (Dev 4 updated these from 8192/5/14).
+    assert cfg.bundle_token_budget == 8000
+    assert cfg.bundle_max_logs == 20
+    assert cfg.bundle_log_window_days == 30
 
 
 def test_load_portfolio_config_custom_values(tmp_path, monkeypatch):

@@ -1,4 +1,4 @@
-from ontos.commands.export_data import _compute_content_hash
+from ontos.core.content_hash import compute_content_hash
 from ontos.mcp import tools
 
 from tests.mcp import build_cache, create_workspace
@@ -12,6 +12,6 @@ def test_query_returns_graph_details(tmp_path):
     assert payload["depends_on"] == ["product_doc"]
     assert payload["depended_by"] == ["log_doc"]
     assert payload["depth"] >= 0
-    assert payload["content_hash"] == _compute_content_hash(
+    assert payload["content_hash"] == compute_content_hash(
         cache.snapshot.documents["atom_doc"].content
     )

@@ -125,8 +125,12 @@ def test_get_context_bundle_log_window_and_score(tmp_path):
     payload = tools.get_context_bundle(None, cache, token_budget=8192)
     score_map = {item["id"]: item["score"] for item in payload["included_documents"]}
 
+    # Under addendum v1.2 §A4 semantics (Dev 4): logs only enter the bundle
+    # via the recent-logs pool and only if they fall within log_window_days
+    # (default 30). The 60-day-old log is now excluded from the bundle
+    # entirely — the previous "demote to 0.5" behavior no longer applies.
     assert score_map[f"{today}_recent_log"] == 0.3
-    assert score_map[f"{old}_old_log"] >= 0.5
+    assert f"{old}_old_log" not in score_map
 
 
 def test_get_context_bundle_detects_stale_documents(tmp_path):

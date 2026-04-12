@@ -154,6 +154,42 @@ def test_load_registry_records_supports_multiple_shapes(tmp_path, payload_factor
     assert records[0].has_ontos_raw == "false"
 
 
+def test_load_registry_records_dict_fallback_skips_top_level_metadata(tmp_path):
+    """m-1: when the registry is a dict keyed by slug, top-level metadata
+    fields must NOT be ingested as projects. Only nested mappings that carry
+    a path-shaped field qualify.
+    """
+    dev_root = tmp_path / "Dev"
+    dev_root.mkdir()
+    project_path = _make_project(dev_root / "alpha", with_ontos=True, with_readme=True, doc_count=1)
+    registry_path = tmp_path / ".dev-hub" / "registry" / "projects.json"
+    registry_path.parent.mkdir(parents=True)
+
+    # Mix of a legitimate project entry + reserved top-level keys + a random
+    # metadata dict that should NOT be pulled in as a project.
+    registry_payload = {
+        "dev_root": str(dev_root),
+        "version": "1.0",
+        "metadata": {"generator": "hand", "generated_at": "2026-01-01T00:00:00Z"},
+        "alpha-project": {
+            "path": str(project_path),
+            "status": "documented",
+            "has_ontos": True,
+        },
+        # Dict-valued entry with no path-like field: previously would have been
+        # ingested as a "project" with no path (caller quietly dropped it);
+        # the new filter skips it at extraction time instead.
+        "broken-entry": {"note": "not a project, no path here"},
+    }
+    registry_path.write_text(json.dumps(registry_payload), encoding="utf-8")
+
+    records = load_registry_records(registry_path, tolerate_errors=False)
+
+    # Exactly one record survives: the real project.
+    assert len(records) == 1
+    assert records[0].path == project_path
+
+
 def _make_project(path: Path, *, with_ontos: bool, with_readme: bool, doc_count: int) -> Path:
     path.mkdir(parents=True)
     (path / ".git").mkdir()
