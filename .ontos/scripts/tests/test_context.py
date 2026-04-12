@@ -2,7 +2,7 @@
 
 This test suite validates the core SessionContext functionality:
 - Buffer operations (write/delete/move)
-- Two-phase commit with atomicity
+- Staged commit behavior for buffered writes
 - Rollback behavior
 - Lock acquisition and timeout
 - Factory initialization
@@ -11,14 +11,38 @@ This test suite validates the core SessionContext functionality:
 Per v2.9.5 spec, tests focus on behavior, not internal mechanics.
 """
 
-import os
-import time
+import fcntl
 import types
+from multiprocessing import Event, Process
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 import pytest
 
 from ontos.core.context import SessionContext, FileOperation, PendingWrite
+
+
+def _hold_flock(lock_path: str, ready, release) -> None:
+    """Hold an exclusive flock lock until the caller signals release."""
+    path = Path(lock_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a+", encoding="utf-8") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        ready.set()
+        release.wait(timeout=5.0)
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+def _try_flock_once(lock_path: str, acquired) -> None:
+    """Try to acquire the lock once and immediately release it."""
+    path = Path(lock_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a+", encoding="utf-8") as handle:
+        try:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return
+        acquired.set()
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
 
 class TestBufferOperations:
@@ -64,7 +88,7 @@ class TestBufferOperations:
 
 
 class TestCommit:
-    """Tests for commit() method - file creation and atomicity."""
+    """Tests for commit() method - file creation and staged updates."""
 
     def test_commit_empty_buffer_returns_empty(self, tmp_path):
         """Commit with no pending writes returns empty list."""
@@ -159,9 +183,14 @@ class TestCommitFailure:
             with pytest.raises(OSError):
                 ctx.commit()
         
-        # No residual files should exist after cleanup
-        remaining = [f for f in tmp_path.iterdir() if f.is_file()]
-        assert len(remaining) == 0, f"Residual files after cleanup: {remaining}"
+        # The flock substrate keeps a persistent lock file, but temp outputs
+        # from the failed write should still be cleaned up.
+        remaining = sorted(f.name for f in tmp_path.iterdir() if f.is_file())
+        assert remaining == [".ontos.lock"], (
+            f"Unexpected residual files after cleanup: {remaining}"
+        )
+        assert not target.exists()
+        assert not target.with_suffix(target.suffix + ".tmp").exists()
 
     def test_commit_failure_records_error(self, tmp_path):
         """Commit failure records error in context."""
@@ -208,38 +237,49 @@ class TestLocking:
         """Commit raises RuntimeError when lock cannot be acquired."""
         ctx = SessionContext(repo_root=tmp_path, config={})
         ctx.buffer_write(tmp_path / "test.txt", "content")
-        
-        # Pre-create lock file with our own PID (simulates active lock)
-        lock_dir = tmp_path / ".ontos"
-        lock_dir.mkdir(parents=True, exist_ok=True)
-        lock_file = lock_dir / "write.lock"
-        lock_file.write_text(str(os.getpid()))  # Our own PID = not stale
-        
-        # Mock time.time to simulate timeout
-        start_time = time.time()
-        call_count = [0]
-        def mock_time():
-            call_count[0] += 1
-            # First call returns start time, subsequent calls exceed timeout
-            if call_count[0] == 1:
-                return start_time
-            return start_time + 10  # Exceeds 5.0 second timeout
-        
-        with patch('time.time', side_effect=mock_time):
-            with pytest.raises(RuntimeError, match="Could not acquire write lock"):
-                ctx.commit()
+
+        lock_file = tmp_path / ".ontos.lock"
+        ready = Event()
+        release = Event()
+        proc = Process(target=_hold_flock, args=(str(lock_file), ready, release))
+        proc.start()
+
+        try:
+            assert ready.wait(timeout=5.0), "Timed out waiting for lock holder"
+            original_acquire = ctx._acquire_lock
+
+            def short_timeout(lock_path, timeout=5.0):
+                return original_acquire(lock_path, timeout=0.2)
+
+            with patch.object(ctx, "_acquire_lock", side_effect=short_timeout):
+                with pytest.raises(RuntimeError, match="Could not acquire write lock"):
+                    ctx.commit()
+        finally:
+            release.set()
+            proc.join(timeout=5.0)
+            if proc.is_alive():
+                proc.terminate()
+                proc.join(timeout=1.0)
 
     def test_commit_acquires_and_releases_lock(self, tmp_path):
         """Commit properly acquires and releases lock."""
         ctx = SessionContext(repo_root=tmp_path, config={})
         ctx.buffer_write(tmp_path / "test.txt", "content")
-        
-        lock_file = tmp_path / ".ontos" / "write.lock"
-        
+
         ctx.commit()
-        
-        # Lock should be released after commit
-        assert not lock_file.exists()
+
+        lock_file = tmp_path / ".ontos.lock"
+        assert lock_file.exists()
+
+        acquired = Event()
+        proc = Process(target=_try_flock_once, args=(str(lock_file), acquired))
+        proc.start()
+        proc.join(timeout=5.0)
+        if proc.is_alive():
+            proc.terminate()
+            proc.join(timeout=1.0)
+
+        assert acquired.is_set(), "Lock remained held after commit"
 
 
 class TestFromRepo:
