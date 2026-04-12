@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import sqlite3
 from typing import Any, Dict, Optional
 
 import ontos
@@ -14,6 +15,8 @@ from ontos.commands.map import CompactMode, GenerateMapOptions, generate_context
 from ontos.core.errors import OntosUserError
 from ontos.core.snapshot import DocumentSnapshot
 from ontos.core.types import DocumentData, ValidationResult
+from ontos.io.snapshot import create_snapshot
+from ontos.mcp.scanner import slugify
 
 
 TYPE_RANKS = {
@@ -96,8 +99,9 @@ def build_canonical_snapshot_view(
     )
 
 
-def workspace_overview(cache: Any) -> dict[str, Any]:
+def workspace_overview(cache: Any, *, workspace_id: Optional[str] = None) -> dict[str, Any]:
     """Return structured orientation data for the current workspace."""
+    _enforce_workspace_scope(cache, workspace_id)
     key_documents = sorted(
         cache.snapshot.documents.values(),
         key=lambda doc: (-len(cache.snapshot.graph.reverse_edges.get(doc.id, [])), doc.id),
@@ -134,8 +138,14 @@ def workspace_overview(cache: Any) -> dict[str, Any]:
     }
 
 
-def context_map(cache: Any, compact: str = "tiered") -> dict[str, Any]:
+def context_map(
+    cache: Any,
+    compact: str = "tiered",
+    *,
+    workspace_id: Optional[str] = None,
+) -> dict[str, Any]:
     """Return a wrapped context-map payload."""
+    _enforce_workspace_scope(cache, workspace_id)
     compact_key = str(compact).strip().lower()
     compact_modes = {
         "basic": CompactMode.BASIC,
@@ -175,8 +185,10 @@ def get_document(
     document_id: Optional[str] = None,
     path: Optional[str] = None,
     include_content: bool = True,
+    workspace_id: Optional[str] = None,
 ) -> dict[str, Any]:
     """Return one canonical document."""
+    _enforce_workspace_scope(cache, workspace_id)
     if bool(document_id) == bool(path):
         raise OntosUserError(
             "Provide exactly one of document_id or path.",
@@ -217,8 +229,10 @@ def list_documents(
     status: Optional[str] = None,
     offset: int = 0,
     limit: int = 100,
+    workspace_id: Optional[str] = None,
 ) -> dict[str, Any]:
     """Return paginated canonical document rows."""
+    _enforce_workspace_scope(cache, workspace_id)
     if offset < 0:
         raise OntosUserError("offset must be >= 0.", code="E_INVALID_OFFSET")
     if limit <= 0:
@@ -243,8 +257,10 @@ def export_graph(
     *,
     summary_only: bool = True,
     export_to_file: Optional[str] = None,
+    workspace_id: Optional[str] = None,
 ) -> dict[str, Any]:
     """Return or persist a canonical export payload."""
+    _enforce_workspace_scope(cache, workspace_id)
     raw_payload = _snapshot_to_json(cache.snapshot, filters=None, deterministic=False)
     ordered_payload = _ordered_export_payload(raw_payload, cache.snapshot)
 
@@ -280,8 +296,9 @@ def export_graph(
     return ordered_payload
 
 
-def query(cache: Any, *, entity_id: str) -> dict[str, Any]:
+def query(cache: Any, *, entity_id: str, workspace_id: Optional[str] = None) -> dict[str, Any]:
     """Return structured graph details for one document."""
+    _enforce_workspace_scope(cache, workspace_id)
     doc = cache.snapshot.documents.get(entity_id)
     if doc is None:
         raise OntosUserError("Document not found.", code="E_DOCUMENT_NOT_FOUND")
@@ -297,8 +314,9 @@ def query(cache: Any, *, entity_id: str) -> dict[str, Any]:
     }
 
 
-def health(cache: Any) -> dict[str, Any]:
+def health(cache: Any, *, workspace_id: Optional[str] = None) -> dict[str, Any]:
     """Return server/cache health state."""
+    _enforce_workspace_scope(cache, workspace_id)
     uptime = max(0, int((datetime.now(timezone.utc) - cache.started_at).total_seconds()))
     return {
         "server_uptime": uptime,
@@ -312,8 +330,9 @@ def health(cache: Any) -> dict[str, Any]:
     }
 
 
-def refresh(cache: Any) -> dict[str, Any]:
+def refresh(cache: Any, *, workspace_id: Optional[str] = None) -> dict[str, Any]:
     """Force a cache rebuild and return the observable state change."""
+    _enforce_workspace_scope(cache, workspace_id)
     _snapshot, duration_ms = cache.force_refresh()
     return {
         "refreshed": True,
@@ -322,8 +341,209 @@ def refresh(cache: Any) -> dict[str, Any]:
     }
 
 
+def project_registry(portfolio_index: Any) -> dict[str, Any]:
+    """Return the complete project inventory from the portfolio index."""
+    if portfolio_index is None:
+        raise OntosUserError(
+            "project_registry is available only in portfolio mode.",
+            code="E_PORTFOLIO_REQUIRED",
+        )
+    projects = portfolio_index.get_projects()
+    return {
+        "project_count": len(projects),
+        "projects": [
+            {
+                "slug": p["slug"],
+                "path": p["path"],
+                "status": p["status"],
+                "doc_count": p["doc_count"],
+                "last_updated": p["last_scanned"],
+                "tags": _parse_project_tags(p.get("tags")),
+                "has_ontos": bool(p["has_ontos"]),
+            }
+            for p in projects
+        ],
+        "summary": f"Portfolio contains {len(projects)} projects.",
+    }
+
+
+def search(
+    portfolio_index: Any,
+    *,
+    query_string: str,
+    workspace_id: Optional[str] = None,
+    offset: int = 0,
+    limit: int = 20,
+) -> dict[str, Any]:
+    """Full-text search across the portfolio or a single workspace."""
+    if portfolio_index is None:
+        raise OntosUserError(
+            "search is available only in portfolio mode.",
+            code="E_PORTFOLIO_REQUIRED",
+        )
+    if not query_string or not query_string.strip():
+        raise OntosUserError(
+            "query_string must be non-empty.",
+            code="E_EMPTY_QUERY",
+        )
+    if limit < 1 or limit > 100:
+        raise OntosUserError(
+            "limit must be between 1 and 100.",
+            code="E_INVALID_LIMIT",
+        )
+    if offset < 0:
+        raise OntosUserError(
+            "offset must be >= 0.",
+            code="E_INVALID_OFFSET",
+        )
+    if workspace_id is not None:
+        _validate_workspace_id(portfolio_index, workspace_id)
+    try:
+        return portfolio_index.search_fts(query_string, workspace_id, offset, limit)
+    except sqlite3.OperationalError as exc:
+        raise OntosUserError(
+            "Invalid search query syntax.",
+            code="E_INVALID_QUERY",
+            details=str(exc),
+        ) from exc
+
+
+def get_context_bundle(
+    portfolio_index: Any,
+    cache: Any,
+    *,
+    workspace_id: Optional[str] = None,
+    token_budget: int = 8192,
+) -> dict[str, Any]:
+    """Return a token-budgeted context package for a workspace."""
+    from ontos.mcp.bundler import build_context_bundle
+
+    if token_budget < 1024:
+        raise OntosUserError(
+            "token_budget must be at least 1024.",
+            code="E_INVALID_BUDGET",
+        )
+    if token_budget > 128000:
+        raise OntosUserError(
+            "token_budget must be at most 128000.",
+            code="E_INVALID_BUDGET",
+        )
+
+    if portfolio_index is None:
+        slug = _slugify_workspace_name(cache.workspace_root.name)
+        snapshot = cache.get_fresh_snapshot()
+        workspace_root = cache.workspace_root
+    elif workspace_id is None:
+        raise OntosUserError(
+            "workspace_id is required in portfolio mode. "
+            "Use project_registry() to discover available workspaces.",
+            code="E_MISSING_WORKSPACE",
+        )
+    else:
+        _validate_workspace_id(portfolio_index, workspace_id)
+        projects = portfolio_index.get_projects()
+        project = next((item for item in projects if item["slug"] == workspace_id), None)
+        if project is None:
+            raise OntosUserError(
+                f"Unknown workspace '{workspace_id}'.",
+                code="E_UNKNOWN_WORKSPACE",
+            )
+        if project["status"] == "undocumented":
+            raise OntosUserError(
+                f"Workspace '{workspace_id}' is undocumented. "
+                "Run `ontos init` in that project directory first.",
+                code="E_UNDOCUMENTED_WORKSPACE",
+            )
+        slug = workspace_id
+        workspace_root = Path(project["path"]).resolve()
+        snapshot = create_snapshot(
+            root=workspace_root,
+            include_content=True,
+            filters=None,
+            git_commit_provider=None,
+            scope=None,
+        )
+
+    return build_context_bundle(
+        snapshot,
+        workspace_root,
+        slug,
+        token_budget=token_budget,
+    )
+
+
 def _humanize_id(doc_id: str) -> str:
     return doc_id.replace("_", " ").title()
+
+
+def _parse_project_tags(raw: Any) -> list[str]:
+    if not raw:
+        return []
+    if isinstance(raw, list):
+        return [str(item) for item in raw]
+    if isinstance(raw, str):
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError:
+            return []
+        if isinstance(parsed, list):
+            return [str(item) for item in parsed]
+    return []
+
+
+def _validate_workspace_id(portfolio_index: Any, workspace_id: str) -> None:
+    """Validate workspace_id exists in portfolio. Raise OntosUserError if not."""
+    if portfolio_index is None:
+        raise OntosUserError(
+            "workspace_id requires portfolio mode.",
+            code="E_PORTFOLIO_REQUIRED",
+        )
+    projects = portfolio_index.get_projects()
+    slugs = [project["slug"] for project in projects]
+    if workspace_id not in slugs:
+        sorted_slugs = ", ".join(sorted(slugs))
+        raise OntosUserError(
+            f"Unknown workspace '{workspace_id}'. "
+            f"Valid workspace slugs: {sorted_slugs}. "
+            "Use project_registry() to discover available workspaces.",
+            code="E_UNKNOWN_WORKSPACE",
+        )
+
+
+def _enforce_workspace_scope(cache: Any, workspace_id: Optional[str]) -> None:
+    if workspace_id is None:
+        return
+    if not _is_portfolio_mode(cache):
+        return
+    primary_workspace = _primary_workspace_slug(cache)
+    if workspace_id == primary_workspace:
+        return
+    raise OntosUserError(
+        "Cross-workspace reads are not supported in this tool yet. "
+        "Start a separate `ontos serve` in the target workspace.",
+        code="E_CROSS_WORKSPACE_NOT_SUPPORTED",
+    )
+
+
+def _is_portfolio_mode(cache: Any) -> bool:
+    return bool(
+        getattr(cache, "portfolio_mode", False)
+        or getattr(cache, "is_portfolio_mode", False)
+        or getattr(cache, "portfolio_enabled", False)
+        or getattr(cache, "portfolio_index", None) is not None
+    )
+
+
+def _primary_workspace_slug(cache: Any) -> str:
+    for attr in ("primary_workspace_slug", "workspace_slug", "workspace_id"):
+        value = getattr(cache, attr, None)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return _slugify_workspace_name(cache.workspace_root.name)
+
+
+def _slugify_workspace_name(raw: str) -> str:
+    return slugify(raw)
 
 
 def _normalize_warnings(

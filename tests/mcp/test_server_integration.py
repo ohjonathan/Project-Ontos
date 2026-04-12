@@ -124,9 +124,10 @@ def test_serve_binds_config_to_workspace_across_cwd(tmp_path, monkeypatch):
         def run(self, transport: str) -> None:
             captured["transport"] = transport
 
-    def fake_create_server(cache):
+    def fake_create_server(cache, **kwargs):
         captured["docs_dir"] = cache.config.paths.docs_dir
         captured["initial_count"] = cache.canonical_view.total_count
+        captured["kwargs"] = kwargs
         write_file(
             target_root / "knowledge/extra.md",
             """
@@ -152,3 +153,4 @@ def test_serve_binds_config_to_workspace_across_cwd(tmp_path, monkeypatch):
     assert captured["docs_dir"] == "knowledge"
     assert captured["initial_count"] == 1
     assert captured["refreshed_count"] == 2
+    assert captured["kwargs"]["include_bundle_tool"] is True

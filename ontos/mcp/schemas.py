@@ -54,6 +54,19 @@ class ToolErrorEnvelope(StrictModel):
     content: List[ToolErrorTextItem]
 
 
+class WriteToolError(StrictModel):
+    error_code: str
+    what: str
+    why: str
+    fix: str
+
+
+class WriteToolErrorEnvelope(StrictModel):
+    isError: Literal[True]
+    error: WriteToolError
+    content: List[ToolErrorTextItem]
+
+
 class KeyDocumentItem(StrictModel):
     id: str
     title: str
@@ -180,6 +193,93 @@ class RefreshResponse(StrictModel):
     duration_ms: int
 
 
+class ProjectItem(StrictModel):
+    slug: str
+    path: str
+    status: str
+    doc_count: int
+    last_updated: Optional[str]
+    tags: List[str]
+    has_ontos: bool
+
+
+class ProjectRegistryResponse(StrictModel):
+    project_count: int
+    projects: List[ProjectItem]
+    summary: str
+
+
+class SearchResultItem(StrictModel):
+    doc_id: str
+    workspace_slug: str
+    type: str
+    status: str
+    path: str
+    snippet: str
+    score: float
+
+
+class SearchResponse(StrictModel):
+    total_hits: int
+    results: List[SearchResultItem]
+
+
+class BundleDocumentItem(StrictModel):
+    id: str
+    type: str
+    score: float
+    token_estimate: int
+
+
+class StaleDocumentItem(StrictModel):
+    id: str
+    reason: str
+
+
+class GetContextBundleResponse(StrictModel):
+    workspace_id: str
+    workspace_slug: str
+    token_estimate: int
+    document_count: int
+    bundle_text: str
+    included_documents: List[BundleDocumentItem]
+    excluded_count: int
+    stale_documents: List[StaleDocumentItem]
+    warnings: List[str]
+
+
+class ScaffoldDocumentResponse(StrictModel):
+    success: Literal[True]
+    path: str
+    id: str
+    type: str
+    status: str
+    curation_level: str
+
+
+class RenameDocumentResponse(StrictModel):
+    success: Literal[True]
+    old_id: str
+    new_id: str
+    path: str
+    references_updated: int
+    updated_files: List[str]
+
+
+class LogSessionResponse(StrictModel):
+    success: Literal[True]
+    path: str
+    id: str
+    date: str
+
+
+class PromoteDocumentResponse(StrictModel):
+    success: Literal[True]
+    document_id: str
+    old_level: str
+    new_level: str
+
+
 TOOL_SUCCESS_MODELS: Dict[str, Type[BaseModel]] = {
     "workspace_overview": WorkspaceOverviewResponse,
     "context_map": ContextMapResponse,
@@ -189,6 +289,9 @@ TOOL_SUCCESS_MODELS: Dict[str, Type[BaseModel]] = {
     "query": QueryResponse,
     "health": HealthResponse,
     "refresh": RefreshResponse,
+    "project_registry": ProjectRegistryResponse,
+    "search": SearchResponse,
+    "get_context_bundle": GetContextBundleResponse,
 }
 
 TOOL_OUTPUT_SCHEMAS: Dict[str, Dict[str, Any]] = {
@@ -196,7 +299,12 @@ TOOL_OUTPUT_SCHEMAS: Dict[str, Dict[str, Any]] = {
     for name, model in TOOL_SUCCESS_MODELS.items()
 }
 
-TOOL_ERROR_SCHEMA: Dict[str, Any] = ToolErrorEnvelope.model_json_schema(by_alias=True)
+TOOL_ERROR_SCHEMA: Dict[str, Any] = {
+    "oneOf": [
+        ToolErrorEnvelope.model_json_schema(by_alias=True),
+        WriteToolErrorEnvelope.model_json_schema(by_alias=True),
+    ]
+}
 EXPORT_GRAPH_ADAPTER = TypeAdapter(
     Union[ExportGraphSummaryResponse, ExportGraphFullResponse, ExportGraphFileResponse]
 )

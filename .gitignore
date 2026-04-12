@@ -19,6 +19,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 .ontos/session_archived
+.ontos.lock
 ontos.egg-info/
 dist/
 

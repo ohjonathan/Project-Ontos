@@ -307,6 +307,16 @@ def _register_serve(subparsers, parent):
         type=Path,
         help="Workspace path to serve (defaults to the current working directory)",
     )
+    p.add_argument(
+        "--portfolio",
+        action="store_true",
+        help="Enable portfolio mode: index all projects under configured scan roots",
+    )
+    p.add_argument(
+        "--read-only",
+        action="store_true",
+        help="Expose only read tools on the MCP surface",
+    )
     p.set_defaults(func=_cmd_serve)
 
 
@@ -429,6 +439,11 @@ def _register_verify(subparsers, parent):
     p.add_argument(
         "--date", "-d",
         help="Verification date (YYYY-MM-DD, default: today)"
+    )
+    p.add_argument(
+        "--portfolio",
+        action="store_true",
+        help="Compare portfolio DB against projects.json and report discrepancies",
     )
     _add_scope_argument(p)
     p.set_defaults(func=_cmd_verify)
@@ -873,6 +888,10 @@ def _cmd_serve(args) -> int:
 
         workspace_root = find_project_root(start_path=resolved_start)
         from ontos.mcp import serve
+        portfolio = bool(getattr(args, "portfolio", False))
+        read_only = bool(getattr(args, "read_only", False))
+        if portfolio or read_only:
+            return serve(workspace_root, portfolio=portfolio, read_only=read_only)
         return serve(workspace_root)
     except FileNotFoundError as exc:
         raise OntosUserError(str(exc), code="E_WORKSPACE_NOT_FOUND") from exc
@@ -1290,6 +1309,34 @@ def _cmd_query(args) -> int:
 
 def _cmd_verify(args) -> int:
     """Handle verify command."""
+    if getattr(args, "portfolio", False):
+        from ontos.commands.verify import verify_portfolio
+        from ontos.mcp.portfolio_config import load_portfolio_config
+
+        try:
+            config = load_portfolio_config()
+        except (OSError, ValueError, TypeError) as exc:
+            message = f"Invalid portfolio config: {exc}"
+            if args.json:
+                _emit_handler_result_json(
+                    command="verify",
+                    exit_code=2,
+                    message=message,
+                    data={"error": True},
+                )
+            else:
+                print(message)
+            return 2
+        registry_path = Path(config.registry_path).expanduser() if config.registry_path else (
+            Path.home() / "Dev" / ".dev-hub" / "registry" / "projects.json"
+        )
+        return verify_portfolio(
+            portfolio_db_path=Path.home() / ".config" / "ontos" / "portfolio.db",
+            registry_path=registry_path,
+            json_output=args.json,
+            workspace_id=getattr(args, "workspace_id", None),
+        )
+
     from ontos.commands.verify import VerifyOptions, _run_verify_command
 
     options = VerifyOptions(

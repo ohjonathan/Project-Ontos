@@ -1,10 +1,12 @@
 """Native verify command implementation."""
 
+import json
 import re
+import sqlite3
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
-from typing import Optional, Tuple, List
+from typing import Any, Optional, Tuple, List
 
 from ontos.core.staleness import (
     normalize_describes,
@@ -279,3 +281,221 @@ def verify_command(options: VerifyOptions) -> int:
     """Run verify command and return exit code only."""
     exit_code, _ = _run_verify_command(options)
     return exit_code
+
+
+def verify_portfolio(
+    *,
+    portfolio_db_path: Path,
+    registry_path: Path,
+    json_output: bool = False,
+    workspace_id: Optional[str] = None,
+) -> int:
+    """Compare portfolio DB projects against the dev-hub registry."""
+    if not portfolio_db_path.exists():
+        message = "Portfolio DB not found. Run `ontos serve --portfolio` first."
+        _emit_verify_portfolio_result(
+            clean=False,
+            missing_in_db=[],
+            missing_in_json=[],
+            field_mismatches=[],
+            summary=message,
+            json_output=json_output,
+            exit_code=2,
+        )
+        return 2
+
+    if not registry_path.exists():
+        message = (
+            f"Registry file not found at {registry_path}. "
+            "Check portfolio.toml registry_path."
+        )
+        _emit_verify_portfolio_result(
+            clean=False,
+            missing_in_db=[],
+            missing_in_json=[],
+            field_mismatches=[],
+            summary=message,
+            json_output=json_output,
+            exit_code=2,
+        )
+        return 2
+
+    try:
+        db_projects = _load_portfolio_db_projects(portfolio_db_path)
+        registry_projects = _load_registry_projects(registry_path)
+    except (sqlite3.DatabaseError, OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        _emit_verify_portfolio_result(
+            clean=False,
+            missing_in_db=[],
+            missing_in_json=[],
+            field_mismatches=[],
+            summary=f"Portfolio verification failed: {exc}",
+            json_output=json_output,
+            exit_code=2,
+        )
+        return 2
+
+    if workspace_id is not None:
+        db_projects = _scope_projects(db_projects, workspace_id)
+        registry_projects = _scope_projects(registry_projects, workspace_id)
+
+    db_slugs = set(db_projects.keys())
+    registry_slugs = set(registry_projects.keys())
+    missing_in_db = sorted(registry_slugs - db_slugs)
+    missing_in_json = sorted(db_slugs - registry_slugs)
+
+    field_mismatches: list[dict[str, Any]] = []
+    for slug in sorted(db_slugs & registry_slugs):
+        db_row = db_projects[slug]
+        registry_row = registry_projects[slug]
+        for field in ("path", "status", "has_ontos"):
+            db_value = db_row.get(field)
+            registry_value = registry_row.get(field)
+            if db_value != registry_value:
+                field_mismatches.append(
+                    {
+                        "slug": slug,
+                        "field": field,
+                        "db_value": db_value,
+                        "json_value": registry_value,
+                    }
+                )
+
+    discrepancies = len(missing_in_db) + len(missing_in_json) + len(field_mismatches)
+    clean = discrepancies == 0
+    summary = "No discrepancies found." if clean else f"{discrepancies} discrepancies found."
+    exit_code = 0 if clean else 1
+    _emit_verify_portfolio_result(
+        clean=clean,
+        missing_in_db=missing_in_db,
+        missing_in_json=missing_in_json,
+        field_mismatches=field_mismatches,
+        summary=summary,
+        json_output=json_output,
+        exit_code=exit_code,
+    )
+    return exit_code
+
+
+def _load_portfolio_db_projects(portfolio_db_path: Path) -> dict[str, dict[str, Any]]:
+    connection = sqlite3.connect(str(portfolio_db_path))
+    connection.row_factory = sqlite3.Row
+    try:
+        rows = connection.execute(
+            "SELECT slug, path, status, has_ontos FROM projects"
+        ).fetchall()
+    finally:
+        connection.close()
+
+    projects: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        slug = str(row["slug"])
+        projects[slug] = {
+            "path": _normalize_path(row["path"]),
+            "status": str(row["status"]),
+            "has_ontos": bool(row["has_ontos"]),
+        }
+    return projects
+
+
+def _load_registry_projects(registry_path: Path) -> dict[str, dict[str, Any]]:
+    from ontos.mcp.scanner import allocate_slug, load_registry_records, slugify
+
+    records = load_registry_records(registry_path, tolerate_errors=False)
+    projects: dict[str, dict[str, Any]] = {}
+    used_slugs: dict[str, int] = {}
+    for record in sorted(records, key=lambda item: str(item.path)):
+        normalized_path = _normalize_path(record.path)
+        base_slug = slugify(Path(normalized_path).name)
+        slug = allocate_slug(base_slug, used_slugs)
+        status = record.status if record.status else "unknown"
+        has_ontos = _registry_has_ontos(record.has_ontos_raw, normalized_path)
+        projects[slug] = {
+            "path": normalized_path,
+            "status": status,
+            "has_ontos": has_ontos,
+        }
+    return projects
+
+
+def _scope_projects(
+    projects: dict[str, dict[str, Any]],
+    workspace_id: str,
+) -> dict[str, dict[str, Any]]:
+    if workspace_id in projects:
+        return {workspace_id: projects[workspace_id]}
+    return {}
+
+
+def _normalize_path(path_value: Any) -> str:
+    return str(Path(str(path_value)).expanduser().resolve(strict=False))
+
+
+def _registry_has_ontos(has_ontos_raw: Optional[object], normalized_path: str) -> bool:
+    coerced = _coerce_registry_bool(has_ontos_raw)
+    if coerced is not None:
+        return coerced
+    # Deleted workspace entries can remain in the registry even after the path disappears.
+    # For malformed has_ontos values, fallback to filesystem state to preserve this behavior.
+    return (Path(normalized_path) / ".ontos.toml").exists()
+
+
+def _coerce_registry_bool(value: Optional[object]) -> Optional[bool]:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes"}:
+            return True
+        if normalized in {"false", "0", "no", ""}:
+            return False
+    return None
+
+
+def _emit_verify_portfolio_result(
+    *,
+    clean: bool,
+    missing_in_db: list[str],
+    missing_in_json: list[str],
+    field_mismatches: list[dict[str, Any]],
+    summary: str,
+    json_output: bool,
+    exit_code: int,
+) -> None:
+    if json_output:
+        payload: dict[str, Any] = {
+            "clean": clean,
+            "missing_in_db": missing_in_db,
+            "missing_in_json": missing_in_json,
+            "field_mismatches": field_mismatches,
+            "summary": summary,
+        }
+        if exit_code == 2:
+            payload["error"] = True
+        print(json.dumps(payload, ensure_ascii=True))
+        return
+
+    if clean:
+        print(summary)
+        return
+    if exit_code == 2:
+        print(summary)
+        return
+
+    print(summary)
+    if missing_in_db:
+        print("Missing in portfolio DB:")
+        for slug in missing_in_db:
+            print(f"  - {slug}")
+    if missing_in_json:
+        print("Missing in projects.json:")
+        for slug in missing_in_json:
+            print(f"  - {slug}")
+    if field_mismatches:
+        print("Field mismatches:")
+        for mismatch in field_mismatches:
+            print(
+                "  - "
+                f"{mismatch['slug']} {mismatch['field']}: "
+                f"db={mismatch['db_value']!r} json={mismatch['json_value']!r}"
+            )

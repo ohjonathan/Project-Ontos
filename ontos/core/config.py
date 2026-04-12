@@ -12,7 +12,7 @@ The caller (commands layer) provides the IO callback.
 """
 
 import os
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Callable
@@ -123,6 +123,7 @@ def _validate_types(data: dict) -> None:
         ("workflow", "log_retention_count"): int,
         ("hooks", "pre_push"): bool,
         ("hooks", "pre_commit"): bool,
+        ("hooks", "strict"): bool,
         ("mcp", "usage_logging"): bool,
         ("mcp", "usage_log_path"): str,
     }
@@ -141,6 +142,9 @@ def _validate_types(data: dict) -> None:
 
 def dict_to_config(data: dict, repo_root: Optional[Path] = None) -> OntosConfig:
     """Convert dict from TOML to config dataclass."""
+    data = _normalize_legacy_config(data)
+    _validate_section_names(data)
+
     # Type validation
     _validate_types(data)
 
@@ -155,13 +159,15 @@ def dict_to_config(data: dict, repo_root: Optional[Path] = None) -> OntosConfig:
                     )
 
     # Build config with defaults for missing fields
-    ontos = OntosSection(**data.get("ontos", {}))
-    paths = PathsConfig(**data.get("paths", {}))
-    scanning = ScanningConfig(**data.get("scanning", {}))
-    validation = ValidationConfig(**data.get("validation", {}))
-    workflow = WorkflowConfig(**data.get("workflow", {}))
-    hooks = HooksConfig(**data.get("hooks", {}))
-    mcp = McpConfig(**data.get("mcp", {}))
+    ontos = OntosSection(**_section_kwargs(OntosSection, "ontos", data.get("ontos")))
+    paths = PathsConfig(**_section_kwargs(PathsConfig, "paths", data.get("paths")))
+    scanning = ScanningConfig(**_section_kwargs(ScanningConfig, "scanning", data.get("scanning")))
+    validation = ValidationConfig(
+        **_section_kwargs(ValidationConfig, "validation", data.get("validation"))
+    )
+    workflow = WorkflowConfig(**_section_kwargs(WorkflowConfig, "workflow", data.get("workflow")))
+    hooks = HooksConfig(**_section_kwargs(HooksConfig, "hooks", data.get("hooks")))
+    mcp = McpConfig(**_section_kwargs(McpConfig, "mcp", data.get("mcp")))
 
     return OntosConfig(
         ontos=ontos,
@@ -172,6 +178,53 @@ def dict_to_config(data: dict, repo_root: Optional[Path] = None) -> OntosConfig:
         hooks=hooks,
         mcp=mcp,
     )
+
+
+def _normalize_legacy_config(data: dict) -> dict:
+    """Map known legacy config fields onto the current schema."""
+    normalized = {
+        key: (dict(value) if isinstance(value, dict) else value)
+        for key, value in data.items()
+    }
+    # Legacy user projects may still carry a top-level [project] section.
+    # Current runtime code does not consume those fields, so treat it as a
+    # compatibility no-op while keeping strict validation for every other
+    # unknown section.
+    normalized.pop("project", None)
+
+    validation = normalized.get("validation")
+    if not isinstance(validation, dict):
+        return normalized
+
+    legacy_strict = validation.pop("strict", None)
+    if legacy_strict is None:
+        return normalized
+
+    hooks = normalized.get("hooks")
+    if not isinstance(hooks, dict):
+        hooks = {}
+        normalized["hooks"] = hooks
+    hooks.setdefault("strict", legacy_strict)
+    return normalized
+
+
+def _validate_section_names(data: dict) -> None:
+    """Reject unknown top-level config sections."""
+    allowed = {field_info.name for field_info in fields(OntosConfig)}
+    for section_name in data:
+        if section_name not in allowed:
+            raise ConfigError(f"Unknown config section '{section_name}'")
+
+
+def _section_kwargs(section_type: type, section_name: str, raw_values: object) -> dict:
+    """Return constructor kwargs for one config section and reject unknown keys."""
+    if not isinstance(raw_values, dict):
+        return {}
+    allowed = {field_info.name for field_info in fields(section_type)}
+    for key in raw_values:
+        if key not in allowed:
+            raise ConfigError(f"Unknown config key '{section_name}.{key}'")
+    return dict(raw_values)
 
 
 # =============================================================================

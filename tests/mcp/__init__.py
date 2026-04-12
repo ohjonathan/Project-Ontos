@@ -269,10 +269,10 @@ def build_cache(root: Path) -> SnapshotCache:
     )
 
 
-def build_server(root: Path):
+def build_server(root: Path, **kwargs: Any):
     from ontos.mcp.server import create_server
 
-    return create_server(build_cache(root))
+    return create_server(build_cache(root), **kwargs)
 
 
 def invoke_tool(*args: Any, **kwargs: Any):

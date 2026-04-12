@@ -139,3 +139,30 @@ class TestDictToConfig:
         """dict_to_config validates types."""
         with pytest.raises(ConfigError, match="must be int"):
             dict_to_config({"workflow": {"log_retention_count": "bad"}})
+
+    def test_dict_to_config_maps_legacy_validation_strict_to_hooks(self):
+        """Legacy validation.strict is accepted and preserved via hooks.strict."""
+        config = dict_to_config({"validation": {"strict": True}})
+
+        assert config.hooks.strict is True
+
+    def test_dict_to_config_accepts_legacy_project_section(self):
+        """Legacy top-level [project] section remains a compatibility no-op."""
+        config = dict_to_config(
+            {
+                "project": {"name": "legacy-project"},
+                "paths": {"logs_dir": "docs/logs"},
+            }
+        )
+
+        assert config.paths.logs_dir == "docs/logs"
+
+    def test_dict_to_config_rejects_unknown_section_key(self):
+        """Unknown keys raise ConfigError with the offending dotted key."""
+        with pytest.raises(ConfigError, match=r"hooks\.strictt"):
+            dict_to_config({"hooks": {"strictt": True}})
+
+    def test_dict_to_config_rejects_unknown_top_level_section(self):
+        """Unknown top-level sections raise ConfigError with section name."""
+        with pytest.raises(ConfigError, match="hokks"):
+            dict_to_config({"hokks": {"strict": True}})
