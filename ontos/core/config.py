@@ -186,6 +186,12 @@ def _normalize_legacy_config(data: dict) -> dict:
         key: (dict(value) if isinstance(value, dict) else value)
         for key, value in data.items()
     }
+    # Legacy user projects may still carry a top-level [project] section.
+    # Current runtime code does not consume those fields, so treat it as a
+    # compatibility no-op while keeping strict validation for every other
+    # unknown section.
+    normalized.pop("project", None)
+
     validation = normalized.get("validation")
     if not isinstance(validation, dict):
         return normalized

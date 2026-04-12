@@ -146,6 +146,17 @@ class TestDictToConfig:
 
         assert config.hooks.strict is True
 
+    def test_dict_to_config_accepts_legacy_project_section(self):
+        """Legacy top-level [project] section remains a compatibility no-op."""
+        config = dict_to_config(
+            {
+                "project": {"name": "legacy-project"},
+                "paths": {"logs_dir": "docs/logs"},
+            }
+        )
+
+        assert config.paths.logs_dir == "docs/logs"
+
     def test_dict_to_config_rejects_unknown_section_key(self):
         """Unknown keys raise ConfigError with the offending dotted key."""
         with pytest.raises(ConfigError, match=r"hooks\.strictt"):
