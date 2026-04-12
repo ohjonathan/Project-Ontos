@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 import fcntl
+import os
 from pathlib import Path
 import time
 from typing import Iterator
@@ -18,6 +19,7 @@ def workspace_lock(workspace_root: Path, timeout: float = 5.0) -> Iterator[None]
     lock_path.parent.mkdir(parents=True, exist_ok=True)
 
     handle = lock_path.open("a+", encoding="utf-8")
+    os.set_inheritable(handle.fileno(), False)
     start = time.monotonic()
     try:
         while True:
