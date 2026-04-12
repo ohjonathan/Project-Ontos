@@ -161,13 +161,14 @@ def create_server(
         register_fn=register,
     )
 
-    _register_write_tools(
-        cache=cache,
-        workspace_name=workspace_name,
-        portfolio_index=portfolio_index,
-        read_only=read_only,
-        register_fn=register,
-    )
+    if not read_only:
+        _register_write_tools(
+            cache=cache,
+            workspace_name=workspace_name,
+            portfolio_index=portfolio_index,
+            read_only=read_only,
+            register_fn=register,
+        )
 
     if portfolio_index is not None:
         _register_portfolio_tools(
