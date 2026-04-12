@@ -295,6 +295,7 @@ TOOL_SUCCESS_MODELS: Dict[str, Type[BaseModel]] = {
     "scaffold_document": ScaffoldDocumentResponse,
     "log_session": LogSessionResponse,
     "promote_document": PromoteDocumentResponse,
+    "rename_document": RenameDocumentResponse,
 }
 
 TOOL_OUTPUT_SCHEMAS: Dict[str, Dict[str, Any]] = {
