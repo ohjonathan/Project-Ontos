@@ -143,6 +143,7 @@ def _validate_types(data: dict) -> None:
 def dict_to_config(data: dict, repo_root: Optional[Path] = None) -> OntosConfig:
     """Convert dict from TOML to config dataclass."""
     data = _normalize_legacy_config(data)
+    _validate_section_names(data)
 
     # Type validation
     _validate_types(data)
@@ -158,13 +159,15 @@ def dict_to_config(data: dict, repo_root: Optional[Path] = None) -> OntosConfig:
                     )
 
     # Build config with defaults for missing fields
-    ontos = OntosSection(**_section_kwargs(OntosSection, data.get("ontos")))
-    paths = PathsConfig(**_section_kwargs(PathsConfig, data.get("paths")))
-    scanning = ScanningConfig(**_section_kwargs(ScanningConfig, data.get("scanning")))
-    validation = ValidationConfig(**_section_kwargs(ValidationConfig, data.get("validation")))
-    workflow = WorkflowConfig(**_section_kwargs(WorkflowConfig, data.get("workflow")))
-    hooks = HooksConfig(**_section_kwargs(HooksConfig, data.get("hooks")))
-    mcp = McpConfig(**_section_kwargs(McpConfig, data.get("mcp")))
+    ontos = OntosSection(**_section_kwargs(OntosSection, "ontos", data.get("ontos")))
+    paths = PathsConfig(**_section_kwargs(PathsConfig, "paths", data.get("paths")))
+    scanning = ScanningConfig(**_section_kwargs(ScanningConfig, "scanning", data.get("scanning")))
+    validation = ValidationConfig(
+        **_section_kwargs(ValidationConfig, "validation", data.get("validation"))
+    )
+    workflow = WorkflowConfig(**_section_kwargs(WorkflowConfig, "workflow", data.get("workflow")))
+    hooks = HooksConfig(**_section_kwargs(HooksConfig, "hooks", data.get("hooks")))
+    mcp = McpConfig(**_section_kwargs(McpConfig, "mcp", data.get("mcp")))
 
     return OntosConfig(
         ontos=ontos,
@@ -199,16 +202,23 @@ def _normalize_legacy_config(data: dict) -> dict:
     return normalized
 
 
-def _section_kwargs(section_type: type, raw_values: object) -> dict:
-    """Return only constructor-supported keys for one config section."""
+def _validate_section_names(data: dict) -> None:
+    """Reject unknown top-level config sections."""
+    allowed = {field_info.name for field_info in fields(OntosConfig)}
+    for section_name in data:
+        if section_name not in allowed:
+            raise ConfigError(f"Unknown config section '{section_name}'")
+
+
+def _section_kwargs(section_type: type, section_name: str, raw_values: object) -> dict:
+    """Return constructor kwargs for one config section and reject unknown keys."""
     if not isinstance(raw_values, dict):
         return {}
     allowed = {field_info.name for field_info in fields(section_type)}
-    return {
-        key: value
-        for key, value in raw_values.items()
-        if key in allowed
-    }
+    for key in raw_values:
+        if key not in allowed:
+            raise ConfigError(f"Unknown config key '{section_name}.{key}'")
+    return dict(raw_values)
 
 
 # =============================================================================

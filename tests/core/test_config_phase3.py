@@ -146,15 +146,12 @@ class TestDictToConfig:
 
         assert config.hooks.strict is True
 
-    def test_dict_to_config_ignores_unknown_section_keys(self):
-        """Unknown keys do not break config loading for mixed-version projects."""
-        config = dict_to_config(
-            {
-                "workflow": {
-                    "log_retention_count": 30,
-                    "enforce_archive_before_push": True,
-                }
-            }
-        )
+    def test_dict_to_config_rejects_unknown_section_key(self):
+        """Unknown keys raise ConfigError with the offending dotted key."""
+        with pytest.raises(ConfigError, match=r"hooks\.strictt"):
+            dict_to_config({"hooks": {"strictt": True}})
 
-        assert config.workflow.log_retention_count == 30
+    def test_dict_to_config_rejects_unknown_top_level_section(self):
+        """Unknown top-level sections raise ConfigError with section name."""
+        with pytest.raises(ConfigError, match="hokks"):
+            dict_to_config({"hokks": {"strict": True}})
