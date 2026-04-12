@@ -690,10 +690,20 @@ The server runs in the foreground and communicates via stdin/stdout. Press Ctrl+
 | `query` | Dependency details for a single document | `entity_id` |
 | `health` | Server uptime, document count, index freshness | — |
 | `refresh` | Force cache rebuild | — |
+| `get_context_bundle` | Token-budgeted context bundle for a workspace | `workspace_id`, `token_budget` |
+
+#### Portfolio Tools (v4.1)
+
+When the server runs with `--portfolio`, it also registers:
+
+| Tool | Description | Key Parameters |
+|------|-------------|----------------|
+| `project_registry` | Inventory of all indexed workspaces | `workspace_id` |
+| `search` | FTS5 full-text search across portfolio documents | `query_string`, `workspace_id`, `offset`, `limit` |
 
 #### Write Tools (v4.1)
 
-When the server runs in mutable mode, it may also expose:
+When the server runs without `--read-only`, it also registers:
 
 | Tool | Description | Key Parameters |
 |------|-------------|----------------|

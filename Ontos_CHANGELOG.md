@@ -30,7 +30,7 @@ Major release shipping portfolio-scoped MCP with read AND write tools, a portfol
 ### Added
 
 - **4 MCP write tools** — `scaffold_document`, `log_session`, `promote_document`, `rename_document`. All respect `read_only` at registration time and wrap mutations in `workspace_lock()`.
-- **3 MCP portfolio tools** — `project_registry`, `search_portfolio`, `get_context_bundle` over a per-session SQLite portfolio index with FTS5 full-text search.
+- **3 MCP portfolio tools** — `project_registry`, `search`, `get_context_bundle` over a per-session SQLite portfolio index with FTS5 full-text search. `project_registry` and `search` require `--portfolio`; `get_context_bundle` is always available.
 - **`ontos verify --portfolio`** — Audits portfolio consistency (slug collisions, malformed TOML).
 - **Bundle config** — `bundle_token_budget`, `bundle_max_logs`, `bundle_log_window_days` in `~/.config/ontos/portfolio.toml` now reach `build_context_bundle()`.
 - **Shared rename orchestrator** — `build_rename_plan` used by both CLI and MCP.
@@ -39,7 +39,7 @@ Major release shipping portfolio-scoped MCP with read AND write tools, a portfol
 
 ### Changed
 
-- MCP tool count: 8 → 15 (8 core + 3 portfolio + 4 write).
+- MCP tool count: 8 → up to 15 (9 core + 2 portfolio + 4 write).
 - `read_only=True` now omits write tools from `list_tools()` entirely (previously returned `E_READ_ONLY` on invocation).
 
 ### Metrics

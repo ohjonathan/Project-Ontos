@@ -40,7 +40,7 @@ ontos serve --workspace /path  # Serve a specific project
 MCP support is opt-in. The base package is unchanged:
 ```bash
 pip install ontos            # Same as before — no new dependencies
-pip install 'ontos[mcp]'    # Adds mcp>=1.2 and pydantic>=2.0
+pip install 'ontos[mcp]'    # Adds mcp>=1.27.0 and pydantic>=2.0
 ```
 
 > **Note:** MCP requires Python 3.10+. All other Ontos commands continue to work on Python 3.9+.
@@ -60,13 +60,20 @@ pip install 'ontos[mcp]'    # Adds mcp>=1.2 and pydantic>=2.0
 
 ### 7 New MCP Tools (v4.1)
 
-**Portfolio tools (always available):**
+**Bundle tool (always available):**
+
+| Tool | Purpose |
+|------|---------|
+| `get_context_bundle` | Token-budgeted context bundle for a workspace |
+
+`get_context_bundle` is always registered. In portfolio mode it queries the portfolio index; otherwise it builds a bundle from the served workspace.
+
+**Portfolio tools (requires `--portfolio` flag):**
 
 | Tool | Purpose |
 |------|---------|
 | `project_registry` | Inventory of all known workspaces |
-| `search_portfolio` | FTS5 full-text search across workspaces |
-| `get_context_bundle` | Token-budgeted context bundle for a workspace |
+| `search` | FTS5 full-text search across workspaces |
 
 **Write tools (mutable mode only — omitted when `--read-only`):**
 

@@ -292,9 +292,9 @@ The server runs over stdio — your IDE manages the process lifecycle.
 
 ### 4. Available Tools
 
-The MCP server exposes 15 tools across three categories:
+The MCP server exposes up to 15 tools depending on server flags:
 
-**Core (8 tools — always available):**
+**Core (9 tools — always available):**
 
 | Tool | Purpose | Read-only |
 |------|---------|:---------:|
@@ -306,14 +306,14 @@ The MCP server exposes 15 tools across three categories:
 | `query` | Dependency details for a single document | ✅ |
 | `health` | Server uptime, document count, version | ✅ |
 | `refresh` | Force cache rebuild after bulk changes | ⚠️ |
+| `get_context_bundle` | Token-budgeted context bundle for a workspace | ✅ |
 
-**Portfolio (3 tools — v4.1, always available):**
+**Portfolio (2 tools — v4.1, requires `--portfolio` flag):**
 
 | Tool | Purpose |
 |------|---------|
 | `project_registry` | Inventory of all known workspaces |
-| `search_portfolio` | FTS5 full-text search across workspaces |
-| `get_context_bundle` | Token-budgeted context bundle for a workspace |
+| `search` | FTS5 full-text search across workspaces |
 
 **Write (4 tools — v4.1, mutable mode only):**
 

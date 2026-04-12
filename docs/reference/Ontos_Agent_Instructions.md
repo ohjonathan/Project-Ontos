@@ -8,7 +8,7 @@ depends_on: [ontos_manual]
 # Ontos Agent Instructions
 
 > **v4.1:** All CLI commands use `ontos <command>` (package installed via pip).
-> Agents can also connect via MCP server (`ontos serve`) for native integration — 15 tools including 4 write tools and portfolio search.
+> Agents can also connect via MCP server (`ontos serve`) for native integration — up to 15 tools including 4 write tools and portfolio search.
 > Use `python3 -m ontos <command>` if not installed globally.
 > See [Ontos Manual](Ontos_Manual.md) for details.
 
@@ -53,14 +53,14 @@ If the IDE supports MCP and the Ontos server is configured:
 | `query` | Dependency details for one document |
 | `health` | Server health and index freshness |
 | `refresh` | Force cache rebuild after bulk changes |
+| `get_context_bundle` | Token-budgeted context bundle for a workspace |
 
-**Portfolio tools (v4.1):**
+**Portfolio tools (v4.1, requires `--portfolio` flag):**
 
 | Tool | Purpose |
 |------|---------|
 | `project_registry` | Inventory of all known workspaces |
-| `search_portfolio` | FTS5 full-text search across workspaces |
-| `get_context_bundle` | Token-budgeted context bundle for a workspace |
+| `search` | FTS5 full-text search across workspaces |
 
 **Write tools (v4.1, mutable mode only):**
 
@@ -75,7 +75,7 @@ If the IDE supports MCP and the Ontos server is configured:
 ```bash
 ontos serve                    # Serve current directory
 ontos serve --workspace /path  # Serve specific workspace
-ontos serve --read-only        # Read + portfolio tools only (no write tools)
+ontos serve --read-only        # Omit write tools from the server
 ```
 Starts a stdio MCP server. Configure in your IDE's MCP settings. Requires `pip install 'ontos[mcp]'`.
 
