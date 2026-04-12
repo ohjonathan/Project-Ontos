@@ -626,48 +626,12 @@ def test_rename_document_output_schema_exposed():
     }
 
 
-# ---------------------------------------------------------------------------
-# Shared-orchestrator cross-scope collision (gained in the Dev 3 follow-up).
-# ---------------------------------------------------------------------------
-
-
-def test_rename_rejects_cross_scope_collision_docs_scope(tmp_path):
-    """Seed a doc with ``id: strategy_doc`` inside ``.ontos-internal/`` and
-    attempt to rename the docs-scope ``strategy_doc`` → ``renamed_strategy``.
-    The shared orchestrator's docs-scope external-IDs check must refuse it.
-
-    This path was silently allowed before the shared-orchestrator refactor:
-    the MCP tool had its own ID validation + collision checks that never
-    consulted ``_load_external_ids``. Asserts a new regression line.
-    """
-    root = create_workspace(tmp_path)
-    # Seed .ontos-internal/ with a colliding id BEFORE git init so the
-    # baseline commit is clean.
-    internal_doc = root / ".ontos-internal" / "collision.md"
-    internal_doc.parent.mkdir(parents=True, exist_ok=True)
-    internal_doc.write_text(
-        "---\n"
-        "id: strategy_doc\n"
-        "type: atom\n"
-        "status: active\n"
-        "---\n\n"
-        "Internal body.\n",
-        encoding="utf-8",
-    )
-    _git_init_clean(root)
-
-    server = build_server(root)
-    result = _call(
-        server,
-        "rename_document",
-        {"document_id": "strategy_doc", "new_id": "renamed_strategy"},
-    )
-
-    assert result.isError is True
-    assert (
-        result.structuredContent["error"]["error_code"]
-        == "E_CROSS_SCOPE_COLLISION"
-    )
+# CB-B3 spec correction: rename_document now uses ScanScope.LIBRARY
+# unconditionally, regardless of workspace .ontos.toml default_scope. The
+# former test_rename_rejects_cross_scope_collision_docs_scope test (Dev 3
+# refactor) relied on scope-tracks-config to reach the DOCS-scope external-IDs
+# check and is no longer reachable from the MCP surface. See
+# tests/mcp/test_rename_scope_forced_library.py for the replacement contract.
 
 
 def test_rename_library_scope_allows_ids_in_ontos_internal(tmp_path):

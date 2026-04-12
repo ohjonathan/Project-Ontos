@@ -52,7 +52,7 @@ from ontos.core.context import SessionContext
 from ontos.core.errors import OntosInternalError, OntosUserError
 from ontos.core.git import is_workspace_clean
 from ontos.io.config import load_project_config
-from ontos.io.scan_scope import resolve_scan_scope
+from ontos.io.scan_scope import ScanScope
 from ontos.mcp._validation import validate_workspace_id
 from ontos.mcp.cache import SnapshotCache
 from ontos.mcp.locking import workspace_lock
@@ -421,12 +421,14 @@ def _rename_document_impl(
             f"Config error: {exc}",
             code="E_CONFIG_ERROR",
         )
-    # Use the same scope resolution the snapshot cache used, so the docs
-    # dict and the scope parameter stay consistent. This keeps MCP's
-    # pre-refactor behaviour (whatever scope the snapshot was built with)
-    # while gaining the docs-scope cross-scope collision check whenever
-    # the effective scope is DOCS.
-    scope = resolve_scan_scope(None, config.scanning.default_scope)
+    # CB-B3 spec correction: MCP ``rename_document`` operates at LIBRARY
+    # scope unconditionally. The workspace's configured ``default_scope`` is
+    # IGNORED here — if the workspace sets ``default_scope = "portfolio"`` or
+    # similar, that is a CLI-surface preference and must NOT propagate to MCP
+    # write tools. DOCS scope at the MCP surface would let a rename traverse
+    # into ``.ontos-internal/`` and rewrite cross-scope references, which is
+    # explicitly out of scope for the MCP surface per Phase D verdict.
+    scope = ScanScope.LIBRARY
 
     rename_plan, error = build_rename_plan(
         repo_root=plan.workspace_root,
