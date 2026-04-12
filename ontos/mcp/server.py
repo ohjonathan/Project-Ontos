@@ -377,8 +377,10 @@ def _register_write_tools(
     read_only: bool,
     register_fn: Callable[..., None],
 ) -> None:
-    """Register the v4.1 Track B single-file write tools (Dev 2)."""
+    """Register the v4.1 Track B single-file write tools (Dev 2) and the
+    multi-file ``rename_document`` tool (Dev 3)."""
     from ontos.mcp import writes as write_impl
+    from ontos.mcp import rename_tool as rename_impl
 
     def handle_scaffold_document(
         path: str,
@@ -434,6 +436,22 @@ def _register_write_tools(
             workspace_id=workspace_id,
         )
 
+    def handle_rename_document(
+        document_id: str,
+        new_id: str,
+        workspace_id: Optional[str] = None,
+    ) -> CallToolResult:
+        return _invoke_write_tool(
+            "rename_document",
+            cache,
+            rename_impl.rename_document,
+            portfolio_index=portfolio_index,
+            read_only=read_only,
+            document_id=document_id,
+            new_id=new_id,
+            workspace_id=workspace_id,
+        )
+
     write_annotations = ToolAnnotations(
         readOnlyHint=False,
         destructiveHint=False,
@@ -473,6 +491,19 @@ def _register_write_tools(
         handler=handle_promote_document,
         annotations=write_annotations,
         meta={"anthropic/maxResultSizeChars": 4000},
+    )
+    register_fn(
+        name="rename_document",
+        title="Rename Document",
+        description=(
+            f"Renames a document ID in the {workspace_name} workspace and "
+            "rewrites every referencing file. Requires a clean git working "
+            "tree; on commit failure the workspace is rolled back via "
+            "`git checkout -- .`."
+        ),
+        handler=handle_rename_document,
+        annotations=write_annotations,
+        meta={"anthropic/maxResultSizeChars": 8000},
     )
 
 

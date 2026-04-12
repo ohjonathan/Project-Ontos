@@ -23,13 +23,15 @@ def test_server_lists_all_tools_with_correct_annotations(tmp_path):
         "scaffold_document",
         "log_session",
         "promote_document",
+        # v4.1 Track B (Dev 3) — multi-file write tool.
+        "rename_document",
     }
     assert set(tool_map.keys()) == expected_tools
     assert len(tool_map) == len(expected_tools)
 
     # export_graph, refresh, and the write tools are non-read-only
     for name in ("export_graph", "refresh", "scaffold_document",
-                 "log_session", "promote_document"):
+                 "log_session", "promote_document", "rename_document"):
         assert tool_map[name].annotations.readOnlyHint is False, (
             f"{name} must not be readOnly"
         )
