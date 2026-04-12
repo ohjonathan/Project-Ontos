@@ -12,6 +12,7 @@ from multiprocessing import Event, Process
 from pathlib import Path
 import pytest
 
+import ontos.core.context as context_module
 from ontos.core.context import SessionContext, FileOperation, PendingWrite
 
 
@@ -86,8 +87,10 @@ class TestSessionContext:
 
     def test_session_context_docstring_describes_buffered_commit_behavior(self):
         docstring = inspect.getdoc(SessionContext) or ""
+        module_docstring = inspect.getdoc(context_module) or ""
         assert "two-phase commit" not in docstring.lower()
         assert "atomic writes" not in docstring.lower()
+        assert "sequentially" in module_docstring.lower()
 
 
 class TestFileLocking:
