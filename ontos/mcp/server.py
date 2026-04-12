@@ -12,12 +12,14 @@ from typing import Any, Callable, Dict, Optional, Union
 
 import ontos
 from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import CallToolResult, TextContent, Tool as MCPTool, ToolAnnotations
 
 from ontos.core.errors import OntosInternalError, OntosUserError
 from ontos.io.config import load_project_config
 from ontos.io.snapshot import create_snapshot
 from ontos.mcp.cache import SnapshotCache
+from ontos.mcp.scanner import slugify
 from ontos.mcp.schemas import ToolErrorEnvelope, output_schema_for, validate_success_payload
 from ontos.mcp import tools as tool_impl
 
@@ -34,6 +36,7 @@ CORE_TOOL_NAMES = {
     "health",
     "refresh",
 }
+PORTFOLIO_MODE_TOOL_NAMES = {"project_registry", "search"}
 
 
 class OntosFastMCP(FastMCP):
@@ -61,6 +64,19 @@ class OntosFastMCP(FastMCP):
             )
             for info in tools
         ]
+
+    async def call_tool(self, name: str, arguments: dict[str, Any]) -> Any:
+        try:
+            return await super().call_tool(name, arguments)
+        except ToolError as exc:
+            if (
+                name in PORTFOLIO_MODE_TOOL_NAMES
+                and str(exc).startswith("Unknown tool:")
+            ):
+                return _tool_error_result(
+                    "E_PORTFOLIO_REQUIRED: Tool is available only in portfolio mode."
+                )
+            raise
 
 
 def serve(
@@ -723,15 +739,7 @@ def _build_portfolio_index() -> Any:
 
 
 def _workspace_slug(workspace_root: Path) -> str:
-    try:
-        from ontos.mcp.scanner import slugify
-    except Exception:
-        slugify = None
-    if slugify is not None:
-        return slugify(workspace_root.name)
-    lowered = workspace_root.name.strip().lower()
-    parts = [char if char.isalnum() else "-" for char in lowered]
-    return "".join(parts).strip("-") or "workspace"
+    return slugify(workspace_root.name)
 
 
 def _is_cross_workspace_read(

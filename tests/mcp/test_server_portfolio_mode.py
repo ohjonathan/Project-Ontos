@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import asyncio
+
+from mcp.types import CallToolResult
+
 from tests.mcp import build_server, create_workspace, list_tools
 
 
@@ -67,3 +71,18 @@ def test_create_server_registers_track_a_portfolio_matrix(tmp_path):
 
     for name in ("workspace_overview", "search", "project_registry", "get_context_bundle"):
         assert "workspace_id" in tool_map[name].inputSchema["properties"]
+
+
+def test_single_workspace_call_to_portfolio_tool_returns_structured_error(tmp_path):
+    root = create_workspace(tmp_path)
+    server = build_server(root, include_bundle_tool=True)
+    tool_names = {tool.name for tool in list_tools(server)}
+
+    assert "project_registry" not in tool_names
+    assert "search" not in tool_names
+
+    result = asyncio.run(server.call_tool("project_registry", {}))
+    assert isinstance(result, CallToolResult)
+    assert result.isError is True
+    assert result.structuredContent["isError"] is True
+    assert "E_PORTFOLIO_REQUIRED" in result.content[0].text
