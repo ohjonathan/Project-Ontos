@@ -288,7 +288,7 @@ def verify_portfolio(
     portfolio_db_path: Path,
     registry_path: Path,
     json_output: bool = False,
-    workspace_id: str | None = None,
+    workspace_id: Optional[str] = None,
 ) -> int:
     """Compare portfolio DB projects against the dev-hub registry."""
     if not portfolio_db_path.exists():
@@ -431,7 +431,7 @@ def _normalize_path(path_value: Any) -> str:
     return str(Path(str(path_value)).expanduser().resolve(strict=False))
 
 
-def _registry_has_ontos(has_ontos_raw: object | None, normalized_path: str) -> bool:
+def _registry_has_ontos(has_ontos_raw: Optional[object], normalized_path: str) -> bool:
     coerced = _coerce_registry_bool(has_ontos_raw)
     if coerced is not None:
         return coerced
@@ -440,7 +440,7 @@ def _registry_has_ontos(has_ontos_raw: object | None, normalized_path: str) -> b
     return (Path(normalized_path) / ".ontos.toml").exists()
 
 
-def _coerce_registry_bool(value: object | None) -> bool | None:
+def _coerce_registry_bool(value: Optional[object]) -> Optional[bool]:
     if isinstance(value, bool):
         return value
     if isinstance(value, str):
