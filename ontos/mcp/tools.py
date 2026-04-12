@@ -492,22 +492,14 @@ def _parse_project_tags(raw: Any) -> list[str]:
 
 
 def _validate_workspace_id(portfolio_index: Any, workspace_id: str) -> None:
-    """Validate workspace_id exists in portfolio. Raise OntosUserError if not."""
-    if portfolio_index is None:
-        raise OntosUserError(
-            "workspace_id requires portfolio mode.",
-            code="E_PORTFOLIO_REQUIRED",
-        )
-    projects = portfolio_index.get_projects()
-    slugs = [project["slug"] for project in projects]
-    if workspace_id not in slugs:
-        sorted_slugs = ", ".join(sorted(slugs))
-        raise OntosUserError(
-            f"Unknown workspace '{workspace_id}'. "
-            f"Valid workspace slugs: {sorted_slugs}. "
-            "Use project_registry() to discover available workspaces.",
-            code="E_UNKNOWN_WORKSPACE",
-        )
+    """Validate workspace_id exists in portfolio. Raise OntosUserError if not.
+
+    Delegates to the shared helper in ``ontos.mcp._validation`` so the read
+    and write paths use a single implementation (closes m-8 / m-14).
+    """
+    from ontos.mcp._validation import validate_workspace_id as _shared
+
+    _shared(portfolio_index, workspace_id)
 
 
 def _enforce_workspace_scope(cache: Any, workspace_id: Optional[str]) -> None:

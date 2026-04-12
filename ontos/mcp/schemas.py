@@ -292,6 +292,9 @@ TOOL_SUCCESS_MODELS: Dict[str, Type[BaseModel]] = {
     "project_registry": ProjectRegistryResponse,
     "search": SearchResponse,
     "get_context_bundle": GetContextBundleResponse,
+    "scaffold_document": ScaffoldDocumentResponse,
+    "log_session": LogSessionResponse,
+    "promote_document": PromoteDocumentResponse,
 }
 
 TOOL_OUTPUT_SCHEMAS: Dict[str, Dict[str, Any]] = {
