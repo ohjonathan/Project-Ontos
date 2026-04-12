@@ -4,6 +4,7 @@ import pytest
 
 from ontos.core.errors import OntosUserError
 from ontos.mcp import tools
+from ontos.mcp.scanner import slugify
 from ontos.mcp.schemas import validate_success_payload
 
 
@@ -150,3 +151,7 @@ def test_search_preserves_snippets_and_bm25_ordering():
         "alpha_doc_2",
     ]
     assert all("<mark>" in result["snippet"] for result in payload["results"])
+
+
+def test_tools_slugify_workspace_name_matches_scanner():
+    assert tools._slugify_workspace_name("my--project") == slugify("my--project")

@@ -16,6 +16,7 @@ from ontos.core.errors import OntosUserError
 from ontos.core.snapshot import DocumentSnapshot
 from ontos.core.types import DocumentData, ValidationResult
 from ontos.io.snapshot import create_snapshot
+from ontos.mcp.scanner import slugify
 
 
 TYPE_RANKS = {
@@ -542,27 +543,7 @@ def _primary_workspace_slug(cache: Any) -> str:
 
 
 def _slugify_workspace_name(raw: str) -> str:
-    try:
-        from ontos.mcp.scanner import slugify
-    except Exception:
-        slugify = None
-
-    if slugify is not None:
-        return slugify(raw)
-
-    lowered = raw.strip().lower()
-    result = []
-    previous_dash = False
-    for char in lowered:
-        if char.isalnum():
-            result.append(char)
-            previous_dash = False
-            continue
-        if not previous_dash:
-            result.append("-")
-        previous_dash = True
-    slug = "".join(result).strip("-")
-    return slug or "workspace"
+    return slugify(raw)
 
 
 def _normalize_warnings(
