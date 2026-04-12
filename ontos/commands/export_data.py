@@ -3,13 +3,13 @@ Export data command — bulk document export to JSON.
 """
 
 from __future__ import annotations
-import hashlib
 import json
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 
+from ontos.core.content_hash import compute_content_hash
 from ontos.core.snapshot import SnapshotFilters
 from ontos.io.snapshot import create_snapshot, DocumentSnapshot
 from ontos.core.migration import classify_documents
@@ -36,11 +36,6 @@ def _parse_csv(value: Optional[str]) -> Optional[List[str]]:
     if not value:
         return None
     return [v.strip() for v in value.split(",") if v.strip()]
-
-
-def _compute_content_hash(content: str) -> str:
-    """Compute SHA256 hash of content."""
-    return f"sha256:{hashlib.sha256(content.encode('utf-8')).hexdigest()[:16]}"
 
 
 def _snapshot_to_json(
@@ -88,7 +83,7 @@ def _snapshot_to_json(
             "inferred_migration_status": classification.inferred_status if classification else None,
             "effective_migration_status": classification.effective_status if classification else None,
             "content": doc.content if doc.content else None,
-            "content_hash": _compute_content_hash(doc.content) if doc.content else None,
+            "content_hash": compute_content_hash(doc.content) if doc.content else None,
         }
         documents.append(doc_dict)
 

@@ -18,6 +18,7 @@ from mcp.types import CallToolResult, TextContent, Tool as MCPTool, ToolAnnotati
 from ontos.core.errors import OntosInternalError, OntosUserError
 from ontos.io.config import load_project_config
 from ontos.io.snapshot import create_snapshot
+from ontos.mcp._types import PortfolioIndexLike
 from ontos.mcp.cache import SnapshotCache
 from ontos.mcp.scanner import slugify
 from ontos.mcp.schemas import ToolErrorEnvelope, output_schema_for, validate_success_payload
@@ -89,7 +90,7 @@ def serve(
     workspace_root = workspace_root.resolve()
     cache = _build_cache(workspace_root)
 
-    portfolio_index: Any = None
+    portfolio_index: Optional[PortfolioIndexLike] = None
     try:
         if portfolio:
             portfolio_index = _build_portfolio_index()
@@ -111,7 +112,7 @@ def serve(
 def create_server(
     cache: SnapshotCache,
     *,
-    portfolio_index: Any = None,
+    portfolio_index: Optional[PortfolioIndexLike] = None,
     read_only: bool = False,
     include_bundle_tool: bool = False,
 ) -> FastMCP:
@@ -550,7 +551,7 @@ def _invoke_write_tool(
 def _register_portfolio_tools(
     *,
     cache: SnapshotCache,
-    portfolio_index: Any,
+    portfolio_index: PortfolioIndexLike,
     register_fn: Callable[..., None],
 ) -> None:
     def handle_project_registry(workspace_id: str | None = None) -> CallToolResult:
@@ -600,13 +601,13 @@ def _register_portfolio_tools(
 def _register_bundle_tool(
     *,
     cache: SnapshotCache,
-    portfolio_index: Any,
+    portfolio_index: Optional[PortfolioIndexLike],
     register_fn: Callable[..., None],
 ) -> None:
     if portfolio_index is None:
         def handle_get_context_bundle(
             workspace_id: str | None = None,
-            token_budget: int = 8192,
+            token_budget: Optional[int] = None,
         ) -> CallToolResult:
             return _invoke_read_tool(
                 "get_context_bundle",
@@ -620,7 +621,7 @@ def _register_bundle_tool(
     else:
         def handle_get_context_bundle(
             workspace_id: str | None = None,
-            token_budget: int = 8192,
+            token_budget: Optional[int] = None,
         ) -> CallToolResult:
             return _invoke_portfolio_tool(
                 "get_context_bundle",
@@ -651,7 +652,7 @@ def _get_context_bundle_single_workspace(
     cache: SnapshotCache,
     *,
     workspace_id: str | None = None,
-    token_budget: int = 8192,
+    token_budget: Optional[int] = None,
 ) -> dict[str, Any]:
     return tool_impl.get_context_bundle(
         None,
@@ -706,7 +707,7 @@ def _invoke_read_tool(
 
 def _invoke_portfolio_tool(
     tool_name: str,
-    portfolio_index: Any,
+    portfolio_index: Optional[PortfolioIndexLike],
     tool_fn: Callable[..., Dict[str, Any]],
     *,
     cache: SnapshotCache | None = None,
@@ -902,10 +903,13 @@ def _build_cache(workspace_root: Path) -> SnapshotCache:
     )
 
 
-def _build_portfolio_index() -> Any:
+def _build_portfolio_index() -> PortfolioIndexLike:
     from ontos.mcp.portfolio import PortfolioIndex
-    from ontos.mcp.portfolio_config import load_portfolio_config
+    from ontos.mcp.portfolio_config import ensure_portfolio_config, load_portfolio_config
 
+    # Initialize the on-disk config if absent (side-effectful write), then load
+    # it with the pure read path. See m-9 in Track A/D verdict.
+    ensure_portfolio_config()
     config = load_portfolio_config()
     scan_roots = [Path(path).expanduser() for path in config.scan_roots]
     registry_path = (

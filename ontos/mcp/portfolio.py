@@ -9,7 +9,7 @@ import sqlite3
 import threading
 from typing import Any, Optional
 
-from ontos.commands.export_data import _compute_content_hash
+from ontos.core.content_hash import compute_content_hash
 from ontos.core.errors import OntosUserError
 from ontos.io.config import load_project_config
 from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
@@ -357,7 +357,7 @@ class PortfolioIndex:
                             rel_path,
                             self._extract_title(doc.frontmatter),
                             self._extract_curation(doc.frontmatter),
-                            _compute_content_hash(doc.content) if doc.content else None,
+                            compute_content_hash(doc.content) if doc.content else None,
                             len(doc.content.split()) if doc.content else 0,
                             concepts,
                             doc.content,
@@ -446,7 +446,10 @@ class PortfolioIndex:
             self._create_schema(conn)
             return
         raise sqlite3.DatabaseError(
-            f"Schema version mismatch: expected {self.SCHEMA_VERSION}, got {version}"
+            f"Schema version mismatch: expected {self.SCHEMA_VERSION}, got {version}. "
+            "The caller (PortfolioIndex.open) recovers by invoking "
+            "_reset_db_file() to delete the on-disk database and recreate the "
+            "schema from scratch; no manual migration is performed."
         )
 
     def _create_schema(self, conn: sqlite3.Connection) -> None:

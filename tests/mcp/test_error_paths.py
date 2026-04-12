@@ -142,7 +142,7 @@ def test_cmd_serve_redirects_stdout_before_project_root_lookup(tmp_path, monkeyp
     monkeypatch.setattr(sys, "stdout", stdout)
     monkeypatch.setattr(sys, "stderr", stderr)
     monkeypatch.setattr("ontos.io.files.find_project_root", noisy_find_project_root)
-    monkeypatch.setattr(ontos.mcp, "serve", lambda workspace_root: 0)
+    monkeypatch.setattr(ontos.mcp, "serve", lambda workspace_root, **kwargs: 0)
 
     exit_code = cli._cmd_serve(SimpleNamespace(workspace=root))
 
