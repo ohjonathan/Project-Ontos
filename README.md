@@ -292,7 +292,9 @@ The server runs over stdio — your IDE manages the process lifecycle.
 
 ### 4. Available Tools
 
-The MCP server exposes 8 tools (6 read-only, 2 write-capable):
+The MCP server exposes up to 15 tools depending on server flags:
+
+**Core (9 tools — always available):**
 
 | Tool | Purpose | Read-only |
 |------|---------|:---------:|
@@ -304,13 +306,30 @@ The MCP server exposes 8 tools (6 read-only, 2 write-capable):
 | `query` | Dependency details for a single document | ✅ |
 | `health` | Server uptime, document count, version | ✅ |
 | `refresh` | Force cache rebuild after bulk changes | ⚠️ |
+| `get_context_bundle` | Token-budgeted context bundle for a workspace | ✅ |
 
-`export_graph` can write a file within the workspace root. `refresh` rebuilds the internal cache. Both are safe but not strictly read-only.
+**Portfolio (2 tools — v4.1, requires `--portfolio` flag):**
+
+| Tool | Purpose |
+|------|---------|
+| `project_registry` | Inventory of all known workspaces |
+| `search` | FTS5 full-text search across workspaces |
+
+**Write (4 tools — v4.1, mutable mode only):**
+
+| Tool | Purpose |
+|------|---------|
+| `scaffold_document` | Create a new markdown file with scaffold frontmatter |
+| `log_session` | Create a dated session log |
+| `promote_document` | Change curation level without moving the file |
+| `rename_document` | Rename an ID across all referencing files |
+
+Write tools are registered only when the server runs without `--read-only`. All write operations use advisory flock locking for cross-process safety.
 
 ### 5. Verify
 
 ```bash
-ontos --version   # Should show 4.0.0
+ontos --version   # Should show 4.1.0
 ontos serve       # Starts the stdio server (Ctrl+C to stop)
 ```
 
@@ -393,10 +412,10 @@ Version 3 is when Ontos became public. The earlier versions live on in the desig
 
 | Version | Status | Highlights |
 |---------|--------|------------|
-| **v4.0.0** | ✅ Current | MCP server mode — 8 tools for native AI IDE integration |
-| **v4.1** | Next | Portfolio index, cross-project tools, HTTP/SSE transport |
+| **v4.1.0** | ✅ Current | Portfolio index, 4 write tools, advisory flock locking, shared rename orchestrator |
+| **v4.2** | Next | HTTP/SSE transport, cross-workspace writes |
 
-v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python. v3.2 added re-architecture support, environment detection, and activation resilience. v3.3 ships 62 audit-derived hardening fixes plus `link-check`, `rename`, unified JSON envelopes, and a canonical document loader. v3.3.1 reduced link-check false positives by 89% and added `promote_check` to the maintenance pipeline. v3.4 adds `--compact tiered` context maps for token-constrained agents. v4.0 adds an MCP server mode with 8 read-only tools, enabling native integration with AI IDEs like Claude Desktop and Cursor without CLI overhead.
+v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python. v3.2 added re-architecture support, environment detection, and activation resilience. v3.3 ships 62 audit-derived hardening fixes plus `link-check`, `rename`, unified JSON envelopes, and a canonical document loader. v3.3.1 reduced link-check false positives by 89% and added `promote_check` to the maintenance pipeline. v3.4 adds `--compact tiered` context maps for token-constrained agents. v4.0 adds an MCP server mode with 8 read-only tools, enabling native integration with AI IDEs like Claude Desktop and Cursor without CLI overhead. v4.1 expands MCP to 15 tools — 4 write tools (`scaffold_document`, `log_session`, `promote_document`, `rename_document`), a portfolio index with FTS5 search, advisory flock locking, and a shared rename orchestrator used by both CLI and MCP.
 
 ---
 
