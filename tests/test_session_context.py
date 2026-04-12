@@ -7,6 +7,7 @@ Tests the v2.8 refactoring deliverables:
 """
 
 import fcntl
+import inspect
 from multiprocessing import Event, Process
 from pathlib import Path
 import pytest
@@ -82,6 +83,11 @@ class TestSessionContext:
         (tmp_path / '.ontos').mkdir()
         ctx = SessionContext.from_repo(tmp_path)
         assert ctx.repo_root == tmp_path
+
+    def test_session_context_docstring_describes_buffered_commit_behavior(self):
+        docstring = inspect.getdoc(SessionContext) or ""
+        assert "two-phase commit" not in docstring.lower()
+        assert "atomic writes" not in docstring.lower()
 
 
 class TestFileLocking:

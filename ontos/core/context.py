@@ -6,7 +6,7 @@ state for an Ontos session and provides transaction support for file operations.
 Per v2.8 implementation plan, SessionContext:
 - Is the single source of truth for repository configuration
 - Buffers file operations for later commit
-- Provides atomic writes via two-phase commit
+- Applies buffered writes sequentially during commit
 - Uses file locking with flock
 """
 
@@ -132,10 +132,11 @@ class SessionContext:
         ))
 
     def commit(self) -> List[Path]:
-        """Execute all buffered operations with two-phase commit.
+        """Execute all buffered operations from the current session.
 
-        ATOMICITY: Uses temp-then-rename pattern. If any operation fails,
-        previous temp files are cleaned up. Rename is atomic on POSIX.
+        Writes and moves stage temporary files before applying updates. The
+        commit is best-effort across buffered operations, not a global
+        transactional two-phase commit.
 
         Returns:
             List of paths successfully modified.

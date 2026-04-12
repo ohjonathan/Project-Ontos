@@ -23,6 +23,15 @@ class ProjectEntry:
     metadata: dict[str, Any]
 
 
+@dataclass(frozen=True)
+class RegistryRecord:
+    path: Path
+    status: str | None
+    tags: list[str]
+    metadata: dict[str, Any]
+    has_ontos_raw: object | None
+
+
 def slugify(directory_name: str) -> str:
     """Convert a directory name to a URL-safe workspace slug."""
     slug = directory_name.lower().replace(".", "-").replace(" ", "-")
@@ -38,7 +47,7 @@ def discover_projects(
 ) -> list[ProjectEntry]:
     """Discover candidate workspaces across scan roots and registry entries."""
     exclude_prefixes, exclude_patterns = _compile_excludes(exclude)
-    registry_records = _load_registry_records(registry_path)
+    registry_records = load_registry_records(registry_path)
 
     discovered_paths: set[Path] = set()
     for scan_root in scan_roots:
@@ -84,7 +93,7 @@ def discover_projects(
             status = registry_record.status
 
         base_slug = slugify(path.name)
-        slug = _allocate_slug(base_slug, used_slugs)
+        slug = allocate_slug(base_slug, used_slugs)
         results.append(
             ProjectEntry(
                 slug=slug,
@@ -99,14 +108,6 @@ def discover_projects(
         )
 
     return sorted(results, key=lambda item: item.slug)
-
-
-@dataclass(frozen=True)
-class _RegistryRecord:
-    path: Path
-    status: str | None
-    tags: list[str]
-    metadata: dict[str, Any]
 
 
 def _compile_excludes(exclude: list[str]) -> tuple[list[Path], list[str]]:
@@ -139,7 +140,11 @@ def _is_excluded(path: Path, exclude_prefixes: list[Path], exclude_patterns: lis
     return False
 
 
-def _load_registry_records(registry_path: Path | None) -> list[_RegistryRecord]:
+def load_registry_records(
+    registry_path: Path | None,
+    *,
+    tolerate_errors: bool = True,
+) -> list[RegistryRecord]:
     if registry_path is None:
         return []
     expanded = registry_path.expanduser().resolve(strict=False)
@@ -149,11 +154,13 @@ def _load_registry_records(registry_path: Path | None) -> list[_RegistryRecord]:
     try:
         raw = json.loads(expanded.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return []
+        if tolerate_errors:
+            return []
+        raise
 
     registry_root = _registry_root(raw, expanded.parent)
     items = _extract_registry_items(raw)
-    results: list[_RegistryRecord] = []
+    results: list[RegistryRecord] = []
     for item in items:
         if not isinstance(item, dict):
             continue
@@ -181,14 +188,20 @@ def _load_registry_records(registry_path: Path | None) -> list[_RegistryRecord]:
             normalized_status = "archived"
 
         results.append(
-            _RegistryRecord(
+            RegistryRecord(
                 path=path,
                 status=normalized_status,
                 tags=normalized_tags,
                 metadata=normalized_metadata,
+                has_ontos_raw=item.get("has_ontos") if "has_ontos" in item else None,
             )
         )
     return results
+
+
+def _load_registry_records(registry_path: Path | None) -> list[RegistryRecord]:
+    """Backward-compatible alias for internal callers."""
+    return load_registry_records(registry_path)
 
 
 def _registry_root(raw: object, default_root: Path) -> Path:
@@ -265,9 +278,14 @@ def _classify_status(
     return "undocumented"
 
 
-def _allocate_slug(base_slug: str, used_slugs: dict[str, int]) -> str:
+def allocate_slug(base_slug: str, used_slugs: dict[str, int]) -> str:
     if base_slug not in used_slugs:
         used_slugs[base_slug] = 1
         return base_slug
     used_slugs[base_slug] += 1
     return f"{base_slug}-{used_slugs[base_slug]}"
+
+
+def _allocate_slug(base_slug: str, used_slugs: dict[str, int]) -> str:
+    """Backward-compatible alias for internal callers."""
+    return allocate_slug(base_slug, used_slugs)

@@ -288,6 +288,7 @@ def verify_portfolio(
     portfolio_db_path: Path,
     registry_path: Path,
     json_output: bool = False,
+    workspace_id: str | None = None,
 ) -> int:
     """Compare portfolio DB projects against the dev-hub registry."""
     if not portfolio_db_path.exists():
@@ -333,6 +334,10 @@ def verify_portfolio(
             exit_code=2,
         )
         return 2
+
+    if workspace_id is not None:
+        db_projects = _scope_projects(db_projects, workspace_id)
+        registry_projects = _scope_projects(registry_projects, workspace_id)
 
     db_slugs = set(db_projects.keys())
     registry_slugs = set(registry_projects.keys())
@@ -394,26 +399,17 @@ def _load_portfolio_db_projects(portfolio_db_path: Path) -> dict[str, dict[str, 
 
 
 def _load_registry_projects(registry_path: Path) -> dict[str, dict[str, Any]]:
-    raw = json.loads(registry_path.read_text(encoding="utf-8"))
-    registry_root = _registry_root(raw, registry_path.parent)
-    if isinstance(raw, dict):
-        records = raw.get("projects", [])
-    else:
-        records = raw
-    if not isinstance(records, list):
-        raise ValueError("Registry JSON must contain a list of project objects.")
+    from ontos.mcp.scanner import allocate_slug, load_registry_records, slugify
 
+    records = load_registry_records(registry_path, tolerate_errors=False)
     projects: dict[str, dict[str, Any]] = {}
-    for record in records:
-        if not isinstance(record, dict):
-            continue
-        path_value = record.get("path")
-        if not isinstance(path_value, str) or not path_value.strip():
-            continue
-        normalized_path = _normalize_registry_path(path_value, registry_root)
-        slug = _slugify_path_name(normalized_path)
-        status = str(record.get("status", "unknown"))
-        has_ontos = _registry_has_ontos(record, normalized_path)
+    used_slugs: dict[str, int] = {}
+    for record in sorted(records, key=lambda item: str(item.path)):
+        normalized_path = _normalize_path(record.path)
+        base_slug = slugify(Path(normalized_path).name)
+        slug = allocate_slug(base_slug, used_slugs)
+        status = record.status if record.status else "unknown"
+        has_ontos = _registry_has_ontos(record.has_ontos_raw, normalized_path)
         projects[slug] = {
             "path": normalized_path,
             "status": status,
@@ -422,52 +418,38 @@ def _load_registry_projects(registry_path: Path) -> dict[str, dict[str, Any]]:
     return projects
 
 
+def _scope_projects(
+    projects: dict[str, dict[str, Any]],
+    workspace_id: str,
+) -> dict[str, dict[str, Any]]:
+    if workspace_id in projects:
+        return {workspace_id: projects[workspace_id]}
+    return {}
+
+
 def _normalize_path(path_value: Any) -> str:
     return str(Path(str(path_value)).expanduser().resolve(strict=False))
 
 
-def _normalize_registry_path(path_value: Any, registry_root: Path) -> str:
-    path = Path(str(path_value)).expanduser()
-    if not path.is_absolute():
-        path = registry_root / path
-    return str(path.resolve(strict=False))
-
-
-def _registry_root(raw: object, default_root: Path) -> Path:
-    if isinstance(raw, dict):
-        dev_root = raw.get("dev_root")
-        if isinstance(dev_root, str) and dev_root.strip():
-            return Path(dev_root).expanduser().resolve(strict=False)
-    return default_root.resolve(strict=False)
-
-
-def _registry_has_ontos(record: dict[str, Any], normalized_path: str) -> bool:
-    if "has_ontos" in record:
-        return bool(record.get("has_ontos"))
+def _registry_has_ontos(has_ontos_raw: object | None, normalized_path: str) -> bool:
+    coerced = _coerce_registry_bool(has_ontos_raw)
+    if coerced is not None:
+        return coerced
+    # Deleted workspace entries can remain in the registry even after the path disappears.
+    # For malformed has_ontos values, fallback to filesystem state to preserve this behavior.
     return (Path(normalized_path) / ".ontos.toml").exists()
 
 
-def _slugify_path_name(path_value: str) -> str:
-    path_name = Path(path_value).name
-    try:
-        from ontos.mcp.scanner import slugify
-    except Exception:
-        slugify = None
-    if slugify is not None:
-        return slugify(path_name)
-    lowered = path_name.strip().lower()
-    result: list[str] = []
-    previous_dash = False
-    for char in lowered:
-        if char.isalnum():
-            result.append(char)
-            previous_dash = False
-            continue
-        if not previous_dash:
-            result.append("-")
-        previous_dash = True
-    slug = "".join(result).strip("-")
-    return slug or "workspace"
+def _coerce_registry_bool(value: object | None) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes"}:
+            return True
+        if normalized in {"false", "0", "no", ""}:
+            return False
+    return None
 
 
 def _emit_verify_portfolio_result(

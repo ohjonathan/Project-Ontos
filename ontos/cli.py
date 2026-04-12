@@ -1313,7 +1313,20 @@ def _cmd_verify(args) -> int:
         from ontos.commands.verify import verify_portfolio
         from ontos.mcp.portfolio_config import load_portfolio_config
 
-        config = load_portfolio_config()
+        try:
+            config = load_portfolio_config()
+        except (OSError, ValueError, TypeError) as exc:
+            message = f"Invalid portfolio config: {exc}"
+            if args.json:
+                _emit_handler_result_json(
+                    command="verify",
+                    exit_code=2,
+                    message=message,
+                    data={"error": True},
+                )
+            else:
+                print(message)
+            return 2
         registry_path = Path(config.registry_path).expanduser() if config.registry_path else (
             Path.home() / "Dev" / ".dev-hub" / "registry" / "projects.json"
         )
@@ -1321,6 +1334,7 @@ def _cmd_verify(args) -> int:
             portfolio_db_path=Path.home() / ".config" / "ontos" / "portfolio.db",
             registry_path=registry_path,
             json_output=args.json,
+            workspace_id=getattr(args, "workspace_id", None),
         )
 
     from ontos.commands.verify import VerifyOptions, _run_verify_command

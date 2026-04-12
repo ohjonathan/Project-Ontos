@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from ontos.mcp.scanner import discover_projects, slugify
+import pytest
+
+from ontos.mcp.scanner import discover_projects, load_registry_records, slugify
 
 
 def test_slugify_normalizes_name():
@@ -121,6 +123,35 @@ def test_discover_projects_handles_slug_collisions(tmp_path):
 
     slugs = sorted(entry.slug for entry in projects)
     assert slugs == ["sample-app", "sample-app-2"]
+
+
+@pytest.mark.parametrize(
+    "payload_factory",
+    [
+        lambda entry: [entry],
+        lambda entry: {"projects": [entry]},
+        lambda entry: {"workspaces": [entry]},
+        lambda entry: {"entries": [entry]},
+        lambda entry: {"items": [entry]},
+        lambda entry: {"alpha-project": entry},
+    ],
+)
+def test_load_registry_records_supports_multiple_shapes(tmp_path, payload_factory):
+    dev_root = tmp_path / "Dev"
+    dev_root.mkdir()
+    project_path = _make_project(dev_root / "alpha", with_ontos=True, with_readme=True, doc_count=1)
+    entry = {"path": str(project_path), "status": "documented", "has_ontos": "false"}
+
+    registry_path = tmp_path / ".dev-hub" / "registry" / "projects.json"
+    registry_path.parent.mkdir(parents=True)
+    registry_path.write_text(json.dumps(payload_factory(entry)), encoding="utf-8")
+
+    records = load_registry_records(registry_path, tolerate_errors=False)
+
+    assert len(records) == 1
+    assert records[0].path == project_path
+    assert records[0].status == "documented"
+    assert records[0].has_ontos_raw == "false"
 
 
 def _make_project(path: Path, *, with_ontos: bool, with_readme: bool, doc_count: int) -> Path:
