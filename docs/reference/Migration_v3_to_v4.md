@@ -167,7 +167,7 @@ ontos serve
 
 ### Portfolio Index
 
-v4.1 introduces a per-session SQLite portfolio index with FTS5 full-text search. Three new MCP tools (`project_registry`, `search_portfolio`, `get_context_bundle`) let agents discover and search across workspaces.
+v4.1 introduces a per-session SQLite portfolio index with FTS5 full-text search. Three new MCP tools (`project_registry`, `search`, `get_context_bundle`) let agents discover and search across workspaces.
 
 Configure in `~/.config/ontos/portfolio.toml`:
 ```toml
