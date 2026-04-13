@@ -1,6 +1,9 @@
 """Integration tests for the MCP server (spec Section 7)."""
 
+import json
 from pathlib import Path
+
+from mcp.types import ListToolsResult
 
 from tests.mcp import build_cache, build_server, create_workspace, list_tools, write_file
 
@@ -51,6 +54,52 @@ def test_list_tools_output_schemas_are_object_or_absent(tmp_path):
             f"Tool '{tool.name}' advertises a non-object outputSchema; "
             "strict MCP clients reject the entire tools/list response."
         )
+
+
+def test_tools_list_wire_payload_has_object_typed_or_absent_output_schemas(tmp_path):
+    """Transport-level round-trip: serialize tools/list exactly as the MCP
+    SDK does on the wire (mcp/shared/session.py: model_dump(by_alias=True,
+    mode="json", exclude_none=True)), re-parse the JSON, and assert each
+    tool entry either omits ``outputSchema`` or types it as an object.
+
+    Higher-level tests inspect ``list_tools()`` return values, which can
+    mask bugs introduced by the Pydantic serializer (e.g. a future change
+    that emits ``outputSchema: null`` instead of omitting the key — some
+    strict clients treat ``null`` as a validation failure). This test
+    pins the actual bytes Claude Code parses.
+    """
+    root = create_workspace(tmp_path)
+    server = build_server(root)
+    result = ListToolsResult(tools=list_tools(server))
+
+    wire_json = result.model_dump_json(by_alias=True, exclude_none=True)
+    parsed = json.loads(wire_json)
+
+    tool_names = {entry["name"] for entry in parsed["tools"]}
+    assert "export_graph" in tool_names, "export_graph must still be advertised"
+
+    for entry in parsed["tools"]:
+        if "outputSchema" not in entry:
+            continue
+        schema = entry["outputSchema"]
+        assert isinstance(schema, dict), (
+            f"Tool '{entry['name']}' serialized outputSchema={schema!r}; "
+            "MCP clients expect an object or omission."
+        )
+        assert schema.get("type") == "object", (
+            f"Tool '{entry['name']}' wire outputSchema has type "
+            f"{schema.get('type')!r}; strict MCP clients (e.g. Claude Code) "
+            "reject the entire tools/list response when any outputSchema "
+            "is not root-typed as 'object'. See issue #97."
+        )
+
+    export_entry = next(t for t in parsed["tools"] if t["name"] == "export_graph")
+    assert "outputSchema" not in export_entry, (
+        "export_graph must NOT serialize an outputSchema key on the wire "
+        "until its response is refactored into a discriminated object "
+        "(Option A, deferred to 4.2.0). A serialized key of any value — "
+        "including null — risks regressing issue #97."
+    )
 
 
 def test_tool_descriptions_include_workspace_name(tmp_path):
