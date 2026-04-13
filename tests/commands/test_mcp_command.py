@@ -7,6 +7,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from ontos.commands.mcp import MCPInstallOptions, _run_mcp_install_command
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -185,3 +187,26 @@ def test_mcp_install_json_envelope_reports_created_config(tmp_path: Path) -> Non
     assert payload["command"] == "mcp-install"
     assert payload["data"]["client"] == "antigravity"
     assert payload["data"]["mode"] == "read-only"
+
+
+def test_mcp_install_unwritable_config_dir(tmp_path: Path, monkeypatch) -> None:
+    workspace = tmp_path / "workspace"
+    home = tmp_path / "home"
+    workspace.mkdir()
+    home.mkdir()
+    _init_workspace(workspace)
+    monkeypatch.chdir(workspace)
+    monkeypatch.setenv("HOME", str(home))
+
+    def _raise_permission_error(path: Path, data: dict) -> None:
+        raise PermissionError("Permission denied")
+
+    monkeypatch.setattr("ontos.commands.mcp.write_antigravity_config", _raise_permission_error)
+
+    exit_code, message, data = _run_mcp_install_command(MCPInstallOptions(client="antigravity"))
+
+    assert exit_code == 2
+    assert message.startswith("Could not write config:")
+    assert str(home / ".gemini" / "antigravity" / "mcp_config.json") in message
+    assert data["config_path"] == str(home / ".gemini" / "antigravity" / "mcp_config.json")
+    assert data["error"] == "Permission denied"

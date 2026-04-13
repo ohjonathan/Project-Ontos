@@ -60,7 +60,13 @@ def _run_mcp_install_command(options: MCPInstallOptions) -> Tuple[int, str, Dict
 
     entry = build_antigravity_ontos_entry(workspace_root, write_enabled=options.write_enabled)
     updated_config, action = upsert_antigravity_ontos_entry(existing, entry)
-    write_antigravity_config(config_path, updated_config)
+    try:
+        write_antigravity_config(config_path, updated_config)
+    except OSError as exc:
+        return 2, f"Could not write config: {config_path}: {exc}", {
+            "config_path": str(config_path),
+            "error": str(exc),
+        }
 
     mode = "write-enabled" if options.write_enabled else "read-only"
     verb = "Created" if action == "created" else "Updated"
