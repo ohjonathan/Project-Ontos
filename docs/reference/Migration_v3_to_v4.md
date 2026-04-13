@@ -225,6 +225,27 @@ All write paths (CLI and MCP) now use `workspace_lock()` with advisory flock on 
 }
 ```
 
+**Antigravity native agents** (`~/.gemini/antigravity/mcp_config.json`):
+
+```bash
+ontos mcp install --client antigravity
+```
+
+This command creates or updates the native Antigravity config with an `mcpServers.ontos` entry:
+
+```json
+{
+  "mcpServers": {
+    "ontos": {
+      "command": "/absolute/path/to/ontos",
+      "args": ["serve", "--workspace", "/absolute/path/to/your/project", "--read-only"]
+    }
+  }
+}
+```
+
+Use `--write-enabled` if you want mutable MCP tools. This native config is separate from `AGENTS.md` / `.cursorrules` and from any editor-level MCP manifest.
+
 ### 5. Enable Usage Logging (Optional)
 
 Add to `.ontos.toml`:

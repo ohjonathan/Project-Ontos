@@ -99,6 +99,16 @@ class TestCLICommands:
         assert "data" in result.stdout.lower()
         assert "claude" in result.stdout.lower()
 
+    def test_mcp_install_help(self):
+        """mcp install --help should work."""
+        result = subprocess.run(
+            [sys.executable, "-m", "ontos", "mcp", "install", "--help"],
+            capture_output=True, text=True
+        )
+        assert result.returncode == 0
+        assert "antigravity" in result.stdout.lower()
+        assert "write-enabled" in result.stdout.lower()
+
     def test_hook_help(self):
         """hook --help should work."""
         result = subprocess.run(
@@ -192,6 +202,9 @@ class TestCLIDoctorCommand:
     def test_doctor_json(self, tmp_path, monkeypatch):
         """--json doctor should output JSON."""
         monkeypatch.chdir(tmp_path)
+        (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n")
+        (tmp_path / "docs").mkdir()
+        (tmp_path / "docs" / "doc.md").write_text("---\nid: sample\ntype: atom\nstatus: active\n---\n")
         result = subprocess.run(
             [sys.executable, "-m", "ontos", "--json", "doctor"],
             capture_output=True, text=True
@@ -200,6 +213,7 @@ class TestCLIDoctorCommand:
         assert "status" in data
         assert "data" in data
         assert "checks" in data["data"]
+        assert any(check["name"] == "antigravity_mcp" for check in data["data"]["checks"])
 
 
 class TestCLIExportCommand:

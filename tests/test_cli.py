@@ -76,7 +76,7 @@ class TestUnifiedCLI:
 
     # Test all v3.0 commands respond to --help
     @pytest.mark.parametrize("command", [
-        'init', 'map', 'log', 'doctor', 'maintain', 'link-check', 'agents', 'export', 'hook', 'agent-export',
+        'init', 'map', 'log', 'doctor', 'maintain', 'link-check', 'agents', 'export', 'mcp', 'hook', 'agent-export',
         'verify', 'query', 'migrate', 'consolidate', 'promote', 'scaffold', 'stub', 'env', 'rename',
         'tree', 'validate'
     ])
@@ -161,7 +161,7 @@ class TestCLICommands:
         """All v3.0 commands should appear in --help output."""
         result = self.run_cli('--help')
         expected_commands = [
-            'init', 'map', 'log', 'doctor', 'maintain', 'link-check', 'agents', 'export',
+            'init', 'map', 'log', 'doctor', 'maintain', 'link-check', 'agents', 'export', 'mcp',
             'verify', 'query', 'migrate', 'consolidate', 'promote', 'scaffold', 'stub', 'env', 'rename'
         ]
         for cmd in expected_commands:
@@ -184,6 +184,11 @@ class TestCLICommands:
     def test_agents_runs(self):
         """agents command should run without crashing."""
         result = self.run_cli('agents', '--help')
+        assert result.returncode == 0
+
+    def test_mcp_runs(self):
+        """mcp command should run without crashing."""
+        result = self.run_cli('mcp', '--help')
         assert result.returncode == 0
 
 

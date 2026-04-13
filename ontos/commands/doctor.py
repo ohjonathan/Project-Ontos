@@ -2,8 +2,7 @@
 """
 Health check and diagnostics command.
 
-Implements 7 health checks per Roadmap 6.4 and Spec v1.1 Section 4.2.
-Decision: Option B (Standard) - all 7 checks with graceful error handling.
+Implements the CLI health checks with graceful error handling.
 """
 
 import shutil
@@ -554,6 +553,28 @@ def check_environment_manifests(repo_root: Optional[Path] = None) -> CheckResult
         )
 
 
+def check_antigravity_mcp() -> CheckResult:
+    """Check 10: Antigravity native MCP config status."""
+    from ontos.core.antigravity_mcp import inspect_antigravity_ontos_config
+
+    try:
+        inspection = inspect_antigravity_ontos_config()
+    except Exception as exc:
+        return CheckResult(
+            name="antigravity_mcp",
+            status="warning",
+            message="Antigravity MCP check failed",
+            details=str(exc),
+        )
+
+    return CheckResult(
+        name="antigravity_mcp",
+        status="success" if inspection.ok else "warning",
+        message=inspection.message,
+        details=inspection.details,
+    )
+
+
 def _get_config_path(repo_root: Optional[Path] = None) -> Optional[Path]:
     """Get config path if it exists."""
     root = resolve_project_root(repo_root=repo_root)
@@ -622,6 +643,7 @@ def _run_doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
         check_cli_availability,
         lambda: check_agents_staleness(repo_root),
         lambda: check_environment_manifests(repo_root),
+        check_antigravity_mcp,
     ]
 
     for check_fn in checks:

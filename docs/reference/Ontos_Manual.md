@@ -678,6 +678,27 @@ The server runs in the foreground and communicates via stdin/stdout. Press Ctrl+
 }
 ```
 
+**Antigravity native agents** (`~/.gemini/antigravity/mcp_config.json`):
+
+```bash
+ontos mcp install --client antigravity
+```
+
+Ontos writes or updates `mcpServers.ontos` in the native Antigravity config:
+
+```json
+{
+  "mcpServers": {
+    "ontos": {
+      "command": "/absolute/path/to/ontos",
+      "args": ["serve", "--workspace", "/absolute/path/to/your/project", "--read-only"]
+    }
+  }
+}
+```
+
+Use `--write-enabled` to expose mutable MCP tools. This native config is separate from repo-local instruction artifacts such as `AGENTS.md` and `.cursorrules`.
+
 #### Available Tools
 
 | Tool | Description | Key Parameters |

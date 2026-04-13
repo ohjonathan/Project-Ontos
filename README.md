@@ -118,7 +118,7 @@ The litmus test: *Can a new person (or AI) become productive in under 10 minutes
 ## Use Cases
 
 ### Multi-AI Workflows
-Switch between Claude Code, Cursor, ChatGPT, and Gemini without re-explaining your project. Ontos can generate `AGENTS.md` and `.cursorrules` so your context activates automatically when supported.
+Switch between Claude Code, Cursor, ChatGPT, and Gemini without re-explaining your project. Ontos can generate `AGENTS.md` and `.cursorrules` where instruction artifacts are supported, while native MCP clients use their own client-specific config.
 
 ### Prototype → Production
 Built a demo in Streamlit? When you rewrite in FastAPI or Next.js, your atoms are disposable but your strategy survives. Three weeks of product decisions don't vanish with the old code.
@@ -127,7 +127,7 @@ Built a demo in Streamlit? When you rewrite in FastAPI or Next.js, your atoms ar
 Pass a project to another developer or agency. Because you own your context, everything travels with `git clone`—session logs, context map, decision history. No export wizard, no platform migration, no 2-hour call.
 
 ### Native IDE Integration (MCP)
-Run `ontos serve` to start an MCP server that exposes your knowledge graph directly to AI agents. Claude Desktop, Cursor, and other MCP-compatible IDEs connect natively — no CLI parsing, no context map re-reads, just structured tool calls with live cache invalidation.
+Run `ontos serve` to start an MCP server that exposes your knowledge graph directly to AI agents. Claude Desktop and Cursor are configured directly below, and other MCP clients can connect once their client-specific manifest points at `ontos serve`.
 
 ```json
 {
@@ -182,7 +182,7 @@ pip install ontos
 ```
 
 > [!TIP]
-> **Want native AI IDE integration?** See [MCP Setup](#mcp-setup) below to enable `ontos serve` for Claude Desktop, Cursor, and other MCP-compatible tools.
+> **Want native AI IDE integration?** See [MCP Setup](#mcp-setup) below to enable `ontos serve` for Claude Desktop, Cursor, and Antigravity native agents.
 
 > [!NOTE]
 > **"command not found: ontos"?** Your Python scripts directory may not be on PATH.
@@ -289,6 +289,29 @@ The server runs over stdio — your IDE manages the process lifecycle.
 
 > [!NOTE]
 > Cursor launches the MCP server from your project root by default. If your project is elsewhere, add `"--workspace", "/path/to/your/project"` to the `args` array.
+
+**Antigravity native agents** (`~/.gemini/antigravity/mcp_config.json`):
+
+Use Ontos to create or update the native Antigravity config:
+
+```bash
+ontos mcp install --client antigravity
+```
+
+This writes an `mcpServers.ontos` entry that points at your current Ontos workspace:
+
+```json
+{
+  "mcpServers": {
+    "ontos": {
+      "command": "/absolute/path/to/ontos",
+      "args": ["serve", "--workspace", "/absolute/path/to/your/project", "--read-only"]
+    }
+  }
+}
+```
+
+Use `--write-enabled` if you want mutable MCP tools instead of the default read-only profile. This native config is separate from editor-level manifests and separate from `AGENTS.md` / `.cursorrules`.
 
 ### 4. Available Tools
 

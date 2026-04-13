@@ -12,6 +12,7 @@ from ontos.commands.doctor import (
     CheckResult,
     DoctorOptions,
     DoctorResult,
+    check_antigravity_mcp,
     check_docs_directory,
     check_configuration,
     check_git_hooks,
@@ -46,15 +47,15 @@ class TestDoctorResult:
     """Tests for DoctorResult dataclass."""
 
     def test_status_pass_when_no_failures(self):
-        result = DoctorResult(passed=7, failed=0, warnings=0)
+        result = DoctorResult(passed=8, failed=0, warnings=0)
         assert result.status == "success"
 
     def test_status_fail_when_has_failures(self):
-        result = DoctorResult(passed=5, failed=2, warnings=0)
+        result = DoctorResult(passed=6, failed=2, warnings=0)
         assert result.status == "failed"
 
     def test_status_warn_when_only_warnings(self):
-        result = DoctorResult(passed=5, failed=0, warnings=2)
+        result = DoctorResult(passed=6, failed=0, warnings=2)
         assert result.status == "warning"
 
 
@@ -115,10 +116,11 @@ class TestDoctorCommand:
              patch("ontos.commands.doctor.check_validation") as mock_valid, \
              patch("ontos.commands.doctor.check_cli_availability") as mock_cli, \
              patch("ontos.commands.doctor.check_agents_staleness") as mock_agents, \
-             patch("ontos.commands.doctor.check_environment_manifests") as mock_env:
+             patch("ontos.commands.doctor.check_environment_manifests") as mock_env, \
+             patch("ontos.commands.doctor.check_antigravity_mcp") as mock_antigravity:
 
             for mock in [mock_config, mock_hooks, mock_python, mock_docs,
-                        mock_map, mock_valid, mock_cli, mock_agents, mock_env]:
+                        mock_map, mock_valid, mock_cli, mock_agents, mock_env, mock_antigravity]:
                 mock.return_value = CheckResult(
                     name="test", status="success", message="OK"
                 )
@@ -128,7 +130,7 @@ class TestDoctorCommand:
             exit_code, result = _run_doctor_command(options)
 
             assert exit_code == 0
-            assert result.passed == 9
+            assert result.passed == 10
             assert result.failed == 0
 
     def test_returns_exit_code_1_when_check_fails(self):
@@ -141,10 +143,11 @@ class TestDoctorCommand:
              patch("ontos.commands.doctor.check_validation") as mock_valid, \
              patch("ontos.commands.doctor.check_cli_availability") as mock_cli, \
              patch("ontos.commands.doctor.check_agents_staleness") as mock_agents, \
-             patch("ontos.commands.doctor.check_environment_manifests") as mock_env:
+             patch("ontos.commands.doctor.check_environment_manifests") as mock_env, \
+             patch("ontos.commands.doctor.check_antigravity_mcp") as mock_antigravity:
 
             for mock in [mock_hooks, mock_python, mock_docs,
-                        mock_map, mock_valid, mock_cli, mock_agents, mock_env]:
+                        mock_map, mock_valid, mock_cli, mock_agents, mock_env, mock_antigravity]:
                 mock.return_value = CheckResult(
                     name="test", status="success", message="OK"
                 )
@@ -274,6 +277,47 @@ class TestCheckAgentsStaleness:
         
         assert result.status == "warning"
         assert "no source files" in result.message.lower()
+
+
+class TestCheckAntigravityMCP:
+    """Tests for check_antigravity_mcp."""
+
+    def test_skips_cleanly_when_not_detected(self):
+        with patch("ontos.core.antigravity_mcp.inspect_antigravity_ontos_config") as mock_inspect:
+            from ontos.core.antigravity_mcp import AntigravityInspection
+
+            mock_inspect.return_value = AntigravityInspection(
+                code="not_detected",
+                ok=True,
+                message="Antigravity not detected; skipping native MCP config check",
+                details=None,
+                config_path=Path("/tmp/mcp_config.json"),
+                detected=False,
+            )
+
+            result = check_antigravity_mcp()
+
+        assert result.status == "success"
+        assert "skipping" in result.message.lower()
+
+    def test_warns_when_native_config_is_missing(self):
+        with patch("ontos.core.antigravity_mcp.inspect_antigravity_ontos_config") as mock_inspect:
+            from ontos.core.antigravity_mcp import AntigravityInspection
+
+            mock_inspect.return_value = AntigravityInspection(
+                code="missing",
+                ok=False,
+                message="Antigravity native MCP config is missing",
+                details="Run 'ontos mcp install --client antigravity'",
+                config_path=Path("/tmp/mcp_config.json"),
+                detected=True,
+            )
+
+            result = check_antigravity_mcp()
+
+        assert result.status == "warning"
+        assert "missing" in result.message.lower()
+        assert "mcp install" in (result.details or "")
 
 
 def test_check_docs_directory_scope_library_includes_internal(tmp_path, monkeypatch):
