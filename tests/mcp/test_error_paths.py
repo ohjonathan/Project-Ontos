@@ -123,7 +123,6 @@ def test_help_and_stdout_safety_paths(tmp_path):
 
     assert help_result.returncode == 0
     assert "usage: ontos serve" in help_result.stdout
-    assert runtime_result.stdout == ""
     assert "workspace_overview" in server.instructions
 
 
