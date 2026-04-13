@@ -189,6 +189,34 @@ def test_mcp_install_json_envelope_reports_created_config(tmp_path: Path) -> Non
     assert payload["data"]["mode"] == "read-only"
 
 
+def test_mcp_install_write_enabled_omits_read_only(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    home = tmp_path / "home"
+    workspace.mkdir()
+    home.mkdir()
+    _init_workspace(workspace)
+
+    result = _run_ontos(
+        workspace,
+        "--json",
+        "mcp",
+        "install",
+        "--client",
+        "antigravity",
+        "--write-enabled",
+        home=home,
+    )
+
+    assert result.returncode == 0, result.stderr
+    envelope = json.loads(result.stdout)
+    assert envelope["data"]["mode"] == "write-enabled"
+
+    config_path = home / ".gemini" / "antigravity" / "mcp_config.json"
+    payload = json.loads(config_path.read_text(encoding="utf-8"))
+    entry = payload["mcpServers"]["ontos"]
+    assert "--read-only" not in entry["args"]
+
+
 def test_mcp_install_unwritable_config_dir(tmp_path: Path, monkeypatch) -> None:
     workspace = tmp_path / "workspace"
     home = tmp_path / "home"
