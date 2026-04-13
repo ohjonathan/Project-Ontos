@@ -99,6 +99,7 @@ def create_parser(include_hidden: bool = True) -> argparse.ArgumentParser:
     _register_link_check(subparsers, global_parser)
     _register_rename(subparsers, global_parser)
     _register_env(subparsers, global_parser)
+    _register_mcp(subparsers, global_parser)
     _register_serve(subparsers, global_parser)
     _register_agents(subparsers, global_parser)
     _register_export(subparsers, global_parser)
@@ -294,6 +295,44 @@ def _register_env(subparsers, parent):
         help="Output format (default: text). Short flag -f is deprecated."
     )
     p.set_defaults(func=_cmd_env)
+
+
+def _register_mcp(subparsers, parent):
+    """Register MCP client config commands."""
+    mcp_parser = subparsers.add_parser(
+        "mcp",
+        help="Install native MCP client configuration",
+        parents=[parent],
+    )
+    mcp_parser.set_defaults(func=_cmd_mcp_root, mcp_command=None, _mcp_parser=mcp_parser)
+    mcp_subparsers = mcp_parser.add_subparsers(
+        dest="mcp_command",
+        title="mcp commands",
+        metavar="<command>",
+    )
+
+    install_parser = mcp_subparsers.add_parser(
+        "install",
+        help="Install or update a native MCP client config",
+        parents=[parent],
+    )
+    install_parser.add_argument(
+        "--client",
+        choices=["antigravity"],
+        required=True,
+        help="Native MCP client to configure",
+    )
+    install_parser.add_argument(
+        "--workspace",
+        type=Path,
+        help="Workspace path to serve (defaults to the current Ontos project root)",
+    )
+    install_parser.add_argument(
+        "--write-enabled",
+        action="store_true",
+        help="Generate a writable Ontos server entry (default: read-only)",
+    )
+    install_parser.set_defaults(func=_cmd_mcp_install)
 
 
 def _register_serve(subparsers, parent):
@@ -842,6 +881,45 @@ def _cmd_env(args) -> int:
             print(output)
     elif not args.quiet and output:
         print(output)
+
+    return exit_code
+
+
+def _cmd_mcp_root(args) -> int:
+    """Handle bare `ontos mcp` by showing help."""
+    parser = getattr(args, "_mcp_parser", None)
+    if args.json:
+        _emit_handler_result_json(
+            command="mcp",
+            exit_code=2,
+            message="No mcp subcommand specified",
+            error_code="E_NO_COMMAND",
+        )
+    elif parser is not None and not args.quiet:
+        parser.print_help()
+    return 2
+
+
+def _cmd_mcp_install(args) -> int:
+    """Handle `ontos mcp install`."""
+    from ontos.commands.mcp import MCPInstallOptions, _run_mcp_install_command
+
+    options = MCPInstallOptions(
+        client=args.client,
+        workspace=getattr(args, "workspace", None),
+        write_enabled=getattr(args, "write_enabled", False),
+    )
+    exit_code, message, data = _run_mcp_install_command(options)
+
+    if args.json:
+        _emit_handler_result_json(
+            command="mcp-install",
+            exit_code=exit_code,
+            message=message,
+            data=data,
+        )
+    elif not args.quiet:
+        print(message)
 
     return exit_code
 

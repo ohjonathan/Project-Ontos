@@ -225,6 +225,40 @@ All write paths (CLI and MCP) now use `workspace_lock()` with advisory flock on 
 }
 ```
 
+**Antigravity native agents** (`~/.gemini/antigravity/mcp_config.json`):
+
+```bash
+ontos mcp install --client antigravity
+```
+
+This command creates or updates the native Antigravity config with an `mcpServers.ontos` entry:
+
+```json
+{
+  "mcpServers": {
+    "ontos": {
+      "command": "/absolute/path/to/ontos",
+      "args": ["serve", "--workspace", "/absolute/path/to/your/project", "--read-only"]
+    }
+  }
+}
+```
+
+Use `--write-enabled` if you want mutable MCP tools. This native config is separate from `AGENTS.md` / `.cursorrules` and from any editor-level MCP manifest.
+
+### Client Support Policy
+
+Ontos now treats MCP enablement as two separate jobs:
+
+- **Server health** — `ontos serve` works.
+- **Client onboarding** — the client discovers Ontos tools through its own config contract.
+
+That philosophy should stay consistent across clients, while the automation level stays client-specific:
+
+- **First-class** clients get `ontos mcp install --client ...` plus `ontos doctor` checks once their native config contract is stable. Antigravity is the first example.
+- **Supported** clients keep explicit manual setup docs until Ontos can rely on a stable contract. Claude Desktop and Cursor remain in this tier for now.
+- **Evolving** clients should get docs and diagnostics first, with automation deferred until the contract settles. Claude Code and Codex are the obvious candidates here.
+
 ### 5. Enable Usage Logging (Optional)
 
 Add to `.ontos.toml`:

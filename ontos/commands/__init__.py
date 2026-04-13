@@ -121,6 +121,11 @@ from ontos.commands.rename import (
     RenameOptions,
 )
 
+from ontos.commands.mcp import (
+    MCPInstallOptions,
+    mcp_install_command,
+)
+
 __all__ = [
     # Native orchestration (Phase 2)
     "GenerateMapOptions",
@@ -165,4 +170,6 @@ __all__ = [
     "MaintainOptions",
     "rename_command",
     "RenameOptions",
+    "MCPInstallOptions",
+    "mcp_install_command",
 ]
