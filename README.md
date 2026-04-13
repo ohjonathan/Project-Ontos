@@ -313,6 +313,19 @@ This writes an `mcpServers.ontos` entry that points at your current Ontos worksp
 
 Use `--write-enabled` if you want mutable MCP tools instead of the default read-only profile. This native config is separate from editor-level manifests and separate from `AGENTS.md` / `.cursorrules`.
 
+**Client support policy**
+
+Ontos treats MCP integration as two separate concerns:
+
+- **Server health** — `ontos serve` starts correctly and answers MCP requests.
+- **Client onboarding** — the client discovers Ontos tools through its own config contract.
+
+Support is client-specific:
+
+- **First-class** — stable native config contract, so Ontos can ship `ontos mcp install --client ...` plus `ontos doctor` coverage. Antigravity is the first client in this tier.
+- **Supported** — explicit setup docs today, with automation added only after the client contract proves stable. Claude Desktop and Cursor currently fit here.
+- **Evolving** — docs and diagnostics first, automation later if the config surface becomes stable enough. This is the likely path for CLI-native agents such as Claude Code and Codex.
+
 ### 4. Available Tools
 
 The MCP server exposes up to 15 tools depending on server flags:

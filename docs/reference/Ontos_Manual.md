@@ -699,6 +699,19 @@ Ontos writes or updates `mcpServers.ontos` in the native Antigravity config:
 
 Use `--write-enabled` to expose mutable MCP tools. This native config is separate from repo-local instruction artifacts such as `AGENTS.md` and `.cursorrules`.
 
+#### Client Support Policy
+
+Ontos treats MCP support as two layers:
+
+- **Server health** — `ontos serve` is healthy and answers MCP requests.
+- **Client onboarding** — the client actually discovers Ontos tools through its own config format.
+
+Apply the same philosophy across clients, but not the same installer blindly:
+
+- **First-class** clients have a stable native config contract, so Ontos can ship `ontos mcp install --client ...` and `ontos doctor` validation. Antigravity currently fits here.
+- **Supported** clients have clear manual config docs today, with automation deferred until the contract is stable enough. Claude Desktop and Cursor currently fit here.
+- **Evolving** clients should get docs and diagnostics first, then automation later if the config surface stabilizes. This is the expected path for CLI-native agents such as Claude Code and Codex.
+
 #### Available Tools
 
 | Tool | Description | Key Parameters |
