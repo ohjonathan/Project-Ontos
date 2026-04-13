@@ -43,9 +43,13 @@ PORTFOLIO_MODE_TOOL_NAMES = {"project_registry", "search"}
 class OntosFastMCP(FastMCP):
     """FastMCP variant that advertises explicit output schemas per tool."""
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, version: Optional[str] = None, **kwargs: Any) -> None:
         self._output_schemas: Dict[str, Dict[str, Any]] = {}
         super().__init__(*args, **kwargs)
+        # FastMCP does not forward `version` to its inner MCPServer; without this,
+        # initialize responses advertise the `mcp` SDK version as serverInfo.version.
+        if version is not None:
+            self._mcp_server.version = version
 
     def set_output_schema(self, tool_name: str, schema: Dict[str, Any]) -> None:
         self._output_schemas[tool_name] = schema
@@ -128,6 +132,7 @@ def create_server(
 
     server = OntosFastMCP(
         name="Ontos",
+        version=ontos.__version__,
         instructions=_render_instructions(
             cache,
             portfolio_mode=portfolio_mode,

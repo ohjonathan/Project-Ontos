@@ -6,6 +6,7 @@ Full argparse implementation per Spec v1.1 Section 4.1.
 """
 
 import argparse
+import contextlib
 import json
 import sys
 from pathlib import Path
@@ -881,17 +882,19 @@ def _cmd_serve(args) -> int:
             code="E_WORKSPACE_NOT_FOUND",
         )
 
-    original_stdout = sys.stdout
-    sys.stdout = sys.stderr
     try:
-        from ontos.io.files import find_project_root
+        # Setup-only stdout redirect: stray prints during imports/workspace
+        # resolution must not reach the JSON-RPC wire. The redirect MUST end
+        # before serve() runs — FastMCP's stdio transport snapshots sys.stdout
+        # at server.run() time, so an active redirect routes every response to
+        # stderr and breaks the initialize handshake.
+        with contextlib.redirect_stdout(sys.stderr):
+            from ontos.io.files import find_project_root
 
-        workspace_root = find_project_root(start_path=resolved_start)
-        from ontos.mcp import serve
-        portfolio = bool(getattr(args, "portfolio", False))
-        read_only = bool(getattr(args, "read_only", False))
-        # m-3: always forward the same kwargs, regardless of truthiness, so
-        # behavior is uniform and there is a single call path to reason about.
+            workspace_root = find_project_root(start_path=resolved_start)
+            from ontos.mcp import serve
+            portfolio = bool(getattr(args, "portfolio", False))
+            read_only = bool(getattr(args, "read_only", False))
         return serve(workspace_root, portfolio=portfolio, read_only=read_only)
     except FileNotFoundError as exc:
         raise OntosUserError(str(exc), code="E_WORKSPACE_NOT_FOUND") from exc
@@ -911,8 +914,6 @@ def _cmd_serve(args) -> int:
         raise
     except Exception as exc:
         raise OntosInternalError(str(exc), code="E_MCP_STARTUP") from exc
-    finally:
-        sys.stdout = original_stdout
 
 
 def _cmd_agent_export(args) -> int:
