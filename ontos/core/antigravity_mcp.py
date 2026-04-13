@@ -9,7 +9,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 
 ANTIGRAVITY_CONFIG_RELATIVE_PATH = Path(".gemini") / "antigravity" / "mcp_config.json"
@@ -76,21 +76,11 @@ def antigravity_config_path(home: Optional[Path] = None) -> Path:
     return base_home.expanduser() / ANTIGRAVITY_CONFIG_RELATIVE_PATH
 
 
-def antigravity_app_candidates(home: Optional[Path] = None) -> List[Path]:
-    """Return possible Antigravity app bundle locations."""
-    base_home = Path(home) if home is not None else Path.home()
-    return [
-        Path("/Applications/Antigravity.app"),
-        base_home.expanduser() / "Applications" / "Antigravity.app",
-    ]
-
-
 def detect_antigravity_installation(home: Optional[Path] = None) -> AntigravityInstallation:
-    """Detect whether Antigravity is installed or already configured."""
+    """Detect whether the user has created Antigravity native MCP config state."""
     config_path = antigravity_config_path(home=home)
-    app_path = next((path for path in antigravity_app_candidates(home=home) if path.exists()), None)
-    detected = app_path is not None or config_path.exists() or config_path.parent.exists()
-    return AntigravityInstallation(config_path=config_path, app_path=app_path, detected=detected)
+    detected = config_path.parent.exists()
+    return AntigravityInstallation(config_path=config_path, app_path=None, detected=detected)
 
 
 def resolve_ontos_launcher() -> Tuple[str, List[str]]:
