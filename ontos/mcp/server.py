@@ -158,7 +158,9 @@ def create_server(
             meta=meta,
             structured_output=False,
         )(handler)
-        server.set_output_schema(name, output_schema_for(name))
+        schema = output_schema_for(name)
+        if schema is not None:
+            server.set_output_schema(name, schema)
 
     _register_core_tools(
         cache=cache,

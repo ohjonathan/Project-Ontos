@@ -43,6 +43,16 @@ def test_server_lists_all_tools_with_correct_annotations(tmp_path):
         assert tool_map[name].annotations.readOnlyHint is True, f"{name} should be readOnly"
 
 
+def test_list_tools_output_schemas_are_object_or_absent(tmp_path):
+    root = create_workspace(tmp_path)
+    server = build_server(root)
+    for tool in list_tools(server):
+        assert tool.outputSchema is None or tool.outputSchema["type"] == "object", (
+            f"Tool '{tool.name}' advertises a non-object outputSchema; "
+            "strict MCP clients reject the entire tools/list response."
+        )
+
+
 def test_tool_descriptions_include_workspace_name(tmp_path):
     root = create_workspace(tmp_path)
     server = build_server(root)

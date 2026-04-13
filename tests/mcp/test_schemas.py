@@ -5,6 +5,7 @@ from ontos.mcp.schemas import (
     RenameDocumentResponse,
     ScaffoldDocumentResponse,
     TOOL_ERROR_SCHEMA,
+    TOOL_SUCCESS_MODELS,
     WriteToolErrorEnvelope,
     output_schema_for,
     validate_success_payload,
@@ -75,13 +76,25 @@ def test_success_payloads_validate_against_declared_schemas(tmp_path):
     for name, payload in payloads.items():
         normalized = validate_success_payload(name, payload)
         assert isinstance(normalized, dict)
-        assert output_schema_for(name)
+        schema = output_schema_for(name)
+        assert schema is None or schema.get("type") == "object"
 
 
-def test_export_graph_schema_is_one_of():
-    schema = output_schema_for("export_graph")
-    assert "oneOf" in schema
-    assert len(schema["oneOf"]) == 3
+def test_export_graph_schema_is_omitted():
+    # See schemas.output_schema_for: export_graph advertises no outputSchema
+    # because its three response shapes can't be expressed as a single object
+    # schema without a breaking change to the return type.
+    assert output_schema_for("export_graph") is None
+
+
+def test_every_advertised_output_schema_is_object_typed():
+    for name in TOOL_SUCCESS_MODELS:
+        schema = output_schema_for(name)
+        assert schema is None or schema["type"] == "object", (
+            f"Tool '{name}' advertises a non-object outputSchema; MCP clients "
+            "validate structuredContent as an object and will reject the "
+            "entire tools/list response."
+        )
 
 
 def test_write_tool_models_validate_success_payload_shapes():

@@ -327,14 +327,18 @@ def validate_success_payload(tool_name: str, payload: Dict[str, Any]) -> Dict[st
     return normalized
 
 
-def output_schema_for(tool_name: str) -> Dict[str, Any]:
-    """Return the JSON Schema advertised for one tool."""
+def output_schema_for(tool_name: str) -> Optional[Dict[str, Any]]:
+    """Return the JSON Schema advertised for one tool, or ``None`` to omit it.
+
+    ``export_graph`` returns three distinct response shapes depending on its
+    arguments. MCP's ``Tool.outputSchema`` describes ``structuredContent``,
+    which must be an object — advertising a root ``oneOf`` has been observed
+    to trip strict clients (e.g., Claude Code) into discarding the entire
+    ``tools/list`` response. Until the response type is refactored into a
+    single discriminated object, we omit the schema so the client skips
+    structured-output validation for this one tool. Runtime payloads are
+    still validated via ``EXPORT_GRAPH_ADAPTER``.
+    """
     if tool_name == "export_graph":
-        return {
-            "oneOf": [
-                ExportGraphSummaryResponse.model_json_schema(by_alias=True),
-                ExportGraphFullResponse.model_json_schema(by_alias=True),
-                ExportGraphFileResponse.model_json_schema(by_alias=True),
-            ]
-        }
+        return None
     return TOOL_OUTPUT_SCHEMAS[tool_name]
