@@ -139,7 +139,7 @@ pipx install --force 'ontos[mcp]'
 ### 2. Verify
 
 ```bash
-ontos --version  # Should show 4.1.0
+ontos --version  # Should show 4.1.x
 ontos doctor     # Check graph health
 ```
 

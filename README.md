@@ -329,7 +329,7 @@ Write tools are registered only when the server runs without `--read-only`. All 
 ### 5. Verify
 
 ```bash
-ontos --version   # Should show 4.1.0
+ontos --version   # Should show 4.1.x
 ontos serve       # Starts the stdio server (Ctrl+C to stop)
 ```
 
