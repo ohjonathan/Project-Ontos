@@ -4,7 +4,7 @@ type: log
 status: active
 event_type: fix
 source: Claude Code
-branch: main
+branch: fix/mcp-stdio-stream-routing
 created: 2026-04-12
 ---
 
