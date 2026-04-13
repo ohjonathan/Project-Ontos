@@ -308,7 +308,7 @@ The MCP server exposes up to 15 tools depending on server flags:
 | `refresh` | Force cache rebuild after bulk changes | ⚠️ |
 | `get_context_bundle` | Token-budgeted context bundle for a workspace | ✅ |
 
-**Portfolio (2 tools — v4.1, requires `--portfolio` flag):**
+**Portfolio (2 tools — v4.1, requires `--portfolio` flag and `~/.config/ontos/portfolio.toml`):**
 
 | Tool | Purpose |
 |------|---------|
@@ -337,6 +337,97 @@ ontos serve       # Starts the stdio server (Ctrl+C to stop)
 > The server communicates over stdio (JSON-RPC), so it won't print a "ready" message — silence is normal. To verify it's working, connect through your IDE and call a tool like `health`.
 
 For the full migration guide, including optional usage logging and known limitations, see [Migration Guide v3→v4](docs/reference/Migration_v3_to_v4.md).
+
+### Portfolio Mode (Multi-Project)
+
+Portfolio mode lets a single `ontos serve` process index and search across all your projects. Pass `--portfolio` and Ontos discovers every git repository under your configured scan roots and builds a SQLite-backed index with FTS5 full-text search. This unlocks two additional tools: `project_registry` and `search`. The existing `get_context_bundle` tool also gains portfolio-level awareness — in portfolio mode it queries the index instead of just the served workspace.
+
+```bash
+ontos serve --portfolio
+```
+
+> [!TIP]
+> The first `--portfolio` run auto-creates `~/.config/ontos/portfolio.toml` with sensible defaults. Edit it to match your directory layout.
+
+#### Configuration
+
+Portfolio config lives at `~/.config/ontos/portfolio.toml`:
+
+```toml
+[portfolio]
+scan_roots = ["~/Dev"]                    # Parent dirs to scan (first-level children)
+exclude = ["~/Dev/.dev-hub", "~/Dev/archive"]  # Paths or substrings to skip
+registry_path = "~/Dev/.dev-hub/registry/projects.json"  # Optional enriched metadata
+
+[bundle]
+token_budget = 8000     # Max tokens for context bundles
+max_logs = 20           # Max session logs per bundle
+log_window_days = 30    # Only include logs from the last N days
+```
+
+- **`scan_roots`** accepts a list — scan multiple parent directories (e.g., `["~/Dev", "~/Work"]`).
+- The scanner looks at **first-level children** of each scan root and picks directories containing `.git/`.
+- **`exclude`** matches both absolute paths and substrings against resolved paths.
+- **`registry_path`** is optional. If set, registry entries are merged with filesystem discovery — adding tags, status overrides, and notes. Projects listed in the registry but missing on disk are skipped.
+- Each workspace gets a URL-safe slug from its directory name (`Ontos-dev` → `ontos-dev`). Collisions get numeric suffixes (`workspace`, `workspace-2`).
+
+#### IDE Configuration
+
+**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "ontos": {
+      "command": "ontos",
+      "args": ["serve", "--portfolio"],
+      "cwd": "/path/to/your/primary/project"
+    }
+  }
+}
+```
+
+**Cursor** (`.cursor/mcp.json` in your project root):
+```json
+{
+  "mcpServers": {
+    "ontos": {
+      "command": "ontos",
+      "args": ["serve", "--portfolio"]
+    }
+  }
+}
+```
+
+These are the same configs from [§3 above](#3-configure-your-ide), with `--portfolio` added to `args`.
+
+#### Tool Scoping
+
+The server binds to one **primary workspace** (the `cwd` or `--workspace` path). Tool access depends on scope:
+
+| Scope | Tools | Reaches |
+|-------|-------|---------|
+| **Portfolio** | `project_registry`, `search` | All indexed workspaces |
+| **Primary** | `get_document`, `context_map`, `list_documents`, `query`, etc. | Primary workspace only |
+| **Write** | `scaffold_document`, `log_session`, `promote_document`, `rename_document` | Primary workspace only |
+
+Calling a core tool with a `workspace_id` that doesn't match the primary workspace returns `E_CROSS_WORKSPACE_NOT_SUPPORTED`. This is a deliberate safety boundary. To read another project's documents, change your `cwd` or run a second `ontos serve` instance.
+
+> [!NOTE]
+> Cross-workspace document reads and writes are on the v4.2 roadmap.
+
+#### Example Workflow
+
+```text
+Agent → project_registry     → sees 15 indexed workspaces
+Agent → search("auth flow")  → finds matches in finance-engine and api-gateway
+Agent → get_document("auth_flow")  → reads from primary workspace
+```
+
+#### Scoping Tips
+
+- **Exclude noisy dirs:** Add test repos, forks, and archived projects to `exclude`.
+- **Use the registry:** Create a `projects.json` with only the projects you actively work across.
+- **Tune bundles:** Lower `token_budget` if context bundles are too large, or widen `log_window_days` to catch more history.
 
 ---
 
@@ -413,7 +504,7 @@ Version 3 is when Ontos became public. The earlier versions live on in the desig
 | Version | Status | Highlights |
 |---------|--------|------------|
 | **v4.1.0** | ✅ Current | Portfolio index, 4 write tools, advisory flock locking, shared rename orchestrator |
-| **v4.2** | Next | HTTP/SSE transport, cross-workspace writes |
+| **v4.2** | Next | HTTP/SSE transport, cross-workspace document reads/writes |
 
 v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python. v3.2 added re-architecture support, environment detection, and activation resilience. v3.3 ships 62 audit-derived hardening fixes plus `link-check`, `rename`, unified JSON envelopes, and a canonical document loader. v3.3.1 reduced link-check false positives by 89% and added `promote_check` to the maintenance pipeline. v3.4 adds `--compact tiered` context maps for token-constrained agents. v4.0 adds an MCP server mode with 8 read-only tools, enabling native integration with AI IDEs like Claude Desktop and Cursor without CLI overhead. v4.1 expands MCP to 15 tools — 4 write tools (`scaffold_document`, `log_session`, `promote_document`, `rename_document`), a portfolio index with FTS5 search, advisory flock locking, and a shared rename orchestrator used by both CLI and MCP.
 
