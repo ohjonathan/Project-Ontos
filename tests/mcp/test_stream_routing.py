@@ -62,13 +62,12 @@ def test_stderr_contains_no_jsonrpc(tmp_path):
     root = create_empty_workspace(tmp_path)
     result = _run_serve(root, INITIALIZE_REQUEST)
 
-    for line in result.stderr.splitlines():
-        stripped = line.strip()
-        if not stripped:
-            continue
-        assert not stripped.startswith("{"), (
-            f"stderr contains JSON-RPC-like payload: {stripped[:200]!r}"
-        )
+    assert result.returncode == 0, (
+        f"serve exited {result.returncode}; stderr={result.stderr[:400]!r}"
+    )
+    assert "jsonrpc" not in result.stderr, (
+        f"JSON-RPC payload leaked to stderr: {result.stderr[:400]!r}"
+    )
 
 
 def test_server_info_version_matches_package_version(tmp_path):
