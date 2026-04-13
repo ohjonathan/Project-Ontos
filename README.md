@@ -340,7 +340,7 @@ For the full migration guide, including optional usage logging and known limitat
 
 ### Portfolio Mode (Multi-Project)
 
-Portfolio mode lets a single `ontos serve` process index and search across all your projects. Pass `--portfolio` and Ontos discovers every git repository under your configured scan roots, builds a SQLite index with FTS5 full-text search, and unlocks two additional tools: `project_registry` and `search`.
+Portfolio mode lets a single `ontos serve` process index and search across all your projects. Pass `--portfolio` and Ontos discovers every git repository under your configured scan roots and builds a SQLite-backed index with FTS5 full-text search. This unlocks two additional tools: `project_registry` and `search`. The existing `get_context_bundle` tool also gains portfolio-level awareness — in portfolio mode it queries the index instead of just the served workspace.
 
 ```bash
 ontos serve --portfolio
@@ -398,6 +398,8 @@ log_window_days = 30    # Only include logs from the last N days
 }
 ```
 
+These are the same configs from [§3 above](#3-configure-your-ide), with `--portfolio` added to `args`.
+
 #### Tool Scoping
 
 The server binds to one **primary workspace** (the `cwd` or `--workspace` path). Tool access depends on scope:
@@ -415,7 +417,7 @@ Calling a core tool with a `workspace_id` that doesn't match the primary workspa
 
 #### Example Workflow
 
-```
+```text
 Agent → project_registry     → sees 15 indexed workspaces
 Agent → search("auth flow")  → finds matches in finance-engine and api-gateway
 Agent → get_document("auth_flow")  → reads from primary workspace
