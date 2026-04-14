@@ -5,7 +5,7 @@ status: active
 depends_on: []
 ---
 
-# Ontos Manual v4.1
+# Ontos Manual v4.2
 
 *The complete reference for Project Ontos*
 
@@ -28,7 +28,7 @@ pip install 'ontos[mcp]'
 ontos serve
 ```
 
-> **v4.1 Note:** v4.0 added MCP server mode for native AI IDE integration. v4.1 adds write tools, portfolio index, and advisory flock locking. See the [Migration Guide v3→v4](Migration_v3_to_v4.md). For v2.x users, see [Migration v2→v3](Migration_v2_to_v3.md).
+> **v4.2 Note:** v4.0 added MCP server mode for native AI IDE integration. v4.1 added write tools, portfolio index, and advisory flock locking. v4.2 adds Cursor MCP onboarding plus `print-config` fallback for the remaining supported client surfaces. See the [Migration Guide v3→v4](Migration_v3_to_v4.md). For v2.x users, see [Migration v2→v3](Migration_v2_to_v3.md).
 
 ---
 
