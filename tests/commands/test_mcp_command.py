@@ -10,7 +10,11 @@ from pathlib import Path
 import pytest
 
 from ontos.commands.mcp import MCPInstallOptions, _run_mcp_install_command
-from ontos.core.antigravity_mcp import build_antigravity_ontos_entry
+from ontos.core.antigravity_mcp import (
+    build_antigravity_ontos_entry,
+    upsert_antigravity_ontos_entry,
+    write_antigravity_config,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -679,12 +683,12 @@ def test_mcp_install_antigravity_identical_rerun_returns_noop(tmp_path: Path) ->
     assert config_path.read_text(encoding="utf-8") == before
 
 
-def test_antigravity_install_golden_snapshot(monkeypatch) -> None:
+def test_antigravity_install_golden_snapshot(monkeypatch, tmp_path: Path) -> None:
     snapshot_path = Path(__file__).resolve().parents[1] / "fixtures" / "mcp" / "antigravity_install_golden.json"
     snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
 
     monkeypatch.setattr(
-        "ontos.core.antigravity_mcp.resolve_ontos_launcher",
+        "ontos.core.mcp_shared.resolve_ontos_launcher",
         lambda: ("/opt/ontos/bin/ontos", []),
     )
 
@@ -692,7 +696,15 @@ def test_antigravity_install_golden_snapshot(monkeypatch) -> None:
     entry["command"] = "<ontos-command>"
     entry["args"][2] = "<workspace-root>"
 
-    assert entry == snapshot
+    payload, action = upsert_antigravity_ontos_entry(None, entry)
+    assert action == "created"
+    assert payload["mcpServers"]["ontos"] == snapshot
+
+    config_path = tmp_path / "mcp_config.json"
+    write_antigravity_config(config_path, payload)
+    expected_bytes = (json.dumps(payload, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+    assert config_path.read_bytes() == expected_bytes
+    assert json.loads(config_path.read_text(encoding="utf-8")) == payload
 
 
 def test_mcp_install_unwritable_config_dir(tmp_path: Path, monkeypatch) -> None:
@@ -716,3 +728,5 @@ def test_mcp_install_unwritable_config_dir(tmp_path: Path, monkeypatch) -> None:
     assert str(home / ".gemini" / "antigravity" / "mcp_config.json") in message
     assert data["config_path"] == str(home / ".gemini" / "antigravity" / "mcp_config.json")
     assert data["error"] == "Permission denied"
+    assert "fallback_snippet" in data
+    assert data["fallback_snippet"]

@@ -350,6 +350,14 @@ def _run_mcp_uninstall_command(options: MCPUninstallOptions) -> Tuple[int, str, 
     if exit_code != 0 or config_path is None:
         return exit_code, error_message, {}
 
+    exit_code, error_message = _validate_managed_config_scope(
+        config_path,
+        scope,
+        workspace_root or Path.cwd().resolve(),
+    )
+    if exit_code != 0:
+        return exit_code, error_message, {}
+
     if not config_path.exists():
         return 0, f"No Ontos MCP entry found at {config_path}", {
             "client": options.client,
