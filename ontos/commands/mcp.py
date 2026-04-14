@@ -17,9 +17,11 @@ from ontos.core.antigravity_mcp import (
 from ontos.core.cursor_mcp import CURSOR_MCP_ADAPTER, CursorConfigError
 from ontos.core.mcp_shared import (
     MCPConfigError,
+    MCPConfigScopeError,
     get_client_contract,
     remove_named_server_entry,
     render_client_config_document,
+    validate_config_path_scope,
 )
 from ontos.io.files import find_project_root
 
@@ -120,6 +122,20 @@ def _resolve_managed_config_path(
             config_path_override=override,
         ), ""
     return 2, None, f"Unsupported MCP client: {client}"
+
+
+def _validate_managed_config_scope(config_path: Path, scope: str, workspace_root: Path) -> Tuple[int, str]:
+    """Reject config paths that resolve outside the expected scope."""
+    try:
+        validate_config_path_scope(
+            config_path,
+            scope,
+            workspace_root=workspace_root,
+            home=Path.home(),
+        )
+    except (MCPConfigScopeError, ValueError) as exc:
+        return 2, str(exc)
+    return 0, ""
 
 
 def _resolve_print_config_path(
@@ -254,6 +270,10 @@ def _run_mcp_install_command(options: MCPInstallOptions) -> Tuple[int, str, Dict
         config_path_override=options.config_path,
     )
     if exit_code != 0 or config_path is None:
+        return exit_code, error_message, {}
+
+    exit_code, error_message = _validate_managed_config_scope(config_path, scope, workspace_root)
+    if exit_code != 0:
         return exit_code, error_message, {}
 
     existing = None

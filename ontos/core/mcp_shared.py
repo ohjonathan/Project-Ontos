@@ -37,6 +37,10 @@ class MCPConfigError(ValueError):
         self.code = code
 
 
+class MCPConfigScopeError(MCPConfigError):
+    """Raised when a config path resolves outside its expected scope."""
+
+
 @dataclass(frozen=True)
 class MCPProbeResult:
     """Result of a lightweight MCP initialize probe."""

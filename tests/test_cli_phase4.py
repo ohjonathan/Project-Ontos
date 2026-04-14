@@ -2,6 +2,7 @@
 
 import os
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -268,7 +269,12 @@ class TestCLIDoctorCommand:
         assert "data" in data
         assert "checks" in data["data"]
         assert any(check["name"] == "antigravity_mcp" for check in data["data"]["checks"])
+        cursor_check = next(check for check in data["data"]["checks"] if check["name"] == "cursor_mcp")
         assert any(check["name"] == "cursor_mcp" for check in data["data"]["checks"])
+        assert re.fullmatch(
+            r"project: \w+ - .+; user: \w+ - .+",
+            cursor_check.get("details", ""),
+        ), cursor_check.get("details", "")
 
 
 class TestCLIExportCommand:
