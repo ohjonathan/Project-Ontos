@@ -1,6 +1,7 @@
 """Tests for doctor command (Phase 4)."""
 
 import os
+import json
 import site
 import subprocess
 import sys
@@ -11,7 +12,6 @@ import pytest
 
 from ontos.commands.doctor import (
     CheckResult,
-    CursorScopeInspection,
     DoctorOptions,
     DoctorResult,
     check_antigravity_mcp,
@@ -58,6 +58,40 @@ def _init_workspace(root: Path) -> None:
         encoding="utf-8",
     )
     (root / "Ontos_Context_Map.md").write_text("# Context Map\n", encoding="utf-8")
+
+
+def _write_json(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
+def _write_probe_script(path: Path, *, exit_code: int = 0) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if exit_code == 0:
+        content = """#!/usr/bin/env python3
+import json
+import sys
+
+_ = sys.stdin.read()
+print(json.dumps({
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+        "serverInfo": {
+            "name": "ontos-test",
+            "version": "0",
+        }
+    },
+}))
+"""
+    else:
+        content = f"""#!/usr/bin/env python3
+import sys
+
+sys.exit({exit_code})
+"""
+    path.write_text(content, encoding="utf-8")
+    path.chmod(0o755)
 class TestCheckResult:
     """Tests for CheckResult dataclass."""
 
@@ -410,27 +444,26 @@ def test_doctor_cli_outside_project_returns_nonzero(tmp_path):
 
 def test_doctor_json_includes_cursor_mcp_project_precedence_success(tmp_path: Path, monkeypatch) -> None:
     workspace = tmp_path / "workspace"
+    home = tmp_path / "home"
     workspace.mkdir()
+    home.mkdir()
     _init_workspace(workspace)
+    monkeypatch.setenv("HOME", str(home))
 
-    def _inspect(scope: str, _config_path: Path) -> CursorScopeInspection:
-        if scope == "project":
-            return CursorScopeInspection(
-                scope="project",
-                status="success",
-                reason="valid Ontos entry",
-                path=workspace / ".cursor" / "mcp.json",
-                has_ontos_entry=True,
-            )
-        return CursorScopeInspection(
-            scope="user",
-            status="warning",
-            reason="malformed config",
-            path=tmp_path / "home" / ".cursor" / "mcp.json",
-            has_ontos_entry=True,
-        )
-
-    monkeypatch.setattr("ontos.commands.doctor._inspect_cursor_scope", _inspect)
+    probe_script = tmp_path / "bin" / "cursor-ok"
+    _write_probe_script(probe_script, exit_code=0)
+    _write_json(
+        workspace / ".cursor" / "mcp.json",
+        {
+            "mcpServers": {
+                "ontos": {
+                    "command": str(probe_script),
+                    "args": ["serve", "--workspace", str(workspace.resolve()), "--read-only"],
+                }
+            }
+        },
+    )
+    _write_json(home / ".cursor" / "mcp.json", {"mcpServers": {"ontos": {"command": "bad", "args": []}}})
 
     result = check_cursor_mcp(repo_root=workspace)
     assert result.status == "success"
@@ -440,27 +473,36 @@ def test_doctor_json_includes_cursor_mcp_project_precedence_success(tmp_path: Pa
 
 def test_doctor_json_includes_cursor_mcp_project_invalid_user_valid_warning(tmp_path: Path, monkeypatch) -> None:
     workspace = tmp_path / "workspace"
+    home = tmp_path / "home"
     workspace.mkdir()
+    home.mkdir()
     _init_workspace(workspace)
+    monkeypatch.setenv("HOME", str(home))
 
-    def _inspect(scope: str, _config_path: Path) -> CursorScopeInspection:
-        if scope == "project":
-            return CursorScopeInspection(
-                scope="project",
-                status="warning",
-                reason="missing serve argument",
-                path=workspace / ".cursor" / "mcp.json",
-                has_ontos_entry=True,
-            )
-        return CursorScopeInspection(
-            scope="user",
-            status="success",
-            reason="valid Ontos entry",
-            path=tmp_path / "home" / ".cursor" / "mcp.json",
-            has_ontos_entry=True,
-        )
-
-    monkeypatch.setattr("ontos.commands.doctor._inspect_cursor_scope", _inspect)
+    valid_probe = tmp_path / "bin" / "cursor-ok"
+    _write_probe_script(valid_probe, exit_code=0)
+    _write_json(
+        workspace / ".cursor" / "mcp.json",
+        {
+            "mcpServers": {
+                "ontos": {
+                    "command": str(valid_probe),
+                    "args": ["-m", "ontos", "--workspace", str(workspace.resolve()), "--read-only"],
+                }
+            }
+        },
+    )
+    _write_json(
+        home / ".cursor" / "mcp.json",
+        {
+            "mcpServers": {
+                "ontos": {
+                    "command": str(valid_probe),
+                    "args": ["serve", "--workspace", str(workspace.resolve()), "--read-only"],
+                }
+            }
+        },
+    )
 
     result = check_cursor_mcp(repo_root=workspace)
     assert result.status == "warning"
@@ -470,20 +512,30 @@ def test_doctor_json_includes_cursor_mcp_project_invalid_user_valid_warning(tmp_
 
 def test_doctor_json_includes_cursor_mcp_skipped_when_no_entry_and_no_malformed_file(tmp_path: Path, monkeypatch) -> None:
     workspace = tmp_path / "workspace"
+    home = tmp_path / "home"
     workspace.mkdir()
+    home.mkdir()
     _init_workspace(workspace)
-
-    def _inspect(_scope: str, config_path: Path) -> CursorScopeInspection:
-        return CursorScopeInspection(
-            scope="project" if "workspace" in str(config_path) else "user",
-            status="skipped",
-            reason="config not present",
-            path=config_path,
-            has_ontos_entry=False,
-        )
-
-    monkeypatch.setattr("ontos.commands.doctor._inspect_cursor_scope", _inspect)
+    monkeypatch.setenv("HOME", str(home))
 
     result = check_cursor_mcp(repo_root=workspace)
     assert result.status == "success"
     assert "skipping mcp check" in result.message.lower()
+
+
+def test_doctor_json_includes_cursor_mcp_malformed_project_config_warning(tmp_path: Path, monkeypatch) -> None:
+    workspace = tmp_path / "workspace"
+    home = tmp_path / "home"
+    workspace.mkdir()
+    home.mkdir()
+    _init_workspace(workspace)
+    monkeypatch.setenv("HOME", str(home))
+
+    malformed = workspace / ".cursor" / "mcp.json"
+    malformed.parent.mkdir(parents=True, exist_ok=True)
+    malformed.write_text("{ invalid json\n", encoding="utf-8")
+
+    result = check_cursor_mcp(repo_root=workspace)
+
+    assert result.status == "warning"
+    assert "malformed" in result.message.lower()

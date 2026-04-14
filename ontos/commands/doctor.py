@@ -10,7 +10,7 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from ontos.core.paths import resolve_project_root
 from ontos.ui.output import OutputHandler
@@ -49,17 +49,6 @@ class DoctorResult:
         elif self.warnings > 0:
             return "warning"
         return "success"
-
-
-@dataclass(frozen=True)
-class CursorScopeInspection:
-    """Compatibility shape used by local doctor tests when monkeypatched."""
-
-    scope: str
-    status: str
-    reason: str
-    path: Path
-    has_ontos_entry: bool = False
 
 def check_configuration(repo_root: Optional[Path] = None) -> CheckResult:
     """Check 1: .ontos.toml exists and is valid."""
@@ -605,7 +594,7 @@ def _format_cursor_details(project_status: str, project_reason: str, user_status
     return f"project: {project_status} - {project_reason}; user: {user_status} - {user_reason}"
 
 
-def _inspect_cursor_scope(scope: str, repo_root: Path) -> CursorScopeInspection:
+def _inspect_cursor_scope(scope: str, repo_root: Path) -> Any:
     """Compatibility wrapper around the Cursor adapter inspection entry point."""
     from ontos.core.cursor_mcp import inspect_cursor_ontos_config
 
