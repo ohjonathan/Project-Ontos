@@ -7,7 +7,7 @@ depends_on: [ontos_manual]
 
 # Migration Guide: v3.x → v4.x
 
-This guide covers the new capabilities in Ontos v4.0 and v4.1 and how to enable them. **There are no breaking changes** — all existing CLI commands, configuration, and frontmatter schemas are preserved.
+This guide covers the new capabilities in Ontos v4.0, v4.1, and v4.2 and how to enable them. **There are no breaking changes** — all existing CLI commands, configuration, and frontmatter schemas are preserved.
 
 ## What's New in v4.0
 
@@ -139,7 +139,7 @@ pipx install --force 'ontos[mcp]'
 ### 2. Verify
 
 ```bash
-ontos --version  # Should show 4.1.x
+ontos --version  # Should show 4.2.x
 ontos doctor     # Check graph health
 ```
 
@@ -197,6 +197,32 @@ All write paths (CLI and MCP) now use `workspace_lock()` with advisory flock on 
 ### Shared Rename Orchestrator
 
 `build_rename_plan` is now the single plan-builder used by both `ontos rename --apply` and MCP `rename_document`.
+
+## What's New in v4.2
+
+### Managed Cursor Onboarding
+
+Ontos v4.2 keeps Antigravity as a first-class managed MCP client and adds
+Cursor as the next managed client. Cursor can now be installed at project or
+user scope:
+
+```bash
+ontos mcp install --client cursor --scope project
+ontos mcp install --client cursor --scope user
+ontos mcp uninstall --client cursor --scope project
+```
+
+Rerunning `ontos mcp install --client cursor ...` is the supported refresh
+path when the Ontos launcher path changes on your shell `PATH`.
+
+### Universal `print-config` Fallback
+
+`ontos mcp print-config --client ...` emits a complete config document without
+writing to disk. In `v4.2`, Claude Code, Codex, and VS Code are supported via
+this fallback path rather than managed install / uninstall / doctor support.
+
+Managed MCP automation remains POSIX-only in `v4.2`; Windows users should use
+`print-config`.
 
 ### 4. Configure Your IDE (Optional)
 

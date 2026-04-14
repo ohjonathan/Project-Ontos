@@ -48,6 +48,24 @@ def test_manual_and_migration_guide_mention_antigravity_native_mcp_setup() -> No
             assert token in content, f"Missing {token!r} from {path}"
 
 
+def test_v42_docs_describe_mcp_support_tiers() -> None:
+    for path in ("README.md", "docs/reference/Ontos_Manual.md", "docs/reference/Migration_v3_to_v4.md"):
+        content = _read(path)
+        for token in (
+            "First-class",
+            "Print-config only",
+            "Docs-only",
+            "Antigravity",
+            "Cursor",
+            "Claude Code",
+            "Codex",
+            "VS Code",
+            "Claude Desktop",
+            "Windsurf",
+        ):
+            assert token in content, f"Missing {token!r} from {path}"
+
+
 def test_v413_release_notes_cover_issue_99_antigravity_fix() -> None:
     content = _read("docs/releases/v4.1.3.md")
     assert "#99" in content

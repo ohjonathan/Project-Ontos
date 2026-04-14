@@ -383,7 +383,7 @@ Write tools are registered only when the server runs without `--read-only`. All 
 ### 5. Verify
 
 ```bash
-ontos --version   # Should show 4.1.x
+ontos --version   # Should show 4.2.x
 ontos serve       # Starts the stdio server (Ctrl+C to stop)
 ```
 
@@ -557,16 +557,16 @@ Version 3 is when Ontos became public. The earlier versions live on in the desig
 
 | Version | Status | Highlights |
 |---------|--------|------------|
-| **v4.1.0** | ✅ Current | Portfolio index, 4 write tools, advisory flock locking, shared rename orchestrator |
-| **v4.2** | Next | HTTP/SSE transport, cross-workspace document reads/writes |
+| **v4.2.0** | ✅ Current | Managed Cursor onboarding, universal `print-config`, shared MCP core |
+| **v4.3** | Next | HTTP / Streamable HTTP transport, daemon mode, security hardening |
 
-v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python. v3.2 added re-architecture support, environment detection, and activation resilience. v3.3 ships 62 audit-derived hardening fixes plus `link-check`, `rename`, unified JSON envelopes, and a canonical document loader. v3.3.1 reduced link-check false positives by 89% and added `promote_check` to the maintenance pipeline. v3.4 adds `--compact tiered` context maps for token-constrained agents. v4.0 adds an MCP server mode with 8 read-only tools, enabling native integration with AI IDEs like Claude Desktop and Cursor without CLI overhead. v4.1 expands MCP to 15 tools — 4 write tools (`scaffold_document`, `log_session`, `promote_document`, `rename_document`), a portfolio index with FTS5 search, advisory flock locking, and a shared rename orchestrator used by both CLI and MCP. v4.2 adds Cursor as the next first-class managed MCP client, plus `ontos mcp print-config` for the remaining supported client surfaces.
+v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python. v3.2 added re-architecture support, environment detection, and activation resilience. v3.3 ships 62 audit-derived hardening fixes plus `link-check`, `rename`, unified JSON envelopes, and a canonical document loader. v3.3.1 reduced link-check false positives by 89% and added `promote_check` to the maintenance pipeline. v3.4 adds `--compact tiered` context maps for token-constrained agents. v4.0 adds an MCP server mode with 8 read-only tools, enabling native integration with AI IDEs like Claude Desktop and Cursor without CLI overhead. v4.1 expands MCP to 15 tools — 4 write tools (`scaffold_document`, `log_session`, `promote_document`, `rename_document`), a portfolio index with FTS5 search, advisory flock locking, and a shared rename orchestrator used by both CLI and MCP. v4.2.0 makes Cursor a first-class managed MCP client alongside Antigravity and adds `ontos mcp print-config` for Claude Code, Codex, and VS Code. The next planned transport work moves to v4.3.
 
 ---
 
 ## Documentation
 
-> *Note: Documentation links below point to the latest source on GitHub and may reflect features not yet released.*
+> *Note: Documentation links below point to the latest source on GitHub. During release cutover, source docs may reflect `v4.2.0` before PyPI finishes publishing the same version.*
 
 - **[Ontos Manual](https://github.com/ohjonathan/Project-Ontos/blob/main/docs/reference/Ontos_Manual.md)**: Complete reference—installation, workflow, configuration, errors
 - **[Agent Instructions](https://github.com/ohjonathan/Project-Ontos/blob/main/docs/reference/Ontos_Agent_Instructions.md)**: Commands for AI agents
