@@ -7,6 +7,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Protocol, Tuple
@@ -233,7 +234,55 @@ def load_json_object_config(path: Path, *, client_label: str, root_key: str) -> 
 def write_json_object_config(path: Path, data: Dict[str, Any]) -> None:
     """Write a JSON config with stable formatting."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    content = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+    fd, tmp_name = tempfile.mkstemp(dir=str(path.parent), prefix=".ontos-", suffix=".tmp")
+    tmp_path = Path(tmp_name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as tmp_file:
+            fd = -1
+            tmp_file.write(content)
+            tmp_file.flush()
+            os.fsync(tmp_file.fileno())
+        os.replace(tmp_path, path)
+    except Exception:
+        if fd != -1:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+        try:
+            tmp_path.unlink()
+        except FileNotFoundError:
+            pass
+        raise
+
+
+def validate_config_path_scope(
+    config_path: Path,
+    scope: str,
+    *,
+    workspace_root: Optional[Path] = None,
+    home: Optional[Path] = None,
+) -> None:
+    """Reject config paths that resolve outside the expected scope root."""
+    resolved_path = config_path.resolve(strict=False)
+    if scope == "project":
+        if workspace_root is None:
+            raise ValueError("workspace_root required for project scope")
+        scope_root = workspace_root.expanduser().resolve(strict=False)
+    elif scope == "user":
+        scope_root = (home or Path.home()).expanduser().resolve(strict=False)
+    else:
+        raise ValueError(f"Unsupported scope for config path validation: {scope}")
+
+    try:
+        resolved_path.relative_to(scope_root)
+    except ValueError as exc:
+        raise MCPConfigScopeError(
+            "invalid_scope",
+            "config_path resolves outside expected scope (possible symlink): "
+            f"{config_path} -> {resolved_path} (expected root: {scope_root})",
+        ) from exc
 
 
 def upsert_named_server_entry(
