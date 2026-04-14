@@ -271,16 +271,19 @@ def _greedy_pack(
 
 def _lost_in_middle_order(docs: list[BundleDocument]) -> list[BundleDocument]:
     ranked = sorted(docs, key=lambda doc: (-doc.score, doc.id))
-    front: list[BundleDocument] = []
-    back: list[BundleDocument] = []
+    ordered: list[BundleDocument | None] = [None] * len(ranked)
+    left = 0
+    right = len(ranked) - 1
 
     for index, doc in enumerate(ranked):
         if index % 2 == 0:
-            front.append(doc)
+            ordered[left] = doc
+            left += 1
         else:
-            back.append(doc)
+            ordered[right] = doc
+            right -= 1
 
-    return front + list(reversed(back))
+    return [doc for doc in ordered if doc is not None]
 
 
 def _render_bundle_text(
@@ -341,4 +344,3 @@ def _detect_stale_documents(
 
 def _humanize_id(doc_id: str) -> str:
     return doc_id.replace("_", " ").title()
-
