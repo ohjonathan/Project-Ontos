@@ -161,7 +161,7 @@ def test_verify_portfolio_scopes_to_workspace_id(tmp_path, capsys):
     assert "No discrepancies found." in captured.out
 
 
-def test_verify_portfolio_handles_same_basename_collision(tmp_path):
+def test_verify_portfolio_handles_same_basename_collision_without_stderr_warning(tmp_path, capsys):
     db_path = tmp_path / "portfolio.db"
     root_one = tmp_path / "DevA"
     root_two = tmp_path / "DevB"
@@ -210,7 +210,9 @@ def test_verify_portfolio_handles_same_basename_collision(tmp_path):
         json_output=True,
     )
 
+    captured = capsys.readouterr()
     assert exit_code == 0
+    assert captured.err == ""
 
 
 @pytest.mark.parametrize("registry_key", ["projects", "workspaces", "entries", "items"])

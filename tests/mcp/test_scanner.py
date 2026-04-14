@@ -39,6 +39,21 @@ def test_discover_projects_classifies_and_excludes(tmp_path):
     assert by_path[undocumented].status == "undocumented"
 
 
+def test_discover_projects_without_collisions_emits_no_warning(tmp_path, capsys):
+    scan_root = tmp_path / "Dev"
+    scan_root.mkdir()
+    _make_project(scan_root / "alpha", with_ontos=True, with_readme=True, doc_count=1)
+
+    discover_projects(
+        scan_roots=[scan_root],
+        exclude=[],
+        registry_path=None,
+    )
+
+    captured = capsys.readouterr()
+    assert captured.err == ""
+
+
 def test_discover_projects_merges_registry_metadata(tmp_path):
     scan_root = tmp_path / "Dev"
     scan_root.mkdir()
@@ -106,14 +121,14 @@ def test_discover_projects_resolves_registry_paths_from_dev_root(tmp_path):
     assert projects[0].path == project_path
 
 
-def test_discover_projects_handles_slug_collisions(tmp_path):
+def test_discover_projects_handles_slug_collisions(tmp_path, capsys):
     root_one = tmp_path / "DevA"
     root_two = tmp_path / "DevB"
     root_one.mkdir()
     root_two.mkdir()
 
     _make_project(root_one / "sample-app", with_ontos=True, with_readme=True, doc_count=5)
-    _make_project(root_two / "sample-app", with_ontos=True, with_readme=True, doc_count=5)
+    collided_path = _make_project(root_two / "sample-app", with_ontos=True, with_readme=True, doc_count=5)
 
     projects = discover_projects(
         scan_roots=[root_one, root_two],
@@ -121,8 +136,34 @@ def test_discover_projects_handles_slug_collisions(tmp_path):
         registry_path=None,
     )
 
+    captured = capsys.readouterr()
     slugs = sorted(entry.slug for entry in projects)
     assert slugs == ["sample-app", "sample-app-2"]
+    assert captured.err.strip() == (
+        f"[ontos] slug collision: 'sample-app' -> 'sample-app-2' "
+        f"for workspace '{collided_path}'"
+    )
+
+
+def test_discover_projects_triple_slug_collision_emits_one_warning_per_suffix(tmp_path, capsys):
+    roots = [tmp_path / name for name in ("DevA", "DevB", "DevC")]
+    for root in roots:
+        root.mkdir()
+        _make_project(root / "sample-app", with_ontos=True, with_readme=True, doc_count=1)
+
+    projects = discover_projects(
+        scan_roots=roots,
+        exclude=[],
+        registry_path=None,
+    )
+
+    captured = capsys.readouterr()
+    warnings = [line for line in captured.err.splitlines() if line]
+    assert sorted(entry.slug for entry in projects) == ["sample-app", "sample-app-2", "sample-app-3"]
+    assert warnings == [
+        f"[ontos] slug collision: 'sample-app' -> 'sample-app-2' for workspace '{(roots[1] / 'sample-app').resolve()}'",
+        f"[ontos] slug collision: 'sample-app' -> 'sample-app-3' for workspace '{(roots[2] / 'sample-app').resolve()}'",
+    ]
 
 
 @pytest.mark.parametrize(
