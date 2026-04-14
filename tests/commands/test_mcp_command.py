@@ -730,3 +730,42 @@ def test_mcp_install_unwritable_config_dir(tmp_path: Path, monkeypatch) -> None:
     assert data["error"] == "Permission denied"
     assert "fallback_snippet" in data
     assert data["fallback_snippet"]
+
+
+def test_mcp_install_symlink_outside_scope_rejected(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    home = tmp_path / "home"
+    outside = tmp_path / "outside"
+    workspace.mkdir()
+    home.mkdir()
+    outside.mkdir()
+    _init_workspace(workspace)
+
+    outside_config = outside / "escaped.json"
+    _write_json(outside_config, {"mcpServers": {"foreign": {"command": "keep", "args": ["safe"]}}})
+    before = outside_config.read_text(encoding="utf-8")
+
+    config_path = workspace / ".cursor" / "mcp.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        config_path.symlink_to(outside_config)
+    except OSError as exc:
+        pytest.skip(f"symlinks unavailable: {exc}")
+
+    result = _run_ontos(
+        workspace,
+        "--json",
+        "mcp",
+        "install",
+        "--client",
+        "cursor",
+        "--scope",
+        "project",
+        home=home,
+    )
+
+    assert result.returncode == 2
+    envelope = json.loads(result.stdout)
+    assert envelope["message"]
+    assert "outside expected scope" in envelope["message"]
+    assert outside_config.read_text(encoding="utf-8") == before
