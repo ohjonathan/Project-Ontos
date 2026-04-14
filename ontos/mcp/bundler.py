@@ -14,6 +14,8 @@ from ontos.core.tokens import estimate_tokens
 from ontos.core.types import DocumentData
 from ontos.mcp.tools import TYPE_RANKS
 
+__all__ = ["BundleDocument", "build_context_bundle"]
+
 
 TOP_INDEGREE_COUNT = 10
 

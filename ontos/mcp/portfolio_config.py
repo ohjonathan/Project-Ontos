@@ -11,6 +11,13 @@ try:  # Python 3.11+
 except ImportError:  # pragma: no cover - Python 3.10 fallback
     import tomli as tomllib  # type: ignore
 
+__all__ = [
+    "PortfolioConfig",
+    "PORTFOLIO_CONFIG_PATH",
+    "ensure_portfolio_config",
+    "load_portfolio_config",
+]
+
 _DEFAULT_REGISTRY_PATH = "~/Dev/.dev-hub/registry/projects.json"
 _MISSING = object()
 

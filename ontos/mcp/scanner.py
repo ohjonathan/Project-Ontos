@@ -11,6 +11,15 @@ from typing import Any
 
 from ontos.io.snapshot import create_snapshot
 
+__all__ = [
+    "ProjectEntry",
+    "RegistryRecord",
+    "slugify",
+    "discover_projects",
+    "load_registry_records",
+    "allocate_slug",
+]
+
 
 @dataclass(frozen=True)
 class ProjectEntry:

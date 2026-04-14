@@ -17,6 +17,8 @@ from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
 from ontos.io.snapshot import create_snapshot
 from ontos.mcp.scanner import ProjectEntry, discover_projects
 
+__all__ = ["PortfolioIndex"]
+
 # Keep keyword detection case-sensitive and word-boundary-aware.
 # Naive substring matching would misclassify plain words like FORD, ANDROID,
 # NOTES, and NEARBY as explicit FTS syntax.
