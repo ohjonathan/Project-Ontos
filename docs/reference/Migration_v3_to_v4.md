@@ -246,6 +246,17 @@ This command creates or updates the native Antigravity config with an `mcpServer
 
 Use `--write-enabled` if you want mutable MCP tools. This native config is separate from `AGENTS.md` / `.cursorrules` and from any editor-level MCP manifest.
 
+**Cursor** (`.cursor/mcp.json` in your project, `~/.cursor/mcp.json` for user scope):
+
+```bash
+ontos mcp install --client cursor --scope project
+ontos mcp install --client cursor --scope user
+ontos mcp uninstall --client cursor --scope project
+ontos mcp print-config --client codex
+```
+
+Rerunning `ontos mcp install --client cursor ...` refreshes the launcher path if Ontos moves on your shell `PATH`. Managed install, uninstall, and doctor support are POSIX-only in `v4.2`; Windows users should use `print-config`.
+
 ### Client Support Policy
 
 Ontos now treats MCP enablement as two separate jobs:
@@ -255,9 +266,11 @@ Ontos now treats MCP enablement as two separate jobs:
 
 That philosophy should stay consistent across clients, while the automation level stays client-specific:
 
-- **First-class** clients get `ontos mcp install --client ...` plus `ontos doctor` checks once their native config contract is stable. Antigravity is the first example.
-- **Supported** clients keep explicit manual setup docs until Ontos can rely on a stable contract. Claude Desktop and Cursor remain in this tier for now.
-- **Evolving** clients should get docs and diagnostics first, with automation deferred until the contract settles. Claude Code and Codex are the obvious candidates here.
+- **First-class** clients get `ontos mcp install --client ...`, `ontos mcp uninstall --client ...`, and `ontos doctor` checks once their native config contract is stable. Antigravity and Cursor are the first examples in `v4.2`.
+- **Print-config only** clients keep explicit manual setup docs plus a copy-pastable fallback document. Claude Code, Codex, and VS Code fit here.
+- **Docs-only** clients remain manual in this release. Claude Desktop and Windsurf are the examples here.
+
+The managed MCP client config is separate from `AGENTS.md` / `.cursorrules` and from any editor-level MCP manifest.
 
 ### 5. Enable Usage Logging (Optional)
 

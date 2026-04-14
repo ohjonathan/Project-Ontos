@@ -1,0 +1,4 @@
+{
+  "command": "<ontos-command>",
+  "args": ["serve", "--workspace", "<workspace-root>", "--read-only"]
+}

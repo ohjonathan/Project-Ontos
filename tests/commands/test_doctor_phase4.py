@@ -1,6 +1,7 @@
 """Tests for doctor command (Phase 4)."""
 
 import os
+import site
 import subprocess
 import sys
 from pathlib import Path
@@ -10,9 +11,11 @@ import pytest
 
 from ontos.commands.doctor import (
     CheckResult,
+    CursorScopeInspection,
     DoctorOptions,
     DoctorResult,
     check_antigravity_mcp,
+    check_cursor_mcp,
     check_docs_directory,
     check_configuration,
     check_git_hooks,
@@ -23,6 +26,38 @@ from ontos.commands.doctor import (
 )
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _run_ontos(
+    cwd: Path,
+    *args: str,
+    home: Path,
+) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    pythonpath_entries = [str(PROJECT_ROOT)]
+    for entry in [site.getusersitepackages(), *site.getsitepackages()]:
+        if entry and entry not in pythonpath_entries:
+            pythonpath_entries.append(entry)
+    env["PYTHONPATH"] = os.pathsep.join(pythonpath_entries)
+    env["HOME"] = str(home)
+    return subprocess.run(
+        [sys.executable, "-m", "ontos", *args],
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+
+def _init_workspace(root: Path) -> None:
+    (root / ".ontos.toml").write_text("[ontos]\nversion = '4.2'\n", encoding="utf-8")
+    (root / "docs").mkdir()
+    (root / "docs" / "doc.md").write_text(
+        "---\nid: sample\ntype: atom\nstatus: active\n---\n",
+        encoding="utf-8",
+    )
+    (root / "Ontos_Context_Map.md").write_text("# Context Map\n", encoding="utf-8")
 class TestCheckResult:
     """Tests for CheckResult dataclass."""
 
@@ -130,7 +165,7 @@ class TestDoctorCommand:
             exit_code, result = _run_doctor_command(options)
 
             assert exit_code == 0
-            assert result.passed == 10
+            assert result.passed == 11
             assert result.failed == 0
 
     def test_returns_exit_code_1_when_check_fails(self):
@@ -371,3 +406,84 @@ def test_doctor_cli_outside_project_returns_nonzero(tmp_path):
     assert result.returncode == 1
     combined = (result.stdout + result.stderr).lower()
     assert "project root" in combined or "not in an ontos project" in combined
+
+
+def test_doctor_json_includes_cursor_mcp_project_precedence_success(tmp_path: Path, monkeypatch) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    _init_workspace(workspace)
+
+    def _inspect(scope: str, _config_path: Path) -> CursorScopeInspection:
+        if scope == "project":
+            return CursorScopeInspection(
+                scope="project",
+                status="success",
+                reason="valid Ontos entry",
+                path=workspace / ".cursor" / "mcp.json",
+                has_ontos_entry=True,
+            )
+        return CursorScopeInspection(
+            scope="user",
+            status="warning",
+            reason="malformed config",
+            path=tmp_path / "home" / ".cursor" / "mcp.json",
+            has_ontos_entry=True,
+        )
+
+    monkeypatch.setattr("ontos.commands.doctor._inspect_cursor_scope", _inspect)
+
+    result = check_cursor_mcp(repo_root=workspace)
+    assert result.status == "success"
+    assert "project: success" in result.details
+    assert "user: warning" in result.details
+
+
+def test_doctor_json_includes_cursor_mcp_project_invalid_user_valid_warning(tmp_path: Path, monkeypatch) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    _init_workspace(workspace)
+
+    def _inspect(scope: str, _config_path: Path) -> CursorScopeInspection:
+        if scope == "project":
+            return CursorScopeInspection(
+                scope="project",
+                status="warning",
+                reason="missing serve argument",
+                path=workspace / ".cursor" / "mcp.json",
+                has_ontos_entry=True,
+            )
+        return CursorScopeInspection(
+            scope="user",
+            status="success",
+            reason="valid Ontos entry",
+            path=tmp_path / "home" / ".cursor" / "mcp.json",
+            has_ontos_entry=True,
+        )
+
+    monkeypatch.setattr("ontos.commands.doctor._inspect_cursor_scope", _inspect)
+
+    result = check_cursor_mcp(repo_root=workspace)
+    assert result.status == "warning"
+    assert "project: warning" in result.details
+    assert "user: success" in result.details
+
+
+def test_doctor_json_includes_cursor_mcp_skipped_when_no_entry_and_no_malformed_file(tmp_path: Path, monkeypatch) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    _init_workspace(workspace)
+
+    def _inspect(_scope: str, config_path: Path) -> CursorScopeInspection:
+        return CursorScopeInspection(
+            scope="project" if "workspace" in str(config_path) else "user",
+            status="skipped",
+            reason="config not present",
+            path=config_path,
+            has_ontos_entry=False,
+        )
+
+    monkeypatch.setattr("ontos.commands.doctor._inspect_cursor_scope", _inspect)
+
+    result = check_cursor_mcp(repo_root=workspace)
+    assert result.status == "success"
+    assert "skipping mcp check" in result.message.lower()
