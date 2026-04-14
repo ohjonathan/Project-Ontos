@@ -3,546 +3,538 @@ id: ontos_v42_mcp_client_onboarding_proposal
 type: strategy
 status: draft
 depends_on: [ontos_manual, v4_roadmap, v412, v413]
-concepts: [mcp, onboarding, antigravity, cursor, claude-code, codex, vscode, roadmap]
+concepts: [mcp, onboarding, antigravity, cursor, claude-code, codex, vscode, print-config]
 ---
 
 # Ontos v4.2 Proposal: MCP Client Onboarding
 
 **Date:** 2026-04-13  
-**Author:** Codex (synthesized from shipped `v4.1.3`, current codebase analysis, internal roadmap review, and current client-contract research)  
-**Status:** Draft -- ready for review  
+**Author:** Codex (revised per CA response after cross-platform proposal review)  
+**Status:** Draft -- revised for re-review  
 **Audience:** Johnny (project owner), future implementers, review-board LLMs
 
 ## 1. What This Is
 
-Ontos v4.2 is the **MCP client onboarding** release.
+Ontos v4.2 is the **narrowed MCP client onboarding** release.
 
-It expands the `v4.1.3` Antigravity-native onboarding work into a
-general client-install and client-diagnostics layer for the major MCP
-CLIs and IDEs that now have stable enough local configuration contracts
-to support first-class automation.
+It keeps the shipped `v4.1.3` Antigravity onboarding support, adds
+**Cursor** as the only new first-class managed client, and introduces a
+universal **`ontos mcp print-config`** fallback so users can bridge the
+remaining client surfaces without Ontos taking ownership of all of their
+configs at once.
 
 Concretely, v4.2 adds:
 
-- first-class onboarding for **Cursor**, **Claude Code**, **Codex**, and
-  **VS Code**, while preserving the shipped **Antigravity** support
-- a shared client-adapter layer for install and doctor flows
-- a clearer client support policy that separates:
-  - first-class install + doctor automation
-  - supported manual setup
-  - docs-only / evolving surfaces
+- managed onboarding for **Cursor**
+- `ontos mcp uninstall` for the managed JSON clients
+- `ontos mcp print-config` for **Antigravity, Cursor, Claude Code,
+  Codex, and VS Code**
+- a contract-drift policy for any client Ontos manages directly
 
 What v4.2 does **not** add:
 
 - HTTP / Streamable HTTP transport
 - daemon mode or background indexers
 - a Python version floor bump
+- third-party CLI delegation (`codex mcp add`, `claude mcp add`, etc.)
+- Codex or VS Code managed install / doctor support
 - malformed-config auto-repair
-- the deferred breaking `export_graph` schema redesign from `v4.1.2`
 
-Those items move to **v4.3**.
+## 2. Evidence
 
-## 2. Why Now
+The evidence for broader onboarding is **real but weak**, so the release
+is narrowed accordingly.
 
-`v4.1.3` proved the problem is real: a healthy `ontos serve` is not
-enough if the client-side MCP manifest is missing or wrong. Antigravity
-now works because Ontos owns the install and doctor path for that
-client. The same product logic applies to other major agent tools.
+Evidence that supports continuing the line:
 
-The current repo already says this direction out loud:
+1. Issue [#99](https://github.com/ohjonathan/Project-Ontos/issues/99)
+   proved the onboarding problem for Antigravity: `ontos serve` could be
+   healthy while the user still had no tools because the client config
+   was missing.
+2. `v4.1.3` shipped Antigravity install + doctor support and closed that
+   issue, proving that Ontos-owned onboarding can remove a real setup
+   failure class.
+3. The maintainer explicitly asked on 2026-04-13 to apply the same
+   philosophy to other CLIs and IDEs.
+4. Current customer-facing docs already position Cursor as manually
+   configured today and call out Claude Code / Codex as likely next
+   clients once the contract is stable enough.
 
-- Antigravity is first-class today
-- Cursor and Claude Desktop are documented manually
-- Claude Code and Codex are explicitly called out as likely next clients
+Evidence that does **not** support a 5-client managed rollout yet:
 
-The gap is that the docs, support policy, and implementation are not yet
-aligned. There is also a roadmap mismatch:
+- there is no repo-local issue history showing distinct onboarding bugs
+  for Cursor, Claude Code, Codex, and VS Code
+- there is no usage or install telemetry showing that all five should be
+  owned at once
+- there is no existing success metric proving multi-client automation is
+  the right `v4.2` bet
 
-- shipped reality: `v4.1.x` already delivered write tools, portfolio
-  indexing, schema fixes, and Antigravity onboarding
-- stale internal roadmap: still treats `v4.1` as proposed and `v4.2` as
-  transport-first
+This proposal therefore treats the evidence as sufficient for **one more
+managed client**, not for immediate 5-client ownership.
 
-The correct next step is not to mix transport work into this onboarding
-expansion. The correct next step is to finish the user-facing MCP story
-for the major clients that now have sufficiently stable native contracts.
+## 3. Product Decision
 
-## 3. Current State
+### 3.1 Release Theme
 
-### 3.1 What `v4.1.3` Ships
+`v4.2.0` is the release where Ontos stabilizes the onboarding pattern
+proven in `v4.1.3` without overextending into every promising client at
+once.
 
-Current code surfaces:
+### 3.2 Support Tiers For v4.2
 
-- `ontos mcp install --client antigravity`
-- `ontos doctor` check: `antigravity_mcp`
-- Antigravity helpers in `ontos/core/antigravity_mcp.py`
-- installer logic in `ontos/commands/mcp.py`
+**Managed in `v4.2`**
 
-Current behavior:
+- Antigravity (existing)
+- Cursor (new)
 
-- resolves the Ontos launcher via `shutil.which("ontos")`, falling back
-  to `sys.executable -m ontos`
-- writes `~/.gemini/antigravity/mcp_config.json`
-- preserves unrelated `mcpServers` entries
-- defaults to `--read-only`
-- validates the config and runs a lightweight stdio `initialize` probe
+These clients get:
 
-### 3.2 Why The Current Shape Cannot Scale As-Is
+- `ontos mcp install --client ...`
+- `ontos mcp uninstall --client ...`
+- client-aware `ontos doctor` coverage
+- exact docs for the managed config path(s)
 
-The current implementation is Antigravity-specific rather than
-client-generic:
+**`print-config` only in `v4.2`**
 
-- config discovery is hard-coded to Antigravity
-- JSON shape rules are Antigravity-specific
-- doctor only knows the Antigravity check name and semantics
-- install only allows one client
-
-Expanding by adding more `if client == ...` branches directly into the
-Antigravity helpers would create the wrong architecture. The shared logic
-already exists conceptually:
-
-- resolve Ontos launcher
-- resolve workspace root
-- generate read-only vs write-enabled args
-- inspect command and workspace validity
-- probe a configured stdio server
-
-That shared layer should be explicit in v4.2, with client-specific
-adapters sitting on top of it.
-
-### 3.3 Roadmap Conflict To Resolve
-
-The internal `v4.x` roadmap still frames `v4.2` as HTTP transport and
-daemon mode. That plan is now stale for two reasons:
-
-1. `v4.1` shipped much more than the old roadmap still claims
-2. the immediate, validated customer need is client onboarding, not
-   transport infrastructure
-
-This proposal therefore **reassigns `v4.2` to MCP client onboarding**
-and moves the previous transport/daemon/security work, plus the deferred
-breaking `export_graph` contract cleanup, to **v4.3**.
-
-## 4. Product Decision
-
-### 4.1 v4.2 Release Theme
-
-`v4.2.0` is the release where Ontos becomes opinionated and reliable
-about **getting connected** to the major local MCP clients.
-
-The principle is:
-
-> If a client has a stable enough native contract, Ontos should own the
-> install path and the doctor path for that client.
-
-### 4.2 Support Tiers For v4.2
-
-**First-class in v4.2**
-
-- Antigravity
-- Cursor
 - Claude Code
 - Codex
 - VS Code
 
 These clients get:
 
-- `ontos mcp install --client ...`
-- client-aware `ontos doctor` coverage
-- docs with exact managed path / scope
+- `ontos mcp print-config --client ...`
+- explicit manual setup guidance
+- no Ontos-managed install or doctor promises in this release
 
-**Supported, but not automated in v4.2**
+**Docs-only in `v4.2`**
 
 - Claude Desktop
-
-Claude Desktop remains documented, but its recommended transport story is
-not the same local native-manifest path that Ontos can safely automate
-in this release.
-
-**Docs-only / evolving in v4.2**
-
 - Windsurf
 
-Windsurf remains out of first-class automation until its local config
-contract is stable enough to trust and document confidently.
+### 3.3 Why Cursor Is The Only New Managed Client
 
-## 5. Public Interface
+Cursor is the right single new managed client because:
 
-### 5.1 CLI Surface
+- the repo already documents it manually
+- it uses a straightforward JSON manifest shape
+- it exercises both project and user scope without requiring third-party
+  CLI delegation or TOML config ownership
+- it is the closest next step to the Antigravity pattern without adding
+  a new dependency or unstable adapter class
 
-Expand:
+## 4. Success Metric
+
+`v4.2` is successful if, within 4 weeks of release:
+
+1. Cursor onboarding produces at least one confirmed non-Antigravity
+   real-world use / ask beyond the original Antigravity repro path, and
+2. no contract-drift or config-corruption bug is reported for the
+   managed adapters (Antigravity and Cursor).
+
+Expansion from `print-config` to managed automation for another client
+requires either:
+
+- one concrete issue / bug / ask for that specific client, or
+- two separate maintainer / user asks plus stable official docs for the
+  target contract.
+
+## 5. Alternatives Considered
+
+### 5.1 Five-Client Managed Automation Now
+
+Rejected for `v4.2`.
+
+Reason: the evidence supports the direction but not that much immediate
+ownership. It would add multiple contract shapes, delegation logic, and
+support burden without repo-local proof that all five need to be managed
+now.
+
+### 5.2 Docs-Only / Manual Setup
+
+Rejected as the sole `v4.2` answer.
+
+Reason: `v4.1.3` already proved that installer + doctor support removes
+real onboarding failure. Going back to docs-only for every follow-on
+client would ignore that learning.
+
+### 5.3 `print-config` Only
+
+Partially accepted, but not as the whole release.
+
+Reason: `print-config` is the right universal fallback and should exist
+for every candidate client. It does not fully replace managed onboarding
+for Cursor, which is already manually documented and has a simple enough
+JSON contract to justify first-class ownership.
+
+## 6. Public Interface
+
+### 6.1 Managed Commands
+
+`v4.2` managed CLI surface:
 
 ```bash
-ontos mcp install --client ...
+ontos mcp install --client {antigravity,cursor}
+ontos mcp uninstall --client {antigravity,cursor}
 ```
 
-to:
+Both commands support:
+
+- `--workspace PATH` where relevant
+- `--write-enabled` on install
+- `--scope {project,user}` for Cursor
+- `--config-path PATH`
+- `--json`
+
+### 6.2 Fallback Command
+
+Universal snippet output:
 
 ```bash
-ontos mcp install --client {antigravity,cursor,claude-code,codex,vscode}
+ontos mcp print-config --client {antigravity,cursor,claude-code,codex,vscode}
 ```
 
-with:
+`print-config` supports:
 
-- `--workspace PATH` optional, defaulting to the resolved Ontos project root
-- `--write-enabled` optional, preserving read-only as the default
-- `--scope {project,user}` for clients that support more than one managed scope
-- `--json` preserving the existing command-envelope pattern
+- `--workspace PATH`
+- client-appropriate `--scope`
+- `--write-enabled`
+- `--config-path PATH`
+- `--json`
 
-### 5.2 Supported Scope Matrix
+`print-config` never writes files. It returns the exact minimal snippet
+the user can paste into the target config.
 
-`v4.2` supports only the scopes Ontos can automate safely with clear,
-stable paths:
+### 6.3 Supported Scope Matrix
 
-| Client | Managed Scope(s) | Default | Notes |
-|--------|------------------|---------|-------|
-| Antigravity | `user` | `user` | Existing `~/.gemini/antigravity/mcp_config.json` path |
-| Cursor | `project`, `user` | `project` | Project config is repo-local and shareable; user config supported for personal installs |
-| Claude Code | `project` | `project` | Managed via project `.mcp.json` only in v4.2 |
-| Codex | `user` | `user` | Installed via native CLI path; user-scoped only |
-| VS Code | `project` | `project` | Managed via project `.vscode/mcp.json` only in v4.2 |
+| Client | Managed in v4.2 | `print-config` in v4.2 | Supported Scope(s) |
+|--------|------------------|------------------------|--------------------|
+| Antigravity | Yes | Yes | `user` |
+| Cursor | Yes | Yes | `project`, `user` |
+| Claude Code | No | Yes | `project` |
+| Codex | No | Yes | `user` |
+| VS Code | No | Yes | `project` |
+| Claude Desktop | No | No | manual docs only |
+| Windsurf | No | No | manual docs only |
 
-Unsupported client/scope combinations return exit code `2` with an
-actionable remediation message.
+Unsupported client / scope combinations return exit code `2` with
+actionable remediation.
 
-### 5.3 Install Output Contract
+### 6.4 Output Contract
 
-Successful installs should report:
+Successful managed commands report:
 
 - `client`
 - `scope`
-- `action` (`created` / `updated`)
+- `action` (`created`, `updated`, `removed`, `noop`)
 - `config_path`
 - `workspace`
-- `mode` (`read-only` / `write-enabled`)
-- `managed_by` (`direct-config` / `native-cli`)
+- `mode` (`read-only`, `write-enabled`)
 
-This is additive to the current JSON envelope shape.
+`print-config` reports:
 
-## 6. Client Contracts
+- `client`
+- `scope`
+- `config_path`
+- `format` (`json`, `toml`)
+- `snippet`
 
-### 6.1 Antigravity
+## 7. Managed Client Contracts
 
-Keep the shipped behavior:
+### 7.1 Antigravity
 
-- config path: `~/.gemini/antigravity/mcp_config.json`
-- top-level key: `mcpServers`
-- direct JSON management by Ontos
+Managed path:
 
-No scope broadening in v4.2.
+- `~/.gemini/antigravity/mcp_config.json`
 
-### 6.2 Cursor
+Managed root key:
 
-Manage:
+- `mcpServers`
 
-- project config: `.cursor/mcp.json`
-- user config: `~/.cursor/mcp.json`
+Source of truth:
 
-Shape:
+- existing shipped `v4.1.3` contract validated from the native config
+  path and bundled schema during issue [#99](https://github.com/ohjonathan/Project-Ontos/issues/99)
 
-```json
-{
-  "mcpServers": {
-    "ontos": {
-      "command": "...",
-      "args": ["serve", "--workspace", "...", "--read-only"]
-    }
-  }
-}
-```
+Last verified:
 
-Rules:
+- 2026-04-13
 
-- preserve unrelated server entries
-- fail clearly on malformed JSON or non-object roots
-- default to project scope
+### 7.2 Cursor
 
-### 6.3 Claude Code
+Managed paths:
 
-Manage **project scope only** in v4.2:
+- project: `.cursor/mcp.json`
+- user: `~/.cursor/mcp.json`
 
-- config path: `.mcp.json`
-- top-level key: `mcpServers`
+Managed root key:
 
-Shape:
+- `mcpServers`
 
-```json
-{
-  "mcpServers": {
-    "ontos": {
-      "command": "...",
-      "args": ["serve", "--workspace", "...", "--read-only"],
-      "env": {}
-    }
-  }
-}
-```
+Source of truth:
 
-Rules:
+- official Cursor MCP docs / CLI docs
 
-- direct JSON management for project scope only
-- reject `--scope user` in v4.2 with guidance to use Claude Code's own
-  CLI if a user-level install is desired
-- preserve unrelated server entries
+Last verified:
 
-### 6.4 Codex
+- 2026-04-13
 
-Codex is different because its user config is TOML and the repo does not
-currently carry a round-trip TOML writer. v4.2 should avoid brittle TOML
-string manipulation.
+Cursor remains the only new managed adapter in `v4.2`.
 
-Install strategy:
+## 8. Fallback Client Contracts
 
-- use the native CLI install path: `codex mcp add ...`
-- manage **user scope only**
-- return `managed_by = native-cli`
+These clients are explicitly **not** managed in `v4.2`. Ontos only
+prints the right snippet for them.
 
-Doctor strategy:
+### 8.1 Claude Code
 
-- inspect `~/.codex/config.toml`
-- validate `[mcp_servers.ontos]`
-- validate command, args, workspace, and initialize probe using the same
-  shared inspection logic
+- project path: `.mcp.json`
+- root key: `mcpServers`
+- mode in `v4.2`: `print-config` only
 
-If the `codex` executable is not present, install returns exit `2` with
-clear remediation.
+### 8.2 Codex
 
-### 6.5 VS Code
+- user path: `~/.codex/config.toml`
+- root table: `[mcp_servers.ontos]`
+- mode in `v4.2`: `print-config` only
 
-Manage **project scope only** in v4.2:
+Codex is removed from managed scope even though future support is
+feasible. Ontos already has Python 3.9-compatible TOML read support via
+`tomli`; the deferral is about product scope, not runtime feasibility.
 
-- config path: `.vscode/mcp.json`
-- top-level key: `servers`
+### 8.3 VS Code
 
-Shape:
+- project path: `.vscode/mcp.json`
+- root key: `servers`
+- mode in `v4.2`: `print-config` only
 
-```json
-{
-  "servers": {
-    "ontos": {
-      "command": "...",
-      "args": ["serve", "--workspace", "...", "--read-only"]
-    }
-  }
-}
-```
+VS Code remains out of managed scope until a separate stability decision
+justifies treating its MCP file as a first-class contract.
 
-Rules:
+## 9. Contract-Drift Policy
 
-- direct JSON management for project scope only
-- do not attempt to manage profile-level user config in v4.2
-- reject `--scope user` with actionable remediation
+For each managed adapter:
 
-## 7. Architecture
+1. The proposal and customer-facing docs must record the source of truth
+   and a `last verified` date.
+2. Ontos validates the expected root shape before writing.
+3. If the root shape is malformed or unknown, Ontos fails with exit `2`.
+4. On failure, Ontos prints the exact `print-config` fallback snippet and
+   a message that automation could not proceed safely.
+5. Ontos never silently rewrites malformed or unknown config shapes.
+6. Patch target after a reproduced drift report is 72 hours for either:
+   - corrected docs / snippet output, or
+   - an explicit incompatibility error that prevents unsafe writes.
 
-### 7.1 Shared Adapter Layer
+This policy applies only to the managed JSON adapters in `v4.2`.
 
-Split the current Antigravity-specific helpers into:
+## 10. Install / Uninstall / Refresh Semantics
 
-1. **Shared client-install primitives**
-   - resolve Ontos launcher
-   - resolve workspace root
-   - build Ontos stdio command args
-   - validate command and workspace
-   - stdio initialize probe
+### 10.1 Install
 
-2. **Per-client adapters**
-   - config discovery
-   - config parser / writer or native CLI installer
-   - Ontos entry upsert rules
-   - doctor detection and inspection logic
+`install` is idempotent.
 
-This should live as a new client-generic onboarding layer rather than as
-incremental expansion of `antigravity_mcp.py`.
+- It creates the file if missing.
+- It upserts only the `ontos` entry.
+- It preserves unrelated server entries and unknown top-level keys.
+- Re-running install acts as refresh / re-register and updates the Ontos
+  entry only when command / args differ.
 
-### 7.2 Write Policy
+### 10.2 Uninstall
 
-Default generated config remains:
+`uninstall` removes only the Ontos entry from the managed config.
 
-```text
-serve --workspace ABS_PATH --read-only
-```
+- unrelated entries remain untouched
+- if the Ontos entry is absent, uninstall returns success with `action =
+  noop`
+- uninstall does not delete the config file
+- if the config is malformed or drifted, uninstall fails closed and
+  points the user to manual cleanup
 
-`--write-enabled` omits `--read-only`; it does not add any other changes.
+### 10.3 Stale Launcher Refresh
 
-This preserves the shipping `v4.1.3` safety model and makes writable
-installs explicit.
+Ontos resolves the launcher path at install time. If the user changes
+Python environments or Ontos install prefixes, the documented refresh
+path is to rerun `ontos mcp install --client ...`, which rewrites only
+the Ontos entry.
 
-### 7.3 Config Preservation Policy
+## 11. `print-config` Design
 
-For direct-config clients:
+`print-config` is the universal escape hatch.
+
+It should output the exact minimal snippet needed for the target client:
+
+- JSON object for Antigravity / Cursor / Claude Code / VS Code
+- TOML block for Codex
+
+`--config-path` overrides only the target path metadata; it does not
+change the required client-specific syntax.
+
+This command exists for two reasons:
+
+1. it gives users a zero-write path even for managed clients
+2. it gives Ontos a safe fallback whenever automated install or uninstall
+   cannot proceed
+
+## 12. Architecture
+
+### 12.1 Shared JSON Adapter Layer
+
+`v4.2` only needs one new adapter class beyond Antigravity:
+
+- shared launcher / workspace / mode generation
+- shared JSON load / merge / write helpers for `mcpServers`
+- shared failure handling and snippet fallback
+
+This is intentionally narrower than the old proposal. `v4.2` does not
+need:
+
+- third-party CLI delegation support
+- TOML ownership
+- multiple doctor adapter families
+
+### 12.2 Config Preservation Policy
+
+For managed JSON clients:
 
 - preserve unrelated server entries
 - preserve unknown top-level keys
-- do not silently rewrite malformed configs
-- fail on invalid JSON / TOML / root shape mismatches
+- fail on invalid JSON or incompatible root shape
+- never auto-repair malformed files in this release
 
-For native-CLI clients:
+## 13. Doctor Design
 
-- do not hand-edit the config file in this release
-- use the client's native install command and inspect the resulting
-  persisted config during doctor flows
+### 13.1 Check Names
 
-## 8. Doctor Design
-
-### 8.1 Check Names
-
-Keep the shipped:
+Managed doctor checks in `v4.2`:
 
 - `antigravity_mcp`
-
-Add:
-
 - `cursor_mcp`
-- `claude_code_mcp`
-- `codex_mcp`
-- `vscode_mcp`
 
-This keeps the JSON output additive and readable.
+No new doctor checks are added for Claude Code, Codex, or VS Code in
+this release.
 
-### 8.2 Detection Policy
+### 13.2 Detection Policy
 
-Doctor should remain **user-scoped and opt-in**, not app-bundle-scoped.
+Doctor detection must key on the Ontos entry, not just file presence.
 
-A client check should run when Ontos has evidence the user opted into
-that client surface, such as:
+That means:
 
-- the managed project config file exists
-- the managed user config file exists
-- a previously installed Ontos entry exists in the relevant config
+- `antigravity_mcp` inspects only when `mcpServers.ontos` is present or
+  the managed Antigravity config exists and is expected to contain it
+- `cursor_mcp` inspects project and/or user config only when
+  `mcpServers.ontos` is present
 
-Doctor should not nag users merely because an IDE or CLI app is present
-on the machine.
+Generic `.cursor/mcp.json` or `.mcp.json` files for unrelated servers do
+not justify an Ontos warning.
 
-### 8.3 Status Rules
+### 13.3 Status Rules
 
 `success`:
 
-- client not detected / not configured, so the check is skipped
-- or valid Ontos entry + successful initialize probe
+- no Ontos-managed entry is present, so the check is skipped
+- or the entry is valid and the initialize probe passes
 
 `warning`:
 
-- config exists but is empty, malformed, or unreadable
-- config shape is invalid
-- Ontos entry missing
-- command not executable
-- workspace missing or invalid
-- initialize probe fails
+- the Ontos entry is malformed
+- the command is not executable
+- the workspace path is invalid
+- the initialize probe fails
 
-Human remediation should point to `ontos mcp install --client ...`
-whenever Ontos can manage that client directly.
+Remediation points to:
 
-## 9. Docs And Release Positioning
+- `ontos mcp install --client ...` for managed clients
+- `ontos mcp print-config --client ...` for manual recovery
 
-v4.2 requires customer-facing docs to say the same thing everywhere:
+## 14. Upgrade Idempotency
 
-- instruction artifacts and MCP client config are separate setup steps
-- first-class clients get exact install commands and doctor coverage
-- supported/manual clients keep explicit config examples
-- evolving clients remain docs-only until the contract stabilizes
+Cross-version behavior must remain predictable.
 
-This proposal also establishes the versioning decision:
+### 14.1 Antigravity (`v4.1.3` -> `v4.2`)
 
-- `v4.2`: client onboarding
-- `v4.3`: Streamable HTTP / daemon / security / deferred `export_graph`
-  contract cleanup
+Re-running Antigravity install under `v4.2`:
 
-## 10. Test Plan
+- must not inject extra metadata into the client config
+- must only rewrite `mcpServers.ontos` if command / args differ
+- must preserve all unrelated entries exactly as before
 
-### 10.1 CLI Coverage
+### 14.2 Cursor
 
-- top-level help lists the expanded client set
-- invalid client/scope combinations return exit `2`
-- install creates fresh config for each direct-config client
+Cursor follows the same rule:
+
+- only `mcpServers.ontos` is owned
+- install is safe to rerun
+- uninstall removes only that entry
+
+## 15. Test Plan
+
+### 15.1 CLI Coverage
+
+- help output includes `install`, `uninstall`, and `print-config`
+- install / uninstall support only `{antigravity,cursor}`
+- `print-config` supports `{antigravity,cursor,claude-code,codex,vscode}`
+- unsupported client / scope combinations return exit `2`
+- `--config-path` overrides the target path metadata
+
+### 15.2 Managed Adapter Coverage
+
+- Antigravity install remains idempotent across `v4.1.3` -> `v4.2`
+- Cursor install creates fresh project / user config
 - install merges with unrelated entries
-- install defaults to read-only
+- uninstall removes only `ontos`
+- uninstall on missing entry is `noop`
+- malformed config fails closed and prints fallback guidance
 - `--write-enabled` removes `--read-only`
-- launcher fallback still works when `ontos` is not on `PATH`
-- malformed existing config returns non-zero and leaves the file untouched
-- Codex install invokes the native CLI with the expected arguments
 
-### 10.2 Doctor Coverage
+### 15.3 `print-config` Coverage
 
-- skipped success before client opt-in
-- warning for missing Ontos entry
-- warning for malformed config
-- warning for bad command
-- warning for bad workspace
-- warning for initialize probe failure
-- success when the entry is valid and the probe passes
-- `--json` output includes the new additive check objects
+- prints valid JSON snippets for Antigravity / Cursor / Claude Code / VS Code
+- prints valid TOML snippet for Codex
+- does not require third-party CLIs in CI
+- can be snapshot-tested as pure output
 
-### 10.3 Docs Coverage
+### 15.4 Doctor Coverage
 
-- command and help snapshots include the expanded client matrix
-- doc assertions verify the exact config paths and key shapes for:
-  - Antigravity (`mcpServers`)
-  - Cursor (`mcpServers`)
-  - Claude Code (`mcpServers`)
-  - Codex (`mcp_servers`)
-  - VS Code (`servers`)
+- `antigravity_mcp` and `cursor_mcp` only
+- detection keys on `mcpServers.ontos`, not file presence alone
+- warnings for malformed Ontos entry, bad command, bad workspace, and
+  probe failure
+- success when valid entry + probe pass
 
-## 11. Acceptance Criteria
+## 16. Acceptance Criteria
 
-v4.2 is complete when:
+`v4.2` is complete when:
 
-1. Ontos can install and diagnose all first-class clients defined in
-   this proposal
-2. all managed config writes preserve unrelated entries and fail safely
-   on malformed input
-3. doctor checks are additive, opt-in, and do not produce false-positive
-   nags for merely installed applications
-4. customer-facing docs and the internal roadmap all agree on the
-   `v4.2` / `v4.3` split
+1. Antigravity remains supported with no regression from `v4.1.3`
+2. Cursor has first-class install / uninstall / doctor coverage
+3. `print-config` works for Antigravity, Cursor, Claude Code, Codex,
+   and VS Code
+4. managed installs fail closed on drift and provide manual fallback
+5. cross-version idempotency is explicit for Antigravity and Cursor
 
-## 12. Non-Goals
+## 17. Non-Goals
 
-Not in v4.2:
+Not in `v4.2`:
 
-- HTTP / Streamable HTTP serving
-- daemon or launchd work
-- background indexing or portfolio daemons
-- new security middleware
-- automatic config repair
-- full user-scope management for Claude Code or VS Code
-- Windsurf automation
+- managed Claude Code onboarding
+- managed Codex onboarding
+- managed VS Code onboarding
+- any new doctor checks for print-config-only clients
+- roadmap reshuffling inside this proposal document
+- HTTP / Streamable HTTP transport
+- daemon mode
+- security middleware
 
-## 13. Defaults Chosen Here
+## 18. Expected Outcome
 
-This proposal intentionally locks these defaults so implementation does
-not have to guess:
+If approved, this proposal should produce an implementation prompt that
+is intentionally narrow:
 
-- `v4.2.0` is the onboarding release
-- `v4.3.0` inherits the old transport/daemon/security lane
-- Codex installs via native CLI, not direct TOML editing
-- Claude Code and VS Code user-scope automation are deferred
-- read-only remains the default generated mode
-- doctor remains opt-in and user-scoped
+- extend the existing Antigravity pattern to Cursor
+- add `print-config`
+- add `uninstall`
+- update docs for the narrowed support tiers
 
-## 14. Implementation Risk Areas To Review
-
-The review board should pressure-test:
-
-- JSON vs TOML preservation strategy
-- project vs user scope defaults
-- Codex native-CLI install behavior and fallbacks
-- doctor detection thresholds for each client
-- whether the proposed check names are the right long-term surface
-- whether any client here should be demoted back to manual-only support
-
-## 15. Expected Outcome
-
-If approved, this proposal should produce a revised implementation spec
-that can be handed directly to an implementation agent without needing
-new product decisions.
-
-That implementation spec should stay narrow:
-
-- create the shared adapter layer
-- extend `ontos mcp install`
-- extend `ontos doctor`
-- update customer-facing docs
-- update the internal roadmap
-
-and should explicitly avoid transport work in the same patch train.
+The broader release-sequencing question (`v4.2` vs `v4.3`, plus the
+status of the old `v4.1.1` backlog) is handled in the separate roadmap
+decision doc, not here.
