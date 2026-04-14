@@ -11,12 +11,15 @@ try:  # Python 3.11+
 except ImportError:  # pragma: no cover - Python 3.10 fallback
     import tomli as tomllib  # type: ignore
 
+_DEFAULT_REGISTRY_PATH = "~/Dev/.dev-hub/registry/projects.json"
+_MISSING = object()
+
 
 @dataclass(frozen=True)
 class PortfolioConfig:
     scan_roots: List[str] = field(default_factory=lambda: ["~/Dev"])
     exclude: List[str] = field(default_factory=lambda: ["~/Dev/.dev-hub", "~/Dev/archive"])
-    registry_path: Optional[str] = "~/Dev/.dev-hub/registry/projects.json"
+    registry_path: Optional[str] = _DEFAULT_REGISTRY_PATH
     bundle_token_budget: int = 8000
     bundle_max_logs: int = 20
     bundle_log_window_days: int = 30
@@ -74,7 +77,10 @@ def load_portfolio_config() -> PortfolioConfig:
     return PortfolioConfig(
         scan_roots=_coerce_str_list(portfolio.get("scan_roots"), ["~/Dev"]),
         exclude=_coerce_str_list(portfolio.get("exclude"), ["~/Dev/.dev-hub", "~/Dev/archive"]),
-        registry_path=_coerce_optional_str(portfolio.get("registry_path"), "~/Dev/.dev-hub/registry/projects.json"),
+        registry_path=_coerce_registry_path(
+            portfolio.get("registry_path", _MISSING),
+            _DEFAULT_REGISTRY_PATH,
+        ),
         bundle_token_budget=_coerce_int(bundle.get("token_budget"), 8000),
         bundle_max_logs=_coerce_int(bundle.get("max_logs"), 20),
         bundle_log_window_days=_coerce_int(bundle.get("log_window_days"), 30),
@@ -87,11 +93,11 @@ def _coerce_str_list(value: object, default: List[str]) -> List[str]:
     return list(default)
 
 
-def _coerce_optional_str(value: object, default: Optional[str]) -> Optional[str]:
-    if value is None:
-        return None
+def _coerce_registry_path(value: object, default: str) -> Optional[str]:
+    if value is _MISSING:
+        return default
     if isinstance(value, str):
-        return value
+        return value if value.strip() else None
     return default
 
 

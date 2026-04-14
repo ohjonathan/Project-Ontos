@@ -71,6 +71,74 @@ def test_load_portfolio_config_custom_values(tmp_path, monkeypatch):
     assert cfg.bundle_log_window_days == 3
 
 
+def test_load_portfolio_config_missing_registry_path_uses_default(tmp_path, monkeypatch):
+    config_path = tmp_path / ".config" / "ontos" / "portfolio.toml"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        """
+        [portfolio]
+        scan_roots = ["~/Dev"]
+        """,
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(portfolio_config_module, "PORTFOLIO_CONFIG_PATH", config_path)
+
+    cfg = load_portfolio_config()
+
+    assert cfg.registry_path == "~/Dev/.dev-hub/registry/projects.json"
+
+
+def test_load_portfolio_config_empty_registry_path_disables_merge(tmp_path, monkeypatch):
+    config_path = tmp_path / ".config" / "ontos" / "portfolio.toml"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        """
+        [portfolio]
+        registry_path = ""
+        """,
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(portfolio_config_module, "PORTFOLIO_CONFIG_PATH", config_path)
+
+    cfg = load_portfolio_config()
+
+    assert cfg.registry_path is None
+
+
+def test_load_portfolio_config_whitespace_registry_path_disables_merge(tmp_path, monkeypatch):
+    config_path = tmp_path / ".config" / "ontos" / "portfolio.toml"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        """
+        [portfolio]
+        registry_path = "   "
+        """,
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(portfolio_config_module, "PORTFOLIO_CONFIG_PATH", config_path)
+
+    cfg = load_portfolio_config()
+
+    assert cfg.registry_path is None
+
+
+def test_load_portfolio_config_non_string_registry_path_falls_back_to_default(tmp_path, monkeypatch):
+    config_path = tmp_path / ".config" / "ontos" / "portfolio.toml"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        """
+        [portfolio]
+        registry_path = 42
+        """,
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(portfolio_config_module, "PORTFOLIO_CONFIG_PATH", config_path)
+
+    cfg = load_portfolio_config()
+
+    assert cfg.registry_path == "~/Dev/.dev-hub/registry/projects.json"
+
+
 def test_load_portfolio_config_invalid_toml_raises(tmp_path, monkeypatch):
     config_path = tmp_path / ".config" / "ontos" / "portfolio.toml"
     config_path.parent.mkdir(parents=True)
@@ -91,4 +159,3 @@ def test_ensure_portfolio_config_is_idempotent(tmp_path, monkeypatch):
     assert first == Path(config_path)
     assert second == Path(config_path)
     assert config_path.exists()
-
