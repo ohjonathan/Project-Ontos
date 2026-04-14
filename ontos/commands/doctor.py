@@ -8,6 +8,7 @@ Implements the CLI health checks with graceful error handling.
 import shutil
 import subprocess
 import sys
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Tuple
@@ -49,6 +50,17 @@ class DoctorResult:
         elif self.warnings > 0:
             return "warning"
         return "success"
+
+
+@dataclass(frozen=True)
+class CursorScopeInspection:
+    """Inspection result for one Cursor config scope."""
+
+    scope: str
+    status: str
+    reason: str
+    path: Path
+    has_ontos_entry: bool = False
 
 
 def check_configuration(repo_root: Optional[Path] = None) -> CheckResult:
@@ -575,6 +587,233 @@ def check_antigravity_mcp() -> CheckResult:
     )
 
 
+def _cursor_config_path(scope: str, repo_root: Path, home: Optional[Path] = None) -> Path:
+    """Resolve the Cursor MCP config path for the requested scope."""
+    if scope == "project":
+        return repo_root / ".cursor" / "mcp.json"
+    if scope == "user":
+        return (home or Path.home()).expanduser() / ".cursor" / "mcp.json"
+    raise ValueError(f"Unsupported Cursor scope: {scope}")
+
+
+def _extract_workspace_arg(args: List[str]) -> Optional[Path]:
+    """Extract `--workspace` from the configured Ontos command args."""
+    for index, value in enumerate(args):
+        if value == "--workspace" and index + 1 < len(args):
+            return Path(args[index + 1]).expanduser()
+        if value.startswith("--workspace="):
+            return Path(value.split("=", 1)[1]).expanduser()
+    return None
+
+
+def _resolve_executable(command: str) -> Optional[str]:
+    """Resolve a command path if it is executable."""
+    if not command:
+        return None
+    if Path(command).expanduser().is_absolute():
+        candidate = Path(command).expanduser()
+        if candidate.exists() and candidate.is_file():
+            return str(candidate.resolve())
+        return None
+    resolved = shutil.which(command)
+    if not resolved:
+        return None
+    return str(Path(resolved).resolve())
+
+
+def _inspect_cursor_scope(scope: str, config_path: Path) -> CursorScopeInspection:
+    """Inspect one Cursor MCP config scope."""
+    from ontos.core.antigravity_mcp import probe_mcp_initialize
+
+    if not config_path.exists():
+        return CursorScopeInspection(
+            scope=scope,
+            status="skipped",
+            reason="config not present",
+            path=config_path,
+        )
+
+    try:
+        raw = config_path.read_text(encoding="utf-8")
+        data = json.loads(raw)
+    except (OSError, json.JSONDecodeError):
+        return CursorScopeInspection(
+            scope=scope,
+            status="warning",
+            reason="malformed config",
+            path=config_path,
+        )
+
+    if not isinstance(data, dict):
+        return CursorScopeInspection(
+            scope=scope,
+            status="warning",
+            reason="malformed config",
+            path=config_path,
+        )
+
+    servers = data.get("mcpServers")
+    if servers is not None and not isinstance(servers, dict):
+        return CursorScopeInspection(
+            scope=scope,
+            status="warning",
+            reason="malformed config",
+            path=config_path,
+        )
+
+    entry = (servers or {}).get("ontos")
+    if not isinstance(entry, dict):
+        return CursorScopeInspection(
+            scope=scope,
+            status="skipped",
+            reason="no Ontos entry",
+            path=config_path,
+        )
+
+    command = entry.get("command")
+    args = entry.get("args")
+    if not isinstance(command, str) or not command.strip():
+        return CursorScopeInspection(
+            scope=scope,
+            status="warning",
+            reason="missing valid command",
+            path=config_path,
+            has_ontos_entry=True,
+        )
+    if not isinstance(args, list) or any(not isinstance(item, str) for item in args):
+        return CursorScopeInspection(
+            scope=scope,
+            status="warning",
+            reason="invalid args list",
+            path=config_path,
+            has_ontos_entry=True,
+        )
+    if _resolve_executable(command) is None:
+        return CursorScopeInspection(
+            scope=scope,
+            status="warning",
+            reason="command not executable",
+            path=config_path,
+            has_ontos_entry=True,
+        )
+    if "serve" not in args:
+        return CursorScopeInspection(
+            scope=scope,
+            status="warning",
+            reason="missing serve argument",
+            path=config_path,
+            has_ontos_entry=True,
+        )
+
+    workspace = _extract_workspace_arg(args)
+    if workspace is None:
+        return CursorScopeInspection(
+            scope=scope,
+            status="warning",
+            reason="missing workspace argument",
+            path=config_path,
+            has_ontos_entry=True,
+        )
+    if not workspace.is_absolute():
+        return CursorScopeInspection(
+            scope=scope,
+            status="warning",
+            reason="workspace path is not absolute",
+            path=config_path,
+            has_ontos_entry=True,
+        )
+    if not workspace.exists():
+        return CursorScopeInspection(
+            scope=scope,
+            status="warning",
+            reason="workspace path does not exist",
+            path=config_path,
+            has_ontos_entry=True,
+        )
+
+    probe = probe_mcp_initialize(command, args)
+    if not probe.ok:
+        return CursorScopeInspection(
+            scope=scope,
+            status="warning",
+            reason="initialize probe failed",
+            path=config_path,
+            has_ontos_entry=True,
+        )
+
+    return CursorScopeInspection(
+        scope=scope,
+        status="success",
+        reason="valid Ontos entry",
+        path=config_path,
+        has_ontos_entry=True,
+    )
+
+
+def _format_cursor_details(project: CursorScopeInspection, user: CursorScopeInspection) -> str:
+    """Format scope-level details for Cursor doctor output."""
+    return f"project: {project.status} - {project.reason}; user: {user.status} - {user.reason}"
+
+
+def check_cursor_mcp(repo_root: Optional[Path] = None) -> CheckResult:
+    """Check 11: Cursor native MCP config status with project precedence."""
+    try:
+        root = resolve_project_root(repo_root=repo_root)
+    except FileNotFoundError as exc:
+        return CheckResult(
+            name="cursor_mcp",
+            status="warning",
+            message="Cursor MCP check failed",
+            details=str(exc),
+        )
+
+    project = _inspect_cursor_scope("project", _cursor_config_path("project", root))
+    user = _inspect_cursor_scope("user", _cursor_config_path("user", root))
+    details = _format_cursor_details(project, user)
+
+    if project.status == "success":
+        return CheckResult(
+            name="cursor_mcp",
+            status="success",
+            message="Cursor Ontos MCP entry valid in project scope",
+            details=details,
+        )
+    if project.status == "warning" and project.has_ontos_entry:
+        return CheckResult(
+            name="cursor_mcp",
+            status="warning",
+            message="Cursor Ontos MCP entry invalid in project scope",
+            details=details,
+        )
+    if project.status == "warning":
+        return CheckResult(
+            name="cursor_mcp",
+            status="warning",
+            message="Cursor MCP config malformed in project scope",
+            details=details,
+        )
+    if user.status == "success":
+        return CheckResult(
+            name="cursor_mcp",
+            status="success",
+            message="Cursor Ontos MCP entry valid in user scope",
+            details=details,
+        )
+    if user.status == "warning":
+        return CheckResult(
+            name="cursor_mcp",
+            status="warning",
+            message="Cursor MCP config malformed in user scope",
+            details=details,
+        )
+    return CheckResult(
+        name="cursor_mcp",
+        status="success",
+        message="Cursor not configured for Ontos; skipping MCP check",
+        details=details,
+    )
+
+
 def _get_config_path(repo_root: Optional[Path] = None) -> Optional[Path]:
     """Get config path if it exists."""
     root = resolve_project_root(repo_root=repo_root)
@@ -644,6 +883,7 @@ def _run_doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
         lambda: check_agents_staleness(repo_root),
         lambda: check_environment_manifests(repo_root),
         check_antigravity_mcp,
+        lambda: check_cursor_mcp(repo_root),
     ]
 
     for check_fn in checks:
