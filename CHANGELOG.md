@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 > For the full historical changelog with Ontos frontmatter (from v0.1.0), see [`Ontos_CHANGELOG.md`](Ontos_CHANGELOG.md).
 
+## [4.2.0] - 2026-04-14
+
+Adds managed Cursor MCP onboarding and a universal `print-config` fallback while preserving the shipped Antigravity contract. PR #102.
+
+### Added
+- **Managed Cursor MCP adapter** — `ontos mcp install --client cursor --scope {project,user}` writes `.cursor/mcp.json` or `~/.cursor/mcp.json` with the Ontos entry.
+- **`ontos mcp uninstall`** — Removes only `mcpServers.ontos` for managed clients, returning `removed` or `noop`.
+- **`ontos mcp print-config`** — Emits a complete manual config document for Antigravity, Cursor, Claude Code, Codex, and VS Code without writing to disk.
+- **`cursor_mcp` doctor check** — Validates Cursor project/user MCP config with project-precedence aggregation and pinned details output.
+- **Shared MCP core** — `ontos/core/mcp_shared.py` now owns launcher resolution, shared entry building, initialize probing, config rendering, and entry equivalence.
+- **Cursor adapter module** — `ontos/core/cursor_mcp.py` encapsulates Cursor path discovery, read/write helpers, entry upsert/remove, and inspection.
+
+### Fixed
+- **Symlink scope-containment** — Managed MCP writes now reject config paths whose resolved targets escape the expected workspace or home scope.
+- **Atomic config writes** — JSON config writes now use tempfile + `os.replace()` to avoid partial-write races during concurrent installs.
+- **Doctor path coverage** — Cursor doctor tests now exercise the production adapter path and cover malformed/misconfigured entry variants directly.
+- **Antigravity compatibility guard** — Golden snapshot coverage now asserts the persisted Antigravity entry shape and upsert action.
+
+### Changed
+- **Install action taxonomy** — `ontos mcp install` now reports `created`, `updated`, or `noop`; `noop` is a behavior clarification, not a breaking change.
+- **Refresh semantics** — Rerunning `ontos mcp install --client ...` remains the supported refresh/re-register flow; no standalone `refresh` subcommand was added.
+- **Platform scope** — Managed MCP automation remains POSIX-only in `v4.2.0`; Windows users should use `print-config`.
+
 ## [4.0.0] - 2026-04-05
 
 Ships MCP server mode — a stdio MCP server that exposes the Ontos knowledge graph to AI agents and IDEs via 8 structured tools. PR #81.
