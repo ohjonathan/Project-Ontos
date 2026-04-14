@@ -4,7 +4,7 @@ from ontos.mcp import tools
 from ontos.mcp.portfolio import PortfolioIndex
 from ontos.mcp.schemas import validate_success_payload
 
-from tests.mcp import build_cache, create_workspace
+from tests.mcp import build_cache, create_workspace, write_file
 
 
 def test_portfolio_index_outputs_validate_against_track_a_tools(tmp_path):
@@ -30,3 +30,28 @@ def test_portfolio_index_outputs_validate_against_track_a_tools(tmp_path):
     assert search_payload["results"][0]["workspace_slug"] == "workspace"
     assert bundle_payload["workspace_slug"] == "workspace"
     assert bundle_payload["document_count"] >= 1
+
+
+def test_tools_search_uses_real_portfolio_index_for_sanitized_query(tmp_path):
+    root = create_workspace(tmp_path)
+    write_file(
+        root / "docs" / "hyphenated.md",
+        """
+        ---
+        id: hyphenated_doc
+        type: atom
+        status: active
+        ---
+        hello-world
+        """,
+    )
+    index = PortfolioIndex(tmp_path / "portfolio.db")
+
+    index.rebuild_workspace("workspace", root)
+    payload = validate_success_payload(
+        "search",
+        tools.search(index, query_string="hello-world", workspace_id="workspace"),
+    )
+
+    assert payload["total_hits"] == 1
+    assert payload["results"][0]["doc_id"] == "hyphenated_doc"

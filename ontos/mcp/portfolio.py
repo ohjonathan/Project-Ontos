@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import re
 import sqlite3
 import threading
 from typing import Any, Optional
@@ -15,6 +16,11 @@ from ontos.io.config import load_project_config
 from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
 from ontos.io.snapshot import create_snapshot
 from ontos.mcp.scanner import ProjectEntry, discover_projects
+
+# Keep keyword detection case-sensitive and word-boundary-aware.
+# Naive substring matching would misclassify plain words like FORD, ANDROID,
+# NOTES, and NEARBY as explicit FTS syntax.
+_FTS_SYNTAX_MARKERS = re.compile(r'\b(?:AND|OR|NOT|NEAR)\b|["*:()]')
 
 
 class PortfolioIndex:
@@ -173,12 +179,13 @@ class PortfolioIndex:
             raise OntosUserError("limit must be > 0.", code="E_INVALID_LIMIT")
         if not query or not query.strip():
             raise OntosUserError("query must be non-empty.", code="E_INVALID_QUERY")
+        sanitized_query = _sanitize_fts_query(query)
 
         with self._connect() as conn:
             try:
                 conn.execute("BEGIN;")
                 where = "fts_content MATCH ?"
-                params: list[Any] = [query]
+                params: list[Any] = [sanitized_query]
                 if workspace:
                     where += " AND documents.workspace = ?"
                     params.append(workspace)
@@ -636,3 +643,10 @@ class PortfolioIndex:
             stat = self._stat_fingerprint(path)
             fingerprint[rel_path] = [stat[0], stat[1]] if stat is not None else None
         return fingerprint
+
+
+def _sanitize_fts_query(query: str) -> str:
+    trimmed = query.strip()
+    if _FTS_SYNTAX_MARKERS.search(trimmed):
+        return trimmed
+    return " ".join(f'"{term}"' for term in trimmed.split())
