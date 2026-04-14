@@ -141,6 +141,22 @@ Run `ontos serve` to start an MCP server that exposes your knowledge graph direc
 }
 ```
 
+**Cursor** uses the same direct-file pattern in `v4.2`, but it is first-class only for the managed clients Ontos owns directly:
+
+- project scope: `.cursor/mcp.json`
+- user scope: `~/.cursor/mcp.json`
+
+Use:
+
+```bash
+ontos mcp install --client cursor --scope project
+ontos mcp install --client cursor --scope user
+ontos mcp uninstall --client cursor --scope project
+ontos mcp print-config --client codex
+```
+
+Rerunning `ontos mcp install --client cursor ...` refreshes the launcher path if Ontos moves on your shell `PATH`. Windows users should use `print-config`; managed install, uninstall, and doctor support are POSIX-only in `v4.2`.
+
 ### Documentation Health
 CI validation catches broken links, circular dependencies, and architectural violations before they become tribal knowledge buried in someone's head.
 
@@ -322,9 +338,11 @@ Ontos treats MCP integration as two separate concerns:
 
 Support is client-specific:
 
-- **First-class** — stable native config contract, so Ontos can ship `ontos mcp install --client ...` plus `ontos doctor` coverage. Antigravity is the first client in this tier.
-- **Supported** — explicit setup docs today, with automation added only after the client contract proves stable. Claude Desktop and Cursor currently fit here.
-- **Evolving** — docs and diagnostics first, automation later if the config surface becomes stable enough. This is the likely path for CLI-native agents such as Claude Code and Codex.
+- **First-class** — stable native config contract, so Ontos can ship `ontos mcp install --client ...`, `ontos mcp uninstall --client ...`, and `ontos doctor` coverage. Antigravity and Cursor are the first clients in this tier.
+- **Print-config only** — docs and a copy-pastable config snippet, but no Ontos-managed install / doctor promises in `v4.2`. Claude Code, Codex, and VS Code fit here.
+- **Docs-only** — native config is not managed by Ontos in this release. Claude Desktop and Windsurf stay here.
+
+The managed MCP client config is separate from repo-local instruction artifacts such as `AGENTS.md` and `.cursorrules`.
 
 ### 4. Available Tools
 
@@ -542,7 +560,7 @@ Version 3 is when Ontos became public. The earlier versions live on in the desig
 | **v4.1.0** | ✅ Current | Portfolio index, 4 write tools, advisory flock locking, shared rename orchestrator |
 | **v4.2** | Next | HTTP/SSE transport, cross-workspace document reads/writes |
 
-v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python. v3.2 added re-architecture support, environment detection, and activation resilience. v3.3 ships 62 audit-derived hardening fixes plus `link-check`, `rename`, unified JSON envelopes, and a canonical document loader. v3.3.1 reduced link-check false positives by 89% and added `promote_check` to the maintenance pipeline. v3.4 adds `--compact tiered` context maps for token-constrained agents. v4.0 adds an MCP server mode with 8 read-only tools, enabling native integration with AI IDEs like Claude Desktop and Cursor without CLI overhead. v4.1 expands MCP to 15 tools — 4 write tools (`scaffold_document`, `log_session`, `promote_document`, `rename_document`), a portfolio index with FTS5 search, advisory flock locking, and a shared rename orchestrator used by both CLI and MCP.
+v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python. v3.2 added re-architecture support, environment detection, and activation resilience. v3.3 ships 62 audit-derived hardening fixes plus `link-check`, `rename`, unified JSON envelopes, and a canonical document loader. v3.3.1 reduced link-check false positives by 89% and added `promote_check` to the maintenance pipeline. v3.4 adds `--compact tiered` context maps for token-constrained agents. v4.0 adds an MCP server mode with 8 read-only tools, enabling native integration with AI IDEs like Claude Desktop and Cursor without CLI overhead. v4.1 expands MCP to 15 tools — 4 write tools (`scaffold_document`, `log_session`, `promote_document`, `rename_document`), a portfolio index with FTS5 search, advisory flock locking, and a shared rename orchestrator used by both CLI and MCP. v4.2 adds Cursor as the next first-class managed MCP client, plus `ontos mcp print-config` for the remaining supported client surfaces.
 
 ---
 

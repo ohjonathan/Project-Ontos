@@ -301,7 +301,7 @@ def _register_mcp(subparsers, parent):
     """Register MCP client config commands."""
     mcp_parser = subparsers.add_parser(
         "mcp",
-        help="Install native MCP client configuration",
+        help="Manage MCP client configuration",
         parents=[parent],
     )
     mcp_parser.set_defaults(func=_cmd_mcp_root, mcp_command=None, _mcp_parser=mcp_parser)
@@ -318,9 +318,14 @@ def _register_mcp(subparsers, parent):
     )
     install_parser.add_argument(
         "--client",
-        choices=["antigravity"],
+        choices=["antigravity", "cursor"],
         required=True,
         help="Native MCP client to configure",
+    )
+    install_parser.add_argument(
+        "--scope",
+        choices=["project", "user"],
+        help="Config scope for clients that support multiple scopes",
     )
     install_parser.add_argument(
         "--workspace",
@@ -332,7 +337,68 @@ def _register_mcp(subparsers, parent):
         action="store_true",
         help="Generate a writable Ontos server entry (default: read-only)",
     )
+    install_parser.add_argument(
+        "--config-path",
+        type=Path,
+        help="Override the target client config path",
+    )
     install_parser.set_defaults(func=_cmd_mcp_install)
+
+    uninstall_parser = mcp_subparsers.add_parser(
+        "uninstall",
+        help="Remove the Ontos entry from a managed MCP client config",
+        parents=[parent],
+    )
+    uninstall_parser.add_argument(
+        "--client",
+        choices=["antigravity", "cursor"],
+        required=True,
+        help="Managed MCP client to update",
+    )
+    uninstall_parser.add_argument(
+        "--scope",
+        choices=["project", "user"],
+        help="Config scope for clients that support multiple scopes",
+    )
+    uninstall_parser.add_argument(
+        "--config-path",
+        type=Path,
+        help="Override the target client config path",
+    )
+    uninstall_parser.set_defaults(func=_cmd_mcp_uninstall)
+
+    print_config_parser = mcp_subparsers.add_parser(
+        "print-config",
+        help="Print a complete MCP config document without writing files",
+        parents=[parent],
+    )
+    print_config_parser.add_argument(
+        "--client",
+        choices=["antigravity", "cursor", "claude-code", "codex", "vscode"],
+        required=True,
+        help="MCP client to render a config document for",
+    )
+    print_config_parser.add_argument(
+        "--scope",
+        choices=["project", "user"],
+        help="Config scope for clients that support multiple scopes",
+    )
+    print_config_parser.add_argument(
+        "--workspace",
+        type=Path,
+        help="Workspace path to serve (defaults to the current Ontos project root)",
+    )
+    print_config_parser.add_argument(
+        "--write-enabled",
+        action="store_true",
+        help="Generate a writable Ontos server entry (default: read-only)",
+    )
+    print_config_parser.add_argument(
+        "--config-path",
+        type=Path,
+        help="Override the reported target config path",
+    )
+    print_config_parser.set_defaults(func=_cmd_mcp_print_config)
 
 
 def _register_serve(subparsers, parent):
@@ -906,8 +972,10 @@ def _cmd_mcp_install(args) -> int:
 
     options = MCPInstallOptions(
         client=args.client,
+        scope=getattr(args, "scope", None),
         workspace=getattr(args, "workspace", None),
         write_enabled=getattr(args, "write_enabled", False),
+        config_path=getattr(args, "config_path", None),
     )
     exit_code, message, data = _run_mcp_install_command(options)
 
@@ -918,6 +986,65 @@ def _cmd_mcp_install(args) -> int:
             message=message,
             data=data,
         )
+    elif not args.quiet:
+        print(message)
+        if exit_code != 0 and data.get("fallback_snippet"):
+            print("")
+            print(data["fallback_snippet"])
+
+    return exit_code
+
+
+def _cmd_mcp_uninstall(args) -> int:
+    """Handle `ontos mcp uninstall`."""
+    from ontos.commands.mcp import MCPUninstallOptions, _run_mcp_uninstall_command
+
+    options = MCPUninstallOptions(
+        client=args.client,
+        scope=getattr(args, "scope", None),
+        config_path=getattr(args, "config_path", None),
+    )
+    exit_code, message, data = _run_mcp_uninstall_command(options)
+
+    if args.json:
+        _emit_handler_result_json(
+            command="mcp-uninstall",
+            exit_code=exit_code,
+            message=message,
+            data=data,
+        )
+    elif not args.quiet:
+        print(message)
+        if exit_code != 0 and data.get("fallback_snippet"):
+            print("")
+            print(data["fallback_snippet"])
+
+    return exit_code
+
+
+def _cmd_mcp_print_config(args) -> int:
+    """Handle `ontos mcp print-config`."""
+    from ontos.commands.mcp import MCPPrintConfigOptions, _run_mcp_print_config_command
+
+    options = MCPPrintConfigOptions(
+        client=args.client,
+        scope=getattr(args, "scope", None),
+        workspace=getattr(args, "workspace", None),
+        write_enabled=getattr(args, "write_enabled", False),
+        config_path=getattr(args, "config_path", None),
+    )
+    exit_code, message, data = _run_mcp_print_config_command(options)
+
+    if args.json:
+        _emit_handler_result_json(
+            command="mcp-print-config",
+            exit_code=exit_code,
+            message=message,
+            data=data,
+        )
+    elif not args.quiet and exit_code == 0:
+        print(data["snippet"], end="")
+        print(f"Target path: {data['config_path']}", file=sys.stderr)
     elif not args.quiet:
         print(message)
 

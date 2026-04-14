@@ -1,6 +1,8 @@
 """Tests for CLI (Phase 4)."""
 
+import os
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -107,7 +109,57 @@ class TestCLICommands:
         )
         assert result.returncode == 0
         assert "antigravity" in result.stdout.lower()
+        assert "cursor" in result.stdout.lower()
+        assert "--scope" in result.stdout.lower()
         assert "write-enabled" in result.stdout.lower()
+
+    def test_mcp_root_help_lists_new_subcommands(self):
+        """mcp --help should list install, uninstall, and print-config."""
+        result = subprocess.run(
+            [sys.executable, "-m", "ontos", "mcp", "--help"],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0
+        lowered = result.stdout.lower()
+        assert "install" in lowered
+        assert "uninstall" in lowered
+        assert "print-config" in lowered
+
+    def test_mcp_uninstall_help(self):
+        """mcp uninstall --help should work."""
+        result = subprocess.run(
+            [sys.executable, "-m", "ontos", "mcp", "uninstall", "--help"],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0
+        lowered = result.stdout.lower()
+        assert "scope" in lowered
+        assert "config-path" in lowered
+
+    def test_mcp_print_config_help(self):
+        """mcp print-config --help should work."""
+        result = subprocess.run(
+            [sys.executable, "-m", "ontos", "mcp", "print-config", "--help"],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0
+        lowered = result.stdout.lower()
+        assert "client" in lowered
+        assert "workspace" in lowered
+
+    def test_mcp_refresh_help_is_not_registered(self):
+        """mcp refresh should not be a standalone CLI command."""
+        result = subprocess.run(
+            [sys.executable, "-m", "ontos", "mcp", "refresh", "--help"],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode != 0
+        combined = (result.stdout + result.stderr).lower()
+        assert "refresh" in combined
 
     def test_hook_help(self):
         """hook --help should work."""
@@ -205,15 +257,24 @@ class TestCLIDoctorCommand:
         (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n")
         (tmp_path / "docs").mkdir()
         (tmp_path / "docs" / "doc.md").write_text("---\nid: sample\ntype: atom\nstatus: active\n---\n")
+        (tmp_path / "Ontos_Context_Map.md").write_text("# Context Map\n")
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(Path(__file__).resolve().parents[1])
         result = subprocess.run(
             [sys.executable, "-m", "ontos", "--json", "doctor"],
-            capture_output=True, text=True
+            capture_output=True, text=True, env=env
         )
         data = json.loads(result.stdout)
         assert "status" in data
         assert "data" in data
         assert "checks" in data["data"]
         assert any(check["name"] == "antigravity_mcp" for check in data["data"]["checks"])
+        cursor_check = next(check for check in data["data"]["checks"] if check["name"] == "cursor_mcp")
+        assert any(check["name"] == "cursor_mcp" for check in data["data"]["checks"])
+        assert re.fullmatch(
+            r"project: \w+ - .+; user: \w+ - .+",
+            cursor_check.get("details", ""),
+        ), cursor_check.get("details", "")
 
 
 class TestCLIExportCommand:

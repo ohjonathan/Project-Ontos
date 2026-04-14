@@ -10,7 +10,7 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from ontos.core.paths import resolve_project_root
 from ontos.ui.output import OutputHandler
@@ -49,7 +49,6 @@ class DoctorResult:
         elif self.warnings > 0:
             return "warning"
         return "success"
-
 
 def check_configuration(repo_root: Optional[Path] = None) -> CheckResult:
     """Check 1: .ontos.toml exists and is valid."""
@@ -575,6 +574,95 @@ def check_antigravity_mcp() -> CheckResult:
     )
 
 
+def _cursor_scope_summary(inspection) -> Tuple[str, str]:
+    """Normalize Cursor adapter inspection into status/reason for aggregation."""
+    if hasattr(inspection, "status") and hasattr(inspection, "reason"):
+        return inspection.status, inspection.reason
+    if inspection.code in {"invalid_json", "invalid_root", "empty", "unreadable"}:
+        return "warning", "malformed config"
+    if not inspection.file_present:
+        return "skipped", "config not present"
+    if not inspection.entry_present:
+        return "skipped", "no Ontos entry"
+    if inspection.ok:
+        return "success", "valid Ontos entry"
+    return "warning", inspection.message
+
+
+def _format_cursor_details(project_status: str, project_reason: str, user_status: str, user_reason: str) -> str:
+    """Format scope-level details for Cursor doctor output."""
+    return f"project: {project_status} - {project_reason}; user: {user_status} - {user_reason}"
+
+
+def _inspect_cursor_scope(scope: str, repo_root: Path) -> Any:
+    """Compatibility wrapper around the Cursor adapter inspection entry point."""
+    from ontos.core.cursor_mcp import inspect_cursor_ontos_config
+
+    return inspect_cursor_ontos_config(scope=scope, workspace_root=repo_root)
+
+
+def check_cursor_mcp(repo_root: Optional[Path] = None) -> CheckResult:
+    """Check 11: Cursor native MCP config status with project precedence."""
+    try:
+        root = resolve_project_root(repo_root=repo_root)
+    except FileNotFoundError as exc:
+        return CheckResult(
+            name="cursor_mcp",
+            status="warning",
+            message="Cursor MCP check failed",
+            details=str(exc),
+        )
+
+    project = _inspect_cursor_scope("project", root)
+    user = _inspect_cursor_scope("user", root)
+    project_status, project_reason = _cursor_scope_summary(project)
+    user_status, user_reason = _cursor_scope_summary(user)
+    details = _format_cursor_details(project_status, project_reason, user_status, user_reason)
+
+    if project_status == "success":
+        return CheckResult(
+            name="cursor_mcp",
+            status="success",
+            message="Cursor Ontos MCP entry valid in project scope",
+            details=details,
+        )
+    project_entry_present = getattr(project, "entry_present", getattr(project, "has_ontos_entry", False))
+    if project_status == "warning" and project_entry_present:
+        return CheckResult(
+            name="cursor_mcp",
+            status="warning",
+            message="Cursor Ontos MCP entry invalid in project scope",
+            details=details,
+        )
+    if project_status == "warning":
+        return CheckResult(
+            name="cursor_mcp",
+            status="warning",
+            message="Cursor MCP config malformed in project scope",
+            details=details,
+        )
+    if user_status == "success":
+        return CheckResult(
+            name="cursor_mcp",
+            status="success",
+            message="Cursor Ontos MCP entry valid in user scope",
+            details=details,
+        )
+    if user_status == "warning":
+        return CheckResult(
+            name="cursor_mcp",
+            status="warning",
+            message="Cursor MCP config malformed in user scope",
+            details=details,
+        )
+    return CheckResult(
+        name="cursor_mcp",
+        status="success",
+        message="Cursor not configured for Ontos; skipping MCP check",
+        details=details,
+    )
+
+
 def _get_config_path(repo_root: Optional[Path] = None) -> Optional[Path]:
     """Get config path if it exists."""
     root = resolve_project_root(repo_root=repo_root)
@@ -644,6 +732,7 @@ def _run_doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
         lambda: check_agents_staleness(repo_root),
         lambda: check_environment_manifests(repo_root),
         check_antigravity_mcp,
+        lambda: check_cursor_mcp(repo_root),
     ]
 
     for check_fn in checks:

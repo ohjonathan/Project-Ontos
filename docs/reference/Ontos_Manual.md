@@ -5,7 +5,7 @@ status: active
 depends_on: []
 ---
 
-# Ontos Manual v4.1
+# Ontos Manual v4.2
 
 *The complete reference for Project Ontos*
 
@@ -28,7 +28,7 @@ pip install 'ontos[mcp]'
 ontos serve
 ```
 
-> **v4.1 Note:** v4.0 added MCP server mode for native AI IDE integration. v4.1 adds write tools, portfolio index, and advisory flock locking. See the [Migration Guide v3→v4](Migration_v3_to_v4.md). For v2.x users, see [Migration v2→v3](Migration_v2_to_v3.md).
+> **v4.2 Note:** v4.0 added MCP server mode for native AI IDE integration. v4.1 added write tools, portfolio index, and advisory flock locking. v4.2 adds Cursor MCP onboarding plus `print-config` fallback for the remaining supported client surfaces. See the [Migration Guide v3→v4](Migration_v3_to_v4.md). For v2.x users, see [Migration v2→v3](Migration_v2_to_v3.md).
 
 ---
 
@@ -699,6 +699,17 @@ Ontos writes or updates `mcpServers.ontos` in the native Antigravity config:
 
 Use `--write-enabled` to expose mutable MCP tools. This native config is separate from repo-local instruction artifacts such as `AGENTS.md` and `.cursorrules`.
 
+**Cursor** (`.cursor/mcp.json` in your project, `~/.cursor/mcp.json` for user scope):
+
+```bash
+ontos mcp install --client cursor --scope project
+ontos mcp install --client cursor --scope user
+ontos mcp uninstall --client cursor --scope project
+ontos mcp print-config --client codex
+```
+
+Rerunning `ontos mcp install --client cursor ...` refreshes the launcher path if Ontos moves on your shell `PATH`. Managed install, uninstall, and doctor support are POSIX-only in `v4.2`; Windows users should use `print-config`.
+
 #### Client Support Policy
 
 Ontos treats MCP support as two layers:
@@ -708,9 +719,11 @@ Ontos treats MCP support as two layers:
 
 Apply the same philosophy across clients, but not the same installer blindly:
 
-- **First-class** clients have a stable native config contract, so Ontos can ship `ontos mcp install --client ...` and `ontos doctor` validation. Antigravity currently fits here.
-- **Supported** clients have clear manual config docs today, with automation deferred until the contract is stable enough. Claude Desktop and Cursor currently fit here.
-- **Evolving** clients should get docs and diagnostics first, then automation later if the config surface stabilizes. This is the expected path for CLI-native agents such as Claude Code and Codex.
+- **First-class** clients have a stable native config contract, so Ontos can ship `ontos mcp install --client ...`, `ontos mcp uninstall --client ...`, and `ontos doctor` validation. Antigravity and Cursor currently fit here in `v4.2`.
+- **Print-config only** clients get a copy-pastable config document but no managed install / doctor promises in `v4.2`. Claude Code, Codex, and VS Code currently fit here.
+- **Docs-only** clients stay manual in this release. Claude Desktop and Windsurf currently fit here.
+
+The managed MCP client config is separate from repo-local instruction artifacts such as `AGENTS.md` and `.cursorrules`.
 
 #### Available Tools
 

@@ -17,6 +17,14 @@ def test_readme_mentions_antigravity_native_mcp_setup() -> None:
         "Antigravity native agents",
         "~/.gemini/antigravity/mcp_config.json",
         "ontos mcp install --client antigravity",
+        ".cursor/mcp.json",
+        "~/.cursor/mcp.json",
+        "ontos mcp install --client cursor",
+        "ontos mcp uninstall --client cursor",
+        "ontos mcp print-config --client codex",
+        "Rerunning",
+        "print-config",
+        "Windows",
     ):
         assert token in content
 
@@ -27,6 +35,14 @@ def test_manual_and_migration_guide_mention_antigravity_native_mcp_setup() -> No
         for token in (
             "~/.gemini/antigravity/mcp_config.json",
             "ontos mcp install --client antigravity",
+            "ontos mcp uninstall --client cursor",
+            "ontos mcp print-config --client codex",
+            "Cursor",
+            ".cursor/mcp.json",
+            "~/.cursor/mcp.json",
+            "Rerunning",
+            "print-config",
+            "Windows",
             '"mcpServers"',
         ):
             assert token in content, f"Missing {token!r} from {path}"
@@ -37,3 +53,19 @@ def test_v413_release_notes_cover_issue_99_antigravity_fix() -> None:
     assert "#99" in content
     assert "Antigravity" in content
     assert "ontos mcp install --client antigravity" in content
+
+
+def test_v42_release_notes_cover_cursor_onboarding_and_print_config() -> None:
+    content = _read("docs/releases/v4.2.0.md")
+
+    for token in (
+        "Cursor",
+        "ontos mcp install --client cursor",
+        "ontos mcp uninstall --client cursor",
+        "ontos mcp print-config --client codex",
+        "Rerunning",
+        "Windows",
+        "print-config",
+        "first-class managed client",
+    ):
+        assert token in content
