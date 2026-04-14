@@ -8,7 +8,7 @@ import time
 import pytest
 
 from ontos.core.errors import OntosUserError
-from ontos.mcp.portfolio import PortfolioIndex
+from ontos.mcp.portfolio import PortfolioIndex, _sanitize_fts_query
 from tests.mcp import create_workspace, write_file
 
 
@@ -107,6 +107,59 @@ def test_search_fts_returns_ranked_results(tmp_path):
 
     assert result["total_hits"] > 0
     assert scores == sorted(scores)
+
+
+def test_sanitize_fts_query_quotes_plain_multi_term_queries():
+    assert _sanitize_fts_query("  alpha beta  ") == '"alpha" "beta"'
+
+
+def test_sanitize_fts_query_quotes_single_plain_term():
+    assert _sanitize_fts_query(" alpha ") == '"alpha"'
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "alpha AND beta",
+        "alpha OR beta",
+        "alpha NOT beta",
+        "alpha NEAR beta",
+        '"alpha beta"',
+        "title:alpha",
+        "alpha*",
+        "(alpha OR beta)",
+    ],
+)
+def test_sanitize_fts_query_preserves_explicit_fts_syntax(query):
+    assert _sanitize_fts_query(f"  {query}  ") == query
+
+
+def test_sanitize_fts_query_lowercase_and_is_not_marker():
+    assert _sanitize_fts_query(" bread and butter ") == '"bread" "and" "butter"'
+
+
+@pytest.mark.parametrize(
+    ("query", "body"),
+    [
+        ("hello-world", "Contains hello-world token."),
+        ("what a day!", "what a day!"),
+        (".hidden", ".hidden file"),
+        ("'foo", "'foo bar"),
+    ],
+)
+def test_search_fts_err_to_ok_queries_are_sanitized(tmp_path, query, body):
+    workspace_root = _make_custom_workspace(
+        tmp_path,
+        workspace_name="sanitize-workspace",
+        docs={"alpha.md": _doc_content("alpha_doc", body)},
+    )
+    index = PortfolioIndex(tmp_path / "portfolio.db")
+    index.rebuild_workspace("sanitize", workspace_root)
+
+    result = index.search_fts(query, workspace="sanitize", offset=0, limit=10)
+
+    assert result["total_hits"] == 1
+    assert result["results"][0]["doc_id"] == "alpha_doc"
 
 
 def test_search_fts_rejects_malformed_queries(tmp_path):

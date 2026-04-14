@@ -6,9 +6,19 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 import re
+import sys
 from typing import Any
 
 from ontos.io.snapshot import create_snapshot
+
+__all__ = [
+    "ProjectEntry",
+    "RegistryRecord",
+    "slugify",
+    "discover_projects",
+    "load_registry_records",
+    "allocate_slug",
+]
 
 
 @dataclass(frozen=True)
@@ -94,6 +104,11 @@ def discover_projects(
 
         base_slug = slugify(path.name)
         slug = allocate_slug(base_slug, used_slugs)
+        if slug != base_slug:
+            print(
+                f"[ontos] slug collision: '{base_slug}' -> '{slug}' for workspace '{path}'",
+                file=sys.stderr,
+            )
         results.append(
             ProjectEntry(
                 slug=slug,

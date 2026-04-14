@@ -385,8 +385,9 @@ def test_write_tool_rejects_cross_workspace_id(tmp_path):
     assert result.structuredContent["error"]["error_code"] == "E_PORTFOLIO_REQUIRED"
 
 
-def test_write_tool_without_workspace_id_targets_served_workspace_in_portfolio_mode(tmp_path):
+def test_write_tool_without_workspace_id_targets_served_workspace_in_portfolio_mode(tmp_path, capsys):
     left_root, right_root, index = _build_same_basename_portfolio(tmp_path)
+    capsys.readouterr()
     server = build_server(right_root, portfolio_index=index)
 
     before_left_ids = {doc["id"] for doc in index.get_workspace_documents("workspace")}
@@ -403,10 +404,12 @@ def test_write_tool_without_workspace_id_targets_served_workspace_in_portfolio_m
 
     after_left_ids = {doc["id"] for doc in index.get_workspace_documents("workspace")}
     after_right_ids = {doc["id"] for doc in index.get_workspace_documents("workspace-2")}
+    captured = capsys.readouterr()
     assert after_left_ids == before_left_ids
     assert after_right_ids == before_right_ids | {"current_workspace_only"}
     assert "current_workspace_only" not in after_left_ids
     assert not (left_root / "docs" / "current_workspace_only.md").exists()
+    assert captured.err == ""
 
 
 def test_write_tool_rejects_unknown_workspace_id_in_portfolio_mode(tmp_path):

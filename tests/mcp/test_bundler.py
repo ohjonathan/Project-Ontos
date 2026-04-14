@@ -1,10 +1,61 @@
 from datetime import date, timedelta
 
+import pytest
+
 from ontos.core.snapshot import DocumentSnapshot
 from ontos.io.snapshot import create_snapshot
-from ontos.mcp.bundler import build_context_bundle
+from ontos.mcp.bundler import BundleDocument, _lost_in_middle_order, build_context_bundle
 
 from tests.mcp import create_empty_workspace, create_workspace, write_file
+
+
+def _bundle_doc(doc_id: str, score: float) -> BundleDocument:
+    return BundleDocument(id=doc_id, type="atom", status="active", content="", score=score, token_estimate=1)
+
+
+def _legacy_lost_in_middle_order(docs: list[BundleDocument]) -> list[BundleDocument]:
+    ranked = sorted(docs, key=lambda doc: (-doc.score, doc.id))
+    front: list[BundleDocument] = []
+    back: list[BundleDocument] = []
+    for index, doc in enumerate(ranked):
+        if index % 2 == 0:
+            front.append(doc)
+        else:
+            back.append(doc)
+    return front + list(reversed(back))
+
+
+@pytest.mark.parametrize(
+    ("count", "expected"),
+    [
+        (0, []),
+        (1, ["a"]),
+        (2, ["a", "b"]),
+        (3, ["a", "c", "b"]),
+        (4, ["a", "c", "d", "b"]),
+        (5, ["a", "c", "e", "d", "b"]),
+        (6, ["a", "c", "e", "f", "d", "b"]),
+    ],
+)
+def test_lost_in_middle_order_matches_fixed_slot_fixture_table(count, expected):
+    docs = [_bundle_doc(chr(ord("a") + index), 1.0 - (index * 0.1)) for index in range(count)]
+
+    ordered = _lost_in_middle_order(docs)
+
+    assert [doc.id for doc in ordered] == expected
+
+
+def test_lost_in_middle_order_matches_legacy_behavior():
+    docs = [
+        _bundle_doc("alpha", 1.0),
+        _bundle_doc("beta", 0.95),
+        _bundle_doc("gamma", 0.95),
+        _bundle_doc("delta", 0.8),
+        _bundle_doc("epsilon", 0.7),
+        _bundle_doc("zeta", 0.6),
+    ]
+
+    assert _lost_in_middle_order(docs) == _legacy_lost_in_middle_order(docs)
 
 
 def test_build_context_bundle_scores_kernels_highest(tmp_path):

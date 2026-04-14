@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 > For the full historical changelog with Ontos frontmatter (from v0.1.0), see [`Ontos_CHANGELOG.md`](Ontos_CHANGELOG.md).
 
+## [4.2.1] - 2026-04-14
+
+Patch release shipping the remaining Issue #86 release-hardening items for portfolio config semantics, FTS sanitization, slug-collision warnings, module exports, and bundle-order parity.
+
+### Fixed
+- **`registry_path` omission semantics** — Omitting `registry_path` in `portfolio.toml` now applies the default `~/Dev/.dev-hub/registry/projects.json` path; set `registry_path = ""` to disable registry metadata merging explicitly. This behavior change affects hand-edited configs with the key removed, not configs created by `ensure_portfolio_config()`.
+- **Plain FTS query sanitization** — behavior expansion: plain multi-term searches are now quoted before FTS5 execution, which turns previously failing queries like `hello-world`, `what a day!`, `.hidden`, and `'foo` into successful searches while preserving explicit FTS syntax passthrough and existing `E_INVALID_QUERY` behavior for malformed explicit syntax. Literal-colon queries such as `user:alice` remain an explicit-syntax limitation in this patch.
+- **Slug-collision visibility** — Portfolio discovery now emits a stderr warning when a numeric suffix is assigned after a slug collision, including the base slug, assigned slug, and workspace path.
+
+### Changed
+- **Module export hygiene** — Track A MCP modules now publish explicit `__all__` surfaces for `PortfolioIndex`, portfolio config helpers, scanner helpers, and context bundling entry points.
+- **Lost-in-the-middle ordering clarity** — `_lost_in_middle_order()` now uses the spec’s fixed-slot implementation directly while preserving the existing output order.
+
 ## [4.2.0] - 2026-04-14
 
 Adds managed Cursor MCP onboarding and a universal `print-config` fallback while preserving the shipped Antigravity contract. PR #102.
