@@ -61,6 +61,7 @@ class RetrofitOptions:
 
 @dataclass(frozen=True)
 class RetrofitEdit:
+    path: Path
     field: str  # "tags" | "aliases"
     action: str  # "insert" | "replace" | "remove"
     old_value: Optional[List[str]]
@@ -95,6 +96,7 @@ class RetrofitSummary:
     planned_files: int
     inserts: int
     replaces: int
+    removes: int
     warnings: int
 
 
@@ -262,12 +264,16 @@ def _prepare_plan(
     replaces = sum(
         1 for fp in file_plans for edit in fp.edits if edit.action == "replace"
     )
+    removes = sum(
+        1 for fp in file_plans for edit in fp.edits if edit.action == "remove"
+    )
     summary = RetrofitSummary(
         files_scanned=len(doc_paths),
         documents_loaded=len(docs),
         planned_files=len([fp for fp in file_plans if fp.has_changes]),
         inserts=inserts,
         replaces=replaces,
+        removes=removes,
         warnings=len(all_warnings),
     )
 
@@ -434,6 +440,7 @@ def _build_file_plan(doc: DocumentData) -> Optional[FilePlan]:
                 top_level = _index_top_level_fields(lines)
                 edits.append(
                     RetrofitEdit(
+                        path=path,
                         field=field_name,
                         action="remove",
                         old_value=on_disk,
@@ -452,6 +459,7 @@ def _build_file_plan(doc: DocumentData) -> Optional[FilePlan]:
             top_level = _index_top_level_fields(lines)
             edits.append(
                 RetrofitEdit(
+                    path=path,
                     field=field_name,
                     action="replace",
                     old_value=on_disk,
@@ -469,15 +477,13 @@ def _build_file_plan(doc: DocumentData) -> Optional[FilePlan]:
         top_level = _index_top_level_fields(lines)
         edits.append(
             RetrofitEdit(
+                path=path,
                 field=field_name,
                 action="insert",
                 old_value=None,
                 new_value=list(new_value),
             )
         )
-
-    if not edits and not warnings:
-        return None
 
     new_frontmatter = "".join(lines)
     if edits:
@@ -622,6 +628,7 @@ def _summary_to_json(summary: RetrofitSummary, *, applied_files: int = 0) -> Dic
         "applied_files": applied_files,
         "inserts": summary.inserts,
         "replaces": summary.replaces,
+        "removes": summary.removes,
         "warnings": summary.warnings,
     }
 
@@ -631,6 +638,7 @@ def _file_plan_to_json(file_plan: FilePlan) -> Dict[str, object]:
         "path": str(file_plan.path),
         "edits": [
             {
+                "path": str(edit.path),
                 "field": edit.field,
                 "action": edit.action,
                 "old_value": edit.old_value,
@@ -678,6 +686,7 @@ def _emit_dry_run(options: RetrofitOptions, plan: RetrofitPlan) -> None:
     print(f"  Planned file edits: {plan.summary.planned_files}")
     print(f"  Inserts: {plan.summary.inserts}")
     print(f"  Replaces: {plan.summary.replaces}")
+    print(f"  Removes: {plan.summary.removes}")
     if plan.summary.warnings:
         print(f"  Warnings: {plan.summary.warnings}")
     print()
@@ -793,6 +802,7 @@ def _emit_error(
                         planned_files=0,
                         inserts=0,
                         replaces=0,
+                        removes=0,
                         warnings=len(warnings),
                     )
                 ),

@@ -133,8 +133,18 @@ def test_retrofit_dry_run_json_envelope(tmp_path: Path):
     assert data["summary"]["planned_files"] == 1
     assert data["summary"]["inserts"] >= 2  # tags + aliases
     file_entry = data["files"][0]
-    assert any(e["field"] == "tags" and e["action"] == "insert" for e in file_entry["edits"])
-    assert any(e["field"] == "aliases" and e["action"] == "insert" for e in file_entry["edits"])
+    assert any(
+        e["field"] == "tags"
+        and e["action"] == "insert"
+        and e["path"].endswith("auth.md")
+        for e in file_entry["edits"]
+    )
+    assert any(
+        e["field"] == "aliases"
+        and e["action"] == "insert"
+        and e["path"].endswith("auth.md")
+        for e in file_entry["edits"]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -226,6 +236,9 @@ def test_retrofit_apply_noop_when_fields_match_computed(tmp_path: Path):
     assert data["summary"]["planned_files"] == 0
     assert data["summary"]["inserts"] == 0
     assert data["summary"]["replaces"] == 0
+    assert data["summary"]["removes"] == 0
+    file_entry = next(item for item in data["files"] if item["path"].endswith("stable.md"))
+    assert file_entry["edits"] == []
 
 
 # ---------------------------------------------------------------------------
