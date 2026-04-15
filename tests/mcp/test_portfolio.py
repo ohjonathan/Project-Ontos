@@ -8,7 +8,7 @@ import time
 import pytest
 
 from ontos.core.errors import OntosUserError
-from ontos.mcp.portfolio import PortfolioIndex, _sanitize_fts_query
+from ontos.mcp.portfolio import PortfolioIndex, _MAX_FTS_QUERY_LENGTH, _sanitize_fts_query
 from tests.mcp import create_workspace, write_file
 
 
@@ -138,6 +138,11 @@ def test_sanitize_fts_query_lowercase_and_is_not_marker():
     assert _sanitize_fts_query(" bread and butter ") == '"bread" "and" "butter"'
 
 
+@pytest.mark.parametrize("query", ["FORD", "ANDROID", "NOTES", "NEARBY"])
+def test_sanitize_fts_query_does_not_treat_plain_words_as_syntax(query):
+    assert _sanitize_fts_query(query) == f'"{query}"'
+
+
 @pytest.mark.parametrize(
     ("query", "body"),
     [
@@ -171,6 +176,78 @@ def test_search_fts_rejects_malformed_queries(tmp_path):
         index.search_fts('"unterminated', workspace=None, offset=0, limit=10)
 
     assert exc_info.value.code == "E_INVALID_QUERY"
+
+
+@pytest.mark.parametrize("query", [":", "AND", "NOT foo", "foo:bar", 'foo " bar'])
+def test_search_fts_marker_only_or_bare_marker_queries_raise_invalid_query(tmp_path, query):
+    workspace_root = create_workspace(tmp_path)
+    index = PortfolioIndex(tmp_path / "portfolio.db")
+    index.rebuild_workspace("workspace", workspace_root)
+
+    with pytest.raises(OntosUserError) as exc_info:
+        index.search_fts(query, workspace=None, offset=0, limit=10)
+
+    assert exc_info.value.code == "E_INVALID_QUERY"
+
+
+def test_sanitize_fts_query_rejects_excessively_long_queries():
+    with pytest.raises(OntosUserError) as exc_info:
+        _sanitize_fts_query("a" * (_MAX_FTS_QUERY_LENGTH + 1))
+
+    assert exc_info.value.code == "E_INVALID_QUERY"
+    assert str(_MAX_FTS_QUERY_LENGTH) in str(exc_info.value)
+
+
+def test_sanitize_fts_query_rejects_whitespace_flood_before_strip():
+    with pytest.raises(OntosUserError) as exc_info:
+        _sanitize_fts_query(" " * (_MAX_FTS_QUERY_LENGTH + 1))
+
+    assert exc_info.value.code == "E_INVALID_QUERY"
+
+
+def test_sanitize_fts_query_accepts_exact_length_boundary():
+    assert _sanitize_fts_query("a" * _MAX_FTS_QUERY_LENGTH) == f'"{"a" * _MAX_FTS_QUERY_LENGTH}"'
+
+
+def test_search_fts_rejects_whitespace_flood_before_strip(tmp_path):
+    workspace_root = create_workspace(tmp_path)
+    index = PortfolioIndex(tmp_path / "portfolio.db")
+    index.rebuild_workspace("workspace", workspace_root)
+
+    with pytest.raises(OntosUserError) as exc_info:
+        index.search_fts(" " * (_MAX_FTS_QUERY_LENGTH + 1), workspace=None, offset=0, limit=10)
+
+    assert exc_info.value.code == "E_INVALID_QUERY"
+
+
+def test_search_fts_matches_decomposed_query_against_composed_fixture(tmp_path):
+    workspace_root = _make_custom_workspace(
+        tmp_path,
+        workspace_name="unicode-composed",
+        docs={"unicode.md": _doc_content("composed_doc", "café")},
+    )
+    index = PortfolioIndex(tmp_path / "portfolio.db")
+    index.rebuild_workspace("unicode", workspace_root)
+
+    decomposed = index.search_fts("cafe\u0301", workspace="unicode", offset=0, limit=10)
+
+    assert decomposed["total_hits"] == 1
+    assert decomposed["results"][0]["doc_id"] == "composed_doc"
+
+
+def test_search_fts_matches_composed_query_against_decomposed_fixture(tmp_path):
+    workspace_root = _make_custom_workspace(
+        tmp_path,
+        workspace_name="unicode-decomposed",
+        docs={"unicode.md": _doc_content("decomposed_doc", "cafe\u0301")},
+    )
+    index = PortfolioIndex(tmp_path / "portfolio.db")
+    index.rebuild_workspace("unicode", workspace_root)
+
+    composed = index.search_fts("café", workspace="unicode", offset=0, limit=10)
+
+    assert composed["total_hits"] == 1
+    assert composed["results"][0]["doc_id"] == "decomposed_doc"
 
 
 def test_connect_uses_nonzero_timeout(tmp_path, monkeypatch):
