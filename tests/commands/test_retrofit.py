@@ -515,6 +515,33 @@ def test_retrofit_removes_stale_tags_when_computed_value_is_empty(tmp_path: Path
     assert second_payload["data"]["summary"]["planned_files"] == 0
 
 
+def test_retrofit_apply_preserves_crlf_line_endings(tmp_path: Path):
+    _init_repo(tmp_path)
+    path = tmp_path / "docs" / "crlf.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(
+        (
+            "---\r\n"
+            "id: crlf_doc\r\n"
+            "type: atom\r\n"
+            "status: active\r\n"
+            "concepts:\r\n"
+            "  - alpha\r\n"
+            "---\r\n"
+            "Body\r\n"
+        ).encode("utf-8")
+    )
+    _init_git_repo(tmp_path)
+
+    result = _run_ontos(tmp_path, "retrofit", "--obsidian", "--apply")
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    updated = path.read_bytes()
+    assert b"tags:\r\n  - alpha\r\n" in updated
+    assert b"aliases:\r\n" in updated
+    assert b"\n" not in updated.replace(b"\r\n", b"")
+
+
 # ---------------------------------------------------------------------------
 # Scope
 # ---------------------------------------------------------------------------

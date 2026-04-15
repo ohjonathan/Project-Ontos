@@ -325,6 +325,7 @@ def _build_file_plan(doc: DocumentData) -> Optional[FilePlan]:
     }
 
     lines = split.frontmatter.splitlines(keepends=True)
+    line_ending = _detect_dominant_line_ending(lines)
     top_level = _index_top_level_fields(lines)
 
     edits: List[RetrofitEdit] = []
@@ -444,7 +445,7 @@ def _build_file_plan(doc: DocumentData) -> Optional[FilePlan]:
             if sorted(on_disk) == sorted(new_value):
                 continue
 
-            replacement = _format_field_block(field_name, new_value)
+            replacement = _format_field_block(field_name, new_value, line_ending)
             del lines[occurrence.line_index : occurrence.end_line_index]
             for offset, replacement_line in enumerate(replacement):
                 lines.insert(occurrence.line_index + offset, replacement_line)
@@ -459,9 +460,9 @@ def _build_file_plan(doc: DocumentData) -> Optional[FilePlan]:
             )
             continue
 
-        replacement = _format_field_block(field_name, new_value)
+        replacement = _format_field_block(field_name, new_value, line_ending)
         if lines and not lines[-1].endswith(("\n", "\r")):
-            lines[-1] = lines[-1] + "\n"
+            lines[-1] = lines[-1] + line_ending
         insertion_index = len(lines)
         for offset, replacement_line in enumerate(replacement):
             lines.insert(insertion_index + offset, replacement_line)
@@ -480,7 +481,7 @@ def _build_file_plan(doc: DocumentData) -> Optional[FilePlan]:
 
     new_frontmatter = "".join(lines)
     if edits:
-        new_frontmatter = _ensure_trailing_newline(new_frontmatter)
+        new_frontmatter = _ensure_trailing_newline(new_frontmatter, line_ending)
     normalized_new = f"---{new_frontmatter}---{split.body}"
     new_content = decoded.leading_prefix + normalized_new
 
@@ -548,10 +549,20 @@ def _block_contains_anchor(block_lines: Sequence[str]) -> bool:
     return False
 
 
-def _format_field_block(field_name: str, values: Sequence[str]) -> List[str]:
-    out = [f"{field_name}:\n"]
+def _detect_dominant_line_ending(lines: Sequence[str]) -> str:
+    crlf_count = sum(1 for line in lines if line.endswith("\r\n"))
+    lf_count = sum(
+        1 for line in lines if line.endswith("\n") and not line.endswith("\r\n")
+    )
+    if crlf_count > lf_count:
+        return "\r\n"
+    return "\n"
+
+
+def _format_field_block(field_name: str, values: Sequence[str], line_ending: str) -> List[str]:
+    out = [f"{field_name}:{line_ending}"]
     for value in values:
-        out.append(f"  - {_serialize_item(value)}\n")
+        out.append(f"  - {_serialize_item(value)}{line_ending}")
     return out
 
 
@@ -577,12 +588,12 @@ def _serialize_item(value: str) -> str:
     return f'"{escaped}"'
 
 
-def _ensure_trailing_newline(frontmatter_text: str) -> str:
+def _ensure_trailing_newline(frontmatter_text: str, line_ending: str) -> str:
     if not frontmatter_text:
-        return "\n"
-    if frontmatter_text.endswith("\n"):
+        return line_ending
+    if frontmatter_text.endswith(("\n", "\r")):
         return frontmatter_text
-    return frontmatter_text + "\n"
+    return frontmatter_text + line_ending
 
 
 # ----------------------------------------------------------------------------
