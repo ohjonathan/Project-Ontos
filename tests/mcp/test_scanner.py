@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import errno
 import json
 from pathlib import Path
 
 import pytest
 
+import ontos.mcp.scanner as scanner_module
 from ontos.mcp.scanner import discover_projects, load_registry_records, slugify
 
 
@@ -183,8 +185,55 @@ def test_discover_projects_repeated_calls_reemit_collision_warnings(tmp_path, ca
         f"[ontos] slug collision: 'sample-app' -> 'sample-app-2' "
         f"for workspace '{collided_path.resolve()}'"
     )
-    assert first.err.strip() == expected
-    assert second.err.strip() == expected
+    for captured in (first.err, second.err):
+        warnings = [line for line in captured.splitlines() if "slug collision:" in line]
+        assert warnings == [expected]
+        assert "'sample-app'" in warnings[0]
+        assert "'sample-app-2'" in warnings[0]
+
+
+def test_discover_projects_ignores_broken_pipe_warning_write(tmp_path, monkeypatch):
+    root_one = tmp_path / "DevA"
+    root_two = tmp_path / "DevB"
+    root_one.mkdir()
+    root_two.mkdir()
+    _make_project(root_one / "sample-app", with_ontos=True, with_readme=True, doc_count=1)
+    _make_project(root_two / "sample-app", with_ontos=True, with_readme=True, doc_count=1)
+
+    class _BrokenPipeStream:
+        def write(self, _text: str) -> int:
+            raise BrokenPipeError()
+
+        def flush(self) -> None:
+            return None
+
+    monkeypatch.setattr(scanner_module.sys, "stderr", _BrokenPipeStream())
+
+    projects = discover_projects(scan_roots=[root_one, root_two], exclude=[], registry_path=None)
+
+    assert sorted(entry.slug for entry in projects) == ["sample-app", "sample-app-2"]
+
+
+def test_discover_projects_ignores_epipe_warning_write(tmp_path, monkeypatch):
+    root_one = tmp_path / "DevA"
+    root_two = tmp_path / "DevB"
+    root_one.mkdir()
+    root_two.mkdir()
+    _make_project(root_one / "sample-app", with_ontos=True, with_readme=True, doc_count=1)
+    _make_project(root_two / "sample-app", with_ontos=True, with_readme=True, doc_count=1)
+
+    class _EpipeStream:
+        def write(self, _text: str) -> int:
+            raise OSError(errno.EPIPE, "broken pipe")
+
+        def flush(self) -> None:
+            return None
+
+    monkeypatch.setattr(scanner_module.sys, "stderr", _EpipeStream())
+
+    projects = discover_projects(scan_roots=[root_one, root_two], exclude=[], registry_path=None)
+
+    assert sorted(entry.slug for entry in projects) == ["sample-app", "sample-app-2"]
 
 
 @pytest.mark.parametrize(

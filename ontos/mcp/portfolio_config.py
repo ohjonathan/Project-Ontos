@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import logging
+import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -22,6 +23,7 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 _DEFAULT_REGISTRY_PATH = "~/Dev/.dev-hub/registry/projects.json"
+_REGISTRY_PATH_EDGE_CHARS = "\u200b\u200c\u200d\ufeff"
 _MISSING = object()
 
 
@@ -106,11 +108,25 @@ def _coerce_str_list(value: object, default: List[str]) -> List[str]:
 def _coerce_registry_path(value: object, default: str) -> Optional[str]:
     if value is _MISSING:
         return default
+    if isinstance(value, os.PathLike):
+        value = os.fspath(value)
     if isinstance(value, str):
-        stripped = value.strip()
+        stripped = _strip_registry_path_edges(value)
         return stripped or None
     logger.warning("Ignoring non-string portfolio.registry_path value %r; using default path.", value)
     return default
+
+
+def _strip_registry_path_edges(value: str) -> str:
+    start = 0
+    end = len(value)
+
+    while start < end and (value[start].isspace() or value[start] in _REGISTRY_PATH_EDGE_CHARS):
+        start += 1
+    while end > start and (value[end - 1].isspace() or value[end - 1] in _REGISTRY_PATH_EDGE_CHARS):
+        end -= 1
+
+    return value[start:end]
 
 
 def _coerce_int(value: object, default: int) -> int:

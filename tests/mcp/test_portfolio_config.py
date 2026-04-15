@@ -122,6 +122,36 @@ def test_load_portfolio_config_whitespace_registry_path_disables_merge(tmp_path,
     assert cfg.registry_path is None
 
 
+def test_coerce_registry_path_accepts_pathlike_values(tmp_path):
+    default = "~/Dev/.dev-hub/registry/projects.json"
+    registry_path = tmp_path / "registry" / "projects.json"
+
+    coerced = portfolio_config_module._coerce_registry_path(registry_path, default)
+
+    assert coerced == str(registry_path)
+
+
+def test_coerce_registry_path_none_warns_and_falls_back_to_default(caplog):
+    default = "~/Dev/.dev-hub/registry/projects.json"
+
+    with caplog.at_level("WARNING"):
+        coerced = portfolio_config_module._coerce_registry_path(None, default)
+
+    assert coerced == default
+    assert "Ignoring non-string portfolio.registry_path value" in caplog.text
+
+
+@pytest.mark.parametrize("value", [True, 42, ["~/Dev/custom-registry.json"]])
+def test_coerce_registry_path_invalid_values_warn_and_fall_back_to_default(value, caplog):
+    default = "~/Dev/.dev-hub/registry/projects.json"
+
+    with caplog.at_level("WARNING"):
+        coerced = portfolio_config_module._coerce_registry_path(value, default)
+
+    assert coerced == default
+    assert "Ignoring non-string portfolio.registry_path value" in caplog.text
+
+
 def test_load_portfolio_config_strips_outer_whitespace_from_registry_path(tmp_path, monkeypatch):
     config_path = tmp_path / ".config" / "ontos" / "portfolio.toml"
     config_path.parent.mkdir(parents=True)
@@ -137,6 +167,32 @@ def test_load_portfolio_config_strips_outer_whitespace_from_registry_path(tmp_pa
     cfg = load_portfolio_config()
 
     assert cfg.registry_path == "~/Dev/custom-registry.json"
+
+
+def test_coerce_registry_path_strips_zero_width_edges_in_addition_to_whitespace():
+    default = "~/Dev/.dev-hub/registry/projects.json"
+    value = "\u200b\u200c \t~/Dev/custom-registry.json\u00a0\ufeff"
+
+    coerced = portfolio_config_module._coerce_registry_path(value, default)
+
+    assert coerced == "~/Dev/custom-registry.json"
+
+
+def test_coerce_registry_path_zero_width_only_disables_merge():
+    default = "~/Dev/.dev-hub/registry/projects.json"
+
+    coerced = portfolio_config_module._coerce_registry_path("\u200b\u200c\u200d\ufeff", default)
+
+    assert coerced is None
+
+
+def test_coerce_registry_path_preserves_interior_zero_width_characters():
+    default = "~/Dev/.dev-hub/registry/projects.json"
+    value = "~/Dev/alpha\u200bproject.json"
+
+    coerced = portfolio_config_module._coerce_registry_path(value, default)
+
+    assert coerced == value
 
 
 def test_load_portfolio_config_non_string_registry_path_falls_back_to_default(tmp_path, monkeypatch):

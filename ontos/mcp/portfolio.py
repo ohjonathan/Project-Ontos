@@ -23,6 +23,16 @@ __all__ = ["PortfolioIndex"]
 # Naive substring matching would misclassify plain words like FORD, ANDROID,
 # NOTES, and NEARBY as explicit FTS syntax.
 _FTS_SYNTAX_MARKERS = re.compile(r'\b(?:AND|OR|NOT|NEAR)\b|["*:()]')
+_INVALID_FTS_QUERY_FRAGMENTS = (
+    "fts5",
+    "malformed match expression",
+    "syntax error",
+    "unterminated string",
+    "unknown special query",
+    # Explicit FTS column selectors like foo:bar surface as "no such column"
+    # when SQLite parses "foo" as an unknown FTS column name.
+    "no such column",
+)
 _MAX_FTS_QUERY_LENGTH = 10_000
 
 
@@ -604,16 +614,7 @@ class PortfolioIndex:
     @staticmethod
     def _is_invalid_fts_query(exc: sqlite3.OperationalError) -> bool:
         message = str(exc).lower()
-        return (
-            "fts5" in message
-            or "malformed match expression" in message
-            or "syntax error" in message
-            or "unterminated string" in message
-            or "unknown special query" in message
-            # Explicit FTS column selectors like foo:bar surface as "no such
-            # column" when SQLite parses "foo" as an unknown FTS column name.
-            or "no such column" in message
-        )
+        return any(fragment in message for fragment in _INVALID_FTS_QUERY_FRAGMENTS)
 
     @staticmethod
     def _is_busy_error(exc: sqlite3.OperationalError) -> bool:
@@ -660,6 +661,8 @@ def _sanitize_fts_query(query: str) -> str:
             code="E_INVALID_QUERY",
         )
     trimmed = query.strip()
+    # Keep ":" on the explicit-syntax path; literal-colon queries like
+    # user:alice remain a known limitation and surface as E_INVALID_QUERY.
     if _FTS_SYNTAX_MARKERS.search(trimmed):
         return trimmed
     return " ".join(f'"{term}"' for term in trimmed.split())

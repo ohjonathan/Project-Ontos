@@ -209,6 +209,23 @@ def test_sanitize_fts_query_accepts_exact_length_boundary():
     assert _sanitize_fts_query("a" * _MAX_FTS_QUERY_LENGTH) == f'"{"a" * _MAX_FTS_QUERY_LENGTH}"'
 
 
+@pytest.mark.parametrize(
+    "message",
+    [
+        "FTS5: malformed thing",
+        "malformed match expression near \"alpha\"",
+        "syntax error near AND",
+        "unterminated string",
+        "unknown special query",
+        "no such column: user",
+    ],
+)
+def test_is_invalid_fts_query_matches_known_sqlite_fragments(message):
+    exc = sqlite3.OperationalError(message)
+
+    assert PortfolioIndex._is_invalid_fts_query(exc) is True
+
+
 def test_search_fts_rejects_whitespace_flood_before_strip(tmp_path):
     workspace_root = create_workspace(tmp_path)
     index = PortfolioIndex(tmp_path / "portfolio.db")
@@ -248,6 +265,17 @@ def test_search_fts_matches_composed_query_against_decomposed_fixture(tmp_path):
 
     assert composed["total_hits"] == 1
     assert composed["results"][0]["doc_id"] == "decomposed_doc"
+
+
+def test_search_fts_literal_colon_query_remains_known_limitation(tmp_path):
+    workspace_root = create_workspace(tmp_path)
+    index = PortfolioIndex(tmp_path / "portfolio.db")
+    index.rebuild_workspace("workspace", workspace_root)
+
+    with pytest.raises(OntosUserError) as exc_info:
+        index.search_fts("user:alice", workspace=None, offset=0, limit=10)
+
+    assert exc_info.value.code == "E_INVALID_QUERY"
 
 
 def test_connect_uses_nonzero_timeout(tmp_path, monkeypatch):
