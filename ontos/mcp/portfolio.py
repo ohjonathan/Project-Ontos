@@ -23,6 +23,7 @@ __all__ = ["PortfolioIndex"]
 # Naive substring matching would misclassify plain words like FORD, ANDROID,
 # NOTES, and NEARBY as explicit FTS syntax.
 _FTS_SYNTAX_MARKERS = re.compile(r'\b(?:AND|OR|NOT|NEAR)\b|["*:()]')
+_MAX_FTS_QUERY_LENGTH = 10_000
 
 
 class PortfolioIndex:
@@ -179,9 +180,11 @@ class PortfolioIndex:
             raise OntosUserError("offset must be >= 0.", code="E_INVALID_OFFSET")
         if limit <= 0:
             raise OntosUserError("limit must be > 0.", code="E_INVALID_LIMIT")
-        if not query or not query.strip():
+        if not query:
             raise OntosUserError("query must be non-empty.", code="E_INVALID_QUERY")
         sanitized_query = _sanitize_fts_query(query)
+        if not sanitized_query:
+            raise OntosUserError("query must be non-empty.", code="E_INVALID_QUERY")
 
         with self._connect() as conn:
             try:
@@ -607,6 +610,9 @@ class PortfolioIndex:
             or "syntax error" in message
             or "unterminated string" in message
             or "unknown special query" in message
+            # Explicit FTS column selectors like foo:bar surface as "no such
+            # column" when SQLite parses "foo" as an unknown FTS column name.
+            or "no such column" in message
         )
 
     @staticmethod
@@ -648,6 +654,11 @@ class PortfolioIndex:
 
 
 def _sanitize_fts_query(query: str) -> str:
+    if len(query) > _MAX_FTS_QUERY_LENGTH:
+        raise OntosUserError(
+            f"Query exceeds maximum length of {_MAX_FTS_QUERY_LENGTH} characters.",
+            code="E_INVALID_QUERY",
+        )
     trimmed = query.strip()
     if _FTS_SYNTAX_MARKERS.search(trimmed):
         return trimmed

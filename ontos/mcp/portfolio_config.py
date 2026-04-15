@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import logging
 from pathlib import Path
 from typing import List, Optional
 
@@ -17,6 +18,8 @@ __all__ = [
     "ensure_portfolio_config",
     "load_portfolio_config",
 ]
+
+logger = logging.getLogger(__name__)
 
 _DEFAULT_REGISTRY_PATH = "~/Dev/.dev-hub/registry/projects.json"
 _MISSING = object()
@@ -104,7 +107,9 @@ def _coerce_registry_path(value: object, default: str) -> Optional[str]:
     if value is _MISSING:
         return default
     if isinstance(value, str):
-        return value if value.strip() else None
+        stripped = value.strip()
+        return stripped or None
+    logger.warning("Ignoring non-string portfolio.registry_path value %r; using default path.", value)
     return default
 
 

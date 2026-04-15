@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 > For the full historical changelog with Ontos frontmatter (from v0.1.0), see [`Ontos_CHANGELOG.md`](Ontos_CHANGELOG.md).
 
+## [4.2.2] - 2026-04-15
+
+Patch release closing the residual Issue #105 hardening items on top of the
+shipped `v4.2.1` release.
+
+### Fixed
+- **Plain-word FTS regression coverage** — Sanitized plain queries are now
+  pinned against substring traps like `FORD`, `ANDROID`, `NOTES`, and
+  `NEARBY`, plus marker-only and bare-marker negative cases.
+- **FTS length-cap enforcement** — Queries longer than 10,000 characters now
+  fail before any strip-based copy, including whitespace-flood inputs; the
+  `== 10,000` boundary is test-pinned as accepted. This is a new
+  `E_INVALID_QUERY` behavior commitment in `v4.2.2`.
+- **Unicode search parity** — Cross-form NFC/NFD search behavior is now
+  explicitly test-asserted against the `unicode61` tokenizer contract.
+- **`registry_path` coercion observability** — Non-string
+  `portfolio.registry_path` values now emit a `WARNING` before falling back to
+  the default path, and outer whitespace on string paths is normalized.
+- **Malformed explicit FTS error translation** — SQLite `"no such column"`
+  errors produced by malformed explicit syntax now map to `E_INVALID_QUERY`
+  alongside the existing syntax-error family.
+
+### Changed
+- **Bundle ordering traceability** — `_lost_in_middle_order()` now carries an
+  inline fixed-slot rationale comment, and equal-score tiebreak behavior is
+  independently pinned by test.
+- **Scanner warning policy** — Repeated portfolio discovery passes now
+  explicitly document and test that slug-collision warnings re-emit per call.
+
 ## [4.2.1] - 2026-04-14
 
 Patch release shipping the remaining Issue #86 release-hardening items for portfolio config semantics, FTS sanitization, slug-collision warnings, module exports, and bundle-order parity.

@@ -270,6 +270,7 @@ def _greedy_pack(
 
 
 def _lost_in_middle_order(docs: list[BundleDocument]) -> list[BundleDocument]:
+    # m-6: fixed-slot, no list.insert; see plan §m-6.
     ranked = sorted(docs, key=lambda doc: (-doc.score, doc.id))
     ordered: list[BundleDocument | None] = [None] * len(ranked)
     left = 0

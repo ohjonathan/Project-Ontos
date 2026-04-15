@@ -122,6 +122,23 @@ def test_load_portfolio_config_whitespace_registry_path_disables_merge(tmp_path,
     assert cfg.registry_path is None
 
 
+def test_load_portfolio_config_strips_outer_whitespace_from_registry_path(tmp_path, monkeypatch):
+    config_path = tmp_path / ".config" / "ontos" / "portfolio.toml"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        """
+        [portfolio]
+        registry_path = "   ~/Dev/custom-registry.json   "
+        """,
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(portfolio_config_module, "PORTFOLIO_CONFIG_PATH", config_path)
+
+    cfg = load_portfolio_config()
+
+    assert cfg.registry_path == "~/Dev/custom-registry.json"
+
+
 def test_load_portfolio_config_non_string_registry_path_falls_back_to_default(tmp_path, monkeypatch):
     config_path = tmp_path / ".config" / "ontos" / "portfolio.toml"
     config_path.parent.mkdir(parents=True)
@@ -137,6 +154,29 @@ def test_load_portfolio_config_non_string_registry_path_falls_back_to_default(tm
     cfg = load_portfolio_config()
 
     assert cfg.registry_path == "~/Dev/.dev-hub/registry/projects.json"
+
+
+def test_load_portfolio_config_non_string_registry_path_warns_and_falls_back_to_default(
+    tmp_path,
+    monkeypatch,
+    caplog,
+):
+    config_path = tmp_path / ".config" / "ontos" / "portfolio.toml"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        """
+        [portfolio]
+        registry_path = true
+        """,
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(portfolio_config_module, "PORTFOLIO_CONFIG_PATH", config_path)
+
+    with caplog.at_level("WARNING"):
+        cfg = load_portfolio_config()
+
+    assert cfg.registry_path == "~/Dev/.dev-hub/registry/projects.json"
+    assert "Ignoring non-string portfolio.registry_path value" in caplog.text
 
 
 def test_load_portfolio_config_invalid_toml_raises(tmp_path, monkeypatch):
