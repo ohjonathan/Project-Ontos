@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 > For the full historical changelog with Ontos frontmatter (from v0.1.0), see [`Ontos_CHANGELOG.md`](Ontos_CHANGELOG.md).
 
+## [4.2.3] - 2026-04-15
+
+Patch release closing the residual Issue #107 MCP portfolio hardening items on
+top of the shipped `v4.2.2` release.
+
+### Fixed
+- **`registry_path` helper coercion** — `portfolio.registry_path` now accepts
+  `os.PathLike` inputs for programmatic callers, trims leading/trailing
+  zero-width/BOM edge characters in addition to normal whitespace, and keeps
+  explicit `None` on the existing warning-plus-default fallback path.
+- **Invalid FTS query contract pinning** — The SQLite error-text fragments that
+  map malformed queries to `E_INVALID_QUERY` are now centralized and directly
+  test-pinned, including the `"no such column"` path used by malformed
+  explicit syntax.
+- **Literal-colon limitation visibility** — Explicit colon queries such as
+  `user:alice` remain a known `E_INVALID_QUERY` limitation in this patch, and
+  the limitation is now documented inline and in the release notes.
+- **Scanner stderr resilience** — Slug-collision warnings now ignore broken
+  pipe / `EPIPE` write failures without changing warning format or slug
+  allocation.
+
+### Changed
+- **Repeated discovery warning tests** — Scanner repeated-pass coverage now
+  asserts the collision-warning invariants without coupling to full stderr
+  equality, so unrelated future warnings do not make the policy test brittle.
+
 ## [4.2.2] - 2026-04-15
 
 Patch release closing the residual Issue #105 hardening items on top of the

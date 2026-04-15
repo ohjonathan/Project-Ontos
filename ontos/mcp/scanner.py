@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import errno
 import json
 from pathlib import Path
 import re
@@ -107,10 +108,7 @@ def discover_projects(
         if slug != base_slug:
             # Warnings are emitted per discovery pass; repeated scans intentionally
             # re-emit them instead of tracking process-global dedupe state.
-            print(
-                f"[ontos] slug collision: '{base_slug}' -> '{slug}' for workspace '{path}'",
-                file=sys.stderr,
-            )
+            _emit_slug_collision_warning(base_slug, slug, path)
         results.append(
             ProjectEntry(
                 slug=slug,
@@ -214,6 +212,20 @@ def load_registry_records(
             )
         )
     return results
+
+
+def _emit_slug_collision_warning(base_slug: str, slug: str, path: Path) -> None:
+    try:
+        print(
+            f"[ontos] slug collision: '{base_slug}' -> '{slug}' for workspace '{path}'",
+            file=sys.stderr,
+        )
+    except BrokenPipeError:
+        return
+    except OSError as exc:
+        if exc.errno == errno.EPIPE:
+            return
+        raise
 
 
 def _load_registry_records(registry_path: Path | None) -> list[RegistryRecord]:
