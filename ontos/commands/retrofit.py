@@ -350,6 +350,22 @@ def _build_file_plan(doc: DocumentData) -> Optional[FilePlan]:
         parsed_value = parsed_frontmatter.get(field_name)
         on_disk = _coerce_on_disk_list(parsed_value)
 
+        if len(occurrences) == 0 and _has_nonempty_parsed_value(
+            parsed_frontmatter, field_name, on_disk
+        ):
+            warnings.append(
+                RetrofitWarning(
+                    path=path,
+                    field=field_name,
+                    reason_code=REASON_UNPATCHABLE_FORMAT,
+                    reason_message=(
+                        f"Field '{field_name}' is present but cannot be targeted for patching."
+                    ),
+                    blocking=True,
+                )
+            )
+            continue
+
         if len(occurrences) == 1:
             if on_disk is None:
                 warnings.append(
@@ -390,6 +406,19 @@ def _build_file_plan(doc: DocumentData) -> Optional[FilePlan]:
                         reason_code=REASON_BLOCK_SCALAR,
                         reason_message=(
                             f"Field '{field_name}' uses block scalar syntax."
+                        ),
+                        blocking=True,
+                    )
+                )
+                continue
+            if value_token.startswith("!"):
+                warnings.append(
+                    RetrofitWarning(
+                        path=path,
+                        field=field_name,
+                        reason_code=REASON_UNPATCHABLE_FORMAT,
+                        reason_message=(
+                            f"Field '{field_name}' uses YAML tag syntax."
                         ),
                         blocking=True,
                     )
@@ -466,6 +495,22 @@ def _coerce_on_disk_list(parsed_value: object) -> Optional[List[str]]:
             items.append(str(item).strip())
         return [item for item in items if item]
     return None
+
+
+def _has_nonempty_parsed_value(
+    parsed_frontmatter: Dict[str, object], field_name: str, on_disk: Optional[List[str]]
+) -> bool:
+    if field_name not in parsed_frontmatter:
+        return False
+    if on_disk is not None:
+        return bool(on_disk)
+
+    parsed_value = parsed_frontmatter[field_name]
+    if isinstance(parsed_value, str):
+        return bool(parsed_value.strip())
+    if isinstance(parsed_value, list):
+        return any(str(item).strip() for item in parsed_value if item is not None)
+    return parsed_value is not None
 
 
 def _block_contains_anchor(block_lines: Sequence[str]) -> bool:

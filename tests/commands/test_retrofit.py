@@ -367,6 +367,94 @@ def test_retrofit_apply_skips_duplicate_top_level_field(tmp_path: Path):
     assert apply_payload["error"]["code"] == "unsupported_target_format"
 
 
+def test_retrofit_dry_run_warns_on_merge_derived_tags_without_duplicate_insert(
+    tmp_path: Path,
+):
+    _init_repo(tmp_path)
+    path = tmp_path / "docs" / "merge-derived.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "---\n"
+        "id: merge_doc\n"
+        "type: atom\n"
+        "status: active\n"
+        "concepts:\n"
+        "  - merged\n"
+        "shared: &shared\n"
+        "  tags:\n"
+        "    - merged\n"
+        "<<: *shared\n"
+        "---\n"
+        "Body\n",
+        encoding="utf-8",
+    )
+    original = path.read_text(encoding="utf-8")
+
+    first = _run_ontos(tmp_path, "--json", "retrofit", "--obsidian")
+    assert first.returncode == 0
+    payload = json.loads(first.stdout)
+    assert any(
+        w["field"] == "tags" and w["reason_code"] == "unpatchable_field_format"
+        for w in payload["warnings"]
+    )
+    file_entry = next(item for item in payload["data"]["files"] if item["path"].endswith("merge-derived.md"))
+    assert not any(
+        edit["field"] == "tags" and edit["action"] == "insert"
+        for edit in file_entry["edits"]
+    )
+    assert any(
+        edit["field"] == "aliases" and edit["action"] == "insert"
+        for edit in file_entry["edits"]
+    )
+    assert path.read_text(encoding="utf-8") == original
+
+    second = _run_ontos(tmp_path, "--json", "retrofit", "--obsidian")
+    assert second.returncode == 0
+    second_payload = json.loads(second.stdout)
+    second_entry = next(
+        item for item in second_payload["data"]["files"] if item["path"].endswith("merge-derived.md")
+    )
+    assert not any(
+        edit["field"] == "tags" and edit["action"] == "insert"
+        for edit in second_entry["edits"]
+    )
+
+
+def test_retrofit_dry_run_warns_on_tag_prefixed_tags_field(tmp_path: Path):
+    _init_repo(tmp_path)
+    path = tmp_path / "docs" / "tagged.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "---\n"
+        "id: tagged_doc\n"
+        "type: atom\n"
+        "status: active\n"
+        "concepts:\n"
+        "  - a\n"
+        "tags: !!seq\n"
+        "  - a\n"
+        "---\n"
+        "Body\n",
+        encoding="utf-8",
+    )
+    original = path.read_text(encoding="utf-8")
+
+    result = _run_ontos(tmp_path, "--json", "retrofit", "--obsidian")
+    assert result.returncode == 0
+    payload = json.loads(result.stdout)
+    assert any(
+        w["field"] == "tags" and w["reason_code"] == "unpatchable_field_format"
+        for w in payload["warnings"]
+    )
+    file_entry = next(item for item in payload["data"]["files"] if item["path"].endswith("tagged.md"))
+    assert not any(edit["field"] == "tags" for edit in file_entry["edits"])
+    assert any(
+        edit["field"] == "aliases" and edit["action"] == "insert"
+        for edit in file_entry["edits"]
+    )
+    assert path.read_text(encoding="utf-8") == original
+
+
 # ---------------------------------------------------------------------------
 # Scope
 # ---------------------------------------------------------------------------
