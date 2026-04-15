@@ -166,6 +166,27 @@ def test_discover_projects_triple_slug_collision_emits_one_warning_per_suffix(tm
     ]
 
 
+def test_discover_projects_repeated_calls_reemit_collision_warnings(tmp_path, capsys):
+    root_one = tmp_path / "DevA"
+    root_two = tmp_path / "DevB"
+    root_one.mkdir()
+    root_two.mkdir()
+    _make_project(root_one / "sample-app", with_ontos=True, with_readme=True, doc_count=1)
+    collided_path = _make_project(root_two / "sample-app", with_ontos=True, with_readme=True, doc_count=1)
+
+    discover_projects(scan_roots=[root_one, root_two], exclude=[], registry_path=None)
+    first = capsys.readouterr()
+    discover_projects(scan_roots=[root_one, root_two], exclude=[], registry_path=None)
+    second = capsys.readouterr()
+
+    expected = (
+        f"[ontos] slug collision: 'sample-app' -> 'sample-app-2' "
+        f"for workspace '{collided_path.resolve()}'"
+    )
+    assert first.err.strip() == expected
+    assert second.err.strip() == expected
+
+
 @pytest.mark.parametrize(
     "payload_factory",
     [

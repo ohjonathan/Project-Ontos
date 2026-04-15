@@ -105,6 +105,8 @@ def discover_projects(
         base_slug = slugify(path.name)
         slug = allocate_slug(base_slug, used_slugs)
         if slug != base_slug:
+            # Warnings are emitted per discovery pass; repeated scans intentionally
+            # re-emit them instead of tracking process-global dedupe state.
             print(
                 f"[ontos] slug collision: '{base_slug}' -> '{slug}' for workspace '{path}'",
                 file=sys.stderr,
