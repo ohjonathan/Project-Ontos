@@ -21,6 +21,29 @@ All notable changes to **Project Ontos itself** (the protocol and tooling) will 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.3.0] - 2026-04-15
+
+### Theme: "Obsidian Write Path"
+
+Minor release shipping `ontos retrofit --obsidian`, a scoped bulk-apply command that writes computed `tags:` and `aliases:` frontmatter fields into existing documents so Obsidian vaults can browse Ontos-managed docs without hand-editing every block.
+
+### Added
+
+- **`ontos retrofit --obsidian`** — New command that writes `normalize_tags()` + `normalize_aliases()` results into on-disk frontmatter. Inserts the block when absent, replaces when drifted, no-op when already in sync. Dry-run by default; `--apply` requires clean git.
+- **`ontos/core/frontmatter_edit.py`** — Shared YAML-surgery helpers (`_read_decoded_content`, `_split_frontmatter`, `_index_top_level_fields`, `_check_clean_git_state`) used by both `rename` and `retrofit`.
+
+### Safety
+
+- `--apply` requires clean git working tree (matches `ontos rename`).
+- Atomic commit via `SessionContext` with flock serialization.
+- Unpatchable frontmatter (anchors, block scalars, duplicate top-level keys) raises blocking warnings and aborts `--apply`.
+
+### Metrics
+
+- 14 new integration tests, 25 rename regression tests pass unchanged.
+
+---
+
 ## [4.1.0] - 2026-04-12
 
 ### Theme: "Portfolio Authority"
