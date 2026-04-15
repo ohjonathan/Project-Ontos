@@ -40,7 +40,7 @@ Minor release shipping `ontos retrofit --obsidian`, a scoped bulk-apply command 
 
 ### Metrics
 
-- 14 new integration tests, 25 rename regression tests pass unchanged.
+- 21 new retrofit integration tests, 25 rename regression tests passing.
 
 ---
 
