@@ -11,9 +11,8 @@ top of the shipped `v4.2.2` release.
 
 ### Fixed
 - **`registry_path` helper coercion** — `portfolio.registry_path` now accepts
-  `os.PathLike` inputs for programmatic callers, trims leading/trailing
-  zero-width/BOM edge characters in addition to normal whitespace, and keeps
-  explicit `None` on the existing warning-plus-default fallback path.
+  `os.PathLike` inputs for programmatic callers and trims leading/trailing
+  zero-width/BOM edge characters in addition to normal whitespace.
 - **Invalid FTS query contract pinning** — The SQLite error-text fragments that
   map malformed queries to `E_INVALID_QUERY` are now centralized and directly
   test-pinned, including the `"no such column"` path used by malformed
@@ -26,6 +25,9 @@ top of the shipped `v4.2.2` release.
   allocation.
 
 ### Changed
+- **Explicit `None` fallback contract** — Programmatic callers that pass
+  `None` for `portfolio.registry_path` now have that warning-plus-default
+  behavior called out as an intentional pinned contract for `v4.2.3`.
 - **Repeated discovery warning tests** — Scanner repeated-pass coverage now
   asserts the collision-warning invariants without coupling to full stderr
   equality, so unrelated future warnings do not make the policy test brittle.
