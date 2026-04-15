@@ -87,6 +87,11 @@ def _split_frontmatter(normalized: str) -> _FrontmatterSplit:
     )
 
 
+def _is_blank_or_comment_line(line: str) -> bool:
+    stripped = line.rstrip("\r\n").strip()
+    return not stripped or stripped.startswith("#")
+
+
 def _index_top_level_fields(lines: Sequence[str]) -> List[_TopLevelField]:
     top_level_entries: List[Tuple[str, int, str, int, str]] = []
     for index, line in enumerate(lines):
@@ -109,6 +114,11 @@ def _index_top_level_fields(lines: Sequence[str]) -> List[_TopLevelField]:
     results: List[_TopLevelField] = []
     for pos, entry in enumerate(top_level_entries):
         next_line_index = top_level_entries[pos + 1][1] if pos + 1 < len(top_level_entries) else len(lines)
+        end_line_index = next_line_index
+        while end_line_index > entry[1] + 1 and _is_blank_or_comment_line(
+            lines[end_line_index - 1]
+        ):
+            end_line_index -= 1
         results.append(
             _TopLevelField(
                 key=entry[0],
@@ -116,7 +126,7 @@ def _index_top_level_fields(lines: Sequence[str]) -> List[_TopLevelField]:
                 line_text=entry[2],
                 colon_index=entry[3],
                 value_text=entry[4],
-                end_line_index=next_line_index,
+                end_line_index=end_line_index,
             )
         )
     return results

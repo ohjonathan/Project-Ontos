@@ -263,6 +263,35 @@ def test_retrofit_apply_replaces_drifted_tags(tmp_path: Path):
     assert parsed["tags"] == ["alpha", "beta", "stale"]
 
 
+def test_retrofit_apply_replace_preserves_inter_field_comment(tmp_path: Path):
+    _init_repo(tmp_path)
+    path = tmp_path / "docs" / "commented.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "---\n"
+        "id: commented_doc\n"
+        "type: atom\n"
+        "status: active\n"
+        "concepts:\n"
+        "  - fresh\n"
+        "tags:\n"
+        "  - old-tag\n"
+        "# This comment must survive\n"
+        "aliases:\n"
+        "  - Test Alias\n"
+        "---\n"
+        "Body\n",
+        encoding="utf-8",
+    )
+    _init_git_repo(tmp_path)
+
+    result = _run_ontos(tmp_path, "retrofit", "--obsidian", "--apply")
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    updated = path.read_text(encoding="utf-8")
+    assert "# This comment must survive\naliases:\n" in updated
+
+
 def test_retrofit_apply_merges_concepts_into_tags(tmp_path: Path):
     _init_repo(tmp_path)
     path = tmp_path / "docs" / "merge.md"
