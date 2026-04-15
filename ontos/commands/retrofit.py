@@ -16,6 +16,7 @@ Structure mirrors ``ontos/commands/rename.py``:
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -44,6 +45,7 @@ REASON_UNPATCHABLE_FORMAT = "unpatchable_field_format"
 POST_APPLY_WARNING = "Run 'ontos map' to regenerate derived artifacts."
 
 _TARGET_FIELDS: Tuple[str, ...] = ("tags", "aliases")
+_DATE_LIKE_RE = re.compile(r"^\d{4}-\d{2}(-\d{2})?")
 
 
 @dataclass
@@ -540,6 +542,8 @@ def _serialize_item(value: str) -> str:
     elif any(ch in value for ch in ":#&*!|>%@`,[]{}"):
         needs_quote = True
     elif value.lower() in {"true", "false", "yes", "no", "null", "on", "off", "~"}:
+        needs_quote = True
+    elif _DATE_LIKE_RE.match(value):
         needs_quote = True
     else:
         try:
