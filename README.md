@@ -467,7 +467,7 @@ The server binds to one **primary workspace** (the `cwd` or `--workspace` path).
 Calling a core tool with a `workspace_id` that doesn't match the primary workspace returns `E_CROSS_WORKSPACE_NOT_SUPPORTED`. This is a deliberate safety boundary. To read another project's documents, change your `cwd` or run a second `ontos serve` instance.
 
 > [!NOTE]
-> Cross-workspace document reads and writes are on the v4.2 roadmap.
+> Cross-workspace document reads and writes are not supported in v4.3.0.
 
 #### Example Workflow
 
@@ -506,6 +506,7 @@ ontos doctor       # Check graph health
 ontos maintain     # Run weekly maintenance (9 tasks)
 ontos link-check   # Scan for broken references
 ontos rename       # Safe ID rename across graph
+ontos retrofit --obsidian  # Sync Obsidian tags/aliases into frontmatter
 ontos promote      # Promote docs to Level 2
 ontos agents       # Regenerate AGENTS.md and .cursorrules
 ontos serve        # Start MCP server for IDE integration
@@ -557,16 +558,16 @@ Version 3 is when Ontos became public. The earlier versions live on in the desig
 
 | Version | Status | Highlights |
 |---------|--------|------------|
-| **v4.2.0** | ✅ Current | Managed Cursor onboarding, universal `print-config`, shared MCP core |
-| **v4.3** | Next | HTTP / Streamable HTTP transport, daemon mode, security hardening |
+| **v4.3.0** | ✅ Current | Obsidian write path via `ontos retrofit --obsidian` |
+| **Future** | Next | HTTP / Streamable HTTP transport, daemon mode, security hardening |
 
-v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python. v3.2 added re-architecture support, environment detection, and activation resilience. v3.3 ships 62 audit-derived hardening fixes plus `link-check`, `rename`, unified JSON envelopes, and a canonical document loader. v3.3.1 reduced link-check false positives by 89% and added `promote_check` to the maintenance pipeline. v3.4 adds `--compact tiered` context maps for token-constrained agents. v4.0 adds an MCP server mode with 8 read-only tools, enabling native integration with AI IDEs like Claude Desktop and Cursor without CLI overhead. v4.1 expands MCP to 15 tools — 4 write tools (`scaffold_document`, `log_session`, `promote_document`, `rename_document`), a portfolio index with FTS5 search, advisory flock locking, and a shared rename orchestrator used by both CLI and MCP. v4.2.0 makes Cursor a first-class managed MCP client alongside Antigravity and adds `ontos mcp print-config` for Claude Code, Codex, and VS Code. The next planned transport work moves to v4.3.
+v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python. v3.2 added re-architecture support, environment detection, and activation resilience. v3.3 ships 62 audit-derived hardening fixes plus `link-check`, `rename`, unified JSON envelopes, and a canonical document loader. v3.3.1 reduced link-check false positives by 89% and added `promote_check` to the maintenance pipeline. v3.4 adds `--compact tiered` context maps for token-constrained agents. v4.0 adds an MCP server mode with 8 read-only tools, enabling native integration with AI IDEs like Claude Desktop and Cursor without CLI overhead. v4.1 expands MCP to 15 tools — 4 write tools (`scaffold_document`, `log_session`, `promote_document`, `rename_document`), a portfolio index with FTS5 search, advisory flock locking, and a shared rename orchestrator used by both CLI and MCP. v4.2.0 makes Cursor a first-class managed MCP client alongside Antigravity and adds `ontos mcp print-config` for Claude Code, Codex, and VS Code. v4.3.0 adds `ontos retrofit --obsidian`, a dry-run-first write path that lands computed `tags` and `aliases` on disk for Obsidian-compatible browsing. The next transport work remains on the roadmap.
 
 ---
 
 ## Documentation
 
-> *Note: Documentation links below point to the latest source on GitHub. During release cutover, source docs may reflect `v4.2.0` before PyPI finishes publishing the same version.*
+> *Note: Documentation links below point to the latest source on GitHub. During release cutover, source docs may reflect `v4.3.0` before PyPI finishes publishing the same version.*
 
 - **[Ontos Manual](https://github.com/ohjonathan/Project-Ontos/blob/main/docs/reference/Ontos_Manual.md)**: Complete reference—installation, workflow, configuration, errors
 - **[Agent Instructions](https://github.com/ohjonathan/Project-Ontos/blob/main/docs/reference/Ontos_Agent_Instructions.md)**: Commands for AI agents

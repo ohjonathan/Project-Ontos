@@ -7,7 +7,7 @@ depends_on: [ontos_manual]
 
 # Migration Guide: v3.x → v4.x
 
-This guide covers the new capabilities in Ontos v4.0, v4.1, and v4.2 and how to enable them. **There are no breaking changes** — all existing CLI commands, configuration, and frontmatter schemas are preserved.
+This guide covers the new capabilities in Ontos v4.0, v4.1, v4.2, and v4.3 and how to enable them. **There are no breaking changes** — all existing CLI commands, configuration, and frontmatter schemas are preserved.
 
 ## What's New in v4.0
 
@@ -105,7 +105,7 @@ usage_log_path = "~/.config/ontos/usage.jsonl"  # default
 
 Everything else works the same:
 
-- ✅ All CLI commands (`map`, `log`, `doctor`, `maintain`, `link-check`, `rename`, etc.)
+- ✅ All existing CLI commands (`map`, `log`, `doctor`, `maintain`, `link-check`, `rename`, etc.) still work the same
 - ✅ `pip install ontos` (without extras) — no new dependencies on Python 3.9+
 - ✅ `.ontos.toml` configuration — existing settings preserved
 - ✅ Frontmatter schema — no changes to document metadata
@@ -139,7 +139,7 @@ pipx install --force 'ontos[mcp]'
 ### 2. Verify
 
 ```bash
-ontos --version  # Should show 4.2.x
+ontos --version  # Should show 4.3.x
 ontos doctor     # Check graph health
 ```
 
@@ -307,6 +307,33 @@ usage_logging = true
 ```
 
 Tool invocations are logged to `~/.config/ontos/usage.jsonl`. No document content is logged.
+
+## What's New in v4.3
+
+### New Command: `ontos retrofit --obsidian`
+
+Ontos v4.3 adds the Obsidian write path: a dry-run-first CLI command that lands canonical frontmatter on disk for existing documents. The read path has been available since v3.1.0 via in-memory normalization; v4.3 makes those values persistent for vault browsing.
+
+`ontos retrofit --obsidian`:
+
+- writes computed `tags` from `concepts`
+- writes computed `aliases` from explicit aliases plus an ID-derived alias
+- inserts missing fields, replaces drifted fields, removes stale blocks, and no-ops when files are already in sync
+
+```bash
+ontos retrofit --obsidian
+ontos retrofit --obsidian --apply
+ontos retrofit --obsidian --scope library
+```
+
+### Safety Model
+
+The retrofit command follows the same conservative write pattern as Ontos's other mutating commands:
+
+- dry-run by default
+- `--apply` requires a clean git worktree
+- blocking warnings abort batch apply for unpatchable frontmatter
+- JSON output reports files, edits, and warnings for machine consumers
 
 ## Known Limitations (v4.1)
 

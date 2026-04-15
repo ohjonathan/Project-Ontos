@@ -5,7 +5,7 @@ status: active
 depends_on: []
 ---
 
-# Ontos Manual v4.2
+# Ontos Manual v4.3
 
 *The complete reference for Project Ontos*
 
@@ -28,7 +28,7 @@ pip install 'ontos[mcp]'
 ontos serve
 ```
 
-> **v4.2 Note:** v4.0 added MCP server mode for native AI IDE integration. v4.1 added write tools, portfolio index, and advisory flock locking. v4.2 adds Cursor MCP onboarding plus `print-config` fallback for the remaining supported client surfaces. See the [Migration Guide v3→v4](Migration_v3_to_v4.md). For v2.x users, see [Migration v2→v3](Migration_v2_to_v3.md).
+> **v4.3 Note:** v4.0 added MCP server mode for native AI IDE integration. v4.1 added write tools, portfolio index, and advisory flock locking. v4.2 added Cursor MCP onboarding plus `print-config` fallback for the remaining supported client surfaces. v4.3 adds `ontos retrofit --obsidian`, the dry-run-first write path that lands computed `tags` and `aliases` in on-disk frontmatter for Obsidian. See the [Migration Guide v3→v4](Migration_v3_to_v4.md). For v2.x users, see [Migration v2→v3](Migration_v2_to_v3.md).
 
 ---
 
@@ -546,6 +546,7 @@ ontos <command> [options]
 | `maintain`  | Run maintenance tasks  | `python3 .ontos/scripts/ontos_maintain.py`           |
 | `link-check` | Scan for broken refs | (New in v3.3)                                         |
 | `rename`    | Rename a document ID   | (New in v3.3)                                         |
+| `retrofit`  | Sync Obsidian frontmatter | (New in v4.3)                                      |
 | `consolidate` | Archive old logs     | `python3 .ontos/scripts/ontos_consolidate.py`        |
 | `query`     | Search documents       | `python3 .ontos/scripts/ontos_query.py`              |
 | `scaffold`  | Generate scaffolds     | `python3 .ontos/scripts/ontos_scaffold.py`           |
@@ -571,6 +572,9 @@ ontos query --concept caching
 
 # Check graph health
 ontos query --health
+
+# Preview Obsidian frontmatter retrofit
+ontos retrofit --obsidian
 ```
 
 ### 10.1 Environment Detection (v3.2)
@@ -638,7 +642,31 @@ ontos rename old_id new_id --json
 - Collision detection — refuses to rename if `new_id` already exists
 - Automatic `depends_on` propagation across all documents
 
-### 10.4 MCP Server Mode (v4.0)
+### 10.4 Retrofit (v4.3)
+
+The `retrofit` command writes canonical Obsidian-facing frontmatter into existing documents so vaults can browse Ontos-managed docs without hand-editing every file. It computes `tags` from `concepts` and `aliases` from explicit aliases plus an ID-derived alias, then inserts, replaces, removes stale blocks, or no-ops depending on drift.
+
+```bash
+# Dry-run (default)
+ontos retrofit --obsidian
+
+# Apply frontmatter updates
+ontos retrofit --obsidian --apply
+
+# Include .ontos-internal documents
+ontos retrofit --obsidian --scope library
+
+# JSON output
+ontos retrofit --obsidian --json
+```
+
+**Safety features:**
+- Dry-run by default — requires `--apply` to write changes
+- Clean-git check before apply — writes only when the worktree is clean
+- Blocking warnings for unpatchable frontmatter — batch apply aborts rather than partially writing
+- Surgical field updates — preserves unrelated frontmatter and removes stale `tags` / `aliases` blocks when canonical values are empty
+
+### 10.5 MCP Server Mode (v4.0)
 
 The `serve` command starts a stdio MCP server that exposes the Ontos knowledge graph to AI agents and IDEs via the Model Context Protocol.
 

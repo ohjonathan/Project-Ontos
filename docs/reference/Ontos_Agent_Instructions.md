@@ -7,8 +7,9 @@ depends_on: [ontos_manual]
 
 # Ontos Agent Instructions
 
-> **v4.1:** All CLI commands use `ontos <command>` (package installed via pip).
+> **v4.3:** All CLI commands use `ontos <command>` (package installed via pip).
 > Agents can also connect via MCP server (`ontos serve`) for native integration — up to 15 tools including 4 write tools and portfolio search.
+> `ontos retrofit --obsidian` is the CLI write path for landing computed `tags` and `aliases` into on-disk frontmatter for Obsidian.
 > Use `python3 -m ontos <command>` if not installed globally.
 > See [Ontos Manual](Ontos_Manual.md) for details.
 
@@ -199,6 +200,19 @@ Mark documentation as current after reviewing described atoms:
 - After updating code that a document describes
 - When Archive Ontos shows staleness warnings
 - When context map Section 5 shows stale documents
+
+### "Retrofit Obsidian Frontmatter" (v4.3)
+Use this when the user wants on-disk `tags:` and `aliases:` updated for Obsidian browsing:
+
+1. `ontos retrofit --obsidian` — Dry-run preview
+2. Review inserts, replaces, removes, and warnings
+3. `ontos retrofit --obsidian --apply` — Only when the user explicitly wants writes
+4. `ontos retrofit --obsidian --scope library` — Include `.ontos-internal` when requested
+
+**Rules:**
+- Dry-run is the default
+- `--apply` requires clean git and aborts on blocking warnings
+- Use `retrofit` to sync frontmatter, not to rename IDs or change document bodies
 
 
 ## Type Hierarchy
