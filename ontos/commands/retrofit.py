@@ -62,7 +62,7 @@ class RetrofitOptions:
 @dataclass(frozen=True)
 class RetrofitEdit:
     field: str  # "tags" | "aliases"
-    action: str  # "insert" | "replace"
+    action: str  # "insert" | "replace" | "remove"
     old_value: Optional[List[str]]
     new_value: List[str]
 
@@ -320,7 +320,7 @@ def _build_file_plan(doc: DocumentData) -> Optional[FilePlan]:
         )
 
     computed: Dict[str, List[str]] = {
-        "tags": list(doc.tags),
+        "tags": _compute_retrofit_tags(parsed_frontmatter),
         "aliases": list(doc.aliases),
     }
 
@@ -331,9 +331,6 @@ def _build_file_plan(doc: DocumentData) -> Optional[FilePlan]:
 
     for field_name in _TARGET_FIELDS:
         new_value = computed[field_name]
-        if not new_value:
-            continue
-
         occurrences = [item for item in top_level if item.key == field_name]
         if len(occurrences) > 1:
             warnings.append(
@@ -366,6 +363,10 @@ def _build_file_plan(doc: DocumentData) -> Optional[FilePlan]:
                     blocking=True,
                 )
             )
+            continue
+
+        should_remove = len(occurrences) == 1 and bool(on_disk) and not new_value
+        if not new_value and not should_remove:
             continue
 
         if len(occurrences) == 1:
@@ -423,6 +424,19 @@ def _build_file_plan(doc: DocumentData) -> Optional[FilePlan]:
                             f"Field '{field_name}' uses YAML tag syntax."
                         ),
                         blocking=True,
+                    )
+                )
+                continue
+
+            if should_remove:
+                del lines[occurrence.line_index : occurrence.end_line_index]
+                top_level = _index_top_level_fields(lines)
+                edits.append(
+                    RetrofitEdit(
+                        field=field_name,
+                        action="remove",
+                        old_value=on_disk,
+                        new_value=[],
                     )
                 )
                 continue
@@ -497,6 +511,12 @@ def _coerce_on_disk_list(parsed_value: object) -> Optional[List[str]]:
             items.append(str(item).strip())
         return [item for item in items if item]
     return None
+
+
+def _compute_retrofit_tags(parsed_frontmatter: Dict[str, object]) -> List[str]:
+    computed_frontmatter = dict(parsed_frontmatter)
+    computed_frontmatter.pop("tags", None)
+    return normalize_tags(computed_frontmatter)
 
 
 def _has_nonempty_parsed_value(

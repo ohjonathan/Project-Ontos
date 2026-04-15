@@ -260,7 +260,7 @@ def test_retrofit_apply_replaces_drifted_tags(tmp_path: Path):
     import yaml
     parts = updated.split("---", 2)
     parsed = yaml.safe_load(parts[1])
-    assert parsed["tags"] == ["alpha", "beta", "stale"]
+    assert parsed["tags"] == ["alpha", "beta"]
 
 
 def test_retrofit_apply_replace_preserves_inter_field_comment(tmp_path: Path):
@@ -292,7 +292,7 @@ def test_retrofit_apply_replace_preserves_inter_field_comment(tmp_path: Path):
     assert "# This comment must survive\naliases:\n" in updated
 
 
-def test_retrofit_apply_merges_concepts_into_tags(tmp_path: Path):
+def test_retrofit_apply_rewrites_tags_from_concepts_only(tmp_path: Path):
     _init_repo(tmp_path)
     path = tmp_path / "docs" / "merge.md"
     _write_doc(path, "merge_doc", concepts="[a, b]", tags="[c]")
@@ -305,7 +305,7 @@ def test_retrofit_apply_merges_concepts_into_tags(tmp_path: Path):
     import yaml
     parts = updated.split("---", 2)
     parsed = yaml.safe_load(parts[1])
-    assert parsed["tags"] == ["a", "b", "c"]
+    assert parsed["tags"] == ["a", "b"]
 
 
 def test_retrofit_apply_quotes_date_like_tag_values(tmp_path: Path):
@@ -472,6 +472,47 @@ def test_retrofit_dry_run_warns_on_tag_prefixed_tags_field(tmp_path: Path):
         for edit in file_entry["edits"]
     )
     assert path.read_text(encoding="utf-8") == original
+
+
+def test_retrofit_removes_stale_tags_when_computed_value_is_empty(tmp_path: Path):
+    _init_repo(tmp_path)
+    path = tmp_path / "docs" / "stale-tags.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "---\n"
+        "id: stale_doc\n"
+        "type: atom\n"
+        "status: active\n"
+        "tags:\n"
+        "  - stale-tag\n"
+        "aliases:\n"
+        "  - Stale Doc\n"
+        "  - stale-doc\n"
+        "---\n"
+        "Body\n",
+        encoding="utf-8",
+    )
+    _init_git_repo(tmp_path)
+
+    dry_run = _run_ontos(tmp_path, "--json", "retrofit", "--obsidian")
+    assert dry_run.returncode == 0
+    dry_payload = json.loads(dry_run.stdout)
+    file_entry = next(item for item in dry_payload["data"]["files"] if item["path"].endswith("stale-tags.md"))
+    assert any(
+        edit["field"] == "tags" and edit["action"] == "remove"
+        for edit in file_entry["edits"]
+    )
+
+    apply_result = _run_ontos(tmp_path, "retrofit", "--obsidian", "--apply")
+    assert apply_result.returncode == 0, apply_result.stdout + apply_result.stderr
+
+    updated = path.read_text(encoding="utf-8")
+    assert "tags:" not in updated
+
+    second = _run_ontos(tmp_path, "--json", "retrofit", "--obsidian")
+    assert second.returncode == 0
+    second_payload = json.loads(second.stdout)
+    assert second_payload["data"]["summary"]["planned_files"] == 0
 
 
 # ---------------------------------------------------------------------------
