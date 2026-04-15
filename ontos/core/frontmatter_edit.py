@@ -68,6 +68,9 @@ def _split_frontmatter(normalized: str) -> _FrontmatterSplit:
             body=normalized,
             body_abs_offset=0,
         )
+    # Known limitation: if a YAML block scalar value contains a literal
+    # "---" on its own line, this split will be incorrect. This is a
+    # shared limitation with all ----based frontmatter parsers.
     parts = normalized.split("---", 2)
     if len(parts) < 3:
         return _FrontmatterSplit(
