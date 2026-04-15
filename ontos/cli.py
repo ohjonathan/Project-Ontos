@@ -98,6 +98,7 @@ def create_parser(include_hidden: bool = True) -> argparse.ArgumentParser:
     _register_maintain(subparsers, global_parser)
     _register_link_check(subparsers, global_parser)
     _register_rename(subparsers, global_parser)
+    _register_retrofit(subparsers, global_parser)
     _register_env(subparsers, global_parser)
     _register_mcp(subparsers, global_parser)
     _register_serve(subparsers, global_parser)
@@ -269,6 +270,32 @@ def _register_rename(subparsers, parent):
     )
     _add_scope_argument(p)
     p.set_defaults(func=_cmd_rename)
+
+
+def _register_retrofit(subparsers, parent):
+    """Register retrofit command."""
+    p = subparsers.add_parser(
+        "retrofit",
+        help="Bulk-apply computed frontmatter fields (tags, aliases) to existing documents",
+        description=(
+            "Write computed tags + aliases into on-disk frontmatter.\n"
+            "Dry-run by default. Use --apply to write changes."
+        ),
+        epilog="Dry-run by default. Use --apply to write changes.",
+        parents=[parent],
+    )
+    p.add_argument(
+        "--obsidian",
+        action="store_true",
+        help="Write computed tags + aliases to frontmatter",
+    )
+    p.add_argument(
+        "--apply",
+        action="store_true",
+        help="Apply changes (default: dry-run)",
+    )
+    _add_scope_argument(p)
+    p.set_defaults(func=_cmd_retrofit)
 
 
 def _register_env(subparsers, parent):
@@ -911,6 +938,20 @@ def _cmd_rename(args) -> int:
         quiet=args.quiet,
     )
     return rename_command(options)
+
+
+def _cmd_retrofit(args) -> int:
+    """Handle retrofit command."""
+    from ontos.commands.retrofit import RetrofitOptions, retrofit_command
+
+    options = RetrofitOptions(
+        obsidian=getattr(args, "obsidian", False),
+        apply=getattr(args, "apply", False),
+        scope=getattr(args, "scope", None),
+        json_output=args.json,
+        quiet=args.quiet,
+    )
+    return retrofit_command(options)
 
 
 def _cmd_env(args) -> int:
