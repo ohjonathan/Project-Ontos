@@ -31,7 +31,7 @@ from ontos.core.frontmatter_edit import (
 )
 from ontos.core.types import DocumentData
 from ontos.io.config import load_project_config
-from ontos.io.files import find_project_root, load_documents
+from ontos.io.files import DocumentLoadIssue, find_project_root, load_documents
 from ontos.io.scan_scope import ScanScope, collect_scoped_documents, resolve_scan_scope
 from ontos.io.yaml import parse_frontmatter_content
 from ontos.ui.json_output import emit_command_error, emit_command_success
@@ -248,7 +248,7 @@ def _prepare_plan(
     docs = load_result.documents
 
     file_plans: List[FilePlan] = []
-    all_warnings: List[RetrofitWarning] = []
+    all_warnings: List[RetrofitWarning] = _loader_issues_to_warnings(load_result.issues)
     for doc in sorted(docs.values(), key=lambda item: str(item.filepath)):
         file_plan = _build_file_plan(doc)
         if file_plan is None:
@@ -536,6 +536,19 @@ def _has_nonempty_parsed_value(
     return parsed_value is not None
 
 
+def _loader_issues_to_warnings(issues: Sequence[DocumentLoadIssue]) -> List[RetrofitWarning]:
+    return [
+        RetrofitWarning(
+            path=issue.path,
+            field=None,
+            reason_code=issue.code,
+            reason_message=issue.message,
+            blocking=False,
+        )
+        for issue in issues
+    ]
+
+
 def _block_contains_anchor(block_lines: Sequence[str]) -> bool:
     for line in block_lines:
         if "&" in line or "*" in line:
@@ -650,6 +663,7 @@ def _emit_dry_run(options: RetrofitOptions, plan: RetrofitPlan) -> None:
                 "scope": plan.scope.value,
                 "summary": _summary_to_json(plan.summary),
                 "files": [_file_plan_to_json(item) for item in plan.files],
+                "warnings": [_warning_to_json(item) for item in plan.warnings],
             },
             warnings=[_warning_to_json(item) for item in plan.warnings],
         )
@@ -688,6 +702,33 @@ def _emit_dry_run(options: RetrofitOptions, plan: RetrofitPlan) -> None:
                 )
             print()
 
+    reported_warning_keys = {
+        (
+            str(warning.path),
+            warning.field,
+            warning.reason_code,
+            warning.reason_message,
+            warning.blocking,
+        )
+        for file_plan in plan.files
+        for warning in file_plan.warnings
+    }
+    external_warnings = [
+        warning
+        for warning in plan.warnings
+        if (
+            str(warning.path),
+            warning.field,
+            warning.reason_code,
+            warning.reason_message,
+            warning.blocking,
+        )
+        not in reported_warning_keys
+    ]
+    for warning in external_warnings:
+        field_part = f" field={warning.field}" if warning.field else ""
+        print(f"warning ({warning.reason_code}){field_part}: {warning.reason_message} [{warning.path}]")
+
     print("No files written. Re-run with --apply to execute.")
 
 
@@ -708,6 +749,7 @@ def _emit_apply_success(
                     plan.summary, applied_files=len(modified_paths)
                 ),
                 "files": [_file_plan_to_json(item) for item in plan.files],
+                "warnings": [_warning_to_json(item) for item in plan.warnings],
                 "applied_paths": [str(path) for path in sorted(modified_paths)],
                 "post_apply_warning": POST_APPLY_WARNING,
                 "partial_commit": {"detected": False, "message": None},
@@ -755,6 +797,7 @@ def _emit_error(
                     )
                 ),
                 "files": [],
+                "warnings": [_warning_to_json(item) for item in warnings],
                 "applied_paths": [],
                 "post_apply_warning": POST_APPLY_WARNING if mode == "apply" else None,
                 "partial_commit": {

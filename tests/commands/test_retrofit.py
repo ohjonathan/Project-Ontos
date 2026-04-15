@@ -542,6 +542,32 @@ def test_retrofit_apply_preserves_crlf_line_endings(tmp_path: Path):
     assert b"\n" not in updated.replace(b"\r\n", b"")
 
 
+def test_retrofit_apply_surfaces_loader_issues_without_blocking_valid_files(
+    tmp_path: Path,
+):
+    _init_repo(tmp_path)
+    valid = tmp_path / "docs" / "valid.md"
+    broken = tmp_path / "docs" / "broken.md"
+    _write_doc(valid, "valid_doc", concepts="[x]")
+    broken.write_text("---\nid: [\n---\nBroken\n", encoding="utf-8")
+    _init_git_repo(tmp_path)
+
+    result = _run_ontos(tmp_path, "--json", "retrofit", "--obsidian", "--apply")
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    payload = json.loads(result.stdout)
+    warning_codes = [warning["reason_code"] for warning in payload["warnings"]]
+    assert "parse_error" in warning_codes
+    data_warning_codes = [warning["reason_code"] for warning in payload["data"]["warnings"]]
+    assert "parse_error" in data_warning_codes
+
+    file_entry = next(item for item in payload["data"]["files"] if item["path"].endswith("valid.md"))
+    assert any(edit["field"] == "tags" for edit in file_entry["edits"])
+
+    updated = valid.read_text(encoding="utf-8")
+    assert "tags:" in updated
+
+
 # ---------------------------------------------------------------------------
 # Scope
 # ---------------------------------------------------------------------------
