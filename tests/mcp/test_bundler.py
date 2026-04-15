@@ -58,6 +58,19 @@ def test_lost_in_middle_order_matches_legacy_behavior():
     assert _lost_in_middle_order(docs) == _legacy_lost_in_middle_order(docs)
 
 
+def test_lost_in_middle_order_tiebreaks_equal_scores_by_id_ascending():
+    docs = [
+        _bundle_doc("gamma", 1.0),
+        _bundle_doc("alpha", 1.0),
+        _bundle_doc("beta", 1.0),
+        _bundle_doc("delta", 0.8),
+    ]
+
+    ordered = _lost_in_middle_order(docs)
+
+    assert [doc.id for doc in ordered] == ["alpha", "gamma", "delta", "beta"]
+
+
 def test_build_context_bundle_scores_kernels_highest(tmp_path):
     root = create_workspace(tmp_path)
     snapshot = create_snapshot(root=root, include_content=True, filters=None, git_commit_provider=None, scope=None)
