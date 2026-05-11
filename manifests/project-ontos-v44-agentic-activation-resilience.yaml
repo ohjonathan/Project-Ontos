@@ -1,0 +1,220 @@
+manifest_version: "1.5.0"
+id: project-ontos-v44-agentic-activation-resilience
+slug: project-ontos-v44-agentic-activation-resilience
+summary: "Project Ontos v4.4 release for resilient agent activation, MCP session state, frontmatter diagnostics, and scan-scope consistency."
+
+owners:
+  - "Project Ontos Maintainers"
+
+pre_a:
+  entry: proposal
+  artifact_path: ".ontos-internal/strategy/proposals/v4.4/agentic_activation_resilience_proposal.md"
+
+scope:
+  allowed_paths:
+    - ".llm-dev/"
+    - ".ontos-internal/strategy/proposals/v4.4/"
+    - "AGENTS.md"
+    - "Ontos_Context_Map.md"
+    - "README.md"
+    - "docs/reference/"
+    - "docs/releases/"
+    - "docs/reviews/project-ontos-v44-agentic-activation-resilience/"
+    - "docs/retros/"
+    - "docs/specs/"
+    - "docs/trackers/"
+    - "manifests/"
+    - "ontos/"
+    - "pyproject.toml"
+    - "scripts/llm-dev"
+    - "tests/"
+  allowed_path_patterns:
+    - "docs/reviews/project-ontos-v44-agentic-activation-resilience/*"
+  composition_targets: []
+  forbidden_paths:
+    - ".github/"
+    - "dist/"
+    - "build/"
+    - "site/"
+  forbidden_symbols:
+    - "git reset --hard"
+    - "git checkout -- ."
+  cardinality_assertions:
+    - name: "activate command registered"
+      command: "python -m ontos --help | grep -q activate"
+      expect: "exit-0"
+    - name: "MCP activate schema registered"
+      command: "python - <<'PY'\nfrom ontos.mcp.schemas import TOOL_SUCCESS_MODELS\nprint('activate' in TOOL_SUCCESS_MODELS and 'session_end' in TOOL_SUCCESS_MODELS)\nPY"
+      expect: "literal:True"
+
+artifacts:
+  spec: "docs/specs/project-ontos-v44-agentic-activation-resilience-spec.md"
+  family_verdict: "docs/reviews/project-ontos-v44-agentic-activation-resilience/<phase>-<family>-<role>.md"
+  canonical_verdict: "docs/reviews/project-ontos-v44-agentic-activation-resilience/<phase>-verdict.md"
+  fix_summary: "docs/reviews/project-ontos-v44-agentic-activation-resilience/D.4-fix-summary.md"
+  verification: "docs/reviews/project-ontos-v44-agentic-activation-resilience/D.5-<family>-verifier.md"
+  final_approval: "docs/reviews/project-ontos-v44-agentic-activation-resilience/final-approval.md"
+  retro: "docs/retros/project-ontos-v44-agentic-activation-resilience-retro.md"
+  proposal_verdict: "docs/reviews/project-ontos-v44-agentic-activation-resilience/pre-a-proposal-verdict.md"
+
+model_assignments:
+  - phase: "-A.proposal"
+    assignments:
+      codex: proposal-reviewer
+  - phase: "0"
+    assignments:
+      codex: infra-bootstrap
+  - phase: "A"
+    assignments:
+      codex: spec-author
+  - phase: "B.1"
+    assignments:
+      claude-opus: peer
+      claude-sonnet: alignment
+      gemini: adversarial
+  - phase: "B.3"
+    assignments:
+      claude-opus: meta-consolidator
+  - phase: "C"
+    assignments:
+      codex: implementation-author
+  - phase: "D.1"
+    assignments:
+      claude-sonnet: peer
+  - phase: "D.2"
+    assignments:
+      claude-opus: peer
+      claude-sonnet: alignment
+      gemini: adversarial
+  - phase: "D.3"
+    assignments:
+      claude-opus: meta-consolidator
+  - phase: "D.4"
+    assignments:
+      codex: fix-author
+  - phase: "D.5"
+    assignments:
+      claude-opus: verifier
+      claude-sonnet: verifier
+      gemini: verifier
+  - phase: "D.6"
+    assignments:
+      claude-sonnet: final-approval
+  - phase: "E"
+    assignments:
+      gemini: retro
+
+cli_capability_matrix:
+  codex:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+  claude-opus:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+  claude-sonnet:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+  gemini:
+    shell: false
+    git: false
+    test_runner: false
+    doc_index: true
+    evidence_cap: static-inspection
+
+smoke_checks:
+  - phase: "C"
+    checks:
+      - name: "targeted activation resilience tests"
+        command: ".venv/bin/python -m pytest -q tests/mcp/test_activation.py tests/commands/test_agentic_activation_resilience.py tests/core/test_frontmatter_repair.py"
+        expect: "exit-0"
+  - phase: "D.5"
+    checks:
+      - name: "MCP contract tests"
+        command: ".venv/bin/python -m pytest -q tests/mcp/test_server_integration.py tests/mcp/test_read_only_registration.py tests/mcp/test_schemas.py tests/mcp/test_write_tools.py"
+        expect: "exit-0"
+  - phase: "D.6"
+    checks:
+      - name: "full test suite"
+        command: ".venv/bin/python -m pytest -q"
+        expect: "exit-0"
+
+regression_guards:
+  - name: "import path full-suite debt closure"
+    command: ".venv/bin/python -m pytest -q"
+    owns_deliverable_id: "github-issue-109"
+
+gate_prerequisites:
+  - id: G-test-1
+    category: test
+    description: "Targeted activation resilience tests pass."
+    verification:
+      command: ".venv/bin/python -m pytest -q tests/mcp/test_activation.py tests/commands/test_agentic_activation_resilience.py tests/core/test_frontmatter_repair.py"
+      expect: "exit-0"
+  - id: G-scope-1
+    category: scope
+    description: "Implementation stays inside CLI, MCP, docs, tests, and llm-dev adopter wiring."
+    verification:
+      command: "git diff --name-only | grep -Ev '^(\\.llm-dev/|\\.gitmodules|\\.ontos-internal/strategy/proposals/v4\\.4/|AGENTS\\.md|Ontos_Context_Map\\.md|README\\.md|docs/reference/|docs/releases/|docs/reviews/project-ontos-v44-agentic-activation-resilience/|docs/retros/|docs/specs/|docs/trackers/|manifests/|ontos/|pyproject\\.toml|scripts/llm-dev|tests/)'"
+      expect: "exit-nonzero"
+  - id: G-cardinality-1
+    category: cardinality
+    description: "activate and session_end MCP success schemas are registered."
+    verification:
+      command: "python - <<'PY'\nfrom ontos.mcp.schemas import TOOL_SUCCESS_MODELS\nprint('activate' in TOOL_SUCCESS_MODELS and 'session_end' in TOOL_SUCCESS_MODELS)\nPY"
+      expect: "literal:True"
+  - id: G-verdict-1
+    category: verdict-presence
+    description: "Canonical Phase B.3 verdict exists."
+    verification:
+      command: "test -f docs/reviews/project-ontos-v44-agentic-activation-resilience/B.3-verdict.md"
+      expect: "exit-0"
+  - id: G-blocker-1
+    category: blocker-closure
+    description: "D.4 fix summary exists before final approval."
+    verification:
+      command: "test -f docs/reviews/project-ontos-v44-agentic-activation-resilience/D.4-fix-summary.md"
+      expect: "exit-0"
+  - id: G-branch-1
+    category: branch
+    description: "Work runs on the v4.4 release branch."
+    verification:
+      command: "git branch --show-current"
+      expect: "literal:codex/project-ontos-v44-agentic-activation-resilience"
+
+review_rounds:
+  - phase: "B.1"
+    round: 1
+    preserved_blocker_ids: []
+
+tracker:
+  path: "docs/trackers/project-ontos-v44-agentic-activation-resilience.md"
+  columns:
+    - Phase
+    - Owner
+    - Status
+    - Artifact
+    - Evidence
+    - Timestamp
+
+branch_map:
+  default: "codex/<DELIVERABLE_ID>-<PHASE_ID>-<ROLE>-<FAMILY>"
+
+references:
+  - path: ".llm-dev/framework/framework.md"
+    version: "1.5.0"
+    relevance: "Lifecycle authority from Pre-A through Phase E."
+  - path: "docs/reference/Ontos_Agent_Instructions.md"
+    relevance: "Agent activation contract."
+  - path: "docs/reference/Ontos_Manual.md"
+    relevance: "CLI and MCP user documentation."
+
+sibling_deliverable_ids: []
+self_review_caveats: []
+consolidation_mode: external
+reviewer_family_substitutes: []

@@ -35,17 +35,19 @@ ontos init --no-scaffold # Skip scaffold prompt
 If the IDE supports MCP and the Ontos server is configured:
 
 1. The IDE connects to `ontos serve` automatically on startup
-2. Use `workspace_overview` to get project orientation (key documents, graph stats)
-3. Use `get_document` to read specific documents by ID
-4. Use `context_map` for the full context narrative
-5. Use `query` to explore dependencies for a single document
+2. Call `activate` first; it marks the MCP session activated and returns status plus loaded IDs
+3. Use `workspace_overview` to get project orientation (key documents, graph stats)
+4. Use `get_document` to read specific documents by ID
+5. Use `context_map` for the full context narrative
+6. Use `query` to explore dependencies for a single document
 
-**MCP vs CLI:** MCP tools return structured JSON and support live cache invalidation. Use MCP when available; fall back to CLI when MCP is not configured.
+If a read tool is used before `activate`, the server includes `_ontos_warning` in that response. Treat `usable_with_warnings` as actionable context; only stop when activation reports no usable context. **MCP vs CLI:** MCP tools return structured JSON and support live cache invalidation. Use MCP when available; fall back to CLI when MCP is not configured.
 
 **Core tools:**
 
 | Tool | Purpose |
 |------|---------|
+| `activate` | Mandatory best-effort session activation |
 | `workspace_overview` | Project orientation (key docs, stats, warnings) |
 | `context_map` | Full context map (supports compact modes) |
 | `get_document` | Read one document by ID or path |
@@ -69,6 +71,7 @@ If the IDE supports MCP and the Ontos server is configured:
 |------|---------|
 | `scaffold_document` | Create a new markdown file with scaffold frontmatter |
 | `log_session` | Create a dated session log |
+| `session_end` | Create a structured session-end log |
 | `promote_document` | Change curation level without moving the file |
 | `rename_document` | Rename an ID across all referencing files |
 
@@ -81,8 +84,8 @@ ontos serve --read-only        # Omit write tools from the server
 Starts a stdio MCP server. Configure in your IDE's MCP settings. Requires `pip install 'ontos[mcp]'`.
 
 ### "Ontos" (Activate via CLI)
-1. Check for `Ontos_Context_Map.md`
-2. If missing: `ontos map`
+1. Run `ontos activate` or `ontos activate --json`
+2. If activation reports warnings, continue with task-critical direct reads
 3. Read map, identify relevant IDs for user's request
 4. **Check consolidation status (prompted/advisory modes only):**
    - Context map generation now shows consolidation warning when needed

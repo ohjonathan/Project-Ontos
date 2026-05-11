@@ -91,9 +91,12 @@ When uncertain: "If this doc changes, what else breaks?"
 
 ### Activate Context
 Say **"Ontos"** to your AI agent. It will:
-1. Read `Ontos_Context_Map.md`
-2. Load relevant files based on your request
+1. Run `ontos activate` or call the MCP `activate` tool
+2. Read `Ontos_Context_Map.md`
+3. Load relevant files based on your request
     print("Loaded: [id1, id2]")
+
+`ontos activate --json` returns `usable`, `usable_with_warnings`, or `not_usable`. Warnings are non-blocking when the command can still produce actionable context.
     
 ### Query Graph
 Say **"Query Ontos"** to find connections:
@@ -137,6 +140,17 @@ This runs nine tasks:
 7. **review_proposals** — Report draft proposals for manual graduation
 8. **check_links** — Validate dependency links
 9. **sync_agents** — Regenerate `AGENTS.md` when stale
+
+Frontmatter-focused maintenance:
+```bash
+ontos doctor --frontmatter
+ontos maintain --fix-frontmatter-enums --dry-run
+ontos maintain --fix-frontmatter-enums --apply
+```
+
+`doctor --frontmatter` reports exact path, line, field, observed value, allowed values, severity, blocking status, and suggested fix for invalid `type` / `status` frontmatter. The repair command preserves old values as `original_type` or `original_status` when applying known lifecycle-artifact mappings.
+
+Scan exclusions are shared across `map`, `doctor`, `verify --all`, and frontmatter repair. Use absolute-style patterns such as `*/docs/reviews/*` to exclude generated review artifacts regardless of workspace location.
 
 Useful flags:
 - `--dry-run` — Preview tasks without executing
@@ -757,6 +771,7 @@ The managed MCP client config is separate from repo-local instruction artifacts 
 
 | Tool | Description | Key Parameters |
 |------|-------------|----------------|
+| `activate` | Mandatory best-effort session activation with loaded IDs and warnings | `workspace_id` |
 | `workspace_overview` | Structured orientation — key documents, graph stats, top warnings | — |
 | `context_map` | Full context map markdown | `compact`: basic, rich, tiered, or full |
 | `get_document` | Read one document with full frontmatter and metadata | `document_id` or `path`, `include_content` |
@@ -784,16 +799,18 @@ When the server runs without `--read-only`, it also registers:
 |------|-------------|----------------|
 | `scaffold_document` | Create a new markdown document with scaffold frontmatter | `path`, `content`, `workspace_id` |
 | `log_session` | Create a dated log entry in the workspace logs directory | `title`, `event_type`, `source`, `branch`, `body`, `workspace_id` |
+| `session_end` | Create a structured session-end log | `title`, `goal`, `key_decisions`, `alternatives_considered`, `impacts`, `testing`, `workspace_id` |
 | `promote_document` | Change a document `curation_level` without renaming or moving it | `document_id`, `new_level`, `workspace_id` |
 | `rename_document` | Rename one document ID and rewrite references across the served workspace | `document_id`, `new_id`, `workspace_id` |
 
 Write-tool contracts:
 - `read_only=True` omits write tools from discovery.
 - `workspace_id` is optional and defaults to the served workspace.
+- In read-only mode, archive with the CLI fallback `ontos log -e "slug"`.
 - Cross-workspace writes are not supported; start a separate `ontos serve` in the target workspace.
 - `rename_document` always uses library scope.
 
-All tools return structured JSON. Start with `workspace_overview` for project orientation, then use `get_document` or `context_map` as needed.
+All tools return structured JSON. Start with `activate`; if a read tool is used first, the response includes `_ontos_warning` reminding the agent to activate the session.
 
 #### Cache Behavior
 

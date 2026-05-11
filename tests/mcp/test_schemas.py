@@ -1,9 +1,11 @@
 from ontos.mcp import tools
 from ontos.mcp.schemas import (
+    ActivateResponse,
     LogSessionResponse,
     PromoteDocumentResponse,
     RenameDocumentResponse,
     ScaffoldDocumentResponse,
+    SessionEndResponse,
     TOOL_ERROR_SCHEMA,
     TOOL_SUCCESS_MODELS,
     WriteToolErrorEnvelope,
@@ -60,6 +62,7 @@ def test_success_payloads_validate_against_declared_schemas(tmp_path):
         ],
     )
     payloads = {
+        "activate": tools.activate(cache),
         "workspace_overview": tools.workspace_overview(cache),
         "context_map": tools.context_map(cache),
         "get_document": tools.get_document(cache, document_id="atom_doc"),
@@ -98,6 +101,17 @@ def test_every_advertised_output_schema_is_object_typed():
 
 
 def test_write_tool_models_validate_success_payload_shapes():
+    ActivateResponse.model_validate(
+        {
+            "status": "usable",
+            "workspace": "workspace",
+            "workspace_path": "/tmp/workspace",
+            "doc_count": 1,
+            "loaded_ids": ["doc_1"],
+            "warnings": [],
+            "recommendation": "continue",
+        }
+    )
     ScaffoldDocumentResponse.model_validate(
         {
             "success": True,
@@ -123,6 +137,14 @@ def test_write_tool_models_validate_success_payload_shapes():
             "success": True,
             "path": "docs/logs/2026-04-11_session.md",
             "id": "2026-04-11_session",
+            "date": "2026-04-11",
+        }
+    )
+    SessionEndResponse.model_validate(
+        {
+            "success": True,
+            "path": "docs/logs/2026-04-11_session-end.md",
+            "id": "2026-04-11_session-end",
             "date": "2026-04-11",
         }
     )

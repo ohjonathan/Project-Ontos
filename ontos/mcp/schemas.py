@@ -94,6 +94,16 @@ class WorkspaceOverviewResponse(StrictModel):
     warnings: List[ValidationIssue]
 
 
+class ActivateResponse(StrictModel):
+    status: Literal["usable", "usable_with_warnings", "not_usable"]
+    workspace: str
+    workspace_path: str
+    doc_count: int
+    loaded_ids: List[str]
+    warnings: List[ValidationIssue]
+    recommendation: str
+
+
 class ContextMapResponse(StrictModel):
     markdown: str
     validation: ValidationPayload
@@ -273,6 +283,10 @@ class LogSessionResponse(StrictModel):
     date: str
 
 
+class SessionEndResponse(LogSessionResponse):
+    pass
+
+
 class PromoteDocumentResponse(StrictModel):
     success: Literal[True]
     document_id: str
@@ -281,6 +295,7 @@ class PromoteDocumentResponse(StrictModel):
 
 
 TOOL_SUCCESS_MODELS: Dict[str, Type[BaseModel]] = {
+    "activate": ActivateResponse,
     "workspace_overview": WorkspaceOverviewResponse,
     "context_map": ContextMapResponse,
     "get_document": GetDocumentResponse,
@@ -294,6 +309,7 @@ TOOL_SUCCESS_MODELS: Dict[str, Type[BaseModel]] = {
     "get_context_bundle": GetContextBundleResponse,
     "scaffold_document": ScaffoldDocumentResponse,
     "log_session": LogSessionResponse,
+    "session_end": SessionEndResponse,
     "promote_document": PromoteDocumentResponse,
     "rename_document": RenameDocumentResponse,
 }
@@ -312,6 +328,17 @@ TOOL_ERROR_SCHEMA: Dict[str, Any] = {
 EXPORT_GRAPH_ADAPTER = TypeAdapter(
     Union[ExportGraphSummaryResponse, ExportGraphFullResponse, ExportGraphFileResponse]
 )
+
+READ_WARNING_TOOL_NAMES = {
+    "activate",
+    "workspace_overview",
+    "context_map",
+    "get_document",
+    "list_documents",
+    "query",
+    "health",
+    "refresh",
+}
 
 
 def validate_success_payload(tool_name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -341,4 +368,15 @@ def output_schema_for(tool_name: str) -> Optional[Dict[str, Any]]:
     """
     if tool_name == "export_graph":
         return None
-    return TOOL_OUTPUT_SCHEMAS[tool_name]
+    schema = dict(TOOL_OUTPUT_SCHEMAS[tool_name])
+    if tool_name in READ_WARNING_TOOL_NAMES and schema.get("type") == "object":
+        properties = dict(schema.get("properties", {}))
+        properties.setdefault(
+            "_ontos_warning",
+            {
+                "type": "string",
+                "description": "Reminder emitted when an MCP read tool is used before activate.",
+            },
+        )
+        schema["properties"] = properties
+    return schema

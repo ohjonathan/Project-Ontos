@@ -31,6 +31,7 @@ class DoctorOptions:
     verbose: bool = False
     json_output: bool = False
     scope: Optional[str] = None
+    frontmatter: bool = False
 
 
 @dataclass
@@ -129,9 +130,16 @@ def check_git_hooks(repo_root: Optional[Path] = None) -> CheckResult:
             message="Git check timed out"
         )
 
-    # Check if in a git repo
-    git_dir = root / ".git"
-    if not git_dir.is_dir():
+    # Check if in a git repo. Use git itself so linked worktrees with a
+    # .git file are recognized correctly.
+    inside = subprocess.run(
+        ["git", "rev-parse", "--is-inside-work-tree"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    if inside.returncode != 0 or inside.stdout.strip() != "true":
         return CheckResult(
             name="git_hooks",
             status="warning",
@@ -140,7 +148,17 @@ def check_git_hooks(repo_root: Optional[Path] = None) -> CheckResult:
         )
 
     # Check for hook files
-    hooks_dir = git_dir / "hooks"
+    hook_path_result = subprocess.run(
+        ["git", "rev-parse", "--git-path", "hooks"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    hooks_raw = hook_path_result.stdout.strip() if hook_path_result.returncode == 0 else ".git/hooks"
+    hooks_dir = Path(hooks_raw)
+    if not hooks_dir.is_absolute():
+        hooks_dir = root / hooks_dir
     pre_push = hooks_dir / "pre-push"
     pre_commit = hooks_dir / "pre-commit"
 
@@ -383,6 +401,50 @@ def check_validation(scope: Optional[str] = None, repo_root: Optional[Path] = No
             message="Validation check skipped",
             details=str(e)
         )
+
+
+def check_frontmatter_enums(scope: Optional[str] = None, repo_root: Optional[Path] = None) -> CheckResult:
+    """Check frontmatter type/status enum diagnostics with exact paths."""
+    try:
+        from ontos.core.frontmatter_repair import build_enum_repair_plan, enum_issue_summary
+        from ontos.io.config import load_project_config
+        from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
+
+        root = resolve_project_root(repo_root=repo_root)
+        config = load_project_config(repo_root=root)
+        effective_scope = resolve_scan_scope(scope, config.scanning.default_scope)
+        files = collect_scoped_documents(
+            root,
+            config,
+            effective_scope,
+            base_skip_patterns=list(config.scanning.skip_patterns),
+        )
+        plan = build_enum_repair_plan(files)
+    except Exception as exc:
+        return CheckResult(
+            name="frontmatter_enums",
+            status="warning",
+            message="Frontmatter enum check failed",
+            details=str(exc),
+        )
+
+    if not plan.diagnostics:
+        return CheckResult(
+            name="frontmatter_enums",
+            status="success",
+            message="No invalid type/status enum values",
+        )
+
+    details = "\n".join(enum_issue_summary(plan.diagnostics, root=root, limit=10))
+    return CheckResult(
+        name="frontmatter_enums",
+        status="warning",
+        message=(
+            f"{len(plan.diagnostics)} invalid enum value(s); "
+            f"{len(plan.repairable_edits)} repairable"
+        ),
+        details=details,
+    )
 
 
 def check_cli_availability() -> CheckResult:
@@ -734,6 +796,8 @@ def _run_doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
         check_antigravity_mcp,
         lambda: check_cursor_mcp(repo_root),
     ]
+    if options.frontmatter:
+        checks.append(lambda: check_frontmatter_enums(options.scope, repo_root))
 
     for check_fn in checks:
         check_result = check_fn()
@@ -770,7 +834,7 @@ def format_doctor_output(result: DoctorResult, verbose: bool = False) -> str:
 
         lines.append(f"{icon}: {check.name}: {check.message}")
 
-        if verbose and check.details:
+        if check.details and (verbose or check.name == "frontmatter_enums"):
             lines.append(f"     {check.details}")
 
     lines.append("")

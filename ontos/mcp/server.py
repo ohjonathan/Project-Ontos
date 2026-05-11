@@ -28,6 +28,7 @@ from ontos.mcp import tools as tool_impl
 DEFAULT_USAGE_LOG_PATH = "~/.config/ontos/usage.jsonl"
 DEFAULT_PORTFOLIO_DB_PATH = Path.home() / ".config" / "ontos" / "portfolio.db"
 CORE_TOOL_NAMES = {
+    "activate",
     "workspace_overview",
     "context_map",
     "get_document",
@@ -129,6 +130,7 @@ def create_server(
     setattr(cache, "portfolio_index", portfolio_index)
     setattr(cache, "primary_workspace_slug", _workspace_slug(cache.workspace_root))
     setattr(cache, "read_only", read_only)
+    setattr(cache, "activation_performed", False)
 
     server = OntosFastMCP(
         name="Ontos",
@@ -200,6 +202,18 @@ def _register_core_tools(
     workspace_name: str,
     register_fn: Callable[..., None],
 ) -> None:
+    def handle_activate(
+        workspace_id: str | None = None,
+    ) -> CallToolResult:
+        return _invoke_read_tool(
+            "activate",
+            cache,
+            tool_impl.activate,
+            ensure_fresh=False,
+            use_live_cache=True,
+            workspace_id=workspace_id,
+        )
+
     def handle_workspace_overview(
         workspace_id: str | None = None,
     ) -> CallToolResult:
@@ -300,6 +314,14 @@ def _register_core_tools(
             workspace_id=workspace_id,
         )
 
+    register_fn(
+        name="activate",
+        title="Activate Ontos",
+        description=f"Performs mandatory agent activation for the {workspace_name} workspace.",
+        handler=handle_activate,
+        annotations=_readonly_annotations(),
+        meta={"anthropic/maxResultSizeChars": 8000},
+    )
     register_fn(
         name="workspace_overview",
         title="Workspace Overview",
@@ -429,6 +451,34 @@ def _register_write_tools(
             workspace_id=workspace_id,
         )
 
+    def handle_session_end(
+        title: str,
+        goal: str,
+        key_decisions: str = "",
+        alternatives_considered: str = "",
+        impacts: str = "",
+        testing: str = "",
+        source: str = "mcp",
+        branch: str = "unknown",
+        workspace_id: Optional[str] = None,
+    ) -> CallToolResult:
+        return _invoke_write_tool(
+            "session_end",
+            cache,
+            write_impl.session_end,
+            portfolio_index=portfolio_index,
+            read_only=read_only,
+            title=title,
+            goal=goal,
+            key_decisions=key_decisions,
+            alternatives_considered=alternatives_considered,
+            impacts=impacts,
+            testing=testing,
+            source=source,
+            branch=branch,
+            workspace_id=workspace_id,
+        )
+
     def handle_promote_document(
         document_id: str,
         new_level: int,
@@ -487,6 +537,16 @@ def _register_write_tools(
             "workspace."
         ),
         handler=handle_log_session,
+        annotations=write_annotations,
+        meta={"anthropic/maxResultSizeChars": 4000},
+    )
+    register_fn(
+        name="session_end",
+        title="Session End",
+        description=(
+            f"Creates a structured session-end log in the {workspace_name} workspace."
+        ),
+        handler=handle_session_end,
         annotations=write_annotations,
         meta={"anthropic/maxResultSizeChars": 4000},
     )
@@ -700,6 +760,10 @@ def _invoke_read_tool(
             tool_input = cache
         payload = tool_fn(tool_input, **kwargs)
         validated = validate_success_payload(tool_name, payload)
+        if tool_name != "activate" and not getattr(cache, "activation_performed", False):
+            validated["_ontos_warning"] = (
+                "Ontos activation not performed this MCP session; call activate first."
+            )
         return _tool_success_result(validated)
     except OntosUserError as exc:
         return _tool_error_result(str(exc))
@@ -824,7 +888,9 @@ def _render_instructions(
         "product (user-facing specs), atom (technical implementation docs), "
         "and log (session history). All tools are deterministic, local-only, "
         "and fast (<100ms cached after warmup). "
-        "Start with `workspace_overview` for project orientation. "
+        "Start with `activate` before any other Ontos tool; it returns the "
+        "Loaded IDs and activation status for the session. "
+        "Use `workspace_overview` for project orientation. "
         "Use `context_map` for the full markdown narrative. "
         "Use `get_document` to read one document. "
         "Use `list_documents` to browse by type/status. "
@@ -840,6 +906,16 @@ def _render_instructions(
         instructions += (
             " Portfolio mode also enables `project_registry` and `search` for "
             "cross-workspace discovery."
+        )
+    if getattr(cache, "read_only", False):
+        instructions += (
+            " This server is read-only; at session end use the CLI fallback "
+            "`ontos log -e \"slug\"` if you need to archive work."
+        )
+    else:
+        instructions += (
+            " At session end, use `session_end` to create a structured log "
+            "with Goal, Key Decisions, Alternatives Considered, Impacts, and Testing."
         )
     return instructions
 

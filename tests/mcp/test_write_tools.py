@@ -3,6 +3,7 @@
 Covers:
 * scaffold_document — create a new markdown file with scaffold frontmatter.
 * log_session — create a dated session log under logs_dir.
+* session_end — create a structured session-end log under logs_dir.
 * promote_document — mutate frontmatter-only curation_level change.
 * read_only refusal (m-2 consumer).
 * workspace_id validation (m-14 consumer via shared helper).
@@ -243,6 +244,49 @@ def test_log_session_rejects_empty_title(tmp_path):
     assert result.structuredContent["error"]["error_code"] == "E_INVALID_TITLE"
 
 
+def test_session_end_creates_structured_log(tmp_path):
+    root = create_workspace(tmp_path)
+    server = build_server(root)
+
+    result = _call(
+        server,
+        "session_end",
+        {
+            "title": "Agentic Activation Resilience",
+            "goal": "Close activation resilience work.",
+            "key_decisions": "Use activate first in MCP sessions.",
+            "alternatives_considered": "Keep relying on passive instructions.",
+            "impacts": "Agents get structured activation state.",
+            "testing": "Targeted MCP tests.",
+        },
+    )
+
+    assert result.isError is False, result.content[0].text
+    payload = result.structuredContent
+    log_file = root / payload["path"]
+    content = log_file.read_text(encoding="utf-8")
+
+    assert payload["success"] is True
+    assert payload["path"].startswith("docs/logs/")
+    assert "## Goal" in content
+    assert "Close activation resilience work." in content
+    assert "## Key Decisions" in content
+    assert "Use activate first in MCP sessions." in content
+    assert "## Alternatives Considered" in content
+    assert "## Impacts" in content
+    assert "## Testing" in content
+
+
+def test_session_end_rejects_empty_goal(tmp_path):
+    root = create_workspace(tmp_path)
+    server = build_server(root)
+
+    result = _call(server, "session_end", {"title": "Wrap", "goal": "  "})
+
+    assert result.isError is True
+    assert result.structuredContent["error"]["error_code"] == "E_INVALID_GOAL"
+
+
 # ---------------------------------------------------------------------------
 # promote_document
 # ---------------------------------------------------------------------------
@@ -349,6 +393,16 @@ def test_read_only_refuses_log_session(tmp_path):
 
     with pytest.raises(ToolError, match="log_session"):
         _call(server, "log_session", {"title": "banned write"})
+
+
+def test_read_only_refuses_session_end(tmp_path):
+    from mcp.server.fastmcp.exceptions import ToolError
+
+    root = create_workspace(tmp_path)
+    server = build_server(root, read_only=True)
+
+    with pytest.raises(ToolError, match="session_end"):
+        _call(server, "session_end", {"title": "banned write", "goal": "No writes."})
 
 
 def test_read_only_refuses_promote_document(tmp_path):

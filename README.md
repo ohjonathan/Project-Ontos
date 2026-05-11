@@ -346,12 +346,13 @@ The managed MCP client config is separate from repo-local instruction artifacts 
 
 ### 4. Available Tools
 
-The MCP server exposes up to 15 tools depending on server flags:
+The MCP server exposes up to 17 tools depending on server flags:
 
-**Core (9 tools — always available):**
+**Core (10 tools — always available):**
 
 | Tool | Purpose | Read-only |
 |------|---------|:---------:|
+| `activate` | Mandatory best-effort session activation with loaded IDs and warnings | ✅ |
 | `workspace_overview` | Project orientation — key documents, graph stats, warnings | ✅ |
 | `context_map` | Full context map (supports compact modes) | ✅ |
 | `get_document` | Read one document by ID or path | ✅ |
@@ -369,21 +370,22 @@ The MCP server exposes up to 15 tools depending on server flags:
 | `project_registry` | Inventory of all known workspaces |
 | `search` | FTS5 full-text search across workspaces |
 
-**Write (4 tools — v4.1, mutable mode only):**
+**Write (5 tools — v4.1+, mutable mode only):**
 
 | Tool | Purpose |
 |------|---------|
 | `scaffold_document` | Create a new markdown file with scaffold frontmatter |
 | `log_session` | Create a dated session log |
+| `session_end` | Create a structured session-end log |
 | `promote_document` | Change curation level without moving the file |
 | `rename_document` | Rename an ID across all referencing files |
 
-Write tools are registered only when the server runs without `--read-only`. All write operations use advisory flock locking for cross-process safety.
+Write tools are registered only when the server runs without `--read-only`. In read-only mode, archive sessions with `ontos log -e "slug"` instead. All write operations use advisory flock locking for cross-process safety.
 
 ### 5. Verify
 
 ```bash
-ontos --version   # Should show 4.2.x
+ontos --version   # Should show 4.4.x
 ontos serve       # Starts the stdio server (Ctrl+C to stop)
 ```
 
@@ -467,7 +469,7 @@ The server binds to one **primary workspace** (the `cwd` or `--workspace` path).
 Calling a core tool with a `workspace_id` that doesn't match the primary workspace returns `E_CROSS_WORKSPACE_NOT_SUPPORTED`. This is a deliberate safety boundary. To read another project's documents, change your `cwd` or run a second `ontos serve` instance.
 
 > [!NOTE]
-> Cross-workspace document reads and writes are not supported in v4.3.0.
+> Cross-workspace document reads and writes are not supported in v4.4.0.
 
 #### Example Workflow
 
@@ -500,6 +502,7 @@ Use these phrases with an AI agent that supports Ontos activation. They are not 
 ```bash
 # CLI equivalents
 ontos scaffold     # Auto-tag docs with YAML frontmatter
+ontos activate     # Best-effort agent activation with diagnostics
 ontos map          # Generate/update context map
 ontos log          # Create a session log
 ontos doctor       # Check graph health
@@ -511,6 +514,21 @@ ontos promote      # Promote docs to Level 2
 ontos agents       # Regenerate AGENTS.md and .cursorrules
 ontos serve        # Start MCP server for IDE integration
 ```
+
+Agent-facing activation can be run directly:
+```bash
+ontos activate --json
+ontos activate --scope library
+```
+
+Frontmatter and scan-scope helpers:
+```bash
+ontos doctor --frontmatter
+ontos maintain --fix-frontmatter-enums --dry-run
+ontos maintain --fix-frontmatter-enums --apply
+```
+
+`doctor --frontmatter` reports path, line, field, observed value, allowed values, severity, blocking status, and suggested fix for invalid `type` / `status` fields. `map`, `doctor`, `verify --all`, and frontmatter repair use the same configured scan exclusions; absolute-style patterns such as `*/docs/reviews/*` are useful for generated review artifacts.
 
 Compact context maps for token-constrained agents:
 ```bash
@@ -529,6 +547,7 @@ ontos map --compact tiered    # Prose summary + type-ranked compact
 - **Curate, don't hoard.** Not every session needs a log. Archive the ones with decisions that matter.
 - **Review scaffold output.** Auto-tagging proposes; you decide. The human judgment is the point.
 - **Run `ontos doctor` periodically.** Catch broken links and dependency issues before they compound.
+- **Use precise frontmatter repair.** Run `ontos doctor --frontmatter`, then preview conservative enum fixes with `ontos maintain --fix-frontmatter-enums --dry-run` before `--apply`.
 - **Scan for secrets before release.** Use `gitleaks detect` and `trufflehog git file://. --no-update` (see `.trufflehog-exclude-paths.txt`).
 
 ---
@@ -558,16 +577,17 @@ Version 3 is when Ontos became public. The earlier versions live on in the desig
 
 | Version | Status | Highlights |
 |---------|--------|------------|
-| **v4.3.0** | ✅ Current | Obsidian write path via `ontos retrofit --obsidian` |
+| **v4.4.0** | Current | Agentic activation resilience, MCP `activate`, `session_end`, frontmatter diagnostics |
+| **v4.3.0** | Previous | Obsidian write path via `ontos retrofit --obsidian` |
 | **Future** | Next | HTTP / Streamable HTTP transport, daemon mode, security hardening |
 
-v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python. v3.2 added re-architecture support, environment detection, and activation resilience. v3.3 ships 62 audit-derived hardening fixes plus `link-check`, `rename`, unified JSON envelopes, and a canonical document loader. v3.3.1 reduced link-check false positives by 89% and added `promote_check` to the maintenance pipeline. v3.4 adds `--compact tiered` context maps for token-constrained agents. v4.0 adds an MCP server mode with 8 read-only tools, enabling native integration with AI IDEs like Claude Desktop and Cursor without CLI overhead. v4.1 expands MCP to 15 tools — 4 write tools (`scaffold_document`, `log_session`, `promote_document`, `rename_document`), a portfolio index with FTS5 search, advisory flock locking, and a shared rename orchestrator used by both CLI and MCP. v4.2.0 makes Cursor a first-class managed MCP client alongside Antigravity and adds `ontos mcp print-config` for Claude Code, Codex, and VS Code. v4.3.0 adds `ontos retrofit --obsidian`, a dry-run-first write path that lands computed `tags` and `aliases` on disk for Obsidian-compatible browsing. The next transport work remains on the roadmap.
+v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python. v3.2 added re-architecture support, environment detection, and activation resilience. v3.3 ships 62 audit-derived hardening fixes plus `link-check`, `rename`, unified JSON envelopes, and a canonical document loader. v3.3.1 reduced link-check false positives by 89% and added `promote_check` to the maintenance pipeline. v3.4 adds `--compact tiered` context maps for token-constrained agents. v4.0 adds an MCP server mode with 8 read-only tools, enabling native integration with AI IDEs like Claude Desktop and Cursor without CLI overhead. v4.1 expands MCP to 15 tools, a portfolio index with FTS5 search, advisory flock locking, and a shared rename orchestrator used by both CLI and MCP. v4.2.0 makes Cursor a first-class managed MCP client alongside Antigravity and adds `ontos mcp print-config` for Claude Code, Codex, and VS Code. v4.3.0 adds `ontos retrofit --obsidian`, a dry-run-first write path that lands computed `tags` and `aliases` on disk for Obsidian-compatible browsing. v4.4.0 adds `ontos activate`, MCP session activation state, `session_end`, precise frontmatter diagnostics, enum repair, and shared scan exclusions. The next transport work remains on the roadmap.
 
 ---
 
 ## Documentation
 
-> *Note: Documentation links below point to the latest source on GitHub. During release cutover, source docs may reflect `v4.3.0` before PyPI finishes publishing the same version.*
+> *Note: Documentation links below point to the latest source on GitHub. During release cutover, source docs may reflect `v4.4.0` before PyPI finishes publishing the same version.*
 
 - **[Ontos Manual](https://github.com/ohjonathan/Project-Ontos/blob/main/docs/reference/Ontos_Manual.md)**: Complete reference—installation, workflow, configuration, errors
 - **[Agent Instructions](https://github.com/ohjonathan/Project-Ontos/blob/main/docs/reference/Ontos_Agent_Instructions.md)**: Commands for AI agents

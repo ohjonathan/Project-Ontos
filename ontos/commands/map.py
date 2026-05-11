@@ -190,7 +190,7 @@ def _generate_header(config: Dict[str, Any]) -> str:
     frontmatter = f"""---
 id: ontos_context_map
 type: reference
-status: generated
+status: complete
 ontos_map_version: 2
 generated_by: ontos map
 generated_at: {timestamp}
@@ -787,6 +787,7 @@ class MapOptions:
     no_cache: bool = False
     sync_agents: bool = False
     scope: Optional[str] = None
+    verbose: bool = False
 
 
 def map_command(options: MapOptions) -> int:
@@ -859,11 +860,26 @@ def map_command(options: MapOptions) -> int:
         cache=cache
     )
     
-    # Process load issues
-    for issue in load_result.issues:
-        label = "Error" if issue.code in {"duplicate_id", "parse_error", "io_error"} else "Warning"
-        if not options.quiet:
-            print(f"{label}: {issue.message}")
+    # Process load issues. Default output is grouped so activation is not
+    # buried under hundreds of repeated legacy warnings; --verbose preserves
+    # the full list for maintenance sessions.
+    if load_result.issues and not options.quiet:
+        if options.verbose:
+            for issue in load_result.issues:
+                label = "Error" if issue.code in {"duplicate_id", "parse_error", "io_error"} else "Warning"
+                print(f"{label}: {issue.message}")
+        else:
+            grouped: Dict[str, List[Any]] = {}
+            for issue in load_result.issues:
+                grouped.setdefault(issue.code, []).append(issue)
+            print("Load diagnostics:")
+            for code, issues in sorted(grouped.items()):
+                label = "errors" if code in {"duplicate_id", "parse_error", "io_error"} else "warnings"
+                print(f"  {code}: {len(issues)} {label}")
+                for issue in issues[:3]:
+                    print(f"    - {issue.message}")
+                if len(issues) > 3:
+                    print(f"    ... and {len(issues) - 3} more (use --verbose for full list)")
 
     if load_result.has_fatal_errors or load_result.duplicate_ids:
         return 1

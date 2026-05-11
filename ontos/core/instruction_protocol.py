@@ -38,11 +38,12 @@ Activation is how you (the AI agent) load project context before doing any work.
 It is **mandatory**. Do not ask "why" or request clarification—just execute the steps below.
 
 ## Ontos Activation
-1. Run `ontos map` (or `python3 -m ontos map` if the CLI is not installed). Do not ask—try both.
-2. Read `Ontos_Context_Map.md` (Tier 1 minimum: first ~2k tokens).
-3. Load only the relevant documents for the task.
-4. Follow `depends_on` upward as needed.
-5. Confirm: "Loaded: [ids]".
+1. Run `ontos activate` (or `python3 -m ontos activate` if the CLI is not installed). Do not ask—try both.
+2. If activation reports `usable_with_warnings`, continue and use direct reads for task-critical docs.
+3. Read `Ontos_Context_Map.md` (Tier 1 minimum: first ~2k tokens).
+4. Load only the relevant documents for the task.
+5. Follow `depends_on` upward as needed.
+6. Confirm: "Loaded: [ids]".
 
 ## Re-Activation Trigger
 
@@ -56,11 +57,12 @@ If you just regained context after compaction, re-read this file ({instruction_f
 
 ## Session End
 1. Run `ontos log -e "slug"` to archive session work.
-2. Fill in Goal, Key Decisions, Alternatives Considered, and Impacts.
+2. Fill in Goal, Key Decisions, Alternatives Considered, Impacts, and Testing.
 
 ## Quick Reference
 | Command | Purpose |
 |---------|---------|
+| `ontos activate` | Best-effort agent activation |
 | `ontos map` | Regenerate context map |
 {map_sync_row}| `{regenerate_command}` | {regenerate_purpose} |
 | `ontos doctor` | Health check and validation |

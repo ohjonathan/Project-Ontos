@@ -33,17 +33,14 @@ class VerifyOptions:
 
 def find_stale_documents_list(scope: Optional[str] = None) -> List[dict]:
     """Find all documents with stale describes fields using new architecture symbols."""
-    from ontos.core.curation import load_ontosignore
-
     root = find_project_root()
     config = load_project_config(repo_root=root)
     effective_scope = resolve_scan_scope(scope, config.scanning.default_scope)
-    ignore_patterns = load_ontosignore(root)
     files = collect_scoped_documents(
         root,
         config,
         effective_scope,
-        base_skip_patterns=ignore_patterns,
+        base_skip_patterns=list(config.scanning.skip_patterns),
     )
     load_result = load_documents(files, parse_frontmatter_content)
     if load_result.has_fatal_errors or load_result.duplicate_ids:
@@ -159,15 +156,13 @@ def verify_document(path: Path, verify_date: str) -> Tuple[bool, str]:
 def verify_all_interactive(verify_date: date, output: OutputHandler, scope: Optional[str] = None) -> int:
     """Interactively verify all stale documents."""
     root = find_project_root()
-    from ontos.core.curation import load_ontosignore
     config = load_project_config(repo_root=root)
     effective_scope = resolve_scan_scope(scope, config.scanning.default_scope)
-    ignore_patterns = load_ontosignore(root)
     files = collect_scoped_documents(
         root,
         config,
         effective_scope,
-        base_skip_patterns=ignore_patterns,
+        base_skip_patterns=list(config.scanning.skip_patterns),
     )
     load_result = load_documents(files, parse_frontmatter_content)
     
