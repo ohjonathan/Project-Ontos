@@ -91,6 +91,7 @@ def create_parser(include_hidden: bool = True) -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Register commands with shared parent
+    _register_activate(subparsers, global_parser)
     _register_init(subparsers, global_parser)
     _register_map(subparsers, global_parser)
     _register_log(subparsers, global_parser)
@@ -138,6 +139,16 @@ def _add_scope_argument(parser) -> None:
         help="Scan scope: docs (default) or library (includes .ontos-internal)",
     )
 
+def _register_activate(subparsers, parent):
+    """Register activate command."""
+    p = subparsers.add_parser(
+        "activate",
+        help="Best-effort agent activation with structured diagnostics",
+        parents=[parent],
+    )
+    _add_scope_argument(p)
+    p.set_defaults(func=_cmd_activate)
+
 def _register_init(subparsers, parent):
     """Register init command."""
     p = subparsers.add_parser("init", help="Initialize Ontos in a project", parents=[parent])
@@ -174,6 +185,8 @@ def _register_map(subparsers, parent):
                    help="Bypass document cache (for debugging)")
     p.add_argument("--sync-agents", action="store_true",
                    help="Also sync AGENTS.md if it exists")
+    p.add_argument("--verbose", "-v", action="store_true",
+                   help="Show full load diagnostics instead of grouped examples")
     _add_scope_argument(p)
     p.set_defaults(func=_cmd_map)
 
@@ -201,6 +214,8 @@ def _register_doctor(subparsers, parent):
     p = subparsers.add_parser("doctor", help="Health check and diagnostics", parents=[parent])
     p.add_argument("--verbose", "-v", action="store_true",
                    help="Show detailed output")
+    p.add_argument("--frontmatter", action="store_true",
+                   help="Include precise frontmatter enum diagnostics")
     _add_scope_argument(p)
     p.set_defaults(func=_cmd_doctor)
 
@@ -221,6 +236,16 @@ def _register_maintain(subparsers, parent):
         "--dry-run", "-n",
         action="store_true",
         help="Report tasks without executing them"
+    )
+    p.add_argument(
+        "--fix-frontmatter-enums",
+        action="store_true",
+        help="Plan or apply conservative type/status enum repairs"
+    )
+    p.add_argument(
+        "--apply",
+        action="store_true",
+        help="Apply the selected maintenance repair workflow"
     )
     p.add_argument(
         "--skip",
@@ -828,11 +853,25 @@ def _cmd_map(args) -> int:
         no_cache=getattr(args, 'no_cache', False),
         sync_agents=getattr(args, 'sync_agents', False),
         scope=getattr(args, "scope", None),
+        verbose=getattr(args, "verbose", False),
     )
     if "-f" in sys.argv and "--filter" not in sys.argv and "-F" not in sys.argv:
         print("Warning: map -f is deprecated; use -F.", file=sys.stderr)
 
     return map_command(options)
+
+
+def _cmd_activate(args) -> int:
+    """Handle activate command."""
+    from ontos.commands.activate import ActivateOptions, activate_command
+
+    return activate_command(
+        ActivateOptions(
+            json_output=args.json,
+            quiet=args.quiet,
+            scope=getattr(args, "scope", None),
+        )
+    )
 
 
 def _cmd_log(args) -> int:
@@ -868,6 +907,7 @@ def _cmd_doctor(args) -> int:
         verbose=args.verbose,
         json_output=args.json,
         scope=getattr(args, "scope", None),
+        frontmatter=getattr(args, "frontmatter", False),
     )
     output = OutputHandler(quiet=args.quiet or args.json)
 
@@ -904,6 +944,8 @@ def _cmd_maintain(args) -> int:
     options = MaintainOptions(
         verbose=getattr(args, "verbose", False),
         dry_run=getattr(args, "dry_run", False),
+        apply=getattr(args, "apply", False),
+        fix_frontmatter_enums=getattr(args, "fix_frontmatter_enums", False),
         skip=getattr(args, "skip", []),
         quiet=args.quiet,
         json_output=args.json,

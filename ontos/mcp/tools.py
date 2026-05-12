@@ -140,6 +140,34 @@ def workspace_overview(cache: Any, *, workspace_id: Optional[str] = None) -> dic
     }
 
 
+def activate(cache: Any, *, workspace_id: Optional[str] = None) -> dict[str, Any]:
+    """Mark the MCP session activated and return orientation status."""
+    _enforce_workspace_scope(cache, workspace_id)
+    view = cache.get_fresh_view()
+    setattr(cache, "activation_performed", True)
+    warnings = _normalize_warnings(
+        view.snapshot.validation_result,
+        view.snapshot.warnings,
+    )
+    loaded_ids = [doc.id for doc in sorted(
+        view.snapshot.documents.values(),
+        key=lambda doc: (-len(view.snapshot.graph.reverse_edges.get(doc.id, [])), doc.id),
+    )[:5]]
+    status = "usable" if not warnings else "usable_with_warnings"
+    return {
+        "status": status,
+        "workspace": view.workspace_root.name,
+        "workspace_path": str(view.workspace_root),
+        "doc_count": view.canonical_view.total_count,
+        "loaded_ids": loaded_ids,
+        "warnings": warnings,
+        "recommendation": (
+            "continue; use direct reads for task-critical docs"
+            if warnings else "continue"
+        ),
+    }
+
+
 def context_map(
     cache: Any,
     compact: str = "tiered",

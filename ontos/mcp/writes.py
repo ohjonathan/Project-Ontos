@@ -5,6 +5,7 @@ a single markdown file:
 
 * ``scaffold_document`` — create a new ``.md`` in the target workspace.
 * ``log_session`` — create ``{logs_dir}/{date}_{slug}.md``.
+* ``session_end`` — create a structured session-end log.
 * ``promote_document`` — mutate document frontmatter only (no rename,
   no move).
 
@@ -266,6 +267,40 @@ def log_session(
     )
 
 
+def session_end(
+    cache: SnapshotCache,
+    *,
+    portfolio_index: Any = None,
+    read_only: bool = False,
+    title: str,
+    goal: str,
+    key_decisions: str = "",
+    alternatives_considered: str = "",
+    impacts: str = "",
+    testing: str = "",
+    source: str = "mcp",
+    branch: str = "unknown",
+    workspace_id: Optional[str] = None,
+) -> CallToolResult:
+    """Create a structured session-end log."""
+    return _dispatch(
+        "session_end",
+        _session_end_impl,
+        cache=cache,
+        portfolio_index=portfolio_index,
+        read_only=read_only,
+        workspace_id=workspace_id,
+        title=title,
+        goal=goal,
+        key_decisions=key_decisions,
+        alternatives_considered=alternatives_considered,
+        impacts=impacts,
+        testing=testing,
+        source=source,
+        branch=branch,
+    )
+
+
 def promote_document(
     cache: SnapshotCache,
     *,
@@ -489,6 +524,56 @@ def _log_session_impl(
         "id": log_id,
         "date": date_str,
     }
+
+
+def _session_end_impl(
+    *,
+    cache: SnapshotCache,
+    portfolio_index: Any,
+    plan: _Preflight,
+    title: str,
+    goal: str,
+    key_decisions: str,
+    alternatives_considered: str,
+    impacts: str,
+    testing: str,
+    source: str,
+    branch: str,
+) -> Dict[str, Any]:
+    """Build the typed session-end body and delegate to log_session."""
+    if not goal or not str(goal).strip():
+        raise OntosUserError(
+            "goal must be non-empty.",
+            code="E_INVALID_GOAL",
+        )
+
+    body = "\n\n".join(
+        [
+            "## Goal\n\n" + str(goal).strip(),
+            "## Key Decisions\n\n" + _session_end_section(key_decisions, "None recorded."),
+            (
+                "## Alternatives Considered\n\n"
+                + _session_end_section(alternatives_considered, "None recorded.")
+            ),
+            "## Impacts\n\n" + _session_end_section(impacts, "None recorded."),
+            "## Testing\n\n" + _session_end_section(testing, "Not run."),
+        ]
+    )
+    return _log_session_impl(
+        cache=cache,
+        portfolio_index=portfolio_index,
+        plan=plan,
+        title=title,
+        event_type="chore",
+        source=source,
+        branch=branch,
+        body=body,
+    )
+
+
+def _session_end_section(value: str, fallback: str) -> str:
+    text = str(value).strip()
+    return text if text else fallback
 
 
 # ---------------------------------------------------------------------------

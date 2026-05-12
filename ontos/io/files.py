@@ -27,6 +27,38 @@ class DocumentLoadIssue:
     doc_id: Optional[str] = None
     field: Optional[str] = None
     value: Optional[Any] = None
+    line: Optional[int] = None
+    allowed_values: Optional[List[str]] = None
+    suggested_fix: Optional[str] = None
+    severity: str = "warning"
+    blocking: bool = False
+
+    def to_dict(self, *, root: Optional[Path] = None) -> Dict[str, Any]:
+        """Return a machine-readable diagnostic payload."""
+        if root is None:
+            path_text = str(self.path)
+        else:
+            try:
+                path_text = (
+                    self.path.resolve(strict=False)
+                    .relative_to(root.resolve(strict=False))
+                    .as_posix()
+                )
+            except ValueError:
+                path_text = str(self.path)
+        return {
+            "code": self.code,
+            "path": path_text,
+            "line": self.line,
+            "doc_id": self.doc_id,
+            "field": self.field,
+            "observed_value": self.value,
+            "allowed_values": self.allowed_values or [],
+            "suggested_fix": self.suggested_fix,
+            "severity": self.severity,
+            "blocking": self.blocking,
+            "message": self.message,
+        }
 
 
 @dataclass
@@ -334,32 +366,59 @@ def load_document_from_content(
     fm, body = frontmatter_parser(content)
     issues: List[DocumentLoadIssue] = []
 
-    def report_warning(msg: str):
+    def report_warning(msg: str, field_name: str):
         issues.append(DocumentLoadIssue(
             code="invalid_reference_type",
             path=path,
             message=msg,
-            doc_id=fm.get('id', path.stem)
+            doc_id=fm.get('id', path.stem),
+            field=field_name,
+            suggested_fix=f"Use a scalar string or list of strings for '{field_name}'.",
         ))
 
-    def report_enum_error(msg: str, val: Any, options: List[str]):
-        issues.append(DocumentLoadIssue(
-            code="invalid_enum",
-            path=path,
-            message=f"{msg}. Expected one of: {', '.join(options)}",
-            doc_id=fm.get('id', path.stem),
-            value=val
-        ))
+    def report_enum_error(field_name: str):
+        def inner(msg: str, val: Any, options: List[str]):
+            line = _frontmatter_line_for_field(content, field_name)
+            location = f"{path}:{line}" if line is not None else str(path)
+            issues.append(DocumentLoadIssue(
+                code="invalid_enum",
+                path=path,
+                message=(
+                    f"{location}: invalid frontmatter field '{field_name}' value "
+                    f"{val!r}. Expected one of: {', '.join(options)}"
+                ),
+                doc_id=fm.get('id', path.stem),
+                field=field_name,
+                value=val,
+                line=line,
+                allowed_values=options,
+                suggested_fix=(
+                    f"Change '{field_name}' to one of: {', '.join(options)}. "
+                    f"Preserve the old value as original_{field_name} if it carries lifecycle nuance."
+                ),
+                severity="warning",
+                blocking=False,
+            ))
+        return inner
 
     # Core fields (B1 Canonical Mapping)
     doc_id = fm.get('id', path.stem)
-    doc_type = normalize_type(fm.get('type'), on_error=report_enum_error)
-    doc_status = normalize_status(fm.get('status'), on_error=report_enum_error)
-    depends_on = normalize_depends_on(fm.get('depends_on'), on_warning=report_warning)
-    impacts = normalize_depends_on(fm.get('impacts'), on_warning=report_warning)
+    doc_type = normalize_type(fm.get('type'), on_error=report_enum_error("type"))
+    doc_status = normalize_status(fm.get('status'), on_error=report_enum_error("status"))
+    depends_on = normalize_depends_on(
+        fm.get('depends_on'),
+        on_warning=lambda msg: report_warning(msg, "depends_on"),
+    )
+    impacts = normalize_depends_on(
+        fm.get('impacts'),
+        on_warning=lambda msg: report_warning(msg, "impacts"),
+    )
     tags = normalize_tags(fm)
     aliases = normalize_aliases(fm, doc_id)
-    describes = normalize_describes(fm.get('describes'), on_warning=report_warning)
+    describes = normalize_describes(
+        fm.get('describes'),
+        on_warning=lambda msg: report_warning(msg, "describes"),
+    )
 
     doc_data = DocumentData(
         id=doc_id,
@@ -376,6 +435,24 @@ def load_document_from_content(
     )
     
     return doc_data, issues
+
+
+def _frontmatter_line_for_field(content: str, field_name: str) -> Optional[int]:
+    """Return the 1-based line number for a top-level frontmatter field."""
+    normalized = content.lstrip()
+    leading_offset = content[: len(content) - len(normalized)].count("\n")
+    if not normalized.startswith("---"):
+        return None
+    for index, line in enumerate(normalized.splitlines()[1:], start=2):
+        if line.strip() == "---":
+            return None
+        if line.startswith((" ", "\t")):
+            continue
+        if ":" not in line:
+            continue
+        if line.split(":", 1)[0].strip() == field_name:
+            return leading_offset + index
+    return None
 
 
 def get_file_mtime(path: Path) -> Optional[datetime]:

@@ -19,6 +19,7 @@ _WRITE_TOOL_NAMES = frozenset(
     {
         "scaffold_document",
         "log_session",
+        "session_end",
         "promote_document",
         "rename_document",
     }
@@ -39,6 +40,8 @@ def test_read_only_server_omits_write_tools(tmp_path: Path) -> None:
     assert not missing_intersect, (
         f"read_only=True must not advertise write tools; found: {sorted(missing_intersect)}"
     )
+    assert "activate" in advertised
+    assert "ontos log" in server.instructions
 
 
 def test_mutable_server_advertises_write_tools(tmp_path: Path) -> None:

@@ -45,10 +45,11 @@ pip install 'ontos[mcp]'    # Adds mcp>=1.27.0 and pydantic>=2.0
 
 > **Note:** MCP requires Python 3.10+. All other Ontos commands continue to work on Python 3.9+.
 
-### 8 Core MCP Tools (v4.0)
+### Core MCP Tools (v4.0+)
 
 | Tool | Purpose |
 |------|---------|
+| `activate` | Mandatory best-effort session activation with loaded IDs and warnings |
 | `workspace_overview` | Structured orientation — key documents, graph stats, warnings |
 | `context_map` | Full context map markdown (supports compact modes: basic, rich, tiered, full) |
 | `get_document` | Read one document by ID or path, with full frontmatter and metadata |
@@ -58,7 +59,7 @@ pip install 'ontos[mcp]'    # Adds mcp>=1.27.0 and pydantic>=2.0
 | `health` | Server uptime, document count, index freshness, version |
 | `refresh` | Force cache rebuild after bulk changes |
 
-### 7 New MCP Tools (v4.1)
+### Additional MCP Tools (v4.1+)
 
 **Bundle tool (always available):**
 
@@ -81,12 +82,28 @@ pip install 'ontos[mcp]'    # Adds mcp>=1.27.0 and pydantic>=2.0
 |------|---------|
 | `scaffold_document` | Create a new markdown file with scaffold frontmatter |
 | `log_session` | Create a dated session log |
+| `session_end` | Create a structured session-end log with Goal, Key Decisions, Alternatives Considered, Impacts, and Testing |
 | `promote_document` | Change curation level without moving the file |
 | `rename_document` | Rename an ID across all referencing files |
 
 All write tools use advisory flock locking (`workspace_lock()`) for cross-process safety and perform rollback-then-rebuild recovery on commit failure.
 
-All tools are read-only except `export_graph` with `export_to_file` (writes within workspace root) and the four write tools above.
+All tools are read-only except `export_graph` with `export_to_file` (writes within workspace root) and the write tools above. In read-only mode, use the CLI fallback `ontos log -e "slug"` for session archives.
+
+### v4.4 Activation and Diagnostics
+
+`ontos activate` is additive and safe for existing workflows. It refreshes the context map when possible, returns `usable`, `usable_with_warnings`, or `not_usable`, and exits non-zero only when no actionable context can be produced.
+
+```bash
+ontos activate --json
+ontos doctor --frontmatter
+ontos maintain --fix-frontmatter-enums --dry-run
+ontos maintain --fix-frontmatter-enums --apply
+```
+
+Frontmatter diagnostics now include path, line when available, field, observed value, allowed values, severity, blocking flag, and suggested fix. Enum repair is conservative: known lifecycle artifact values are mapped to valid document enums while old values are preserved as `original_type` or `original_status`; unknown mappings are reported without writing.
+
+`map`, `doctor`, `verify --all`, and frontmatter repair share configured scan exclusions. Absolute-style patterns such as `*/docs/reviews/*` are recommended for generated lifecycle review folders.
 
 ### File-Mtime Cache Invalidation
 

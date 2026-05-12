@@ -69,12 +69,15 @@ AGENTS_MCP_WRITE_TOOLS_TEMPLATE = """## MCP Write Tools
 When the server runs without `--read-only`, MCP may expose:
 - `scaffold_document`
 - `log_session`
+- `session_end`
 - `promote_document`
 - `rename_document`
 
 Write-tool contracts:
 - `read_only=True` omits the write tools from discovery.
 - `workspace_id` is optional and defaults to the served workspace.
+- `session_end` is the typed session archive wrapper for Goal, Key Decisions,
+  Alternatives Considered, Impacts, and Testing.
 - `rename_document` always uses library scope.
 """
 

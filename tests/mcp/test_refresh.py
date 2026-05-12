@@ -25,11 +25,14 @@ def test_server_lists_tools_and_instructions(tmp_path):
     server = build_server(cache.workspace_root)
     tool_map = {tool.name: tool for tool in list_tools(server)}
 
-    assert len(tool_map) == 12
+    assert len(tool_map) == 14
+    assert "activate" in tool_map
     assert "workspace_overview" in tool_map
     assert "scaffold_document" in tool_map
     assert "log_session" in tool_map
+    assert "session_end" in tool_map
     assert "promote_document" in tool_map
     assert "rename_document" in tool_map
+    assert "activate" in server.instructions
     assert "workspace_overview" in server.instructions
     assert "workspace" in tool_map["workspace_overview"].description

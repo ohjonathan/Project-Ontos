@@ -37,6 +37,8 @@ class MaintainOptions:
 
     verbose: bool = False
     dry_run: bool = False
+    apply: bool = False
+    fix_frontmatter_enums: bool = False
     skip: List[str] = field(default_factory=list)
     quiet: bool = False
     json_output: bool = False
@@ -807,6 +809,9 @@ def maintain_command(options: MaintainOptions, registry: Optional[MaintainTaskRe
         output=output,
     )
 
+    if options.fix_frontmatter_enums:
+        return _run_frontmatter_enum_repair(context)
+
     skip_names = set(_normalize_skip(options.skip))
     known_names = set(active_registry.names())
     unknown_skips = sorted(skip_names - known_names)
@@ -917,3 +922,86 @@ def maintain_command(options: MaintainOptions, registry: Optional[MaintainTaskRe
             output.success(summary)
 
     return exit_code
+
+
+def _run_frontmatter_enum_repair(ctx: MaintainContext) -> int:
+    from ontos.core.frontmatter_edit import _check_clean_git_state
+    from ontos.core.frontmatter_repair import (
+        apply_enum_repair_plan,
+        build_enum_repair_plan,
+    )
+
+    files = _scan_docs(ctx)
+    plan = build_enum_repair_plan(files)
+    mode = "apply" if ctx.options.apply else "dry-run"
+    payload = plan.to_dict(root=ctx.repo_root)
+    payload["mode"] = mode
+    quiet = ctx.options.quiet or ctx.options.json_output
+
+    if not quiet:
+        ctx.output.info(f"Frontmatter enum repair ({mode})")
+        ctx.output.plain(
+            f"Scanned {plan.files_scanned} files; "
+            f"{len(plan.diagnostics)} invalid enum value(s); "
+            f"{len(plan.repairable_edits)} repairable; "
+            f"{len(plan.unresolved_edits)} unresolved."
+        )
+        for edit in plan.edits[:10]:
+            new_value = edit.new_value if edit.new_value is not None else "unresolved"
+            ctx.output.detail(
+                f"{edit.path.relative_to(ctx.repo_root)}:{edit.line or '?'} "
+                f"{edit.field} {edit.old_value!r} -> {new_value!r}"
+            )
+        if len(plan.edits) > 10:
+            ctx.output.detail(f"... and {len(plan.edits) - 10} more")
+
+    if not ctx.options.apply:
+        if ctx.options.json_output:
+            emit_command_success(
+                command="maintain",
+                exit_code=0,
+                message="Frontmatter enum repair plan complete",
+                data=payload,
+            )
+        return 0
+
+    clean, git_error = _check_clean_git_state(ctx.repo_root)
+    if not clean:
+        if ctx.options.json_output:
+            emit_command_error(
+                command="maintain",
+                exit_code=1,
+                code="E_DIRTY_WORKSPACE",
+                message=git_error or "Git working tree must be clean for --apply.",
+                data=payload,
+            )
+        elif not quiet:
+            ctx.output.error(git_error or "Git working tree must be clean for --apply.")
+        return 1
+    if plan.unresolved_edits:
+        message = "Unresolved enum values remain; refusing partial apply."
+        if ctx.options.json_output:
+            emit_command_error(
+                command="maintain",
+                exit_code=1,
+                code="E_UNRESOLVED_ENUMS",
+                message=message,
+                data=payload,
+            )
+        elif not quiet:
+            ctx.output.error(message)
+        return 1
+
+    modified = apply_enum_repair_plan(plan, repo_root=ctx.repo_root)
+    payload["modified_files"] = [str(path.relative_to(ctx.repo_root)) for path in modified]
+    if ctx.options.json_output:
+        emit_command_success(
+            command="maintain",
+            exit_code=0,
+            message="Frontmatter enum repair applied",
+            data=payload,
+        )
+        return 0
+    if not quiet:
+        ctx.output.success(f"Updated {len(modified)} file(s).")
+    return 0

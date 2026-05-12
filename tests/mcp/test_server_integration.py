@@ -14,6 +14,7 @@ def test_server_lists_all_tools_with_correct_annotations(tmp_path):
     tool_map = {tool.name: tool for tool in list_tools(server)}
 
     expected_tools = {
+        "activate",
         "workspace_overview",
         "context_map",
         "get_document",
@@ -25,6 +26,7 @@ def test_server_lists_all_tools_with_correct_annotations(tmp_path):
         # v4.1 Track B (Dev 2) — single-file write tools.
         "scaffold_document",
         "log_session",
+        "session_end",
         "promote_document",
         # v4.1 Track B (Dev 3) — multi-file write tool.
         "rename_document",
@@ -34,14 +36,14 @@ def test_server_lists_all_tools_with_correct_annotations(tmp_path):
 
     # export_graph, refresh, and the write tools are non-read-only
     for name in ("export_graph", "refresh", "scaffold_document",
-                 "log_session", "promote_document", "rename_document"):
+                 "log_session", "session_end", "promote_document", "rename_document"):
         assert tool_map[name].annotations.readOnlyHint is False, (
             f"{name} must not be readOnly"
         )
     assert tool_map["refresh"].annotations.idempotentHint is False
 
     # Read-only tools
-    for name in ("workspace_overview", "context_map", "get_document",
+    for name in ("activate", "workspace_overview", "context_map", "get_document",
                  "list_documents", "query", "health"):
         assert tool_map[name].annotations.readOnlyHint is True, f"{name} should be readOnly"
 
@@ -119,6 +121,8 @@ def test_instructions_mention_workspace_overview(tmp_path):
     server = build_server(root)
 
     assert "workspace_overview" in server.instructions
+    assert "activate" in server.instructions
+    assert "session_end" in server.instructions
 
 
 def test_instructions_contain_workspace_identity(tmp_path):
