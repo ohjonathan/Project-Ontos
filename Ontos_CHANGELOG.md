@@ -21,6 +21,38 @@ All notable changes to **Project Ontos itself** (the protocol and tooling) will 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.4.0] - 2026-05-12
+
+### Theme: "Agentic Activation Resilience"
+
+Minor release making Ontos harder for AI agents to skip and easier to keep usable in large lifecycle-heavy repositories.
+
+### Added
+
+- **`ontos activate`** — Best-effort activation command with `usable`, `usable_with_warnings`, and `not_usable` statuses plus JSON diagnostics.
+- **MCP `activate` and `session_end` tools** — First-class session activation and typed session archive workflows, with read-only fallback guidance.
+- **Frontmatter diagnostics and repair** — `ontos doctor --frontmatter` plus `ontos maintain --fix-frontmatter-enums --dry-run|--apply` for precise enum diagnosis and conservative repair.
+
+### Changed
+
+- `map`, `doctor`, `verify --all`, and frontmatter repair now share configured scan exclusions.
+- Default warning output is grouped by category with top examples, while verbose output preserves full detail.
+- Generated context maps now use valid `status: complete` frontmatter with `generated_by: ontos map`.
+
+### Fixed
+
+- MCP read tools now include `_ontos_warning` when called before activation in a server session.
+- `doctor` now detects linked git worktrees with `git rev-parse --is-inside-work-tree`.
+- Import-path test debt is closed with a green full suite and Python matrix CI evidence.
+
+### Metrics
+
+- PR #113 merged with 50 files changed.
+- Local verification: `1300 passed, 2 skipped, 2 warnings`.
+- GitHub CI passed for Python 3.9, 3.10, 3.11, 3.12, and `test-non-editable`.
+
+---
+
 ## [4.3.0] - 2026-04-15
 
 ### Theme: "Obsidian Write Path"
