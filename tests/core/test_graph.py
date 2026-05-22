@@ -185,6 +185,40 @@ class TestDependsOnPathFallback:
 
 
 # ---------------------------------------------------------------------------
+# (#117) README / *_template.md loader skip
+# ---------------------------------------------------------------------------
+
+
+def test_readme_files_are_skipped_unless_they_declare_explicit_id(tmp_path):
+    """README.md and *_template.md sit alongside data docs but rarely carry
+    valid frontmatter; the loader must skip them unless they opt back in via
+    an explicit `id:` field (escape hatch)."""
+    from ontos.io.files import load_documents
+    from ontos.io.yaml import parse_frontmatter_content
+
+    readme_no_id = tmp_path / "docs/logs/README.md"
+    readme_no_id.parent.mkdir(parents=True, exist_ok=True)
+    readme_no_id.write_text("# Logs README\n\nNo frontmatter here.\n")
+
+    template_no_id = tmp_path / "docs/notes_template.md"
+    template_no_id.write_text("# Notes Template\n")
+
+    explicit_readme = tmp_path / "docs/explicit/README.md"
+    explicit_readme.parent.mkdir(parents=True, exist_ok=True)
+    explicit_readme.write_text("---\nid: explicit_readme\ntype: log\n---\n")
+
+    regular = tmp_path / "docs/regular.md"
+    regular.write_text("---\nid: regular_doc\ntype: log\n---\n")
+
+    result = load_documents(
+        [readme_no_id, template_no_id, explicit_readme, regular],
+        parse_frontmatter_content,
+    )
+
+    assert set(result.documents.keys()) == {"regular_doc", "explicit_readme"}
+
+
+# ---------------------------------------------------------------------------
 # detect_cycles
 # ---------------------------------------------------------------------------
 

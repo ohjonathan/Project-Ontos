@@ -14,6 +14,7 @@ from ontos.commands.doctor import (
     CheckResult,
     DoctorOptions,
     DoctorResult,
+    check_activation_health,
     check_antigravity_mcp,
     check_cursor_mcp,
     check_docs_directory,
@@ -539,3 +540,31 @@ def test_doctor_json_includes_cursor_mcp_malformed_project_config_warning(tmp_pa
 
     assert result.status == "warning"
     assert "malformed" in result.message.lower()
+
+
+def test_check_activation_health_clean_workspace_passes(tmp_path):
+    # (#117) A workspace with no broken depends_on yields success status.
+    _init_workspace(tmp_path)
+
+    result = check_activation_health(repo_root=tmp_path)
+
+    assert result.name == "activation_health"
+    assert result.status == "success"
+
+
+def test_check_activation_health_reports_failed_on_broken_depends_on(tmp_path):
+    # (#117) Doctor severity now reflects activation hard-error severity.
+    # A doc that declares an unresolvable depends_on (neither a known doc
+    # id nor an on-disk path) should make this check return `failed` and
+    # contribute to doctor's non-zero exit code.
+    _init_workspace(tmp_path)
+    (tmp_path / "docs" / "broken.md").write_text(
+        "---\nid: broken_doc\ntype: atom\nstatus: active\ndepends_on:\n  - genuinely_missing_target\n---\n",
+        encoding="utf-8",
+    )
+
+    result = check_activation_health(repo_root=tmp_path)
+
+    assert result.status == "failed"
+    assert "error" in result.message.lower()
+    assert "broken_link" in result.details
