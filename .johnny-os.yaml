@@ -1,0 +1,17 @@
+manifest_version: 1
+
+workspace:
+  id: project-ontos
+  name: Project-Ontos
+  kind: infra
+  isolation_tier: medium
+
+entities:
+  - id: project-ontos-repo
+    name: Project-Ontos
+    type: repo
+    domain: infra
+    lifecycle: active
+    maturity: usable
+    risk_tier: sandbox
+    repo_path: /Users/jonathanoh/workspaces/Project-Ontos
