@@ -15,27 +15,24 @@ Request changes
 
 ## Summary
 
-The spec is comprehensive and addresses the core issues effectively, particularly in reducing false positives from the link-checker and improving warning context. However, one blocking security vulnerability and two potential maintenance/state issues require remediation before implementation. The proposed path-based dependency resolution introduces a path traversal risk that must be mitigated.
+The spec is comprehensive and addresses the root causes of the reported issues with sound logic. However, a potential path traversal vulnerability exists in the proposed `depends_on` resolution logic, which could leak information about files outside the workspace. A minor clarification on case-insensitivity for file exclusion rules is also recommended.
 
 ## Findings
 
-### [F1] Path traversal vulnerability in `depends_on` resolution
+### [F1] Path traversal risk in `depends_on` path resolution
 - **Severity:** blocker
 - **Evidence:** static-inspection
-- **Where:** Spec §2.1.2, §2.1.3
-- **Issue:** The contract for `depends_on` resolution proposes treating dependency IDs as workspace-relative or document-relative file paths. It does not specify that these paths must be validated to exist *within* the workspace boundary. A malicious `depends_on: "../../../../etc/passwd"` entry could cause the system to read arbitrary files from the filesystem, as `workspace_root / dep_id` would resolve outside the project.
-- **Recommendation:** The implementation contract must be amended to require path sanitization. After resolving a path candidate (e.g., via `(workspace_root / dep_id).resolve()`), the implementation MUST verify that the resolved absolute path is a child of the workspace root's own resolved absolute path. Any path resolving outside the workspace must be treated as a broken link, not an external dependency.
+- **Where:** Spec section 2.1.2 and 2.1.3
+- **Issue:** The contract for resolving `depends_on` entries as paths does not mandate that the resolved file path must exist within the workspace root. An entry like `../.env` or `../../../../etc/passwd` could resolve to a file outside the project directory. While the spec proposes not loading the file, Rule #4 would still confirm its existence via an "external resolved dependency" warning, creating an information leak vulnerability about the host file system.
+- **Recommendation:** The implementation (e.g., in `_resolve_depends_on_path`) must verify that the fully resolved candidate path is a subpath of the workspace root. If `candidate.resolve()` is not within `workspace_root.resolve()`, the dependency should be treated as `broken` (Rule #5), not `external` (Rule #4).
 
-### [F2] Brittle `rule_id` generation from string prefixes
+### [F2] Case-insensitivity for README/template exclusion rule
 - **Severity:** should-fix
 - **Evidence:** static-inspection
-- **Where:** Spec §2.2.3
-- **Issue:** The spec proposes deriving a structured `rule_id` for bare-string warnings by matching known string prefixes (e.g., `"Log missing fields:"` → `rule_id="schema.log_missing_fields"`). This is brittle; any future change to the human-readable warning message will break the `rule_id` mapping. This creates a tight, non-obvious coupling between distant parts of the codebase.
-- **Recommendation:** Modify the implementation contract. Instead of reverse-engineering the `rule_id` from a string, the code locations that generate these warnings should be modified to emit a structured object containing both the message and the appropriate `rule_id` from the outset.
+- **Where:** Spec section 2.5
+- **Issue:** The contract specifies that files with a stem of `README` should be excluded from validation. On case-sensitive filesystems, this would exclude `README.md` but not `readme.md` or `Readme.txt`. This behavior could be surprising and lead to unexpected validation errors.
+- **Recommendation:** Explicitly state that the `README` stem check must be case-insensitive. The implementation in the proposed `_is_validation_excluded` helper should normalize the stem to lowercase before comparison (e.g., `path.stem.lower() == 'readme'`).
 
-### [F3] Unspecified side effects of `ontos doctor` running activation
-- **Severity:** should-fix
-- **Evidence:** static-inspection
-- **Where:** Spec §2.6
-- **Issue:** The spec proposes that `ontos doctor` run the full activation pipeline to check for errors. This could significantly slow down a command intended as a quick health check. More critically, the spec does not state whether this activation run is isolated. If it modifies any persistent state (e.g., caches, logs), it could produce unintended side effects that influence subsequent commands like `ontos activate`.
-- **Recommendation:** The implementation contract in §2.6.3 should explicitly state that the activation pipeline invoked by `ontos doctor` must be run in a "dry-run" or "read-only" mode that does not persist any state changes to the filesystem or any long-lived cache. The performance degradation should be acknowledged as an acceptable trade-off for a more accurate report.
+## Notes
+
+The planned changes for issues #115, #116, and the other sub-items of #117 appear robust and well-considered from an adversarial standpoint, with clear back-compatibility paths and conservative fallbacks. The findings above are the only points of concern identified.

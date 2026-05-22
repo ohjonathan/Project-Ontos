@@ -151,6 +151,8 @@ self_review_caveats: []
 consolidation_mode: external
 reviewer_family_substitutes: []
 
+lifecycle_receipt_inventory_path: "docs/reviews/project-ontos-github-issues-115-117/lifecycle-receipt-inventory.yaml"
+
 merge_authority:
   mode: recommendation_only
 

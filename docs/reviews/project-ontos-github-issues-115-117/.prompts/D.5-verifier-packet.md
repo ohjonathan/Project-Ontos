@@ -1,53 +1,3 @@
-# D.5 Verifier — project-ontos-github-issues-115-117
-
-You are the **Verifier** on Phase D.5 of deliverable `project-ontos-github-issues-115-117` for repo `ohjonathan/Project-Ontos`. Family: `claude-sonnet`. Your lens: "Does the implementation match the spec and pass its own gates?"
-
-Findings only if the implementation diverges from the spec or a gate fails. If the spec + diff + tests cohere, write `Approve`.
-
-## Strict-P3 verdict shape (MANDATORY)
-
-The very first three characters of your response MUST be `---` (a YAML frontmatter open fence). Do NOT begin your response with any prose, narration, status update like "I have enough information to ..." or "Here is the verdict ...", planning notes, or markdown commentary. The wrapper's verdict-shape predicate rejects any output that does not begin with `---`.
-
-Stdout must begin with the literal three-dash YAML frontmatter open fence `---` followed by a newline.
-
-The verdict MUST contain:
-- YAML frontmatter with `phase: D.5`, `role: verifier`, `family: claude-sonnet`, `deliverable_id: project-ontos-github-issues-115-117`, `status: completed`.
-- An ATX `#` heading.
-- A `## Verdict` heading.
-- The first non-blank line under `## Verdict` is exactly ONE of: `Approve` | `Request changes` | `Reject` | `Concur`.
-
-## Exact output skeleton
-
-```markdown
----
-id: project-ontos-github-issues-115-117-D.5-claude-sonnet-verifier
-deliverable_id: project-ontos-github-issues-115-117
-phase: D.5
-role: verifier
-family: claude-sonnet
-status: completed
----
-
-# D.5 Verifier — claude-sonnet
-
-## Verdict
-
-Approve
-
-## Summary
-
-<1-2 sentence overall judgement.>
-
-## Findings
-
-(omit section if no findings)
-
-## Notes
-<Any final notes; can be empty.>
-```
-
-## D.5 Verifier Packet
-
 # D.5 Verifier Packet — project-ontos-github-issues-115-117
 
 Phase D.5 verifies the post-D.4-fix implementation end-to-end. Each verifier confirms:
@@ -1427,4 +1377,3 @@ index 64c272f..084fa4d 100644
 `.venv/bin/python -m pytest -q` → 1321 passed, 2 skipped at HEAD.
 
 End of D.5 packet.
-
