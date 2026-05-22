@@ -361,6 +361,18 @@ The retrofit command follows the same conservative write pattern as Ontos's othe
 - ~~**No cross-project search** — Portfolio index deferred to v4.1~~ ✅ Shipped in v4.1
 - **No cross-workspace writes** — Write tools target the served workspace only
 
+## Restart MCP hosts after upgrading Ontos
+
+Long-lived MCP hosts (Claude Code, Cursor, Antigravity) spawn `ontos serve` once and keep that child process alive across upgrades. After any of:
+
+```bash
+pipx upgrade ontos
+pip install --upgrade ontos
+pipx install --force 'ontos[mcp]'
+```
+
+**restart the MCP host** — or reload the Ontos plugin — so it picks up the new version. Until the host process is recycled, MCP `health` responses will continue reporting the previous `ontos_version`. The CLI (`ontos --version`) and freshly-started `ontos serve` children always report the new version because every CLI invocation is its own process.
+
 ## Getting Help
 
 - Run `ontos doctor` for diagnostics

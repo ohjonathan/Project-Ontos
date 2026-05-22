@@ -260,6 +260,17 @@ pip install 'ontos[mcp]'
 > ```
 > Using pipx? Run `pipx install --force 'ontos[mcp]'` (pipx upgrade does not add new extras).
 
+> [!IMPORTANT]
+> **Restart your MCP host after upgrading Ontos.** Long-lived MCP hosts
+> (Claude Code, Cursor, Antigravity) spawn `ontos serve` once and keep
+> that child process alive across upgrades. After `pipx upgrade ontos`,
+> `pip install --upgrade ontos`, or `pipx install --force 'ontos[mcp]'`,
+> restart the MCP host — or reload the Ontos plugin — so it picks up the
+> new version. The CLI (`ontos --version`) shows the new version
+> immediately because each CLI invocation is a fresh process; the host's
+> persistent `ontos serve` child keeps the old version until it's
+> recycled.
+
 ### 2. Start the Server
 
 ```bash
