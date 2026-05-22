@@ -118,9 +118,13 @@ class TestDependsOnPathFallback:
         )
         graph, errors = build_graph(docs, workspace_root=tmp_path)
         assert errors == []
-        # Edge was repaired to point at the doc id, not the raw path.
-        assert "kernel" in graph.edges["strategy"]
+        # Edge was repaired to point at the doc id; the raw path string
+        # must NOT appear as a graph edge (claude-opus B.1 F1 — doc-id
+        # graph cleanliness).
+        assert graph.edges["strategy"] == ["kernel"]
+        assert "docs/kernel.md" not in graph.edges["strategy"]
         assert "strategy" in graph.reverse_edges["kernel"]
+        assert "docs/kernel.md" not in graph.reverse_edges
 
     def test_declaring_doc_relative_path_resolves_to_loaded_doc(self, tmp_path):
         docs = self._docs(
@@ -168,6 +172,30 @@ class TestDependsOnPathFallback:
         graph, errors = build_graph(docs)
         assert len(errors) == 1
         assert errors[0].error_type.value == "broken_link"
+
+    def test_path_traversal_outside_workspace_is_treated_as_broken(self, tmp_path):
+        # gemini B.1 F1 — depends_on entries that resolve outside the workspace
+        # root (e.g., `../../etc/passwd`) must NOT leak through the
+        # activation warnings channel as out-of-scope dependencies. They
+        # fall through to broken-link severity instead.
+        outside = tmp_path.parent / "secrets"
+        outside.mkdir(parents=True, exist_ok=True)
+        (outside / "vault.md").write_text("nope")
+
+        docs = self._docs(
+            tmp_path,
+            [
+                ("a", "docs/a.md", ["../secrets/vault.md"]),
+            ],
+        )
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+        # The traversal-escaping path is reported as broken (error), not as
+        # an out-of-scope dependency (warning that would otherwise leak the
+        # external filesystem state).
+        assert len(errors) == 1
+        assert errors[0].error_type.value == "broken_link"
+        assert errors[0].severity == "error"
+        assert "vault.md" in errors[0].message
 
     def test_doc_id_match_takes_precedence_over_path(self, tmp_path):
         # An entry that matches a loaded doc id is NEVER tried as a path

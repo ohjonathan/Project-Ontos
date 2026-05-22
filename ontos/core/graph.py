@@ -39,14 +39,22 @@ def _resolve_depends_on_path(
     doc: DocumentData,
     docs_by_resolved_path: Dict[Path, str],
     workspace_root: Optional[Path],
+    workspace_root_resolved: Optional[Path],
 ) -> Tuple[Optional[str], Optional[Path]]:
     """Try to resolve a `depends_on` entry as a filesystem path.
 
     Returns (resolved_doc_id, external_path):
         (id, None) — path resolved to a loaded doc; caller treats as a graph edge.
-        (None, p)  — path exists on disk but is not loaded; caller treats as
-                      an out-of-scope dependency (warning, not error).
-        (None, None) — no path resolution; caller falls back to broken-link.
+        (None, p)  — path exists on disk inside the workspace but is not loaded;
+                      caller treats as an out-of-scope dependency (warning).
+        (None, None) — no path resolution OR resolved path escapes the
+                       workspace; caller falls back to broken-link.
+
+    Containment: any candidate whose resolved path (with symlinks followed)
+    is outside `workspace_root_resolved` is rejected (no fall-through to
+    external-dep emission). This is the gemini-B.1-F1 fix — `Path.resolve`
+    follows symlinks, so a malicious or buggy `depends_on: '../../etc/passwd'`
+    must not leak filesystem state through the activation warnings channel.
     """
     if workspace_root is None or not _looks_like_path(dep_id):
         return None, None
@@ -57,7 +65,6 @@ def _resolve_depends_on_path(
         candidates.append(raw)
     else:
         candidates.append(workspace_root / raw)
-        # Declaring-doc-relative: walk from the doc's directory.
         doc_dir = doc.filepath.parent if doc.filepath else workspace_root
         candidates.append(doc_dir / raw)
 
@@ -66,6 +73,11 @@ def _resolve_depends_on_path(
             resolved = candidate.resolve(strict=False)
         except (OSError, RuntimeError):
             continue
+        if workspace_root_resolved is not None:
+            try:
+                resolved.relative_to(workspace_root_resolved)
+            except ValueError:
+                continue
         if resolved in docs_by_resolved_path:
             return docs_by_resolved_path[resolved], None
         if candidate.exists():
@@ -133,7 +145,12 @@ def build_graph(
     )
 
     docs_by_resolved_path: Dict[Path, str] = {}
+    workspace_root_resolved: Optional[Path] = None
     if workspace_root is not None:
+        try:
+            workspace_root_resolved = workspace_root.resolve()
+        except (OSError, RuntimeError):
+            workspace_root_resolved = None
         for d in docs.values():
             try:
                 docs_by_resolved_path[d.filepath.resolve()] = d.id
@@ -143,20 +160,22 @@ def build_graph(
     for doc_id, doc in docs.items():
         depends_on = doc.depends_on
         doc_type = doc.type.value
-        graph.add_node(doc_id, doc_type, str(doc.filepath), depends_on)
-
+        # (#117) Resolve each declared dep BEFORE building the graph node so
+        # the edges + reverse_edges record doc-id targets, not raw path
+        # strings. Doc-id matches and path-resolved-to-loaded-doc both
+        # become regular edges; out-of-scope or broken entries are dropped
+        # from the edge list and reported as ValidationErrors.
+        resolved_depends_on: List[str] = []
         for dep_id in depends_on:
             if dep_id in existing_ids:
+                resolved_depends_on.append(dep_id)
                 continue
 
-            # (#117) Try path resolution before reporting broken-link.
             resolved_id, external_path = _resolve_depends_on_path(
-                dep_id, doc, docs_by_resolved_path, workspace_root
+                dep_id, doc, docs_by_resolved_path, workspace_root, workspace_root_resolved
             )
             if resolved_id is not None:
-                # Path pointed at a loaded doc — repair the edge silently.
-                graph.edges.setdefault(doc_id, []).append(resolved_id)
-                graph.reverse_edges.setdefault(resolved_id, []).append(doc_id)
+                resolved_depends_on.append(resolved_id)
                 continue
             if external_path is not None:
                 errors.append(ValidationError(
@@ -191,6 +210,8 @@ def build_graph(
                 fix_suggestion=fix_suggestion,
                 severity=circular_severity if dep_id == doc_id else depends_on_severity
             ))
+
+        graph.add_node(doc_id, doc_type, str(doc.filepath), resolved_depends_on)
 
     return graph, errors
 
