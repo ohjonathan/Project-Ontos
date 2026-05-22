@@ -68,6 +68,10 @@ class ValidationErrorType(Enum):
     CURATION = "curation"
     IMPACTS = "impacts"
     DEPTH = "depth"
+    # (#117) depends_on entry resolved as a path against the filesystem but
+    # the target is not a loaded doc — treat as a soft external dependency
+    # rather than a hard broken-link error.
+    OUT_OF_SCOPE_DEPENDENCY = "out_of_scope_dependency"
 
 
 # =============================================================================

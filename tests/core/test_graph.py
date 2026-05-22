@@ -75,6 +75,116 @@ class TestBuildGraph:
 
 
 # ---------------------------------------------------------------------------
+# build_graph — #117 depends_on path-fallback resolution
+# ---------------------------------------------------------------------------
+
+
+class TestDependsOnPathFallback:
+    """`depends_on` entries that don't match a doc id but resolve against the
+    workspace filesystem should be either repaired silently (when they
+    point at a loaded doc) or downgraded to a soft OUT_OF_SCOPE_DEPENDENCY
+    warning (when they point at an existing non-loaded file). Hard
+    broken-link errors are reserved for genuinely missing targets. (#117)"""
+
+    def _docs(self, tmp_path, layout):
+        """Build a doc dict whose filepaths sit inside `tmp_path`.
+
+        `layout` is a sequence of (doc_id, rel_path, depends_on) tuples.
+        Each rel_path file is created so `.exists()` is true.
+        """
+        docs = {}
+        for doc_id, rel_path, depends_on in layout:
+            abs_path = tmp_path / rel_path
+            abs_path.parent.mkdir(parents=True, exist_ok=True)
+            abs_path.write_text(f"# {doc_id}\n")
+            docs[doc_id] = DocumentData(
+                id=doc_id,
+                type=DocumentType.ATOM,
+                status=DocumentStatus.ACTIVE,
+                filepath=abs_path,
+                frontmatter={"id": doc_id, "type": "atom"},
+                content="",
+                depends_on=list(depends_on),
+            )
+        return docs
+
+    def test_workspace_relative_path_resolves_to_loaded_doc(self, tmp_path):
+        docs = self._docs(
+            tmp_path,
+            [
+                ("kernel", "docs/kernel.md", []),
+                ("strategy", "docs/strategy.md", ["docs/kernel.md"]),
+            ],
+        )
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+        assert errors == []
+        # Edge was repaired to point at the doc id, not the raw path.
+        assert "kernel" in graph.edges["strategy"]
+        assert "strategy" in graph.reverse_edges["kernel"]
+
+    def test_declaring_doc_relative_path_resolves_to_loaded_doc(self, tmp_path):
+        docs = self._docs(
+            tmp_path,
+            [
+                ("a", "docs/sub/a.md", []),
+                ("b", "docs/sub/b.md", ["a.md"]),
+            ],
+        )
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+        assert errors == []
+        assert "a" in graph.edges["b"]
+
+    def test_existing_non_loaded_path_is_out_of_scope_warning(self, tmp_path):
+        # Create the dep target on disk but do not load it.
+        (tmp_path / ".llm-dev/framework").mkdir(parents=True, exist_ok=True)
+        (tmp_path / ".llm-dev/framework/framework.md").write_text("framework")
+        docs = self._docs(
+            tmp_path,
+            [("orchestrator", "docs/orchestrator.md", [".llm-dev/framework/framework.md"])],
+        )
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+        assert len(errors) == 1
+        assert errors[0].error_type.value == "out_of_scope_dependency"
+        assert errors[0].severity == "warning"
+        assert ".llm-dev/framework/framework.md" in errors[0].message
+
+    def test_missing_path_falls_through_to_broken_link(self, tmp_path):
+        docs = self._docs(
+            tmp_path,
+            [("a", "docs/a.md", ["docs/does-not-exist.md"])],
+        )
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+        assert len(errors) == 1
+        assert errors[0].error_type.value == "broken_link"
+        assert errors[0].severity == "error"
+
+    def test_no_workspace_root_preserves_legacy_behavior(self, tmp_path):
+        # Without workspace_root, a path-shaped dep is reported as broken-link
+        # exactly as before (back-compat for existing call sites).
+        docs = self._docs(
+            tmp_path,
+            [("a", "docs/a.md", ["docs/does-not-exist.md"])],
+        )
+        graph, errors = build_graph(docs)
+        assert len(errors) == 1
+        assert errors[0].error_type.value == "broken_link"
+
+    def test_doc_id_match_takes_precedence_over_path(self, tmp_path):
+        # An entry that matches a loaded doc id is NEVER tried as a path
+        # (back-compat for the canonical doc-id depends_on usage).
+        docs = self._docs(
+            tmp_path,
+            [
+                ("kernel", "docs/kernel.md", []),
+                ("strategy", "docs/strategy.md", ["kernel"]),
+            ],
+        )
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+        assert errors == []
+        assert "kernel" in graph.edges["strategy"]
+
+
+# ---------------------------------------------------------------------------
 # detect_cycles
 # ---------------------------------------------------------------------------
 

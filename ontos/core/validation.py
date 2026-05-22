@@ -78,13 +78,18 @@ class ValidationOrchestrator:
     def __init__(
         self,
         docs: Dict[str, DocumentData],
-        config: Optional[Dict[str, Any]] = None
+        config: Optional[Dict[str, Any]] = None,
+        workspace_root: Optional[Any] = None,
     ):
         """Initialize with documents and optional config.
 
         Args:
             docs: Dictionary mapping doc_id to DocumentData
             config: Optional configuration dict
+            workspace_root: Optional workspace root for depends_on path
+                resolution. When provided, depends_on entries that look like
+                paths are tried against the filesystem before being reported
+                as broken (#117).
         """
         self.docs = docs
         self.config = config or {}
@@ -92,6 +97,7 @@ class ValidationOrchestrator:
             **REFERENCE_SEVERITY_DEFAULT,
             **self.config.get("severity_map", {}),
         }
+        self.workspace_root = workspace_root
         self.errors: List[ValidationError] = []
         self.warnings: List[ValidationError] = []
 
@@ -121,7 +127,11 @@ class ValidationOrchestrator:
 
     def validate_graph(self) -> None:
         """Validate dependency graph: broken links, cycles, orphans, depth."""
-        graph, broken_link_errors = build_graph(self.docs, severity_map=self.severity_map)
+        graph, broken_link_errors = build_graph(
+            self.docs,
+            severity_map=self.severity_map,
+            workspace_root=self.workspace_root,
+        )
         self.errors.extend([e for e in broken_link_errors if e.severity == "error"])
         self.warnings.extend([e for e in broken_link_errors if e.severity == "warning"])
 
