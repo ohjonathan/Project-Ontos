@@ -330,13 +330,20 @@ def run_link_diagnostics(
                 known_ids=active_ids,
                 include_skipped=False,
             )
-            # Pass 2: Generic unknown scan — finds references to IDs that
-            # don't exist (broken reference detection).  Uses the
-            # _looks_like_doc_id filter to suppress false positives.
+            # Pass 2: Generic unknown scan — finds broken references to
+            # IDs that don't exist. (#117) The prose-token heuristic
+            # (`_looks_like_doc_id`) produced ~11k false positives per
+            # 163-doc corpus; it is now disabled by passing
+            # include_generic_bare_id_token=False. Broken markdown link
+            # targets still surface because link_target detection is
+            # independent of the bare-token heuristic. Broken bare
+            # references inside explicit `[[id]]` wikilink sigils still
+            # surface via _iter_wikilink_id_candidates.
             generic_scan = scan_body_references(
                 path=doc.filepath,
                 body=doc.content,
                 include_skipped=False,
+                include_generic_bare_id_token=False,
             )
             # Merge both passes, deduplicating by position.
             seen_positions: set[tuple[int, int]] = set()

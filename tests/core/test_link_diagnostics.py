@@ -148,12 +148,16 @@ def test_parse_failed_candidates_reported_without_affecting_exit(tmp_path: Path)
 
 
 def test_body_broken_reference_gets_suggestion(tmp_path: Path):
+    # (#117) Broken bare-id-token detection in body text now requires an
+    # explicit `[[id]]` wikilink sigil. The prose-token heuristic was
+    # disabled in link-check after producing ~11k false positives per
+    # 163-doc corpus; deliberate references still surface via the sigil.
     _init_project(tmp_path)
     _write_doc(tmp_path / "docs" / "target.md", "v3_2_1")
     _write_doc(
         tmp_path / "docs" / "source.md",
         "source_doc",
-        body="See v3_2 for details.",
+        body="See [[v3_2]] for details.",
     )
 
     result = _run(tmp_path, ScanScope.LIBRARY)

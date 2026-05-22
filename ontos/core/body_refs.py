@@ -116,6 +116,7 @@ def scan_body_references(
     rename_target: Optional[str] = None,
     known_ids: Optional[set[str]] = None,
     include_skipped: bool = True,
+    include_generic_bare_id_token: bool = True,
 ) -> BodyReferenceScan:
     """Scan markdown body for reference matches.
 
@@ -123,6 +124,14 @@ def scan_body_references(
     - rename mode: `rename_target` is provided and only exact target matches are emitted.
     - link-check mode: `rename_target` is omitted and all candidate references are emitted.
       If `known_ids` is set, candidates are limited to that known set.
+
+    (#117) Generic-mode prose-token matching (the heuristic that flagged
+    11,163 false positives on a 163-doc workspace) is now opt-in via
+    `include_generic_bare_id_token`. When False AND `known_ids` is None
+    AND `rename_target` is None, BARE_ID_TOKEN matches require an explicit
+    `[[id]]` wikilink sigil. Markdown link target detection is unchanged.
+    Known-ID and rename modes are unchanged. Default True preserves
+    back-compat for existing callers.
     """
 
     lines = body.splitlines(keepends=True)
@@ -223,6 +232,7 @@ def scan_body_references(
                     rename_target=rename_target,
                     known_ids=known_ids,
                     line_is_reference_definition=line_is_reference_definition,
+                    include_generic_bare_id_token=include_generic_bare_id_token,
                 )
             )
 
@@ -378,6 +388,7 @@ def _scan_normal_text_segment(
     rename_target: Optional[str],
     known_ids: Optional[set[str]],
     line_is_reference_definition: bool,
+    include_generic_bare_id_token: bool = True,
 ) -> List[BodyReferenceMatch]:
     if line_is_reference_definition:
         return []
@@ -385,7 +396,10 @@ def _scan_normal_text_segment(
     matches: List[BodyReferenceMatch] = []
     link_targets = _find_markdown_link_targets(segment_text)
     occupied = [(item.full_start, item.full_end) for item in link_targets]
-    occupied.extend(_find_unsupported_spans(segment_text))
+    # (#117) Wikilink spans `[[…]]` are no longer treated as unsupported —
+    # they're now the canonical opt-in source for generic-mode bare-id-token
+    # matches when callers disable the prose heuristic.
+    occupied.extend(_find_unsupported_spans(segment_text, include_wikilinks=False))
 
     for link_target in link_targets:
         if rename_target is not None and link_target.normalized_id != rename_target:
@@ -419,8 +433,13 @@ def _scan_normal_text_segment(
     elif known_ids is not None:
         ordered_ids = sorted(known_ids, key=lambda item: (-len(item), item))
         bare_candidates = _iter_known_id_candidates(segment_text, ordered_ids)
-    else:
+    elif include_generic_bare_id_token:
         bare_candidates = _iter_generic_id_candidates(segment_text)
+    else:
+        # (#117) Generic prose-token heuristic disabled — fall back to
+        # explicit `[[id]]` wikilink sigils only. Suppresses the 11k-class
+        # false positives the prose scanner produced on natural text.
+        bare_candidates = _iter_wikilink_id_candidates(segment_text)
 
     for start, end, normalized_id in bare_candidates:
         if _overlaps_any(start, end, occupied):
@@ -705,9 +724,30 @@ def _is_reference_definition_line(line_text: str) -> bool:
     return _REFERENCE_DEF_RE.match(line_text) is not None
 
 
-def _find_unsupported_spans(segment_text: str) -> List[Tuple[int, int]]:
+def _find_unsupported_spans(
+    segment_text: str,
+    *,
+    include_wikilinks: bool = True,
+) -> List[Tuple[int, int]]:
+    patterns = [_REFERENCE_STYLE_RE, _HTML_OR_AUTOLINK_RE]
+    if include_wikilinks:
+        patterns.append(_WIKILINK_RE)
     spans: List[Tuple[int, int]] = []
-    for pattern in (_REFERENCE_STYLE_RE, _WIKILINK_RE, _HTML_OR_AUTOLINK_RE):
+    for pattern in patterns:
         for match in pattern.finditer(segment_text):
             spans.append(match.span())
     return spans
+
+
+def _iter_wikilink_id_candidates(text: str) -> Iterable[Tuple[int, int, str]]:
+    # (#117) Generic-mode opt-in source for BARE_ID_TOKEN: only emit
+    # candidates extracted from explicit `[[id]]` wikilink sigils.
+    for match in _WIKILINK_RE.finditer(text):
+        raw_inner = match.group(0)[2:-2]
+        inner = raw_inner.strip()
+        if not inner:
+            continue
+        offset = raw_inner.index(inner) if inner in raw_inner else 0
+        start = match.start() + 2 + offset
+        end = start + len(inner)
+        yield start, end, inner
