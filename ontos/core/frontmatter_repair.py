@@ -18,25 +18,26 @@ from ontos.io.yaml import parse_frontmatter_content
 
 
 TYPE_REPAIRS: Dict[str, str] = {
+    # (#117) `review`, `retro`, `tracker` are now first-class canonical
+    # types in DocumentType — no repair needed. Aliases that aren't
+    # canonical map to the closest canonical value.
     "proposal": "strategy",
-    "review": "log",
-    "retro": "log",
-    "retrospective": "log",
-    "tracker": "log",
-    "final-report": "log",
-    "final_report": "log",
+    "retrospective": "retro",
+    "final-report": "report",
+    "final_report": "report",
     "verdict": "log",
     "prompt": "log",
     "artifact": "log",
 }
 
 STATUS_REPAIRS: Dict[str, str] = {
-    "completed": "complete",
+    # (#117) `completed`, `ready`, `proposed`, `revised`, `in-lifecycle`
+    # are now first-class canonical statuses. Remaining repairs cover
+    # genuine aliases.
     "passed": "complete",
     "approve": "complete",
     "approved": "complete",
     "final": "complete",
-    "ready": "complete",
     "done": "complete",
     "pr-open": "active",
     "in-review": "active",
