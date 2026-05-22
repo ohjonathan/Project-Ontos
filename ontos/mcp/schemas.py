@@ -340,6 +340,14 @@ READ_WARNING_TOOL_NAMES = {
     "refresh",
 }
 
+# Tools whose declared success schema already carries a `warnings: List[str]`
+# field. For these, the pre-activate reminder is appended to that list rather
+# than injected as an undeclared `_ontos_warning` key — which the MCP SDK
+# rejects when the schema is `additionalProperties: false`. (Issue #115.)
+WARNINGS_LIST_TOOL_NAMES = {
+    "get_context_bundle",
+}
+
 
 def validate_success_payload(tool_name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     """Validate and normalize one tool success payload."""

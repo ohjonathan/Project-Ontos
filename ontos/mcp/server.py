@@ -21,8 +21,32 @@ from ontos.io.snapshot import create_snapshot
 from ontos.mcp._types import PortfolioIndexLike
 from ontos.mcp.cache import SnapshotCache
 from ontos.mcp.scanner import slugify
-from ontos.mcp.schemas import ToolErrorEnvelope, output_schema_for, validate_success_payload
+from ontos.mcp.schemas import (
+    READ_WARNING_TOOL_NAMES,
+    WARNINGS_LIST_TOOL_NAMES,
+    ToolErrorEnvelope,
+    output_schema_for,
+    validate_success_payload,
+)
 from ontos.mcp import tools as tool_impl
+
+_PRE_ACTIVATE_WARNING = (
+    "Ontos activation not performed this MCP session; call activate first."
+)
+
+
+def _attach_pre_activate_warning(tool_name: str, validated: Dict[str, Any]) -> None:
+    # Route via the channel each tool's schema declares: legacy
+    # `_ontos_warning` property for READ_WARNING_TOOL_NAMES; the declared
+    # `warnings: List[str]` field for WARNINGS_LIST_TOOL_NAMES. Strict schemas
+    # forbid undeclared keys (#115).
+    if tool_name in READ_WARNING_TOOL_NAMES:
+        validated["_ontos_warning"] = _PRE_ACTIVATE_WARNING
+        return
+    if tool_name in WARNINGS_LIST_TOOL_NAMES:
+        warnings_field = validated.setdefault("warnings", [])
+        if isinstance(warnings_field, list) and _PRE_ACTIVATE_WARNING not in warnings_field:
+            warnings_field.append(_PRE_ACTIVATE_WARNING)
 
 
 DEFAULT_USAGE_LOG_PATH = "~/.config/ontos/usage.jsonl"
@@ -761,9 +785,7 @@ def _invoke_read_tool(
         payload = tool_fn(tool_input, **kwargs)
         validated = validate_success_payload(tool_name, payload)
         if tool_name != "activate" and not getattr(cache, "activation_performed", False):
-            validated["_ontos_warning"] = (
-                "Ontos activation not performed this MCP session; call activate first."
-            )
+            _attach_pre_activate_warning(tool_name, validated)
         return _tool_success_result(validated)
     except OntosUserError as exc:
         return _tool_error_result(str(exc))
