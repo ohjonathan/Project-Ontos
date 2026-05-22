@@ -185,3 +185,189 @@ results:
   artifact_source: raw_stdout
   artifact_write_conflict: false
   artifact_prewrite_sha256: null
+- dispatch_id: project-ontos-github-issues-115-117-D.2-claude-opus-peer
+  family: claude-opus
+  role: peer
+  execution_provider: claude
+  execution_cli: claude
+  resolved_executable: /Users/jonathanoh/.local/bin/claude
+  resolved_executable_realpath: /Users/jonathanoh/.local/share/claude/versions/2.1.144
+  cli_version: 2.1.144 (Claude Code)
+  provider_probe_hash: sha256:339d1e4dee3817fb7ea2e4c18f25b80d86fa3b193a9a0c31434d32da93bce595
+  model_id: opus
+  resolved_model: opus
+  model_probe_command: (none) same-family literal accepted under P14
+  model_candidate_list:
+  - opus
+  model_selection_rule: same-family-literal
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - claude
+  - --permission-mode
+  - bypassPermissions
+  - --add-dir
+  - .
+  - -p
+  - <prompt-body-redacted>
+  - --model
+  - opus
+  prompt_path: docs/reviews/project-ontos-github-issues-115-117/.prompts/project-ontos-github-issues-115-117-D.2-claude-opus-peer.prompt.md
+  prompt_sha256: sha256:d4de5f7d5e2111499a298b0cf228fe0b0da7d8fb3f7f9d7db8ad8bae4545d83d
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-05-22T06:26:48Z'
+  ended_at: '2026-05-22T06:29:35Z'
+  raw_output_path: docs/reviews/project-ontos-github-issues-115-117/.raw/project-ontos-github-issues-115-117-D.2-claude-opus-peer.raw.txt
+  raw_output_hash: sha256:5b819ea2794d201f2dce6dfebd464b2de130ac77e2bb5212793eff49ce427b03
+  evidence_cap: direct-run
+  evidence_labels_used:
+  - static-inspection
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-github-issues-115-117/D.2-claude-opus-peer.md
+  artifact_sha256: sha256:5b819ea2794d201f2dce6dfebd464b2de130ac77e2bb5212793eff49ce427b03
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: opus
+  model_used: opus
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: opus
+    exit_code: 0
+    started_at: '2026-05-22T06:26:48Z'
+    ended_at: '2026-05-22T06:29:35Z'
+    detected_429: false
+    stderr_tail_200: ''
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: raw_transcript_promoted
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  raw_transcript_sha256: sha256:5b819ea2794d201f2dce6dfebd464b2de130ac77e2bb5212793eff49ce427b03
+  promoted_artifact_sha256: sha256:5b819ea2794d201f2dce6dfebd464b2de130ac77e2bb5212793eff49ce427b03
+  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/workspaces/Project-Ontos/docs/reviews/project-ontos-github-issues-115-117/D.2-claude-opus-peer.md'
+- dispatch_id: project-ontos-github-issues-115-117-D.2-claude-sonnet-alignment
+  family: claude-sonnet
+  role: alignment
+  execution_provider: claude
+  execution_cli: claude
+  resolved_executable: /Users/jonathanoh/.local/bin/claude
+  resolved_executable_realpath: /Users/jonathanoh/.local/share/claude/versions/2.1.144
+  cli_version: 2.1.144 (Claude Code)
+  provider_probe_hash: sha256:339d1e4dee3817fb7ea2e4c18f25b80d86fa3b193a9a0c31434d32da93bce595
+  model_id: sonnet
+  resolved_model: sonnet
+  model_probe_command: (none) same-family literal accepted under P14
+  model_candidate_list:
+  - sonnet
+  model_selection_rule: same-family-literal
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - claude
+  - --permission-mode
+  - bypassPermissions
+  - --add-dir
+  - .
+  - -p
+  - <prompt-body-redacted>
+  - --model
+  - sonnet
+  prompt_path: docs/reviews/project-ontos-github-issues-115-117/.prompts/project-ontos-github-issues-115-117-D.2-claude-sonnet-alignment.prompt.md
+  prompt_sha256: sha256:da9a083bebe86392f2a041fb713719aaafd475e6b17f0c9473da3443c014087d
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-05-22T06:34:13Z'
+  ended_at: '2026-05-22T06:37:35Z'
+  raw_output_path: docs/reviews/project-ontos-github-issues-115-117/.raw/project-ontos-github-issues-115-117-D.2-claude-sonnet-alignment.raw.txt
+  raw_output_hash: sha256:d7da24d3632426789dabe691076f49d75c9e458b28166f9fc85fc3b274c925a5
+  evidence_cap: direct-run
+  evidence_labels_used:
+  - static-inspection
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-github-issues-115-117/D.2-claude-sonnet-alignment.md
+  artifact_sha256: sha256:d7da24d3632426789dabe691076f49d75c9e458b28166f9fc85fc3b274c925a5
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: sonnet
+  model_used: sonnet
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: sonnet
+    exit_code: 0
+    started_at: '2026-05-22T06:34:13Z'
+    ended_at: '2026-05-22T06:37:35Z'
+    detected_429: false
+    stderr_tail_200: ''
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: raw_transcript_promoted
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  raw_transcript_sha256: sha256:d7da24d3632426789dabe691076f49d75c9e458b28166f9fc85fc3b274c925a5
+  promoted_artifact_sha256: sha256:d7da24d3632426789dabe691076f49d75c9e458b28166f9fc85fc3b274c925a5
+  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/workspaces/Project-Ontos/docs/reviews/project-ontos-github-issues-115-117/D.2-claude-sonnet-alignment.md'
+- dispatch_id: project-ontos-github-issues-115-117-D.2-gemini-adversarial
+  family: gemini
+  role: adversarial
+  execution_provider: gemini
+  execution_cli: gemini
+  resolved_executable: /opt/homebrew/bin/gemini
+  resolved_executable_realpath: /opt/homebrew/Cellar/gemini-cli/0.38.2/libexec/lib/node_modules/@google/gemini-cli/bundle/gemini.js
+  cli_version: 0.38.2
+  provider_probe_hash: sha256:f64620764754f8e003bd18be394159b3550f7812e8c0504f2424af67d8197398
+  model_id: auto
+  resolved_model: cli-default-unknown
+  model_probe_command: (post-dispatch) grep -iE 'model:' <raw_stderr> | head -1
+  model_candidate_list:
+  - cli-config-default
+  model_selection_rule: cli-config-default+post-dispatch-best-effort
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - gemini
+  - -p
+  - <prompt-body-redacted>
+  prompt_path: docs/reviews/project-ontos-github-issues-115-117/.prompts/project-ontos-github-issues-115-117-D.2-gemini-adversarial.prompt.md
+  prompt_sha256: sha256:32ed43f7f18f0631f33afb0fef1f66c65f3c8eea607b6457d4c5beac953c0e5f
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-05-22T06:37:45Z'
+  ended_at: '2026-05-22T06:38:45Z'
+  raw_output_path: docs/reviews/project-ontos-github-issues-115-117/.raw/project-ontos-github-issues-115-117-D.2-gemini-adversarial.raw.txt
+  raw_output_hash: sha256:c7f0d0dd0c32c8a267cdd6a093b7be6a2f9bf717f2b1663b9efa12bce74a344a
+  evidence_cap: static-inspection
+  evidence_labels_used:
+  - static-inspection
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-github-issues-115-117/D.2-gemini-adversarial.md
+  artifact_sha256: sha256:9a808680fa9ca0a415b3c5811d65f0b8d92f360ff1de2e6abb7333ea249a7ff4
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: null
+  model_used: cli-default-unknown
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: ''
+    exit_code: 0
+    started_at: '2026-05-22T06:37:45Z'
+    ended_at: '2026-05-22T06:38:45Z'
+    detected_429: false
+    stderr_tail_200: ''
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: raw_stdout
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null

@@ -117,23 +117,34 @@ def generate_context_map(
     # Vocabulary check (#42 / CC-16 / VUL-06)
     # If known_concepts is not provided, vocabulary check is skipped (old behavior)
     
-    # Run validation
-    validator = ValidationOrchestrator(docs, {
-        "max_dependency_depth": options.max_dependency_depth,
-        "allowed_orphan_types": config.get("allowed_orphan_types", ["atom", "log"]),
-        "severity_map": {
-            "broken_link": "warning",
-            "concepts": "warning"
-        },
-        "known_concepts": known_concepts
-    })
-    result = validator.validate_all()
-
-    # Ensure project_root exists in config (fallback to CWD for standalone usage)
-    # Must happen before compact dispatch so all modes see normalized config.
+    # Ensure project_root exists in config (fallback to CWD for standalone usage).
+    # (#117) Must happen BEFORE validation so workspace_root is available
+    # to the depends_on path-fallback resolver.
     if "project_root" not in config:
         config = dict(config)
         config["project_root"] = str(Path.cwd())
+    workspace_root_value = config["project_root"]
+    if not isinstance(workspace_root_value, Path):
+        workspace_root_value = Path(str(workspace_root_value))
+
+    # Run validation
+    # (#117) Thread project_root through as workspace_root so depends_on
+    # entries that resolve to workspace-relative paths can fall back from
+    # broken-link to either edge-resolution or out-of-scope warning.
+    validator = ValidationOrchestrator(
+        docs,
+        {
+            "max_dependency_depth": options.max_dependency_depth,
+            "allowed_orphan_types": config.get("allowed_orphan_types", ["atom", "log"]),
+            "severity_map": {
+                "broken_link": "warning",
+                "concepts": "warning"
+            },
+            "known_concepts": known_concepts
+        },
+        workspace_root=workspace_root_value,
+    )
+    result = validator.validate_all()
 
     # Compact output (if enabled)
     # ORDERING: TIERED must be checked first because it needs `config` for Tier 1 prose.

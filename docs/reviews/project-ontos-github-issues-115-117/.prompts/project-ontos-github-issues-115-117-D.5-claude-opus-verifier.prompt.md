@@ -8,7 +8,9 @@ Phase D.5 verifies the IMPLEMENTATION END-TO-END after any D.4 fix. Confirm the 
 
 ## Strict-P3 verdict shape (MANDATORY)
 
-Your stdout response IS the verdict artifact. Output ONLY the verdict markdown — no preamble, no closing notes. The first character of stdout must be `-` (the opening frontmatter fence).
+Your stdout response IS the verdict artifact. Output ONLY the verdict markdown — no preamble, no closing notes. The very first three characters of your response MUST be `---` (a YAML frontmatter open fence). Do NOT begin your response with any prose, narration, status update like "I have enough information to ..." or "Here is the verdict ...", planning notes, or markdown commentary. The wrapper's verdict-shape predicate rejects any output that does not begin with `---`.
+
+Stdout must begin with the literal three-dash YAML frontmatter open fence `---` followed by a newline. Do NOT output a bare `-` or `--`; only `---` is a valid opening fence.
 
 The verdict MUST contain ALL of:
 

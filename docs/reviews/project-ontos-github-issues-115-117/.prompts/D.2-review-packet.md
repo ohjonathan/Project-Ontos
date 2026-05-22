@@ -1,64 +1,3 @@
-# D.2 Peer Review — project-ontos-github-issues-115-117
-
-You are the **Peer Review** on Phase D.2 of deliverable `project-ontos-github-issues-115-117` for repo `ohjonathan/Project-Ontos`. Family: `claude-opus`.
-
-Peer reviewer (lens: 'Is this good?'). Check implementation quality, completeness, code clarity, test coverage adequacy. Do NOT duplicate Alignment (compliance with prior decisions) or Adversarial (hostile inputs).
-
-Phase D.2 reviews the LANDED IMPLEMENTATION (14 commits on branch codex/project-ontos-github-issues-115-117). Compare the diff against the spec; identify implementation issues, not spec issues. B.1 already closed 2 blockers in commit dd68231 — confirm they remain closed.
-
-## Strict-P3 verdict shape (MANDATORY)
-
-Your stdout response IS the verdict artifact. Output ONLY the verdict markdown — no preamble, no closing notes. The very first three characters of your response MUST be `---` (a YAML frontmatter open fence). Do NOT begin your response with any prose, narration, status update like "I have enough information to ..." or "Here is the verdict ...", planning notes, or markdown commentary. The wrapper's verdict-shape predicate rejects any output that does not begin with `---`.
-
-Stdout must begin with the literal three-dash YAML frontmatter open fence `---` followed by a newline. Do NOT output a bare `-` or `--`; only `---` is a valid opening fence.
-
-The verdict MUST contain:
-- YAML frontmatter with `phase: D.2`, `role: peer`, `family: claude-opus`, `deliverable_id: project-ontos-github-issues-115-117`, `status: completed`.
-- An ATX `#` heading after the frontmatter.
-- A `## Verdict` heading.
-- The first non-blank line under `## Verdict` is exactly ONE of: `Approve` | `Request changes` | `Reject` | `Concur`.
-
-## Exact output skeleton
-
-```markdown
----
-id: project-ontos-github-issues-115-117-D.2-claude-opus-peer
-deliverable_id: project-ontos-github-issues-115-117
-phase: D.2
-role: peer
-family: claude-opus
-status: completed
----
-
-# D.2 Peer Review — claude-opus
-
-## Verdict
-
-Approve
-
-## Summary
-
-<1-2 sentence overall judgement about the landed implementation.>
-
-## Findings
-
-### [F1] <Short title>
-- **Severity:** blocker | should-fix | nit
-- **Evidence:** direct-run | static-inspection
-- **Where:** <file:line>
-- **Issue:** <what is wrong in the implementation>
-- **Recommendation:** <concrete change>
-
-(repeat as needed; omit if none)
-
-## Notes
-<Any final notes; can be empty.>
-```
-
-If you have no findings, write `Approve` and explain your scrutiny under Notes.
-
-## D.2 Review Packet (spec + commit log + diffs + tests)
-
 # D.2 Review Packet — project-ontos-github-issues-115-117
 
 Phase D.2 reviews the LANDED IMPLEMENTATION against the spec under three lenses (peer / alignment / adversarial). The packet below contains:
@@ -1373,4 +1312,3 @@ Targeted suites: 1320 passed (pre-blocker-fix). After the dd68231 blocker fix th
 ```
 
 End of D.2 packet.
-

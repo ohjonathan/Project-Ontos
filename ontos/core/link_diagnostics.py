@@ -261,7 +261,14 @@ def run_link_diagnostics(
     broken_seen: Set[Tuple[str, str, str, Optional[int], Optional[int], Optional[str]]] = set()
     external_seen: Set[Tuple[str, str, str, str]] = set()
 
-    graph, broken_depends_on = build_graph(docs, severity_map=_LINK_CHECK_SEVERITY)
+    # (#117) Thread repo_root through so depends_on entries that resolve to
+    # workspace-relative paths can fall back from hard broken-link to either
+    # edge-resolution (loaded doc) or soft out-of-scope dependency.
+    graph, broken_depends_on = build_graph(
+        docs,
+        severity_map=_LINK_CHECK_SEVERITY,
+        workspace_root=repo_root,
+    )
     for error in broken_depends_on:
         value = _extract_reference_value(error.message)
         if value is None:
