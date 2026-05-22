@@ -602,11 +602,11 @@ def _slugify_workspace_name(raw: str) -> str:
 def _normalize_warnings(
     validation: ValidationResult,
     snapshot_warnings: list[str],
-) -> list[dict[str, str]]:
-    warnings: list[dict[str, str]] = []
+) -> list[dict[str, Any]]:
+    warnings: list[dict[str, Any]] = []
     warnings.extend(_validation_issues(validation.errors))
     warnings.extend(_validation_issues(validation.warnings))
-    warnings.extend({"severity": "warning", "message": message} for message in snapshot_warnings)
+    warnings.extend(_snapshot_issue(message) for message in snapshot_warnings)
     return warnings
 
 
@@ -617,14 +617,58 @@ def _validation_payload(validation: ValidationResult) -> dict[str, Any]:
     }
 
 
-def _validation_issues(issues: list[Any]) -> list[dict[str, str]]:
-    return [
-        {
+def _validation_issues(issues: list[Any]) -> list[dict[str, Any]]:
+    # (#117) Surface document context (rule_id, document_id, file_path) so
+    # downstream agents can triage without a second query. Empty strings are
+    # squashed so the public payload stays compact.
+    enriched: list[dict[str, Any]] = []
+    for issue in issues:
+        record: dict[str, Any] = {
             "severity": issue.severity,
             "message": issue.message,
         }
-        for issue in issues
-    ]
+        rule_id = getattr(issue.error_type, "value", None) if getattr(issue, "error_type", None) else None
+        if rule_id:
+            record["rule_id"] = rule_id
+        doc_id = getattr(issue, "doc_id", "") or ""
+        if doc_id:
+            record["document_id"] = doc_id
+        file_path = getattr(issue, "filepath", "") or ""
+        if file_path:
+            record["file_path"] = file_path
+        enriched.append(record)
+    return enriched
+
+
+# (#117) Bare snapshot strings often originate from the loader and document
+# their own provenance prefix (e.g. "Log missing fields:", "invalid
+# frontmatter field"). Classify the prefix into a rule_id so the channel
+# becomes parseable; bare unknowns get a generic snapshot rule_id.
+_SNAPSHOT_RULE_PREFIXES = (
+    ("Log missing fields:", "schema.log_missing_fields"),
+    ("Log document missing", "schema.log_missing_concepts"),
+    ("invalid frontmatter field 'type'", "schema.invalid_type"),
+    ("invalid frontmatter field 'status'", "schema.invalid_status"),
+    ("invalid frontmatter", "schema.invalid_frontmatter"),
+    ("Impact reference", "impacts.broken"),
+    ("Broken dependency", "broken_link"),
+    ("External dependency resolved from disk", "out_of_scope_dependency"),
+    ("Document has no incoming dependencies", "orphan"),
+    ("Dependency depth", "depth"),
+)
+
+
+def _snapshot_issue(message: str) -> dict[str, Any]:
+    rule_id = "snapshot"
+    for prefix, candidate in _SNAPSHOT_RULE_PREFIXES:
+        if prefix in message:
+            rule_id = candidate
+            break
+    return {
+        "severity": "warning",
+        "rule_id": rule_id,
+        "message": message,
+    }
 
 
 def _ordered_export_payload(

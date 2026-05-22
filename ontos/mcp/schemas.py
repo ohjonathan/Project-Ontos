@@ -16,6 +16,15 @@ class StrictModel(BaseModel):
 class ValidationIssue(StrictModel):
     severity: str
     message: str
+    # (#117) Optional context fields so agents and humans can triage a warning
+    # without re-running queries. `rule_id` mirrors ValidationError.error_type
+    # (e.g. "orphan", "broken_link", "out_of_scope_dependency"). `document_id`
+    # / `file_path` are populated when the warning originates from a known
+    # document; absent when the warning is a snapshot-level note with no
+    # doc context.
+    rule_id: Optional[str] = None
+    document_id: Optional[str] = None
+    file_path: Optional[str] = None
 
 
 class ValidationPayload(StrictModel):
