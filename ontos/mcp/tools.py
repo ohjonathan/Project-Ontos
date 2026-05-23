@@ -194,6 +194,7 @@ def context_map(
         "project_name": cache.workspace_root.name,
         "version": cache.config.ontos.version,
         "allowed_orphan_types": cache.config.validation.allowed_orphan_types,
+        "allowed_orphan_paths": cache.config.validation.allowed_orphan_paths,
         "docs_dir": str(cache.config.paths.docs_dir),
         "logs_dir": str(cache.config.paths.logs_dir),
         "is_contributor_mode": (cache.workspace_root / ".ontos-internal").is_dir(),

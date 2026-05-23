@@ -135,7 +135,8 @@ def generate_context_map(
         docs,
         {
             "max_dependency_depth": options.max_dependency_depth,
-            "allowed_orphan_types": config.get("allowed_orphan_types", ["atom", "log"]),
+            "allowed_orphan_types": config.get("allowed_orphan_types", ["atom"]),
+            "allowed_orphan_paths": config.get("allowed_orphan_paths", []),
             "severity_map": {
                 "broken_link": "warning",
                 "concepts": "warning"
@@ -909,6 +910,7 @@ def map_command(options: MapOptions) -> int:
         "project_name": project_root.name,
         "version": config.ontos.version,
         "allowed_orphan_types": config.validation.allowed_orphan_types,
+        "allowed_orphan_paths": config.validation.allowed_orphan_paths,
         "project_root": str(project_root),
         "docs_dir": str(config.paths.docs_dir),
         "logs_dir": str(config.paths.logs_dir),

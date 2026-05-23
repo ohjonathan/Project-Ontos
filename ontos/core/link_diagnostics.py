@@ -402,7 +402,13 @@ def run_link_diagnostics(
     )
 
     allowed_orphan_types = set(config.validation.allowed_orphan_types)
-    orphan_ids = detect_orphans(graph, allowed_orphan_types)
+    allowed_orphan_paths = list(config.validation.allowed_orphan_paths)
+    orphan_ids = detect_orphans(
+        graph,
+        allowed_orphan_types,
+        allowed_orphan_paths=allowed_orphan_paths,
+        workspace_root=repo_root,
+    )
     if scope == ScanScope.DOCS and external_scope.external_depends_on_index:
         orphan_ids = [
             orphan_id

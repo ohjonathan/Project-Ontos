@@ -62,6 +62,7 @@ class ValidationConfig:
     """[validation] section."""
     max_dependency_depth: int = 5
     allowed_orphan_types: List[str] = field(default_factory=lambda: ["atom"])
+    allowed_orphan_paths: List[str] = field(default_factory=list)
 
 
 @dataclass

@@ -200,7 +200,10 @@ class TestDoctorCommand:
             exit_code, result = _run_doctor_command(options)
 
             assert exit_code == 0
-            assert result.passed == 11
+            # 12 checks total: 10 mocked + check_activation_health (clean
+            # snapshot under the path-based orphan allowlist) +
+            # check_cursor_mcp (no project/user config present).
+            assert result.passed == 12
             assert result.failed == 0
 
     def test_returns_exit_code_1_when_check_fails(self):

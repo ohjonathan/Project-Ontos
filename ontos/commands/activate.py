@@ -87,6 +87,7 @@ def run_activation(
         "project_name": project_root.name,
         "version": config.ontos.version,
         "allowed_orphan_types": config.validation.allowed_orphan_types,
+        "allowed_orphan_paths": config.validation.allowed_orphan_paths,
         "project_root": str(project_root),
         "docs_dir": str(config.paths.docs_dir),
         "logs_dir": str(config.paths.logs_dir),

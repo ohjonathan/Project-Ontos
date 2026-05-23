@@ -8,9 +8,10 @@ Phase 2 Decomposition - Created from Phase2-Implementation-Spec.md Section 4.3
 """
 
 from __future__ import annotations
+import fnmatch
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Set, Optional, Tuple, Union
+from typing import Dict, List, Sequence, Set, Optional, Tuple, Union
 
 from ontos.core.types import DocumentData, ValidationError, ValidationErrorType
 from ontos.core.suggestions import suggest_candidates_for_broken_ref
@@ -259,20 +260,61 @@ def detect_cycles(graph: DependencyGraph) -> List[List[str]]:
     return cycles
 
 
-def detect_orphans(graph: DependencyGraph, allowed_orphan_types: Set[str]) -> List[str]:
+def _path_matches_allowlist(rel_path: str, patterns: Sequence[str]) -> bool:
+    """Return True if rel_path matches any allowlist glob pattern.
+
+    Patterns use POSIX-style forward slashes. A trailing ``/**`` means
+    "any file at any depth under this directory". Other patterns are matched
+    with ``fnmatch.fnmatchcase``. The function is Python 3.9+ compatible and
+    does not depend on ``PurePath.full_match`` (3.13+).
+    """
+    rel = rel_path.replace("\\", "/")
+    for pattern in patterns:
+        pat = pattern.replace("\\", "/")
+        if pat.endswith("/**"):
+            prefix = pat[:-3]
+            if rel == prefix or rel.startswith(prefix + "/"):
+                return True
+        elif fnmatch.fnmatchcase(rel, pat):
+            return True
+    return False
+
+
+def detect_orphans(
+    graph: DependencyGraph,
+    allowed_orphan_types: Set[str],
+    allowed_orphan_paths: Optional[Sequence[str]] = None,
+    workspace_root: Optional[Path] = None,
+) -> List[str]:
     """Find documents with no incoming edges (not depended on by anyone).
 
     Args:
         graph: DependencyGraph to analyze
         allowed_orphan_types: Document types that are allowed to be orphans
+        allowed_orphan_paths: Optional glob patterns (workspace-relative) that
+            exempt their matches from the orphan check. See
+            :func:`_path_matches_allowlist` for pattern semantics.
+        workspace_root: Repository root used to compute relative paths for
+            ``allowed_orphan_paths`` matching. Required when
+            ``allowed_orphan_paths`` is non-empty.
 
     Returns:
         List of orphan doc_ids
     """
     orphans = []
+    patterns = list(allowed_orphan_paths or ())
+    ws_root = workspace_root.resolve() if workspace_root is not None else None
+
     for doc_id, node in graph.nodes.items():
         if node.doc_type in allowed_orphan_types:
             continue
+        if patterns and ws_root is not None:
+            try:
+                rel = Path(node.filepath).resolve().relative_to(ws_root)
+            except (ValueError, OSError):
+                rel = None
+            if rel is not None and _path_matches_allowlist(rel.as_posix(), patterns):
+                continue
         if doc_id not in graph.reverse_edges or not graph.reverse_edges[doc_id]:
             orphans.append(doc_id)
     return orphans
