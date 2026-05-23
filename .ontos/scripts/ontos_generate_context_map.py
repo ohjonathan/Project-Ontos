@@ -919,9 +919,10 @@ def get_status_indicator(status: str) -> str:
     return ''
 
 
-def generate_context_map(target_dirs: list[str], quiet: bool = False, strict: bool = False, 
+def generate_context_map(target_dirs: list[str], quiet: bool = False, strict: bool = False,
                          lint: bool = False, include_rejected: bool = False,
-                         include_archived: bool = False, skip_history: bool = False) -> int:
+                         include_archived: bool = False, skip_history: bool = False,
+                         check: bool = False) -> int:
     """Main function to generate the Ontos_Context_Map.md file.
 
     Args:
@@ -930,6 +931,8 @@ def generate_context_map(target_dirs: list[str], quiet: bool = False, strict: bo
         include_rejected: Include rejected proposals in context map.
         include_archived: Include archived logs in context map.
         skip_history: Skip regenerating decision_history.md.
+        check: Validate only; skip writing Ontos_Context_Map.md and
+            decision_history.md. Intended for pre-commit/CI use.
 
     Returns:
         Number of issues found.
@@ -1057,35 +1060,41 @@ Scanned Directory: `{dirs_str}`
 {staleness_audit}
 """
 
-    # v2.8: Use transactional write
-    try:
-        ctx.buffer_write(Path(OUTPUT_FILE), content)
-        
-        # v2.7: Buffer decision_history.md unless --skip-history
-        if not skip_history:
-            output.info("Regenerating decision_history.md (v2.7 immutable history)...")
-            logs_dir = get_logs_dir()
-            archive_logs_dir = get_archive_logs_dir()
-            history_path = get_decision_history_path()
-            # Generate content without writing (we buffer it ourselves)
-            history_content, history_warnings = generate_decision_history(
-                [logs_dir, archive_logs_dir],
-                None  # Don't write directly, we'll buffer it
-            )
-            ctx.buffer_write(Path(history_path), history_content)
-        
-        # Commit all writes atomically
-        modified = ctx.commit()
-        
-        output.success(f"Successfully generated {OUTPUT_FILE}")
-        output.info(f"Scanned {len(files_data)} documents, found {len(issues)} issues.")
-        if not skip_history:
-            output.info(f"  Generated {history_path}")
-            
-    except Exception as e:
-        ctx.rollback()
-        output.error(f"Failed to write files: {e}")
-        sys.exit(1)
+    # v2.8: Use transactional write — skipped in --check mode (validate-only)
+    if check:
+        output.info(
+            f"Check mode: validated {len(files_data)} documents, "
+            f"found {len(issues)} issues. Skipping writes."
+        )
+    else:
+        try:
+            ctx.buffer_write(Path(OUTPUT_FILE), content)
+
+            # v2.7: Buffer decision_history.md unless --skip-history
+            if not skip_history:
+                output.info("Regenerating decision_history.md (v2.7 immutable history)...")
+                logs_dir = get_logs_dir()
+                archive_logs_dir = get_archive_logs_dir()
+                history_path = get_decision_history_path()
+                # Generate content without writing (we buffer it ourselves)
+                history_content, history_warnings = generate_decision_history(
+                    [logs_dir, archive_logs_dir],
+                    None  # Don't write directly, we'll buffer it
+                )
+                ctx.buffer_write(Path(history_path), history_content)
+
+            # Commit all writes atomically
+            modified = ctx.commit()
+
+            output.success(f"Successfully generated {OUTPUT_FILE}")
+            output.info(f"Scanned {len(files_data)} documents, found {len(issues)} issues.")
+            if not skip_history:
+                output.info(f"  Generated {history_path}")
+
+        except Exception as e:
+            ctx.rollback()
+            output.error(f"Failed to write files: {e}")
+            sys.exit(1)
 
     # Count error-level issues (exclude INFO for strict mode purposes)
     error_issues = [i for i in issues if '[INFO]' not in i]
@@ -1242,6 +1251,9 @@ Examples:
                         help='Include archived logs in context map (default: excluded)')
     parser.add_argument('--skip-history', action='store_true',
                         help='Skip regenerating decision_history.md (v2.7)')
+    parser.add_argument('--check', action='store_true',
+                        help='Validate only; do not write Ontos_Context_Map.md or '
+                             'decision_history.md (intended for pre-commit/CI use)')
     args = parser.parse_args()
 
     # Default to docs directory if none specified
@@ -1258,10 +1270,11 @@ Examples:
         watch_mode(target_dirs, args.quiet)
         return 0
     else:
-        issue_count = generate_context_map(target_dirs, args.quiet, args.strict, args.lint, 
+        issue_count = generate_context_map(target_dirs, args.quiet, args.strict, args.lint,
                                            getattr(args, 'include_rejected', False),
                                            getattr(args, 'include_archived', False),
-                                           getattr(args, 'skip_history', False))
+                                           getattr(args, 'skip_history', False),
+                                           getattr(args, 'check', False))
         
         # v2.5: Check consolidation status for prompted/advisory modes
         if not args.quiet:
