@@ -5,7 +5,7 @@ status: active
 event_type: feature
 branch: v3.0.0
 source: Antigravity (Gemini CLI, powered by Gemini 2.5 Pro)
-impacts: [ontos_agent_instructions, agents_command, doctor_staleness]
+impacts: [ontos_agent_instructions]
 concepts: [activation, agents, pypi, cli]
 ---
 

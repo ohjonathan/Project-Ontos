@@ -1,5 +1,6 @@
 ---
 id: project-ontos-github-issues-115-117-triage-input
+type: review
 deliverable_id: project-ontos-github-issues-115-117
 phase: "-A.triage"
 role: triage-input

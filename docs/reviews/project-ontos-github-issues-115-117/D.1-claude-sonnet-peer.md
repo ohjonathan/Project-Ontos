@@ -1,10 +1,11 @@
 ---
 id: project-ontos-github-issues-115-117-D.1-claude-sonnet-peer
+type: review
 deliverable_id: project-ontos-github-issues-115-117
 phase: D.1
 role: peer
 family: claude-sonnet
-status: completed
+status: complete
 ---
 
 # D.1 Peer Pre-Review — claude-sonnet

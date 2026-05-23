@@ -1,10 +1,11 @@
 ---
 id: project-ontos-github-issues-115-117-B.1-claude-opus-peer
+type: review
 deliverable_id: project-ontos-github-issues-115-117
 phase: B.1
 role: peer
 family: claude-opus
-status: completed
+status: complete
 ---
 
 # B.1 Peer Review — claude-opus

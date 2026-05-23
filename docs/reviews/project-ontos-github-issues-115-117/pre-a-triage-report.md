@@ -1,12 +1,13 @@
 ---
 id: project-ontos-github-issues-115-117-triage-report
+type: review
 deliverable_id: project-ontos-github-issues-115-117
 phase: "-A.triage"
 role: triage-author
 family: codex
 triage_input: docs/reviews/project-ontos-github-issues-115-117/github-issues-input.md
 evidence_labels_used: [direct-run, static-inspection]
-status: completed
+status: complete
 ---
 
 # Triage Report — project-ontos-github-issues-115-117

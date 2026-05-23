@@ -1,10 +1,11 @@
 ---
 id: project-ontos-github-issues-115-117-D.4-fix-summary
+type: review
 deliverable_id: project-ontos-github-issues-115-117
 phase: D.4
 role: fix-author
 family: codex
-status: completed
+status: complete
 ---
 
 # D.4 Fix Summary — codex

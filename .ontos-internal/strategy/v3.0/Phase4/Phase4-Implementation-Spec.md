@@ -1,7 +1,7 @@
 ---
 id: phase4_implementation_spec
 type: strategy
-status: approved
+status: complete
 depends_on: [phase3_final_approval_chief_architect]
 concepts: [cli, argparse, doctor, hook, export, json-output, pypi, legacy-deletion]
 ---

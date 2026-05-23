@@ -1,11 +1,12 @@
 ---
 id: project-ontos-github-issues-115-117-triage-verdict
+type: review
 deliverable_id: project-ontos-github-issues-115-117
 phase: "-A.triage"
 role: triage-verdict
 family: codex
 triage_report: docs/reviews/project-ontos-github-issues-115-117/pre-a-triage-report.md
-status: completed
+status: complete
 ---
 
 # Triage Verdict — project-ontos-github-issues-115-117

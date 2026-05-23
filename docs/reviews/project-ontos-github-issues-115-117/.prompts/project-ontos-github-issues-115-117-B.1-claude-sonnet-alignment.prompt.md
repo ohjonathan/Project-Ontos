@@ -39,7 +39,7 @@ deliverable_id: project-ontos-github-issues-115-117
 phase: B.1
 role: alignment
 family: claude-sonnet
-status: completed
+status: complete
 ---
 
 # B.1 Alignment Review — claude-sonnet

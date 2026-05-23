@@ -41,7 +41,7 @@ deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
 phase: B.1
 role: adversarial
 family: gemini
-status: completed
+status: complete
 ---
 
 # B.1 Adversarial Review — gemini

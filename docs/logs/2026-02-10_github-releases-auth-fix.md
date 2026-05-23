@@ -2,7 +2,7 @@
 id: log_20260210_github-releases-auth-fix
 type: log
 status: active
-event_type: feat
+event_type: feature
 source: Antigravity
 branch: main
 created: 2026-02-10

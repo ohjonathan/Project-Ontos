@@ -1,5 +1,6 @@
 ---
 id: project-ontos-issue-119-triage-input
+type: review
 deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
 phase: "-A.triage"
 role: triage-input

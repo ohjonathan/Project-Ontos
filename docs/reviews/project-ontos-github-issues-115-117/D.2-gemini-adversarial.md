@@ -1,10 +1,11 @@
 ---
 id: project-ontos-github-issues-115-117-D.2-gemini-adversarial
+type: review
 deliverable_id: project-ontos-github-issues-115-117
 phase: D.2
 role: adversarial
 family: gemini
-status: completed
+status: complete
 ---
 
 # D.2 Adversarial Review — gemini

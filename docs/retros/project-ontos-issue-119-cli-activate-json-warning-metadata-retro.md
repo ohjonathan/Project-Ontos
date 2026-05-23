@@ -1,10 +1,11 @@
 ---
 id: project-ontos-issue-119-cli-activate-json-warning-metadata-retro
+type: retro
 deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
 phase: E
 role: retro
 family: gemini
-status: completed
+status: complete
 ---
 
 # E Retrospective — project-ontos-issue-119-cli-activate-json-warning-metadata

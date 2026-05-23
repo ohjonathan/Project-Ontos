@@ -1,10 +1,11 @@
 ---
 id: project-ontos-issue-119-D.2-gemini-adversarial
+type: review
 deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
 phase: D.2
 role: adversarial
 family: gemini
-status: completed
+status: complete
 ---
 
 # D.2 Adversarial Review — gemini

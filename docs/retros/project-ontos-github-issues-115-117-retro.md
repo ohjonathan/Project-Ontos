@@ -1,10 +1,11 @@
 ---
 id: project-ontos-github-issues-115-117-retro
+type: retro
 deliverable_id: project-ontos-github-issues-115-117
 phase: E
 role: retro
 family: gemini
-status: completed
+status: complete
 ---
 
 # E Retrospective — project-ontos-github-issues-115-117

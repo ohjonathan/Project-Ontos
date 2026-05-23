@@ -2,7 +2,7 @@
 id: log_20260209_polish-path-formatting-and-tests
 type: log
 status: active
-event_type: pr-62-key-documents-paths
+event_type: fix
 source: cli
 branch: fix/key-documents-spec
 created: 2026-02-09

@@ -2,7 +2,7 @@
 id: v3_1_0_track_b_final_approval_chief_architect
 type: approval
 status: complete
-depends_on: [v3_1_0_track_b_code_verification_codex]
+depends_on: []
 concepts: [final-approval, chief-architect, track-b, phase-d]
 ---
 

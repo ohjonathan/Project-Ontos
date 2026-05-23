@@ -25,7 +25,7 @@ deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
 phase: D.5
 role: verifier
 family: claude-sonnet
-status: completed
+status: complete
 ---
 
 # D.5 Verifier — claude-sonnet
@@ -331,7 +331,7 @@ deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
 phase: D.4
 role: fix-author
 family: claude-opus
-status: completed
+status: complete
 ---
 
 # D.4 Fix Summary — claude-opus (orchestrator-authored)

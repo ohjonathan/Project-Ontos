@@ -1,4 +1,5 @@
 
+import importlib
 import sys
 import os
 import pytest
@@ -7,8 +8,8 @@ from unittest.mock import patch
 # Add scripts directory to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts')))
 
-from ontos_config import PROJECT_ROOT, SKIP_PATTERNS
-from ontos_config_defaults import is_ontos_repo
+from ontos_config import PROJECT_ROOT, SKIP_PATTERNS, MAX_DEPENDENCY_DEPTH
+from ontos_config_defaults import is_ontos_repo, DEFAULT_MAX_DEPENDENCY_DEPTH
 
 def test_is_ontos_repo_contributor_mode():
     with patch("os.path.exists") as mock_exists:
@@ -24,6 +25,33 @@ def test_is_ontos_repo_user_mode():
 
 def test_skip_patterns_contains_archive():
     assert any('archive/' in p for p in SKIP_PATTERNS)
+
+
+def test_contributor_mode_max_dependency_depth_relaxed():
+    """Contributor mode keeps the bumped depth limit for v3.1 lifecycle chains."""
+    # We are running tests inside the Project-Ontos repo, so is_ontos_repo()
+    # is True at import time and the contributor-mode override applies.
+    assert is_ontos_repo() is True
+    assert MAX_DEPENDENCY_DEPTH > DEFAULT_MAX_DEPENDENCY_DEPTH
+
+
+def test_user_mode_max_dependency_depth_uses_default():
+    """User-mode (non-Ontos-repo) consumers must keep the stricter default.
+
+    `ontos_config.is_ontos_repo()` checks `os.path.isdir(INTERNAL_DIR)` and
+    `os.path.isfile(ONTOS_REPO_MARKER)`. Force both to False so reloading
+    the module takes the user-mode branch.
+    """
+    import ontos_config
+
+    with patch('os.path.isdir', return_value=False), \
+         patch('os.path.isfile', return_value=False):
+        reloaded = importlib.reload(ontos_config)
+        try:
+            assert reloaded.MAX_DEPENDENCY_DEPTH == DEFAULT_MAX_DEPENDENCY_DEPTH
+        finally:
+            # Restore the contributor-mode module state for the rest of the suite.
+            importlib.reload(ontos_config)
 
 
 # =============================================================================

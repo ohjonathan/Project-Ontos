@@ -25,7 +25,7 @@ deliverable_id: project-ontos-github-issues-115-117
 phase: D.5
 role: verifier
 family: claude-opus
-status: completed
+status: complete
 ---
 
 # D.5 Verifier — claude-opus

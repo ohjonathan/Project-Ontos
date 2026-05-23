@@ -1,5 +1,6 @@
 ---
 id: phase3_implementation_spec_review_codex
+type: review
 status: draft
 reviewer: Codex
 ---

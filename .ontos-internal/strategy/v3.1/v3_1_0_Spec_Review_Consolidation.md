@@ -2,7 +2,7 @@
 id: v3_1_0_spec_review_consolidation
 type: review
 status: complete
-depends_on: [v3_1_0_spec_review_claude, v3_1_0_spec_review_gemini, v3_1_0_spec_review_gpt5]
+depends_on: [v3_1_0_spec_review_claude]
 concepts: [consolidation, spec-review, v3.1.0]
 ---
 

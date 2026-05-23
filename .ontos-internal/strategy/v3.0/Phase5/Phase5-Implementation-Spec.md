@@ -2,7 +2,7 @@
 id: phase5_implementation_spec
 type: strategy
 status: active
-depends_on: [phase4_final_approval_chief_architect]
+depends_on: []
 concepts: [polish, v3.0.1, documentation, technical-debt, pypi]
 ---
 

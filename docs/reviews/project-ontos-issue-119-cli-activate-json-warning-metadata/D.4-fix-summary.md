@@ -1,10 +1,11 @@
 ---
 id: project-ontos-issue-119-D.4-fix-summary
+type: review
 deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
 phase: D.4
 role: fix-author
 family: claude-opus
-status: completed
+status: complete
 ---
 
 # D.4 Fix Summary — claude-opus (orchestrator-authored)

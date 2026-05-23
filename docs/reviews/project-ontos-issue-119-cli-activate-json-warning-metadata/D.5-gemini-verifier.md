@@ -1,10 +1,11 @@
 ---
 id: project-ontos-issue-119-D.5-gemini-verifier
+type: review
 deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
 phase: D.5
 role: verifier
 family: gemini
-status: completed
+status: complete
 ---
 
 # D.5 Verifier — gemini

@@ -1,8 +1,9 @@
 ---
 id: project-ontos-github-issues-115-117-final-approval
+type: review
 deliverable_id: project-ontos-github-issues-115-117
 role: final-approval
-status: passed
+status: complete
 ---
 
 # Final-Approval Gate — project-ontos-github-issues-115-117

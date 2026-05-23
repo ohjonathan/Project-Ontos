@@ -25,7 +25,7 @@ deliverable_id: project-ontos-github-issues-115-117
 phase: D.5
 role: verifier
 family: gemini
-status: completed
+status: complete
 ---
 
 # D.5 Verifier — gemini

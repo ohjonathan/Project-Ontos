@@ -1,12 +1,13 @@
 ---
 id: project-ontos-issue-119-triage-report
+type: review
 deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
 phase: "-A.triage"
 role: triage-author
 family: claude-opus
 triage_input: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/github-issues-input.md
 evidence_labels_used: [direct-run, static-inspection]
-status: completed
+status: complete
 ---
 
 # Triage Report — project-ontos-issue-119-cli-activate-json-warning-metadata
