@@ -12,18 +12,38 @@ from ontos.core.ontology import (
     get_valid_type_status,
 )
 
+CORE_TYPES = {"kernel", "strategy", "product", "atom", "log"}
+LIFECYCLE_TYPES = {
+    "reference",
+    "concept",
+    "handoff",
+    "tracker",
+    "retro",
+    "review",
+    "spec",
+    "report",
+    "adr",
+    "policy",
+}
+ALL_TYPES = CORE_TYPES | LIFECYCLE_TYPES
+
 
 class TestTypeDefinitions:
     """Tests for TYPE_DEFINITIONS."""
 
     def test_type_definitions_complete(self):
-        """All 5 types defined."""
-        assert set(TYPE_DEFINITIONS.keys()) == {"kernel", "strategy", "product", "atom", "log"}
+        """All public document types are defined."""
+        assert set(TYPE_DEFINITIONS.keys()) == ALL_TYPES
 
     def test_type_ranks_ordered(self):
-        """Ranks are 0-4 in hierarchy order."""
-        ranks = [td.rank for td in TYPE_DEFINITIONS.values()]
-        assert sorted(ranks) == [0, 1, 2, 3, 4]
+        """Core ranks preserve hierarchy; lifecycle/support types share rank 5."""
+        hierarchy = {type_name: td.rank for type_name, td in TYPE_DEFINITIONS.items()}
+        assert hierarchy["kernel"] == 0
+        assert hierarchy["strategy"] == 1
+        assert hierarchy["product"] == 2
+        assert hierarchy["atom"] == 3
+        assert hierarchy["log"] == 4
+        assert {hierarchy[type_name] for type_name in LIFECYCLE_TYPES} == {5}
 
     def test_kernel_can_depend_on_kernel(self):
         """Kernel can depend on other kernels (e.g., constitution->mission)."""
@@ -48,6 +68,12 @@ class TestTypeDefinitions:
         """Log type supports auto-generated status (behavior fix)."""
         assert "auto-generated" in TYPE_DEFINITIONS["log"].valid_statuses
 
+    def test_lifecycle_types_have_lifecycle_statuses(self):
+        """Lifecycle/support types expose the v4.6 workflow vocabulary."""
+        for type_name in LIFECYCLE_TYPES:
+            statuses = set(TYPE_DEFINITIONS[type_name].valid_statuses)
+            assert {"proposed", "ready", "completed", "revised", "in-lifecycle"}.issubset(statuses)
+
 
 class TestFieldDefinitions:
     """Tests for FIELD_DEFINITIONS."""
@@ -58,11 +84,12 @@ class TestFieldDefinitions:
         assert required.issubset(FIELD_DEFINITIONS.keys())
 
     def test_depends_on_applies_to_non_logs(self):
-        """depends_on applies to strategy, product, atom (not kernel or log)."""
+        """depends_on applies to non-root, non-log documents."""
         fd = FIELD_DEFINITIONS["depends_on"]
         assert "log" not in fd.applies_to
         assert "kernel" not in fd.applies_to  # kernel docs have no dependencies
-        assert fd.applies_to == ("strategy", "product", "atom")
+        assert {"strategy", "product", "atom"}.issubset(fd.applies_to)
+        assert LIFECYCLE_TYPES.issubset(fd.applies_to)
         assert isinstance(fd.applies_to, tuple)  # verify immutability
 
     def test_impacts_applies_to_log_only(self):
@@ -92,7 +119,7 @@ class TestBackwardCompatHelpers:
         types = get_valid_types()
         assert "kernel" in types
         assert "log" in types
-        assert len(types) == 5
+        assert set(types) == ALL_TYPES
 
     def test_get_valid_type_status(self):
         """get_valid_type_status returns correct status sets."""
@@ -100,6 +127,9 @@ class TestBackwardCompatHelpers:
         assert "active" in status_map["kernel"]
         assert "archived" in status_map["log"]
         assert "auto-generated" in status_map["log"]
+        assert {"proposed", "ready", "completed", "revised", "in-lifecycle"}.issubset(
+            status_map["review"]
+        )
 
 
 class TestIntegrationWithConfigDefaults:

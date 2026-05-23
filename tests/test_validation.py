@@ -378,6 +378,8 @@ class TestConfigConstants:
         """VALID_STATUS contains all expected values."""
         expected = {
             'draft', 'active', 'deprecated', 'archived', 'rejected', 'complete',
+            'completed', 'auto-generated', 'in_progress',
+            'proposed', 'ready', 'revised', 'in-lifecycle',
             'scaffold', 'pending_curation',  # v2.9: curation levels
         }
         assert VALID_STATUS == expected
@@ -389,6 +391,8 @@ class TestConfigConstants:
         assert 'product' in VALID_TYPE_STATUS
         assert 'atom' in VALID_TYPE_STATUS
         assert 'log' in VALID_TYPE_STATUS
+        assert 'review' in VALID_TYPE_STATUS
+        assert 'tracker' in VALID_TYPE_STATUS
     
     def test_log_cannot_be_rejected(self):
         """Log type cannot have rejected status."""

@@ -1,7 +1,7 @@
 """Single source of truth for Ontos type and field definitions.
 
 This module defines the ontology schema used throughout Ontos:
-- TypeDefinition: Document types (kernel, strategy, product, atom, log)
+- TypeDefinition: Document types (core hierarchy plus lifecycle artifacts)
 - FieldDefinition: Frontmatter fields (id, type, status, etc.)
 
 All other modules should import from here to ensure consistency.
@@ -55,8 +55,46 @@ class FieldDefinition:
     applies_to: Optional[Tuple[str, ...]] = None  # None = all types
 
 
-# Curation meta-statuses apply to all types during L0/L1 processing
+# Curation meta-statuses apply to all types during L0/L1 processing.
 _CURATION_STATUSES: Tuple[str, ...] = ("scaffold", "pending_curation")
+_BASE_STATUSES: Tuple[str, ...] = ("active", "draft", "deprecated")
+_LIFECYCLE_STATUSES: Tuple[str, ...] = (
+    "proposed",
+    "ready",
+    "completed",
+    "revised",
+    "in-lifecycle",
+)
+_HISTORICAL_STATUSES: Tuple[str, ...] = (
+    "archived",
+    "rejected",
+    "complete",
+    "auto-generated",
+    "in_progress",
+)
+_ALL_DOCUMENT_STATUSES: Tuple[str, ...] = (
+    _BASE_STATUSES
+    + _HISTORICAL_STATUSES
+    + _LIFECYCLE_STATUSES
+    + _CURATION_STATUSES
+)
+_ANY_DOCUMENT_TYPE: Tuple[str, ...] = (
+    "kernel",
+    "strategy",
+    "product",
+    "atom",
+    "log",
+    "reference",
+    "concept",
+    "handoff",
+    "tracker",
+    "retro",
+    "review",
+    "spec",
+    "report",
+    "adr",
+    "policy",
+)
 
 TYPE_DEFINITIONS: Dict[str, TypeDefinition] = {
     "kernel": TypeDefinition(
@@ -93,8 +131,78 @@ TYPE_DEFINITIONS: Dict[str, TypeDefinition] = {
         description="Session history - temporal records of work",
         can_depend_on=(),
         # BEHAVIOR FIX: Added auto-generated (used in practice, was missing from VALID_TYPE_STATUS)
-        valid_statuses=("active", "archived", "auto-generated") + _CURATION_STATUSES,
+        valid_statuses=("active", "archived", "auto-generated", "complete", "completed") + _CURATION_STATUSES,
         uses_impacts=True,
+    ),
+    "reference": TypeDefinition(
+        name="reference",
+        rank=5,
+        description="External or internal reference material that supports the graph",
+        can_depend_on=_ANY_DOCUMENT_TYPE,
+        valid_statuses=_ALL_DOCUMENT_STATUSES,
+    ),
+    "concept": TypeDefinition(
+        name="concept",
+        rank=5,
+        description="Vocabulary, taxonomy, or glossary material",
+        can_depend_on=_ANY_DOCUMENT_TYPE,
+        valid_statuses=_ALL_DOCUMENT_STATUSES,
+    ),
+    "handoff": TypeDefinition(
+        name="handoff",
+        rank=5,
+        description="Lifecycle handoff packet for agents or maintainers",
+        can_depend_on=_ANY_DOCUMENT_TYPE,
+        valid_statuses=_ALL_DOCUMENT_STATUSES,
+    ),
+    "tracker": TypeDefinition(
+        name="tracker",
+        rank=5,
+        description="Lifecycle tracker for workstreams, issues, or release gates",
+        can_depend_on=_ANY_DOCUMENT_TYPE,
+        valid_statuses=_ALL_DOCUMENT_STATUSES,
+    ),
+    "retro": TypeDefinition(
+        name="retro",
+        rank=5,
+        description="Retrospective or lessons-learned lifecycle record",
+        can_depend_on=_ANY_DOCUMENT_TYPE,
+        valid_statuses=_ALL_DOCUMENT_STATUSES,
+    ),
+    "review": TypeDefinition(
+        name="review",
+        rank=5,
+        description="Peer, alignment, adversarial, or verification review artifact",
+        can_depend_on=_ANY_DOCUMENT_TYPE,
+        valid_statuses=_ALL_DOCUMENT_STATUSES,
+    ),
+    "spec": TypeDefinition(
+        name="spec",
+        rank=5,
+        description="Implementation or behavior specification",
+        can_depend_on=_ANY_DOCUMENT_TYPE,
+        valid_statuses=_ALL_DOCUMENT_STATUSES,
+    ),
+    "report": TypeDefinition(
+        name="report",
+        rank=5,
+        description="Final report, status report, or synthesized analysis",
+        can_depend_on=_ANY_DOCUMENT_TYPE,
+        valid_statuses=_ALL_DOCUMENT_STATUSES,
+    ),
+    "adr": TypeDefinition(
+        name="adr",
+        rank=5,
+        description="Architecture decision record",
+        can_depend_on=_ANY_DOCUMENT_TYPE,
+        valid_statuses=_ALL_DOCUMENT_STATUSES,
+    ),
+    "policy": TypeDefinition(
+        name="policy",
+        rank=5,
+        description="Policy, rule, or operating constraint",
+        can_depend_on=_ANY_DOCUMENT_TYPE,
+        valid_statuses=_ALL_DOCUMENT_STATUSES,
     ),
 }
 
@@ -113,23 +221,35 @@ FIELD_DEFINITIONS: Dict[str, FieldDefinition] = {
         field_type="enum",
         required=True,
         description="Document type in hierarchy",
-        valid_values=("kernel", "strategy", "product", "atom", "log"),
+        valid_values=_ANY_DOCUMENT_TYPE,
     ),
     "status": FieldDefinition(
         name="status",
         field_type="enum",
         required=True,
         description="Document lifecycle state",
-        valid_values=("active", "draft", "deprecated", "archived",
-                      "rejected", "complete", "auto-generated",
-                      "scaffold", "pending_curation"),
+        valid_values=_ALL_DOCUMENT_STATUSES,
     ),
     "depends_on": FieldDefinition(
         name="depends_on",
         field_type="list",
         required=False,  # optional at schema level, L2 curation enforces
         description="Referenced document IDs (required at L2 for strategy/product/atom)",
-        applies_to=("strategy", "product", "atom"),  # kernel excluded per curation.py
+        applies_to=(
+            "strategy",
+            "product",
+            "atom",
+            "reference",
+            "concept",
+            "handoff",
+            "tracker",
+            "retro",
+            "review",
+            "spec",
+            "report",
+            "adr",
+            "policy",
+        ),  # kernel/log excluded per curation.py
     ),
     "impacts": FieldDefinition(
         name="impacts",
