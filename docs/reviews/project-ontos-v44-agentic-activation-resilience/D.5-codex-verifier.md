@@ -3,6 +3,9 @@ id: project_ontos_v44_d5_codex_verifier
 type: log
 status: archived
 event_type: chore
+source: legacy-curation
+branch: main
+concepts: [testing, docs, schema, config]
 impacts:
   - project_ontos_v44_d4_fix_summary
 ---

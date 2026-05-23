@@ -6,6 +6,7 @@ event_type: feature
 source: cli
 branch: main
 created: 2026-02-01
+concepts: [testing, docs, config]
 ---
 
 # add v3.2.1 activation resilience and v3.2.2 mainta

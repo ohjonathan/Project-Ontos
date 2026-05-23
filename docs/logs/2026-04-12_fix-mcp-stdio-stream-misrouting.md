@@ -6,6 +6,7 @@ event_type: fix
 source: Claude Code
 branch: fix/mcp-stdio-stream-routing
 created: 2026-04-12
+concepts: [devops, workflow, testing, docs]
 ---
 
 # Fix MCP stdio stream misrouting (v4.1.1 blocker)

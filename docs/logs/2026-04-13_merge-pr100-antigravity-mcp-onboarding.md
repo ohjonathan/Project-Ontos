@@ -6,6 +6,7 @@ event_type: fix
 source: codex
 branch: codex/issue-99-antigravity-mcp
 created: 2026-04-13
+concepts: [devops, workflow, testing, docs]
 ---
 
 # merge-pr100-antigravity-mcp-onboarding

@@ -6,6 +6,7 @@ event_type: feature
 source: Antigravity
 branch: main
 created: 2026-02-10
+concepts: [devops, workflow, testing, docs]
 ---
 
 # GitHub Releases & Auth Fix

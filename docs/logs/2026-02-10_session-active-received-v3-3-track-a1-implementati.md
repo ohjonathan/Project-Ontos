@@ -6,6 +6,7 @@ event_type: chore
 source: cli
 branch: main
 created: 2026-02-10
+concepts: [testing, docs]
 ---
 
 # Session active. Received v3.3 Track A1 Implementation Spec.

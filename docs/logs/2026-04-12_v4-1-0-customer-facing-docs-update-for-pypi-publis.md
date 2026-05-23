@@ -6,6 +6,7 @@ event_type: chore
 source: Antigravity (Claude Opus 4.6 Thinking)
 branch: docs/v4.1.0-pypi-publish-prep
 created: 2026-04-12
+concepts: [devops, workflow, testing, docs]
 ---
 
 # v4.1.0 customer-facing docs update for PyPI publish

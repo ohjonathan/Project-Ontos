@@ -6,6 +6,7 @@ event_type: chore
 source: cli
 branch: proposal/v4.0-mcp
 created: 2026-04-05
+concepts: [testing, docs]
 ---
 
 # add review analysis docs, clarify P1 scope, update

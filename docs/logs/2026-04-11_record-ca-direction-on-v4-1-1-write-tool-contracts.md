@@ -6,6 +6,7 @@ event_type: chore
 source: cli
 branch: docs/v4.1-proposal
 created: 2026-04-11
+concepts: [testing, docs]
 ---
 
 # record CA direction on v4.1.1 write tool contracts

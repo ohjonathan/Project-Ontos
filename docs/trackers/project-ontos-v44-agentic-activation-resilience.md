@@ -3,6 +3,9 @@ id: project_ontos_v44_agentic_activation_resilience_tracker
 type: log
 status: active
 event_type: chore
+source: legacy-curation
+branch: main
+concepts: [testing, docs, schema, config]
 impacts:
   - project_ontos_v44_agentic_activation_resilience_spec
 ---

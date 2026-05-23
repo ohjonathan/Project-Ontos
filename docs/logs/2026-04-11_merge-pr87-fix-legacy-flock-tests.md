@@ -6,6 +6,7 @@ event_type: fix
 source: codex
 branch: codex/fix-main-ci-lock-compat
 created: 2026-04-11
+concepts: [devops, workflow, testing, docs]
 ---
 
 # merge-pr87-fix-legacy-flock-tests

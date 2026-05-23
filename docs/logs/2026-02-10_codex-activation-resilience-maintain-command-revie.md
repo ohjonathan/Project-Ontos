@@ -6,6 +6,7 @@ event_type: exploration
 source: Antigravity
 branch: main
 created: 2026-02-10
+concepts: [testing, docs, config]
 ---
 
 # Codex Activation Resilience & Maintain Command Review

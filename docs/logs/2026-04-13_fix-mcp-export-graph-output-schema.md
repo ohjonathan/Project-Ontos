@@ -6,6 +6,7 @@ event_type: fix
 source: Claude Code
 branch: fix/mcp-export-graph-output-schema
 created: 2026-04-13
+concepts: [devops, workflow, testing, docs]
 ---
 
 # Fix MCP export_graph outputSchema (issue #97, PR #98)

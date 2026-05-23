@@ -6,6 +6,7 @@ event_type: fix
 source: codex
 branch: main
 created: 2026-04-14
+concepts: [devops, workflow, testing, docs]
 ---
 
 # merge-pr-108-v4-2-3-hardening

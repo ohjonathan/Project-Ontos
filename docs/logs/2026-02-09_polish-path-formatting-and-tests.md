@@ -6,6 +6,7 @@ event_type: fix
 source: cli
 branch: fix/key-documents-spec
 created: 2026-02-09
+concepts: [devops, workflow, testing, docs]
 ---
 
 # Polish path formatting and tests

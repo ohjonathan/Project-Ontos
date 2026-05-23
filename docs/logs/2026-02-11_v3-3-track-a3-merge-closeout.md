@@ -6,6 +6,7 @@ event_type: chore
 source: codex
 branch: main
 created: 2026-02-11
+concepts: [testing, docs]
 ---
 
 # v3.3 Track A3 Merge Closeout

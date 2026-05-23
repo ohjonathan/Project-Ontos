@@ -6,6 +6,7 @@ event_type: fix
 source: codex
 branch: main
 created: 2026-02-11
+concepts: [testing, docs, cleanup]
 ---
 
 # v3.3-a1-hardening-tail-cherry-picked-into-main

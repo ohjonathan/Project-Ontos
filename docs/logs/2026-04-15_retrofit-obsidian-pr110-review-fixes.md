@@ -6,6 +6,7 @@ event_type: fix
 source: codex
 branch: feature/v4.3.0-obsidian-retrofit
 created: 2026-04-15
+concepts: [devops, workflow, testing, docs]
 ---
 
 # retrofit-obsidian-pr110-review-fixes

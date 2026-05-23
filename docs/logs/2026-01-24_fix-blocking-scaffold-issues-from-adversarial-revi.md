@@ -6,6 +6,7 @@ event_type: fix
 source: Antigravity (Gemini 2.5 Pro)
 branch: feature/init-improvements-v3.1.1
 created: 2026-01-24
+concepts: [devops, workflow, testing, docs]
 ---
 
 # Fix blocking scaffold issues from adversarial review

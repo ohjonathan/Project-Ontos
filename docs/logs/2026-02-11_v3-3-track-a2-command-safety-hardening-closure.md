@@ -6,6 +6,7 @@ event_type: release
 source: codex
 branch: feature/v3.3-track-a2-command-safety
 created: 2026-02-11
+concepts: [testing, docs, cleanup, security]
 ---
 
 # v3.3 track a2 command safety hardening closure

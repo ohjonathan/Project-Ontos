@@ -6,6 +6,7 @@ event_type: chore
 source: Codex
 branch: feature/v4.1-track-b
 created: 2026-04-12
+concepts: [devops, workflow, testing, docs]
 ---
 
 # Sync PR #92 re-fix head and verify

@@ -6,6 +6,7 @@ event_type: release
 source: codex
 branch: main
 created: 2026-04-13
+concepts: [devops, workflow, testing, docs]
 ---
 
 # release(v4.1.3): bump version

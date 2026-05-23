@@ -6,6 +6,7 @@ event_type: chore
 source: codex
 branch: fix/v3.3-a1-hardening
 created: 2026-02-11
+concepts: [testing, docs, cleanup]
 ---
 
 # v3_3_a1_final_hardening_wrap

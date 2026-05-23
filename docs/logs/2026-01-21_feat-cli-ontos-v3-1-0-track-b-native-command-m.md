@@ -6,6 +6,7 @@ event_type: feature
 source: cli
 branch: main
 created: 2026-01-21
+concepts: [testing, docs]
 ---
 
 # feat(cli): Ontos v3.1.0 Track B - Native Command M
