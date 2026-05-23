@@ -116,6 +116,10 @@ if is_ontos_repo():
         'handoff', 'tracker', 'report', 'adr', 'policy', 'concept',
         'tech-debt',
     ]
+    # Bumped above the default to accommodate historical v3.1 lifecycle chains
+    # (spec → reviews → consolidations → verifications → approvals → final).
+    # Scoped to contributor mode so user-mode projects keep the stricter default.
+    MAX_DEPENDENCY_DEPTH = 15
 else:
     # -------------------------------------------------------------------------
     # USER MODE: Using Project Ontos in another project
@@ -126,7 +130,8 @@ else:
     # Use defaults (which safely skip .ontos-internal if it appears by accident)
     SKIP_PATTERNS = DEFAULT_SKIP_PATTERNS
     ALLOWED_ORPHAN_TYPES = DEFAULT_ALLOWED_ORPHAN_TYPES
-    
+    MAX_DEPENDENCY_DEPTH = DEFAULT_MAX_DEPENDENCY_DEPTH
+
     # Warn if .ontos-internal/ exists but doesn't look like Ontos repo
     if os.path.isdir(INTERNAL_DIR) and not os.path.isfile(ONTOS_REPO_MARKER):
         import warnings
@@ -142,11 +147,6 @@ CONTEXT_MAP_FILE = os.path.join(PROJECT_ROOT, DEFAULT_CONTEXT_MAP_FILE)
 
 # Output file for migration prompts (resolved to absolute path)
 MIGRATION_PROMPT_FILE = os.path.join(PROJECT_ROOT, DEFAULT_MIGRATION_PROMPT_FILE)
-
-# Maximum allowed dependency chain depth.
-# Bumped above the default to accommodate historical v3.1 lifecycle chains
-# (spec → reviews → consolidations → verifications → approvals → final).
-MAX_DEPENDENCY_DEPTH = 15
 
 
 
