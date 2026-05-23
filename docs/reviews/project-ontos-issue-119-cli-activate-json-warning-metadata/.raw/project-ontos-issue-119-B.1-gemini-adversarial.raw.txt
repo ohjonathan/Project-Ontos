@@ -1,0 +1,35 @@
+```markdown
+---
+id: project-ontos-issue-119-B.1-gemini-adversarial
+deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
+phase: B.1
+role: adversarial
+family: gemini
+status: completed
+---
+
+# B.1 Adversarial Review — gemini
+
+## Verdict
+
+Request changes
+
+## Summary
+
+The spec correctly identifies the scope of work and proposes a sound serialization method (`to_dict`) on the `ValidationError` dataclass. The test plan is thorough. However, the proposed refactoring of the MCP consumer (`_validation_issues`) introduces a significant regression risk by making an unsafe assumption about its input, contradicting other evidence within the spec. This constitutes a blocking issue.
+
+## Findings
+
+### [F1] MCP refactoring introduces regression risk
+- **Severity:** blocker
+- **Evidence:** static-inspection
+- **Where:** §1.3.3 MCP consumer (refactor onto the shared method)
+- **Issue:** The proposed refactoring of `_validation_issues` to `return [issue.to_dict() for issue in issues]` will cause a runtime `AttributeError` if the `issues` list contains any object that does not have a `to_dict()` method. This is a likely regression, as two pieces of evidence in the spec suggest the input list is heterogeneous: (1) the function signature's type hint is `list[Any]`, not `list[ValidationError]`, and (2) a comment in the proposed code block itself notes that "Snapshot bare strings still use `_snapshot_issue()`", implying that the broader warning-handling mechanism deals with multiple types, and that `_validation_issues` may have previously played a role in distinguishing them. The spec's assertion that MCP behavior will be "preserved bit-for-bit" is at risk.
+- **Recommendation:** The spec must be revised to provide a safe implementation for the `_validation_issues` refactoring. Either:
+  1.  Change the implementation to safely handle heterogeneous lists (e.g., `return [issue.to_dict() for issue in issues if isinstance(issue, ValidationError)]`).
+  2.  Or, provide evidence that all call sites of `_validation_issues` are guaranteed to pass a homogeneous list of `ValidationError` objects, and update the function's type hint to `list[ValidationError]` to make this contract explicit.
+
+## Notes
+
+The `to_dict()` method itself and the CLI-side changes appear robust. The test plan in §1.4 is well-structured and, if the blocker in F1 is resolved, should provide sufficient coverage to prevent regressions and validate the new contract. The explicit call-out of the intentional breaking change to the JSON contract is well-handled. My review focused on the potential for regressions, and the MCP path is the primary point of concern.
+```

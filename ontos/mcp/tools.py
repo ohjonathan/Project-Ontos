@@ -15,7 +15,7 @@ from ontos.commands.map import CompactMode, GenerateMapOptions, generate_context
 from ontos.core.content_hash import compute_content_hash
 from ontos.core.errors import OntosUserError
 from ontos.core.snapshot import DocumentSnapshot
-from ontos.core.types import DocumentData, ValidationResult
+from ontos.core.types import DocumentData, ValidationError, ValidationResult
 from ontos.io.snapshot import create_snapshot
 from ontos.mcp._types import PortfolioIndexLike
 from ontos.mcp.scanner import slugify
@@ -617,27 +617,14 @@ def _validation_payload(validation: ValidationResult) -> dict[str, Any]:
     }
 
 
-def _validation_issues(issues: list[Any]) -> list[dict[str, Any]]:
-    # (#117) Surface document context (rule_id, document_id, file_path) so
+def _validation_issues(issues: list[ValidationError]) -> list[dict[str, Any]]:
+    # (#117/#119) Surface document context (rule_id, document_id, file_path) so
     # downstream agents can triage without a second query. Empty strings are
-    # squashed so the public payload stays compact.
-    enriched: list[dict[str, Any]] = []
-    for issue in issues:
-        record: dict[str, Any] = {
-            "severity": issue.severity,
-            "message": issue.message,
-        }
-        rule_id = getattr(issue.error_type, "value", None) if getattr(issue, "error_type", None) else None
-        if rule_id:
-            record["rule_id"] = rule_id
-        doc_id = getattr(issue, "doc_id", "") or ""
-        if doc_id:
-            record["document_id"] = doc_id
-        file_path = getattr(issue, "filepath", "") or ""
-        if file_path:
-            record["file_path"] = file_path
-        enriched.append(record)
-    return enriched
+    # squashed so the public payload stays compact. The serialization lives on
+    # ValidationError.to_dict() so CLI and MCP share the exact same shape;
+    # call sites here (_normalize_warnings, _validation_payload) always pass
+    # validation.errors / validation.warnings (List[ValidationError]).
+    return [issue.to_dict() for issue in issues]
 
 
 # (#117) Bare snapshot strings often originate from the loader and document

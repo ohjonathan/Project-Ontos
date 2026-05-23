@@ -101,8 +101,8 @@ def run_activation(
             gen_config,
             GenerateMapOptions(max_dependency_depth=config.validation.max_dependency_depth),
         )
-        validation_errors = [issue.message for issue in validation.errors]
-        validation_warnings = [issue.message for issue in validation.warnings]
+        validation_errors = [issue.to_dict() for issue in validation.errors]
+        validation_warnings = [issue.to_dict() for issue in validation.warnings]
         if write_map:
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(content, encoding="utf-8")
