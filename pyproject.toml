@@ -12,7 +12,7 @@ license = "Apache-2.0"
 authors = [
     {name = "Ontos Project", email = "ohjonathan@users.noreply.github.com"}
 ]
-keywords = ["documentation", "ai", "context", "llm", "developer-tools"]
+keywords = ["documentation", "ai", "context", "llm", "mcp", "knowledge-graph", "developer-tools"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
@@ -25,6 +25,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Documentation",
     "Topic :: Software Development :: Documentation",
+    "Topic :: Utilities",
 ]
 dependencies = [
     "pyyaml>=6.0,<7.0",

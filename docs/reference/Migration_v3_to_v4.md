@@ -7,7 +7,7 @@ depends_on: [ontos_manual]
 
 # Migration Guide: v3.x → v4.x
 
-This guide covers the new capabilities in Ontos v4.0, v4.1, v4.2, and v4.3 and how to enable them. **There are no breaking changes** — all existing CLI commands, configuration, and frontmatter schemas are preserved.
+This guide covers the new capabilities in Ontos v4.0 through v4.6 and how to enable them. Existing CLI commands, configuration, and frontmatter files remain supported. The one machine-contract change is in v4.6: `ontos activate --json` now emits structured validation issue objects instead of bare warning/error strings.
 
 ## What's New in v4.0
 
@@ -90,7 +90,7 @@ All write tools use advisory flock locking (`workspace_lock()`) for cross-proces
 
 All tools are read-only except `export_graph` with `export_to_file` (writes within workspace root) and the write tools above. In read-only mode, use the CLI fallback `ontos log -e "slug"` for session archives.
 
-### v4.4 Activation and Diagnostics
+### v4.4-v4.6 Activation and Diagnostics
 
 `ontos activate` is additive and safe for existing workflows. It refreshes the context map when possible, returns `usable`, `usable_with_warnings`, or `not_usable`, and exits non-zero only when no actionable context can be produced.
 
@@ -104,6 +104,10 @@ ontos maintain --fix-frontmatter-enums --apply
 Frontmatter diagnostics now include path, line when available, field, observed value, allowed values, severity, blocking flag, and suggested fix. Enum repair is conservative: known lifecycle artifact values are mapped to valid document enums while old values are preserved as `original_type` or `original_status`; unknown mappings are reported without writing.
 
 `map`, `doctor`, `verify --all`, and frontmatter repair share configured scan exclusions. Absolute-style patterns such as `*/docs/reviews/*` are recommended for generated lifecycle review folders.
+
+v4.5 makes common lifecycle artifact tagging first-class. In addition to the core `kernel`, `strategy`, `product`, `atom`, and `log` hierarchy, Ontos accepts `reference`, `concept`, `handoff`, `tracker`, `retro`, `review`, `spec`, `report`, `adr`, and `policy`. Lifecycle workflow statuses such as `proposed`, `ready`, `completed`, `revised`, and `in-lifecycle` are also accepted so review and handoff documents keep their source semantics.
+
+v4.6 changes only the `activate --json` validation payload shape. `payload.data.validation.warnings` and `payload.data.validation.errors` are now lists of objects carrying `severity`, `message`, and, when available, `rule_id`, `document_id`, and `file_path`. Consumers that previously expected `list[str]` should read `record["message"]`.
 
 ### File-Mtime Cache Invalidation
 
@@ -125,7 +129,7 @@ Everything else works the same:
 - ✅ All existing CLI commands (`map`, `log`, `doctor`, `maintain`, `link-check`, `rename`, etc.) still work the same
 - ✅ `pip install ontos` (without extras) — no new dependencies on Python 3.9+
 - ✅ `.ontos.toml` configuration — existing settings preserved
-- ✅ Frontmatter schema — no changes to document metadata
+- ✅ Frontmatter files — existing metadata remains readable; v4.5 expands accepted lifecycle type/status values
 - ✅ Context map format — same output from `ontos map`
 - ✅ Git hooks behavior
 - ✅ `AGENTS.md` and `.cursorrules` generation
@@ -235,10 +239,10 @@ path when the Ontos launcher path changes on your shell `PATH`.
 ### Universal `print-config` Fallback
 
 `ontos mcp print-config --client ...` emits a complete config document without
-writing to disk. In `v4.2`, Claude Code, Codex, and VS Code are supported via
+writing to disk. In `v4.6`, Claude Code, Codex, and VS Code are supported via
 this fallback path rather than managed install / uninstall / doctor support.
 
-Managed MCP automation remains POSIX-only in `v4.2`; Windows users should use
+Managed MCP automation remains POSIX-only in `v4.6`; Windows users should use
 `print-config`.
 
 ### 4. Configure Your IDE (Optional)
@@ -298,7 +302,7 @@ ontos mcp uninstall --client cursor --scope project
 ontos mcp print-config --client codex
 ```
 
-Rerunning `ontos mcp install --client cursor ...` refreshes the launcher path if Ontos moves on your shell `PATH`. Managed install, uninstall, and doctor support are POSIX-only in `v4.2`; Windows users should use `print-config`.
+Rerunning `ontos mcp install --client cursor ...` refreshes the launcher path if Ontos moves on your shell `PATH`. Managed install, uninstall, and doctor support are POSIX-only in `v4.6`; Windows users should use `print-config`.
 
 ### Client Support Policy
 
@@ -309,7 +313,7 @@ Ontos now treats MCP enablement as two separate jobs:
 
 That philosophy should stay consistent across clients, while the automation level stays client-specific:
 
-- **First-class** clients get `ontos mcp install --client ...`, `ontos mcp uninstall --client ...`, and `ontos doctor` checks once their native config contract is stable. Antigravity and Cursor are the first examples in `v4.2`.
+- **First-class** clients get `ontos mcp install --client ...`, `ontos mcp uninstall --client ...`, and `ontos doctor` checks once their native config contract is stable. Antigravity and Cursor are the first examples in `v4.6`.
 - **Print-config only** clients keep explicit manual setup docs plus a copy-pastable fallback document. Claude Code, Codex, and VS Code fit here.
 - **Docs-only** clients remain manual in this release. Claude Desktop and Windsurf are the examples here.
 

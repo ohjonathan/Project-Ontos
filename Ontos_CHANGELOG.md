@@ -21,6 +21,59 @@ All notable changes to **Project Ontos itself** (the protocol and tooling) will 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.6.0] - 2026-05-23
+
+### Theme: "CLI Activation Metadata Parity"
+
+Patch release closing Issue #119, the final v4.5 follow-up for structured
+activation diagnostics.
+
+### Changed
+
+- **`ontos activate --json` validation metadata** — CLI validation warnings and
+  errors now use the same structured issue objects as MCP activation:
+  `severity`, `message`, and optional `rule_id`, `document_id`, and
+  `file_path`.
+- **JSON contract shape** — Consumers that parsed validation warnings/errors as
+  `list[str]` should read `record["message"]` from each object.
+
+### Metrics
+
+- PyPI and TestPyPI published `ontos 4.6.0`.
+- GitHub release `v4.6.0` is marked Latest.
+
+---
+
+## [4.5.0] - 2026-05-22
+
+### Theme: "Activation Diagnostic Hardening"
+
+Minor release closing Issues #115, #116, and #117 across activation payload
+schema safety, link-check signal, lifecycle artifact tagging, and MCP upgrade
+documentation.
+
+### Added
+
+- **Lifecycle artifact types** — `handoff`, `tracker`, `retro`, `review`,
+  `spec`, `report`, `adr`, and `policy` are first-class values.
+- **Lifecycle workflow statuses** — `proposed`, `ready`, `completed`,
+  `revised`, and `in-lifecycle` preserve review and handoff semantics.
+- **MCP host restart guidance** — Upgrade docs now explain why long-lived MCP
+  hosts need a restart after package upgrades.
+
+### Fixed
+
+- `get_context_bundle` now places pre-activation reminders in the declared
+  `warnings` field.
+- `depends_on` path fallback resolves workspace-relative, declaring-doc-relative,
+  and absolute paths before broken-link reporting.
+- Generic link-check token scanning now requires explicit wikilink syntax for
+  unknown IDs.
+- README and template files are skipped by validation unless they explicitly
+  declare an `id`.
+
+---
+
 ## [4.4.0] - 2026-05-12
 
 ### Theme: "Agentic Activation Resilience"

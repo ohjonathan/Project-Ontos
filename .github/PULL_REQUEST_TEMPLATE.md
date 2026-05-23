@@ -13,10 +13,10 @@ Fixes #(issue number)
 
 ## Checklist
 
-- [ ] Tests pass (`pytest tests/ -v`)
-- [ ] Validation passes (`python3 .ontos/scripts/ontos_generate_context_map.py --strict`)
+- [ ] Tests pass (`.venv/bin/python -m pytest -q` or CI equivalent)
+- [ ] Ontos activation/validation checked (`ontos activate` and `ontos doctor`)
 - [ ] Documentation updated (if applicable)
-- [ ] Ontos_CHANGELOG.md updated under `[Unreleased]`
+- [ ] CHANGELOG.md / Ontos_CHANGELOG.md updated when release-facing behavior changes
 
 ## Testing
 

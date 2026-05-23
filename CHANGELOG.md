@@ -4,6 +4,68 @@ All notable changes to this project will be documented in this file.
 
 > For the full historical changelog with Ontos frontmatter (from v0.1.0), see [`Ontos_CHANGELOG.md`](Ontos_CHANGELOG.md).
 
+## [4.6.0] - 2026-05-23
+
+Patch release closing Issue #119, the final v4.5.0 follow-up for activation
+warning metadata parity.
+
+### Changed
+- **CLI `activate --json` validation metadata** — `payload.data.validation.warnings`
+  and `payload.data.validation.errors` now contain structured issue objects
+  with `severity`, `message`, and optional `rule_id`, `document_id`, and
+  `file_path`, matching MCP activation payloads.
+- **JSON contract note** — Consumers that previously expected validation
+  warnings/errors as `list[str]` should read `record["message"]`.
+
+## [4.5.0] - 2026-05-22
+
+Minor release closing Issues #115, #116, and #117 across activation,
+link-check, lifecycle vocabulary, and MCP upgrade documentation.
+
+### Added
+- **Lifecycle artifact vocabulary** — `handoff`, `tracker`, `retro`, `review`,
+  `spec`, `report`, `adr`, and `policy` are first-class document types.
+- **Lifecycle workflow statuses** — `proposed`, `ready`, `completed`,
+  `revised`, and `in-lifecycle` preserve review/handoff semantics.
+
+### Fixed
+- **MCP `get_context_bundle` pre-activate warning** — The reminder now uses
+  the declared `warnings` field instead of an undeclared schema key.
+- **`depends_on` path fallback** — Workspace-relative, declaring-doc-relative,
+  and absolute path dependencies resolve before broken-link reporting.
+- **Link-check noise** — Generic bare-token detection now requires explicit
+  wikilink syntax for unknown IDs.
+- **README/template validation skip** — README and `*_template.md` files are
+  skipped unless they explicitly declare an `id`.
+
+### Documentation
+- Added guidance to restart long-lived MCP hosts after `pipx upgrade ontos`,
+  `pip install --upgrade ontos`, or `pipx install --force 'ontos[mcp]'`.
+
+## [4.4.0] - 2026-05-12
+
+Minor release focused on agentic activation resilience.
+
+### Added
+- **`ontos activate`** — Best-effort activation with `usable`,
+  `usable_with_warnings`, and `not_usable` statuses.
+- **MCP `activate` and `session_end`** — Session activation state and typed
+  session archive workflows.
+- **Frontmatter diagnostics and repair** — `ontos doctor --frontmatter` plus
+  `ontos maintain --fix-frontmatter-enums`.
+
+### Changed
+- `map`, `doctor`, `verify --all`, and frontmatter repair share configured
+  scan exclusions.
+
+## [4.3.0] - 2026-04-15
+
+Minor release adding the Obsidian-compatible write path.
+
+### Added
+- **`ontos retrofit --obsidian`** — Dry-run-first command that writes computed
+  `tags` and `aliases` into existing document frontmatter.
+
 ## [4.2.3] - 2026-04-15
 
 Patch release closing the residual Issue #107 MCP portfolio hardening items on
