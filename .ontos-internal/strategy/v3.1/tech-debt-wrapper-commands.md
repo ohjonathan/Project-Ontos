@@ -1,8 +1,8 @@
 ---
 id: v3_1_tech_debt_wrapper_commands
 type: tech-debt
-status: open
-depends_on: [phase_v3_0_4_implementation_spec]
+status: complete
+depends_on: []
 concepts: [tech-debt, wrapper-commands, native-migration, pythonpath]
 ---
 

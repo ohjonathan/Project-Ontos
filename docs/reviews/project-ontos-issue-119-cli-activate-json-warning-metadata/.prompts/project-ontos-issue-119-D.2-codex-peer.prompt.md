@@ -27,7 +27,7 @@ deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
 phase: D.2
 role: peer
 family: codex
-status: completed
+status: complete
 ---
 
 # D.2 Peer Review — codex

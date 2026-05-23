@@ -2,7 +2,7 @@
 id: log_20260209_reorganize-proposals-assets-and-logs-65
 type: log
 status: active
-event_type: post-merge-cleanup
+event_type: chore
 source: cli
 branch: main
 created: 2026-02-09

@@ -7,9 +7,7 @@ source: claude-opus-4-5
 created: 2026-01-14
 impacts:
 - ontos_philosophy_and_ontology
-- obsidian_compatibility_proposal
 - install_experience_technical_debt_proposal
-- maintain_command_v3_proposal
 concepts:
 - philosophy
 - ontology

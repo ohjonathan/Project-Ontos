@@ -2,7 +2,7 @@
 id: v3_1_0_track_b_pr_review_chief_architect
 type: review
 status: complete
-depends_on: [v3_1_0_track_b_implementation_prompt_antigravity]
+depends_on: []
 concepts: [pr-review, chief-architect, track-b, phase-d]
 ---
 

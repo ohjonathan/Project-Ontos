@@ -1,10 +1,11 @@
 ---
 id: project-ontos-issue-119-D.3-verdict
+type: review
 deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
 phase: D.3
 role: meta-consolidator
 family: claude-sonnet
-status: completed
+status: complete
 ---
 
 # D.3 Meta-Consolidation — claude-sonnet

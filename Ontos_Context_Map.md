@@ -1,7 +1,7 @@
 ---
 type: generated
 generator: ontos_generate_context_map
-generated: "2026-05-23 03:33:12 UTC"
+generated: "2026-05-23 04:23:54 UTC"
 mode: Contributor
 scanned: .ontos-internal
 ---
@@ -10,7 +10,7 @@ scanned: .ontos-internal
 > When you run `ontos map` in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2026-05-22 20:33:12
+Generated on: 2026-05-22 21:23:54
 Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -50,9 +50,9 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 - **chief_architect_phase3_response** [L2] (Chief_Architect_Phase3_Response.md) ~3,200 tokens
   - Status: active
   - Depends On: phase3_implementation_spec
-- **install_experience_technical_debt_proposal** [L2] [draft] (Install_Experience_Technical_Debt_Proposal.md) ~2,000 tokens
-  - Status: draft
-  - Depends On: v3_0_implementation_roadmap, installation_ux_proposal
+- **install_experience_technical_debt_proposal** [L2] (Install_Experience_Technical_Debt_Proposal.md) ~2,000 tokens
+  - Status: complete
+  - Depends On: v3_0_implementation_roadmap
 - **ontos_strategic_analysis** [L2] (Ontos-Strategic-Analysis.md) ~3,400 tokens
   - Status: active
   - Depends On: mission, philosophy, v3_0_technical_architecture
@@ -64,7 +64,7 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
   - Depends On: ontos_manual
 - **ontos_v42_mcp_client_onboarding_proposal** [L2] [draft] (Ontos-v4.2-MCP-Client-Onboarding-Proposal.md) ~3,800 tokens
   - Status: draft
-  - Depends On: ontos_manual, v4_roadmap, v412, v413
+  - Depends On: ontos_manual, v4_roadmap
 - **phase0_golden_master_spec** [L2] (phase0_implementation_spec.md) ~10,300 tokens
   - Status: active
   - Depends On: v3_0_implementation_roadmap, v3_0_technical_architecture
@@ -76,7 +76,7 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
   - Depends On: phase2_implementation_instructions_antigravity
 - **phase2_implementation_instructions_antigravity** [L2] (Phase2_Implementation_Instructions_Antigravity.md) ~3,500 tokens
   - Status: active
-  - Depends On: v3_0_technical_architecture, v3_0_implementation_roadmap, chief_architect_round2_critical_analysis
+  - Depends On: v3_0_technical_architecture, v3_0_implementation_roadmap
 - **phase3_final_approval_chief_architect** [L1] (Phase3_Final_Approval_Chief_Architect.md) ~909 tokens  ⚠️ complete
   - Status: complete
   - Depends On: None
@@ -99,14 +99,14 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
   - Status: complete
   - Depends On: phase4_implementation_spec
 - **phase4_implementation_spec** [L2] (Phase4-Implementation-Spec.md) ~7,800 tokens
-  - Status: approved
+  - Status: complete
   - Depends On: phase3_final_approval_chief_architect
 - **phase5_code_review_claude** [L2] (Phase5_Code_Review_Claude.md) ~1,500 tokens
   - Status: complete
   - Depends On: phase5_implementation_spec
-- **phase5_implementation_spec** [L2] (Phase5-Implementation-Spec.md) ~1,000 tokens
+- **phase5_implementation_spec** [L1] (Phase5-Implementation-Spec.md) ~1,000 tokens  ⚠️ active
   - Status: active
-  - Depends On: phase4_final_approval_chief_architect
+  - Depends On: None
 - **phase5_spec_review_claude** [L2] (Phase5_Spec_Review_Claude.md) ~1,200 tokens
   - Status: complete
   - Depends On: phase5_implementation_spec
@@ -134,21 +134,21 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 - **v3_1_0_implementation_plan** [L2] [draft] (V3.1.0-Implementation-Plan.md) ~2,600 tokens
   - Status: draft
   - Depends On: v3_0_implementation_roadmap, v3_1_0_obsidian_compatibility_spec
-- **v3_1_0_implementation_spec** [L2] (v3_1_0_Implementation_Spec_v1.2.md) ~10,100 tokens
-  - Status: approved
-  - Depends On: v3_0_5_implementation_spec, v3_1_0_implementation_plan, v3_1_tech_debt_wrapper_commands
+- **v3_1_0_implementation_spec** [L2] (v3_1_0_Implementation_Spec_v1.2.md) ~10,000 tokens
+  - Status: complete
+  - Depends On: v3_1_0_implementation_plan
 - **v3_1_0_obsidian_compatibility_spec** [L2] [draft] (V3.1.0-Obsidian-Compatibility-Spec.md) ~1,900 tokens
   - Status: draft
   - Depends On: v3_0_implementation_roadmap
 - **v3_1_0_sidecar_pattern** [L2] [draft] (V3.1.0-Sidecar-Pattern.md) ~994 tokens
   - Status: draft
   - Depends On: v3_1_0_implementation_plan
-- **v3_2_backlog** [L2] (v3_2_backlog.md) ~1,300 tokens
+- **v3_2_backlog** [L1] (v3_2_backlog.md) ~1,300 tokens  ⚠️ active
   - Status: active
-  - Depends On: v3_1_0_track_b_final_approval_chief_architect
-- **v3_2_code_review_consolidation** [L2] (v3.2_Code_Review_Consolidation.md) ~1,400 tokens
+  - Depends On: None
+- **v3_2_code_review_consolidation** [L1] (v3.2_Code_Review_Consolidation.md) ~1,400 tokens  ⚠️ active
   - Status: active
-  - Depends On: v3_2_pr_review_chief_architect, v3_2_code_review_claude, v3_2_code_review_codex
+  - Depends On: None
 - **v42_v43_roadmap_shuffle** [L2] [draft] (v4.2-v4.3-roadmap-shuffle.md) ~694 tokens
   - Status: draft
   - Depends On: v4_roadmap, ontos_v42_mcp_client_onboarding_proposal
@@ -208,9 +208,9 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 - **v320** [L2] [draft] (v3.2.0.md) ~751 tokens
   - Status: draft
   - Depends On: ontos_manual
-- **v3_0_3_hybrid_review_adversarial_codex** [L2] (v3.0.3_Hybrid_Review_Adversarial_Codex.md) ~2,700 tokens
+- **v3_0_3_hybrid_review_adversarial_codex** [L1] (v3.0.3_Hybrid_Review_Adversarial_Codex.md) ~2,700 tokens  ⚠️ complete
   - Status: complete
-  - Depends On: v3.0.3_Implementation_Spec
+  - Depends On: None
 
 ### LOG
 - **log_20260112_phase0_v3_0_alpha** [L2] (2026-01-12_phase0-v3-0-alpha.md) ~745 tokens
@@ -231,8 +231,8 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 - **log_20260113_integrate_analysis_docs** [L1] (2026-01-13_integrate-analysis-docs.md) ~127 tokens  ⚠️ active
   - Status: active
   - Impacts: ontos_strategic_analysis, ontos_technical_architecture_map
-- **log_20260113_phase2_v3_0_beta** [L1] (2026-01-13_phase2-v3-0-beta.md) ~197 tokens  ⚠️ auto-generated
-  - Status: auto-generated
+- **log_20260113_phase2_v3_0_beta** [L0] (2026-01-13_phase2-v3-0-beta.md) ~196 tokens  ⚠️ scaffold
+  - Status: scaffold
   - Impacts: None
 - **log_20260113_phase4_cli_release** [L2] (2026-01-13_phase4_cli_release.md) ~1,800 tokens
   - Status: active
@@ -240,9 +240,9 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 - **log_20260113_v3_0_1_release** [L1] (2026-01-13_v3_0_1_release.md) ~921 tokens  ⚠️ active
   - Status: active
   - Impacts: v3_0_implementation_roadmap, phase5_implementation_spec
-- **log_20260114_philosophy_research_and_tech_debt** [L2] (2026-01-14_philosophy-research-and-tech-debt.md) ~929 tokens
+- **log_20260114_philosophy_research_and_tech_debt** [L2] (2026-01-14_philosophy-research-and-tech-debt.md) ~912 tokens
   - Status: active
-  - Impacts: ontos_philosophy_and_ontology, obsidian_compatibility_proposal, install_experience_technical_debt_proposal, maintain_command_v3_proposal
+  - Impacts: ontos_philosophy_and_ontology, install_experience_technical_debt_proposal
 - **log_20260115_philosophy_docs_update** [L1] (2026-01-15_philosophy-docs-update.md) ~115 tokens  ⚠️ active
   - Status: active
   - Impacts: None
@@ -258,10 +258,10 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 - **log_20260117_v3-0-0-readme-license-and-log-fix** [L1] (2026-01-17_v3-0-0-readme-license-and-log-fix.md) ~74 tokens  ⚠️ active
   - Status: active
   - Impacts: None
-- **log_20260117_v3_0_0_activation_survival** [L2] (2026-01-17_v3_0_0_activation_survival.md) ~683 tokens
+- **log_20260117_v3_0_0_activation_survival** [L2] (2026-01-17_v3_0_0_activation_survival.md) ~675 tokens
   - Status: active
-  - Impacts: ontos_agent_instructions, agents_command, doctor_staleness
-- **log_20260121_feat-cli-ontos-v3-1-0-track-b-native-command-m** [L1] (2026-01-21_feat-cli-ontos-v3-1-0-track-b-native-command-m.md) ~85 tokens  ⚠️ active
+  - Impacts: ontos_agent_instructions
+- **log_20260121_feat-cli-ontos-v3-1-0-track-b-native-command-m** [L1] (2026-01-21_feat-cli-ontos-v3-1-0-track-b-native-command-m.md) ~81 tokens  ⚠️ active
   - Status: active
   - Impacts: None
 - **log_20260121_v3-1-0-track-a-obsidian-similarity-token-efficienc** [L1] (2026-01-21_v3-1-0-track-a-obsidian-similarity-token-efficienc.md) ~101 tokens  ⚠️ active
@@ -270,13 +270,13 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 - **log_20260124_fix-blocking-scaffold-issues-from-adversarial-revi** [L1] (2026-01-24_fix-blocking-scaffold-issues-from-adversarial-revi.md) ~390 tokens  ⚠️ active
   - Status: active
   - Impacts: None
-- **log_20260129_v3_2_0_activation_fixes** [L2] (2026-01-29_v3-2-0-activation-fixes.md) ~352 tokens
+- **log_20260129_v3_2_0_activation_fixes** [L2] (2026-01-29_v3-2-0-activation-fixes.md) ~342 tokens
   - Status: active
-  - Impacts: map_command, agents_command, context_map
-- **log_20260131_v3_2_1_and_v3_2_2_proposals** [L2] (2026-01-31_version-string-to-3-2-0-for-ci-tag-validation.md) ~361 tokens
+  - Impacts: None
+- **log_20260131_v3_2_1_and_v3_2_2_proposals** [L2] (2026-01-31_version-string-to-3-2-0-for-ci-tag-validation.md) ~351 tokens
   - Status: active
-  - Impacts: ontos_agent_instructions, v3_2_re_architecture_support_proposal
-- **log_20260201_add-v3-2-1-activation-resilience-and-v3-2-2-mainta** [L1] (2026-02-01_add-v3-2-1-activation-resilience-and-v3-2-2-mainta.md) ~89 tokens  ⚠️ active
+  - Impacts: ontos_agent_instructions
+- **log_20260201_add-v3-2-1-activation-resilience-and-v3-2-2-mainta** [L1] (2026-02-01_add-v3-2-1-activation-resilience-and-v3-2-2-mainta.md) ~82 tokens  ⚠️ active
   - Status: active
   - Impacts: None
 - **log_20260207_improve-hidden-command-handling-add-warn-legacy** [L1] (2026-02-07_improve-hidden-command-handling-add-warn-legacy.md) ~309 tokens  ⚠️ active
@@ -285,16 +285,16 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 - **log_20260209_close-critical-paths-edge-cases** [L1] (2026-02-09_close-critical-paths-edge-cases.md) ~298 tokens  ⚠️ active
   - Status: active
   - Impacts: None
-- **log_20260209_make-critical-paths-config-driven** [L1] (2026-02-09_make-critical-paths-config-driven.md) ~315 tokens  ⚠️ active
+- **log_20260209_make-critical-paths-config-driven** [L1] (2026-02-09_make-critical-paths-config-driven.md) ~311 tokens  ⚠️ active
   - Status: active
   - Impacts: None
-- **log_20260209_polish-path-formatting-and-tests** [L1] (2026-02-09_polish-path-formatting-and-tests.md) ~339 tokens  ⚠️ active
+- **log_20260209_polish-path-formatting-and-tests** [L1] (2026-02-09_polish-path-formatting-and-tests.md) ~334 tokens  ⚠️ active
   - Status: active
   - Impacts: None
-- **log_20260209_reorganize-proposals-assets-and-logs-65** [L1] (2026-02-09_reorganize-proposals-assets-and-logs-65.md) ~400 tokens  ⚠️ active
+- **log_20260209_reorganize-proposals-assets-and-logs-65** [L1] (2026-02-09_reorganize-proposals-assets-and-logs-65.md) ~397 tokens  ⚠️ active
   - Status: active
   - Impacts: None
-- **log_20260210_codex-activation-resilience-maintain-command-revie** [L1] (2026-02-10_codex-activation-resilience-maintain-command-revie.md) ~85 tokens  ⚠️ active
+- **log_20260210_codex-activation-resilience-maintain-command-revie** [L1] (2026-02-10_codex-activation-resilience-maintain-command-revie.md) ~86 tokens  ⚠️ active
   - Status: active
   - Impacts: None
 - **log_20260210_github-releases-auth-fix** [L1] (2026-02-10_github-releases-auth-fix.md) ~313 tokens  ⚠️ active
@@ -324,7 +324,7 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 - **log_20260211_v3-3-track-a2-command-safety-hardening-closure** [L1] (2026-02-11_v3-3-track-a2-command-safety-hardening-closure.md) ~89 tokens  ⚠️ active
   - Status: active
   - Impacts: None
-- **log_20260211_v3-3-track-a3-merge-closeout** [L1] (2026-02-11_v3-3-track-a3-merge-closeout.md) ~77 tokens  ⚠️ active
+- **log_20260211_v3-3-track-a3-merge-closeout** [L1] (2026-02-11_v3-3-track-a3-merge-closeout.md) ~71 tokens  ⚠️ active
   - Status: active
   - Impacts: None
 - **log_20260211_v3-3-track-a4-docs-tests-dead-code-cleanup-and-def** [L1] (2026-02-11_v3-3-track-a4-docs-tests-dead-code-cleanup-and-def.md) ~85 tokens  ⚠️ active
@@ -429,9 +429,9 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 - **log_20260511_project-ontos-johnny-os-onboarding** [L1] (2026-05-11_project-ontos-johnny-os-onboarding.md) ~751 tokens  ⚠️ active
   - Status: active
   - Impacts: None
-- **log_20260511_v4-4-agentic-activation-resilience** [L2] (2026-05-11_v4-4-agentic-activation-resilience.md) ~571 tokens
+- **log_20260511_v4-4-agentic-activation-resilience** [L2] (2026-05-11_v4-4-agentic-activation-resilience.md) ~569 tokens
   - Status: active
-  - Impacts: project_ontos_v44_agentic_activation_resilience_spec, v440
+  - Impacts: project_ontos_v44_agentic_activation_resilience_spec
 - **log_20260521_init** [L1] (2026-05-21_init.md) ~59 tokens  ⚠️ active
   - Status: active
   - Impacts: None
@@ -446,10 +446,16 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
   - Impacts: None
 - **log_20260522_merge-pr-118-v4-5-closes-issues-115-116-117** [L1] (2026-05-22_merge-pr-118-v4-5-closes-issues-115-116-117.md) ~2,300 tokens  ⚠️ active
   - Status: active
-  - Impacts: v450, project-ontos-github-issues-115-117-final-approval
+  - Impacts: project-ontos-github-issues-115-117-final-approval
 - **project_ontos_v44_agentic_activation_resilience_tracker** [L1] (project-ontos-v44-agentic-activation-resilience.md) ~376 tokens  ⚠️ active
   - Status: active
   - Impacts: project_ontos_v44_agentic_activation_resilience_spec
+- **v301** [L0] (v3.0.1.md) ~133 tokens  ⚠️ scaffold
+  - Status: scaffold
+  - Impacts: None
+- **v323** [L0] (v3.2.3.md) ~166 tokens  ⚠️ scaffold
+  - Status: scaffold
+  - Impacts: None
 - **v330** [L2] (v3.3.0.md) ~1,100 tokens
   - Status: active
   - Impacts: None
@@ -486,15 +492,15 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 - **v430** [L2] (v4.3.0.md) ~727 tokens
   - Status: active
   - Impacts: None
-- **v440** [L1] (v4.4.0.md) ~246 tokens  ⚠️ active
+- **v440** [L1] (v4.4.0.md) ~244 tokens  ⚠️ active
   - Status: active
-  - Impacts: v430, project_ontos_v44_agentic_activation_resilience_spec
+  - Impacts: project_ontos_v44_agentic_activation_resilience_spec
 - **v450** [L1] (v4.5.0.md) ~1,000 tokens  ⚠️ active
   - Status: active
-  - Impacts: v440, ontos_manual, migration_v3_to_v4
-- **v460** [L1] (v4.6.0.md) ~751 tokens  ⚠️ active
+  - Impacts: ontos_manual, migration_v3_to_v4
+- **v460** [L1] (v4.6.0.md) ~749 tokens  ⚠️ active
   - Status: active
-  - Impacts: v450, ontos_manual
+  - Impacts: ontos_manual
 
 ### UNKNOWN
 - **migration_v2_to_v3** [L2] (Migration_v2_to_v3.md) ~761 tokens
@@ -509,7 +515,7 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 - **ontos_v42_implementation_spec** [L2] [draft] (Ontos-v4.2-Implementation-Spec.md) ~15,100 tokens
   - Status: draft
   - Depends On: ontos_v42_mcp_client_onboarding_proposal, v42_proposal_ca_response, v42_v43_roadmap_shuffle, ontos_manual, v413
-- **phase3_implementation_spec_review_codex** [L0] [draft] (Phase3-Implementation-Spec-Review-Codex.md) ~2,100 tokens  ⚠️ draft
+- **phase3_implementation_spec_review_codex** [L1] [draft] (Phase3-Implementation-Spec-Review-Codex.md) ~2,100 tokens  ⚠️ draft
   - Status: draft
   - Depends On: None
 - **phase4_final_approval_chief_architect** [L2] (Phase4_Final_Approval_Chief_Architect.md) ~776 tokens
@@ -518,122 +524,116 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 - **phase4_pr_review_chief_architect** [L2] (Phase4_PR_Review_Chief_Architect.md) ~1,600 tokens
   - Status: complete
   - Depends On: phase4_chief_architect_response
-- **project-ontos-github-issues-115-117-B.1-claude-opus-peer** [L0] (B.1-claude-opus-peer.md) ~1,300 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-github-issues-115-117-B.1-claude-opus-peer** [L1] (B.1-claude-opus-peer.md) ~1,300 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-github-issues-115-117-B.1-claude-sonnet-alignment** [L0] (B.1-claude-sonnet-alignment.md) ~1,500 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-github-issues-115-117-B.1-claude-sonnet-alignment** [L1] (B.1-claude-sonnet-alignment.md) ~1,500 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-github-issues-115-117-B.1-gemini-adversarial** [L0] (B.1-gemini-adversarial.md) ~637 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-github-issues-115-117-B.1-gemini-adversarial** [L1] (B.1-gemini-adversarial.md) ~640 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-github-issues-115-117-B.3-verdict** [L0] (B.3-verdict.md) ~1,000 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-github-issues-115-117-B.3-verdict** [L1] (B.3-verdict.md) ~1,000 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-github-issues-115-117-D.1-claude-sonnet-peer** [L0] (D.1-claude-sonnet-peer.md) ~434 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-github-issues-115-117-D.1-claude-sonnet-peer** [L1] (D.1-claude-sonnet-peer.md) ~437 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-github-issues-115-117-D.2-claude-opus-peer** [L0] (D.2-claude-opus-peer.md) ~1,500 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-github-issues-115-117-D.2-claude-opus-peer** [L1] (D.2-claude-opus-peer.md) ~1,500 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-github-issues-115-117-D.2-claude-sonnet-alignment** [L0] (D.2-claude-sonnet-alignment.md) ~1,400 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-github-issues-115-117-D.2-claude-sonnet-alignment** [L1] (D.2-claude-sonnet-alignment.md) ~1,400 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-github-issues-115-117-D.2-gemini-adversarial** [L0] (D.2-gemini-adversarial.md) ~561 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-github-issues-115-117-D.2-gemini-adversarial** [L1] (D.2-gemini-adversarial.md) ~564 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-github-issues-115-117-D.3-verdict** [L0] (D.3-verdict.md) ~862 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-github-issues-115-117-D.3-verdict** [L1] (D.3-verdict.md) ~865 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-github-issues-115-117-D.4-fix-summary** [L0] (D.4-fix-summary.md) ~514 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-github-issues-115-117-D.4-fix-summary** [L1] (D.4-fix-summary.md) ~517 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-github-issues-115-117-D.5-claude-opus-verifier** [L0] (D.5-claude-opus-verifier.md) ~982 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-github-issues-115-117-D.5-claude-opus-verifier** [L1] (D.5-claude-opus-verifier.md) ~985 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-github-issues-115-117-D.5-claude-sonnet-verifier** [L0] (D.5-claude-sonnet-verifier.md) ~587 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-github-issues-115-117-D.5-claude-sonnet-verifier** [L1] (D.5-claude-sonnet-verifier.md) ~590 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-github-issues-115-117-D.5-gemini-verifier** [L0] (D.5-gemini-verifier.md) ~352 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-github-issues-115-117-D.5-gemini-verifier** [L1] (D.5-gemini-verifier.md) ~355 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-github-issues-115-117-final-approval** [L0] (final-approval.md) ~1,400 tokens  ⚠️ passed
-  - Status: passed
+- **project-ontos-github-issues-115-117-final-approval** [L1] (final-approval.md) ~1,400 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-github-issues-115-117-retro** [L0] (project-ontos-github-issues-115-117-retro.md) ~1,600 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-github-issues-115-117-retro** [L1] (project-ontos-github-issues-115-117-retro.md) ~1,600 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-github-issues-115-117-triage-input** [L0] (github-issues-input.md) ~3,100 tokens  ⚠️ active
+- **project-ontos-github-issues-115-117-triage-input** [L1] (github-issues-input.md) ~3,100 tokens  ⚠️ active
   - Status: active
   - Depends On: None
-- **project-ontos-github-issues-115-117-triage-report** [L0] (pre-a-triage-report.md) ~2,900 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-github-issues-115-117-triage-report** [L1] (pre-a-triage-report.md) ~2,900 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-github-issues-115-117-triage-verdict** [L0] (pre-a-triage-verdict.md) ~487 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-github-issues-115-117-triage-verdict** [L1] (pre-a-triage-verdict.md) ~490 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-issue-119-B.1-claude-sonnet-alignment** [L0] (B.1-claude-sonnet-alignment.md) ~783 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-issue-119-B.1-claude-sonnet-alignment** [L1] (B.1-claude-sonnet-alignment.md) ~786 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-issue-119-B.1-codex-peer** [L0] (B.1-codex-peer.md) ~679 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-issue-119-B.1-codex-peer** [L1] (B.1-codex-peer.md) ~682 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-issue-119-B.1-gemini-adversarial** [L0] (B.1-gemini-adversarial.md) ~661 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-issue-119-B.1-gemini-adversarial** [L1] (B.1-gemini-adversarial.md) ~664 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-issue-119-B.3-verdict** [L0] (B.3-verdict.md) ~1,100 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-issue-119-B.3-verdict** [L1] (B.3-verdict.md) ~1,100 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-issue-119-D.1-codex-peer** [L0] (D.1-codex-peer.md) ~1,000 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-issue-119-D.1-codex-peer** [L1] (D.1-codex-peer.md) ~1,100 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-issue-119-D.2-claude-sonnet-alignment** [L0] (D.2-claude-sonnet-alignment.md) ~548 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-issue-119-D.2-claude-sonnet-alignment** [L1] (D.2-claude-sonnet-alignment.md) ~551 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-issue-119-D.2-codex-peer** [L0] (D.2-codex-peer.md) ~529 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-issue-119-D.2-codex-peer** [L1] (D.2-codex-peer.md) ~532 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-issue-119-D.2-gemini-adversarial** [L0] (D.2-gemini-adversarial.md) ~664 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-issue-119-D.2-gemini-adversarial** [L1] (D.2-gemini-adversarial.md) ~667 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-issue-119-D.3-verdict** [L0] (D.3-verdict.md) ~868 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-issue-119-D.3-verdict** [L1] (D.3-verdict.md) ~871 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-issue-119-D.4-fix-summary** [L0] (D.4-fix-summary.md) ~1,100 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-issue-119-D.4-fix-summary** [L1] (D.4-fix-summary.md) ~1,100 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-issue-119-D.5-claude-sonnet-verifier** [L0] (D.5-claude-sonnet-verifier.md) ~395 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-issue-119-D.5-claude-sonnet-verifier** [L1] (D.5-claude-sonnet-verifier.md) ~398 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-issue-119-D.5-codex-verifier** [L0] (D.5-codex-verifier.md) ~417 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-issue-119-D.5-codex-verifier** [L1] (D.5-codex-verifier.md) ~420 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-issue-119-D.5-gemini-verifier** [L0] (D.5-gemini-verifier.md) ~185 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-issue-119-D.5-gemini-verifier** [L1] (D.5-gemini-verifier.md) ~188 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-issue-119-cli-activate-json-warning-metadata-retro** [L0] (project-ontos-issue-119-cli-activate-json-warning-metadata-retro.md) ~2,000 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-issue-119-cli-activate-json-warning-metadata-retro** [L1] (project-ontos-issue-119-cli-activate-json-warning-metadata-retro.md) ~2,000 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-issue-119-final-approval** [L0] (final-approval.md) ~1,800 tokens  ⚠️ passed
-  - Status: passed
+- **project-ontos-issue-119-final-approval** [L1] (final-approval.md) ~1,800 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-issue-119-triage-input** [L0] (github-issues-input.md) ~971 tokens  ⚠️ active
+- **project-ontos-issue-119-triage-input** [L1] (github-issues-input.md) ~974 tokens  ⚠️ active
   - Status: active
   - Depends On: None
-- **project-ontos-issue-119-triage-report** [L0] (pre-a-triage-report.md) ~2,100 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-issue-119-triage-report** [L1] (pre-a-triage-report.md) ~2,100 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **project-ontos-issue-119-triage-verdict** [L0] (pre-a-triage-verdict.md) ~452 tokens  ⚠️ completed
-  - Status: completed
+- **project-ontos-issue-119-triage-verdict** [L1] (pre-a-triage-verdict.md) ~455 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
-- **proposals_naming_conventions** [L1] (README.md) ~145 tokens  ⚠️ active
-  - Status: active
-  - Depends On: None
-- **v301** [L0] (v3.0.1.md) ~126 tokens  ⚠️ scaffold
-  - Status: scaffold
-  - Depends On: None
-- **v323** [L0] (v3.2.3.md) ~159 tokens  ⚠️ scaffold
-  - Status: scaffold
+- **proposals_naming_conventions** [L1] (README.md) ~146 tokens  ⚠️ complete
+  - Status: complete
   - Depends On: None
 - **v3_1_0_audit_triage_chief_architect** [L2] (v3_1_0_Audit_Triage_Chief_Architect.md) ~2,600 tokens
   - Status: complete
@@ -652,37 +652,37 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
   - Depends On: v3_1_0_implementation_spec, v3_1_0_audit_triage_chief_architect
 - **v3_1_0_spec_review_consolidation** [L2] (v3_1_0_Spec_Review_Consolidation.md) ~3,300 tokens
   - Status: complete
-  - Depends On: v3_1_0_spec_review_claude, v3_1_0_spec_review_gemini, v3_1_0_spec_review_gpt5
+  - Depends On: v3_1_0_spec_review_claude
 - **v3_1_0_track_a_ca_rulings_d3a** [L2] (v3_1_0_Track_A_CA_Rulings_D3a.md) ~1,100 tokens
   - Status: complete
   - Depends On: v3_1_0_track_a_pr_review_chief_architect
-- **v3_1_0_track_a_code_review_consolidation** [L2] (v3_1_0_Track_A_Code_Review_Consolidation.md) ~2,500 tokens
+- **v3_1_0_track_a_code_review_consolidation** [L2] (v3_1_0_Track_A_Code_Review_Consolidation.md) ~2,400 tokens
   - Status: complete
-  - Depends On: v3_1_0_track_a_pr_review_chief_architect, v3_1_0_track_a_code_review_claude, v3_1_0_track_a_code_review_codex, v3_1_0_track_a_code_review_gemini
+  - Depends On: v3_1_0_track_a_pr_review_chief_architect
 - **v3_1_0_track_a_final_approval_d6a** [L2] (v3_1_0_Track_A_Final_Approval_D6a.md) ~862 tokens
   - Status: complete
   - Depends On: v3_1_0_track_a_ca_rulings_d3a
 - **v3_1_0_track_a_implementation_prompt** [L2] (v3_1_0_Track_A_Implementation_Prompt_Antigravity.md) ~7,000 tokens
-  - Status: ready
+  - Status: complete
   - Depends On: v3_1_0_implementation_spec, v3_1_0_final_decision_chief_architect
 - **v3_1_0_track_a_pr_review_chief_architect** [L2] (v3_1_0_Track_A_PR_Review_Chief_Architect.md) ~1,500 tokens
   - Status: complete
   - Depends On: v3_1_0_implementation_spec, v3_1_0_track_a_implementation_prompt
-- **v3_1_0_track_b_code_review_consolidation** [L2] (v3_1_0_Track_B_Code_Review_Consolidation.md) ~2,000 tokens
+- **v3_1_0_track_b_code_review_consolidation** [L2] (v3_1_0_Track_B_Code_Review_Consolidation.md) ~1,900 tokens
   - Status: complete
-  - Depends On: v3_1_0_track_b_pr_review_chief_architect, v3_1_0_track_b_code_review_claude, v3_1_0_track_b_code_review_codex, v3_1_0_track_b_code_review_gemini
-- **v3_1_0_track_b_final_approval_chief_architect** [L2] (v3_1_0_Track_B_Final_Approval_Chief_Architect.md) ~833 tokens
+  - Depends On: v3_1_0_track_b_pr_review_chief_architect
+- **v3_1_0_track_b_final_approval_chief_architect** [L1] (v3_1_0_Track_B_Final_Approval_Chief_Architect.md) ~823 tokens  ⚠️ complete
   - Status: complete
-  - Depends On: v3_1_0_track_b_code_verification_codex
-- **v3_1_0_track_b_pr_review_chief_architect** [L2] (v3_1_0_Track_B_PR_Review_Chief_Architect.md) ~2,400 tokens
+  - Depends On: None
+- **v3_1_0_track_b_pr_review_chief_architect** [L1] (v3_1_0_Track_B_PR_Review_Chief_Architect.md) ~2,400 tokens  ⚠️ complete
   - Status: complete
-  - Depends On: v3_1_0_track_b_implementation_prompt_antigravity
-- **v3_1_0_verification_consolidation** [L2] (v3_1_0_Verification_Consolidation.md) ~1,700 tokens
+  - Depends On: None
+- **v3_1_0_verification_consolidation** [L1] (v3_1_0_Verification_Consolidation.md) ~1,700 tokens  ⚠️ complete
   - Status: complete
-  - Depends On: v3_1_0_spec_verification_gemini, v3_1_0_spec_verification_gpt5
-- **v3_1_tech_debt_wrapper_commands** [L2] (tech-debt-wrapper-commands.md) ~658 tokens
-  - Status: open
-  - Depends On: phase_v3_0_4_implementation_spec
+  - Depends On: None
+- **v3_1_tech_debt_wrapper_commands** [L1] (tech-debt-wrapper-commands.md) ~651 tokens  ⚠️ complete
+  - Status: complete
+  - Depends On: None
 - **v42_proposal_ca_response** [L2] (v4.2-proposal-ca-response.md) ~1,700 tokens
   - Status: active
   - Depends On: ontos_v42_mcp_client_onboarding_proposal
@@ -690,11 +690,11 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 
 ## 2. Recent Timeline
 - **v4.6.0.md** [release] **V4.6.0** (`v460`)
-  - Impacted: `v450`, `ontos_manual`
+  - Impacted: `ontos_manual`
 - **v4.5.0.md** [release] **V4.5.0** (`v450`)
-  - Impacted: `v440`, `ontos_manual`, `migration_v3_to_v4`
+  - Impacted: `ontos_manual`, `migration_v3_to_v4`
 - **v4.4.0.md** [release] **V4.4.0** (`v440`)
-  - Impacted: `v430`, `project_ontos_v44_agentic_activation_resilience_spec`
+  - Impacted: `project_ontos_v44_agentic_activation_resilience_spec`
 - **v4.3.0.md** [release] **V4.3.0** (`v430`)
   - Concepts: obsidian, retrofit, frontmatter
 - **v4.2.3.md** [release] **V4.2.3** (`v423`)
@@ -710,264 +710,10 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 - **v4.1.2.md** [release] **V4.1.2** (`v412`)
   - Concepts: mcp, outputschema, tools-list, claude-code
 
-*Showing 10 of 94 sessions*
+*Showing 10 of 96 sessions*
 
 ## 3. Dependency Audit
-- [BROKEN LINK] **v3_2_code_review_consolidation** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/tmp/v3.2_Code_Review_Consolidation.md) references missing ID: `v3_2_pr_review_chief_architect`
-  Fix: Add a document with `id: v3_2_pr_review_chief_architect` or remove it from depends_on
-- [BROKEN LINK] **v3_2_code_review_consolidation** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/tmp/v3.2_Code_Review_Consolidation.md) references missing ID: `v3_2_code_review_claude`
-  Fix: Add a document with `id: v3_2_code_review_claude` or remove it from depends_on
-- [BROKEN LINK] **v3_2_code_review_consolidation** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/tmp/v3.2_Code_Review_Consolidation.md) references missing ID: `v3_2_code_review_codex`
-  Fix: Add a document with `id: v3_2_code_review_codex` or remove it from depends_on
-- [BROKEN LINK] **v3_0_3_hybrid_review_adversarial_codex** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/tmp/v3.0.3_Hybrid_Review_Adversarial_Codex.md) references missing ID: `v3.0.3_Implementation_Spec`
-  Fix: Add a document with `id: v3.0.3_Implementation_Spec` or remove it from depends_on
-- [BROKEN LINK] **install_experience_technical_debt_proposal** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/proposals/Install_Experience_Technical_Debt_Proposal.md) references missing ID: `installation_ux_proposal`
-  Fix: Add a document with `id: installation_ux_proposal` or remove it from depends_on
-- [BROKEN LINK] **v3_1_0_track_b_code_review_consolidation** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Track_B_Code_Review_Consolidation.md) references missing ID: `v3_1_0_track_b_code_review_claude`
-  Fix: Add a document with `id: v3_1_0_track_b_code_review_claude` or remove it from depends_on
-- [BROKEN LINK] **v3_1_0_track_b_code_review_consolidation** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Track_B_Code_Review_Consolidation.md) references missing ID: `v3_1_0_track_b_code_review_codex`
-  Fix: Add a document with `id: v3_1_0_track_b_code_review_codex` or remove it from depends_on
-- [BROKEN LINK] **v3_1_0_track_b_code_review_consolidation** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Track_B_Code_Review_Consolidation.md) references missing ID: `v3_1_0_track_b_code_review_gemini`
-  Fix: Add a document with `id: v3_1_0_track_b_code_review_gemini` or remove it from depends_on
-- [BROKEN LINK] **v3_1_0_implementation_spec** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Implementation_Spec_v1.2.md) references missing ID: `v3_0_5_implementation_spec`
-  Fix: Add a document with `id: v3_0_5_implementation_spec` or remove it from depends_on
-- [BROKEN LINK] **v3_1_0_track_a_code_review_consolidation** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Track_A_Code_Review_Consolidation.md) references missing ID: `v3_1_0_track_a_code_review_claude`
-  Fix: Add a document with `id: v3_1_0_track_a_code_review_claude` or remove it from depends_on
-- [BROKEN LINK] **v3_1_0_track_a_code_review_consolidation** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Track_A_Code_Review_Consolidation.md) references missing ID: `v3_1_0_track_a_code_review_codex`
-  Fix: Add a document with `id: v3_1_0_track_a_code_review_codex` or remove it from depends_on
-- [BROKEN LINK] **v3_1_0_track_a_code_review_consolidation** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Track_A_Code_Review_Consolidation.md) references missing ID: `v3_1_0_track_a_code_review_gemini`
-  Fix: Add a document with `id: v3_1_0_track_a_code_review_gemini` or remove it from depends_on
-- [BROKEN LINK] **v3_1_0_track_b_final_approval_chief_architect** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Track_B_Final_Approval_Chief_Architect.md) references missing ID: `v3_1_0_track_b_code_verification_codex`
-  Fix: Add a document with `id: v3_1_0_track_b_code_verification_codex` or remove it from depends_on
-- [BROKEN LINK] **v3_1_0_verification_consolidation** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Verification_Consolidation.md) references missing ID: `v3_1_0_spec_verification_gemini`
-  Fix: Add a document with `id: v3_1_0_spec_verification_gemini` or remove it from depends_on
-- [BROKEN LINK] **v3_1_0_verification_consolidation** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Verification_Consolidation.md) references missing ID: `v3_1_0_spec_verification_gpt5`
-  Fix: Add a document with `id: v3_1_0_spec_verification_gpt5` or remove it from depends_on
-- [BROKEN LINK] **v3_1_tech_debt_wrapper_commands** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/tech-debt-wrapper-commands.md) references missing ID: `phase_v3_0_4_implementation_spec`
-  Fix: Add a document with `id: phase_v3_0_4_implementation_spec` or remove it from depends_on
-- [BROKEN LINK] **v3_1_0_spec_review_consolidation** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Spec_Review_Consolidation.md) references missing ID: `v3_1_0_spec_review_gemini`
-  Fix: Add a document with `id: v3_1_0_spec_review_gemini` or remove it from depends_on
-- [BROKEN LINK] **v3_1_0_spec_review_consolidation** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Spec_Review_Consolidation.md) references missing ID: `v3_1_0_spec_review_gpt5`
-  Fix: Add a document with `id: v3_1_0_spec_review_gpt5` or remove it from depends_on
-- [BROKEN LINK] **v3_1_0_track_b_pr_review_chief_architect** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Track_B_PR_Review_Chief_Architect.md) references missing ID: `v3_1_0_track_b_implementation_prompt_antigravity`
-  Fix: Add a document with `id: v3_1_0_track_b_implementation_prompt_antigravity` or remove it from depends_on
-- [ORPHAN] **v3_1_0_track_a_final_approval_d6a** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Track_A_Final_Approval_D6a.md) has no dependents
-  Fix: Add `v3_1_0_track_a_final_approval_d6a` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-D.5-codex-verifier** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-codex-verifier.md) has no dependents
-  Fix: Add `project-ontos-issue-119-D.5-codex-verifier` to another document's depends_on, or delete if unused
-- [ORPHAN] **v323** (docs/releases/v3.2.3.md) has no dependents
-  Fix: Add `v323` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-B.1-codex-peer** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-codex-peer.md) has no dependents
-  Fix: Add `project-ontos-issue-119-B.1-codex-peer` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-B.3-verdict** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.3-verdict.md) has no dependents
-  Fix: Add `project-ontos-issue-119-B.3-verdict` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-B.3-verdict** (docs/reviews/project-ontos-github-issues-115-117/B.3-verdict.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-B.3-verdict` to another document's depends_on, or delete if unused
-- [ORPHAN] **migration_v2_to_v3** (docs/reference/Migration_v2_to_v3.md) has no dependents
-  Fix: Add `migration_v2_to_v3` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-B.1-gemini-adversarial** (docs/reviews/project-ontos-github-issues-115-117/B.1-gemini-adversarial.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-B.1-gemini-adversarial` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-D.5-claude-sonnet-verifier** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-claude-sonnet-verifier.md) has no dependents
-  Fix: Add `project-ontos-issue-119-D.5-claude-sonnet-verifier` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-triage-report** (docs/reviews/project-ontos-github-issues-115-117/pre-a-triage-report.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-triage-report` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-D.2-gemini-adversarial** (docs/reviews/project-ontos-github-issues-115-117/D.2-gemini-adversarial.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-D.2-gemini-adversarial` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-B.1-gemini-adversarial** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-gemini-adversarial.md) has no dependents
-  Fix: Add `project-ontos-issue-119-B.1-gemini-adversarial` to another document's depends_on, or delete if unused
-- [ORPHAN] **proposals_naming_conventions** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/proposals/README.md) has no dependents
-  Fix: Add `proposals_naming_conventions` to another document's depends_on, or delete if unused
-- [ORPHAN] **migration_v3_to_v4** (docs/reference/Migration_v3_to_v4.md) has no dependents
-  Fix: Add `migration_v3_to_v4` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-D.2-codex-peer** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-codex-peer.md) has no dependents
-  Fix: Add `project-ontos-issue-119-D.2-codex-peer` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-cli-activate-json-warning-metadata-retro** (docs/retros/project-ontos-issue-119-cli-activate-json-warning-metadata-retro.md) has no dependents
-  Fix: Add `project-ontos-issue-119-cli-activate-json-warning-metadata-retro` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-D.4-fix-summary** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.4-fix-summary.md) has no dependents
-  Fix: Add `project-ontos-issue-119-D.4-fix-summary` to another document's depends_on, or delete if unused
-- [ORPHAN] **phase3_implementation_spec_review_codex** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.0/Phase3/Phase3-Implementation-Spec-Review-Codex.md) has no dependents
-  Fix: Add `phase3_implementation_spec_review_codex` to another document's depends_on, or delete if unused
-- [ORPHAN] **ontos_internal_tmp_readme** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/tmp/README.md) has no dependents
-  Fix: Add `ontos_internal_tmp_readme` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-D.2-gemini-adversarial** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-gemini-adversarial.md) has no dependents
-  Fix: Add `project-ontos-issue-119-D.2-gemini-adversarial` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-final-approval** (docs/reviews/project-ontos-github-issues-115-117/final-approval.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-final-approval` to another document's depends_on, or delete if unused
-- [ORPHAN] **v301** (docs/releases/v3.0.1.md) has no dependents
-  Fix: Add `v301` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-D.5-claude-opus-verifier** (docs/reviews/project-ontos-github-issues-115-117/D.5-claude-opus-verifier.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-D.5-claude-opus-verifier` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-D.1-codex-peer** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.1-codex-peer.md) has no dependents
-  Fix: Add `project-ontos-issue-119-D.1-codex-peer` to another document's depends_on, or delete if unused
-- [ORPHAN] **v3_1_0_track_a_code_review_consolidation** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Track_A_Code_Review_Consolidation.md) has no dependents
-  Fix: Add `v3_1_0_track_a_code_review_consolidation` to another document's depends_on, or delete if unused
-- [ORPHAN] **v3_1_0_chief_architect_response** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Chief_Architect_Response.md) has no dependents
-  Fix: Add `v3_1_0_chief_architect_response` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-triage-report** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/pre-a-triage-report.md) has no dependents
-  Fix: Add `project-ontos-issue-119-triage-report` to another document's depends_on, or delete if unused
-- [ORPHAN] **ontos_v42_implementation_spec** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/specs/v4.2/Ontos-v4.2-Implementation-Spec.md) has no dependents
-  Fix: Add `ontos_v42_implementation_spec` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-D.5-gemini-verifier** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-gemini-verifier.md) has no dependents
-  Fix: Add `project-ontos-issue-119-D.5-gemini-verifier` to another document's depends_on, or delete if unused
-- [ORPHAN] **v3_1_0_track_b_code_review_consolidation** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Track_B_Code_Review_Consolidation.md) has no dependents
-  Fix: Add `v3_1_0_track_b_code_review_consolidation` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-B.1-claude-sonnet-alignment** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-claude-sonnet-alignment.md) has no dependents
-  Fix: Add `project-ontos-issue-119-B.1-claude-sonnet-alignment` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-triage-input** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/github-issues-input.md) has no dependents
-  Fix: Add `project-ontos-issue-119-triage-input` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-D.1-claude-sonnet-peer** (docs/reviews/project-ontos-github-issues-115-117/D.1-claude-sonnet-peer.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-D.1-claude-sonnet-peer` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-triage-input** (docs/reviews/project-ontos-github-issues-115-117/github-issues-input.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-triage-input` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-triage-verdict** (docs/reviews/project-ontos-github-issues-115-117/pre-a-triage-verdict.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-triage-verdict` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-B.1-claude-sonnet-alignment** (docs/reviews/project-ontos-github-issues-115-117/B.1-claude-sonnet-alignment.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-B.1-claude-sonnet-alignment` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-D.3-verdict** (docs/reviews/project-ontos-github-issues-115-117/D.3-verdict.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-D.3-verdict` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-retro** (docs/retros/project-ontos-github-issues-115-117-retro.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-retro` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-D.2-claude-sonnet-alignment** (docs/reviews/project-ontos-github-issues-115-117/D.2-claude-sonnet-alignment.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-D.2-claude-sonnet-alignment` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-D.2-claude-sonnet-alignment** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-claude-sonnet-alignment.md) has no dependents
-  Fix: Add `project-ontos-issue-119-D.2-claude-sonnet-alignment` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-D.5-claude-sonnet-verifier** (docs/reviews/project-ontos-github-issues-115-117/D.5-claude-sonnet-verifier.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-D.5-claude-sonnet-verifier` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-triage-verdict** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/pre-a-triage-verdict.md) has no dependents
-  Fix: Add `project-ontos-issue-119-triage-verdict` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-B.1-claude-opus-peer** (docs/reviews/project-ontos-github-issues-115-117/B.1-claude-opus-peer.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-B.1-claude-opus-peer` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-D.5-gemini-verifier** (docs/reviews/project-ontos-github-issues-115-117/D.5-gemini-verifier.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-D.5-gemini-verifier` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-D.2-claude-opus-peer** (docs/reviews/project-ontos-github-issues-115-117/D.2-claude-opus-peer.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-D.2-claude-opus-peer` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-D.3-verdict** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.3-verdict.md) has no dependents
-  Fix: Add `project-ontos-issue-119-D.3-verdict` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-final-approval** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/final-approval.md) has no dependents
-  Fix: Add `project-ontos-issue-119-final-approval` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-D.4-fix-summary** (docs/reviews/project-ontos-github-issues-115-117/D.4-fix-summary.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-D.4-fix-summary` to another document's depends_on, or delete if unused
-- [DEPTH] **v3_1_0_track_a_final_approval_d6a** has dependency depth 11 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_track_a_ca_rulings_d3a** has dependency depth 10 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_research_review_chief_architect** has dependency depth 7 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_track_a_implementation_prompt** has dependency depth 8 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_final_decision_chief_architect** has dependency depth 7 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_implementation_spec** has dependency depth 6 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_sidecar_pattern** has dependency depth 6 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_audit_triage_chief_architect** has dependency depth 8 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_track_a_pr_review_chief_architect** has dependency depth 9 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_spec_review_consolidation** has dependency depth 10 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_track_a_code_review_consolidation** has dependency depth 10 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_chief_architect_response** has dependency depth 11 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_spec_review_claude** has dependency depth 9 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [ARCHITECTURE] **v3_2_backlog** (strategy) depends on **v3_1_0_track_b_final_approval_chief_architect** (approval)
-  Fix: strategy should not depend on approval. Invert the dependency or change document types
-- [ARCHITECTURE] **phase2_implementation_instructions_antigravity** (strategy) depends on **chief_architect_round2_critical_analysis** (atom)
-  Fix: strategy should not depend on atom. Invert the dependency or change document types
-- [ARCHITECTURE] **phase5_implementation_spec** (strategy) depends on **phase4_final_approval_chief_architect** (approval)
-  Fix: strategy should not depend on approval. Invert the dependency or change document types
-- [ARCHITECTURE] **ontos_v42_mcp_client_onboarding_proposal** (strategy) depends on **v412** (log)
-  Fix: strategy should not depend on log. Invert the dependency or change document types
-- [ARCHITECTURE] **ontos_v42_mcp_client_onboarding_proposal** (strategy) depends on **v413** (log)
-  Fix: strategy should not depend on log. Invert the dependency or change document types
-- [ARCHITECTURE] **v3_1_0_implementation_spec** (strategy) depends on **v3_1_tech_debt_wrapper_commands** (tech-debt)
-  Fix: strategy should not depend on tech-debt. Invert the dependency or change document types
-- [INVALID VALUE] **log_20260210_codex-activation-resilience-maintain-command-revie** (docs/logs/2026-02-10_codex-activation-resilience-maintain-command-revie.md) has invalid event_type: 'session'
-  Fix: Use one of: chore, decision, exploration, feature, fix, refactor, release
-- [INVALID VALUE] **log_20260209_polish-path-formatting-and-tests** (docs/logs/2026-02-09_polish-path-formatting-and-tests.md) has invalid event_type: 'pr-62-key-documents-paths'
-  Fix: Use one of: chore, decision, exploration, feature, fix, refactor, release
-- [INVALID VALUE] **log_20260209_make-critical-paths-config-driven** (docs/logs/2026-02-09_make-critical-paths-config-driven.md) has invalid event_type: 'v3-2-1b-critical-paths'
-  Fix: Use one of: chore, decision, exploration, feature, fix, refactor, release
-- [INVALID VALUE] **log_20260121_feat-cli-ontos-v3-1-0-track-b-native-command-m** (docs/logs/2026-01-21_feat-cli-ontos-v3-1-0-track-b-native-command-m.md) has invalid event_type: 'track-b-migration-final'
-  Fix: Use one of: chore, decision, exploration, feature, fix, refactor, release
-- [INVALID VALUE] **log_20260201_add-v3-2-1-activation-resilience-and-v3-2-2-mainta** (docs/logs/2026-02-01_add-v3-2-1-activation-resilience-and-v3-2-2-mainta.md) has invalid event_type: 'critical-paths-hardcoding-proposal'
-  Fix: Use one of: chore, decision, exploration, feature, fix, refactor, release
-- [INVALID VALUE] **log_20260209_reorganize-proposals-assets-and-logs-65** (docs/logs/2026-02-09_reorganize-proposals-assets-and-logs-65.md) has invalid event_type: 'post-merge-cleanup'
-  Fix: Use one of: chore, decision, exploration, feature, fix, refactor, release
-- [INVALID VALUE] **log_20260210_github-releases-auth-fix** (docs/logs/2026-02-10_github-releases-auth-fix.md) has invalid event_type: 'feat'
-  Fix: Use one of: chore, decision, exploration, feature, fix, refactor, release
-- [INVALID VALUE] **log_20260211_v3-3-track-a3-merge-closeout** (docs/logs/2026-02-11_v3-3-track-a3-merge-closeout.md) has invalid event_type: 'v3_3_track_a3_merge_closeout'
-  Fix: Use one of: chore, decision, exploration, feature, fix, refactor, release
-- [BROKEN LINK] **log_20260129_v3_2_0_activation_fixes** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/logs/2026-01-29_v3-2-0-activation-fixes.md) impacts non-existent document: `map_command`
-  Fix: Create `map_command`, correct the reference, or archive this log
-- [BROKEN LINK] **log_20260129_v3_2_0_activation_fixes** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/logs/2026-01-29_v3-2-0-activation-fixes.md) impacts non-existent document: `agents_command`
-  Fix: Create `agents_command`, correct the reference, or archive this log
-- [BROKEN LINK] **log_20260129_v3_2_0_activation_fixes** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/logs/2026-01-29_v3-2-0-activation-fixes.md) impacts non-existent document: `context_map`
-  Fix: Create `context_map`, correct the reference, or archive this log
-- [BROKEN LINK] **log_20260117_v3_0_0_activation_survival** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/logs/2026-01-17_v3_0_0_activation_survival.md) impacts non-existent document: `agents_command`
-  Fix: Create `agents_command`, correct the reference, or archive this log
-- [BROKEN LINK] **log_20260117_v3_0_0_activation_survival** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/logs/2026-01-17_v3_0_0_activation_survival.md) impacts non-existent document: `doctor_staleness`
-  Fix: Create `doctor_staleness`, correct the reference, or archive this log
-- [BROKEN LINK] **log_20260114_philosophy_research_and_tech_debt** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/logs/2026-01-14_philosophy-research-and-tech-debt.md) impacts non-existent document: `obsidian_compatibility_proposal`
-  Fix: Create `obsidian_compatibility_proposal`, correct the reference, or archive this log
-- [BROKEN LINK] **log_20260114_philosophy_research_and_tech_debt** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/logs/2026-01-14_philosophy-research-and-tech-debt.md) impacts non-existent document: `maintain_command_v3_proposal`
-  Fix: Create `maintain_command_v3_proposal`, correct the reference, or archive this log
-- [BROKEN LINK] **v460** (docs/releases/v4.6.0.md) impacts non-existent document: `v450`
-  Fix: Create `v450`, correct the reference, or archive this log
-- [BROKEN LINK] **v440** (docs/releases/v4.4.0.md) impacts non-existent document: `v430`
-  Fix: Create `v430`, correct the reference, or archive this log
-- [BROKEN LINK] **v450** (docs/releases/v4.5.0.md) impacts non-existent document: `v440`
-  Fix: Create `v440`, correct the reference, or archive this log
-- [BROKEN LINK] **log_20260131_v3_2_1_and_v3_2_2_proposals** (docs/logs/2026-01-31_version-string-to-3-2-0-for-ci-tag-validation.md) impacts non-existent document: `v3_2_re_architecture_support_proposal`
-  Fix: Create `v3_2_re_architecture_support_proposal`, correct the reference, or archive this log
-- [BROKEN LINK] **log_20260511_v4-4-agentic-activation-resilience** (docs/logs/2026-05-11_v4-4-agentic-activation-resilience.md) impacts non-existent document: `v440`
-  Fix: Create `v440`, correct the reference, or archive this log
-- [BROKEN LINK] **log_20260522_merge-pr-118-v4-5-closes-issues-115-116-117** (docs/logs/2026-05-22_merge-pr-118-v4-5-closes-issues-115-116-117.md) impacts non-existent document: `v450`
-  Fix: Create `v450`, correct the reference, or archive this log
-- [LINT] **log_20260113_phase2_v3_0_beta**: Invalid status 'auto-generated'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **phase4_implementation_spec**: Invalid status 'approved'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **install_experience_technical_debt_proposal**: Draft proposal is 127 days old. Approve (move to strategy/) or reject (move to archive/proposals/).
-- [LINT] **proposals_naming_conventions**: Active document in proposals/. Graduate to strategy/.
-- [LINT] **v3_1_0_track_a_implementation_prompt**: Invalid status 'ready'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **v3_1_0_implementation_spec**: Invalid status 'approved'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **v3_1_tech_debt_wrapper_commands**: Invalid status 'open'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-issue-119-cli-activate-json-warning-metadata-retro**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-github-issues-115-117-retro**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-issue-119-triage-verdict**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-issue-119-D.5-codex-verifier**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-issue-119-D.5-gemini-verifier**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-issue-119-B.1-claude-sonnet-alignment**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-issue-119-triage-report**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-issue-119-D.5-claude-sonnet-verifier**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-issue-119-final-approval**: Invalid status 'passed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-issue-119-B.3-verdict**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-issue-119-D.3-verdict**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-issue-119-D.2-gemini-adversarial**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-issue-119-B.1-codex-peer**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-issue-119-D.2-codex-peer**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-issue-119-D.1-codex-peer**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-issue-119-D.2-claude-sonnet-alignment**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-issue-119-B.1-gemini-adversarial**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-issue-119-D.4-fix-summary**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-github-issues-115-117-triage-verdict**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-github-issues-115-117-D.5-gemini-verifier**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-github-issues-115-117-B.1-claude-opus-peer**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-github-issues-115-117-B.1-claude-sonnet-alignment**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-github-issues-115-117-triage-report**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-github-issues-115-117-D.5-claude-sonnet-verifier**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-github-issues-115-117-final-approval**: Invalid status 'passed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-github-issues-115-117-D.2-claude-opus-peer**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-github-issues-115-117-B.3-verdict**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-github-issues-115-117-D.3-verdict**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-github-issues-115-117-D.2-gemini-adversarial**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-github-issues-115-117-D.5-claude-opus-verifier**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-github-issues-115-117-D.1-claude-sonnet-peer**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-github-issues-115-117-D.2-claude-sonnet-alignment**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-github-issues-115-117-B.1-gemini-adversarial**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
-- [LINT] **project-ontos-github-issues-115-117-D.4-fix-summary**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
+No issues found.
 
 ## 4. Index
 | ID | Filename | Type |
@@ -1083,7 +829,7 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 | phase3_final_approval_chief_architect | [Phase3_Final_Approval_Chief_Architect.md](/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.0/Phase3/Phase3_Final_Approval_Chief_Architect.md) | strategy |
 | phase3_implementation_prompt_antigravity | [Phase3_Implementation_Prompt_Antigravity.md](/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.0/Phase3/Phase3_Implementation_Prompt_Antigravity.md) | strategy |
 | phase3_implementation_spec | [Phase3-Implementation-Spec.md](/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.0/Phase3/Phase3-Implementation-Spec.md) | strategy |
-| phase3_implementation_spec_review_codex | [Phase3-Implementation-Spec-Review-Codex.md](/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.0/Phase3/Phase3-Implementation-Spec-Review-Codex.md) | unknown |
+| phase3_implementation_spec_review_codex | [Phase3-Implementation-Spec-Review-Codex.md](/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.0/Phase3/Phase3-Implementation-Spec-Review-Codex.md) | review |
 | phase3_pr_review_chief_architect | [Phase3_PR_Review_Chief_Architect.md](/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.0/Phase3/Phase3_PR_Review_Chief_Architect.md) | strategy |
 | phase3_review_consolidation | [Phase3-Review-Consolidation.md](/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.0/Phase3/Phase3-Review-Consolidation.md) | strategy |
 | phase4_chief_architect_response | [Phase4_Chief_Architect_Response.md](/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.0/Phase4/Phase4_Chief_Architect_Response.md) | strategy |
@@ -1095,50 +841,50 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 | phase5_implementation_spec | [Phase5-Implementation-Spec.md](/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.0/Phase5/Phase5-Implementation-Spec.md) | strategy |
 | phase5_spec_review_claude | [Phase5_Spec_Review_Claude.md](/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.0/Phase5/Phase5_Spec_Review_Claude.md) | strategy |
 | philosophy | [philosophy.md](/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/kernel/philosophy.md) | kernel |
-| project-ontos-github-issues-115-117-B.1-claude-opus-peer | [B.1-claude-opus-peer.md](docs/reviews/project-ontos-github-issues-115-117/B.1-claude-opus-peer.md) | unknown |
-| project-ontos-github-issues-115-117-B.1-claude-sonnet-alignment | [B.1-claude-sonnet-alignment.md](docs/reviews/project-ontos-github-issues-115-117/B.1-claude-sonnet-alignment.md) | unknown |
-| project-ontos-github-issues-115-117-B.1-gemini-adversarial | [B.1-gemini-adversarial.md](docs/reviews/project-ontos-github-issues-115-117/B.1-gemini-adversarial.md) | unknown |
-| project-ontos-github-issues-115-117-B.3-verdict | [B.3-verdict.md](docs/reviews/project-ontos-github-issues-115-117/B.3-verdict.md) | unknown |
-| project-ontos-github-issues-115-117-D.1-claude-sonnet-peer | [D.1-claude-sonnet-peer.md](docs/reviews/project-ontos-github-issues-115-117/D.1-claude-sonnet-peer.md) | unknown |
-| project-ontos-github-issues-115-117-D.2-claude-opus-peer | [D.2-claude-opus-peer.md](docs/reviews/project-ontos-github-issues-115-117/D.2-claude-opus-peer.md) | unknown |
-| project-ontos-github-issues-115-117-D.2-claude-sonnet-alignment | [D.2-claude-sonnet-alignment.md](docs/reviews/project-ontos-github-issues-115-117/D.2-claude-sonnet-alignment.md) | unknown |
-| project-ontos-github-issues-115-117-D.2-gemini-adversarial | [D.2-gemini-adversarial.md](docs/reviews/project-ontos-github-issues-115-117/D.2-gemini-adversarial.md) | unknown |
-| project-ontos-github-issues-115-117-D.3-verdict | [D.3-verdict.md](docs/reviews/project-ontos-github-issues-115-117/D.3-verdict.md) | unknown |
-| project-ontos-github-issues-115-117-D.4-fix-summary | [D.4-fix-summary.md](docs/reviews/project-ontos-github-issues-115-117/D.4-fix-summary.md) | unknown |
-| project-ontos-github-issues-115-117-D.5-claude-opus-verifier | [D.5-claude-opus-verifier.md](docs/reviews/project-ontos-github-issues-115-117/D.5-claude-opus-verifier.md) | unknown |
-| project-ontos-github-issues-115-117-D.5-claude-sonnet-verifier | [D.5-claude-sonnet-verifier.md](docs/reviews/project-ontos-github-issues-115-117/D.5-claude-sonnet-verifier.md) | unknown |
-| project-ontos-github-issues-115-117-D.5-gemini-verifier | [D.5-gemini-verifier.md](docs/reviews/project-ontos-github-issues-115-117/D.5-gemini-verifier.md) | unknown |
-| project-ontos-github-issues-115-117-final-approval | [final-approval.md](docs/reviews/project-ontos-github-issues-115-117/final-approval.md) | unknown |
-| project-ontos-github-issues-115-117-retro | [project-ontos-github-issues-115-117-retro.md](docs/retros/project-ontos-github-issues-115-117-retro.md) | unknown |
+| project-ontos-github-issues-115-117-B.1-claude-opus-peer | [B.1-claude-opus-peer.md](docs/reviews/project-ontos-github-issues-115-117/B.1-claude-opus-peer.md) | review |
+| project-ontos-github-issues-115-117-B.1-claude-sonnet-alignment | [B.1-claude-sonnet-alignment.md](docs/reviews/project-ontos-github-issues-115-117/B.1-claude-sonnet-alignment.md) | review |
+| project-ontos-github-issues-115-117-B.1-gemini-adversarial | [B.1-gemini-adversarial.md](docs/reviews/project-ontos-github-issues-115-117/B.1-gemini-adversarial.md) | review |
+| project-ontos-github-issues-115-117-B.3-verdict | [B.3-verdict.md](docs/reviews/project-ontos-github-issues-115-117/B.3-verdict.md) | review |
+| project-ontos-github-issues-115-117-D.1-claude-sonnet-peer | [D.1-claude-sonnet-peer.md](docs/reviews/project-ontos-github-issues-115-117/D.1-claude-sonnet-peer.md) | review |
+| project-ontos-github-issues-115-117-D.2-claude-opus-peer | [D.2-claude-opus-peer.md](docs/reviews/project-ontos-github-issues-115-117/D.2-claude-opus-peer.md) | review |
+| project-ontos-github-issues-115-117-D.2-claude-sonnet-alignment | [D.2-claude-sonnet-alignment.md](docs/reviews/project-ontos-github-issues-115-117/D.2-claude-sonnet-alignment.md) | review |
+| project-ontos-github-issues-115-117-D.2-gemini-adversarial | [D.2-gemini-adversarial.md](docs/reviews/project-ontos-github-issues-115-117/D.2-gemini-adversarial.md) | review |
+| project-ontos-github-issues-115-117-D.3-verdict | [D.3-verdict.md](docs/reviews/project-ontos-github-issues-115-117/D.3-verdict.md) | review |
+| project-ontos-github-issues-115-117-D.4-fix-summary | [D.4-fix-summary.md](docs/reviews/project-ontos-github-issues-115-117/D.4-fix-summary.md) | review |
+| project-ontos-github-issues-115-117-D.5-claude-opus-verifier | [D.5-claude-opus-verifier.md](docs/reviews/project-ontos-github-issues-115-117/D.5-claude-opus-verifier.md) | review |
+| project-ontos-github-issues-115-117-D.5-claude-sonnet-verifier | [D.5-claude-sonnet-verifier.md](docs/reviews/project-ontos-github-issues-115-117/D.5-claude-sonnet-verifier.md) | review |
+| project-ontos-github-issues-115-117-D.5-gemini-verifier | [D.5-gemini-verifier.md](docs/reviews/project-ontos-github-issues-115-117/D.5-gemini-verifier.md) | review |
+| project-ontos-github-issues-115-117-final-approval | [final-approval.md](docs/reviews/project-ontos-github-issues-115-117/final-approval.md) | review |
+| project-ontos-github-issues-115-117-retro | [project-ontos-github-issues-115-117-retro.md](docs/retros/project-ontos-github-issues-115-117-retro.md) | retro |
 | project-ontos-github-issues-115-117-spec | [project-ontos-github-issues-115-117-spec.md](docs/specs/project-ontos-github-issues-115-117-spec.md) | atom |
-| project-ontos-github-issues-115-117-triage-input | [github-issues-input.md](docs/reviews/project-ontos-github-issues-115-117/github-issues-input.md) | unknown |
-| project-ontos-github-issues-115-117-triage-report | [pre-a-triage-report.md](docs/reviews/project-ontos-github-issues-115-117/pre-a-triage-report.md) | unknown |
-| project-ontos-github-issues-115-117-triage-verdict | [pre-a-triage-verdict.md](docs/reviews/project-ontos-github-issues-115-117/pre-a-triage-verdict.md) | unknown |
-| project-ontos-issue-119-B.1-claude-sonnet-alignment | [B.1-claude-sonnet-alignment.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-claude-sonnet-alignment.md) | unknown |
-| project-ontos-issue-119-B.1-codex-peer | [B.1-codex-peer.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-codex-peer.md) | unknown |
-| project-ontos-issue-119-B.1-gemini-adversarial | [B.1-gemini-adversarial.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-gemini-adversarial.md) | unknown |
-| project-ontos-issue-119-B.3-verdict | [B.3-verdict.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.3-verdict.md) | unknown |
-| project-ontos-issue-119-D.1-codex-peer | [D.1-codex-peer.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.1-codex-peer.md) | unknown |
-| project-ontos-issue-119-D.2-claude-sonnet-alignment | [D.2-claude-sonnet-alignment.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-claude-sonnet-alignment.md) | unknown |
-| project-ontos-issue-119-D.2-codex-peer | [D.2-codex-peer.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-codex-peer.md) | unknown |
-| project-ontos-issue-119-D.2-gemini-adversarial | [D.2-gemini-adversarial.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-gemini-adversarial.md) | unknown |
-| project-ontos-issue-119-D.3-verdict | [D.3-verdict.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.3-verdict.md) | unknown |
-| project-ontos-issue-119-D.4-fix-summary | [D.4-fix-summary.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.4-fix-summary.md) | unknown |
-| project-ontos-issue-119-D.5-claude-sonnet-verifier | [D.5-claude-sonnet-verifier.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-claude-sonnet-verifier.md) | unknown |
-| project-ontos-issue-119-D.5-codex-verifier | [D.5-codex-verifier.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-codex-verifier.md) | unknown |
-| project-ontos-issue-119-D.5-gemini-verifier | [D.5-gemini-verifier.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-gemini-verifier.md) | unknown |
-| project-ontos-issue-119-cli-activate-json-warning-metadata-retro | [project-ontos-issue-119-cli-activate-json-warning-metadata-retro.md](docs/retros/project-ontos-issue-119-cli-activate-json-warning-metadata-retro.md) | unknown |
+| project-ontos-github-issues-115-117-triage-input | [github-issues-input.md](docs/reviews/project-ontos-github-issues-115-117/github-issues-input.md) | review |
+| project-ontos-github-issues-115-117-triage-report | [pre-a-triage-report.md](docs/reviews/project-ontos-github-issues-115-117/pre-a-triage-report.md) | review |
+| project-ontos-github-issues-115-117-triage-verdict | [pre-a-triage-verdict.md](docs/reviews/project-ontos-github-issues-115-117/pre-a-triage-verdict.md) | review |
+| project-ontos-issue-119-B.1-claude-sonnet-alignment | [B.1-claude-sonnet-alignment.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-claude-sonnet-alignment.md) | review |
+| project-ontos-issue-119-B.1-codex-peer | [B.1-codex-peer.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-codex-peer.md) | review |
+| project-ontos-issue-119-B.1-gemini-adversarial | [B.1-gemini-adversarial.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-gemini-adversarial.md) | review |
+| project-ontos-issue-119-B.3-verdict | [B.3-verdict.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.3-verdict.md) | review |
+| project-ontos-issue-119-D.1-codex-peer | [D.1-codex-peer.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.1-codex-peer.md) | review |
+| project-ontos-issue-119-D.2-claude-sonnet-alignment | [D.2-claude-sonnet-alignment.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-claude-sonnet-alignment.md) | review |
+| project-ontos-issue-119-D.2-codex-peer | [D.2-codex-peer.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-codex-peer.md) | review |
+| project-ontos-issue-119-D.2-gemini-adversarial | [D.2-gemini-adversarial.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-gemini-adversarial.md) | review |
+| project-ontos-issue-119-D.3-verdict | [D.3-verdict.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.3-verdict.md) | review |
+| project-ontos-issue-119-D.4-fix-summary | [D.4-fix-summary.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.4-fix-summary.md) | review |
+| project-ontos-issue-119-D.5-claude-sonnet-verifier | [D.5-claude-sonnet-verifier.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-claude-sonnet-verifier.md) | review |
+| project-ontos-issue-119-D.5-codex-verifier | [D.5-codex-verifier.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-codex-verifier.md) | review |
+| project-ontos-issue-119-D.5-gemini-verifier | [D.5-gemini-verifier.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-gemini-verifier.md) | review |
+| project-ontos-issue-119-cli-activate-json-warning-metadata-retro | [project-ontos-issue-119-cli-activate-json-warning-metadata-retro.md](docs/retros/project-ontos-issue-119-cli-activate-json-warning-metadata-retro.md) | retro |
 | project-ontos-issue-119-cli-activate-json-warning-metadata-spec | [project-ontos-issue-119-cli-activate-json-warning-metadata-spec.md](docs/specs/project-ontos-issue-119-cli-activate-json-warning-metadata-spec.md) | atom |
-| project-ontos-issue-119-final-approval | [final-approval.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/final-approval.md) | unknown |
-| project-ontos-issue-119-triage-input | [github-issues-input.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/github-issues-input.md) | unknown |
-| project-ontos-issue-119-triage-report | [pre-a-triage-report.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/pre-a-triage-report.md) | unknown |
-| project-ontos-issue-119-triage-verdict | [pre-a-triage-verdict.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/pre-a-triage-verdict.md) | unknown |
+| project-ontos-issue-119-final-approval | [final-approval.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/final-approval.md) | review |
+| project-ontos-issue-119-triage-input | [github-issues-input.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/github-issues-input.md) | review |
+| project-ontos-issue-119-triage-report | [pre-a-triage-report.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/pre-a-triage-report.md) | review |
+| project-ontos-issue-119-triage-verdict | [pre-a-triage-verdict.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/pre-a-triage-verdict.md) | review |
 | project_ontos_v44_agentic_activation_resilience_spec | [project-ontos-v44-agentic-activation-resilience-spec.md](docs/specs/project-ontos-v44-agentic-activation-resilience-spec.md) | atom |
 | project_ontos_v44_agentic_activation_resilience_tracker | [project-ontos-v44-agentic-activation-resilience.md](docs/trackers/project-ontos-v44-agentic-activation-resilience.md) | log |
 | proposal_v44_agentic_activation_resilience | [agentic_activation_resilience_proposal.md](/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/proposals/v4.4/agentic_activation_resilience_proposal.md) | strategy |
 | proposals_naming_conventions | [README.md](/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/proposals/README.md) | reference |
 | schema | [schema.md](/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/atom/schema.md) | atom |
-| v301 | [v3.0.1.md](docs/releases/v3.0.1.md) | unknown |
+| v301 | [v3.0.1.md](docs/releases/v3.0.1.md) | log |
 | v302 | [v3.0.2.md](docs/releases/v3.0.2.md) | atom |
 | v304 | [v3.0.4.md](docs/releases/v3.0.4.md) | kernel |
 | v305 | [v3.0.5.md](docs/releases/v3.0.5.md) | atom |
@@ -1147,7 +893,7 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 | v320 | [v3.2.0.md](docs/releases/v3.2.0.md) | atom |
 | v321 | [v3.2.1.md](docs/releases/v3.2.1.md) | strategy |
 | v322 | [v3.2.2.md](docs/releases/v3.2.2.md) | kernel |
-| v323 | [v3.2.3.md](docs/releases/v3.2.3.md) | unknown |
+| v323 | [v3.2.3.md](docs/releases/v3.2.3.md) | log |
 | v330 | [v3.3.0.md](docs/releases/v3.3.0.md) | log |
 | v331 | [v3.3.1.md](docs/releases/v3.3.1.md) | log |
 | v340 | [v3.4.0.md](docs/releases/v3.4.0.md) | log |

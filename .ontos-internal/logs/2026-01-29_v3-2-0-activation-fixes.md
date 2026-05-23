@@ -5,7 +5,7 @@ status: active
 branch: feature/v3.2.0-ontos-activation
 event_type: fix
 concepts: [activation, resilience, documentation-parity]
-impacts: [map_command, agents_command, context_map]
+impacts: []
 source: Antigravity
 ---
 

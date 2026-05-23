@@ -2,7 +2,7 @@
 id: v3_1_0_track_a_code_review_consolidation
 type: review
 status: complete
-depends_on: [v3_1_0_track_a_pr_review_chief_architect, v3_1_0_track_a_code_review_claude, v3_1_0_track_a_code_review_codex, v3_1_0_track_a_code_review_gemini]
+depends_on: [v3_1_0_track_a_pr_review_chief_architect]
 concepts: [consolidation, code-review, track-a, phase-d]
 ---
 

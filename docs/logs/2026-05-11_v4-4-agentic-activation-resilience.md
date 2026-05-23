@@ -9,7 +9,6 @@ created: 2026-05-11
 concepts: [agentic_activation, mcp, frontmatter_diagnostics]
 impacts:
   - project_ontos_v44_agentic_activation_resilience_spec
-  - v440
 ---
 
 # v4.4 agentic activation resilience

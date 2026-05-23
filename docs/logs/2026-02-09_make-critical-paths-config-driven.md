@@ -2,7 +2,7 @@
 id: log_20260209_make-critical-paths-config-driven
 type: log
 status: active
-event_type: v3-2-1b-critical-paths
+event_type: refactor
 source: cli
 branch: fix/critical-paths-config
 created: 2026-02-09

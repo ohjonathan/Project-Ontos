@@ -1,10 +1,11 @@
 ---
 id: project-ontos-github-issues-115-117-D.5-claude-sonnet-verifier
+type: review
 deliverable_id: project-ontos-github-issues-115-117
 phase: D.5
 role: verifier
 family: claude-sonnet
-status: completed
+status: complete
 ---
 
 # D.5 Verifier — claude-sonnet

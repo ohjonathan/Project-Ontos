@@ -41,7 +41,7 @@ deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
 phase: B.1
 role: alignment
 family: claude-sonnet
-status: completed
+status: complete
 ---
 
 # B.1 Alignment Review — claude-sonnet

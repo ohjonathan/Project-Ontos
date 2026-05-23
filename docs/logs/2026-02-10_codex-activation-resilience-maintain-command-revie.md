@@ -2,7 +2,7 @@
 id: log_20260210_codex-activation-resilience-maintain-command-revie
 type: log
 status: active
-event_type: session
+event_type: exploration
 source: Antigravity
 branch: main
 created: 2026-02-10

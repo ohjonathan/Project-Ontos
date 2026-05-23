@@ -1,10 +1,11 @@
 ---
 id: project-ontos-issue-119-B.1-codex-peer
+type: review
 deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
 phase: B.1
 role: peer
 family: codex
-status: completed
+status: complete
 ---
 
 # B.1 Peer Review — codex

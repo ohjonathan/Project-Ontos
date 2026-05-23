@@ -2,7 +2,7 @@
 id: v3_2_backlog
 type: strategy
 status: active
-depends_on: [v3_1_0_track_b_final_approval_chief_architect]
+depends_on: []
 concepts: [backlog, v3.2, planning, deferred-items]
 ---
 

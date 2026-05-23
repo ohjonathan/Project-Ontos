@@ -1,10 +1,11 @@
 ---
 id: project-ontos-issue-119-D.5-claude-sonnet-verifier
+type: review
 deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
 phase: D.5
 role: verifier
 family: claude-sonnet
-status: completed
+status: complete
 ---
 
 # D.5 Verifier — claude-sonnet

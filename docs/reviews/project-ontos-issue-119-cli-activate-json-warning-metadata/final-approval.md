@@ -1,8 +1,9 @@
 ---
 id: project-ontos-issue-119-final-approval
+type: review
 deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
 role: final-approval
-status: passed
+status: complete
 ---
 
 # Final-Approval Gate — project-ontos-issue-119-cli-activate-json-warning-metadata

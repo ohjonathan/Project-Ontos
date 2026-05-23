@@ -1,11 +1,12 @@
 ---
 id: project-ontos-issue-119-triage-verdict
+type: review
 deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
 phase: "-A.triage"
 role: triage-verdict
 family: claude-opus
 triage_report: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/pre-a-triage-report.md
-status: completed
+status: complete
 ---
 
 # Triage Verdict — project-ontos-issue-119-cli-activate-json-warning-metadata

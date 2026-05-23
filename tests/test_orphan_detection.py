@@ -216,21 +216,23 @@ class TestDependencyDepth:
     """Tests for dependency depth checking."""
 
     def test_deep_dependency_chain(self):
-        """Test that deep chains (>5) are flagged."""
-        # Create a chain of 7 docs: doc0 -> doc1 -> doc2 -> ... -> doc6
-        files_data = {}
-        for i in range(7):
-            files_data[f'doc{i}'] = {
-                'filepath': f'docs/doc{i}.md',
-                'filename': f'doc{i}.md',
-                'type': 'atom',
-                'depends_on': [f'doc{i+1}'] if i < 6 else [],
-                'status': 'active'
-            }
+        """Test that chains deeper than MAX_DEPENDENCY_DEPTH are flagged."""
+        # Patch to a known limit so the test is independent of project config.
+        with patch('ontos_generate_context_map.MAX_DEPENDENCY_DEPTH', 5):
+            # Create a chain of 7 docs: doc0 -> doc1 -> doc2 -> ... -> doc6
+            files_data = {}
+            for i in range(7):
+                files_data[f'doc{i}'] = {
+                    'filepath': f'docs/doc{i}.md',
+                    'filename': f'doc{i}.md',
+                    'type': 'atom',
+                    'depends_on': [f'doc{i+1}'] if i < 6 else [],
+                    'status': 'active'
+                }
 
-        issues = validate_dependencies(files_data)
-        depth_issues = [i for i in issues if '[DEPTH]' in i]
-        assert len(depth_issues) >= 1
+            issues = validate_dependencies(files_data)
+            depth_issues = [i for i in issues if '[DEPTH]' in i]
+            assert len(depth_issues) >= 1
 
     def test_shallow_chain_ok(self):
         """Test that shallow chains (<=5) are not flagged."""

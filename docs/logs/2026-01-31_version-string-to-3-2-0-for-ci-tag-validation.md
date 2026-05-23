@@ -7,7 +7,7 @@ source: Antigravity
 branch: main
 created: 2026-01-31
 concepts: [activation, agents, maintenance, proposals]
-impacts: [ontos_agent_instructions, v3_2_re_architecture_support_proposal]
+impacts: [ontos_agent_instructions]
 ---
 
 # v3.2.1 and v3.2.2 Proposal Planning

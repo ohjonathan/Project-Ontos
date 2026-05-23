@@ -1,10 +1,11 @@
 ---
 id: project-ontos-github-issues-115-117-D.2-claude-sonnet-alignment
+type: review
 deliverable_id: project-ontos-github-issues-115-117
 phase: D.2
 role: alignment
 family: claude-sonnet
-status: completed
+status: complete
 ---
 
 # D.2 Alignment Review — claude-sonnet

@@ -2,7 +2,7 @@
 id: log_20260201_add-v3-2-1-activation-resilience-and-v3-2-2-mainta
 type: log
 status: active
-event_type: critical-paths-hardcoding-proposal
+event_type: feature
 source: cli
 branch: main
 created: 2026-02-01

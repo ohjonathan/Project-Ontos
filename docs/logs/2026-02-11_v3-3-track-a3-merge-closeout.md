@@ -2,7 +2,7 @@
 id: log_20260211_v3-3-track-a3-merge-closeout
 type: log
 status: active
-event_type: v3_3_track_a3_merge_closeout
+event_type: chore
 source: codex
 branch: main
 created: 2026-02-11

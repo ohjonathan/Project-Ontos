@@ -1,7 +1,7 @@
 ---
 id: proposals_naming_conventions
 type: reference
-status: active
+status: complete
 depends_on: []
 concepts: [naming, proposals, conventions]
 ---

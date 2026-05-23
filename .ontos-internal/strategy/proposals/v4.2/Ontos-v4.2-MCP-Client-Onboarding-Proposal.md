@@ -2,7 +2,7 @@
 id: ontos_v42_mcp_client_onboarding_proposal
 type: strategy
 status: draft
-depends_on: [ontos_manual, v4_roadmap, v412, v413]
+depends_on: [ontos_manual, v4_roadmap]
 concepts: [mcp, onboarding, antigravity, cursor, claude-code, codex, vscode, print-config]
 ---
 

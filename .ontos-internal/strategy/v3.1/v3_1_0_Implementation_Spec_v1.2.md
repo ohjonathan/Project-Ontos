@@ -1,8 +1,8 @@
 ---
 id: v3_1_0_implementation_spec
 type: strategy
-status: approved
-depends_on: [v3_0_5_implementation_spec, v3_1_0_implementation_plan, v3_1_tech_debt_wrapper_commands]
+status: complete
+depends_on: [v3_1_0_implementation_plan]
 concepts: [implementation-spec, native-migration, obsidian, token-efficiency, wrapper-commands]
 ---
 
