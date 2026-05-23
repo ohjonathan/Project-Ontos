@@ -6,6 +6,7 @@ event_type: refactor
 source: cli
 branch: fix/critical-paths-config
 created: 2026-02-09
+concepts: [devops, workflow, testing, docs]
 ---
 
 # Make critical paths config-driven

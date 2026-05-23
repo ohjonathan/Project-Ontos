@@ -6,6 +6,7 @@ event_type: chore
 source: codex
 branch: feature/v3.3-track-b-link-check
 created: 2026-02-11
+concepts: [testing, docs]
 ---
 
 # v3.3b-pr2-ready-to-merge

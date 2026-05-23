@@ -6,6 +6,7 @@ event_type: chore
 source: cli
 branch: main
 created: 2026-02-11
+concepts: [testing, docs, cleanup]
 ---
 
 # v3.3 Track A4: docs, tests, dead code cleanup and deferred items

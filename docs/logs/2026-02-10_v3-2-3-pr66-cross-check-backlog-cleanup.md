@@ -6,6 +6,7 @@ event_type: chore
 source: codex
 branch: feature/v3.2.3-template-parity
 created: 2026-02-10
+concepts: [testing, docs, config, cleanup]
 ---
 
 # v3.2.3-pr66-cross-check-backlog-cleanup

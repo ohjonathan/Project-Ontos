@@ -3,6 +3,9 @@ id: project_ontos_v44_b3_verdict
 type: log
 status: archived
 event_type: decision
+source: legacy-curation
+branch: main
+concepts: [docs, config, api]
 impacts:
   - project_ontos_v44_agentic_activation_resilience_spec
 ---

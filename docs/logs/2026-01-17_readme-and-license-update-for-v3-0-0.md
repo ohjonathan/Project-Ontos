@@ -6,6 +6,7 @@ event_type: chore
 source: cli
 branch: main
 created: 2026-01-17
+concepts: [testing, docs]
 ---
 
 # README and license update for v3.0.0

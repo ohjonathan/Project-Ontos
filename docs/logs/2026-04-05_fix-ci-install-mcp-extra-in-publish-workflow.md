@@ -6,6 +6,7 @@ event_type: chore
 source: cli
 branch: main
 created: 2026-04-05
+concepts: [devops, workflow, testing, docs]
 ---
 
 # fix(ci): install MCP extra in publish workflow

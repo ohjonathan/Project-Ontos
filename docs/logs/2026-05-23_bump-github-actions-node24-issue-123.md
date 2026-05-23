@@ -6,6 +6,7 @@ event_type: chore
 source: claude-opus-4-7
 branch: codex/issue-123-node24-actions
 created: 2026-05-23
+concepts: [devops, workflow, testing, docs]
 ---
 
 # Bump GitHub Actions off Node.js 20 (closes #123)

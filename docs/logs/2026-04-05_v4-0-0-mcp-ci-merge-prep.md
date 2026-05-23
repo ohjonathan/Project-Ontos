@@ -6,6 +6,7 @@ event_type: fix
 source: cli
 branch: v4.0_MCP_Server
 created: 2026-04-05
+concepts: [devops, workflow, testing, docs]
 ---
 
 # v4.0.0-mcp-ci-merge-prep

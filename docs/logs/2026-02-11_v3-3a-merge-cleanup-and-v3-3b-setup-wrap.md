@@ -6,6 +6,7 @@ event_type: chore
 source: codex
 branch: main
 created: 2026-02-11
+concepts: [devops, workflow, testing, docs]
 ---
 
 # v3-3a-merge-cleanup-and-v3-3b-setup-wrap

@@ -6,6 +6,7 @@ event_type: chore
 source: cli
 branch: v3.2.1-external-review-remediation
 created: 2026-02-07
+concepts: [devops, workflow, testing, docs]
 ---
 
 # improve hidden command handling + add warn_legacy 

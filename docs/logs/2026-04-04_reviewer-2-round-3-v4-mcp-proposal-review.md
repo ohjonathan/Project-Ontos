@@ -6,6 +6,7 @@ event_type: exploration
 source: codex
 branch: proposal/v4.0-mcp
 created: 2026-04-04
+concepts: [devops, workflow, testing, docs]
 ---
 
 # reviewer-2-round-3-v4-mcp-proposal-review

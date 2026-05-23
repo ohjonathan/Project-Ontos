@@ -6,6 +6,7 @@ event_type: chore
 source: cli
 branch: main
 created: 2026-04-05
+concepts: [devops, workflow, testing, docs]
 ---
 
 # update external-facing documents for v4.0.0 (#82)

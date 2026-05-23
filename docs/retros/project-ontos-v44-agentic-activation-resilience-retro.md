@@ -3,6 +3,9 @@ id: project_ontos_v44_agentic_activation_resilience_retro
 type: log
 status: archived
 event_type: chore
+source: legacy-curation
+branch: main
+concepts: [devops, workflow, testing, docs]
 impacts:
   - project_ontos_v44_d5_codex_verifier
 ---

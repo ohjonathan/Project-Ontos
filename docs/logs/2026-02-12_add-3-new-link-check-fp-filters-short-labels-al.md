@@ -6,6 +6,7 @@ event_type: chore
 source: cli
 branch: fix/link-check-fp-reduction-round2
 created: 2026-02-12
+concepts: [testing, docs]
 ---
 
 # add 3 new link-check FP filters — short labels, AL

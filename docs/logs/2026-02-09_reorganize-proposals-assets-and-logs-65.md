@@ -6,6 +6,7 @@ event_type: chore
 source: cli
 branch: main
 created: 2026-02-09
+concepts: [devops, workflow, testing, docs]
 ---
 
 # reorganize proposals, assets, and logs (#65)

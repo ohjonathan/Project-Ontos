@@ -3,6 +3,9 @@ id: project_ontos_v44_final_approval
 type: log
 status: archived
 event_type: decision
+source: legacy-curation
+branch: main
+concepts: [devops, workflow, testing, docs]
 impacts:
   - project_ontos_v44_d5_codex_verifier
 ---

@@ -6,6 +6,7 @@ event_type: chore
 source: cli
 branch: main
 created: 2026-04-11
+concepts: [testing, docs]
 ---
 
 # add Ontos v4.1 proposal and v4.x roadmap (#84)

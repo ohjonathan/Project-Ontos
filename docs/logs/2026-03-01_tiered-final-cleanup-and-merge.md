@@ -6,6 +6,7 @@ event_type: fix
 source: cli
 branch: v3.4_Tiered_context
 created: 2026-03-01
+concepts: [devops, workflow, testing, docs]
 ---
 
 # tiered-final-cleanup-and-merge

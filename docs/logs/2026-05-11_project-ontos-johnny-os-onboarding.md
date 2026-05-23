@@ -6,6 +6,7 @@ event_type: chore
 source: codex
 branch: codex/project-ontos-johnny-os-onboarding
 created: 2026-05-11
+concepts: [devops, workflow, testing, docs]
 ---
 
 # project-ontos-johnny-os-onboarding

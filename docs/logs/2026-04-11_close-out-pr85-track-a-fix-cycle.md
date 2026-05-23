@@ -6,6 +6,7 @@ event_type: fix
 source: cli
 branch: v4.1-track-a-portfolio
 created: 2026-04-11
+concepts: [devops, workflow, testing, docs]
 ---
 
 # close-out-pr85-track-a-fix-cycle

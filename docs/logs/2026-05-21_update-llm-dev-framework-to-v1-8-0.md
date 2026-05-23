@@ -6,6 +6,7 @@ event_type: chore
 source: codex
 branch: main
 created: 2026-05-21
+concepts: [devops, workflow, testing, docs]
 ---
 
 # Update llm-dev framework to v1.8.0
