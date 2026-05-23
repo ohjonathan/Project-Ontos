@@ -1,7 +1,7 @@
 ---
 type: generated
 generator: ontos_generate_context_map
-generated: "2026-05-23 03:19:59 UTC"
+generated: "2026-05-23 03:29:44 UTC"
 mode: Contributor
 scanned: .ontos-internal
 ---
@@ -10,7 +10,7 @@ scanned: .ontos-internal
 > When you run `ontos map` in your project, this file will be overwritten with your project's context.
 
 # Ontos Context Map
-Generated on: 2026-05-22 20:19:59
+Generated on: 2026-05-22 20:29:44
 Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, docs`
 
 ## 1. Hierarchy Tree
@@ -599,6 +599,18 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 - **project-ontos-issue-119-D.3-verdict** [L0] (D.3-verdict.md) ~868 tokens  ⚠️ completed
   - Status: completed
   - Depends On: None
+- **project-ontos-issue-119-D.4-fix-summary** [L0] (D.4-fix-summary.md) ~1,100 tokens  ⚠️ completed
+  - Status: completed
+  - Depends On: None
+- **project-ontos-issue-119-D.5-claude-sonnet-verifier** [L0] (D.5-claude-sonnet-verifier.md) ~395 tokens  ⚠️ completed
+  - Status: completed
+  - Depends On: None
+- **project-ontos-issue-119-D.5-codex-verifier** [L0] (D.5-codex-verifier.md) ~417 tokens  ⚠️ completed
+  - Status: completed
+  - Depends On: None
+- **project-ontos-issue-119-D.5-gemini-verifier** [L0] (D.5-gemini-verifier.md) ~185 tokens  ⚠️ completed
+  - Status: completed
+  - Depends On: None
 - **project-ontos-issue-119-triage-input** [L0] (github-issues-input.md) ~971 tokens  ⚠️ active
   - Status: active
   - Depends On: None
@@ -733,115 +745,123 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
   Fix: Add a document with `id: v3_1_0_spec_review_gpt5` or remove it from depends_on
 - [BROKEN LINK] **v3_1_0_track_b_pr_review_chief_architect** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Track_B_PR_Review_Chief_Architect.md) references missing ID: `v3_1_0_track_b_implementation_prompt_antigravity`
   Fix: Add a document with `id: v3_1_0_track_b_implementation_prompt_antigravity` or remove it from depends_on
-- [ORPHAN] **project-ontos-issue-119-triage-input** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/github-issues-input.md) has no dependents
-  Fix: Add `project-ontos-issue-119-triage-input` to another document's depends_on, or delete if unused
-- [ORPHAN] **migration_v2_to_v3** (docs/reference/Migration_v2_to_v3.md) has no dependents
-  Fix: Add `migration_v2_to_v3` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-B.1-gemini-adversarial** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-gemini-adversarial.md) has no dependents
-  Fix: Add `project-ontos-issue-119-B.1-gemini-adversarial` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-B.3-verdict** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.3-verdict.md) has no dependents
-  Fix: Add `project-ontos-issue-119-B.3-verdict` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-D.5-gemini-verifier** (docs/reviews/project-ontos-github-issues-115-117/D.5-gemini-verifier.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-D.5-gemini-verifier` to another document's depends_on, or delete if unused
 - [ORPHAN] **project-ontos-issue-119-D.2-codex-peer** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-codex-peer.md) has no dependents
   Fix: Add `project-ontos-issue-119-D.2-codex-peer` to another document's depends_on, or delete if unused
-- [ORPHAN] **v3_1_0_track_b_code_review_consolidation** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Track_B_Code_Review_Consolidation.md) has no dependents
-  Fix: Add `v3_1_0_track_b_code_review_consolidation` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-retro** (docs/retros/project-ontos-github-issues-115-117-retro.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-retro` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-triage-report** (docs/reviews/project-ontos-github-issues-115-117/pre-a-triage-report.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-triage-report` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-triage-verdict** (docs/reviews/project-ontos-github-issues-115-117/pre-a-triage-verdict.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-triage-verdict` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-triage-verdict** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/pre-a-triage-verdict.md) has no dependents
-  Fix: Add `project-ontos-issue-119-triage-verdict` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-B.1-gemini-adversarial** (docs/reviews/project-ontos-github-issues-115-117/B.1-gemini-adversarial.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-B.1-gemini-adversarial` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-final-approval** (docs/reviews/project-ontos-github-issues-115-117/final-approval.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-final-approval` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-D.2-gemini-adversarial** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-gemini-adversarial.md) has no dependents
-  Fix: Add `project-ontos-issue-119-D.2-gemini-adversarial` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-D.5-claude-opus-verifier** (docs/reviews/project-ontos-github-issues-115-117/D.5-claude-opus-verifier.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-D.5-claude-opus-verifier` to another document's depends_on, or delete if unused
-- [ORPHAN] **v3_1_0_track_a_final_approval_d6a** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Track_A_Final_Approval_D6a.md) has no dependents
-  Fix: Add `v3_1_0_track_a_final_approval_d6a` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-triage-input** (docs/reviews/project-ontos-github-issues-115-117/github-issues-input.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-triage-input` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-D.3-verdict** (docs/reviews/project-ontos-github-issues-115-117/D.3-verdict.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-D.3-verdict` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-issue-119-D.5-claude-sonnet-verifier** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-claude-sonnet-verifier.md) has no dependents
+  Fix: Add `project-ontos-issue-119-D.5-claude-sonnet-verifier` to another document's depends_on, or delete if unused
 - [ORPHAN] **ontos_internal_tmp_readme** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/tmp/README.md) has no dependents
   Fix: Add `ontos_internal_tmp_readme` to another document's depends_on, or delete if unused
-- [ORPHAN] **v301** (docs/releases/v3.0.1.md) has no dependents
-  Fix: Add `v301` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-D.1-codex-peer** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.1-codex-peer.md) has no dependents
-  Fix: Add `project-ontos-issue-119-D.1-codex-peer` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-triage-report** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/pre-a-triage-report.md) has no dependents
-  Fix: Add `project-ontos-issue-119-triage-report` to another document's depends_on, or delete if unused
-- [ORPHAN] **v3_1_0_chief_architect_response** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Chief_Architect_Response.md) has no dependents
-  Fix: Add `v3_1_0_chief_architect_response` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-D.3-verdict** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.3-verdict.md) has no dependents
-  Fix: Add `project-ontos-issue-119-D.3-verdict` to another document's depends_on, or delete if unused
-- [ORPHAN] **ontos_v42_implementation_spec** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/specs/v4.2/Ontos-v4.2-Implementation-Spec.md) has no dependents
-  Fix: Add `ontos_v42_implementation_spec` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-D.2-gemini-adversarial** (docs/reviews/project-ontos-github-issues-115-117/D.2-gemini-adversarial.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-D.2-gemini-adversarial` to another document's depends_on, or delete if unused
-- [ORPHAN] **proposals_naming_conventions** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/proposals/README.md) has no dependents
-  Fix: Add `proposals_naming_conventions` to another document's depends_on, or delete if unused
-- [ORPHAN] **v3_1_0_track_a_code_review_consolidation** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Track_A_Code_Review_Consolidation.md) has no dependents
-  Fix: Add `v3_1_0_track_a_code_review_consolidation` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-D.4-fix-summary** (docs/reviews/project-ontos-github-issues-115-117/D.4-fix-summary.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-D.4-fix-summary` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-D.2-claude-sonnet-alignment** (docs/reviews/project-ontos-github-issues-115-117/D.2-claude-sonnet-alignment.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-D.2-claude-sonnet-alignment` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-B.1-codex-peer** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-codex-peer.md) has no dependents
-  Fix: Add `project-ontos-issue-119-B.1-codex-peer` to another document's depends_on, or delete if unused
-- [ORPHAN] **migration_v3_to_v4** (docs/reference/Migration_v3_to_v4.md) has no dependents
-  Fix: Add `migration_v3_to_v4` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-B.3-verdict** (docs/reviews/project-ontos-github-issues-115-117/B.3-verdict.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-B.3-verdict` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-D.5-claude-sonnet-verifier** (docs/reviews/project-ontos-github-issues-115-117/D.5-claude-sonnet-verifier.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-D.5-claude-sonnet-verifier` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-B.1-claude-sonnet-alignment** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-claude-sonnet-alignment.md) has no dependents
-  Fix: Add `project-ontos-issue-119-B.1-claude-sonnet-alignment` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-D.2-claude-opus-peer** (docs/reviews/project-ontos-github-issues-115-117/D.2-claude-opus-peer.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-D.2-claude-opus-peer` to another document's depends_on, or delete if unused
-- [ORPHAN] **phase3_implementation_spec_review_codex** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.0/Phase3/Phase3-Implementation-Spec-Review-Codex.md) has no dependents
-  Fix: Add `phase3_implementation_spec_review_codex` to another document's depends_on, or delete if unused
-- [ORPHAN] **v323** (docs/releases/v3.2.3.md) has no dependents
-  Fix: Add `v323` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-issue-119-D.2-claude-sonnet-alignment** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-claude-sonnet-alignment.md) has no dependents
-  Fix: Add `project-ontos-issue-119-D.2-claude-sonnet-alignment` to another document's depends_on, or delete if unused
-- [ORPHAN] **project-ontos-github-issues-115-117-B.1-claude-sonnet-alignment** (docs/reviews/project-ontos-github-issues-115-117/B.1-claude-sonnet-alignment.md) has no dependents
-  Fix: Add `project-ontos-github-issues-115-117-B.1-claude-sonnet-alignment` to another document's depends_on, or delete if unused
+- [ORPHAN] **v3_1_0_track_b_code_review_consolidation** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Track_B_Code_Review_Consolidation.md) has no dependents
+  Fix: Add `v3_1_0_track_b_code_review_consolidation` to another document's depends_on, or delete if unused
 - [ORPHAN] **project-ontos-github-issues-115-117-D.1-claude-sonnet-peer** (docs/reviews/project-ontos-github-issues-115-117/D.1-claude-sonnet-peer.md) has no dependents
   Fix: Add `project-ontos-github-issues-115-117-D.1-claude-sonnet-peer` to another document's depends_on, or delete if unused
+- [ORPHAN] **migration_v3_to_v4** (docs/reference/Migration_v3_to_v4.md) has no dependents
+  Fix: Add `migration_v3_to_v4` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-issue-119-B.1-claude-sonnet-alignment** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-claude-sonnet-alignment.md) has no dependents
+  Fix: Add `project-ontos-issue-119-B.1-claude-sonnet-alignment` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-issue-119-D.5-gemini-verifier** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-gemini-verifier.md) has no dependents
+  Fix: Add `project-ontos-issue-119-D.5-gemini-verifier` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-github-issues-115-117-B.3-verdict** (docs/reviews/project-ontos-github-issues-115-117/B.3-verdict.md) has no dependents
+  Fix: Add `project-ontos-github-issues-115-117-B.3-verdict` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-github-issues-115-117-D.2-claude-opus-peer** (docs/reviews/project-ontos-github-issues-115-117/D.2-claude-opus-peer.md) has no dependents
+  Fix: Add `project-ontos-github-issues-115-117-D.2-claude-opus-peer` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-issue-119-D.2-gemini-adversarial** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-gemini-adversarial.md) has no dependents
+  Fix: Add `project-ontos-issue-119-D.2-gemini-adversarial` to another document's depends_on, or delete if unused
+- [ORPHAN] **v323** (docs/releases/v3.2.3.md) has no dependents
+  Fix: Add `v323` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-issue-119-D.1-codex-peer** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.1-codex-peer.md) has no dependents
+  Fix: Add `project-ontos-issue-119-D.1-codex-peer` to another document's depends_on, or delete if unused
+- [ORPHAN] **v3_1_0_track_a_final_approval_d6a** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Track_A_Final_Approval_D6a.md) has no dependents
+  Fix: Add `v3_1_0_track_a_final_approval_d6a` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-github-issues-115-117-final-approval** (docs/reviews/project-ontos-github-issues-115-117/final-approval.md) has no dependents
+  Fix: Add `project-ontos-github-issues-115-117-final-approval` to another document's depends_on, or delete if unused
+- [ORPHAN] **migration_v2_to_v3** (docs/reference/Migration_v2_to_v3.md) has no dependents
+  Fix: Add `migration_v2_to_v3` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-issue-119-D.4-fix-summary** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.4-fix-summary.md) has no dependents
+  Fix: Add `project-ontos-issue-119-D.4-fix-summary` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-github-issues-115-117-retro** (docs/retros/project-ontos-github-issues-115-117-retro.md) has no dependents
+  Fix: Add `project-ontos-github-issues-115-117-retro` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-issue-119-triage-report** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/pre-a-triage-report.md) has no dependents
+  Fix: Add `project-ontos-issue-119-triage-report` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-github-issues-115-117-D.2-gemini-adversarial** (docs/reviews/project-ontos-github-issues-115-117/D.2-gemini-adversarial.md) has no dependents
+  Fix: Add `project-ontos-github-issues-115-117-D.2-gemini-adversarial` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-issue-119-triage-verdict** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/pre-a-triage-verdict.md) has no dependents
+  Fix: Add `project-ontos-issue-119-triage-verdict` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-github-issues-115-117-triage-verdict** (docs/reviews/project-ontos-github-issues-115-117/pre-a-triage-verdict.md) has no dependents
+  Fix: Add `project-ontos-github-issues-115-117-triage-verdict` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-github-issues-115-117-D.5-gemini-verifier** (docs/reviews/project-ontos-github-issues-115-117/D.5-gemini-verifier.md) has no dependents
+  Fix: Add `project-ontos-github-issues-115-117-D.5-gemini-verifier` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-github-issues-115-117-D.2-claude-sonnet-alignment** (docs/reviews/project-ontos-github-issues-115-117/D.2-claude-sonnet-alignment.md) has no dependents
+  Fix: Add `project-ontos-github-issues-115-117-D.2-claude-sonnet-alignment` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-issue-119-triage-input** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/github-issues-input.md) has no dependents
+  Fix: Add `project-ontos-issue-119-triage-input` to another document's depends_on, or delete if unused
+- [ORPHAN] **phase3_implementation_spec_review_codex** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.0/Phase3/Phase3-Implementation-Spec-Review-Codex.md) has no dependents
+  Fix: Add `phase3_implementation_spec_review_codex` to another document's depends_on, or delete if unused
+- [ORPHAN] **proposals_naming_conventions** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/proposals/README.md) has no dependents
+  Fix: Add `proposals_naming_conventions` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-github-issues-115-117-D.4-fix-summary** (docs/reviews/project-ontos-github-issues-115-117/D.4-fix-summary.md) has no dependents
+  Fix: Add `project-ontos-github-issues-115-117-D.4-fix-summary` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-issue-119-B.3-verdict** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.3-verdict.md) has no dependents
+  Fix: Add `project-ontos-issue-119-B.3-verdict` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-issue-119-D.3-verdict** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.3-verdict.md) has no dependents
+  Fix: Add `project-ontos-issue-119-D.3-verdict` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-github-issues-115-117-B.1-gemini-adversarial** (docs/reviews/project-ontos-github-issues-115-117/B.1-gemini-adversarial.md) has no dependents
+  Fix: Add `project-ontos-github-issues-115-117-B.1-gemini-adversarial` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-github-issues-115-117-B.1-claude-sonnet-alignment** (docs/reviews/project-ontos-github-issues-115-117/B.1-claude-sonnet-alignment.md) has no dependents
+  Fix: Add `project-ontos-github-issues-115-117-B.1-claude-sonnet-alignment` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-issue-119-D.5-codex-verifier** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-codex-verifier.md) has no dependents
+  Fix: Add `project-ontos-issue-119-D.5-codex-verifier` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-issue-119-B.1-codex-peer** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-codex-peer.md) has no dependents
+  Fix: Add `project-ontos-issue-119-B.1-codex-peer` to another document's depends_on, or delete if unused
+- [ORPHAN] **ontos_v42_implementation_spec** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/specs/v4.2/Ontos-v4.2-Implementation-Spec.md) has no dependents
+  Fix: Add `ontos_v42_implementation_spec` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-github-issues-115-117-triage-report** (docs/reviews/project-ontos-github-issues-115-117/pre-a-triage-report.md) has no dependents
+  Fix: Add `project-ontos-github-issues-115-117-triage-report` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-github-issues-115-117-D.5-claude-sonnet-verifier** (docs/reviews/project-ontos-github-issues-115-117/D.5-claude-sonnet-verifier.md) has no dependents
+  Fix: Add `project-ontos-github-issues-115-117-D.5-claude-sonnet-verifier` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-github-issues-115-117-D.3-verdict** (docs/reviews/project-ontos-github-issues-115-117/D.3-verdict.md) has no dependents
+  Fix: Add `project-ontos-github-issues-115-117-D.3-verdict` to another document's depends_on, or delete if unused
+- [ORPHAN] **v301** (docs/releases/v3.0.1.md) has no dependents
+  Fix: Add `v301` to another document's depends_on, or delete if unused
 - [ORPHAN] **project-ontos-github-issues-115-117-B.1-claude-opus-peer** (docs/reviews/project-ontos-github-issues-115-117/B.1-claude-opus-peer.md) has no dependents
   Fix: Add `project-ontos-github-issues-115-117-B.1-claude-opus-peer` to another document's depends_on, or delete if unused
+- [ORPHAN] **v3_1_0_chief_architect_response** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Chief_Architect_Response.md) has no dependents
+  Fix: Add `v3_1_0_chief_architect_response` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-github-issues-115-117-D.5-claude-opus-verifier** (docs/reviews/project-ontos-github-issues-115-117/D.5-claude-opus-verifier.md) has no dependents
+  Fix: Add `project-ontos-github-issues-115-117-D.5-claude-opus-verifier` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-github-issues-115-117-triage-input** (docs/reviews/project-ontos-github-issues-115-117/github-issues-input.md) has no dependents
+  Fix: Add `project-ontos-github-issues-115-117-triage-input` to another document's depends_on, or delete if unused
+- [ORPHAN] **v3_1_0_track_a_code_review_consolidation** (/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal/strategy/v3.1/v3_1_0_Track_A_Code_Review_Consolidation.md) has no dependents
+  Fix: Add `v3_1_0_track_a_code_review_consolidation` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-issue-119-B.1-gemini-adversarial** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-gemini-adversarial.md) has no dependents
+  Fix: Add `project-ontos-issue-119-B.1-gemini-adversarial` to another document's depends_on, or delete if unused
+- [ORPHAN] **project-ontos-issue-119-D.2-claude-sonnet-alignment** (docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-claude-sonnet-alignment.md) has no dependents
+  Fix: Add `project-ontos-issue-119-D.2-claude-sonnet-alignment` to another document's depends_on, or delete if unused
 - [DEPTH] **v3_1_0_track_a_implementation_prompt** has dependency depth 8 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_track_a_ca_rulings_d3a** has dependency depth 10 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_audit_triage_chief_architect** has dependency depth 8 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_track_a_pr_review_chief_architect** has dependency depth 9 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_spec_review_consolidation** has dependency depth 10 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_research_review_chief_architect** has dependency depth 7 (max: 5)
-  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_track_a_final_approval_d6a** has dependency depth 11 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [DEPTH] **v3_1_0_spec_review_claude** has dependency depth 9 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_chief_architect_response** has dependency depth 11 (max: 5)
+- [DEPTH] **v3_1_0_research_review_chief_architect** has dependency depth 7 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_track_a_code_review_consolidation** has dependency depth 10 (max: 5)
+- [DEPTH] **v3_1_0_track_a_pr_review_chief_architect** has dependency depth 9 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_implementation_spec** has dependency depth 6 (max: 5)
+- [DEPTH] **v3_1_0_audit_triage_chief_architect** has dependency depth 8 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **v3_1_0_sidecar_pattern** has dependency depth 6 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [DEPTH] **v3_1_0_final_decision_chief_architect** has dependency depth 7 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
-- [DEPTH] **v3_1_0_sidecar_pattern** has dependency depth 6 (max: 5)
+- [DEPTH] **v3_1_0_track_a_final_approval_d6a** has dependency depth 11 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **v3_1_0_track_a_ca_rulings_d3a** has dependency depth 10 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **v3_1_0_implementation_spec** has dependency depth 6 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **v3_1_0_chief_architect_response** has dependency depth 11 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **v3_1_0_spec_review_consolidation** has dependency depth 10 (max: 5)
+  Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
+- [DEPTH] **v3_1_0_track_a_code_review_consolidation** has dependency depth 10 (max: 5)
   Fix: Refactor to reduce nesting or increase MAX_DEPENDENCY_DEPTH in ontos_config.py
 - [ARCHITECTURE] **v3_2_backlog** (strategy) depends on **v3_1_0_track_b_final_approval_chief_architect** (approval)
   Fix: strategy should not depend on approval. Invert the dependency or change document types
@@ -906,8 +926,11 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 - [LINT] **v3_1_tech_debt_wrapper_commands**: Invalid status 'open'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
 - [LINT] **project-ontos-github-issues-115-117-retro**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
 - [LINT] **project-ontos-issue-119-triage-verdict**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
+- [LINT] **project-ontos-issue-119-D.5-codex-verifier**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
+- [LINT] **project-ontos-issue-119-D.5-gemini-verifier**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
 - [LINT] **project-ontos-issue-119-B.1-claude-sonnet-alignment**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
 - [LINT] **project-ontos-issue-119-triage-report**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
+- [LINT] **project-ontos-issue-119-D.5-claude-sonnet-verifier**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
 - [LINT] **project-ontos-issue-119-B.3-verdict**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
 - [LINT] **project-ontos-issue-119-D.3-verdict**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
 - [LINT] **project-ontos-issue-119-D.2-gemini-adversarial**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
@@ -916,6 +939,7 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 - [LINT] **project-ontos-issue-119-D.1-codex-peer**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
 - [LINT] **project-ontos-issue-119-D.2-claude-sonnet-alignment**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
 - [LINT] **project-ontos-issue-119-B.1-gemini-adversarial**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
+- [LINT] **project-ontos-issue-119-D.4-fix-summary**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
 - [LINT] **project-ontos-github-issues-115-117-triage-verdict**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
 - [LINT] **project-ontos-github-issues-115-117-D.5-gemini-verifier**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
 - [LINT] **project-ontos-github-issues-115-117-B.1-claude-opus-peer**: Invalid status 'completed'. Use one of: active, archived, complete, deprecated, draft, pending_curation, rejected, scaffold
@@ -1087,6 +1111,10 @@ Scanned Directory: `/Users/jonathanoh/workspaces/Project-Ontos/.ontos-internal, 
 | project-ontos-issue-119-D.2-codex-peer | [D.2-codex-peer.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-codex-peer.md) | unknown |
 | project-ontos-issue-119-D.2-gemini-adversarial | [D.2-gemini-adversarial.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-gemini-adversarial.md) | unknown |
 | project-ontos-issue-119-D.3-verdict | [D.3-verdict.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.3-verdict.md) | unknown |
+| project-ontos-issue-119-D.4-fix-summary | [D.4-fix-summary.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.4-fix-summary.md) | unknown |
+| project-ontos-issue-119-D.5-claude-sonnet-verifier | [D.5-claude-sonnet-verifier.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-claude-sonnet-verifier.md) | unknown |
+| project-ontos-issue-119-D.5-codex-verifier | [D.5-codex-verifier.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-codex-verifier.md) | unknown |
+| project-ontos-issue-119-D.5-gemini-verifier | [D.5-gemini-verifier.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-gemini-verifier.md) | unknown |
 | project-ontos-issue-119-cli-activate-json-warning-metadata-spec | [project-ontos-issue-119-cli-activate-json-warning-metadata-spec.md](docs/specs/project-ontos-issue-119-cli-activate-json-warning-metadata-spec.md) | atom |
 | project-ontos-issue-119-triage-input | [github-issues-input.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/github-issues-input.md) | unknown |
 | project-ontos-issue-119-triage-report | [pre-a-triage-report.md](docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/pre-a-triage-report.md) | unknown |

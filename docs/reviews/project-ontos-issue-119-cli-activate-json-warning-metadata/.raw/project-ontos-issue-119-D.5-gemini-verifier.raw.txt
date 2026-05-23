@@ -1,0 +1,24 @@
+```markdown
+---
+id: project-ontos-issue-119-D.5-gemini-verifier
+deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
+phase: D.5
+role: verifier
+family: gemini
+status: completed
+---
+
+# D.5 Verifier — gemini
+
+## Verdict
+
+Approve
+
+## Summary
+
+The implementation perfectly matches the spec. The breaking change to the CLI JSON output is correctly implemented, fully tested with both unit and integration tests for all specified cases, and clearly documented in the release notes.
+
+## Notes
+
+The D.4 fix successfully closed the D.2 review finding by expanding integration test coverage, ensuring the implementation is robust. The CLI/MCP parity test provides strong assurance that the core goal of serialization consistency has been met.
+```

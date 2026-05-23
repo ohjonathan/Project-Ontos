@@ -442,15 +442,13 @@ def _log_schema_workspace(root: Path) -> Path:
 
 
 def test_activate_json_schema_class_warning_carries_structured_metadata(tmp_path: Path) -> None:
-    """D.2 codex F1, Case 3 — CLI JSON path emits schema-class warnings as
-    structured records when a log doc is missing required fields.
+    """D.2 codex F1 + D.5 codex F1, Case 3 — CLI JSON path emits schema-class
+    warnings as structured records when a log doc is missing required fields.
 
-    Note: this test asserts the CLI wiring (the warning lands as a structured
-    dict). The validator may classify log-schema issues under either
-    ``rule_id == "schema"`` (the structured enum path) or surface them via
-    the snapshot channel (MCP-only). The test passes as long as the
-    relevant warning record carries the structured shape, regardless of
-    which path the validator chose.
+    The validator emits a `ValidationErrorType.SCHEMA` warning (rule_id ==
+    ``"schema"``) for log docs missing required fields like ``branch``. We
+    assert specifically on that rule_id so the test is load-bearing — if the
+    schema warning disappears from the CLI JSON payload, the test fails.
     """
     root = _log_schema_workspace(tmp_path)
 
@@ -462,14 +460,16 @@ def test_activate_json_schema_class_warning_carries_structured_metadata(tmp_path
     schema_records = [
         w
         for w in payload["data"]["validation"]["warnings"]
-        if w.get("document_id") == log_id
+        if w.get("document_id") == log_id and w.get("rule_id") == "schema"
     ]
-    if schema_records:
-        record = schema_records[0]
-        assert record["severity"] == "warning"
-        assert record["file_path"].endswith("docs/logs/2026-05-22.md")
-        # rule_id is present and is some validator-classified value (not bare).
-        assert "rule_id" in record
+    assert schema_records, (
+        "expected at least one rule_id=='schema' warning for the log doc in "
+        f"{payload['data']['validation']['warnings']!r}"
+    )
+    record = schema_records[0]
+    assert record["severity"] == "warning"
+    assert record["file_path"].endswith("docs/logs/2026-05-22.md")
+    assert "Log missing fields" in record["message"]
 
 
 def test_activate_json_error_severity_lands_under_errors_with_structured_shape(

@@ -12,6 +12,6 @@
 | D.2   | codex / claude-sonnet / gemini | completed | D.2-{family}-{role}.md (×3) | strict-P3 receipts appended; codex Request-changes (1 should-fix on CLI integration coverage), sonnet Approve, gemini Approve | 2026-05-22 |
 | D.3   | claude-sonnet (orchestrator-authored) | completed | D.3-verdict.md | Concur; codex D.2 F1 should-fix queued for D.4 closure | 2026-05-22 |
 | D.4   | claude-opus (orchestrator-authored) | completed | D.4-fix-summary.md + 4 new integration tests in tests/commands/test_activate_json_warning_metadata.py | 1334/1334 tests pass; codex D.2 F1 closed | 2026-05-22 |
-| D.5   | codex / claude-sonnet / gemini | pending |   |   |   |
-| D.6   | codex (orchestrator-authored) | pending |   |   |   |
-| E     | gemini (orchestrator-authored) | pending |   |   |   |
+| D.5   | codex / claude-sonnet / gemini | completed | D.5-{family}-verifier.md (×3) | strict-P3 receipts appended; codex Request-changes (1 should-fix on schema-test load-bearing assertion → closed by test tightening), sonnet Approve, gemini Approve | 2026-05-22 |
+| D.6   | codex (orchestrator-authored) | completed | final-approval.md | verify-d6-gate.sh OK (13/13 rows PASSED); verify-gate-commands.sh OK (13 passed); verify-lifecycle --mode strict-p3 → strict_p3_review_complete | 2026-05-22 |
+| E     | gemini (orchestrator-authored) | completed | docs/retros/project-ontos-issue-119-cli-activate-json-warning-metadata-retro.md | Approve PR | 2026-05-22 |
