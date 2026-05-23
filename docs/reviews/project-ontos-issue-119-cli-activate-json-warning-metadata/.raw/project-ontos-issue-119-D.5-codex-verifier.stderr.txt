@@ -1,6 +1,6 @@
 OpenAI Codex v0.133.0
 --------
-workdir: /Users/jonathanoh/workspaces/Project-Ontos
+workdir: /Users/jonathanoh/Developer/workspaces/Project-Ontos
 model: gpt-5.5
 provider: openai
 approval: never
@@ -1223,12 +1223,12 @@ Manual smoke (CLI shape working end-to-end against live repo):
   "message": "Document has no incoming dependencies",
   "rule_id": "orphan",
   "document_id": "log_20260117_readme-and-license-update-for-v3-0-0",
-  "file_path": "/Users/jonathanoh/workspaces/Project-Ontos/docs/logs/2026-01-17_readme-and-license-update-for-v3-0-0.md"
+  "file_path": "/Users/jonathanoh/Developer/workspaces/Project-Ontos/docs/logs/2026-01-17_readme-and-license-update-for-v3-0-0.md"
 }
 ```
 
 exec
-/bin/zsh -lc 'ontos activate' in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc 'ontos activate' in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 116ms:
 Activation status: usable_with_warnings
 Map: refreshed
@@ -1245,7 +1245,7 @@ Recommended agent action: continue; use direct reads for task-critical docs
 Loaded: ['ontos_manual', 'ontos_agent_instructions', 'ontology_spec', 'project-ontos-github-issues-115-117-spec', 'D.2-review-packet']
 
 exec
-/bin/zsh -lc "sed -n '1,220p' Ontos_Context_Map.md" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "sed -n '1,220p' Ontos_Context_Map.md" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
 ---
 id: ontos_context_map
@@ -1469,10 +1469,10 @@ This document provides a tiered index of the knowledge graph for AI orientation.
     Add this document to another document's depends_on
 
 exec
-/bin/zsh -lc 'test -f .llm-dev/config.yaml && scripts/llm-dev doctor || true' in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc 'test -f .llm-dev/config.yaml && scripts/llm-dev doctor || true' in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
 llm-dev doctor
-  repo:               /Users/jonathanoh/workspaces/Project-Ontos
+  repo:               /Users/jonathanoh/Developer/workspaces/Project-Ontos
   config:             .llm-dev/config.yaml
   framework_path:     .llm-dev/framework
   framework_ref:      v1.9.0
@@ -1489,7 +1489,7 @@ llm-dev doctor
 llm-dev doctor: PASS
 
 exec
-/bin/zsh -lc 'git status --short --branch' in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc 'git status --short --branch' in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
 ## codex/project-ontos-issue-119-cli-activate-json-warning-metadata
  ? .llm-dev/framework
@@ -1502,7 +1502,7 @@ exec
 ?? docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.raw/project-ontos-issue-119-D.5-codex-verifier.stderr.txt
 
 exec
-/bin/zsh -lc "nl -ba ontos/core/types.py | sed -n '110,160p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba ontos/core/types.py | sed -n '110,160p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
    110	    """Parsed document with frontmatter and content."""
    111	    id: str
@@ -1557,7 +1557,7 @@ exec
    160	        else:
 
 exec
-/bin/zsh -lc "nl -ba ontos/mcp/tools.py | sed -n '600,650p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba ontos/mcp/tools.py | sed -n '600,650p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
    600	
    601	
@@ -1612,7 +1612,7 @@ exec
    650	    for prefix, candidate in _SNAPSHOT_RULE_PREFIXES:
 
 exec
-/bin/zsh -lc "nl -ba ontos/commands/activate.py | sed -n '80,150p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba ontos/commands/activate.py | sed -n '80,150p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
     80	            "No Ontos documents loaded and no existing context map is available.",
     81	            project_root=project_root,
@@ -1687,7 +1687,7 @@ exec
    150	    ]
 
 exec
-/bin/zsh -lc 'git diff --stat main..HEAD' in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc 'git diff --stat main..HEAD' in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
  .ontos-internal/reference/decision_history.md      |    2 +-
  Ontos_Context_Map.md                               | 1892 +++++---
@@ -1737,11 +1737,11 @@ exec
  45 files changed, 17186 insertions(+), 775 deletions(-)
 
 exec
-/bin/zsh -lc '.venv/bin/python -m pytest -q tests/commands/test_activate_json_warning_metadata.py tests/commands/test_agentic_activation_resilience.py tests/mcp/test_activation.py tests/mcp/test_context_map.py' in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc '.venv/bin/python -m pytest -q tests/commands/test_activate_json_warning_metadata.py tests/commands/test_agentic_activation_resilience.py tests/mcp/test_activation.py tests/mcp/test_context_map.py' in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 2510ms:
 ============================= test session starts ==============================
 platform darwin -- Python 3.14.4, pytest-8.4.2, pluggy-1.6.0
-rootdir: /Users/jonathanoh/workspaces/Project-Ontos
+rootdir: /Users/jonathanoh/Developer/workspaces/Project-Ontos
 configfile: pyproject.toml
 plugins: cov-5.0.0, anyio-4.13.0
 collected 28 items
@@ -1765,7 +1765,7 @@ print(result.returncode)
 print(result.stderr)
 payload = json.loads(result.stdout)
 print(json.dumps(payload['data']['validation'], indent=2))
-PY" in /Users/jonathanoh/workspaces/Project-Ontos
+PY" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 123ms:
 0
 
@@ -1797,7 +1797,7 @@ PY" in /Users/jonathanoh/workspaces/Project-Ontos
 }
 
 exec
-/bin/zsh -lc "sed -n '1,35p' ontos/core/types.py" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "sed -n '1,35p' ontos/core/types.py" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
 """
 Shared type definitions for Ontos core modules.
@@ -1836,11 +1836,11 @@ class DocumentType(str, Enum):
     (#117) Lifecycle artifact types added so real engineering workspaces
 
 exec
-/bin/zsh -lc '.venv/bin/python -m pytest -q' in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc '.venv/bin/python -m pytest -q' in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 54020ms:
 ============================= test session starts ==============================
 platform darwin -- Python 3.14.4, pytest-8.4.2, pluggy-1.6.0
-rootdir: /Users/jonathanoh/workspaces/Project-Ontos
+rootdir: /Users/jonathanoh/Developer/workspaces/Project-Ontos
 configfile: pyproject.toml
 testpaths: tests
 plugins: cov-5.0.0, anyio-4.13.0
@@ -1973,18 +1973,18 @@ tests/ui/test_json_output.py .....................                       [100%]
 
 =============================== warnings summary ===============================
 .ontos/scripts/ontos_end_session.py:25
-  /Users/jonathanoh/workspaces/Project-Ontos/.ontos/scripts/ontos_end_session.py:25: FutureWarning: Legacy ontos_config.py detected; this path is deprecated and will be removed in a future release. Use .ontos.toml.
+  /Users/jonathanoh/Developer/workspaces/Project-Ontos/.ontos/scripts/ontos_end_session.py:25: FutureWarning: Legacy ontos_config.py detected; this path is deprecated and will be removed in a future release. Use .ontos.toml.
     REQUIRE_SOURCE_IN_LOGS = resolve_config('REQUIRE_SOURCE_IN_LOGS', True)
 
 tests/ui/test_json_output.py::TestConvenienceFunctions::test_emit_error
-  /Users/jonathanoh/workspaces/Project-Ontos/tests/ui/test_json_output.py:148: DeprecationWarning: emit_error() is deprecated; use emit_command_error().
+  /Users/jonathanoh/Developer/workspaces/Project-Ontos/tests/ui/test_json_output.py:148: DeprecationWarning: emit_error() is deprecated; use emit_command_error().
     emit_error("Failed", "E999")
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 ================= 1334 passed, 2 skipped, 2 warnings in 53.53s =================
 
 exec
-/bin/zsh -lc 'scripts/llm-dev verify manifests/project-ontos-issue-119-cli-activate-json-warning-metadata.yaml' in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc 'scripts/llm-dev verify manifests/project-ontos-issue-119-cli-activate-json-warning-metadata.yaml' in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 356ms:
 ok -- validation done
 verify-schema: OK (1 manifests validated)
@@ -1999,12 +1999,12 @@ verify-gate-categories: OK (all six categories covered)
 verify-artifact-paths: OK (canonical_verdict / family_verdict / verification / product_verdict placeholders valid across 1 manifests)
 
 -----------------------------------------------------------------
-verify-adopter: PASSED manifest-conformance (4/4 checks against /Users/jonathanoh/workspaces/Project-Ontos/manifests/project-ontos-issue-119-cli-activate-json-warning-metadata.yaml)
+verify-adopter: PASSED manifest-conformance (4/4 checks against /Users/jonathanoh/Developer/workspaces/Project-Ontos/manifests/project-ontos-issue-119-cli-activate-json-warning-metadata.yaml)
                 manifest-only — does NOT prove lifecycle execution.
                 Run: scripts/llm-dev verify-lifecycle <manifest> for strict-P3 proof.
 
 exec
-/bin/zsh -lc 'scripts/llm-dev verify-lifecycle --mode strict-p3 manifests/project-ontos-issue-119-cli-activate-json-warning-metadata.yaml' in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc 'scripts/llm-dev verify-lifecycle --mode strict-p3 manifests/project-ontos-issue-119-cli-activate-json-warning-metadata.yaml' in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  exited 1 in 205ms:
 verify-lifecycle: FAIL — strict-P3 lifecycle verification rejected (5 issue(s))
   ↳ dispatch-verify-failed: receipt ('B.1', 'peer', 'codex') round=1 intent=project-ontos-issue-119-cli-activate-json-warning-metadata-dispatch-intent.yaml exit=1
@@ -2018,18 +2018,18 @@ verify-family-dispatch: FAILED — 3 violation(s) across 9 dispatches
 verify-lifecycle: status=review_pending
 
 exec
-/bin/zsh -lc ".venv/bin/python -m ontos activate --json | jq '.data.validation.warnings[0]'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc ".venv/bin/python -m ontos activate --json | jq '.data.validation.warnings[0]'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
 {
   "severity": "warning",
   "message": "Document has no incoming dependencies",
   "rule_id": "orphan",
   "document_id": "log_20260117_readme-and-license-update-for-v3-0-0",
-  "file_path": "/Users/jonathanoh/workspaces/Project-Ontos/docs/logs/2026-01-17_readme-and-license-update-for-v3-0-0.md"
+  "file_path": "/Users/jonathanoh/Developer/workspaces/Project-Ontos/docs/logs/2026-01-17_readme-and-license-update-for-v3-0-0.md"
 }
 
 exec
-/bin/zsh -lc "rg \"_validation_issues|to_dict\\(\" ontos tests/commands/test_activate_json_warning_metadata.py tests/mcp/test_activation.py" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "rg \"_validation_issues|to_dict\\(\" ontos tests/commands/test_activate_json_warning_metadata.py tests/mcp/test_activation.py" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
 tests/commands/test_activate_json_warning_metadata.py:from ontos.mcp.tools import _validation_issues
 tests/commands/test_activate_json_warning_metadata.py:# Unit tests — ValidationError.to_dict() shape (Cases 1-6 from spec §1.4.1)
@@ -2069,7 +2069,7 @@ ontos/mcp/tools.py:    # ValidationError.to_dict() so CLI and MCP share the exac
 ontos/mcp/tools.py:    return [issue.to_dict() for issue in issues]
 
 exec
-/bin/zsh -lc "nl -ba ontos/commands/activate.py | sed -n '170,220p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba ontos/commands/activate.py | sed -n '170,220p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
    170	
    171	def _select_loaded_ids(docs: Dict[str, DocumentData]) -> List[str]:
@@ -2124,9 +2124,9 @@ exec
    220	        blocking=bool(item.get("blocking", False)),
 
 exec
-/bin/zsh -lc "nl -ba docs/releases/v4.6.0.md | sed -n '1,120p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba docs/releases/v4.6.0.md | sed -n '1,120p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
 exec
-/bin/zsh -lc "nl -ba docs/specs/project-ontos-issue-119-cli-activate-json-warning-metadata-spec.md | sed -n '1,220p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba docs/specs/project-ontos-issue-119-cli-activate-json-warning-metadata-spec.md | sed -n '1,220p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
      1	---
      2	id: v460
@@ -2420,9 +2420,9 @@ exec
    220	
 
 exec
-/bin/zsh -lc "nl -ba tests/commands/test_activate_json_warning_metadata.py | sed -n '1,260p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba tests/commands/test_activate_json_warning_metadata.py | sed -n '1,260p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
 exec
-/bin/zsh -lc "nl -ba tests/commands/test_activate_json_warning_metadata.py | sed -n '260,620p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba tests/commands/test_activate_json_warning_metadata.py | sed -n '260,620p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
      1	"""CLI regressions for #119 — `ontos activate --json` structured validation
      2	metadata (`severity`, `rule_id`, `message`, `document_id`, `file_path`).
@@ -3008,7 +3008,7 @@ exec
    579	    assert validation["warnings"] == []
 
 exec
-/bin/zsh -lc "nl -ba docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-codex-peer.md | sed -n '1,120p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-codex-peer.md | sed -n '1,120p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
      1	---
      2	id: project-ontos-issue-119-D.2-codex-peer
@@ -3067,7 +3067,7 @@ The production diff matches the serialization contract, and the targeted and ful
 ### F1 — Schema CLI integration coverage is still not load-bearing
 
 - **Severity:** blocker
-- **Where:** [tests/commands/test_activate_json_warning_metadata.py](/Users/jonathanoh/workspaces/Project-Ontos/tests/commands/test_activate_json_warning_metadata.py:461)
+- **Where:** [tests/commands/test_activate_json_warning_metadata.py](/Users/jonathanoh/Developer/workspaces/Project-Ontos/tests/commands/test_activate_json_warning_metadata.py:461)
 - **Issue:** Spec §1.4.1 case 3 requires the CLI JSON path to assert a warning record with `rule_id == "schema"` plus populated `document_id` / `file_path`. The landed test filters only by `document_id`, then conditionally asserts only if records exist; in the current fixture the first matching record can be the log doc's orphan warning, so this test would still pass if the schema warning disappeared.
 - **Fix:** Filter/assert for the schema-class record explicitly, e.g. `w.get("rule_id") == "schema"` with `assert schema_records`, then assert `document_id` and `file_path`.
 

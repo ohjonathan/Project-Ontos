@@ -25,7 +25,7 @@ receipts:
   artifact_source: raw_transcript_promoted
   raw_transcript_sha256: 952a152050ec3b946a9ad9b4d4b9093176c271f08ceca7af96b628ab7136a0ff
   promoted_artifact_sha256: 952a152050ec3b946a9ad9b4d4b9093176c271f08ceca7af96b628ab7136a0ff
-  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/workspaces/Project-Ontos/docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-codex-peer.md'
+  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/Developer/workspaces/Project-Ontos/docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-codex-peer.md'
 - run_id: project-ontos-issue-119-B.1-claude-sonnet-alignment-alignment
   deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
   phase: B.1
@@ -50,7 +50,7 @@ receipts:
   artifact_source: raw_transcript_promoted
   raw_transcript_sha256: e421f5c7eb1b1d264d2b95d2ace981129c958cde73652909a28b9f0cebba1131
   promoted_artifact_sha256: e421f5c7eb1b1d264d2b95d2ace981129c958cde73652909a28b9f0cebba1131
-  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/workspaces/Project-Ontos/docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-claude-sonnet-alignment.md'
+  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/Developer/workspaces/Project-Ontos/docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-claude-sonnet-alignment.md'
 - run_id: project-ontos-issue-119-B.1-gemini-adversarial-adversarial
   deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
   phase: B.1
@@ -97,7 +97,7 @@ receipts:
   artifact_source: raw_transcript_promoted
   raw_transcript_sha256: 3bf7828328b8b2629f060960e095cf564648fab48e7fa90e317b2a6e9f1df1dd
   promoted_artifact_sha256: 3bf7828328b8b2629f060960e095cf564648fab48e7fa90e317b2a6e9f1df1dd
-  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/workspaces/Project-Ontos/docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-codex-peer.md'
+  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/Developer/workspaces/Project-Ontos/docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-codex-peer.md'
 - run_id: project-ontos-issue-119-D.2-claude-sonnet-alignment-alignment
   deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
   phase: D.2
@@ -122,7 +122,7 @@ receipts:
   artifact_source: raw_transcript_promoted
   raw_transcript_sha256: dc11f66ea9724cd1a1d61a467e8306a5b6041785f90e2ca391a9d480555f2587
   promoted_artifact_sha256: dc11f66ea9724cd1a1d61a467e8306a5b6041785f90e2ca391a9d480555f2587
-  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/workspaces/Project-Ontos/docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-claude-sonnet-alignment.md'
+  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/Developer/workspaces/Project-Ontos/docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-claude-sonnet-alignment.md'
 - run_id: project-ontos-issue-119-D.2-gemini-adversarial-adversarial
   deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
   phase: D.2
@@ -169,7 +169,7 @@ receipts:
   artifact_source: raw_transcript_promoted
   raw_transcript_sha256: 2c1d627c557a2c3df14600fe5fbea73f25d9e65724ec6a2954f36593a26c3373
   promoted_artifact_sha256: 2c1d627c557a2c3df14600fe5fbea73f25d9e65724ec6a2954f36593a26c3373
-  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/workspaces/Project-Ontos/docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-codex-verifier.md'
+  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/Developer/workspaces/Project-Ontos/docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-codex-verifier.md'
 - run_id: project-ontos-issue-119-D.5-claude-sonnet-verifier-verifier
   deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
   phase: D.5
@@ -194,7 +194,7 @@ receipts:
   artifact_source: raw_transcript_promoted
   raw_transcript_sha256: c35124fa45e9dfe87da0c132245cb057f4be5621f385e33efcc874805c5f4dd7
   promoted_artifact_sha256: c35124fa45e9dfe87da0c132245cb057f4be5621f385e33efcc874805c5f4dd7
-  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/workspaces/Project-Ontos/docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-claude-sonnet-verifier.md'
+  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/Developer/workspaces/Project-Ontos/docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-claude-sonnet-verifier.md'
 - run_id: project-ontos-issue-119-D.5-gemini-verifier-verifier
   deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
   phase: D.5

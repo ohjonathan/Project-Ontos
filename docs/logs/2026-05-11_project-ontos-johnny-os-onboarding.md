@@ -13,13 +13,13 @@ created: 2026-05-11
 ## Goal
 
 Bring `https://github.com/ohjonathan/Project-Ontos` into the Johnny-OS
-ecosystem as a separately managed workspace under `/Users/jonathanoh/workspaces`,
+ecosystem as a separately managed workspace under `/Users/jonathanoh/Developer/workspaces`,
 matching the Folio onboarding pattern without nesting the repository inside
 `/Users/jonathanoh/johnny-os`.
 
 ## Summary
 
-Project-Ontos was cloned to `/Users/jonathanoh/workspaces/Project-Ontos`,
+Project-Ontos was cloned to `/Users/jonathanoh/Developer/workspaces/Project-Ontos`,
 activated with Ontos, synced with current generated agent/context files, and
 given a `.johnny-os.yaml` manifest for Johnny-OS runtime registration.
 
@@ -49,7 +49,7 @@ The onboarding branch is `codex/project-ontos-johnny-os-onboarding`.
 ## Key Decisions
 
 - Keep Project-Ontos outside the Johnny-OS repo at
-  `/Users/jonathanoh/workspaces/Project-Ontos` to avoid nested-repo coupling.
+  `/Users/jonathanoh/Developer/workspaces/Project-Ontos` to avoid nested-repo coupling.
 - Classify the workspace as `kind: infra`, with the repo entity in
   `domain: infra`, because Ontos is part of the Johnny-OS knowledge/runtime
   substrate rather than a user-facing product.
@@ -69,6 +69,6 @@ The onboarding branch is `codex/project-ontos-johnny-os-onboarding`.
 ## Impacts
 
 Project-Ontos is now ready for Johnny-OS-managed development from
-`/Users/jonathanoh/workspaces/Project-Ontos`. Johnny-OS runtime state can point
+`/Users/jonathanoh/Developer/workspaces/Project-Ontos`. Johnny-OS runtime state can point
 to the repo path and retrieve Ontos context from it through the reference
 adapter once the workspace registration is applied in Johnny-OS.

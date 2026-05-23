@@ -874,6 +874,6 @@ Manual smoke against the live repo:
   "message": "Document has no incoming dependencies",
   "rule_id": "orphan",
   "document_id": "log_20260117_readme-and-license-update-for-v3-0-0",
-  "file_path": "/Users/jonathanoh/workspaces/Project-Ontos/docs/logs/2026-01-17_readme-and-license-update-for-v3-0-0.md"
+  "file_path": "/Users/jonathanoh/Developer/workspaces/Project-Ontos/docs/logs/2026-01-17_readme-and-license-update-for-v3-0-0.md"
 }
 ```

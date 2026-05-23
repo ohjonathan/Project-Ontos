@@ -23,7 +23,7 @@ The production diff matches the serialization contract, and the targeted and ful
 ### F1 — Schema CLI integration coverage is still not load-bearing
 
 - **Severity:** blocker
-- **Where:** [tests/commands/test_activate_json_warning_metadata.py](/Users/jonathanoh/workspaces/Project-Ontos/tests/commands/test_activate_json_warning_metadata.py:461)
+- **Where:** [tests/commands/test_activate_json_warning_metadata.py](/Users/jonathanoh/Developer/workspaces/Project-Ontos/tests/commands/test_activate_json_warning_metadata.py:461)
 - **Issue:** Spec §1.4.1 case 3 requires the CLI JSON path to assert a warning record with `rule_id == "schema"` plus populated `document_id` / `file_path`. The landed test filters only by `document_id`, then conditionally asserts only if records exist; in the current fixture the first matching record can be the log doc's orphan warning, so this test would still pass if the schema warning disappeared.
 - **Fix:** Filter/assert for the schema-class record explicitly, e.g. `w.get("rule_id") == "schema"` with `assert schema_records`, then assert `document_id` and `file_path`.
 

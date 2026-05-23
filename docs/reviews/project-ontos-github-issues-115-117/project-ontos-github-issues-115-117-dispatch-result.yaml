@@ -63,7 +63,7 @@ results:
   artifact_prewrite_sha256: null
   raw_transcript_sha256: sha256:d7da24d3632426789dabe691076f49d75c9e458b28166f9fc85fc3b274c925a5
   promoted_artifact_sha256: sha256:d7da24d3632426789dabe691076f49d75c9e458b28166f9fc85fc3b274c925a5
-  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/workspaces/Project-Ontos/docs/reviews/project-ontos-github-issues-115-117/D.2-claude-sonnet-alignment.md'
+  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/Developer/workspaces/Project-Ontos/docs/reviews/project-ontos-github-issues-115-117/D.2-claude-sonnet-alignment.md'
 - dispatch_id: project-ontos-github-issues-115-117-D.2-gemini-adversarial
   family: gemini
   role: adversarial
@@ -183,7 +183,7 @@ results:
   artifact_prewrite_sha256: null
   raw_transcript_sha256: sha256:3ea1f9a185850d9e70a2baa75e44d0f42668decd660ae8a87f1c369978ea6385
   promoted_artifact_sha256: sha256:3ea1f9a185850d9e70a2baa75e44d0f42668decd660ae8a87f1c369978ea6385
-  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/workspaces/Project-Ontos/docs/reviews/project-ontos-github-issues-115-117/D.5-claude-opus-verifier.md'
+  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/Developer/workspaces/Project-Ontos/docs/reviews/project-ontos-github-issues-115-117/D.5-claude-opus-verifier.md'
 - dispatch_id: project-ontos-github-issues-115-117-D.5-claude-sonnet-verifier
   family: claude-sonnet
   role: verifier
@@ -247,7 +247,7 @@ results:
   artifact_prewrite_sha256: null
   raw_transcript_sha256: sha256:2c05e06d41382a87b35248c06f43e00c7a36e34f90a5af893dea14c9793e6f8b
   promoted_artifact_sha256: sha256:2c05e06d41382a87b35248c06f43e00c7a36e34f90a5af893dea14c9793e6f8b
-  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/workspaces/Project-Ontos/docs/reviews/project-ontos-github-issues-115-117/D.5-claude-sonnet-verifier.md'
+  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/Developer/workspaces/Project-Ontos/docs/reviews/project-ontos-github-issues-115-117/D.5-claude-sonnet-verifier.md'
 - dispatch_id: project-ontos-github-issues-115-117-D.5-gemini-verifier
   family: gemini
   role: verifier

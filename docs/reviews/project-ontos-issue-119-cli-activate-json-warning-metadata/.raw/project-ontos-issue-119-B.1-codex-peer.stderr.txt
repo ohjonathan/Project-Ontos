@@ -1,6 +1,6 @@
 OpenAI Codex v0.133.0
 --------
-workdir: /Users/jonathanoh/workspaces/Project-Ontos
+workdir: /Users/jonathanoh/Developer/workspaces/Project-Ontos
 model: gpt-5.5
 provider: openai
 approval: never
@@ -336,7 +336,7 @@ Last command (manual smoke) demonstrates the new shape against the live repo's 2
 ```
 
 exec
-/bin/zsh -lc 'ontos activate' in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc 'ontos activate' in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 113ms:
 Activation status: usable_with_warnings
 Map: refreshed
@@ -353,7 +353,7 @@ Recommended agent action: continue; use direct reads for task-critical docs
 Loaded: ['ontos_manual', 'ontos_agent_instructions', 'ontology_spec', 'project-ontos-github-issues-115-117-spec', 'D.2-review-packet']
 
 exec
-/bin/zsh -lc "sed -n '1,220p' Ontos_Context_Map.md" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "sed -n '1,220p' Ontos_Context_Map.md" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
 ---
 id: ontos_context_map
@@ -577,10 +577,10 @@ This document provides a tiered index of the knowledge graph for AI orientation.
 - ⚠️ **log_20260209_polish-path-formatting-and-tests**: Document has no incoming dependencies
 
 exec
-/bin/zsh -lc 'scripts/llm-dev doctor' in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc 'scripts/llm-dev doctor' in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
 llm-dev doctor
-  repo:               /Users/jonathanoh/workspaces/Project-Ontos
+  repo:               /Users/jonathanoh/Developer/workspaces/Project-Ontos
   config:             .llm-dev/config.yaml
   framework_path:     .llm-dev/framework
   framework_ref:      v1.9.0
@@ -597,7 +597,7 @@ llm-dev doctor
 llm-dev doctor: PASS
 
 exec
-/bin/zsh -lc "nl -ba ontos/core/types.py | sed -n '1,220p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba ontos/core/types.py | sed -n '1,220p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
      1	"""
      2	Shared type definitions for Ontos core modules.
@@ -783,7 +783,7 @@ exec
    182	}
 
 exec
-/bin/zsh -lc "nl -ba ontos/commands/activate.py | sed -n '1,260p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba ontos/commands/activate.py | sed -n '1,260p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
      1	"""Agent-friendly best-effort activation command."""
      2	
@@ -1008,7 +1008,7 @@ exec
    221	    )
 
 exec
-/bin/zsh -lc "nl -ba ontos/mcp/tools.py | sed -n '600,700p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba ontos/mcp/tools.py | sed -n '600,700p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
    600	
    601	
@@ -1113,7 +1113,7 @@ exec
    700	    }
 
 exec
-/bin/zsh -lc "nl -ba docs/specs/project-ontos-issue-119-cli-activate-json-warning-metadata-spec.md | sed -n '1,260p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba docs/specs/project-ontos-issue-119-cli-activate-json-warning-metadata-spec.md | sed -n '1,260p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
      1	---
      2	id: project-ontos-issue-119-cli-activate-json-warning-metadata-spec
@@ -1365,7 +1365,7 @@ exec
    248	Last command (manual smoke) demonstrates the new shape against the live repo's 204-warning state. The `ontos-validate` pre-commit hook may fail unrelated to this change due to historical graph hygiene noise — if so, commit with `SKIP=ontos-validate` and document the skip in the tracker (per the orchestrator brief).
 
 exec
-/bin/zsh -lc "nl -ba docs/specs/project-ontos-github-issues-115-117-spec.md | sed -n '120,260p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba docs/specs/project-ontos-github-issues-115-117-spec.md | sed -n '120,260p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
    120	
    121	#### 2.2.3 Implementation
@@ -1510,9 +1510,9 @@ exec
    260	Docs-only changes have no pytest coverage. Verification at D.6: `grep -lE 'Restart.*MCP host' README.md docs/reference/Ontos_Manual.md docs/reference/Migration_v3_to_v4.md docs/releases/v4.5.0.md` returns all four paths.
 
 exec
-/bin/zsh -lc "nl -ba tests/mcp/test_activation.py | sed -n '1,220p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba tests/mcp/test_activation.py | sed -n '1,220p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
 exec
-/bin/zsh -lc "nl -ba tests/commands/test_agentic_activation_resilience.py | sed -n '1,260p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba tests/commands/test_agentic_activation_resilience.py | sed -n '1,260p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
      1	"""MCP activation contract tests."""
      2	
@@ -1887,7 +1887,7 @@ exec
    233	    assert result.message.startswith("Hooks missing:")
 
 exec
-/bin/zsh -lc "rg -n \"ValidationError\\(|ValidationErrorType|add_error|OUT_OF_SCOPE|DEPTH|ORPHAN|SCHEMA|BROKEN_LINK\" ontos tests | head -n 200" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "rg -n \"ValidationError\\(|ValidationErrorType|add_error|OUT_OF_SCOPE|DEPTH|ORPHAN|SCHEMA|BROKEN_LINK\" ontos tests | head -n 200" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
 tests/test_orphan_detection.py:8:DEFAULT_ALLOWED_ORPHAN_TYPES = ['product', 'strategy', 'kernel']
 tests/test_orphan_detection.py:14:    @patch('ontos_generate_context_map.ALLOWED_ORPHAN_TYPES', DEFAULT_ALLOWED_ORPHAN_TYPES)
@@ -1984,7 +1984,7 @@ ontos/core/link_diagnostics.py:300:        if validation_error.error_type == Val
 ontos/core/link_diagnostics.py:303:            validation_error.error_type == ValidationErrorType.SCHEMA
 
 exec
-/bin/zsh -lc "nl -ba ontos/core/validation.py | sed -n '1,360p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba ontos/core/validation.py | sed -n '1,360p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
      1	"""
      2	Validation orchestration for context map generation.
@@ -2312,7 +2312,7 @@ exec
    324	                ))
 
 exec
-/bin/zsh -lc "nl -ba ontos/core/graph.py | sed -n '1,260p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba ontos/core/graph.py | sed -n '1,260p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
      1	"""
      2	Dependency graph building and validation.
@@ -2576,7 +2576,7 @@ exec
    260	
 
 exec
-/bin/zsh -lc "nl -ba ontos/commands/map.py | sed -n '1,260p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba ontos/commands/map.py | sed -n '1,260p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
      1	"""
      2	Context map generation command.
@@ -2840,7 +2840,7 @@ exec
    260	            if summary is None:
 
 exec
-/bin/zsh -lc "nl -ba ontos/mcp/schemas.py | sed -n '1,60p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba ontos/mcp/schemas.py | sed -n '1,60p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
      1	"""Pydantic models and JSON Schema helpers for the Ontos MCP surface."""
      2	
@@ -2904,7 +2904,7 @@ exec
     60	
 
 exec
-/bin/zsh -lc "nl -ba ontos/io/config.py | sed -n '1,240p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba ontos/io/config.py | sed -n '1,240p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
      1	"""Config file I/O operations."""
      2	from pathlib import Path
@@ -2981,7 +2981,7 @@ exec
     73	    return check_path.exists()
 
 exec
-/bin/zsh -lc "nl -ba ontos/core/graph.py | sed -n '260,360p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba ontos/core/graph.py | sed -n '260,360p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
    260	
    261	
@@ -3043,7 +3043,7 @@ exec
    317	    return depths
 
 exec
-/bin/zsh -lc "rg -n \"allowed_orphan_types|max_dependency_depth|class ValidationConfig|validation\" ontos/io docs/reference tests -g '*.py' -g '*.md' | head -n 120" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "rg -n \"allowed_orphan_types|max_dependency_depth|class ValidationConfig|validation\" ontos/io docs/reference tests -g '*.py' -g '*.md' | head -n 120" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
 ontos/io/snapshot.py:13:from ontos.core.validation import ValidationOrchestrator
 ontos/io/snapshot.py:80:    # Run structural validation only (no vocabulary check).
@@ -3126,7 +3126,7 @@ tests/mcp/test_rename_document.py:426:    from ontos.mcp import _validation
 tests/mcp/test_rename_document.py:429:    assert _validation.validate_workspace_id is rename_tool.validate_workspace_id
 
 exec
-/bin/zsh -lc "nl -ba ontos/core/config.py | sed -n '1,180p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba ontos/core/config.py | sed -n '1,180p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
      1	"""Configuration helpers.
      2	
@@ -3310,7 +3310,7 @@ exec
    180	    )
 
 exec
-/bin/zsh -lc "nl -ba ontos/io/files.py | sed -n '1,360p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba ontos/io/files.py | sed -n '1,360p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
      1	"""
      2	File system operations for Ontos.
@@ -3674,7 +3674,7 @@ exec
    360	    # artifacts and minor formatting issues in imported/external files.
 
 exec
-/bin/zsh -lc "nl -ba ontos/io/files.py | sed -n '360,520p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba ontos/io/files.py | sed -n '360,520p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
    360	    # artifacts and minor formatting issues in imported/external files.
    361	    content = raw_bytes.decode('utf-8', errors='replace').lstrip()
@@ -3833,7 +3833,7 @@ exec
    514	    path.write_text(content, encoding=encoding)
 
 exec
-/bin/zsh -lc "rg -n \"_validation_issues\\(|validation_result=|ValidationResult\\(\" ontos tests | head -n 160" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "rg -n \"_validation_issues\\(|validation_result=|ValidationResult\\(\" ontos tests | head -n 160" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
 ontos/io/snapshot.py:99:        validation_result=validation_result,
 ontos/mcp/tools.py:607:    warnings.extend(_validation_issues(validation.errors))
@@ -3847,7 +3847,7 @@ tests/mcp/test_bundler.py:322:            validation_result=snapshot.validation_
 ontos/core/validation.py:123:        return ValidationResult(
 
 exec
-/bin/zsh -lc "nl -ba ontos/io/snapshot.py | sed -n '1,160p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba ontos/io/snapshot.py | sed -n '1,160p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
      1	"""
      2	IO-layer wrapper for runtime snapshot assembly.
@@ -3954,7 +3954,7 @@ exec
    103	    )
 
 exec
-/bin/zsh -lc "nl -ba ontos/io/scan_scope.py | sed -n '1,220p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba ontos/io/scan_scope.py | sed -n '1,220p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
      1	"""Shared scan scope utilities for markdown document discovery."""
      2	
@@ -4105,7 +4105,7 @@ exec
    147	    )
 
 exec
-/bin/zsh -lc "nl -ba tests/mcp/__init__.py | sed -n '1,220p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba tests/mcp/__init__.py | sed -n '1,220p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
      1	"""Shared helpers for MCP tests."""
      2	
@@ -4329,7 +4329,7 @@ exec
    220	        """,
 
 exec
-/bin/zsh -lc "nl -ba tests/mcp/__init__.py | sed -n '220,420p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba tests/mcp/__init__.py | sed -n '220,420p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
    220	        """,
    221	    )
@@ -4434,7 +4434,7 @@ exec
    320	    return json.loads(result.content[0].text)
 
 exec
-/bin/zsh -lc "nl -ba docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/pre-a-triage-report.md | sed -n '1,220p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/pre-a-triage-report.md | sed -n '1,220p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
      1	---
      2	id: project-ontos-issue-119-triage-report
@@ -4525,7 +4525,7 @@ exec
     87	See `pre-a-triage-verdict.md` for the canonical exit-verdict artifact.
 
 exec
-/bin/zsh -lc "nl -ba docs/trackers/project-ontos-issue-119-cli-activate-json-warning-metadata.md | sed -n '1,240p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba docs/trackers/project-ontos-issue-119-cli-activate-json-warning-metadata.md | sed -n '1,240p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
      1	# project-ontos-issue-119-cli-activate-json-warning-metadata — Tracker
      2	
@@ -4546,7 +4546,7 @@ exec
     17	| E     | gemini (orchestrator-authored) | pending |   |   |   |
 
 exec
-/bin/zsh -lc "ls -la manifests | sed -n '1,80p'; test -f manifests/project-ontos-issue-119-cli-activate-json-warning-metadata.yaml && nl -ba manifests/project-ontos-issue-119-cli-activate-json-warning-metadata.yaml | sed -n '1,220p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "ls -la manifests | sed -n '1,80p'; test -f manifests/project-ontos-issue-119-cli-activate-json-warning-metadata.yaml && nl -ba manifests/project-ontos-issue-119-cli-activate-json-warning-metadata.yaml | sed -n '1,220p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
 total 64
 drwxr-xr-x@  5 jonathanoh  staff   160 May 22 19:51 .
@@ -4776,12 +4776,12 @@ drwxr-xr-x@ 39 jonathanoh  staff  1248 May 22 19:10 ..
    220	  - id: G-blocker-2
 
 exec
-/bin/zsh -lc "rg -n \"--json|activate\" ontos/__main__.py ontos/cli.py ontos -g '*.py' | head -n 120" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "rg -n \"--json|activate\" ontos/__main__.py ontos/cli.py ontos -g '*.py' | head -n 120" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
 rg: unrecognized flag --json|activate
 
 exec
-/bin/zsh -lc "rg -n -- \"--json|activate\" ontos -g '*.py'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "rg -n -- \"--json|activate\" ontos -g '*.py'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  exited 2 in 0ms:
 rg: -g: No such file or directory (os error 2)
 rg: *.py: No such file or directory (os error 2)
@@ -4825,7 +4825,7 @@ ontos/mcp/server.py:788:            _attach_pre_activate_warning(tool_name, vali
 ontos/mcp/server.py:913:        "Start with `activate` before any other Ontos tool; it returns the "
 
 exec
-/bin/zsh -lc "nl -ba ontos/cli.py | sed -n '50,110p'; nl -ba ontos/cli.py | sed -n '142,154p'; nl -ba ontos/cli.py | sed -n '1700,1722p'" in /Users/jonathanoh/workspaces/Project-Ontos
+/bin/zsh -lc "nl -ba ontos/cli.py | sed -n '50,110p'; nl -ba ontos/cli.py | sed -n '142,154p'; nl -ba ontos/cli.py | sed -n '1700,1722p'" in /Users/jonathanoh/Developer/workspaces/Project-Ontos
  succeeded in 0ms:
     50	        return
     51	
