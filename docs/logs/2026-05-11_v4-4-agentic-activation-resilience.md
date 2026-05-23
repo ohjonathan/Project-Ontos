@@ -6,7 +6,7 @@ event_type: chore
 source: codex
 branch: codex/project-ontos-v44-agentic-activation-resilience
 created: 2026-05-11
-concepts: [agentic_activation, mcp, frontmatter_diagnostics]
+concepts: [agentic-activation, mcp, frontmatter]
 impacts:
   - project_ontos_v44_agentic_activation_resilience_spec
 ---

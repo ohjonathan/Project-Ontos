@@ -62,6 +62,81 @@ concepts: [authentication, endpoints, database-stuff]
 | `staleness` | Detection of outdated documentation when described atoms change |
 | `immutable-history` | Auto-generated decision_history.md from session logs |
 
+### Ontos CLI
+
+| Concept | Covers |
+|:--------|:-------|
+| `activation` | Agent activation phase and `ontos activate` command surface |
+| `agents` | `ontos agents` generation and `AGENTS.md` / `.cursorrules` sync |
+| `doctor` | `ontos doctor` health check and environment diagnostics |
+| `link-check` | `ontos link-check` reference and orphan validation |
+| `maintain` | `ontos maintain` weekly maintenance routines and consolidation |
+| `print-config` | `ontos print-config` configuration introspection output |
+| `promote` | `ontos promote` document promotion across status tiers |
+| `rename` | `ontos rename` atomic ID rename across frontmatter and references |
+| `retrofit` | `ontos retrofit` bulk frontmatter backfill across documents |
+
+### Ontos Internals
+
+| Concept | Covers |
+|:--------|:-------|
+| `agentic-activation` | Agentic activation resilience subsystem (v4.4 line) |
+| `context-map` | Context map generation, tiered output, summary rendering |
+| `frontmatter` | YAML frontmatter parsing, diagnostics, and schema enforcement |
+| `mcp` | Model Context Protocol integration (server and tools) |
+| `mcp-write-tools` | Write-capable MCP tool surface and authorization |
+| `obsidian` | Obsidian-compatible output, wikilinks, vault integration |
+| `scanner` | Document scanner, discovery, and load pipeline |
+| `serverinfo` | MCP `serverInfo` handshake and capability advertisement |
+| `tools-list` | MCP `tools/list` endpoint and tool registration |
+| `outputschema` | MCP `outputSchema` definitions and validation |
+| `fastmcp` | FastMCP library integration and lifecycle |
+| `unified-loader` | Unified document loader pipeline |
+
+### Project Lifecycle
+
+| Concept | Covers |
+|:--------|:-------|
+| `command-safety` | Command safety hardening, validation, allowlists |
+| `curation` | Document curation, selection, archive policy |
+| `external-review` | External reviewer feedback cycles and remediation |
+| `hardening` | Code/feature hardening, defensive fixes, edge-case closure |
+| `onboarding` | User/agent onboarding flows and first-run experience |
+| `packaging` | Python packaging, distribution, PyPI release plumbing |
+| `portfolio` | Portfolio-level changes spanning multiple repos or projects |
+| `proposals` | Project proposal documents and pre-implementation specs |
+| `release` | Release coordination, tagging, version bumps |
+
+### Surface & Output
+
+| Concept | Covers |
+|:--------|:-------|
+| `bundle-config` | Context bundle configuration and assembly |
+| `client-config` | Client-side configuration (e.g., MCP client setup) |
+| `cli` | CLI surface, command interface, argument parsing |
+| `cli-surface` | Public CLI surface contract and compatibility |
+| `compact` | Compact output mode (`basic` / `rich` / `tiered`) |
+| `tiered` | Tiered output formatting and token-budget rendering |
+| `exports` | Document and graph export functionality |
+
+### Integrations
+
+| Concept | Covers |
+|:--------|:-------|
+| `antigravity` | Antigravity tool integration and onboarding hooks |
+| `claude-code` | Claude Code CLI integration and instructions |
+| `cursor` | Cursor IDE integration via `.cursorrules` and AGENTS |
+
+### Building Blocks
+
+| Concept | Covers |
+|:--------|:-------|
+| `flock-locks` | File-lock concurrency primitives via `flock(2)` |
+| `fts` | Full-Text Search backend and indexing |
+| `registry-path` | Tool/plugin registry path resolution |
+| `stdio` | Standard I/O transport (e.g., MCP stdio mode) |
+| `unicode` | Unicode handling, normalization, encoding |
+
 ---
 
 ## Adding New Concepts

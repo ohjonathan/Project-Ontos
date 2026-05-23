@@ -6,7 +6,7 @@ event_type: feature
 source: Antigravity
 branch: main
 created: 2026-01-31
-concepts: [activation, agents, maintenance, proposals]
+concepts: [activation, agents, maintain, proposals]
 impacts: [ontos_agent_instructions]
 ---
 
