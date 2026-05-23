@@ -1,0 +1,580 @@
+results:
+- dispatch_id: project-ontos-issue-119-B.1-codex-peer
+  family: codex
+  role: peer
+  execution_provider: codex
+  execution_cli: codex
+  resolved_executable: /opt/homebrew/bin/codex
+  resolved_executable_realpath: /opt/homebrew/Caskroom/codex/0.133.0/codex-aarch64-apple-darwin
+  cli_version: codex-cli 0.133.0
+  provider_probe_hash: sha256:b168be70895ae4a91aace4172fb079def0e74ced72be33af9ff71525cbec066f
+  model_id: auto
+  resolved_model: gpt-5.5
+  model_probe_command: '(post-dispatch) grep -E ''^model: '' <raw_stderr> | head -1'
+  model_candidate_list:
+  - cli-config-default
+  model_selection_rule: cli-config-default+post-dispatch-banner-parse
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - codex
+  - exec
+  - --dangerously-bypass-approvals-and-sandbox
+  - --sandbox
+  - workspace-write
+  - --skip-git-repo-check
+  - '-'
+  prompt_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-B.1-codex-peer.prompt.md
+  prompt_sha256: sha256:b2310b76e8f13f432abb9ab9b3a92e68709a6c7598e94b9c36655ff994752233
+  stdin_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-B.1-codex-peer.prompt.md
+  stdin_sha256: sha256:b2310b76e8f13f432abb9ab9b3a92e68709a6c7598e94b9c36655ff994752233
+  exit_code: 0
+  started_at: '2026-05-23T02:58:40Z'
+  ended_at: '2026-05-23T03:00:49Z'
+  raw_output_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.raw/project-ontos-issue-119-B.1-codex-peer.raw.txt
+  raw_output_hash: sha256:952a152050ec3b946a9ad9b4d4b9093176c271f08ceca7af96b628ab7136a0ff
+  evidence_cap: direct-run
+  evidence_labels_used:
+  - static-inspection
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-codex-peer.md
+  artifact_sha256: sha256:952a152050ec3b946a9ad9b4d4b9093176c271f08ceca7af96b628ab7136a0ff
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: null
+  model_used: gpt-5.5
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: ''
+    exit_code: 0
+    started_at: '2026-05-23T02:58:40Z'
+    ended_at: '2026-05-23T03:00:49Z'
+    detected_429: false
+    stderr_tail_200: 'release-note/documentation touchpoint.
+
+
+      ## Notes
+
+
+      No blocker found. The core contract, shared serializer placement, MCP preservation
+      invariant, and verification gates are coherent.
+
+      tokens used
+
+      93,375'
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: raw_transcript_promoted
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  raw_transcript_sha256: sha256:952a152050ec3b946a9ad9b4d4b9093176c271f08ceca7af96b628ab7136a0ff
+  promoted_artifact_sha256: sha256:952a152050ec3b946a9ad9b4d4b9093176c271f08ceca7af96b628ab7136a0ff
+  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/workspaces/Project-Ontos/docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-codex-peer.md'
+- dispatch_id: project-ontos-issue-119-B.1-claude-sonnet-alignment
+  family: claude-sonnet
+  role: alignment
+  execution_provider: claude
+  execution_cli: claude
+  resolved_executable: /Users/jonathanoh/.local/bin/claude
+  resolved_executable_realpath: /Users/jonathanoh/.local/share/claude/versions/2.1.149
+  cli_version: 2.1.149 (Claude Code)
+  provider_probe_hash: sha256:5c92748ad5c53f34a55d46aaf99a0a4f1f0dbf3631f0bb143abe06f16d588d8a
+  model_id: sonnet
+  resolved_model: sonnet
+  model_probe_command: (none) same-family literal accepted under P14
+  model_candidate_list:
+  - sonnet
+  model_selection_rule: same-family-literal
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - claude
+  - --permission-mode
+  - bypassPermissions
+  - --add-dir
+  - .
+  - -p
+  - <prompt-body-redacted>
+  - --model
+  - sonnet
+  prompt_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-B.1-claude-sonnet-alignment.prompt.md
+  prompt_sha256: sha256:45d548d672a2ac70604c5201e5626ed939558a539d269321b8004cd0b5f32f45
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-05-23T03:01:11Z'
+  ended_at: '2026-05-23T03:02:25Z'
+  raw_output_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.raw/project-ontos-issue-119-B.1-claude-sonnet-alignment.raw.txt
+  raw_output_hash: sha256:e421f5c7eb1b1d264d2b95d2ace981129c958cde73652909a28b9f0cebba1131
+  evidence_cap: direct-run
+  evidence_labels_used:
+  - static-inspection
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-claude-sonnet-alignment.md
+  artifact_sha256: sha256:e421f5c7eb1b1d264d2b95d2ace981129c958cde73652909a28b9f0cebba1131
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: sonnet
+  model_used: sonnet
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: sonnet
+    exit_code: 0
+    started_at: '2026-05-23T03:01:11Z'
+    ended_at: '2026-05-23T03:02:25Z'
+    detected_429: false
+    stderr_tail_200: ''
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: raw_transcript_promoted
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  raw_transcript_sha256: sha256:e421f5c7eb1b1d264d2b95d2ace981129c958cde73652909a28b9f0cebba1131
+  promoted_artifact_sha256: sha256:e421f5c7eb1b1d264d2b95d2ace981129c958cde73652909a28b9f0cebba1131
+  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/workspaces/Project-Ontos/docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-claude-sonnet-alignment.md'
+- dispatch_id: project-ontos-issue-119-B.1-gemini-adversarial
+  family: gemini
+  role: adversarial
+  execution_provider: gemini
+  execution_cli: gemini
+  resolved_executable: /opt/homebrew/bin/gemini
+  resolved_executable_realpath: /opt/homebrew/Cellar/gemini-cli/0.42.0/libexec/lib/node_modules/@google/gemini-cli/bundle/gemini.js
+  cli_version: 0.42.0
+  provider_probe_hash: sha256:1138de08291ff295ecd0af44246c5cc1f41fe277024ec872c19f49d1217cdcab
+  model_id: auto
+  resolved_model: cli-default-unknown
+  model_probe_command: (post-dispatch) grep -iE 'model:' <raw_stderr> | head -1
+  model_candidate_list:
+  - cli-config-default
+  model_selection_rule: cli-config-default+post-dispatch-best-effort
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - gemini
+  - -p
+  - <prompt-body-redacted>
+  prompt_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-B.1-gemini-adversarial.prompt.md
+  prompt_sha256: sha256:cf1194d16e8fb8c132e9a671c3f168d2546d9b332cf0c3cf88c1826fa18f7cdb
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-05-23T03:02:37Z'
+  ended_at: '2026-05-23T03:03:21Z'
+  raw_output_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.raw/project-ontos-issue-119-B.1-gemini-adversarial.raw.txt
+  raw_output_hash: sha256:894813e11f422dd10d80f1b9fa313f4fbae3e85c0fc8b81134a7c7a3ab648557
+  evidence_cap: static-inspection
+  evidence_labels_used:
+  - static-inspection
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-gemini-adversarial.md
+  artifact_sha256: sha256:ecdc355adf9cc59675fd969b0535b5d331fe85fd1efc143e1b41fc484a8e9fe4
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: null
+  model_used: cli-default-unknown
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: ''
+    exit_code: 0
+    started_at: '2026-05-23T03:02:37Z'
+    ended_at: '2026-05-23T03:03:21Z'
+    detected_429: false
+    stderr_tail_200: 'Warning: 256-color support not detected. Using a terminal with
+      at least 256-color support is recommended for a better visual experience.
+
+      Ripgrep is not available. Falling back to GrepTool.'
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: raw_stdout
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+- dispatch_id: project-ontos-issue-119-D.2-codex-peer
+  family: codex
+  role: peer
+  execution_provider: codex
+  execution_cli: codex
+  resolved_executable: /opt/homebrew/bin/codex
+  resolved_executable_realpath: /opt/homebrew/Caskroom/codex/0.133.0/codex-aarch64-apple-darwin
+  cli_version: codex-cli 0.133.0
+  provider_probe_hash: sha256:b168be70895ae4a91aace4172fb079def0e74ced72be33af9ff71525cbec066f
+  model_id: auto
+  resolved_model: gpt-5.5
+  model_probe_command: '(post-dispatch) grep -E ''^model: '' <raw_stderr> | head -1'
+  model_candidate_list:
+  - cli-config-default
+  model_selection_rule: cli-config-default+post-dispatch-banner-parse
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - codex
+  - exec
+  - --dangerously-bypass-approvals-and-sandbox
+  - --sandbox
+  - workspace-write
+  - --skip-git-repo-check
+  - '-'
+  prompt_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-D.2-codex-peer.prompt.md
+  prompt_sha256: sha256:7b6e748022fda810ace53ef847720c944b2bb1fc72a763da50cf3c5d18fb7ec4
+  stdin_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-D.2-codex-peer.prompt.md
+  stdin_sha256: sha256:7b6e748022fda810ace53ef847720c944b2bb1fc72a763da50cf3c5d18fb7ec4
+  exit_code: 0
+  started_at: '2026-05-23T03:13:29Z'
+  ended_at: '2026-05-23T03:14:52Z'
+  raw_output_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.raw/project-ontos-issue-119-D.2-codex-peer.raw.txt
+  raw_output_hash: sha256:3bf7828328b8b2629f060960e095cf564648fab48e7fa90e317b2a6e9f1df1dd
+  evidence_cap: direct-run
+  evidence_labels_used:
+  - static-inspection
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-codex-peer.md
+  artifact_sha256: sha256:3bf7828328b8b2629f060960e095cf564648fab48e7fa90e317b2a6e9f1df1dd
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: null
+  model_used: gpt-5.5
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: ''
+    exit_code: 0
+    started_at: '2026-05-23T03:13:29Z'
+    ended_at: '2026-05-23T03:14:52Z'
+    detected_429: false
+    stderr_tail_200: 'test_activate_json_warning_metadata.py`, `tests/mcp/test_activation.py`,
+      `tests/commands/test_agentic_activation_resilience.py`, and `tests/mcp/test_context_map.py`;
+      all 24 passed.
+
+      tokens used
+
+      65,283'
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: raw_transcript_promoted
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  raw_transcript_sha256: sha256:3bf7828328b8b2629f060960e095cf564648fab48e7fa90e317b2a6e9f1df1dd
+  promoted_artifact_sha256: sha256:3bf7828328b8b2629f060960e095cf564648fab48e7fa90e317b2a6e9f1df1dd
+  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/workspaces/Project-Ontos/docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-codex-peer.md'
+- dispatch_id: project-ontos-issue-119-D.2-claude-sonnet-alignment
+  family: claude-sonnet
+  role: alignment
+  execution_provider: claude
+  execution_cli: claude
+  resolved_executable: /Users/jonathanoh/.local/bin/claude
+  resolved_executable_realpath: /Users/jonathanoh/.local/share/claude/versions/2.1.149
+  cli_version: 2.1.149 (Claude Code)
+  provider_probe_hash: sha256:5c92748ad5c53f34a55d46aaf99a0a4f1f0dbf3631f0bb143abe06f16d588d8a
+  model_id: sonnet
+  resolved_model: sonnet
+  model_probe_command: (none) same-family literal accepted under P14
+  model_candidate_list:
+  - sonnet
+  model_selection_rule: same-family-literal
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - claude
+  - --permission-mode
+  - bypassPermissions
+  - --add-dir
+  - .
+  - -p
+  - <prompt-body-redacted>
+  - --model
+  - sonnet
+  prompt_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-D.2-claude-sonnet-alignment.prompt.md
+  prompt_sha256: sha256:403d19180dbc98aadd48ecd9b1fc9bb6da83afd5bc149d22c0c2d44f9efbed04
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-05-23T03:15:02Z'
+  ended_at: '2026-05-23T03:15:56Z'
+  raw_output_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.raw/project-ontos-issue-119-D.2-claude-sonnet-alignment.raw.txt
+  raw_output_hash: sha256:dc11f66ea9724cd1a1d61a467e8306a5b6041785f90e2ca391a9d480555f2587
+  evidence_cap: direct-run
+  evidence_labels_used: []
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-claude-sonnet-alignment.md
+  artifact_sha256: sha256:dc11f66ea9724cd1a1d61a467e8306a5b6041785f90e2ca391a9d480555f2587
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: sonnet
+  model_used: sonnet
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: sonnet
+    exit_code: 0
+    started_at: '2026-05-23T03:15:02Z'
+    ended_at: '2026-05-23T03:15:56Z'
+    detected_429: false
+    stderr_tail_200: ''
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: raw_transcript_promoted
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  raw_transcript_sha256: sha256:dc11f66ea9724cd1a1d61a467e8306a5b6041785f90e2ca391a9d480555f2587
+  promoted_artifact_sha256: sha256:dc11f66ea9724cd1a1d61a467e8306a5b6041785f90e2ca391a9d480555f2587
+  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/workspaces/Project-Ontos/docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-claude-sonnet-alignment.md'
+- dispatch_id: project-ontos-issue-119-D.2-gemini-adversarial
+  family: gemini
+  role: adversarial
+  execution_provider: gemini
+  execution_cli: gemini
+  resolved_executable: /opt/homebrew/bin/gemini
+  resolved_executable_realpath: /opt/homebrew/Cellar/gemini-cli/0.42.0/libexec/lib/node_modules/@google/gemini-cli/bundle/gemini.js
+  cli_version: 0.42.0
+  provider_probe_hash: sha256:1138de08291ff295ecd0af44246c5cc1f41fe277024ec872c19f49d1217cdcab
+  model_id: auto
+  resolved_model: cli-default-unknown
+  model_probe_command: (post-dispatch) grep -iE 'model:' <raw_stderr> | head -1
+  model_candidate_list:
+  - cli-config-default
+  model_selection_rule: cli-config-default+post-dispatch-best-effort
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - gemini
+  - -p
+  - <prompt-body-redacted>
+  prompt_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-D.2-gemini-adversarial.prompt.md
+  prompt_sha256: sha256:13bb641e78e674eeb64efcc27fe0cb040b1fa4819ffae47a9326aa3819d7f317
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-05-23T03:16:09Z'
+  ended_at: '2026-05-23T03:16:37Z'
+  raw_output_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.raw/project-ontos-issue-119-D.2-gemini-adversarial.raw.txt
+  raw_output_hash: sha256:015d0cdb17681d49d9fd07344a6da8dfb69fe6a97972fab73b0364085f0ffa6f
+  evidence_cap: static-inspection
+  evidence_labels_used: []
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-gemini-adversarial.md
+  artifact_sha256: sha256:81b2ad96f1f1eff87650cb55c43bb468a353c13670d4ac10580b799feae994ee
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: null
+  model_used: cli-default-unknown
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: ''
+    exit_code: 0
+    started_at: '2026-05-23T03:16:09Z'
+    ended_at: '2026-05-23T03:16:37Z'
+    detected_429: false
+    stderr_tail_200: 'Warning: 256-color support not detected. Using a terminal with
+      at least 256-color support is recommended for a better visual experience.
+
+      Ripgrep is not available. Falling back to GrepTool.'
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: raw_stdout
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+- dispatch_id: project-ontos-issue-119-D.5-codex-verifier
+  family: codex
+  role: verifier
+  execution_provider: codex
+  execution_cli: codex
+  resolved_executable: /opt/homebrew/bin/codex
+  resolved_executable_realpath: /opt/homebrew/Caskroom/codex/0.133.0/codex-aarch64-apple-darwin
+  cli_version: codex-cli 0.133.0
+  provider_probe_hash: sha256:b168be70895ae4a91aace4172fb079def0e74ced72be33af9ff71525cbec066f
+  model_id: auto
+  resolved_model: gpt-5.5
+  model_probe_command: '(post-dispatch) grep -E ''^model: '' <raw_stderr> | head -1'
+  model_candidate_list:
+  - cli-config-default
+  model_selection_rule: cli-config-default+post-dispatch-banner-parse
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - codex
+  - exec
+  - --dangerously-bypass-approvals-and-sandbox
+  - --sandbox
+  - workspace-write
+  - --skip-git-repo-check
+  - '-'
+  prompt_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-D.5-codex-verifier.prompt.md
+  prompt_sha256: sha256:aba5279b8bb5431f740d14e0857e8f87b4614c3cbadb1f69f390bb8a7a3f1a6e
+  stdin_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-D.5-codex-verifier.prompt.md
+  stdin_sha256: sha256:aba5279b8bb5431f740d14e0857e8f87b4614c3cbadb1f69f390bb8a7a3f1a6e
+  exit_code: 0
+  started_at: '2026-05-23T03:22:03Z'
+  ended_at: '2026-05-23T03:24:46Z'
+  raw_output_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.raw/project-ontos-issue-119-D.5-codex-verifier.raw.txt
+  raw_output_hash: sha256:2c1d627c557a2c3df14600fe5fbea73f25d9e65724ec6a2954f36593a26c3373
+  evidence_cap: direct-run
+  evidence_labels_used: []
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-codex-verifier.md
+  artifact_sha256: sha256:2c1d627c557a2c3df14600fe5fbea73f25d9e65724ec6a2954f36593a26c3373
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: null
+  model_used: gpt-5.5
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: ''
+    exit_code: 0
+    started_at: '2026-05-23T03:22:03Z'
+    ended_at: '2026-05-23T03:24:46Z'
+    detected_429: false
+    stderr_tail_200: 'passed`, full suite `1334 passed, 2 skipped`. `verify-lifecycle
+      --mode strict-p3` is still pending D.5 verifier receipts, which is expected
+      before this verifier result is recorded.
+
+      tokens used
+
+      71,611'
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: raw_transcript_promoted
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  raw_transcript_sha256: sha256:2c1d627c557a2c3df14600fe5fbea73f25d9e65724ec6a2954f36593a26c3373
+  promoted_artifact_sha256: sha256:2c1d627c557a2c3df14600fe5fbea73f25d9e65724ec6a2954f36593a26c3373
+  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/workspaces/Project-Ontos/docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-codex-verifier.md'
+- dispatch_id: project-ontos-issue-119-D.5-claude-sonnet-verifier
+  family: claude-sonnet
+  role: verifier
+  execution_provider: claude
+  execution_cli: claude
+  resolved_executable: /Users/jonathanoh/.local/bin/claude
+  resolved_executable_realpath: /Users/jonathanoh/.local/share/claude/versions/2.1.149
+  cli_version: 2.1.149 (Claude Code)
+  provider_probe_hash: sha256:5c92748ad5c53f34a55d46aaf99a0a4f1f0dbf3631f0bb143abe06f16d588d8a
+  model_id: sonnet
+  resolved_model: sonnet
+  model_probe_command: (none) same-family literal accepted under P14
+  model_candidate_list:
+  - sonnet
+  model_selection_rule: same-family-literal
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - claude
+  - --permission-mode
+  - bypassPermissions
+  - --add-dir
+  - .
+  - -p
+  - <prompt-body-redacted>
+  - --model
+  - sonnet
+  prompt_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-D.5-claude-sonnet-verifier.prompt.md
+  prompt_sha256: sha256:73455401f759cf25b4eb29d69d80eb514f0b0ce016a7008c4ca43d70a59aa68b
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-05-23T03:24:55Z'
+  ended_at: '2026-05-23T03:25:37Z'
+  raw_output_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.raw/project-ontos-issue-119-D.5-claude-sonnet-verifier.raw.txt
+  raw_output_hash: sha256:c35124fa45e9dfe87da0c132245cb057f4be5621f385e33efcc874805c5f4dd7
+  evidence_cap: direct-run
+  evidence_labels_used: []
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-claude-sonnet-verifier.md
+  artifact_sha256: sha256:c35124fa45e9dfe87da0c132245cb057f4be5621f385e33efcc874805c5f4dd7
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: sonnet
+  model_used: sonnet
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: sonnet
+    exit_code: 0
+    started_at: '2026-05-23T03:24:55Z'
+    ended_at: '2026-05-23T03:25:37Z'
+    detected_429: false
+    stderr_tail_200: ''
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: raw_transcript_promoted
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  raw_transcript_sha256: sha256:c35124fa45e9dfe87da0c132245cb057f4be5621f385e33efcc874805c5f4dd7
+  promoted_artifact_sha256: sha256:c35124fa45e9dfe87da0c132245cb057f4be5621f385e33efcc874805c5f4dd7
+  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/workspaces/Project-Ontos/docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-claude-sonnet-verifier.md'
+- dispatch_id: project-ontos-issue-119-D.5-gemini-verifier
+  family: gemini
+  role: verifier
+  execution_provider: gemini
+  execution_cli: gemini
+  resolved_executable: /opt/homebrew/bin/gemini
+  resolved_executable_realpath: /opt/homebrew/Cellar/gemini-cli/0.42.0/libexec/lib/node_modules/@google/gemini-cli/bundle/gemini.js
+  cli_version: 0.42.0
+  provider_probe_hash: sha256:1138de08291ff295ecd0af44246c5cc1f41fe277024ec872c19f49d1217cdcab
+  model_id: auto
+  resolved_model: cli-default-unknown
+  model_probe_command: (post-dispatch) grep -iE 'model:' <raw_stderr> | head -1
+  model_candidate_list:
+  - cli-config-default
+  model_selection_rule: cli-config-default+post-dispatch-best-effort
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - gemini
+  - -p
+  - <prompt-body-redacted>
+  prompt_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-D.5-gemini-verifier.prompt.md
+  prompt_sha256: sha256:43b81a4418ba69840cb80139070787545258b98e0b93a048634b7b8755b2ed23
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-05-23T03:25:47Z'
+  ended_at: '2026-05-23T03:26:11Z'
+  raw_output_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.raw/project-ontos-issue-119-D.5-gemini-verifier.raw.txt
+  raw_output_hash: sha256:398e0ed60ba37c5b91f9065428cdcc83a067e3947cb0eb90ca313f5c536392ba
+  evidence_cap: static-inspection
+  evidence_labels_used: []
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.5-gemini-verifier.md
+  artifact_sha256: sha256:ac4b23c8031e6714eb051b770534f009e96e3b63fd0d3af8770e1af3f700ba3b
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: null
+  model_used: cli-default-unknown
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: ''
+    exit_code: 0
+    started_at: '2026-05-23T03:25:47Z'
+    ended_at: '2026-05-23T03:26:11Z'
+    detected_429: false
+    stderr_tail_200: 'Warning: 256-color support not detected. Using a terminal with
+      at least 256-color support is recommended for a better visual experience.
+
+      Ripgrep is not available. Falling back to GrepTool.'
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: raw_stdout
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null

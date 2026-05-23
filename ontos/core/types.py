@@ -131,6 +131,17 @@ class ValidationError:
     fix_suggestion: str
     severity: str  # 'error', 'warning', 'info'
 
+    def to_dict(self) -> Dict[str, Any]:
+        record: Dict[str, Any] = {"severity": self.severity, "message": self.message}
+        rule_id = getattr(self.error_type, "value", None) if self.error_type else None
+        if rule_id:
+            record["rule_id"] = rule_id
+        if self.doc_id:
+            record["document_id"] = self.doc_id
+        if self.filepath:
+            record["file_path"] = self.filepath
+        return record
+
 
 @dataclass
 class ValidationResult:

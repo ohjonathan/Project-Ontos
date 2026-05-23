@@ -1,0 +1,3078 @@
+OpenAI Codex v0.133.0
+--------
+workdir: /Users/jonathanoh/workspaces/Project-Ontos
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: danger-full-access
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 019e52da-aecf-7d32-bd65-52d4b9b87041
+--------
+user
+# D.5 Verifier — `project-ontos-issue-119-cli-activate-json-warning-metadata`
+
+You are the **Verifier** on Phase D.5 of deliverable `project-ontos-issue-119-cli-activate-json-warning-metadata` for repo `ohjonathan/Project-Ontos`. Family: `codex`. Your lens: "Does the implementation match the spec and pass its own gates?"
+
+Findings only if the implementation diverges from the spec or a gate fails. If the spec + diff + tests cohere, write `Approve`.
+
+## Strict-P3 verdict shape (MANDATORY)
+
+The very first three characters of your response MUST be `---` (a YAML frontmatter open fence). Do NOT begin your response with any prose, narration, status update like "I have enough information to ..." or "Here is the verdict ...", planning notes, or markdown commentary. The wrapper's verdict-shape predicate rejects any output that does not begin with `---`.
+
+Stdout must begin with the literal three-dash YAML frontmatter open fence `---` followed by a newline.
+
+The verdict MUST contain:
+- YAML frontmatter with `phase: D.5`, `role: verifier`, `family: codex`, `deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata`, `status: completed`.
+- An ATX `#` heading.
+- A `## Verdict` heading.
+- The first non-blank line under `## Verdict` is exactly ONE of: `Approve` | `Request changes` | `Reject` | `Concur`.
+
+## Exact output skeleton
+
+```markdown
+---
+id: project-ontos-issue-119-D.5-codex-verifier
+deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
+phase: D.5
+role: verifier
+family: codex
+status: completed
+---
+
+# D.5 Verifier — codex
+
+## Verdict
+
+Approve
+
+## Summary
+
+<1-2 sentence overall judgement.>
+
+## Findings
+
+(omit section if no findings)
+
+## Notes
+<Any final notes; can be empty.>
+```
+
+## D.5 Verifier Packet
+
+# D.5 Verifier Packet — project-ontos-issue-119-cli-activate-json-warning-metadata
+
+Phase D.5 verifies the post-D.4-fix implementation end-to-end. Each verifier confirms:
+- The spec's contracts are satisfied by the landed code (`ontos/` diff below).
+- The targeted test suite passes (28 passed) and the full suite passes (1334 passed).
+- B.1 + D.2 should-fix items are closed (B.1 gemini F1 type-hint tightening; B.1 codex F1 test fixture tightening; B.1 sonnet F1 mandatory parity test; D.2 codex F1 CLI integration coverage for depth/schema/out-of-scope/error).
+
+A verifier verdict of `Approve` requires confirming the above end-to-end. `Request changes` requires a specific blocker with file:line citation.
+
+---
+
+## Section 1 — Spec (post-B.3 amendments)
+
+```markdown
+---
+id: project-ontos-issue-119-cli-activate-json-warning-metadata-spec
+deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
+type: atom
+status: active
+phase: A
+role: spec-author
+family: claude-opus
+depends_on:
+  - ontos_manual
+  - ontology_spec
+  - ontos_agent_instructions
+  - project-ontos-github-issues-115-117-spec
+---
+
+# Spec — project-ontos-issue-119-cli-activate-json-warning-metadata
+
+This spec covers one open GitHub issue against `ohjonathan/Project-Ontos`:
+
+- **Closes #119** — `ontos activate --json` should expose structured warning metadata (`severity`, `rule_id`, `message`, `document_id`, `file_path`), matching the MCP enrichment that landed in PR #118 / v4.5.0.
+
+The Pre-A triage report classified #119 as **In-Scope** with `direct-run` evidence (PR #118 D.6 final-approval explicitly recorded the deferral) plus `static-inspection` of the current `ontos/commands/activate.py` flattening. See `docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/pre-a-triage-report.md`.
+
+This deliverable is a **focused follow-up** to deliverable `project-ontos-github-issues-115-117`. The parity contract was specified there in §2.2.2 (MCP side); this spec carries that contract forward to the CLI side and consolidates the shared serialization logic onto the `ValidationError` dataclass itself.
+
+## 0. Cross-cutting invariants
+
+- MCP behavior is preserved bit-for-bit. The existing `_validation_issues` shape — `{severity, message, rule_id?, document_id?, file_path?}` with empty `document_id`/`file_path` squashed — remains the exact wire format MCP emits. `tests/mcp/test_activation.py` must pass without modification.
+- The MCP success schema (`ValidationIssue` at `ontos/mcp/schemas.py:16-27`) is unchanged. `additionalProperties: false` and the optional-context-field invariant from §2.2.2 of the prior spec are preserved.
+- The `ontos activate` human-readable output (the non-`--json` path through `format_activation_output()` at `ontos/commands/activate.py:144-168`) is **untouched**. It only consumes `payload["summary"]` counts and never iterates the restructured `payload["validation"]` lists.
+- MCP-only behavior (`_snapshot_issue()`, `_SNAPSHOT_RULE_PREFIXES` at `ontos/mcp/tools.py:643-671`) is preserved. CLI activation has no snapshot warning channel; the prefix classification stays MCP-side.
+- The `_not_usable()` path at `ontos/commands/activate.py:181-205` continues to emit empty `validation.errors` and `validation.warnings` lists — its semantics are unaffected by the element-shape change.
+- Conservative repair behavior elsewhere in the codebase (e.g., `DocumentType.UNKNOWN` fallback, `original_value` preservation) is **out of scope** and must not be modified.
+- `verify-lifecycle.sh --mode strict-p3 manifests/project-ontos-issue-119-cli-activate-json-warning-metadata.yaml` must pass at D.6.
+
+## 1. Issue #119 — CLI `ontos activate --json` warning metadata parity
+
+### 1.1 Current behavior
+
+[ontos/commands/activate.py:96-105](ontos/commands/activate.py:96) constructs the validation portion of the activation JSON payload by **flattening** each `ValidationError` instance to just its `.message`:
+
+```python
+validation_errors = []
+validation_warnings = []
+if docs:
+    content, validation = generate_context_map(
+        docs,
+        gen_config,
+        GenerateMapOptions(max_dependency_depth=config.validation.max_dependency_depth),
+    )
+    validation_errors = [issue.message for issue in validation.errors]
+    validation_warnings = [issue.message for issue in validation.warnings]
+```
+
+The resulting JSON payload at [ontos/commands/activate.py:114-140](ontos/commands/activate.py:114) emits:
+
+```json
+{
+  "validation": {
+    "errors":   ["message text", ...],
+    "warnings": ["message text", ...]
+  }
+}
+```
+
+In contrast, the MCP `activate` tool — which consumes the same `ValidationResult` (loaded from the cache snapshot in `ontos/mcp/tools.py`) — runs each `ValidationError` through the private `_validation_issues()` helper at [ontos/mcp/tools.py:620-640](ontos/mcp/tools.py:620), producing the enriched dict shape specified in §2.2.2 of the prior deliverable:
+
+```json
+{
+  "severity": "warning",
+  "rule_id": "orphan",
+  "message": "Document has no incoming dependencies",
+  "document_id": "model_a_bronze_sourcepacket_review",
+  "file_path": "docs/reviews/model_a_bronze_sourcepacket_review.md"
+}
+```
+
+CLI automation that wants to triage by rule, document, or path must therefore either re-parse the message string (brittle) or duplicate the MCP call (wasteful). PR #118 D.6 final-approval explicitly recorded this CLI/MCP consistency gap as a non-blocking deferral — that deferral is the entire scope of #119.
+
+### 1.2 Contract
+
+Every CLI activation warning and error emitted in the JSON payload carries the same enriched shape MCP already produces:
+
+```json
+{
+  "severity": "warning|error",
+  "message": "human-readable text",
+  "rule_id": "orphan|depth|schema|broken_link|out_of_scope_dependency|...",
+  "document_id": "doc-id-when-known",
+  "file_path": "docs/path/to/file.md"
+}
+```
+
+Field rules (identical to MCP):
+
+| Field | Rule |
+|---|---|
+| `severity` | always present; verbatim copy of `ValidationError.severity` (`"error"` / `"warning"` / `"info"`). |
+| `message` | always present; verbatim copy of `ValidationError.message`. |
+| `rule_id` | present when `ValidationError.error_type` is set; the value is `error_type.value` from `ValidationErrorType` (e.g. `"orphan"`, `"depth"`, `"schema"`, `"broken_link"`, `"out_of_scope_dependency"`). Absent when `error_type` is falsy. |
+| `document_id` | present when `ValidationError.doc_id` is a non-empty string. Empty / missing `doc_id` → field absent (squashed). |
+| `file_path` | present when `ValidationError.filepath` is a non-empty string. Empty / missing `filepath` → field absent (squashed). |
+
+The squashing rule keeps the public payload compact and matches the MCP contract bit-for-bit, so CLI consumers and MCP consumers see identical record shapes for the same underlying `ValidationError`.
+
+#### 1.2.1 Schema break (intentional)
+
+The `validation.errors` and `validation.warnings` keys retain their names and their position in the payload, but their **element shape changes from `str` to `dict`**:
+
+| Before (`ontos<=4.5.0`) | After (this deliverable) |
+|---|---|
+| `payload.data.validation.warnings: list[str]` | `payload.data.validation.warnings: list[dict]` |
+| `payload.data.validation.errors: list[str]` | `payload.data.validation.errors: list[dict]` |
+
+This is a **deliberate breaking change** to the CLI JSON contract. The Pre-A triage adjudicated this against the alternative of dual-emitting (a `warnings_structured` sibling key) and rejected the alternative on the grounds that it bakes an undesirable historical shape into the contract. Downstream consumers — including the user's Johnny-OS smoke tooling — must update their parsers.
+
+The change is called out:
+
+- in this spec (here, §1.2.1),
+- in the PR body when #119 lands,
+- in the next release note under `docs/releases/` if a release notes directory is in use (verify at C-phase via `ls docs/releases/`).
+
+The unchanged top-level envelope (`status`, `code`, `message`, `data` wrapper from `ontos/ui/json_output.py`) means CLI consumers that already JSON-decode the response keep working — only the inner `validation.errors[i]` / `validation.warnings[i]` element type changes.
+
+### 1.3 Implementation
+
+#### 1.3.1 Shared serialization on the dataclass
+
+Add a public `to_dict()` method to `ValidationError` in [ontos/core/types.py:124-133](ontos/core/types.py:124). This follows the existing pattern set by `DocumentLoadIssue.to_dict()` at [ontos/io/files.py:36](ontos/io/files.py:36) (which CLI already calls via `[issue.to_dict(root=project_root) for issue in load_result.issues]` in `activate.py:125`):
+
+```python
+# ontos/core/types.py — added to @dataclass ValidationError
+def to_dict(self) -> Dict[str, Any]:
+    record: Dict[str, Any] = {"severity": self.severity, "message": self.message}
+    rule_id = getattr(self.error_type, "value", None) if self.error_type else None
+    if rule_id:
+        record["rule_id"] = rule_id
+    if self.doc_id:
+        record["document_id"] = self.doc_id
+    if self.filepath:
+        record["file_path"] = self.filepath
+    return record
+```
+
+The field mapping (`doc_id` → `document_id`, `filepath` → `file_path`) preserves the public-facing key names already established by the MCP `_validation_issues` helper, while the internal dataclass fields keep their existing names. The empty-string squashing rule lives on the dataclass itself so both call sites get it for free.
+
+#### 1.3.2 CLI consumer
+
+Replace the flattening at [ontos/commands/activate.py:104-105](ontos/commands/activate.py:104):
+
+```python
+# Before
+validation_errors = [issue.message for issue in validation.errors]
+validation_warnings = [issue.message for issue in validation.warnings]
+
+# After
+validation_errors = [issue.to_dict() for issue in validation.errors]
+validation_warnings = [issue.to_dict() for issue in validation.warnings]
+```
+
+No other line in `ontos/commands/activate.py` requires changes — the payload assembly at lines 114-140 keeps its existing structure, and `format_activation_output()` (lines 144-168) never touches these lists.
+
+#### 1.3.3 MCP consumer (refactor onto the shared method)
+
+Refactor `_validation_issues()` in [ontos/mcp/tools.py:620-640](ontos/mcp/tools.py:620) to use the new dataclass method. Tighten the parameter type hint from `list[Any]` to `list[ValidationError]` so the contract — that callers always pass a homogeneous list of `ValidationError` instances — is explicit (B.1 gemini F1):
+
+```python
+def _validation_issues(issues: list[ValidationError]) -> list[dict[str, Any]]:
+    # (#119) Reuse ValidationError.to_dict() so CLI + MCP share the
+    # exact same serialization. Snapshot bare strings still use
+    # _snapshot_issue() (MCP-only). Type-hint tightened to list[ValidationError]
+    # because the only call sites (_normalize_warnings, _validation_payload)
+    # pass validation.errors / validation.warnings, both of which are
+    # List[ValidationError] per the dataclass definition.
+    return [issue.to_dict() for issue in issues]
+```
+
+`_normalize_warnings()`, `_validation_payload()`, `_snapshot_issue()`, and `_SNAPSHOT_RULE_PREFIXES` are unchanged. The MCP `ValidationIssue` schema (`ontos/mcp/schemas.py:16-27`) is unchanged — the wire format produced by `to_dict()` is bit-identical to the prior `_validation_issues` output, so the schema validation continues to pass.
+
+#### 1.3.4 No other runtime modules touched
+
+The **runtime implementation surface** is exactly three files:
+
+- `ontos/core/types.py` (one method added, `ValidationError` import already present in `ontos/mcp/tools.py`)
+- `ontos/commands/activate.py` (two lines swapped)
+- `ontos/mcp/tools.py` (one helper body collapsed, one type hint tightened)
+
+The **documentation surface** additionally requires the schema-break call-out in §1.2.1 to land:
+
+- this spec (already includes the call-out at §1.2.1),
+- the PR body (`Closes #119` + the `list[str]` → `list[dict]` note),
+- a release-note bullet under `docs/releases/` (check at Phase C whether the next-release file already exists; create one if needed).
+
+Plus the test surface in §1.4.
+
+### 1.4 Tests
+
+#### 1.4.1 New CLI test file — `tests/commands/test_activate_json_warning_metadata.py`
+
+Build temp workspaces using the same pattern as [tests/commands/test_agentic_activation_resilience.py](tests/commands/test_agentic_activation_resilience.py), invoke `ontos --json activate` (or call `activate_command` / `run_activation` directly), parse the JSON envelope, and assert on the structured payload. Required cases (test fixtures tightened against actual validator behavior per B.1 codex F1):
+
+| # | Case | Assertions |
+|---|---|---|
+| 1 | **Orphan warning** | A doc whose `type` is **not** in `allowed_orphan_types` (default `["atom"]`) and which has no incoming dependencies — e.g. a `kernel`-typed doc with `depends_on: []`. Override `allowed_orphan_types: []` in the test workspace config to be robust to defaults. `validation.warnings` contains one record with `rule_id == "orphan"`, `severity == "warning"`, populated `document_id`, populated `file_path`, and a non-empty `message`. |
+| 2 | **Depth warning** | A `depends_on` chain that exceeds `max_dependency_depth`. `validation.warnings` contains a record with `rule_id == "depth"`, populated `document_id` / `file_path`. |
+| 3 | **Schema warning** | A log doc missing required schema fields (the validator-side schema check, not the loader-side invalid-`type`/`status` diagnostics which go through `load_result.issues` rather than `validation.warnings`). `validation.warnings` contains a record with `rule_id == "schema"` and populated `document_id` / `file_path`. *(Note: finer-grained snapshot rule_ids like `schema.log_missing_fields` are MCP-only by design and out of scope; CLI reports the structured enum value `schema`.)* |
+| 4 | **Out-of-scope dependency** | A doc with `depends_on:` pointing at a workspace-relative path that exists on disk but is not loaded as a doc. `validation.warnings` contains a record with `rule_id == "out_of_scope_dependency"`. |
+| 5 | **Empty context squashed** | Construct a synthetic `ValidationError(error_type=ValidationErrorType.ORPHAN, doc_id="", filepath="", message="m", severity="warning", fix_suggestion="")` and call `.to_dict()` directly. Assert the returned dict contains `severity` and `message` but **not** `document_id` and **not** `file_path` (squashed). `rule_id` is present (`"orphan"`). |
+| 6 | **Error parity** | Force an error-severity `ValidationError` into the result. Since `generate_context_map()` currently emits warning-severity entries for broken `depends_on` (no naturally-occurring `error`-severity validator output via the standard fixture pipeline), use either (a) a controlled synthetic `ValidationError(severity="error", ...)` injected through a monkeypatched validator OR (b) a cycle-creating fixture if the cycle detector emits error-severity entries. Either path: assert the resulting record appears under `validation.errors` (not `.warnings`) with the same field shape and `severity == "error"`. |
+| 7 | **`_not_usable()` path unchanged** | Trigger the `_not_usable()` branch (no docs loaded and no existing context map). Assert `data.validation.errors == []` and `data.validation.warnings == []`. |
+| 8 | **CLI/MCP parity** | **Mandatory** parity assertion (B.1 sonnet F1). Feed a constructed `ValidationResult` (with one warning that has all five fields populated, and one with only `severity`/`message`) through both code paths — `[issue.to_dict() for issue in result.warnings]` (CLI) and `_validation_issues(result.warnings)` (MCP). Assert the two lists are **identical** (same Python equality on the list of dicts). This is the load-bearing regression for the §0 "bit-for-bit" invariant. |
+
+#### 1.4.2 MCP regression — `tests/mcp/test_activation.py`
+
+The existing `test_validation_issues_enriches_with_rule_id_document_id_file_path` and `test_validation_issues_drops_empty_context_fields` cases must pass unchanged. They are the load-bearing regression coverage for MCP behavior. No edits required; verifying they remain green is the test for the MCP refactor.
+
+#### 1.4.3 Existing CLI regression — `tests/commands/test_agentic_activation_resilience.py`
+
+The existing CLI test asserts `payload["data"]["status"]`, `payload["data"]["map"]["refreshed"]`, `payload["data"]["loaded_ids"]` (per the prior exploration). These keys are untouched; the test must continue to pass.
+
+#### 1.4.4 Existing MCP context-map regression — `tests/mcp/test_context_map.py`
+
+The assertion at [tests/mcp/test_context_map.py:30](tests/mcp/test_context_map.py:30) (`assert payload["validation"]["errors"] == []`) compares against the empty list, which is shape-neutral. No change required.
+
+### 1.5 Acceptance check (manifest cardinality)
+
+`G-cardinality-1` gates: `python -c "from ontos.core.types import ValidationError; assert callable(getattr(ValidationError, 'to_dict', None))"` → `ok`.
+
+`G-cardinality-2` gates: `grep -c '#119'` against this spec returns ≥1 (this spec mentions `#119` multiple times — header, §1, §1.2.1, §1.2 acceptance criteria mapping).
+
+## 2. Out of scope
+
+The following items are **not** part of #119 and must not be touched:
+
+- The MCP `_snapshot_issue()` bare-string prefix classifier and `_SNAPSHOT_RULE_PREFIXES` table — MCP-only by design.
+- The MCP `ValidationIssue` schema (`ontos/mcp/schemas.py`) — the wire format is unchanged, so the schema doesn't need to change.
+- The `get_context_bundle` pre-activate warning channel from issue #115 — preserved.
+- The `ontos doctor` severity alignment from issue #117 — preserved.
+- The `body.bare_id_token` precision change from issue #117 — preserved.
+- The `depends_on` resolution rules and `OUT_OF_SCOPE_DEPENDENCY` validator emission from issue #117 — already in place; #119 only **serializes** the resulting `ValidationError` to JSON; it does not re-spec the validation rules themselves.
+- The ontology-engine repo, the `.llm-dev/framework/` submodule contents, and any unrelated Ontos graph hygiene drift on the existing 204 validation warnings.
+
+## 3. Verification
+
+End-to-end gates, run from the repo root after Phase C lands:
+
+```bash
+scripts/llm-dev doctor
+scripts/llm-dev verify manifests/project-ontos-issue-119-cli-activate-json-warning-metadata.yaml
+scripts/llm-dev verify-lifecycle manifests/project-ontos-issue-119-cli-activate-json-warning-metadata.yaml
+.venv/bin/python -m pytest -q tests/commands/test_activate_json_warning_metadata.py tests/commands/test_agentic_activation_resilience.py tests/mcp/test_activation.py tests/mcp/test_context_map.py
+.venv/bin/python -m pytest -q
+ontos activate --json | jq '.data.validation'
+```
+
+Last command (manual smoke) demonstrates the new shape against the live repo's 204-warning state. The `ontos-validate` pre-commit hook may fail unrelated to this change due to historical graph hygiene noise — if so, commit with `SKIP=ontos-validate` and document the skip in the tracker (per the orchestrator brief).
+```
+
+---
+
+## Section 2 — D.4 fix summary
+
+```markdown
+---
+id: project-ontos-issue-119-D.4-fix-summary
+deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
+phase: D.4
+role: fix-author
+family: claude-opus
+status: completed
+---
+
+# D.4 Fix Summary — claude-opus (orchestrator-authored)
+
+## Closure target
+
+D.2 codex F1 (should-fix) — CLI integration tests cover only the orphan case end-to-end; depth / schema / out-of-scope / error cases were unit-tested through `to_dict()` only. See `docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-codex-peer.md`.
+
+## Fix scope
+
+**Tests-only.** No production code changes. The C-phase implementation (commit `a342e5b`) is already correct and passes the D.2 board on functional grounds (sonnet Approve, gemini Approve). The fix expands integration coverage so the CLI JSON path is end-to-end tested for each spec §1.4.1 case, not just the orphan case.
+
+## Files touched
+
+- `tests/commands/test_activate_json_warning_metadata.py` — four new integration tests added.
+
+## New tests (each invokes the real CLI JSON path or `run_activation` directly)
+
+| Spec §1.4.1 case | New test | Fixture / mechanism |
+|---|---|---|
+| Case 2 — Depth warning | `test_activate_json_depth_warning_carries_structured_metadata` | Temp workspace with `max_dependency_depth = 1` and a `doc_a → doc_b → doc_c` chain (3 hops). Subprocess `ontos --json activate`; asserts `rule_id == "depth"` with populated `document_id` / `file_path`. |
+| Case 3 — Schema-class warning | `test_activate_json_schema_class_warning_carries_structured_metadata` | Temp workspace with a log doc missing required fields. Subprocess `ontos --json activate`; asserts the log doc's warning record carries the structured shape (`severity`, `document_id`, `file_path`, `rule_id`). |
+| Case 4 — Out-of-scope dependency | `test_activate_json_out_of_scope_dependency_carries_structured_metadata` | Temp workspace with an external `.md` file outside `docs/` and a doc whose `depends_on:` references it. Subprocess `ontos --json activate`; asserts `rule_id == "out_of_scope_dependency"` with `document_id == "atom_with_external_dep"` and `file_path` ending in `docs/atom.md`. |
+| Case 6 — Error parity | `test_activate_json_error_severity_lands_under_errors_with_structured_shape` | Monkeypatches `ontos.commands.activate.generate_context_map` to return a controlled `ValidationResult` with one error-severity entry plus one warning. Calls `run_activation` directly and asserts the error appears under `data.validation.errors` with `severity == "error"`, `rule_id == "broken_link"`, and populated context. |
+
+## Tests + receipts
+
+- New test file: `tests/commands/test_activate_json_warning_metadata.py` now has 13 tests (was 9 at C-phase): 6 unit + 1 parity + 1 orphan integration + 4 new integration cases (depth / schema / out-of-scope / error).
+- Targeted suite (the same set the manifest's `G-test-1` runs): `.venv/bin/python -m pytest -q tests/commands/test_activate_json_warning_metadata.py tests/commands/test_agentic_activation_resilience.py tests/mcp/test_activation.py tests/mcp/test_context_map.py` → **28 passed** (was 24 at C-phase).
+- Full Ontos test suite: `.venv/bin/python -m pytest -q` → **1334 passed, 2 skipped** (was 1330 at C-phase; the 4 new tests account for the delta).
+- MCP regression coverage (`tests/mcp/test_activation.py`) continues to pass without modification — the C-phase refactor remains bit-identical on the MCP side.
+
+## Adjudication notes
+
+- **Codex D.2 F1 was a should-fix, not a blocker.** The C-phase implementation was already functionally complete (sonnet + gemini both Approve at D.2; orphan integration test already proved the CLI wiring). The fix expands test coverage to honor strict-P3 best practice: close addressable should-fix findings before D.5 verifier triple rather than carrying them to D.5 for re-litigation.
+- **Schema-class test is shape-tolerant.** The log-schema fixture passes whenever the log doc's warning record carries the structured shape, regardless of which `rule_id` the validator chose (e.g. `schema` vs a snapshot prefix). This honors the spec's design that finer-grained snapshot `rule_id`s are MCP-only.
+- **Error-parity test uses monkeypatch by design.** `generate_context_map()` does not naturally emit `error`-severity entries via the standard fixture pipeline (broken `depends_on` was downgraded to warning in PR #118). The monkeypatch is the cleanest way to exercise the wiring without inventing a synthetic validator rule.
+
+## Phase advance
+
+D.4 endorses advance to **Phase D.5 (verifier triple)**. The codex D.2 F1 should-fix is closed; the implementation surface remains exactly as it was at C-phase (no production code edits); coverage is now complete across all required §1.4.1 cases.
+```
+
+---
+
+## Section 3 — Branch commit log
+
+```text
+04ee9a5 feat(phase-d1-d4): close D.2 review board + D.4 fix pass for #119
+a342e5b feat(phase-a-c): close #119 spec + B.1 board + B.3 verdict + C implementation
+```
+
+---
+
+## Section 4 — `git diff --stat main..HEAD`
+
+```text
+ .ontos-internal/reference/decision_history.md      |    2 +-
+ Ontos_Context_Map.md                               | 1892 +++++---
+ docs/releases/v4.6.0.md                            |   68 +
+ .../.prompts/D.2-review-packet.md                  |  818 ++++
+ ...issue-119-B.1-claude-sonnet-alignment.prompt.md |  326 ++
+ ...roject-ontos-issue-119-B.1-codex-peer.prompt.md |  324 ++
+ ...ntos-issue-119-B.1-gemini-adversarial.prompt.md |  326 ++
+ ...issue-119-D.2-claude-sonnet-alignment.prompt.md |  879 ++++
+ ...roject-ontos-issue-119-D.2-codex-peer.prompt.md |  879 ++++
+ ...ntos-issue-119-D.2-gemini-adversarial.prompt.md |  879 ++++
+ ...s-issue-119-B.1-claude-sonnet-alignment.raw.txt |   38 +
+ ...ssue-119-B.1-claude-sonnet-alignment.stderr.txt |    0
+ .../project-ontos-issue-119-B.1-codex-peer.raw.txt |   38 +
+ ...oject-ontos-issue-119-B.1-codex-peer.stderr.txt | 4968 ++++++++++++++++++++
+ ...-ontos-issue-119-B.1-gemini-adversarial.raw.txt |   35 +
+ ...tos-issue-119-B.1-gemini-adversarial.stderr.txt |    2 +
+ ...s-issue-119-D.2-claude-sonnet-alignment.raw.txt |   42 +
+ ...ssue-119-D.2-claude-sonnet-alignment.stderr.txt |    0
+ .../project-ontos-issue-119-D.2-codex-peer.raw.txt |   31 +
+ ...oject-ontos-issue-119-D.2-codex-peer.stderr.txt | 3970 ++++++++++++++++
+ ...-ontos-issue-119-D.2-gemini-adversarial.raw.txt |   38 +
+ ...tos-issue-119-D.2-gemini-adversarial.stderr.txt |    2 +
+ .../B.1-claude-sonnet-alignment.md                 |   38 +
+ .../B.1-codex-peer.md                              |   38 +
+ .../B.1-gemini-adversarial.md                      |   33 +
+ .../B.3-verdict.md                                 |   53 +
+ .../D.1-codex-peer.md                              |   45 +
+ .../D.2-claude-sonnet-alignment.md                 |   42 +
+ .../D.2-codex-peer.md                              |   31 +
+ .../D.2-gemini-adversarial.md                      |   36 +
+ .../D.3-verdict.md                                 |   54 +
+ .../D.4-fix-summary.md                             |   48 +
+ .../github-issues-input.md                         |   86 +
+ .../lifecycle-receipt-inventory.yaml               |  147 +
+ .../pre-a-triage-report.md                         |   87 +
+ .../pre-a-triage-verdict.md                        |   41 +
+ ...vate-json-warning-metadata-dispatch-intent.yaml |   85 +
+ ...vate-json-warning-metadata-dispatch-result.yaml |  390 ++
+ ...-119-cli-activate-json-warning-metadata-spec.md |  256 +
+ ...issue-119-cli-activate-json-warning-metadata.md |   17 +
+ ...sue-119-cli-activate-json-warning-metadata.yaml |  254 +
+ ontos/commands/activate.py                         |    4 +-
+ ontos/core/types.py                                |   11 +
+ ontos/mcp/tools.py                                 |   29 +-
+ .../test_activate_json_warning_metadata.py         |  579 +++
+ 45 files changed, 17186 insertions(+), 775 deletions(-)
+```
+
+---
+
+## Section 5 — Production diff (`ontos/core/types.py`, `ontos/commands/activate.py`, `ontos/mcp/tools.py`)
+
+```diff
+diff --git a/ontos/commands/activate.py b/ontos/commands/activate.py
+index 64fb9a5..c718d12 100644
+--- a/ontos/commands/activate.py
++++ b/ontos/commands/activate.py
+@@ -101,8 +101,8 @@ def run_activation(
+             gen_config,
+             GenerateMapOptions(max_dependency_depth=config.validation.max_dependency_depth),
+         )
+-        validation_errors = [issue.message for issue in validation.errors]
+-        validation_warnings = [issue.message for issue in validation.warnings]
++        validation_errors = [issue.to_dict() for issue in validation.errors]
++        validation_warnings = [issue.to_dict() for issue in validation.warnings]
+         if write_map:
+             output_path.parent.mkdir(parents=True, exist_ok=True)
+             output_path.write_text(content, encoding="utf-8")
+diff --git a/ontos/core/types.py b/ontos/core/types.py
+index eb82c7b..0a1d2eb 100644
+--- a/ontos/core/types.py
++++ b/ontos/core/types.py
+@@ -131,6 +131,17 @@ class ValidationError:
+     fix_suggestion: str
+     severity: str  # 'error', 'warning', 'info'
+ 
++    def to_dict(self) -> Dict[str, Any]:
++        record: Dict[str, Any] = {"severity": self.severity, "message": self.message}
++        rule_id = getattr(self.error_type, "value", None) if self.error_type else None
++        if rule_id:
++            record["rule_id"] = rule_id
++        if self.doc_id:
++            record["document_id"] = self.doc_id
++        if self.filepath:
++            record["file_path"] = self.filepath
++        return record
++
+ 
+ @dataclass
+ class ValidationResult:
+diff --git a/ontos/mcp/tools.py b/ontos/mcp/tools.py
+index 084fa4d..9761739 100644
+--- a/ontos/mcp/tools.py
++++ b/ontos/mcp/tools.py
+@@ -15,7 +15,7 @@ from ontos.commands.map import CompactMode, GenerateMapOptions, generate_context
+ from ontos.core.content_hash import compute_content_hash
+ from ontos.core.errors import OntosUserError
+ from ontos.core.snapshot import DocumentSnapshot
+-from ontos.core.types import DocumentData, ValidationResult
++from ontos.core.types import DocumentData, ValidationError, ValidationResult
+ from ontos.io.snapshot import create_snapshot
+ from ontos.mcp._types import PortfolioIndexLike
+ from ontos.mcp.scanner import slugify
+@@ -617,27 +617,14 @@ def _validation_payload(validation: ValidationResult) -> dict[str, Any]:
+     }
+ 
+ 
+-def _validation_issues(issues: list[Any]) -> list[dict[str, Any]]:
+-    # (#117) Surface document context (rule_id, document_id, file_path) so
++def _validation_issues(issues: list[ValidationError]) -> list[dict[str, Any]]:
++    # (#117/#119) Surface document context (rule_id, document_id, file_path) so
+     # downstream agents can triage without a second query. Empty strings are
+-    # squashed so the public payload stays compact.
+-    enriched: list[dict[str, Any]] = []
+-    for issue in issues:
+-        record: dict[str, Any] = {
+-            "severity": issue.severity,
+-            "message": issue.message,
+-        }
+-        rule_id = getattr(issue.error_type, "value", None) if getattr(issue, "error_type", None) else None
+-        if rule_id:
+-            record["rule_id"] = rule_id
+-        doc_id = getattr(issue, "doc_id", "") or ""
+-        if doc_id:
+-            record["document_id"] = doc_id
+-        file_path = getattr(issue, "filepath", "") or ""
+-        if file_path:
+-            record["file_path"] = file_path
+-        enriched.append(record)
+-    return enriched
++    # squashed so the public payload stays compact. The serialization lives on
++    # ValidationError.to_dict() so CLI and MCP share the exact same shape;
++    # call sites here (_normalize_warnings, _validation_payload) always pass
++    # validation.errors / validation.warnings (List[ValidationError]).
++    return [issue.to_dict() for issue in issues]
+ 
+ 
+ # (#117) Bare snapshot strings often originate from the loader and document
+```
+
+---
+
+## Section 6 — Final test file (`tests/commands/test_activate_json_warning_metadata.py`)
+
+```python
+"""CLI regressions for #119 — `ontos activate --json` structured validation
+metadata (`severity`, `rule_id`, `message`, `document_id`, `file_path`).
+
+Mirrors the MCP enrichment landed in PR #118 / v4.5.0 (deliverable
+project-ontos-github-issues-115-117). See
+docs/specs/project-ontos-issue-119-cli-activate-json-warning-metadata-spec.md
+§1.4.1 for the canonical case list.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+from textwrap import dedent
+
+from ontos.core.types import ValidationError, ValidationErrorType, ValidationResult
+from ontos.mcp.tools import _validation_issues
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+# =============================================================================
+# Helpers
+# =============================================================================
+
+
+def _write(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(dedent(content).lstrip(), encoding="utf-8")
+
+
+def _run(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    env = dict(os.environ)
+    env["PYTHONPATH"] = str(REPO_ROOT)
+    return subprocess.run(
+        [sys.executable, "-m", "ontos", *args],
+        cwd=root,
+        text=True,
+        capture_output=True,
+        env=env,
+    )
+
+
+def _orphan_warning(doc_id: str, filepath: str) -> ValidationError:
+    return ValidationError(
+        error_type=ValidationErrorType.ORPHAN,
+        doc_id=doc_id,
+        filepath=filepath,
+        message="Document has no incoming dependencies",
+        fix_suggestion="Add a dependency from another document, or change type to one in allowed_orphan_types.",
+        severity="warning",
+    )
+
+
+# =============================================================================
+# Unit tests — ValidationError.to_dict() shape (Cases 1-6 from spec §1.4.1)
+# =============================================================================
+
+
+def test_to_dict_orphan_includes_rule_id_document_id_file_path() -> None:
+    """Case 1 — orphan warning carries severity, rule_id, message, document_id, file_path."""
+    issue = _orphan_warning("kernel_doc", "docs/kernel/kernel_doc.md")
+
+    record = issue.to_dict()
+
+    assert record == {
+        "severity": "warning",
+        "message": "Document has no incoming dependencies",
+        "rule_id": "orphan",
+        "document_id": "kernel_doc",
+        "file_path": "docs/kernel/kernel_doc.md",
+    }
+
+
+def test_to_dict_depth_warning_emits_depth_rule_id() -> None:
+    """Case 2 — depth warning carries rule_id == 'depth' and doc context."""
+    issue = ValidationError(
+        error_type=ValidationErrorType.DEPTH,
+        doc_id="leaf_doc",
+        filepath="docs/leaf.md",
+        message="Dependency depth 6 exceeds max 5",
+        fix_suggestion="Flatten the dependency chain or raise max_dependency_depth.",
+        severity="warning",
+    )
+
+    record = issue.to_dict()
+
+    assert record["rule_id"] == "depth"
+    assert record["severity"] == "warning"
+    assert record["document_id"] == "leaf_doc"
+    assert record["file_path"] == "docs/leaf.md"
+
+
+def test_to_dict_schema_warning_emits_schema_rule_id() -> None:
+    """Case 3 — schema warning (e.g. log doc missing required fields) → rule_id == 'schema'.
+
+    Note: finer-grained snapshot rule_ids like ``schema.log_missing_fields`` are
+    MCP-only by design; the CLI path reports the structured enum value ``schema``.
+    """
+    issue = ValidationError(
+        error_type=ValidationErrorType.SCHEMA,
+        doc_id="logs_2026_05_22",
+        filepath="docs/logs/2026-05-22.md",
+        message="Log missing fields: branch",
+        fix_suggestion="Add the required `branch` field to the log frontmatter.",
+        severity="warning",
+    )
+
+    record = issue.to_dict()
+
+    assert record["rule_id"] == "schema"
+    assert record["document_id"] == "logs_2026_05_22"
+    assert record["file_path"] == "docs/logs/2026-05-22.md"
+
+
+def test_to_dict_out_of_scope_dependency_emits_correct_rule_id() -> None:
+    """Case 4 — depends_on resolved on disk but not loaded → rule_id == 'out_of_scope_dependency'."""
+    issue = ValidationError(
+        error_type=ValidationErrorType.OUT_OF_SCOPE_DEPENDENCY,
+        doc_id="strategy_a",
+        filepath="docs/strategy/a.md",
+        message="External dependency resolved from disk: '.llm-dev/framework/framework.md' (declared in strategy_a)",
+        fix_suggestion="Either load the target as a doc or rephrase the dependency.",
+        severity="warning",
+    )
+
+    record = issue.to_dict()
+
+    assert record["rule_id"] == "out_of_scope_dependency"
+    assert record["document_id"] == "strategy_a"
+    assert record["file_path"] == "docs/strategy/a.md"
+
+
+def test_to_dict_squashes_empty_document_id_and_file_path() -> None:
+    """Case 5 — empty doc_id / filepath are absent from the public payload (not present as empty strings)."""
+    issue = ValidationError(
+        error_type=ValidationErrorType.ORPHAN,
+        doc_id="",
+        filepath="",
+        message="Document has no incoming dependencies",
+        fix_suggestion="",
+        severity="warning",
+    )
+
+    record = issue.to_dict()
+
+    assert record == {
+        "severity": "warning",
+        "message": "Document has no incoming dependencies",
+        "rule_id": "orphan",
+    }
+    assert "document_id" not in record
+    assert "file_path" not in record
+
+
+def test_to_dict_error_severity_preserved() -> None:
+    """Case 6 — error-severity ValidationError serializes with severity == 'error'."""
+    issue = ValidationError(
+        error_type=ValidationErrorType.BROKEN_LINK,
+        doc_id="strategy_a",
+        filepath="docs/strategy/a.md",
+        message="Broken dependency: missing_doc",
+        fix_suggestion="Create the target doc or remove the dependency.",
+        severity="error",
+    )
+
+    record = issue.to_dict()
+
+    assert record["severity"] == "error"
+    assert record["rule_id"] == "broken_link"
+    assert record["document_id"] == "strategy_a"
+    assert record["file_path"] == "docs/strategy/a.md"
+
+
+# =============================================================================
+# Parity tests — CLI and MCP paths produce identical lists (Case 8 from spec)
+# =============================================================================
+
+
+def test_cli_and_mcp_serialization_identical_for_validation_result() -> None:
+    """Case 8 (mandatory) — CLI and MCP serialize the same ValidationResult identically.
+
+    This is the load-bearing regression for the §0 'bit-for-bit' invariant: if
+    these two lists ever diverge, MCP and CLI consumers will see different
+    payloads for the same underlying ValidationError, defeating the whole
+    purpose of #119.
+    """
+    enriched = _orphan_warning("kernel_doc", "docs/kernel/kernel_doc.md")
+    sparse = ValidationError(
+        error_type=ValidationErrorType.ORPHAN,
+        doc_id="",
+        filepath="",
+        message="Bare snapshot orphan",
+        fix_suggestion="",
+        severity="warning",
+    )
+    result = ValidationResult(warnings=[enriched, sparse])
+
+    cli_serialized = [issue.to_dict() for issue in result.warnings]
+    mcp_serialized = _validation_issues(result.warnings)
+
+    assert cli_serialized == mcp_serialized
+
+
+# =============================================================================
+# Integration test — CLI JSON envelope carries the structured shape end-to-end
+# =============================================================================
+
+
+def _orphan_workspace(root: Path) -> Path:
+    """Build a temp workspace whose context map will surface at least one
+    orphan warning. Uses a non-atom type (default ``allowed_orphan_types`` is
+    ``["atom"]``) so the orphan rule fires regardless of the default config.
+    """
+    _write(
+        root / ".ontos.toml",
+        """
+        [ontos]
+        version = "4.4"
+
+        [scanning]
+        skip_patterns = ["*/docs/reviews/*"]
+        """,
+    )
+    # A kernel doc with no incoming dependencies — kernel is not in default
+    # allowed_orphan_types, so the validator must emit an orphan warning.
+    _write(
+        root / "docs/kernel.md",
+        """
+        ---
+        id: kernel_doc
+        type: kernel
+        status: active
+        ---
+        Kernel body.
+        """,
+    )
+    return root
+
+
+def test_activate_json_emits_structured_validation_warnings(tmp_path: Path) -> None:
+    """End-to-end — `ontos --json activate` writes objects, not strings, under
+    ``data.validation.warnings`` and ``data.validation.errors``.
+    """
+    root = _orphan_workspace(tmp_path)
+
+    result = _run(root, "--json", "activate")
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+
+    validation = payload["data"]["validation"]
+    assert isinstance(validation["errors"], list)
+    assert isinstance(validation["warnings"], list)
+
+    # Every record (if any) is a dict with severity + message.
+    for record in validation["warnings"] + validation["errors"]:
+        assert isinstance(record, dict), f"expected dict, got {type(record).__name__}: {record!r}"
+        assert "severity" in record
+        assert "message" in record
+
+    # At least one orphan warning must appear (the kernel doc has no incoming deps).
+    orphan_records = [w for w in validation["warnings"] if w.get("rule_id") == "orphan"]
+    assert orphan_records, (
+        f"expected at least one orphan warning in {validation['warnings']!r}"
+    )
+    orphan = orphan_records[0]
+    assert orphan["severity"] == "warning"
+    assert orphan["document_id"] == "kernel_doc"
+    assert orphan["file_path"].endswith("docs/kernel.md")
+
+
+def _depth_chain_workspace(root: Path) -> Path:
+    """A doc chain longer than ``max_dependency_depth`` so the validator emits
+    a depth warning (D.2 codex F1 — Case 2 CLI integration coverage).
+    """
+    _write(
+        root / ".ontos.toml",
+        """
+        [ontos]
+        version = "4.4"
+
+        [validation]
+        max_dependency_depth = 1
+        """,
+    )
+    # depth-chain: a → b → c (3 hops > 1)
+    _write(
+        root / "docs/a.md",
+        """
+        ---
+        id: doc_a
+        type: atom
+        status: active
+        depends_on: [doc_b]
+        ---
+        A.
+        """,
+    )
+    _write(
+        root / "docs/b.md",
+        """
+        ---
+        id: doc_b
+        type: atom
+        status: active
+        depends_on: [doc_c]
+        ---
+        B.
+        """,
+    )
+    _write(
+        root / "docs/c.md",
+        """
+        ---
+        id: doc_c
+        type: atom
+        status: active
+        ---
+        C.
+        """,
+    )
+    return root
+
+
+def test_activate_json_depth_warning_carries_structured_metadata(tmp_path: Path) -> None:
+    """D.2 codex F1, Case 2 — CLI JSON path emits depth warnings as structured records."""
+    root = _depth_chain_workspace(tmp_path)
+
+    result = _run(root, "--json", "activate")
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+
+    depth_records = [
+        w for w in payload["data"]["validation"]["warnings"] if w.get("rule_id") == "depth"
+    ]
+    assert depth_records, (
+        f"expected at least one depth warning in {payload['data']['validation']['warnings']!r}"
+    )
+    record = depth_records[0]
+    assert record["severity"] == "warning"
+    assert record["document_id"]
+    assert record["file_path"]
+
+
+def _out_of_scope_workspace(root: Path) -> Path:
+    """A doc whose `depends_on` resolves to a workspace-relative path that
+    exists on disk but is not loaded as a doc (PR #118 / v4.5.0 behavior).
+    The validator emits an ``out_of_scope_dependency`` warning (D.2 codex F1
+    — Case 4 CLI integration coverage).
+    """
+    _write(
+        root / ".ontos.toml",
+        """
+        [ontos]
+        version = "4.4"
+        """,
+    )
+    # External markdown file outside the scanned docs/ tree (so it exists on
+    # disk but is not loaded as a doc — no doc-id match in the graph).
+    _write(root / "external/notes.md", "External notes content.\n")
+    _write(
+        root / "docs/atom.md",
+        """
+        ---
+        id: atom_with_external_dep
+        type: atom
+        status: active
+        depends_on: [external/notes.md]
+        ---
+        Atom referencing an external file.
+        """,
+    )
+    return root
+
+
+def test_activate_json_out_of_scope_dependency_carries_structured_metadata(tmp_path: Path) -> None:
+    """D.2 codex F1, Case 4 — CLI JSON path emits out-of-scope dependency warnings."""
+    root = _out_of_scope_workspace(tmp_path)
+
+    result = _run(root, "--json", "activate")
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+
+    out_of_scope = [
+        w
+        for w in payload["data"]["validation"]["warnings"]
+        if w.get("rule_id") == "out_of_scope_dependency"
+    ]
+    assert out_of_scope, (
+        f"expected at least one out_of_scope_dependency warning in {payload['data']['validation']['warnings']!r}"
+    )
+    record = out_of_scope[0]
+    assert record["severity"] == "warning"
+    assert record["document_id"] == "atom_with_external_dep"
+    assert record["file_path"].endswith("docs/atom.md")
+
+
+def _log_schema_workspace(root: Path) -> Path:
+    """A log doc missing required schema fields so the validator emits a
+    schema-class warning (D.2 codex F1 — Case 3 CLI integration coverage).
+    The CLI path reports the structured enum value ``rule_id == "schema"``;
+    finer-grained snapshot rule_ids like ``schema.log_missing_fields`` are
+    MCP-only by design.
+    """
+    _write(
+        root / ".ontos.toml",
+        """
+        [ontos]
+        version = "4.4"
+        """,
+    )
+    # A skeleton anchor doc so the workspace has at least one regular doc.
+    _write(
+        root / "docs/atom.md",
+        """
+        ---
+        id: atom_anchor
+        type: atom
+        status: active
+        ---
+        Anchor.
+        """,
+    )
+    # A log doc with `type: log` but missing the required fields the
+    # validator's log-schema check looks for (e.g. `branch`, `concepts`).
+    _write(
+        root / "docs/logs/2026-05-22.md",
+        """
+        ---
+        id: log_2026_05_22
+        type: log
+        status: active
+        ---
+        Log body without required fields.
+        """,
+    )
+    return root
+
+
+def test_activate_json_schema_class_warning_carries_structured_metadata(tmp_path: Path) -> None:
+    """D.2 codex F1, Case 3 — CLI JSON path emits schema-class warnings as
+    structured records when a log doc is missing required fields.
+
+    Note: this test asserts the CLI wiring (the warning lands as a structured
+    dict). The validator may classify log-schema issues under either
+    ``rule_id == "schema"`` (the structured enum path) or surface them via
+    the snapshot channel (MCP-only). The test passes as long as the
+    relevant warning record carries the structured shape, regardless of
+    which path the validator chose.
+    """
+    root = _log_schema_workspace(tmp_path)
+
+    result = _run(root, "--json", "activate")
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+
+    log_id = "log_2026_05_22"
+    schema_records = [
+        w
+        for w in payload["data"]["validation"]["warnings"]
+        if w.get("document_id") == log_id
+    ]
+    if schema_records:
+        record = schema_records[0]
+        assert record["severity"] == "warning"
+        assert record["file_path"].endswith("docs/logs/2026-05-22.md")
+        # rule_id is present and is some validator-classified value (not bare).
+        assert "rule_id" in record
+
+
+def test_activate_json_error_severity_lands_under_errors_with_structured_shape(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """D.2 codex F1, Case 6 — CLI JSON path emits error-severity records under
+    ``data.validation.errors`` with the same structured shape.
+
+    Uses monkeypatch because ``generate_context_map`` currently emits warning-
+    severity entries for broken `depends_on` (no naturally-occurring error-
+    severity output via the standard fixture pipeline). The monkeypatch
+    injects a controlled `ValidationResult` so we can verify the wiring.
+    """
+    import ontos.commands.activate as activate_mod
+
+    # Anchor workspace with a single doc so docs is non-empty (which is the
+    # branch that actually calls generate_context_map and serializes results).
+    _write(
+        tmp_path / ".ontos.toml",
+        """
+        [ontos]
+        version = "4.4"
+        """,
+    )
+    _write(
+        tmp_path / "docs/atom.md",
+        """
+        ---
+        id: atom_anchor
+        type: atom
+        status: active
+        ---
+        Anchor.
+        """,
+    )
+
+    synthetic_error = ValidationError(
+        error_type=ValidationErrorType.BROKEN_LINK,
+        doc_id="atom_anchor",
+        filepath="docs/atom.md",
+        message="Broken dependency: missing_doc",
+        fix_suggestion="Create the target doc or remove the dependency.",
+        severity="error",
+    )
+    synthetic_warning = ValidationError(
+        error_type=ValidationErrorType.ORPHAN,
+        doc_id="atom_anchor",
+        filepath="docs/atom.md",
+        message="Document has no incoming dependencies",
+        fix_suggestion="",
+        severity="warning",
+    )
+
+    def _patched_generate_context_map(docs, gen_config, options):
+        return "stub-content", ValidationResult(
+            errors=[synthetic_error], warnings=[synthetic_warning]
+        )
+
+    monkeypatch.setattr(activate_mod, "generate_context_map", _patched_generate_context_map)
+
+    exit_code, payload = activate_mod.run_activation(scope=None, write_map=False, root=tmp_path)
+    # Exit code is 0 because errors are still load_result + validation_warnings,
+    # not validation_errors specifically; activation considers all-with-warnings
+    # as 'usable_with_warnings' (exit 0). The key assertion is the payload shape.
+    assert exit_code == 0
+
+    errors = payload["validation"]["errors"]
+    warnings = payload["validation"]["warnings"]
+
+    assert len(errors) == 1
+    err = errors[0]
+    assert err["severity"] == "error"
+    assert err["rule_id"] == "broken_link"
+    assert err["document_id"] == "atom_anchor"
+    assert err["file_path"] == "docs/atom.md"
+    assert err["message"] == "Broken dependency: missing_doc"
+
+    assert len(warnings) == 1
+    warn = warnings[0]
+    assert warn["severity"] == "warning"
+    assert warn["rule_id"] == "orphan"
+
+
+def test_activate_json_not_usable_path_emits_empty_lists(tmp_path: Path) -> None:
+    """Case 7 — the ``_not_usable()`` branch (no docs loaded, no existing context
+    map) still emits empty ``validation.errors`` / ``validation.warnings`` lists,
+    unaffected by the shape change.
+    """
+    _write(
+        tmp_path / ".ontos.toml",
+        """
+        [ontos]
+        version = "4.4"
+        """,
+    )
+    # No docs at all and no Context Map → _not_usable path.
+
+    result = _run(tmp_path, "--json", "activate")
+    payload = json.loads(result.stdout)
+
+    # _not_usable returns exit 1 with an error envelope; the inner data block
+    # still includes the validation shell.
+    assert result.returncode == 1, result.stderr
+    validation = payload["data"]["validation"]
+    assert validation["errors"] == []
+    assert validation["warnings"] == []
+```
+
+---
+
+## Section 7 — Release note (`docs/releases/v4.6.0.md`)
+
+```markdown
+---
+id: v460
+type: log
+status: active
+event_type: release
+impacts:
+  - v450
+  - ontos_manual
+---
+
+# Ontos v4.6.0
+
+v4.6.0 closes the final D.6 deferral from PR #118 / v4.5.0: `ontos activate --json` now exposes structured validation metadata, reaching parity with the MCP `activate` tool. Closes [issue #119](https://github.com/ohjonathan/Project-Ontos/issues/119).
+
+## CLI `activate --json` warning metadata parity (#119)
+
+- **Structured validation records.** `payload.data.validation.warnings` and `payload.data.validation.errors` now contain objects carrying `severity`, `message`, `rule_id` (when the validator emits one), `document_id` (when the document context is known), and `file_path` (when known). CLI automation can triage warnings by rule/document without re-parsing message strings or falling back to a parallel MCP call. The serialization is bit-identical to MCP — both paths now route through the same `ValidationError.to_dict()` method.
+
+### Breaking change to the CLI JSON contract
+
+`payload.data.validation.warnings` and `payload.data.validation.errors` previously contained **bare message strings**; they now contain **objects**. Consumers that parsed these fields as `list[str]` will need to read `record["message"]` from each element. The top-level CLI envelope (`status`, `code`, `message`, `data`) is unchanged.
+
+Before (`ontos <= 4.5.0`):
+
+```json
+{
+  "validation": {
+    "errors":   ["Broken dependency: missing_doc"],
+    "warnings": ["Document has no incoming dependencies"]
+  }
+}
+```
+
+After (`ontos >= 4.6.0`):
+
+```json
+{
+  "validation": {
+    "errors":   [{
+      "severity":    "error",
+      "message":     "Broken dependency: missing_doc",
+      "rule_id":     "broken_link",
+      "document_id": "strategy_a",
+      "file_path":   "docs/strategy/a.md"
+    }],
+    "warnings": [{
+      "severity":    "warning",
+      "message":     "Document has no incoming dependencies",
+      "rule_id":     "orphan",
+      "document_id": "kernel_doc",
+      "file_path":   "docs/kernel.md"
+    }]
+  }
+}
+```
+
+`document_id` and `file_path` are omitted when the source `ValidationError` has empty values; `rule_id` is omitted only when the validator did not classify the issue. `severity` and `message` are always present.
+
+## Internal refactor
+
+- `ValidationError.to_dict()` is now the single shared serializer used by both `ontos/commands/activate.py` (CLI JSON path) and `ontos/mcp/tools.py:_validation_issues` (MCP activation payload). The MCP wire format is bit-identical; the existing schema (`ontos/mcp/schemas.py:ValidationIssue`) is unchanged.
+
+## Unchanged
+
+- MCP `activate` tool behavior, schema, and snapshot warning classification.
+- `ontos activate` human-readable (non-JSON) output.
+- `_not_usable()` activation path — still emits empty `validation.errors` / `validation.warnings` lists.
+- Validator rules from PR #118 (depends_on resolution, `out_of_scope_dependency`, type/status widening, README/template skip, doctor severity alignment, body.bare_id_token tightening).
+```
+
+---
+
+## Section 8 — Test status (post-D.4)
+
+```text
+$ .venv/bin/python -m pytest -q tests/commands/test_activate_json_warning_metadata.py tests/commands/test_agentic_activation_resilience.py tests/mcp/test_activation.py tests/mcp/test_context_map.py
+28 passed in <2s
+
+$ .venv/bin/python -m pytest -q
+1334 passed, 2 skipped in 55.94s
+```
+
+Manual smoke (CLI shape working end-to-end against live repo):
+
+```text
+.venv/bin/python -m ontos activate --json | jq '.data.validation.warnings[0]'
+{
+  "severity": "warning",
+  "message": "Document has no incoming dependencies",
+  "rule_id": "orphan",
+  "document_id": "log_20260117_readme-and-license-update-for-v3-0-0",
+  "file_path": "/Users/jonathanoh/workspaces/Project-Ontos/docs/logs/2026-01-17_readme-and-license-update-for-v3-0-0.md"
+}
+```
+
+exec
+/bin/zsh -lc 'ontos activate' in /Users/jonathanoh/workspaces/Project-Ontos
+ succeeded in 116ms:
+Activation status: usable_with_warnings
+Map: refreshed
+Docs scanned: 153
+Documents loaded: 151
+Issues: load=31, validation_errors=0, validation_warnings=230
+Top enum diagnostics:
+  - docs/retros/project-ontos-github-issues-115-117-retro.md:7 status='completed': Change 'status' to one of: draft, active, deprecated, archived, rejected, complete, auto-generated, scaffold, pending_curation, in_progress, unknown. Preserve the old value as original_status if it carries lifecycle nuance.
+  - docs/reviews/project-ontos-github-issues-115-117/B.1-claude-opus-peer.md:7 status='completed': Change 'status' to one of: draft, active, deprecated, archived, rejected, complete, auto-generated, scaffold, pending_curation, in_progress, unknown. Preserve the old value as original_status if it carries lifecycle nuance.
+  - docs/reviews/project-ontos-github-issues-115-117/B.1-claude-sonnet-alignment.md:7 status='completed': Change 'status' to one of: draft, active, deprecated, archived, rejected, complete, auto-generated, scaffold, pending_curation, in_progress, unknown. Preserve the old value as original_status if it carries lifecycle nuance.
+  - docs/reviews/project-ontos-github-issues-115-117/B.1-gemini-adversarial.md:7 status='completed': Change 'status' to one of: draft, active, deprecated, archived, rejected, complete, auto-generated, scaffold, pending_curation, in_progress, unknown. Preserve the old value as original_status if it carries lifecycle nuance.
+  - docs/reviews/project-ontos-github-issues-115-117/B.3-verdict.md:7 status='completed': Change 'status' to one of: draft, active, deprecated, archived, rejected, complete, auto-generated, scaffold, pending_curation, in_progress, unknown. Preserve the old value as original_status if it carries lifecycle nuance.
+Recommended agent action: continue; use direct reads for task-critical docs
+Loaded: ['ontos_manual', 'ontos_agent_instructions', 'ontology_spec', 'project-ontos-github-issues-115-117-spec', 'D.2-review-packet']
+
+exec
+/bin/zsh -lc "sed -n '1,220p' Ontos_Context_Map.md" in /Users/jonathanoh/workspaces/Project-Ontos
+ succeeded in 0ms:
+---
+id: ontos_context_map
+type: reference
+status: complete
+ontos_map_version: 2
+generated_by: ontos map
+generated_at: 2026-05-22 20:22:14
+---
+
+# Project-Ontos Tiered Context Map
+
+> Auto-generated by Ontos 3.0
+> Last updated: 2026-05-22 20:22:14
+
+This document provides a tiered index of the knowledge graph for AI orientation.
+- **Tier 1: Essential Context**: (~2k tokens) Project summary, recent work, and architecture.
+- **Tier 2: Document Index**: Full list of all tracked documents.
+- **Tier 3: Full Graph Details**: Dependency trees, timelines, and health metrics.
+
+## Tier 1: Essential Context
+
+### Project Summary
+- **Name:** Project-Ontos
+- **Doc Count:** 151
+- **Last Updated:** 2026-05-23 03:22:14 UTC
+
+### Recent Activity
+| Log | Status | Summary |
+|-----|--------|---------|
+| v460 | active | No summary |
+| v450 | active | No summary |
+| v440 | active | No summary |
+| ... and 77 more logs | | |
+
+### Key Documents
+- `ontos_manual` (11 dependents) — docs/reference/Ontos_Manual.md
+- `ontos_agent_instructions` (3 dependents) — docs/reference/Ontos_Agent_Instructions.md
+- `ontology_spec` (2 dependents) — docs/reference/ontology_spec.md
+
+### Critical Paths
+- **Docs Root:** `docs/`
+- **Logs:** `docs/logs/`
+- **Strategy:** `.ontos-internal/strategy/`
+- **Reference:** `.ontos-internal/reference/`
+
+---
+
+## Tier 2: Document Index
+
+
+
+## Documents
+
+| Path | ID | Type | Status |
+|------|-----|------|--------|
+| docs/logs/2026-01-17_readme-and-license-update-for-v3-0-0.md | `log_20260117_readme-and-license-update-for-v3-0-0` | log | active |
+| docs/logs/2026-01-17_v3-0-0-readme-license-and-log-fix.md | `log_20260117_v3-0-0-readme-license-and-log-fix` | log | active |
+| docs/logs/2026-01-21_feat-cli-ontos-v3-1-0-track-b-native-command-m.md | `log_20260121_feat-cli-ontos-v3-1-0-track-b-native-command-m` | log | active |
+| docs/logs/2026-01-21_v3-1-0-track-a-obsidian-similarity-token-efficienc.md | `log_20260121_v3-1-0-track-a-obsidian-similarity-token-efficienc` | log | active |
+| docs/logs/2026-01-24_fix-blocking-scaffold-issues-from-adversarial-revi.md | `log_20260124_fix-blocking-scaffold-issues-from-adversarial-revi` | log | active |
+| docs/logs/2026-01-31_version-string-to-3-2-0-for-ci-tag-validation.md | `log_20260131_v3_2_1_and_v3_2_2_proposals` | log | active |
+| docs/logs/2026-02-01_add-v3-2-1-activation-resilience-and-v3-2-2-mainta.md | `log_20260201_add-v3-2-1-activation-resilience-and-v3-2-2-mainta` | log | active |
+| docs/logs/2026-02-07_improve-hidden-command-handling-add-warn-legacy.md | `log_20260207_improve-hidden-command-handling-add-warn-legacy` | log | active |
+| docs/logs/2026-02-09_close-critical-paths-edge-cases.md | `log_20260209_close-critical-paths-edge-cases` | log | active |
+| docs/logs/2026-02-09_make-critical-paths-config-driven.md | `log_20260209_make-critical-paths-config-driven` | log | active |
+| docs/logs/2026-02-09_polish-path-formatting-and-tests.md | `log_20260209_polish-path-formatting-and-tests` | log | active |
+| docs/logs/2026-02-09_reorganize-proposals-assets-and-logs-65.md | `log_20260209_reorganize-proposals-assets-and-logs-65` | log | active |
+| docs/logs/2026-02-10_codex-activation-resilience-maintain-command-revie.md | `log_20260210_codex-activation-resilience-maintain-command-revie` | log | active |
+| docs/logs/2026-02-10_github-releases-auth-fix.md | `log_20260210_github-releases-auth-fix` | log | active |
+| docs/logs/2026-02-10_session-active-received-v3-3-track-a1-implementati.md | `log_20260210_session-active-received-v3-3-track-a1-implementati` | log | active |
+| docs/logs/2026-02-10_v3-2-2-release-docs-and-tag.md | `log_20260210_v3-2-2-release-docs-and-tag` | log | active |
+| docs/logs/2026-02-10_v3-2-3-final-merge-release-wrap.md | `log_20260210_v3-2-3-final-merge-release-wrap` | log | active |
+| docs/logs/2026-02-10_v3-2-3-pr66-cross-check-backlog-cleanup.md | `log_20260210_v3-2-3-pr66-cross-check-backlog-cleanup` | log | active |
+| docs/logs/2026-02-11_v3-3-a1-final-hardening-wrap.md | `log_20260211_v3-3-a1-final-hardening-wrap` | log | active |
+| docs/logs/2026-02-11_v3-3-a1-hardening-tail-cherry-picked-into-main.md | `log_20260211_v3-3-a1-hardening-tail-cherry-picked-into-main` | log | active |
+| docs/logs/2026-02-11_v3-3-track-a2-command-safety-hardening-closure.md | `log_20260211_v3-3-track-a2-command-safety-hardening-closure` | log | active |
+| docs/logs/2026-02-11_v3-3-track-a3-merge-closeout.md | `log_20260211_v3-3-track-a3-merge-closeout` | log | active |
+| docs/logs/2026-02-11_v3-3-track-a4-docs-tests-dead-code-cleanup-and-def.md | `log_20260211_v3-3-track-a4-docs-tests-dead-code-cleanup-and-def` | log | active |
+| docs/logs/2026-02-11_v3-3a-merge-cleanup-and-v3-3b-setup-wrap.md | `log_20260211_v3-3a-merge-cleanup-and-v3-3b-setup-wrap` | log | active |
+| docs/logs/2026-02-11_v3-3a-v3-3b-folder-split-and-track-b-kickoff.md | `log_20260211_v3-3a-v3-3b-folder-split-and-track-b-kickoff` | log | active |
+| docs/logs/2026-02-11_v3-3b-pr2-ready-to-merge.md | `log_20260211_v3-3b-pr2-ready-to-merge` | log | active |
+| docs/logs/2026-02-11_v3-3b-track-b-complete.md | `log_20260211_v3-3b-track-b-complete` | log | active |
+| docs/logs/2026-02-12_add-3-new-link-check-fp-filters-short-labels-al.md | `log_20260212_add-3-new-link-check-fp-filters-short-labels-al` | log | active |
+| docs/logs/2026-02-12_add-integration-tests-documenting-filtered-pattern.md | `log_20260212_add-integration-tests-documenting-filtered-pattern` | log | active |
+| docs/logs/2026-02-12_external-review-remediation-implemented-9-point-v3.md | `log_20260212_external-review-remediation-implemented-9-point-v3` | log | active |
+| docs/logs/2026-02-12_v3-3-1-external-review-remediation-complete-merged.md | `log_20260212_v3-3-1-external-review-remediation-complete-merged` | log | active |
+| docs/logs/2026-02-22_add-promote-check-task-to-ontos-maintain.md | `log_20260222_add-promote-check-task-to-ontos-maintain` | log | active |
+| docs/logs/2026-03-01_tiered-final-cleanup-and-merge.md | `log_20260301_tiered-final-cleanup-and-merge` | log | active |
+| docs/logs/2026-04-04_reviewer-2-round-3-v4-mcp-proposal-review.md | `log_20260404_reviewer-2-round-3-v4-mcp-proposal-review` | log | active |
+| docs/logs/2026-04-05_add-review-analysis-docs-clarify-p1-scope-update.md | `log_20260405_add-review-analysis-docs-clarify-p1-scope-update` | log | active |
+| docs/logs/2026-04-05_fix-ci-install-mcp-extra-in-publish-workflow.md | `log_20260405_fix-ci-install-mcp-extra-in-publish-workflow` | log | active |
+| docs/logs/2026-04-05_update-external-facing-documents-for-v4-0-0-82.md | `log_20260405_update-external-facing-documents-for-v4-0-0-82` | log | active |
+| docs/logs/2026-04-05_v4-0-0-mcp-ci-merge-prep.md | `log_20260405_v4-0-0-mcp-ci-merge-prep` | log | active |
+| docs/logs/2026-04-11_add-ontos-v4-1-proposal-and-v4-x-roadmap-84.md | `log_20260411_add-ontos-v4-1-proposal-and-v4-x-roadmap-84` | log | active |
+| docs/logs/2026-04-11_close-out-pr85-track-a-fix-cycle.md | `log_20260411_close-out-pr85-track-a-fix-cycle` | log | active |
+| docs/logs/2026-04-11_merge-pr87-fix-legacy-flock-tests.md | `log_20260411_merge-pr87-fix-legacy-flock-tests` | log | active |
+| docs/logs/2026-04-11_record-ca-direction-on-v4-1-1-write-tool-contracts.md | `log_20260411_record-ca-direction-on-v4-1-1-write-tool-contracts` | log | active |
+| docs/logs/2026-04-12_fix-mcp-stdio-stream-misrouting.md | `log_20260412_fix-mcp-stdio-stream-misrouting` | log | active |
+| docs/logs/2026-04-12_sync-pr-92-re-fix-head-and-verify.md | `log_20260412_sync-pr-92-re-fix-head-and-verify` | log | active |
+| docs/logs/2026-04-12_v4-1-0-customer-facing-docs-update-for-pypi-publis.md | `log_20260412_v4-1-0-customer-facing-docs-update-for-pypi-publis` | log | active |
+| docs/logs/2026-04-13_fix-mcp-export-graph-output-schema.md | `log_20260413_fix-mcp-export-graph-output-schema` | log | active |
+| docs/logs/2026-04-13_merge-pr100-antigravity-mcp-onboarding.md | `log_20260413_merge-pr100-antigravity-mcp-onboarding` | log | active |
+| docs/logs/2026-04-13_release-v4-1-3-bump-version.md | `log_20260413_release-v4-1-3-bump-version` | log | active |
+| docs/logs/2026-04-14_issue-107-v4-2-3-hardening.md | `log_20260414_issue-107-v4-2-3-hardening` | log | active |
+| docs/logs/2026-04-14_merge-pr-108-v4-2-3-hardening.md | `log_20260414_merge-pr-108-v4-2-3-hardening` | log | active |
+| docs/logs/2026-04-15_retrofit-obsidian-pr110-review-fixes.md | `log_20260415_retrofit-obsidian-pr110-review-fixes` | log | active |
+| docs/logs/2026-05-11_project-ontos-johnny-os-onboarding.md | `log_20260511_project-ontos-johnny-os-onboarding` | log | active |
+| docs/logs/2026-05-11_v4-4-agentic-activation-resilience.md | `log_20260511_v4-4-agentic-activation-resilience` | log | active |
+| docs/logs/2026-05-21_update-llm-dev-framework-to-v1-8-0.md | `log_20260521_update-llm-dev-framework-to-v1-8-0` | log | active |
+| docs/logs/2026-05-21_update-llm-dev-framework-to-v1-9-0.md | `log_20260521_update-llm-dev-framework-to-v1-9-0` | log | active |
+| docs/logs/2026-05-22_merge-pr-118-v4-5-closes-issues-115-116-117.md | `log_20260522_merge-pr-118-v4-5-closes-issues-115-116-117` | log | active |
+| docs/reference/Migration_v2_to_v3.md | `migration_v2_to_v3` | reference | active |
+| docs/reference/Migration_v3_to_v4.md | `migration_v3_to_v4` | reference | active |
+| docs/reference/Ontos_Agent_Instructions.md | `ontos_agent_instructions` | kernel | active |
+| docs/reference/Ontos_Manual.md | `ontos_manual` | kernel | active |
+| docs/reference/ontology_spec.md | `ontology_spec` | kernel | active |
+| docs/releases/v3.0.0.md | `v300` | log | archived |
+| docs/releases/v3.0.1.md | `v301` | unknown | scaffold |
+| docs/releases/v3.0.2.md | `v302` | atom | draft |
+| docs/releases/v3.0.4.md | `v304` | kernel | draft |
+| docs/releases/v3.0.5.md | `v305` | atom | draft |
+| docs/releases/v3.1.0.md | `v310` | kernel | draft |
+| docs/releases/v3.1.1.md | `v311` | strategy | draft |
+| docs/releases/v3.2.0.md | `v320` | atom | draft |
+| docs/releases/v3.2.1.md | `v321` | strategy | draft |
+| docs/releases/v3.2.2.md | `v322` | kernel | draft |
+| docs/releases/v3.2.3.md | `v323` | unknown | scaffold |
+| docs/releases/v3.3.0.md | `v330` | log | active |
+| docs/releases/v3.3.1.md | `v331` | log | active |
+| docs/releases/v3.4.0.md | `v340` | log | active |
+| docs/releases/v4.1.0.md | `v410` | log | active |
+| docs/releases/v4.1.1.md | `v411` | log | active |
+| docs/releases/v4.1.2.md | `v412` | log | active |
+| docs/releases/v4.1.3.md | `v413` | log | active |
+| docs/releases/v4.2.0.md | `v420` | log | active |
+| docs/releases/v4.2.1.md | `v421` | log | active |
+| docs/releases/v4.2.2.md | `v422` | log | active |
+| docs/releases/v4.2.3.md | `v423` | log | active |
+| docs/releases/v4.3.0.md | `v430` | log | active |
+| docs/releases/v4.4.0.md | `v440` | log | active |
+| docs/releases/v4.5.0.md | `v450` | log | active |
+| docs/releases/v4.6.0.md | `v460` | log | active |
+| docs/retros/project-ontos-github-issues-115-117-retro.md | `project-ontos-github-issues-115-117-retro` | unknown | unknown |
+| docs/retros/project-ontos-v44-agentic-activation-resilience-retro.md | `project_ontos_v44_agentic_activation_resilience_retro` | log | archived |
+| docs/reviews/project-ontos-github-issues-115-117/.prompts/D.2-review-packet.md | `D.2-review-packet` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/.prompts/D.5-verifier-packet.md | `D.5-verifier-packet` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/.prompts/project-ontos-github-issues-115-117-B.1-claude-opus-peer.prompt.md | `project-ontos-github-issues-115-117-B.1-claude-opus-peer.prompt` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/.prompts/project-ontos-github-issues-115-117-B.1-claude-sonnet-alignment.prompt.md | `project-ontos-github-issues-115-117-B.1-claude-sonnet-alignment.prompt` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/.prompts/project-ontos-github-issues-115-117-B.1-gemini-adversarial.prompt.md | `project-ontos-github-issues-115-117-B.1-gemini-adversarial.prompt` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/.prompts/project-ontos-github-issues-115-117-D.2-claude-opus-peer.prompt.md | `project-ontos-github-issues-115-117-D.2-claude-opus-peer.prompt` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/.prompts/project-ontos-github-issues-115-117-D.2-claude-sonnet-alignment.prompt.md | `project-ontos-github-issues-115-117-D.2-claude-sonnet-alignment.prompt` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/.prompts/project-ontos-github-issues-115-117-D.2-gemini-adversarial.prompt.md | `project-ontos-github-issues-115-117-D.2-gemini-adversarial.prompt` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/.prompts/project-ontos-github-issues-115-117-D.5-claude-opus-verifier.prompt.md | `project-ontos-github-issues-115-117-D.5-claude-opus-verifier.prompt` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/.prompts/project-ontos-github-issues-115-117-D.5-claude-sonnet-verifier.prompt.md | `project-ontos-github-issues-115-117-D.5-claude-sonnet-verifier.prompt` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/.prompts/project-ontos-github-issues-115-117-D.5-gemini-verifier.prompt.md | `project-ontos-github-issues-115-117-D.5-gemini-verifier.prompt` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/B.1-claude-opus-peer.md | `project-ontos-github-issues-115-117-B.1-claude-opus-peer` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/B.1-claude-sonnet-alignment.md | `project-ontos-github-issues-115-117-B.1-claude-sonnet-alignment` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/B.1-gemini-adversarial.md | `project-ontos-github-issues-115-117-B.1-gemini-adversarial` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/B.3-verdict.md | `project-ontos-github-issues-115-117-B.3-verdict` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/D.1-claude-sonnet-peer.md | `project-ontos-github-issues-115-117-D.1-claude-sonnet-peer` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/D.2-claude-opus-peer.md | `project-ontos-github-issues-115-117-D.2-claude-opus-peer` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/D.2-claude-sonnet-alignment.md | `project-ontos-github-issues-115-117-D.2-claude-sonnet-alignment` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/D.2-gemini-adversarial.md | `project-ontos-github-issues-115-117-D.2-gemini-adversarial` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/D.3-verdict.md | `project-ontos-github-issues-115-117-D.3-verdict` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/D.4-fix-summary.md | `project-ontos-github-issues-115-117-D.4-fix-summary` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/D.5-claude-opus-verifier.md | `project-ontos-github-issues-115-117-D.5-claude-opus-verifier` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/D.5-claude-sonnet-verifier.md | `project-ontos-github-issues-115-117-D.5-claude-sonnet-verifier` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/D.5-gemini-verifier.md | `project-ontos-github-issues-115-117-D.5-gemini-verifier` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/final-approval.md | `project-ontos-github-issues-115-117-final-approval` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/github-issues-input.md | `project-ontos-github-issues-115-117-triage-input` | unknown | active |
+| docs/reviews/project-ontos-github-issues-115-117/pre-a-triage-report.md | `project-ontos-github-issues-115-117-triage-report` | unknown | unknown |
+| docs/reviews/project-ontos-github-issues-115-117/pre-a-triage-verdict.md | `project-ontos-github-issues-115-117-triage-verdict` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-B.1-claude-sonnet-alignment.prompt.md | `project-ontos-issue-119-B.1-claude-sonnet-alignment.prompt` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-B.1-codex-peer.prompt.md | `project-ontos-issue-119-B.1-codex-peer.prompt` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-B.1-gemini-adversarial.prompt.md | `project-ontos-issue-119-B.1-gemini-adversarial.prompt` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-D.2-claude-sonnet-alignment.prompt.md | `project-ontos-issue-119-D.2-claude-sonnet-alignment.prompt` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-D.2-codex-peer.prompt.md | `project-ontos-issue-119-D.2-codex-peer.prompt` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-D.2-gemini-adversarial.prompt.md | `project-ontos-issue-119-D.2-gemini-adversarial.prompt` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-D.5-claude-sonnet-verifier.prompt.md | `project-ontos-issue-119-D.5-claude-sonnet-verifier.prompt` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-D.5-codex-verifier.prompt.md | `project-ontos-issue-119-D.5-codex-verifier.prompt` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-D.5-gemini-verifier.prompt.md | `project-ontos-issue-119-D.5-gemini-verifier.prompt` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-claude-sonnet-alignment.md | `project-ontos-issue-119-B.1-claude-sonnet-alignment` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-codex-peer.md | `project-ontos-issue-119-B.1-codex-peer` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.1-gemini-adversarial.md | `project-ontos-issue-119-B.1-gemini-adversarial` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/B.3-verdict.md | `project-ontos-issue-119-B.3-verdict` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.1-codex-peer.md | `project-ontos-issue-119-D.1-codex-peer` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-claude-sonnet-alignment.md | `project-ontos-issue-119-D.2-claude-sonnet-alignment` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-codex-peer.md | `project-ontos-issue-119-D.2-codex-peer` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-gemini-adversarial.md | `project-ontos-issue-119-D.2-gemini-adversarial` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.3-verdict.md | `project-ontos-issue-119-D.3-verdict` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.4-fix-summary.md | `project-ontos-issue-119-D.4-fix-summary` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/github-issues-input.md | `project-ontos-issue-119-triage-input` | unknown | active |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/pre-a-triage-report.md | `project-ontos-issue-119-triage-report` | unknown | unknown |
+| docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/pre-a-triage-verdict.md | `project-ontos-issue-119-triage-verdict` | unknown | unknown |
+| docs/reviews/project-ontos-v44-agentic-activation-resilience/B.3-verdict.md | `project_ontos_v44_b3_verdict` | log | archived |
+| docs/reviews/project-ontos-v44-agentic-activation-resilience/D.3-verdict.md | `project_ontos_v44_d3_verdict` | log | archived |
+| docs/reviews/project-ontos-v44-agentic-activation-resilience/D.4-fix-summary.md | `project_ontos_v44_d4_fix_summary` | log | archived |
+| docs/reviews/project-ontos-v44-agentic-activation-resilience/D.5-codex-verifier.md | `project_ontos_v44_d5_codex_verifier` | log | archived |
+| docs/reviews/project-ontos-v44-agentic-activation-resilience/final-approval.md | `project_ontos_v44_final_approval` | log | archived |
+| docs/reviews/project-ontos-v44-agentic-activation-resilience/pre-a-proposal-verdict.md | `project_ontos_v44_pre_a_proposal_verdict` | log | archived |
+| docs/specs/project-ontos-github-issues-115-117-spec.md | `project-ontos-github-issues-115-117-spec` | atom | active |
+| docs/specs/project-ontos-issue-119-cli-activate-json-warning-metadata-spec.md | `project-ontos-issue-119-cli-activate-json-warning-metadata-spec` | atom | active |
+| docs/specs/project-ontos-v44-agentic-activation-resilience-spec.md | `project_ontos_v44_agentic_activation_resilience_spec` | atom | active |
+| docs/trackers/project-ontos-github-issues-115-117.md | `project-ontos-github-issues-115-117` | unknown | unknown |
+| docs/trackers/project-ontos-issue-119-cli-activate-json-warning-metadata.md | `project-ontos-issue-119-cli-activate-json-warning-metadata` | unknown | unknown |
+| docs/trackers/project-ontos-v44-agentic-activation-resilience.md | `project_ontos_v44_agentic_activation_resilience_tracker` | log | active |
+
+
+
+## Tier 3: Full Graph Details
+
+
+
+## Validation
+
+### Warnings
+- ⚠️ **log_20260117_readme-and-license-update-for-v3-0-0**: Document has no incoming dependencies
+    Add this document to another document's depends_on
+- ⚠️ **log_20260117_v3-0-0-readme-license-and-log-fix**: Document has no incoming dependencies
+    Add this document to another document's depends_on
+
+exec
+/bin/zsh -lc 'test -f .llm-dev/config.yaml && scripts/llm-dev doctor || true' in /Users/jonathanoh/workspaces/Project-Ontos
+ succeeded in 0ms:
+llm-dev doctor
+  repo:               /Users/jonathanoh/workspaces/Project-Ontos
+  config:             .llm-dev/config.yaml
+  framework_path:     .llm-dev/framework
+  framework_ref:      v1.9.0
+  framework_repo_url: https://github.com/ohjonathan/llm-dev-framework.git
+  PASS command: git
+  PASS command: bash
+  PASS command: python3
+  PASS command: check-jsonschema
+  PASS framework checkout: .llm-dev/framework
+  PASS framework scripts (verify-adopter.sh, day-one.sh)
+  PASS worker CLI: claude
+  PASS worker CLI: codex
+  PASS worker CLI: gemini
+llm-dev doctor: PASS
+
+exec
+/bin/zsh -lc 'git status --short --branch' in /Users/jonathanoh/workspaces/Project-Ontos
+ succeeded in 0ms:
+## codex/project-ontos-issue-119-cli-activate-json-warning-metadata
+ ? .llm-dev/framework
+ M Ontos_Context_Map.md
+?? docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/D.5-verifier-packet.md
+?? docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-D.5-claude-sonnet-verifier.prompt.md
+?? docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-D.5-codex-verifier.prompt.md
+?? docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.prompts/project-ontos-issue-119-D.5-gemini-verifier.prompt.md
+?? docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.raw/project-ontos-issue-119-D.5-codex-verifier.raw.txt
+?? docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/.raw/project-ontos-issue-119-D.5-codex-verifier.stderr.txt
+
+exec
+/bin/zsh -lc "nl -ba ontos/core/types.py | sed -n '110,160p'" in /Users/jonathanoh/workspaces/Project-Ontos
+ succeeded in 0ms:
+   110	    """Parsed document with frontmatter and content."""
+   111	    id: str
+   112	    type: DocumentType
+   113	    status: DocumentStatus
+   114	    filepath: Path
+   115	    frontmatter: Dict[str, Any]
+   116	    content: str
+   117	    depends_on: List[str] = field(default_factory=list)
+   118	    impacts: List[str] = field(default_factory=list)
+   119	    tags: List[str] = field(default_factory=list)
+   120	    aliases: List[str] = field(default_factory=list)
+   121	    describes: List[str] = field(default_factory=list)
+   122	
+   123	
+   124	@dataclass
+   125	class ValidationError:
+   126	    """A single validation error or warning."""
+   127	    error_type: ValidationErrorType
+   128	    doc_id: str
+   129	    filepath: str
+   130	    message: str
+   131	    fix_suggestion: str
+   132	    severity: str  # 'error', 'warning', 'info'
+   133	
+   134	    def to_dict(self) -> Dict[str, Any]:
+   135	        record: Dict[str, Any] = {"severity": self.severity, "message": self.message}
+   136	        rule_id = getattr(self.error_type, "value", None) if self.error_type else None
+   137	        if rule_id:
+   138	            record["rule_id"] = rule_id
+   139	        if self.doc_id:
+   140	            record["document_id"] = self.doc_id
+   141	        if self.filepath:
+   142	            record["file_path"] = self.filepath
+   143	        return record
+   144	
+   145	
+   146	@dataclass
+   147	class ValidationResult:
+   148	    """Result of running all validations."""
+   149	    errors: List[ValidationError] = field(default_factory=list)
+   150	    warnings: List[ValidationError] = field(default_factory=list)
+   151	
+   152	    @property
+   153	    def exit_code(self) -> int:
+   154	        return 1 if self.errors else 0
+   155	
+   156	    def add_error(self, error: ValidationError) -> None:
+   157	        """Add an error to the result."""
+   158	        if error.severity == "error":
+   159	            self.errors.append(error)
+   160	        else:
+
+exec
+/bin/zsh -lc "nl -ba ontos/mcp/tools.py | sed -n '600,650p'" in /Users/jonathanoh/workspaces/Project-Ontos
+ succeeded in 0ms:
+   600	
+   601	
+   602	def _normalize_warnings(
+   603	    validation: ValidationResult,
+   604	    snapshot_warnings: list[str],
+   605	) -> list[dict[str, Any]]:
+   606	    warnings: list[dict[str, Any]] = []
+   607	    warnings.extend(_validation_issues(validation.errors))
+   608	    warnings.extend(_validation_issues(validation.warnings))
+   609	    warnings.extend(_snapshot_issue(message) for message in snapshot_warnings)
+   610	    return warnings
+   611	
+   612	
+   613	def _validation_payload(validation: ValidationResult) -> dict[str, Any]:
+   614	    return {
+   615	        "errors": _validation_issues(validation.errors),
+   616	        "warnings": _validation_issues(validation.warnings),
+   617	    }
+   618	
+   619	
+   620	def _validation_issues(issues: list[ValidationError]) -> list[dict[str, Any]]:
+   621	    # (#117/#119) Surface document context (rule_id, document_id, file_path) so
+   622	    # downstream agents can triage without a second query. Empty strings are
+   623	    # squashed so the public payload stays compact. The serialization lives on
+   624	    # ValidationError.to_dict() so CLI and MCP share the exact same shape;
+   625	    # call sites here (_normalize_warnings, _validation_payload) always pass
+   626	    # validation.errors / validation.warnings (List[ValidationError]).
+   627	    return [issue.to_dict() for issue in issues]
+   628	
+   629	
+   630	# (#117) Bare snapshot strings often originate from the loader and document
+   631	# their own provenance prefix (e.g. "Log missing fields:", "invalid
+   632	# frontmatter field"). Classify the prefix into a rule_id so the channel
+   633	# becomes parseable; bare unknowns get a generic snapshot rule_id.
+   634	_SNAPSHOT_RULE_PREFIXES = (
+   635	    ("Log missing fields:", "schema.log_missing_fields"),
+   636	    ("Log document missing", "schema.log_missing_concepts"),
+   637	    ("invalid frontmatter field 'type'", "schema.invalid_type"),
+   638	    ("invalid frontmatter field 'status'", "schema.invalid_status"),
+   639	    ("invalid frontmatter", "schema.invalid_frontmatter"),
+   640	    ("Impact reference", "impacts.broken"),
+   641	    ("Broken dependency", "broken_link"),
+   642	    ("External dependency resolved from disk", "out_of_scope_dependency"),
+   643	    ("Document has no incoming dependencies", "orphan"),
+   644	    ("Dependency depth", "depth"),
+   645	)
+   646	
+   647	
+   648	def _snapshot_issue(message: str) -> dict[str, Any]:
+   649	    rule_id = "snapshot"
+   650	    for prefix, candidate in _SNAPSHOT_RULE_PREFIXES:
+
+exec
+/bin/zsh -lc "nl -ba ontos/commands/activate.py | sed -n '80,150p'" in /Users/jonathanoh/workspaces/Project-Ontos
+ succeeded in 0ms:
+    80	            "No Ontos documents loaded and no existing context map is available.",
+    81	            project_root=project_root,
+    82	            files_scanned=len(doc_paths),
+    83	            issues=load_result.issues,
+    84	        )
+    85	
+    86	    gen_config = {
+    87	        "project_name": project_root.name,
+    88	        "version": config.ontos.version,
+    89	        "allowed_orphan_types": config.validation.allowed_orphan_types,
+    90	        "project_root": str(project_root),
+    91	        "docs_dir": str(config.paths.docs_dir),
+    92	        "logs_dir": str(config.paths.logs_dir),
+    93	        "is_contributor_mode": (project_root / ".ontos-internal").is_dir(),
+    94	    }
+    95	    map_refreshed = False
+    96	    validation_errors = []
+    97	    validation_warnings = []
+    98	    if docs:
+    99	        content, validation = generate_context_map(
+   100	            docs,
+   101	            gen_config,
+   102	            GenerateMapOptions(max_dependency_depth=config.validation.max_dependency_depth),
+   103	        )
+   104	        validation_errors = [issue.to_dict() for issue in validation.errors]
+   105	        validation_warnings = [issue.to_dict() for issue in validation.warnings]
+   106	        if write_map:
+   107	            output_path.parent.mkdir(parents=True, exist_ok=True)
+   108	            output_path.write_text(content, encoding="utf-8")
+   109	            map_refreshed = True
+   110	
+   111	    warning_count = len(load_result.issues) + len(validation_warnings) + len(validation_errors)
+   112	    status = "usable" if warning_count == 0 else "usable_with_warnings"
+   113	    loaded_ids = _select_loaded_ids(docs)
+   114	    payload = {
+   115	        "status": status,
+   116	        "map": {
+   117	            "path": str(output_path),
+   118	            "refreshed": map_refreshed,
+   119	            "exists": output_path.exists(),
+   120	        },
+   121	        "scope": effective_scope.value,
+   122	        "files_scanned": len(doc_paths),
+   123	        "documents": len(docs),
+   124	        "loaded_ids": loaded_ids,
+   125	        "diagnostics": [issue.to_dict(root=project_root) for issue in load_result.issues],
+   126	        "validation": {
+   127	            "errors": validation_errors,
+   128	            "warnings": validation_warnings,
+   129	        },
+   130	        "summary": {
+   131	            "load_issues": len(load_result.issues),
+   132	            "validation_errors": len(validation_errors),
+   133	            "validation_warnings": len(validation_warnings),
+   134	        },
+   135	        "recommendation": (
+   136	            "continue; use direct reads for task-critical docs"
+   137	            if status == "usable_with_warnings"
+   138	            else "continue"
+   139	        ),
+   140	    }
+   141	    return 0, payload
+   142	
+   143	
+   144	def format_activation_output(payload: Dict[str, Any]) -> List[str]:
+   145	    lines = [
+   146	        f"Activation status: {payload['status']}",
+   147	        f"Map: {'refreshed' if payload['map']['refreshed'] else 'existing'}",
+   148	        f"Docs scanned: {payload.get('files_scanned', 0)}",
+   149	        f"Documents loaded: {payload.get('documents', 0)}",
+   150	    ]
+
+exec
+/bin/zsh -lc 'git diff --stat main..HEAD' in /Users/jonathanoh/workspaces/Project-Ontos
+ succeeded in 0ms:
+ .ontos-internal/reference/decision_history.md      |    2 +-
+ Ontos_Context_Map.md                               | 1892 +++++---
+ docs/releases/v4.6.0.md                            |   68 +
+ .../.prompts/D.2-review-packet.md                  |  818 ++++
+ ...issue-119-B.1-claude-sonnet-alignment.prompt.md |  326 ++
+ ...roject-ontos-issue-119-B.1-codex-peer.prompt.md |  324 ++
+ ...ntos-issue-119-B.1-gemini-adversarial.prompt.md |  326 ++
+ ...issue-119-D.2-claude-sonnet-alignment.prompt.md |  879 ++++
+ ...roject-ontos-issue-119-D.2-codex-peer.prompt.md |  879 ++++
+ ...ntos-issue-119-D.2-gemini-adversarial.prompt.md |  879 ++++
+ ...s-issue-119-B.1-claude-sonnet-alignment.raw.txt |   38 +
+ ...ssue-119-B.1-claude-sonnet-alignment.stderr.txt |    0
+ .../project-ontos-issue-119-B.1-codex-peer.raw.txt |   38 +
+ ...oject-ontos-issue-119-B.1-codex-peer.stderr.txt | 4968 ++++++++++++++++++++
+ ...-ontos-issue-119-B.1-gemini-adversarial.raw.txt |   35 +
+ ...tos-issue-119-B.1-gemini-adversarial.stderr.txt |    2 +
+ ...s-issue-119-D.2-claude-sonnet-alignment.raw.txt |   42 +
+ ...ssue-119-D.2-claude-sonnet-alignment.stderr.txt |    0
+ .../project-ontos-issue-119-D.2-codex-peer.raw.txt |   31 +
+ ...oject-ontos-issue-119-D.2-codex-peer.stderr.txt | 3970 ++++++++++++++++
+ ...-ontos-issue-119-D.2-gemini-adversarial.raw.txt |   38 +
+ ...tos-issue-119-D.2-gemini-adversarial.stderr.txt |    2 +
+ .../B.1-claude-sonnet-alignment.md                 |   38 +
+ .../B.1-codex-peer.md                              |   38 +
+ .../B.1-gemini-adversarial.md                      |   33 +
+ .../B.3-verdict.md                                 |   53 +
+ .../D.1-codex-peer.md                              |   45 +
+ .../D.2-claude-sonnet-alignment.md                 |   42 +
+ .../D.2-codex-peer.md                              |   31 +
+ .../D.2-gemini-adversarial.md                      |   36 +
+ .../D.3-verdict.md                                 |   54 +
+ .../D.4-fix-summary.md                             |   48 +
+ .../github-issues-input.md                         |   86 +
+ .../lifecycle-receipt-inventory.yaml               |  147 +
+ .../pre-a-triage-report.md                         |   87 +
+ .../pre-a-triage-verdict.md                        |   41 +
+ ...vate-json-warning-metadata-dispatch-intent.yaml |   85 +
+ ...vate-json-warning-metadata-dispatch-result.yaml |  390 ++
+ ...-119-cli-activate-json-warning-metadata-spec.md |  256 +
+ ...issue-119-cli-activate-json-warning-metadata.md |   17 +
+ ...sue-119-cli-activate-json-warning-metadata.yaml |  254 +
+ ontos/commands/activate.py                         |    4 +-
+ ontos/core/types.py                                |   11 +
+ ontos/mcp/tools.py                                 |   29 +-
+ .../test_activate_json_warning_metadata.py         |  579 +++
+ 45 files changed, 17186 insertions(+), 775 deletions(-)
+
+exec
+/bin/zsh -lc '.venv/bin/python -m pytest -q tests/commands/test_activate_json_warning_metadata.py tests/commands/test_agentic_activation_resilience.py tests/mcp/test_activation.py tests/mcp/test_context_map.py' in /Users/jonathanoh/workspaces/Project-Ontos
+ succeeded in 2510ms:
+============================= test session starts ==============================
+platform darwin -- Python 3.14.4, pytest-8.4.2, pluggy-1.6.0
+rootdir: /Users/jonathanoh/workspaces/Project-Ontos
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.13.0
+collected 28 items
+
+tests/commands/test_activate_json_warning_metadata.py .............      [ 46%]
+tests/commands/test_agentic_activation_resilience.py ......              [ 67%]
+tests/mcp/test_activation.py .......                                     [ 92%]
+tests/mcp/test_context_map.py ..                                         [100%]
+
+============================== 28 passed in 2.20s ==============================
+
+exec
+/bin/zsh -lc ".venv/bin/python - <<'PY'
+import json, tempfile
+from pathlib import Path
+from tests.commands.test_activate_json_warning_metadata import _log_schema_workspace, _run
+root = Path(tempfile.mkdtemp())
+_log_schema_workspace(root)
+result = _run(root, '--json', 'activate')
+print(result.returncode)
+print(result.stderr)
+payload = json.loads(result.stdout)
+print(json.dumps(payload['data']['validation'], indent=2))
+PY" in /Users/jonathanoh/workspaces/Project-Ontos
+ succeeded in 123ms:
+0
+
+{
+  "errors": [],
+  "warnings": [
+    {
+      "severity": "warning",
+      "message": "Document has no incoming dependencies",
+      "rule_id": "orphan",
+      "document_id": "log_2026_05_22",
+      "file_path": "/private/var/folders/6v/tzqrvzr90gv6f6wl3y4w3k440000gn/T/tmp53jjhdoh/docs/logs/2026-05-22.md"
+    },
+    {
+      "severity": "warning",
+      "message": "Log missing fields: branch, event_type, source",
+      "rule_id": "schema",
+      "document_id": "log_2026_05_22",
+      "file_path": "/private/var/folders/6v/tzqrvzr90gv6f6wl3y4w3k440000gn/T/tmp53jjhdoh/docs/logs/2026-05-22.md"
+    },
+    {
+      "severity": "warning",
+      "message": "Log document missing 'concepts' field (required at L2)",
+      "rule_id": "curation",
+      "document_id": "log_2026_05_22",
+      "file_path": "/private/var/folders/6v/tzqrvzr90gv6f6wl3y4w3k440000gn/T/tmp53jjhdoh/docs/logs/2026-05-22.md"
+    }
+  ]
+}
+
+exec
+/bin/zsh -lc "sed -n '1,35p' ontos/core/types.py" in /Users/jonathanoh/workspaces/Project-Ontos
+ succeeded in 0ms:
+"""
+Shared type definitions for Ontos core modules.
+
+This module has NO dependencies on other ontos modules (except re-exports)
+to prevent circular imports. Import this first when building other core modules.
+
+Phase 2 Decomposition - Created from Phase2-Implementation-Spec.md Section 4.1
+"""
+
+from __future__ import annotations
+from dataclasses import dataclass, field
+from enum import Enum, IntEnum
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set
+
+# =============================================================================
+# RE-EXPORTS (consolidate existing types here)
+# =============================================================================
+
+# CurationLevel moved here to prevent circular imports
+class CurationLevel(IntEnum):
+    """Document curation levels."""
+    SCAFFOLD = 0  # Auto-generated placeholder
+    STUB = 1      # User provides goal only
+    FULL = 2      # Complete Ontos document
+
+# =============================================================================
+# ENUMS (new)
+# =============================================================================
+
+class DocumentType(str, Enum):
+    """Document types in the Ontos ontology.
+
+    Canonical types: kernel/strategy/product/atom/log/reference/concept.
+    (#117) Lifecycle artifact types added so real engineering workspaces
+
+exec
+/bin/zsh -lc '.venv/bin/python -m pytest -q' in /Users/jonathanoh/workspaces/Project-Ontos
+ succeeded in 54020ms:
+============================= test session starts ==============================
+platform darwin -- Python 3.14.4, pytest-8.4.2, pluggy-1.6.0
+rootdir: /Users/jonathanoh/workspaces/Project-Ontos
+configfile: pyproject.toml
+testpaths: tests
+plugins: cov-5.0.0, anyio-4.13.0
+collected 1336 items
+
+tests/commands/test_activate_json_warning_metadata.py .............      [  0%]
+tests/commands/test_agentic_activation_resilience.py ......              [  1%]
+tests/commands/test_agents.py ................................           [  3%]
+tests/commands/test_antigravity_mcp_docs.py .....                        [  4%]
+tests/commands/test_b1_consolidate_crash.py .                            [  4%]
+tests/commands/test_b2_promote_absolute_path.py .                        [  4%]
+tests/commands/test_consolidate_parity.py ...                            [  4%]
+tests/commands/test_consolidate_root_regression.py .......               [  5%]
+tests/commands/test_doctor_hooks.py ..........                           [  5%]
+tests/commands/test_doctor_phase4.py ..............................      [  8%]
+tests/commands/test_env.py .............                                 [  9%]
+tests/commands/test_export_all.py ..                                     [  9%]
+tests/commands/test_export_data_parity.py .......                        [  9%]
+tests/commands/test_export_phase4.py ......................              [ 11%]
+tests/commands/test_hook_phase4.py .........                             [ 12%]
+tests/commands/test_init_phase3.py ....................                  [ 13%]
+tests/commands/test_init_scaffold.py .........................           [ 15%]
+tests/commands/test_instruction_protocol.py .........                    [ 16%]
+tests/commands/test_json_contract_a3.py .                                [ 16%]
+tests/commands/test_link_check.py ...............                        [ 17%]
+tests/commands/test_log.py .......                                       [ 17%]
+tests/commands/test_maintain.py .........................                [ 19%]
+tests/commands/test_map.py .....................                         [ 21%]
+tests/commands/test_map_obsidian.py ........                             [ 21%]
+tests/commands/test_map_resilience.py .....                              [ 22%]
+tests/commands/test_map_tier1_key_documents.py .......                   [ 22%]
+tests/commands/test_mcp_command.py ..........................            [ 24%]
+tests/commands/test_mcp_write_tool_docs.py ..                            [ 24%]
+tests/commands/test_migrate_parity.py ........                           [ 25%]
+tests/commands/test_migration_report_parity.py .....                     [ 25%]
+tests/commands/test_promote_parity.py ...                                [ 26%]
+tests/commands/test_query_parity.py ...                                  [ 26%]
+tests/commands/test_rename.py .........................                  [ 28%]
+tests/commands/test_retrofit.py .....................                    [ 29%]
+tests/commands/test_s2_yaml_warnings.py .                                [ 29%]
+tests/commands/test_scaffold_parity.py ...                               [ 30%]
+tests/commands/test_scan_scope_integration.py .......................... [ 31%]
+...                                                                      [ 32%]
+tests/commands/test_stub_parity.py ..                                    [ 32%]
+tests/commands/test_verify_parity.py ...                                 [ 32%]
+tests/commands/test_verify_portfolio.py .............                    [ 33%]
+tests/core/test_body_refs.py ........................................... [ 36%]
+.................................................                        [ 40%]
+tests/core/test_cache.py ...                                             [ 40%]
+tests/core/test_config_phase3.py ......................                  [ 42%]
+tests/core/test_cursor_mcp.py .............                              [ 43%]
+tests/core/test_frontmatter_repair.py ....                               [ 43%]
+tests/core/test_graph.py .........................                       [ 45%]
+tests/core/test_legacy_config_compat.py .....                            [ 45%]
+tests/core/test_link_diagnostics.py .......                              [ 46%]
+tests/core/test_migration.py ......                                      [ 46%]
+tests/core/test_paths_runtime_root.py ....                               [ 47%]
+tests/core/test_proposals_runtime_paths.py ....                          [ 47%]
+tests/core/test_schema.py ..........................                     [ 49%]
+tests/core/test_snapshot.py .......                                      [ 49%]
+tests/golden/test_golden_master.py ss                                    [ 50%]
+tests/io/test_config_phase3.py ..............                            [ 51%]
+tests/io/test_files_status_parsing.py .                                  [ 51%]
+tests/io/test_load_frontmatter_contract.py .                             [ 51%]
+tests/io/test_scan_scope.py .............                                [ 52%]
+tests/mcp/test_activation.py .......                                     [ 52%]
+tests/mcp/test_bundler.py ................                               [ 53%]
+tests/mcp/test_cache.py ......                                           [ 54%]
+tests/mcp/test_context_bundle.py ......                                  [ 54%]
+tests/mcp/test_context_bundle_config.py .......                          [ 55%]
+tests/mcp/test_context_map.py ..                                         [ 55%]
+tests/mcp/test_error_paths.py ..........                                 [ 56%]
+tests/mcp/test_export_graph.py ..                                        [ 56%]
+tests/mcp/test_get_document.py ...                                       [ 56%]
+tests/mcp/test_health.py ..                                              [ 56%]
+tests/mcp/test_list_documents.py ..                                      [ 56%]
+tests/mcp/test_locking.py ...                                            [ 57%]
+tests/mcp/test_module_exports.py ....                                    [ 57%]
+tests/mcp/test_parity.py ..                                              [ 57%]
+tests/mcp/test_portfolio.py ............................................ [ 60%]
+.....                                                                    [ 61%]
+tests/mcp/test_portfolio_config.py ...................                   [ 62%]
+tests/mcp/test_portfolio_integration.py ..                               [ 62%]
+tests/mcp/test_project_registry.py ..                                    [ 62%]
+tests/mcp/test_query.py .                                                [ 63%]
+tests/mcp/test_read_only_registration.py ..                              [ 63%]
+tests/mcp/test_refresh.py ..                                             [ 63%]
+tests/mcp/test_rename_document.py ..........................             [ 65%]
+tests/mcp/test_rename_scope_forced_library.py .                          [ 65%]
+tests/mcp/test_scanner.py .................                              [ 66%]
+tests/mcp/test_schemas.py .....                                          [ 66%]
+tests/mcp/test_search.py ........                                        [ 67%]
+tests/mcp/test_server_integration.py ........                            [ 68%]
+tests/mcp/test_server_portfolio_mode.py ...                              [ 68%]
+tests/mcp/test_stream_routing.py ...                                     [ 68%]
+tests/mcp/test_validation_helpers.py ..                                  [ 68%]
+tests/mcp/test_workspace_overview.py ..                                  [ 68%]
+tests/mcp/test_write_tools.py ...........................                [ 70%]
+tests/test_cli.py .............................................          [ 74%]
+tests/test_cli_cwd_fix.py ..                                             [ 74%]
+tests/test_cli_phase4.py ......................                          [ 76%]
+tests/test_config.py .........                                           [ 76%]
+tests/test_consolidate.py .....                                          [ 77%]
+tests/test_context_contention.py ........                                [ 77%]
+tests/test_cycle_detection.py .......                                    [ 78%]
+tests/test_describes.py .............................                    [ 80%]
+tests/test_document_loading_contract_a1.py ........                      [ 81%]
+tests/test_dual_mode.py ...                                              [ 81%]
+tests/test_end_session.py .................                              [ 82%]
+tests/test_env_cli.py .....                                              [ 82%]
+tests/test_frontmatter_parsing.py .....                                  [ 83%]
+tests/test_frontmatter_tags.py ..                                        [ 83%]
+tests/test_immutable_history.py ...............                          [ 84%]
+tests/test_lib.py ...............                                        [ 85%]
+tests/test_lint.py ..........                                            [ 86%]
+tests/test_maintain.py ....                                              [ 86%]
+tests/test_map_compact.py ....................                           [ 88%]
+tests/test_map_filter.py ...                                             [ 88%]
+tests/test_orphan_detection.py ............                              [ 89%]
+tests/test_pre_commit_check.py ....................                      [ 90%]
+tests/test_pre_push_check.py ......                                      [ 91%]
+tests/test_query.py .......                                              [ 91%]
+tests/test_session_context.py .................                          [ 93%]
+tests/test_suggestions.py .......                                        [ 93%]
+tests/test_v284_refactor.py .....                                        [ 94%]
+tests/test_validation.py ..............................                  [ 96%]
+tests/test_validation_concepts_a1.py .....                               [ 96%]
+tests/test_yaml_edge_cases.py ........................                   [ 98%]
+tests/ui/test_json_output.py .....................                       [100%]
+
+=============================== warnings summary ===============================
+.ontos/scripts/ontos_end_session.py:25
+  /Users/jonathanoh/workspaces/Project-Ontos/.ontos/scripts/ontos_end_session.py:25: FutureWarning: Legacy ontos_config.py detected; this path is deprecated and will be removed in a future release. Use .ontos.toml.
+    REQUIRE_SOURCE_IN_LOGS = resolve_config('REQUIRE_SOURCE_IN_LOGS', True)
+
+tests/ui/test_json_output.py::TestConvenienceFunctions::test_emit_error
+  /Users/jonathanoh/workspaces/Project-Ontos/tests/ui/test_json_output.py:148: DeprecationWarning: emit_error() is deprecated; use emit_command_error().
+    emit_error("Failed", "E999")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================= 1334 passed, 2 skipped, 2 warnings in 53.53s =================
+
+exec
+/bin/zsh -lc 'scripts/llm-dev verify manifests/project-ontos-issue-119-cli-activate-json-warning-metadata.yaml' in /Users/jonathanoh/workspaces/Project-Ontos
+ succeeded in 356ms:
+ok -- validation done
+verify-schema: OK (1 manifests validated)
+
+::: verify-p3.sh --manifest <manifest> :::
+verify-p3: OK — all manifests satisfy strict P3 (user-facing extension checked on 0 of 1 manifests)
+
+::: verify-gate-categories.sh --manifest <manifest> :::
+verify-gate-categories: OK (all six categories covered)
+
+::: verify-artifact-paths.sh --manifest <manifest> :::
+verify-artifact-paths: OK (canonical_verdict / family_verdict / verification / product_verdict placeholders valid across 1 manifests)
+
+-----------------------------------------------------------------
+verify-adopter: PASSED manifest-conformance (4/4 checks against /Users/jonathanoh/workspaces/Project-Ontos/manifests/project-ontos-issue-119-cli-activate-json-warning-metadata.yaml)
+                manifest-only — does NOT prove lifecycle execution.
+                Run: scripts/llm-dev verify-lifecycle <manifest> for strict-P3 proof.
+
+exec
+/bin/zsh -lc 'scripts/llm-dev verify-lifecycle --mode strict-p3 manifests/project-ontos-issue-119-cli-activate-json-warning-metadata.yaml' in /Users/jonathanoh/workspaces/Project-Ontos
+ exited 1 in 205ms:
+verify-lifecycle: FAIL — strict-P3 lifecycle verification rejected (5 issue(s))
+  ↳ dispatch-verify-failed: receipt ('B.1', 'peer', 'codex') round=1 intent=project-ontos-issue-119-cli-activate-json-warning-metadata-dispatch-intent.yaml exit=1
+  ↳ dispatch-verifier-output: FAIL pending:          project-ontos-issue-119-D.5-codex-verifier — no matching result entry
+FAIL pending:          project-ontos-issue-119-D.5-claude-sonnet-verifier — no matching result entry
+FAIL pending:          project-ontos-issue-119-D.5-gemini-verifier — no matching result entry
+verify-family-dispatch: FAILED — 3 violation(s) across 9 dispatches
+  ↳ missing-receipt: phase=D.5 role=verifier family=codex
+  ↳ missing-receipt: phase=D.5 role=verifier family=claude-sonnet
+  ↳ missing-receipt: phase=D.5 role=verifier family=gemini
+verify-lifecycle: status=review_pending
+
+exec
+/bin/zsh -lc ".venv/bin/python -m ontos activate --json | jq '.data.validation.warnings[0]'" in /Users/jonathanoh/workspaces/Project-Ontos
+ succeeded in 0ms:
+{
+  "severity": "warning",
+  "message": "Document has no incoming dependencies",
+  "rule_id": "orphan",
+  "document_id": "log_20260117_readme-and-license-update-for-v3-0-0",
+  "file_path": "/Users/jonathanoh/workspaces/Project-Ontos/docs/logs/2026-01-17_readme-and-license-update-for-v3-0-0.md"
+}
+
+exec
+/bin/zsh -lc "rg \"_validation_issues|to_dict\\(\" ontos tests/commands/test_activate_json_warning_metadata.py tests/mcp/test_activation.py" in /Users/jonathanoh/workspaces/Project-Ontos
+ succeeded in 0ms:
+tests/commands/test_activate_json_warning_metadata.py:from ontos.mcp.tools import _validation_issues
+tests/commands/test_activate_json_warning_metadata.py:# Unit tests — ValidationError.to_dict() shape (Cases 1-6 from spec §1.4.1)
+tests/commands/test_activate_json_warning_metadata.py:    record = issue.to_dict()
+tests/commands/test_activate_json_warning_metadata.py:    record = issue.to_dict()
+tests/commands/test_activate_json_warning_metadata.py:    record = issue.to_dict()
+tests/commands/test_activate_json_warning_metadata.py:    record = issue.to_dict()
+tests/commands/test_activate_json_warning_metadata.py:    record = issue.to_dict()
+tests/commands/test_activate_json_warning_metadata.py:    record = issue.to_dict()
+tests/commands/test_activate_json_warning_metadata.py:    cli_serialized = [issue.to_dict() for issue in result.warnings]
+tests/commands/test_activate_json_warning_metadata.py:    mcp_serialized = _validation_issues(result.warnings)
+tests/mcp/test_activation.py:from ontos.mcp.tools import _snapshot_issue, _validation_issues
+tests/mcp/test_activation.py:def test_validation_issues_enriches_with_rule_id_document_id_file_path():
+tests/mcp/test_activation.py:    issues = _validation_issues(errors)
+tests/mcp/test_activation.py:def test_validation_issues_drops_empty_context_fields():
+tests/mcp/test_activation.py:    [record] = _validation_issues([issue])
+ontos/core/frontmatter_repair.py:    def to_dict(self, *, root: Optional[Path] = None) -> Dict[str, Any]:
+ontos/core/frontmatter_repair.py:    def to_dict(self, *, root: Optional[Path] = None) -> Dict[str, Any]:
+ontos/core/frontmatter_repair.py:                issue.to_dict(root=root) for issue in self.diagnostics
+ontos/core/frontmatter_repair.py:            "edits": [edit.to_dict(root=root) for edit in self.edits],
+ontos/core/frontmatter_repair.py:        payload = issue.to_dict(root=root)
+ontos/commands/activate.py:        validation_errors = [issue.to_dict() for issue in validation.errors]
+ontos/commands/activate.py:        validation_warnings = [issue.to_dict() for issue in validation.warnings]
+ontos/commands/activate.py:        "diagnostics": [issue.to_dict(root=project_root) for issue in load_result.issues],
+ontos/commands/activate.py:            issue.to_dict(root=project_root) for issue in (issues or [])
+ontos/core/types.py:    def to_dict(self) -> Dict[str, Any]:
+ontos/io/config.py:    data = config_to_dict(config)
+ontos/commands/maintain.py:    payload = plan.to_dict(root=ctx.repo_root)
+ontos/core/config.py:def config_to_dict(config: OntosConfig) -> dict:
+ontos/io/files.py:    def to_dict(self, *, root: Optional[Path] = None) -> Dict[str, Any]:
+ontos/mcp/tools.py:    warnings.extend(_validation_issues(validation.errors))
+ontos/mcp/tools.py:    warnings.extend(_validation_issues(validation.warnings))
+ontos/mcp/tools.py:        "errors": _validation_issues(validation.errors),
+ontos/mcp/tools.py:        "warnings": _validation_issues(validation.warnings),
+ontos/mcp/tools.py:def _validation_issues(issues: list[ValidationError]) -> list[dict[str, Any]]:
+ontos/mcp/tools.py:    # ValidationError.to_dict() so CLI and MCP share the exact same shape;
+ontos/mcp/tools.py:    return [issue.to_dict() for issue in issues]
+
+exec
+/bin/zsh -lc "nl -ba ontos/commands/activate.py | sed -n '170,220p'" in /Users/jonathanoh/workspaces/Project-Ontos
+ succeeded in 0ms:
+   170	
+   171	def _select_loaded_ids(docs: Dict[str, DocumentData]) -> List[str]:
+   172	    in_degree: Dict[str, int] = {}
+   173	    for doc in docs.values():
+   174	        for dep_id in doc.depends_on:
+   175	            if dep_id in docs:
+   176	                in_degree[dep_id] = in_degree.get(dep_id, 0) + 1
+   177	    ranked = sorted(docs.values(), key=lambda doc: (-in_degree.get(doc.id, 0), doc.id))
+   178	    return [doc.id for doc in ranked[:5]]
+   179	
+   180	
+   181	def _not_usable(
+   182	    reason: str,
+   183	    *,
+   184	    project_root: Optional[Path] = None,
+   185	    files_scanned: int = 0,
+   186	    issues: Optional[List[DocumentLoadIssue]] = None,
+   187	) -> Dict[str, Any]:
+   188	    return {
+   189	        "status": "not_usable",
+   190	        "reason": reason,
+   191	        "map": {"path": None, "refreshed": False, "exists": False},
+   192	        "files_scanned": files_scanned,
+   193	        "documents": 0,
+   194	        "loaded_ids": [],
+   195	        "diagnostics": [
+   196	            issue.to_dict(root=project_root) for issue in (issues or [])
+   197	        ],
+   198	        "validation": {"errors": [], "warnings": []},
+   199	        "summary": {
+   200	            "load_issues": len(issues or []),
+   201	            "validation_errors": 0,
+   202	            "validation_warnings": 0,
+   203	        },
+   204	        "recommendation": "halt; no usable Ontos context is available",
+   205	    }
+   206	
+   207	
+   208	def _dict_to_issue(item: Dict[str, Any]) -> DocumentLoadIssue:
+   209	    return DocumentLoadIssue(
+   210	        code=item["code"],
+   211	        path=Path(item["path"]),
+   212	        message=item["message"],
+   213	        doc_id=item.get("doc_id"),
+   214	        field=item.get("field"),
+   215	        value=item.get("observed_value"),
+   216	        line=item.get("line"),
+   217	        allowed_values=item.get("allowed_values"),
+   218	        suggested_fix=item.get("suggested_fix"),
+   219	        severity=item.get("severity", "warning"),
+   220	        blocking=bool(item.get("blocking", False)),
+
+exec
+/bin/zsh -lc "nl -ba docs/releases/v4.6.0.md | sed -n '1,120p'" in /Users/jonathanoh/workspaces/Project-Ontos
+exec
+/bin/zsh -lc "nl -ba docs/specs/project-ontos-issue-119-cli-activate-json-warning-metadata-spec.md | sed -n '1,220p'" in /Users/jonathanoh/workspaces/Project-Ontos
+ succeeded in 0ms:
+     1	---
+     2	id: v460
+     3	type: log
+     4	status: active
+     5	event_type: release
+     6	impacts:
+     7	  - v450
+     8	  - ontos_manual
+     9	---
+    10	
+    11	# Ontos v4.6.0
+    12	
+    13	v4.6.0 closes the final D.6 deferral from PR #118 / v4.5.0: `ontos activate --json` now exposes structured validation metadata, reaching parity with the MCP `activate` tool. Closes [issue #119](https://github.com/ohjonathan/Project-Ontos/issues/119).
+    14	
+    15	## CLI `activate --json` warning metadata parity (#119)
+    16	
+    17	- **Structured validation records.** `payload.data.validation.warnings` and `payload.data.validation.errors` now contain objects carrying `severity`, `message`, `rule_id` (when the validator emits one), `document_id` (when the document context is known), and `file_path` (when known). CLI automation can triage warnings by rule/document without re-parsing message strings or falling back to a parallel MCP call. The serialization is bit-identical to MCP — both paths now route through the same `ValidationError.to_dict()` method.
+    18	
+    19	### Breaking change to the CLI JSON contract
+    20	
+    21	`payload.data.validation.warnings` and `payload.data.validation.errors` previously contained **bare message strings**; they now contain **objects**. Consumers that parsed these fields as `list[str]` will need to read `record["message"]` from each element. The top-level CLI envelope (`status`, `code`, `message`, `data`) is unchanged.
+    22	
+    23	Before (`ontos <= 4.5.0`):
+    24	
+    25	```json
+    26	{
+    27	  "validation": {
+    28	    "errors":   ["Broken dependency: missing_doc"],
+    29	    "warnings": ["Document has no incoming dependencies"]
+    30	  }
+    31	}
+    32	```
+    33	
+    34	After (`ontos >= 4.6.0`):
+    35	
+    36	```json
+    37	{
+    38	  "validation": {
+    39	    "errors":   [{
+    40	      "severity":    "error",
+    41	      "message":     "Broken dependency: missing_doc",
+    42	      "rule_id":     "broken_link",
+    43	      "document_id": "strategy_a",
+    44	      "file_path":   "docs/strategy/a.md"
+    45	    }],
+    46	    "warnings": [{
+    47	      "severity":    "warning",
+    48	      "message":     "Document has no incoming dependencies",
+    49	      "rule_id":     "orphan",
+    50	      "document_id": "kernel_doc",
+    51	      "file_path":   "docs/kernel.md"
+    52	    }]
+    53	  }
+    54	}
+    55	```
+    56	
+    57	`document_id` and `file_path` are omitted when the source `ValidationError` has empty values; `rule_id` is omitted only when the validator did not classify the issue. `severity` and `message` are always present.
+    58	
+    59	## Internal refactor
+    60	
+    61	- `ValidationError.to_dict()` is now the single shared serializer used by both `ontos/commands/activate.py` (CLI JSON path) and `ontos/mcp/tools.py:_validation_issues` (MCP activation payload). The MCP wire format is bit-identical; the existing schema (`ontos/mcp/schemas.py:ValidationIssue`) is unchanged.
+    62	
+    63	## Unchanged
+    64	
+    65	- MCP `activate` tool behavior, schema, and snapshot warning classification.
+    66	- `ontos activate` human-readable (non-JSON) output.
+    67	- `_not_usable()` activation path — still emits empty `validation.errors` / `validation.warnings` lists.
+    68	- Validator rules from PR #118 (depends_on resolution, `out_of_scope_dependency`, type/status widening, README/template skip, doctor severity alignment, body.bare_id_token tightening).
+
+ succeeded in 0ms:
+     1	---
+     2	id: project-ontos-issue-119-cli-activate-json-warning-metadata-spec
+     3	deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
+     4	type: atom
+     5	status: active
+     6	phase: A
+     7	role: spec-author
+     8	family: claude-opus
+     9	depends_on:
+    10	  - ontos_manual
+    11	  - ontology_spec
+    12	  - ontos_agent_instructions
+    13	  - project-ontos-github-issues-115-117-spec
+    14	---
+    15	
+    16	# Spec — project-ontos-issue-119-cli-activate-json-warning-metadata
+    17	
+    18	This spec covers one open GitHub issue against `ohjonathan/Project-Ontos`:
+    19	
+    20	- **Closes #119** — `ontos activate --json` should expose structured warning metadata (`severity`, `rule_id`, `message`, `document_id`, `file_path`), matching the MCP enrichment that landed in PR #118 / v4.5.0.
+    21	
+    22	The Pre-A triage report classified #119 as **In-Scope** with `direct-run` evidence (PR #118 D.6 final-approval explicitly recorded the deferral) plus `static-inspection` of the current `ontos/commands/activate.py` flattening. See `docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/pre-a-triage-report.md`.
+    23	
+    24	This deliverable is a **focused follow-up** to deliverable `project-ontos-github-issues-115-117`. The parity contract was specified there in §2.2.2 (MCP side); this spec carries that contract forward to the CLI side and consolidates the shared serialization logic onto the `ValidationError` dataclass itself.
+    25	
+    26	## 0. Cross-cutting invariants
+    27	
+    28	- MCP behavior is preserved bit-for-bit. The existing `_validation_issues` shape — `{severity, message, rule_id?, document_id?, file_path?}` with empty `document_id`/`file_path` squashed — remains the exact wire format MCP emits. `tests/mcp/test_activation.py` must pass without modification.
+    29	- The MCP success schema (`ValidationIssue` at `ontos/mcp/schemas.py:16-27`) is unchanged. `additionalProperties: false` and the optional-context-field invariant from §2.2.2 of the prior spec are preserved.
+    30	- The `ontos activate` human-readable output (the non-`--json` path through `format_activation_output()` at `ontos/commands/activate.py:144-168`) is **untouched**. It only consumes `payload["summary"]` counts and never iterates the restructured `payload["validation"]` lists.
+    31	- MCP-only behavior (`_snapshot_issue()`, `_SNAPSHOT_RULE_PREFIXES` at `ontos/mcp/tools.py:643-671`) is preserved. CLI activation has no snapshot warning channel; the prefix classification stays MCP-side.
+    32	- The `_not_usable()` path at `ontos/commands/activate.py:181-205` continues to emit empty `validation.errors` and `validation.warnings` lists — its semantics are unaffected by the element-shape change.
+    33	- Conservative repair behavior elsewhere in the codebase (e.g., `DocumentType.UNKNOWN` fallback, `original_value` preservation) is **out of scope** and must not be modified.
+    34	- `verify-lifecycle.sh --mode strict-p3 manifests/project-ontos-issue-119-cli-activate-json-warning-metadata.yaml` must pass at D.6.
+    35	
+    36	## 1. Issue #119 — CLI `ontos activate --json` warning metadata parity
+    37	
+    38	### 1.1 Current behavior
+    39	
+    40	[ontos/commands/activate.py:96-105](ontos/commands/activate.py:96) constructs the validation portion of the activation JSON payload by **flattening** each `ValidationError` instance to just its `.message`:
+    41	
+    42	```python
+    43	validation_errors = []
+    44	validation_warnings = []
+    45	if docs:
+    46	    content, validation = generate_context_map(
+    47	        docs,
+    48	        gen_config,
+    49	        GenerateMapOptions(max_dependency_depth=config.validation.max_dependency_depth),
+    50	    )
+    51	    validation_errors = [issue.message for issue in validation.errors]
+    52	    validation_warnings = [issue.message for issue in validation.warnings]
+    53	```
+    54	
+    55	The resulting JSON payload at [ontos/commands/activate.py:114-140](ontos/commands/activate.py:114) emits:
+    56	
+    57	```json
+    58	{
+    59	  "validation": {
+    60	    "errors":   ["message text", ...],
+    61	    "warnings": ["message text", ...]
+    62	  }
+    63	}
+    64	```
+    65	
+    66	In contrast, the MCP `activate` tool — which consumes the same `ValidationResult` (loaded from the cache snapshot in `ontos/mcp/tools.py`) — runs each `ValidationError` through the private `_validation_issues()` helper at [ontos/mcp/tools.py:620-640](ontos/mcp/tools.py:620), producing the enriched dict shape specified in §2.2.2 of the prior deliverable:
+    67	
+    68	```json
+    69	{
+    70	  "severity": "warning",
+    71	  "rule_id": "orphan",
+    72	  "message": "Document has no incoming dependencies",
+    73	  "document_id": "model_a_bronze_sourcepacket_review",
+    74	  "file_path": "docs/reviews/model_a_bronze_sourcepacket_review.md"
+    75	}
+    76	```
+    77	
+    78	CLI automation that wants to triage by rule, document, or path must therefore either re-parse the message string (brittle) or duplicate the MCP call (wasteful). PR #118 D.6 final-approval explicitly recorded this CLI/MCP consistency gap as a non-blocking deferral — that deferral is the entire scope of #119.
+    79	
+    80	### 1.2 Contract
+    81	
+    82	Every CLI activation warning and error emitted in the JSON payload carries the same enriched shape MCP already produces:
+    83	
+    84	```json
+    85	{
+    86	  "severity": "warning|error",
+    87	  "message": "human-readable text",
+    88	  "rule_id": "orphan|depth|schema|broken_link|out_of_scope_dependency|...",
+    89	  "document_id": "doc-id-when-known",
+    90	  "file_path": "docs/path/to/file.md"
+    91	}
+    92	```
+    93	
+    94	Field rules (identical to MCP):
+    95	
+    96	| Field | Rule |
+    97	|---|---|
+    98	| `severity` | always present; verbatim copy of `ValidationError.severity` (`"error"` / `"warning"` / `"info"`). |
+    99	| `message` | always present; verbatim copy of `ValidationError.message`. |
+   100	| `rule_id` | present when `ValidationError.error_type` is set; the value is `error_type.value` from `ValidationErrorType` (e.g. `"orphan"`, `"depth"`, `"schema"`, `"broken_link"`, `"out_of_scope_dependency"`). Absent when `error_type` is falsy. |
+   101	| `document_id` | present when `ValidationError.doc_id` is a non-empty string. Empty / missing `doc_id` → field absent (squashed). |
+   102	| `file_path` | present when `ValidationError.filepath` is a non-empty string. Empty / missing `filepath` → field absent (squashed). |
+   103	
+   104	The squashing rule keeps the public payload compact and matches the MCP contract bit-for-bit, so CLI consumers and MCP consumers see identical record shapes for the same underlying `ValidationError`.
+   105	
+   106	#### 1.2.1 Schema break (intentional)
+   107	
+   108	The `validation.errors` and `validation.warnings` keys retain their names and their position in the payload, but their **element shape changes from `str` to `dict`**:
+   109	
+   110	| Before (`ontos<=4.5.0`) | After (this deliverable) |
+   111	|---|---|
+   112	| `payload.data.validation.warnings: list[str]` | `payload.data.validation.warnings: list[dict]` |
+   113	| `payload.data.validation.errors: list[str]` | `payload.data.validation.errors: list[dict]` |
+   114	
+   115	This is a **deliberate breaking change** to the CLI JSON contract. The Pre-A triage adjudicated this against the alternative of dual-emitting (a `warnings_structured` sibling key) and rejected the alternative on the grounds that it bakes an undesirable historical shape into the contract. Downstream consumers — including the user's Johnny-OS smoke tooling — must update their parsers.
+   116	
+   117	The change is called out:
+   118	
+   119	- in this spec (here, §1.2.1),
+   120	- in the PR body when #119 lands,
+   121	- in the next release note under `docs/releases/` if a release notes directory is in use (verify at C-phase via `ls docs/releases/`).
+   122	
+   123	The unchanged top-level envelope (`status`, `code`, `message`, `data` wrapper from `ontos/ui/json_output.py`) means CLI consumers that already JSON-decode the response keep working — only the inner `validation.errors[i]` / `validation.warnings[i]` element type changes.
+   124	
+   125	### 1.3 Implementation
+   126	
+   127	#### 1.3.1 Shared serialization on the dataclass
+   128	
+   129	Add a public `to_dict()` method to `ValidationError` in [ontos/core/types.py:124-133](ontos/core/types.py:124). This follows the existing pattern set by `DocumentLoadIssue.to_dict()` at [ontos/io/files.py:36](ontos/io/files.py:36) (which CLI already calls via `[issue.to_dict(root=project_root) for issue in load_result.issues]` in `activate.py:125`):
+   130	
+   131	```python
+   132	# ontos/core/types.py — added to @dataclass ValidationError
+   133	def to_dict(self) -> Dict[str, Any]:
+   134	    record: Dict[str, Any] = {"severity": self.severity, "message": self.message}
+   135	    rule_id = getattr(self.error_type, "value", None) if self.error_type else None
+   136	    if rule_id:
+   137	        record["rule_id"] = rule_id
+   138	    if self.doc_id:
+   139	        record["document_id"] = self.doc_id
+   140	    if self.filepath:
+   141	        record["file_path"] = self.filepath
+   142	    return record
+   143	```
+   144	
+   145	The field mapping (`doc_id` → `document_id`, `filepath` → `file_path`) preserves the public-facing key names already established by the MCP `_validation_issues` helper, while the internal dataclass fields keep their existing names. The empty-string squashing rule lives on the dataclass itself so both call sites get it for free.
+   146	
+   147	#### 1.3.2 CLI consumer
+   148	
+   149	Replace the flattening at [ontos/commands/activate.py:104-105](ontos/commands/activate.py:104):
+   150	
+   151	```python
+   152	# Before
+   153	validation_errors = [issue.message for issue in validation.errors]
+   154	validation_warnings = [issue.message for issue in validation.warnings]
+   155	
+   156	# After
+   157	validation_errors = [issue.to_dict() for issue in validation.errors]
+   158	validation_warnings = [issue.to_dict() for issue in validation.warnings]
+   159	```
+   160	
+   161	No other line in `ontos/commands/activate.py` requires changes — the payload assembly at lines 114-140 keeps its existing structure, and `format_activation_output()` (lines 144-168) never touches these lists.
+   162	
+   163	#### 1.3.3 MCP consumer (refactor onto the shared method)
+   164	
+   165	Refactor `_validation_issues()` in [ontos/mcp/tools.py:620-640](ontos/mcp/tools.py:620) to use the new dataclass method. Tighten the parameter type hint from `list[Any]` to `list[ValidationError]` so the contract — that callers always pass a homogeneous list of `ValidationError` instances — is explicit (B.1 gemini F1):
+   166	
+   167	```python
+   168	def _validation_issues(issues: list[ValidationError]) -> list[dict[str, Any]]:
+   169	    # (#119) Reuse ValidationError.to_dict() so CLI + MCP share the
+   170	    # exact same serialization. Snapshot bare strings still use
+   171	    # _snapshot_issue() (MCP-only). Type-hint tightened to list[ValidationError]
+   172	    # because the only call sites (_normalize_warnings, _validation_payload)
+   173	    # pass validation.errors / validation.warnings, both of which are
+   174	    # List[ValidationError] per the dataclass definition.
+   175	    return [issue.to_dict() for issue in issues]
+   176	```
+   177	
+   178	`_normalize_warnings()`, `_validation_payload()`, `_snapshot_issue()`, and `_SNAPSHOT_RULE_PREFIXES` are unchanged. The MCP `ValidationIssue` schema (`ontos/mcp/schemas.py:16-27`) is unchanged — the wire format produced by `to_dict()` is bit-identical to the prior `_validation_issues` output, so the schema validation continues to pass.
+   179	
+   180	#### 1.3.4 No other runtime modules touched
+   181	
+   182	The **runtime implementation surface** is exactly three files:
+   183	
+   184	- `ontos/core/types.py` (one method added, `ValidationError` import already present in `ontos/mcp/tools.py`)
+   185	- `ontos/commands/activate.py` (two lines swapped)
+   186	- `ontos/mcp/tools.py` (one helper body collapsed, one type hint tightened)
+   187	
+   188	The **documentation surface** additionally requires the schema-break call-out in §1.2.1 to land:
+   189	
+   190	- this spec (already includes the call-out at §1.2.1),
+   191	- the PR body (`Closes #119` + the `list[str]` → `list[dict]` note),
+   192	- a release-note bullet under `docs/releases/` (check at Phase C whether the next-release file already exists; create one if needed).
+   193	
+   194	Plus the test surface in §1.4.
+   195	
+   196	### 1.4 Tests
+   197	
+   198	#### 1.4.1 New CLI test file — `tests/commands/test_activate_json_warning_metadata.py`
+   199	
+   200	Build temp workspaces using the same pattern as [tests/commands/test_agentic_activation_resilience.py](tests/commands/test_agentic_activation_resilience.py), invoke `ontos --json activate` (or call `activate_command` / `run_activation` directly), parse the JSON envelope, and assert on the structured payload. Required cases (test fixtures tightened against actual validator behavior per B.1 codex F1):
+   201	
+   202	| # | Case | Assertions |
+   203	|---|---|---|
+   204	| 1 | **Orphan warning** | A doc whose `type` is **not** in `allowed_orphan_types` (default `["atom"]`) and which has no incoming dependencies — e.g. a `kernel`-typed doc with `depends_on: []`. Override `allowed_orphan_types: []` in the test workspace config to be robust to defaults. `validation.warnings` contains one record with `rule_id == "orphan"`, `severity == "warning"`, populated `document_id`, populated `file_path`, and a non-empty `message`. |
+   205	| 2 | **Depth warning** | A `depends_on` chain that exceeds `max_dependency_depth`. `validation.warnings` contains a record with `rule_id == "depth"`, populated `document_id` / `file_path`. |
+   206	| 3 | **Schema warning** | A log doc missing required schema fields (the validator-side schema check, not the loader-side invalid-`type`/`status` diagnostics which go through `load_result.issues` rather than `validation.warnings`). `validation.warnings` contains a record with `rule_id == "schema"` and populated `document_id` / `file_path`. *(Note: finer-grained snapshot rule_ids like `schema.log_missing_fields` are MCP-only by design and out of scope; CLI reports the structured enum value `schema`.)* |
+   207	| 4 | **Out-of-scope dependency** | A doc with `depends_on:` pointing at a workspace-relative path that exists on disk but is not loaded as a doc. `validation.warnings` contains a record with `rule_id == "out_of_scope_dependency"`. |
+   208	| 5 | **Empty context squashed** | Construct a synthetic `ValidationError(error_type=ValidationErrorType.ORPHAN, doc_id="", filepath="", message="m", severity="warning", fix_suggestion="")` and call `.to_dict()` directly. Assert the returned dict contains `severity` and `message` but **not** `document_id` and **not** `file_path` (squashed). `rule_id` is present (`"orphan"`). |
+   209	| 6 | **Error parity** | Force an error-severity `ValidationError` into the result. Since `generate_context_map()` currently emits warning-severity entries for broken `depends_on` (no naturally-occurring `error`-severity validator output via the standard fixture pipeline), use either (a) a controlled synthetic `ValidationError(severity="error", ...)` injected through a monkeypatched validator OR (b) a cycle-creating fixture if the cycle detector emits error-severity entries. Either path: assert the resulting record appears under `validation.errors` (not `.warnings`) with the same field shape and `severity == "error"`. |
+   210	| 7 | **`_not_usable()` path unchanged** | Trigger the `_not_usable()` branch (no docs loaded and no existing context map). Assert `data.validation.errors == []` and `data.validation.warnings == []`. |
+   211	| 8 | **CLI/MCP parity** | **Mandatory** parity assertion (B.1 sonnet F1). Feed a constructed `ValidationResult` (with one warning that has all five fields populated, and one with only `severity`/`message`) through both code paths — `[issue.to_dict() for issue in result.warnings]` (CLI) and `_validation_issues(result.warnings)` (MCP). Assert the two lists are **identical** (same Python equality on the list of dicts). This is the load-bearing regression for the §0 "bit-for-bit" invariant. |
+   212	
+   213	#### 1.4.2 MCP regression — `tests/mcp/test_activation.py`
+   214	
+   215	The existing `test_validation_issues_enriches_with_rule_id_document_id_file_path` and `test_validation_issues_drops_empty_context_fields` cases must pass unchanged. They are the load-bearing regression coverage for MCP behavior. No edits required; verifying they remain green is the test for the MCP refactor.
+   216	
+   217	#### 1.4.3 Existing CLI regression — `tests/commands/test_agentic_activation_resilience.py`
+   218	
+   219	The existing CLI test asserts `payload["data"]["status"]`, `payload["data"]["map"]["refreshed"]`, `payload["data"]["loaded_ids"]` (per the prior exploration). These keys are untouched; the test must continue to pass.
+   220	
+
+exec
+/bin/zsh -lc "nl -ba tests/commands/test_activate_json_warning_metadata.py | sed -n '1,260p'" in /Users/jonathanoh/workspaces/Project-Ontos
+exec
+/bin/zsh -lc "nl -ba tests/commands/test_activate_json_warning_metadata.py | sed -n '260,620p'" in /Users/jonathanoh/workspaces/Project-Ontos
+ succeeded in 0ms:
+     1	"""CLI regressions for #119 — `ontos activate --json` structured validation
+     2	metadata (`severity`, `rule_id`, `message`, `document_id`, `file_path`).
+     3	
+     4	Mirrors the MCP enrichment landed in PR #118 / v4.5.0 (deliverable
+     5	project-ontos-github-issues-115-117). See
+     6	docs/specs/project-ontos-issue-119-cli-activate-json-warning-metadata-spec.md
+     7	§1.4.1 for the canonical case list.
+     8	"""
+     9	
+    10	from __future__ import annotations
+    11	
+    12	import json
+    13	import os
+    14	import subprocess
+    15	import sys
+    16	from pathlib import Path
+    17	from textwrap import dedent
+    18	
+    19	from ontos.core.types import ValidationError, ValidationErrorType, ValidationResult
+    20	from ontos.mcp.tools import _validation_issues
+    21	
+    22	
+    23	REPO_ROOT = Path(__file__).resolve().parents[2]
+    24	
+    25	
+    26	# =============================================================================
+    27	# Helpers
+    28	# =============================================================================
+    29	
+    30	
+    31	def _write(path: Path, content: str) -> None:
+    32	    path.parent.mkdir(parents=True, exist_ok=True)
+    33	    path.write_text(dedent(content).lstrip(), encoding="utf-8")
+    34	
+    35	
+    36	def _run(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    37	    env = dict(os.environ)
+    38	    env["PYTHONPATH"] = str(REPO_ROOT)
+    39	    return subprocess.run(
+    40	        [sys.executable, "-m", "ontos", *args],
+    41	        cwd=root,
+    42	        text=True,
+    43	        capture_output=True,
+    44	        env=env,
+    45	    )
+    46	
+    47	
+    48	def _orphan_warning(doc_id: str, filepath: str) -> ValidationError:
+    49	    return ValidationError(
+    50	        error_type=ValidationErrorType.ORPHAN,
+    51	        doc_id=doc_id,
+    52	        filepath=filepath,
+    53	        message="Document has no incoming dependencies",
+    54	        fix_suggestion="Add a dependency from another document, or change type to one in allowed_orphan_types.",
+    55	        severity="warning",
+    56	    )
+    57	
+    58	
+    59	# =============================================================================
+    60	# Unit tests — ValidationError.to_dict() shape (Cases 1-6 from spec §1.4.1)
+    61	# =============================================================================
+    62	
+    63	
+    64	def test_to_dict_orphan_includes_rule_id_document_id_file_path() -> None:
+    65	    """Case 1 — orphan warning carries severity, rule_id, message, document_id, file_path."""
+    66	    issue = _orphan_warning("kernel_doc", "docs/kernel/kernel_doc.md")
+    67	
+    68	    record = issue.to_dict()
+    69	
+    70	    assert record == {
+    71	        "severity": "warning",
+    72	        "message": "Document has no incoming dependencies",
+    73	        "rule_id": "orphan",
+    74	        "document_id": "kernel_doc",
+    75	        "file_path": "docs/kernel/kernel_doc.md",
+    76	    }
+    77	
+    78	
+    79	def test_to_dict_depth_warning_emits_depth_rule_id() -> None:
+    80	    """Case 2 — depth warning carries rule_id == 'depth' and doc context."""
+    81	    issue = ValidationError(
+    82	        error_type=ValidationErrorType.DEPTH,
+    83	        doc_id="leaf_doc",
+    84	        filepath="docs/leaf.md",
+    85	        message="Dependency depth 6 exceeds max 5",
+    86	        fix_suggestion="Flatten the dependency chain or raise max_dependency_depth.",
+    87	        severity="warning",
+    88	    )
+    89	
+    90	    record = issue.to_dict()
+    91	
+    92	    assert record["rule_id"] == "depth"
+    93	    assert record["severity"] == "warning"
+    94	    assert record["document_id"] == "leaf_doc"
+    95	    assert record["file_path"] == "docs/leaf.md"
+    96	
+    97	
+    98	def test_to_dict_schema_warning_emits_schema_rule_id() -> None:
+    99	    """Case 3 — schema warning (e.g. log doc missing required fields) → rule_id == 'schema'.
+   100	
+   101	    Note: finer-grained snapshot rule_ids like ``schema.log_missing_fields`` are
+   102	    MCP-only by design; the CLI path reports the structured enum value ``schema``.
+   103	    """
+   104	    issue = ValidationError(
+   105	        error_type=ValidationErrorType.SCHEMA,
+   106	        doc_id="logs_2026_05_22",
+   107	        filepath="docs/logs/2026-05-22.md",
+   108	        message="Log missing fields: branch",
+   109	        fix_suggestion="Add the required `branch` field to the log frontmatter.",
+   110	        severity="warning",
+   111	    )
+   112	
+   113	    record = issue.to_dict()
+   114	
+   115	    assert record["rule_id"] == "schema"
+   116	    assert record["document_id"] == "logs_2026_05_22"
+   117	    assert record["file_path"] == "docs/logs/2026-05-22.md"
+   118	
+   119	
+   120	def test_to_dict_out_of_scope_dependency_emits_correct_rule_id() -> None:
+   121	    """Case 4 — depends_on resolved on disk but not loaded → rule_id == 'out_of_scope_dependency'."""
+   122	    issue = ValidationError(
+   123	        error_type=ValidationErrorType.OUT_OF_SCOPE_DEPENDENCY,
+   124	        doc_id="strategy_a",
+   125	        filepath="docs/strategy/a.md",
+   126	        message="External dependency resolved from disk: '.llm-dev/framework/framework.md' (declared in strategy_a)",
+   127	        fix_suggestion="Either load the target as a doc or rephrase the dependency.",
+   128	        severity="warning",
+   129	    )
+   130	
+   131	    record = issue.to_dict()
+   132	
+   133	    assert record["rule_id"] == "out_of_scope_dependency"
+   134	    assert record["document_id"] == "strategy_a"
+   135	    assert record["file_path"] == "docs/strategy/a.md"
+   136	
+   137	
+   138	def test_to_dict_squashes_empty_document_id_and_file_path() -> None:
+   139	    """Case 5 — empty doc_id / filepath are absent from the public payload (not present as empty strings)."""
+   140	    issue = ValidationError(
+   141	        error_type=ValidationErrorType.ORPHAN,
+   142	        doc_id="",
+   143	        filepath="",
+   144	        message="Document has no incoming dependencies",
+   145	        fix_suggestion="",
+   146	        severity="warning",
+   147	    )
+   148	
+   149	    record = issue.to_dict()
+   150	
+   151	    assert record == {
+   152	        "severity": "warning",
+   153	        "message": "Document has no incoming dependencies",
+   154	        "rule_id": "orphan",
+   155	    }
+   156	    assert "document_id" not in record
+   157	    assert "file_path" not in record
+   158	
+   159	
+   160	def test_to_dict_error_severity_preserved() -> None:
+   161	    """Case 6 — error-severity ValidationError serializes with severity == 'error'."""
+   162	    issue = ValidationError(
+   163	        error_type=ValidationErrorType.BROKEN_LINK,
+   164	        doc_id="strategy_a",
+   165	        filepath="docs/strategy/a.md",
+   166	        message="Broken dependency: missing_doc",
+   167	        fix_suggestion="Create the target doc or remove the dependency.",
+   168	        severity="error",
+   169	    )
+   170	
+   171	    record = issue.to_dict()
+   172	
+   173	    assert record["severity"] == "error"
+   174	    assert record["rule_id"] == "broken_link"
+   175	    assert record["document_id"] == "strategy_a"
+   176	    assert record["file_path"] == "docs/strategy/a.md"
+   177	
+   178	
+   179	# =============================================================================
+   180	# Parity tests — CLI and MCP paths produce identical lists (Case 8 from spec)
+   181	# =============================================================================
+   182	
+   183	
+   184	def test_cli_and_mcp_serialization_identical_for_validation_result() -> None:
+   185	    """Case 8 (mandatory) — CLI and MCP serialize the same ValidationResult identically.
+   186	
+   187	    This is the load-bearing regression for the §0 'bit-for-bit' invariant: if
+   188	    these two lists ever diverge, MCP and CLI consumers will see different
+   189	    payloads for the same underlying ValidationError, defeating the whole
+   190	    purpose of #119.
+   191	    """
+   192	    enriched = _orphan_warning("kernel_doc", "docs/kernel/kernel_doc.md")
+   193	    sparse = ValidationError(
+   194	        error_type=ValidationErrorType.ORPHAN,
+   195	        doc_id="",
+   196	        filepath="",
+   197	        message="Bare snapshot orphan",
+   198	        fix_suggestion="",
+   199	        severity="warning",
+   200	    )
+   201	    result = ValidationResult(warnings=[enriched, sparse])
+   202	
+   203	    cli_serialized = [issue.to_dict() for issue in result.warnings]
+   204	    mcp_serialized = _validation_issues(result.warnings)
+   205	
+   206	    assert cli_serialized == mcp_serialized
+   207	
+   208	
+   209	# =============================================================================
+   210	# Integration test — CLI JSON envelope carries the structured shape end-to-end
+   211	# =============================================================================
+   212	
+   213	
+   214	def _orphan_workspace(root: Path) -> Path:
+   215	    """Build a temp workspace whose context map will surface at least one
+   216	    orphan warning. Uses a non-atom type (default ``allowed_orphan_types`` is
+   217	    ``["atom"]``) so the orphan rule fires regardless of the default config.
+   218	    """
+   219	    _write(
+   220	        root / ".ontos.toml",
+   221	        """
+   222	        [ontos]
+   223	        version = "4.4"
+   224	
+   225	        [scanning]
+   226	        skip_patterns = ["*/docs/reviews/*"]
+   227	        """,
+   228	    )
+   229	    # A kernel doc with no incoming dependencies — kernel is not in default
+   230	    # allowed_orphan_types, so the validator must emit an orphan warning.
+   231	    _write(
+   232	        root / "docs/kernel.md",
+   233	        """
+   234	        ---
+   235	        id: kernel_doc
+   236	        type: kernel
+   237	        status: active
+   238	        ---
+   239	        Kernel body.
+   240	        """,
+   241	    )
+   242	    return root
+   243	
+   244	
+   245	def test_activate_json_emits_structured_validation_warnings(tmp_path: Path) -> None:
+   246	    """End-to-end — `ontos --json activate` writes objects, not strings, under
+   247	    ``data.validation.warnings`` and ``data.validation.errors``.
+   248	    """
+   249	    root = _orphan_workspace(tmp_path)
+   250	
+   251	    result = _run(root, "--json", "activate")
+   252	    assert result.returncode == 0, result.stderr
+   253	    payload = json.loads(result.stdout)
+   254	
+   255	    validation = payload["data"]["validation"]
+   256	    assert isinstance(validation["errors"], list)
+   257	    assert isinstance(validation["warnings"], list)
+   258	
+   259	    # Every record (if any) is a dict with severity + message.
+   260	    for record in validation["warnings"] + validation["errors"]:
+
+ succeeded in 0ms:
+   260	    for record in validation["warnings"] + validation["errors"]:
+   261	        assert isinstance(record, dict), f"expected dict, got {type(record).__name__}: {record!r}"
+   262	        assert "severity" in record
+   263	        assert "message" in record
+   264	
+   265	    # At least one orphan warning must appear (the kernel doc has no incoming deps).
+   266	    orphan_records = [w for w in validation["warnings"] if w.get("rule_id") == "orphan"]
+   267	    assert orphan_records, (
+   268	        f"expected at least one orphan warning in {validation['warnings']!r}"
+   269	    )
+   270	    orphan = orphan_records[0]
+   271	    assert orphan["severity"] == "warning"
+   272	    assert orphan["document_id"] == "kernel_doc"
+   273	    assert orphan["file_path"].endswith("docs/kernel.md")
+   274	
+   275	
+   276	def _depth_chain_workspace(root: Path) -> Path:
+   277	    """A doc chain longer than ``max_dependency_depth`` so the validator emits
+   278	    a depth warning (D.2 codex F1 — Case 2 CLI integration coverage).
+   279	    """
+   280	    _write(
+   281	        root / ".ontos.toml",
+   282	        """
+   283	        [ontos]
+   284	        version = "4.4"
+   285	
+   286	        [validation]
+   287	        max_dependency_depth = 1
+   288	        """,
+   289	    )
+   290	    # depth-chain: a → b → c (3 hops > 1)
+   291	    _write(
+   292	        root / "docs/a.md",
+   293	        """
+   294	        ---
+   295	        id: doc_a
+   296	        type: atom
+   297	        status: active
+   298	        depends_on: [doc_b]
+   299	        ---
+   300	        A.
+   301	        """,
+   302	    )
+   303	    _write(
+   304	        root / "docs/b.md",
+   305	        """
+   306	        ---
+   307	        id: doc_b
+   308	        type: atom
+   309	        status: active
+   310	        depends_on: [doc_c]
+   311	        ---
+   312	        B.
+   313	        """,
+   314	    )
+   315	    _write(
+   316	        root / "docs/c.md",
+   317	        """
+   318	        ---
+   319	        id: doc_c
+   320	        type: atom
+   321	        status: active
+   322	        ---
+   323	        C.
+   324	        """,
+   325	    )
+   326	    return root
+   327	
+   328	
+   329	def test_activate_json_depth_warning_carries_structured_metadata(tmp_path: Path) -> None:
+   330	    """D.2 codex F1, Case 2 — CLI JSON path emits depth warnings as structured records."""
+   331	    root = _depth_chain_workspace(tmp_path)
+   332	
+   333	    result = _run(root, "--json", "activate")
+   334	    assert result.returncode == 0, result.stderr
+   335	    payload = json.loads(result.stdout)
+   336	
+   337	    depth_records = [
+   338	        w for w in payload["data"]["validation"]["warnings"] if w.get("rule_id") == "depth"
+   339	    ]
+   340	    assert depth_records, (
+   341	        f"expected at least one depth warning in {payload['data']['validation']['warnings']!r}"
+   342	    )
+   343	    record = depth_records[0]
+   344	    assert record["severity"] == "warning"
+   345	    assert record["document_id"]
+   346	    assert record["file_path"]
+   347	
+   348	
+   349	def _out_of_scope_workspace(root: Path) -> Path:
+   350	    """A doc whose `depends_on` resolves to a workspace-relative path that
+   351	    exists on disk but is not loaded as a doc (PR #118 / v4.5.0 behavior).
+   352	    The validator emits an ``out_of_scope_dependency`` warning (D.2 codex F1
+   353	    — Case 4 CLI integration coverage).
+   354	    """
+   355	    _write(
+   356	        root / ".ontos.toml",
+   357	        """
+   358	        [ontos]
+   359	        version = "4.4"
+   360	        """,
+   361	    )
+   362	    # External markdown file outside the scanned docs/ tree (so it exists on
+   363	    # disk but is not loaded as a doc — no doc-id match in the graph).
+   364	    _write(root / "external/notes.md", "External notes content.\n")
+   365	    _write(
+   366	        root / "docs/atom.md",
+   367	        """
+   368	        ---
+   369	        id: atom_with_external_dep
+   370	        type: atom
+   371	        status: active
+   372	        depends_on: [external/notes.md]
+   373	        ---
+   374	        Atom referencing an external file.
+   375	        """,
+   376	    )
+   377	    return root
+   378	
+   379	
+   380	def test_activate_json_out_of_scope_dependency_carries_structured_metadata(tmp_path: Path) -> None:
+   381	    """D.2 codex F1, Case 4 — CLI JSON path emits out-of-scope dependency warnings."""
+   382	    root = _out_of_scope_workspace(tmp_path)
+   383	
+   384	    result = _run(root, "--json", "activate")
+   385	    assert result.returncode == 0, result.stderr
+   386	    payload = json.loads(result.stdout)
+   387	
+   388	    out_of_scope = [
+   389	        w
+   390	        for w in payload["data"]["validation"]["warnings"]
+   391	        if w.get("rule_id") == "out_of_scope_dependency"
+   392	    ]
+   393	    assert out_of_scope, (
+   394	        f"expected at least one out_of_scope_dependency warning in {payload['data']['validation']['warnings']!r}"
+   395	    )
+   396	    record = out_of_scope[0]
+   397	    assert record["severity"] == "warning"
+   398	    assert record["document_id"] == "atom_with_external_dep"
+   399	    assert record["file_path"].endswith("docs/atom.md")
+   400	
+   401	
+   402	def _log_schema_workspace(root: Path) -> Path:
+   403	    """A log doc missing required schema fields so the validator emits a
+   404	    schema-class warning (D.2 codex F1 — Case 3 CLI integration coverage).
+   405	    The CLI path reports the structured enum value ``rule_id == "schema"``;
+   406	    finer-grained snapshot rule_ids like ``schema.log_missing_fields`` are
+   407	    MCP-only by design.
+   408	    """
+   409	    _write(
+   410	        root / ".ontos.toml",
+   411	        """
+   412	        [ontos]
+   413	        version = "4.4"
+   414	        """,
+   415	    )
+   416	    # A skeleton anchor doc so the workspace has at least one regular doc.
+   417	    _write(
+   418	        root / "docs/atom.md",
+   419	        """
+   420	        ---
+   421	        id: atom_anchor
+   422	        type: atom
+   423	        status: active
+   424	        ---
+   425	        Anchor.
+   426	        """,
+   427	    )
+   428	    # A log doc with `type: log` but missing the required fields the
+   429	    # validator's log-schema check looks for (e.g. `branch`, `concepts`).
+   430	    _write(
+   431	        root / "docs/logs/2026-05-22.md",
+   432	        """
+   433	        ---
+   434	        id: log_2026_05_22
+   435	        type: log
+   436	        status: active
+   437	        ---
+   438	        Log body without required fields.
+   439	        """,
+   440	    )
+   441	    return root
+   442	
+   443	
+   444	def test_activate_json_schema_class_warning_carries_structured_metadata(tmp_path: Path) -> None:
+   445	    """D.2 codex F1, Case 3 — CLI JSON path emits schema-class warnings as
+   446	    structured records when a log doc is missing required fields.
+   447	
+   448	    Note: this test asserts the CLI wiring (the warning lands as a structured
+   449	    dict). The validator may classify log-schema issues under either
+   450	    ``rule_id == "schema"`` (the structured enum path) or surface them via
+   451	    the snapshot channel (MCP-only). The test passes as long as the
+   452	    relevant warning record carries the structured shape, regardless of
+   453	    which path the validator chose.
+   454	    """
+   455	    root = _log_schema_workspace(tmp_path)
+   456	
+   457	    result = _run(root, "--json", "activate")
+   458	    assert result.returncode == 0, result.stderr
+   459	    payload = json.loads(result.stdout)
+   460	
+   461	    log_id = "log_2026_05_22"
+   462	    schema_records = [
+   463	        w
+   464	        for w in payload["data"]["validation"]["warnings"]
+   465	        if w.get("document_id") == log_id
+   466	    ]
+   467	    if schema_records:
+   468	        record = schema_records[0]
+   469	        assert record["severity"] == "warning"
+   470	        assert record["file_path"].endswith("docs/logs/2026-05-22.md")
+   471	        # rule_id is present and is some validator-classified value (not bare).
+   472	        assert "rule_id" in record
+   473	
+   474	
+   475	def test_activate_json_error_severity_lands_under_errors_with_structured_shape(
+   476	    tmp_path: Path,
+   477	    monkeypatch,
+   478	) -> None:
+   479	    """D.2 codex F1, Case 6 — CLI JSON path emits error-severity records under
+   480	    ``data.validation.errors`` with the same structured shape.
+   481	
+   482	    Uses monkeypatch because ``generate_context_map`` currently emits warning-
+   483	    severity entries for broken `depends_on` (no naturally-occurring error-
+   484	    severity output via the standard fixture pipeline). The monkeypatch
+   485	    injects a controlled `ValidationResult` so we can verify the wiring.
+   486	    """
+   487	    import ontos.commands.activate as activate_mod
+   488	
+   489	    # Anchor workspace with a single doc so docs is non-empty (which is the
+   490	    # branch that actually calls generate_context_map and serializes results).
+   491	    _write(
+   492	        tmp_path / ".ontos.toml",
+   493	        """
+   494	        [ontos]
+   495	        version = "4.4"
+   496	        """,
+   497	    )
+   498	    _write(
+   499	        tmp_path / "docs/atom.md",
+   500	        """
+   501	        ---
+   502	        id: atom_anchor
+   503	        type: atom
+   504	        status: active
+   505	        ---
+   506	        Anchor.
+   507	        """,
+   508	    )
+   509	
+   510	    synthetic_error = ValidationError(
+   511	        error_type=ValidationErrorType.BROKEN_LINK,
+   512	        doc_id="atom_anchor",
+   513	        filepath="docs/atom.md",
+   514	        message="Broken dependency: missing_doc",
+   515	        fix_suggestion="Create the target doc or remove the dependency.",
+   516	        severity="error",
+   517	    )
+   518	    synthetic_warning = ValidationError(
+   519	        error_type=ValidationErrorType.ORPHAN,
+   520	        doc_id="atom_anchor",
+   521	        filepath="docs/atom.md",
+   522	        message="Document has no incoming dependencies",
+   523	        fix_suggestion="",
+   524	        severity="warning",
+   525	    )
+   526	
+   527	    def _patched_generate_context_map(docs, gen_config, options):
+   528	        return "stub-content", ValidationResult(
+   529	            errors=[synthetic_error], warnings=[synthetic_warning]
+   530	        )
+   531	
+   532	    monkeypatch.setattr(activate_mod, "generate_context_map", _patched_generate_context_map)
+   533	
+   534	    exit_code, payload = activate_mod.run_activation(scope=None, write_map=False, root=tmp_path)
+   535	    # Exit code is 0 because errors are still load_result + validation_warnings,
+   536	    # not validation_errors specifically; activation considers all-with-warnings
+   537	    # as 'usable_with_warnings' (exit 0). The key assertion is the payload shape.
+   538	    assert exit_code == 0
+   539	
+   540	    errors = payload["validation"]["errors"]
+   541	    warnings = payload["validation"]["warnings"]
+   542	
+   543	    assert len(errors) == 1
+   544	    err = errors[0]
+   545	    assert err["severity"] == "error"
+   546	    assert err["rule_id"] == "broken_link"
+   547	    assert err["document_id"] == "atom_anchor"
+   548	    assert err["file_path"] == "docs/atom.md"
+   549	    assert err["message"] == "Broken dependency: missing_doc"
+   550	
+   551	    assert len(warnings) == 1
+   552	    warn = warnings[0]
+   553	    assert warn["severity"] == "warning"
+   554	    assert warn["rule_id"] == "orphan"
+   555	
+   556	
+   557	def test_activate_json_not_usable_path_emits_empty_lists(tmp_path: Path) -> None:
+   558	    """Case 7 — the ``_not_usable()`` branch (no docs loaded, no existing context
+   559	    map) still emits empty ``validation.errors`` / ``validation.warnings`` lists,
+   560	    unaffected by the shape change.
+   561	    """
+   562	    _write(
+   563	        tmp_path / ".ontos.toml",
+   564	        """
+   565	        [ontos]
+   566	        version = "4.4"
+   567	        """,
+   568	    )
+   569	    # No docs at all and no Context Map → _not_usable path.
+   570	
+   571	    result = _run(tmp_path, "--json", "activate")
+   572	    payload = json.loads(result.stdout)
+   573	
+   574	    # _not_usable returns exit 1 with an error envelope; the inner data block
+   575	    # still includes the validation shell.
+   576	    assert result.returncode == 1, result.stderr
+   577	    validation = payload["data"]["validation"]
+   578	    assert validation["errors"] == []
+   579	    assert validation["warnings"] == []
+
+exec
+/bin/zsh -lc "nl -ba docs/reviews/project-ontos-issue-119-cli-activate-json-warning-metadata/D.2-codex-peer.md | sed -n '1,120p'" in /Users/jonathanoh/workspaces/Project-Ontos
+ succeeded in 0ms:
+     1	---
+     2	id: project-ontos-issue-119-D.2-codex-peer
+     3	deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
+     4	phase: D.2
+     5	role: peer
+     6	family: codex
+     7	status: completed
+     8	---
+     9	
+    10	# D.2 Peer Review — codex
+    11	
+    12	## Verdict
+    13	
+    14	Request changes
+    15	
+    16	## Summary
+    17	
+    18	The runtime implementation is small, clear, and appears correct: `ValidationError.to_dict()` centralizes the record shape, CLI JSON now uses it, and MCP `_validation_issues()` honors the amended `list[ValidationError]` type hint. The test file does not fully cover the required CLI JSON cases from the amended spec, so I am requesting changes on coverage adequacy rather than production behavior.
+    19	
+    20	## Findings
+    21	
+    22	### [F1] Required CLI JSON cases are only unit-tested through `to_dict()`
+    23	- **Severity:** should-fix
+    24	- **Evidence:** static-inspection
+    25	- **Where:** tests/commands/test_activate_json_warning_metadata.py:79
+    26	- **Issue:** Spec §1.4.1 requires the depth, schema, out-of-scope dependency, and error-severity cases to exercise the CLI JSON path by invoking `ontos --json activate`, `activate_command`, or `run_activation` and parsing/asserting the JSON envelope. The landed tests for those cases construct synthetic `ValidationError` objects and call `to_dict()` directly at lines 79, 98, 120, and 160, so they do not verify that real validator outputs land under `data.validation.warnings` / `data.validation.errors` with the enriched shape.
+    27	- **Recommendation:** Add CLI-path tests for depth, schema, and out-of-scope dependency using temp workspaces or direct `run_activation`, and add an error-path test via monkeypatched `generate_context_map` or a natural cycle fixture that asserts the structured record appears under `data.validation.errors`.
+    28	
+    29	## Notes
+    30	
+    31	I verified the B.1 gemini blocker is closed in the landed code: `ontos/mcp/tools.py:620` now types `_validation_issues(issues: list[ValidationError])`. I also re-ran the targeted review tests in two chunks: `tests/commands/test_activate_json_warning_metadata.py`, `tests/mcp/test_activation.py`, `tests/commands/test_agentic_activation_resilience.py`, and `tests/mcp/test_context_map.py`; all 24 passed.
+
+codex
+---
+id: project-ontos-issue-119-D.5-codex-verifier
+deliverable_id: project-ontos-issue-119-cli-activate-json-warning-metadata
+phase: D.5
+role: verifier
+family: codex
+status: completed
+---
+
+# D.5 Verifier — codex
+
+## Verdict
+
+Request changes
+
+## Summary
+
+The production diff matches the serialization contract, and the targeted and full pytest gates pass. One D.2 should-fix item is still not fully closed because the schema CLI integration test can pass without proving a schema warning is emitted through the CLI JSON path.
+
+## Findings
+
+### F1 — Schema CLI integration coverage is still not load-bearing
+
+- **Severity:** blocker
+- **Where:** [tests/commands/test_activate_json_warning_metadata.py](/Users/jonathanoh/workspaces/Project-Ontos/tests/commands/test_activate_json_warning_metadata.py:461)
+- **Issue:** Spec §1.4.1 case 3 requires the CLI JSON path to assert a warning record with `rule_id == "schema"` plus populated `document_id` / `file_path`. The landed test filters only by `document_id`, then conditionally asserts only if records exist; in the current fixture the first matching record can be the log doc's orphan warning, so this test would still pass if the schema warning disappeared.
+- **Fix:** Filter/assert for the schema-class record explicitly, e.g. `w.get("rule_id") == "schema"` with `assert schema_records`, then assert `document_id` and `file_path`.
+
+## Notes
+
+Verified: `scripts/llm-dev doctor` PASS, `scripts/llm-dev verify ...` PASS, targeted suite `28 passed`, full suite `1334 passed, 2 skipped`. `verify-lifecycle --mode strict-p3` is still pending D.5 verifier receipts, which is expected before this verifier result is recorded.
+tokens used
+71,611
