@@ -6,12 +6,9 @@ repos:
     hooks:
       - id: ontos-validate
         name: Validate Ontos Context Map
-        entry: python3 .ontos/scripts/ontos_generate_context_map.py --strict --quiet
+        entry: python3 .ontos/scripts/ontos_generate_context_map.py --strict --quiet --check
         language: system
         pass_filenames: false
-        always_run: true
-        stages: [commit]
-
         always_run: true
         stages: [commit]
 
