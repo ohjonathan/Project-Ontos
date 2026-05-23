@@ -8,7 +8,7 @@ logs_dir = "docs/logs"
 context_map = "Ontos_Context_Map.md"
 
 [scanning]
-skip_patterns = ["_template.md", "archive/*"]
+skip_patterns = ["_template.md", "archive/*", "*/docs/reviews/*/.prompts/*"]
 
 [validation]
 max_dependency_depth = 5
@@ -21,4 +21,3 @@ log_retention_count = 20
 pre_push = true
 pre_commit = true
 strict = false
-
