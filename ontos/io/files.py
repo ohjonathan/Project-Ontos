@@ -219,6 +219,22 @@ def load_frontmatter(
     return None, None
 
 
+def _is_validation_excluded_by_name(path: Path) -> bool:
+    # (#117) README.md / *_template.md sit alongside data docs in typed
+    # subdirs but rarely declare valid frontmatter; treating them as docs
+    # produces noise like "Log missing fields: branch" on README.md.
+    name = path.name.lower()
+    return name == "readme.md" or name.endswith("_template.md")
+
+
+def _has_explicit_id(doc: DocumentData) -> bool:
+    # An explicit id: in frontmatter opts a README/_template into being
+    # treated as a regular doc. doc.frontmatter holds the raw frontmatter
+    # dict; the loader fills doc.id from path.stem as a fallback, so we
+    # check the raw dict, not doc.id.
+    return isinstance(doc.frontmatter, dict) and "id" in doc.frontmatter
+
+
 def load_documents(
     paths: List[Path],
     frontmatter_parser: Callable[[str], Tuple[Dict[str, Any], str]],
@@ -263,13 +279,22 @@ def load_documents(
                 # content.startswith('---') with no leading whitespace. The leniency handles BOM
                 # artifacts and minor formatting issues in imported/external files.
                 content = raw_bytes.decode('utf-8', errors='replace').lstrip()
-                
+
                 doc, doc_issues = load_document_from_content(path, content, frontmatter_parser)
+
+                # (#117) README.md and *_template.md files are typically not
+                # data docs. Skip them unless they declare an explicit `id:`
+                # frontmatter field (escape hatch for repos that intentionally
+                # track these). Silently drop both the doc and any parser
+                # warnings the file produced so the loader stays quiet.
+                if _is_validation_excluded_by_name(path) and not _has_explicit_id(doc):
+                    continue
+
                 issues.extend(doc_issues)
-                
+
                 if cache and mtime is not None:
                     cache.set(path, doc, mtime)
-            
+
             # Duplicate ID handling
             # Duplicate ID detection is case-sensitive by design.
             # YAML keys are case-sensitive per spec, so 'my_doc' and 'MY_DOC' are distinct IDs.

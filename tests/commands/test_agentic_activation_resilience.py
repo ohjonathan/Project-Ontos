@@ -73,14 +73,17 @@ def test_activate_json_generates_usable_context_map_with_valid_status(tmp_path: 
 
 
 def test_doctor_frontmatter_reports_precise_enum_diagnostics(tmp_path: Path) -> None:
+    # (#117) `review` and `completed` are now canonical; use `proposal` and
+    # `done` to exercise the invalid-enum path (proposal → strategy,
+    # done → complete are still repairable aliases, not canonical).
     root = _workspace(tmp_path)
     _write(
         root / "docs/review.md",
         """
         ---
         id: review_doc
-        type: review
-        status: completed
+        type: proposal
+        status: done
         ---
         Review body.
         """,
@@ -94,14 +97,14 @@ def test_doctor_frontmatter_reports_precise_enum_diagnostics(tmp_path: Path) -> 
     assert result.returncode == 0
     assert checks["frontmatter_enums"]["status"] == "warning"
     assert "2 invalid enum value(s)" in checks["frontmatter_enums"]["message"]
-    assert "docs/review.md:3 type='review'" in checks["frontmatter_enums"]["details"]
-    assert "docs/review.md:4 status='completed'" in checks["frontmatter_enums"]["details"]
+    assert "docs/review.md:3 type='proposal'" in checks["frontmatter_enums"]["details"]
+    assert "docs/review.md:4 status='done'" in checks["frontmatter_enums"]["details"]
 
     human = _run(root, "doctor", "--frontmatter")
 
     assert human.returncode == 0
-    assert "docs/review.md:3 type='review'" in human.stdout
-    assert "docs/review.md:4 status='completed'" in human.stdout
+    assert "docs/review.md:3 type='proposal'" in human.stdout
+    assert "docs/review.md:4 status='done'" in human.stdout
 
 
 def test_maintain_fix_frontmatter_enums_dry_run_json(tmp_path: Path) -> None:
@@ -111,8 +114,8 @@ def test_maintain_fix_frontmatter_enums_dry_run_json(tmp_path: Path) -> None:
         """
         ---
         id: review_doc
-        type: review
-        status: completed
+        type: proposal
+        status: done
         ---
         Review body.
         """,
@@ -135,8 +138,8 @@ def test_maintain_fix_frontmatter_enums_apply_preserves_original_values(tmp_path
         """
         ---
         id: review_doc
-        type: review
-        status: completed
+        type: proposal
+        status: done
         ---
         Review body.
         """,
@@ -166,10 +169,10 @@ def test_maintain_fix_frontmatter_enums_apply_preserves_original_values(tmp_path
     assert result.returncode == 0, result.stderr
     assert payload["data"]["mode"] == "apply"
     assert payload["data"]["modified_files"] == ["docs/review.md"]
-    assert "type: log" in content
-    assert "original_type: review" in content
+    assert "type: strategy" in content
+    assert "original_type: proposal" in content
     assert "status: complete" in content
-    assert "original_status: completed" in content
+    assert "original_status: done" in content
 
 
 def test_verify_all_uses_configured_scan_exclusions(tmp_path: Path) -> None:

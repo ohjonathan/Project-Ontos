@@ -346,6 +346,57 @@ def check_context_map(repo_root: Optional[Path] = None) -> CheckResult:
         )
 
 
+def check_activation_health(
+    scope: Optional[str] = None,
+    repo_root: Optional[Path] = None,
+) -> CheckResult:
+    """(#117) Align doctor severity with activation/link-check health.
+
+    Runs the same snapshot + validation pipeline as `ontos activate` and
+    reports `failed` when any hard error-severity entry is present. Warnings
+    alone remain `warning` (today's behavior); a clean snapshot is `success`.
+    """
+    try:
+        from ontos.io.snapshot import create_snapshot
+
+        root = resolve_project_root(repo_root=repo_root)
+        snapshot = create_snapshot(root, include_content=False, scope=scope)
+    except Exception as exc:
+        return CheckResult(
+            name="activation_health",
+            status="warning",
+            message="Activation health check skipped",
+            details=str(exc),
+        )
+
+    errors = snapshot.validation_result.errors
+    warnings_list = snapshot.validation_result.warnings
+    if errors:
+        details = "; ".join(
+            f"[{e.error_type.value}] {e.message}" for e in errors[:5]
+        )
+        return CheckResult(
+            name="activation_health",
+            status="failed",
+            message=(
+                f"{len(errors)} activation error(s), "
+                f"{len(warnings_list)} warning(s) — doctor exit aligns with hard errors"
+            ),
+            details=details,
+        )
+    if warnings_list:
+        return CheckResult(
+            name="activation_health",
+            status="warning",
+            message=f"{len(warnings_list)} activation warning(s); no hard errors",
+        )
+    return CheckResult(
+        name="activation_health",
+        status="success",
+        message="Activation clean (no errors or warnings)",
+    )
+
+
 def check_validation(scope: Optional[str] = None, repo_root: Optional[Path] = None) -> CheckResult:
     """Check 6: No validation errors in current documents."""
     try:
@@ -790,6 +841,10 @@ def _run_doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
         lambda: check_docs_directory(options.scope, repo_root),
         lambda: check_context_map(repo_root),
         lambda: check_validation(options.scope, repo_root),
+        # (#117) Doctor severity now reflects activation hard-error severity.
+        # If `ontos activate` reports any error-severity entry, this check
+        # contributes a `failed` status and doctor exits non-zero.
+        lambda: check_activation_health(options.scope, repo_root),
         check_cli_availability,
         lambda: check_agents_staleness(repo_root),
         lambda: check_environment_manifests(repo_root),

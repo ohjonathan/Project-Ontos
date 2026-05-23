@@ -127,15 +127,67 @@ def test_nested_fence_content_skipped_until_matching_closer():
 
 
 def test_unsupported_markdown_forms_are_ignored():
+    # (#117) Wikilink spans `[[…]]` are now a SUPPORTED generic-mode source
+    # for BARE_ID_TOKEN (opt-in via include_generic_bare_id_token=False
+    # callers). When the legacy heuristic is enabled (the default for this
+    # test), wikilinks are still treated as opaque — the prose scanner
+    # already detects `v3_2_4_proposal` elsewhere — but the `[[…]]` span
+    # itself doesn't double-fire.
     body = (
         "[text][ref]\n"
         "[ref]: v3_2_4_proposal\n"
         "<https://example.com>\n"
-        "[[v3_2_4_proposal]]\n"
         '<a href="v3_2_4_proposal">link</a>\n'
     )
     scan = _scan(body)
     assert scan.matches == []
+
+
+# ---------------------------------------------------------------------------
+# (#117) include_generic_bare_id_token=False — opt-in narrow generic mode
+# ---------------------------------------------------------------------------
+
+
+def _strict_scan(body: str):
+    return scan_body_references(
+        path=Path("docs/test.md"),
+        body=body,
+        include_skipped=False,
+        include_generic_bare_id_token=False,
+    )
+
+
+def test_strict_generic_mode_suppresses_prose_tokens():
+    # Prose tokens that the legacy heuristic flagged (~11k false positives
+    # on a 163-doc corpus) emit no matches when the heuristic is disabled.
+    scan = _strict_scan(
+        "Workspace `company-os` declares depends_on across many sources. "
+        "We saw v3.2.1 alongside the_test_token_42 in normal prose."
+    )
+    bare_tokens = [m for m in scan.matches if m.match_type == MatchType.BARE_ID_TOKEN]
+    assert bare_tokens == []
+
+
+def test_strict_generic_mode_emits_wikilink_sigil_matches():
+    scan = _strict_scan("See [[my-doc-id]] for details.")
+    bare_tokens = [m for m in scan.matches if m.match_type == MatchType.BARE_ID_TOKEN]
+    assert len(bare_tokens) == 1
+    assert bare_tokens[0].normalized_id == "my-doc-id"
+
+
+def test_strict_generic_mode_preserves_markdown_link_targets():
+    scan = _strict_scan("See [proposal](v3_2_4_proposal) for details.")
+    link_targets = [m for m in scan.matches if m.match_type == MatchType.MARKDOWN_LINK_TARGET]
+    assert len(link_targets) == 1
+    assert link_targets[0].normalized_id == "v3_2_4_proposal"
+
+
+def test_strict_generic_mode_handles_multiple_wikilinks():
+    scan = _strict_scan(
+        "Refs: [[alpha]] and [[beta-doc]] plus prose like v3_2_4_proposal."
+    )
+    ids = sorted(m.normalized_id for m in scan.matches if m.match_type == MatchType.BARE_ID_TOKEN)
+    assert ids == ["alpha", "beta-doc"]
 
 
 # --- False-positive filter tests ---

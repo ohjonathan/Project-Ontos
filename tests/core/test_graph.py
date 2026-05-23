@@ -75,6 +75,178 @@ class TestBuildGraph:
 
 
 # ---------------------------------------------------------------------------
+# build_graph — #117 depends_on path-fallback resolution
+# ---------------------------------------------------------------------------
+
+
+class TestDependsOnPathFallback:
+    """`depends_on` entries that don't match a doc id but resolve against the
+    workspace filesystem should be either repaired silently (when they
+    point at a loaded doc) or downgraded to a soft OUT_OF_SCOPE_DEPENDENCY
+    warning (when they point at an existing non-loaded file). Hard
+    broken-link errors are reserved for genuinely missing targets. (#117)"""
+
+    def _docs(self, tmp_path, layout):
+        """Build a doc dict whose filepaths sit inside `tmp_path`.
+
+        `layout` is a sequence of (doc_id, rel_path, depends_on) tuples.
+        Each rel_path file is created so `.exists()` is true.
+        """
+        docs = {}
+        for doc_id, rel_path, depends_on in layout:
+            abs_path = tmp_path / rel_path
+            abs_path.parent.mkdir(parents=True, exist_ok=True)
+            abs_path.write_text(f"# {doc_id}\n")
+            docs[doc_id] = DocumentData(
+                id=doc_id,
+                type=DocumentType.ATOM,
+                status=DocumentStatus.ACTIVE,
+                filepath=abs_path,
+                frontmatter={"id": doc_id, "type": "atom"},
+                content="",
+                depends_on=list(depends_on),
+            )
+        return docs
+
+    def test_workspace_relative_path_resolves_to_loaded_doc(self, tmp_path):
+        docs = self._docs(
+            tmp_path,
+            [
+                ("kernel", "docs/kernel.md", []),
+                ("strategy", "docs/strategy.md", ["docs/kernel.md"]),
+            ],
+        )
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+        assert errors == []
+        # Edge was repaired to point at the doc id; the raw path string
+        # must NOT appear as a graph edge (claude-opus B.1 F1 — doc-id
+        # graph cleanliness).
+        assert graph.edges["strategy"] == ["kernel"]
+        assert "docs/kernel.md" not in graph.edges["strategy"]
+        assert "strategy" in graph.reverse_edges["kernel"]
+        assert "docs/kernel.md" not in graph.reverse_edges
+
+    def test_declaring_doc_relative_path_resolves_to_loaded_doc(self, tmp_path):
+        docs = self._docs(
+            tmp_path,
+            [
+                ("a", "docs/sub/a.md", []),
+                ("b", "docs/sub/b.md", ["a.md"]),
+            ],
+        )
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+        assert errors == []
+        assert "a" in graph.edges["b"]
+
+    def test_existing_non_loaded_path_is_out_of_scope_warning(self, tmp_path):
+        # Create the dep target on disk but do not load it.
+        (tmp_path / ".llm-dev/framework").mkdir(parents=True, exist_ok=True)
+        (tmp_path / ".llm-dev/framework/framework.md").write_text("framework")
+        docs = self._docs(
+            tmp_path,
+            [("orchestrator", "docs/orchestrator.md", [".llm-dev/framework/framework.md"])],
+        )
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+        assert len(errors) == 1
+        assert errors[0].error_type.value == "out_of_scope_dependency"
+        assert errors[0].severity == "warning"
+        assert ".llm-dev/framework/framework.md" in errors[0].message
+
+    def test_missing_path_falls_through_to_broken_link(self, tmp_path):
+        docs = self._docs(
+            tmp_path,
+            [("a", "docs/a.md", ["docs/does-not-exist.md"])],
+        )
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+        assert len(errors) == 1
+        assert errors[0].error_type.value == "broken_link"
+        assert errors[0].severity == "error"
+
+    def test_no_workspace_root_preserves_legacy_behavior(self, tmp_path):
+        # Without workspace_root, a path-shaped dep is reported as broken-link
+        # exactly as before (back-compat for existing call sites).
+        docs = self._docs(
+            tmp_path,
+            [("a", "docs/a.md", ["docs/does-not-exist.md"])],
+        )
+        graph, errors = build_graph(docs)
+        assert len(errors) == 1
+        assert errors[0].error_type.value == "broken_link"
+
+    def test_path_traversal_outside_workspace_is_treated_as_broken(self, tmp_path):
+        # gemini B.1 F1 — depends_on entries that resolve outside the workspace
+        # root (e.g., `../../etc/passwd`) must NOT leak through the
+        # activation warnings channel as out-of-scope dependencies. They
+        # fall through to broken-link severity instead.
+        outside = tmp_path.parent / "secrets"
+        outside.mkdir(parents=True, exist_ok=True)
+        (outside / "vault.md").write_text("nope")
+
+        docs = self._docs(
+            tmp_path,
+            [
+                ("a", "docs/a.md", ["../secrets/vault.md"]),
+            ],
+        )
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+        # The traversal-escaping path is reported as broken (error), not as
+        # an out-of-scope dependency (warning that would otherwise leak the
+        # external filesystem state).
+        assert len(errors) == 1
+        assert errors[0].error_type.value == "broken_link"
+        assert errors[0].severity == "error"
+        assert "vault.md" in errors[0].message
+
+    def test_doc_id_match_takes_precedence_over_path(self, tmp_path):
+        # An entry that matches a loaded doc id is NEVER tried as a path
+        # (back-compat for the canonical doc-id depends_on usage).
+        docs = self._docs(
+            tmp_path,
+            [
+                ("kernel", "docs/kernel.md", []),
+                ("strategy", "docs/strategy.md", ["kernel"]),
+            ],
+        )
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+        assert errors == []
+        assert "kernel" in graph.edges["strategy"]
+
+
+# ---------------------------------------------------------------------------
+# (#117) README / *_template.md loader skip
+# ---------------------------------------------------------------------------
+
+
+def test_readme_files_are_skipped_unless_they_declare_explicit_id(tmp_path):
+    """README.md and *_template.md sit alongside data docs but rarely carry
+    valid frontmatter; the loader must skip them unless they opt back in via
+    an explicit `id:` field (escape hatch)."""
+    from ontos.io.files import load_documents
+    from ontos.io.yaml import parse_frontmatter_content
+
+    readme_no_id = tmp_path / "docs/logs/README.md"
+    readme_no_id.parent.mkdir(parents=True, exist_ok=True)
+    readme_no_id.write_text("# Logs README\n\nNo frontmatter here.\n")
+
+    template_no_id = tmp_path / "docs/notes_template.md"
+    template_no_id.write_text("# Notes Template\n")
+
+    explicit_readme = tmp_path / "docs/explicit/README.md"
+    explicit_readme.parent.mkdir(parents=True, exist_ok=True)
+    explicit_readme.write_text("---\nid: explicit_readme\ntype: log\n---\n")
+
+    regular = tmp_path / "docs/regular.md"
+    regular.write_text("---\nid: regular_doc\ntype: log\n---\n")
+
+    result = load_documents(
+        [readme_no_id, template_no_id, explicit_readme, regular],
+        parse_frontmatter_content,
+    )
+
+    assert set(result.documents.keys()) == {"regular_doc", "explicit_readme"}
+
+
+# ---------------------------------------------------------------------------
 # detect_cycles
 # ---------------------------------------------------------------------------
 

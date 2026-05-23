@@ -211,26 +211,23 @@ def normalize_depends_on(value, on_warning: Optional[Callable[[str], None]] = No
 
 def normalize_type(value, on_error: Optional[Callable[[str, Any, List[str]], None]] = None) -> Any:
     """Normalize type field to DocumentType enum.
-    
-    Args:
-        value: Raw value from YAML.
-        on_error: Optional callback (message, value, options) for failures.
-        
-    Returns:
-        DocumentType enum (ATOM if invalid).
+
+    Returns DocumentType.UNKNOWN as the conservative-repair fallback when the
+    extended vocabulary cannot match. (#117) The on_error callback receives
+    the original raw value so the validator can surface it instead of
+    silently demoting.
     """
     from ontos.core.types import DocumentType
-    
+
     if isinstance(value, DocumentType):
         return value
-        
-    # Standard string normalization
+
     type_str = 'unknown'
     if isinstance(value, str):
         type_str = value.strip().lower()
     elif isinstance(value, list) and value:
         type_str = str(value[0]).strip().lower()
-        
+
     try:
         return DocumentType(type_str)
     except (ValueError, TypeError):
@@ -239,28 +236,24 @@ def normalize_type(value, on_error: Optional[Callable[[str, Any, List[str]], Non
             on_error(f"Invalid doc type '{type_str}'", type_str, options)
         return DocumentType.UNKNOWN
 
+
 def normalize_status(value, on_error: Optional[Callable[[str, Any, List[str]], None]] = None) -> Any:
     """Normalize status field to DocumentStatus enum.
-    
-    Args:
-        value: Raw value from YAML.
-        on_error: Optional callback (message, value, options) for failures.
-        
-    Returns:
-        DocumentStatus enum (DRAFT if invalid).
+
+    Returns DocumentStatus.UNKNOWN as the conservative-repair fallback when
+    the extended vocabulary cannot match. (#117)
     """
     from ontos.core.types import DocumentStatus
-    
+
     if isinstance(value, DocumentStatus):
         return value
-        
-    # Standard string normalization
+
     status_str = 'unknown'
     if isinstance(value, str):
         status_str = value.strip().lower()
     elif isinstance(value, list) and value:
         status_str = str(value[0]).strip().lower()
-        
+
     try:
         return DocumentStatus(status_str)
     except (ValueError, TypeError):

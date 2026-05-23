@@ -16,6 +16,15 @@ class StrictModel(BaseModel):
 class ValidationIssue(StrictModel):
     severity: str
     message: str
+    # (#117) Optional context fields so agents and humans can triage a warning
+    # without re-running queries. `rule_id` mirrors ValidationError.error_type
+    # (e.g. "orphan", "broken_link", "out_of_scope_dependency"). `document_id`
+    # / `file_path` are populated when the warning originates from a known
+    # document; absent when the warning is a snapshot-level note with no
+    # doc context.
+    rule_id: Optional[str] = None
+    document_id: Optional[str] = None
+    file_path: Optional[str] = None
 
 
 class ValidationPayload(StrictModel):
@@ -338,6 +347,14 @@ READ_WARNING_TOOL_NAMES = {
     "query",
     "health",
     "refresh",
+}
+
+# Tools whose declared success schema already carries a `warnings: List[str]`
+# field. For these, the pre-activate reminder is appended to that list rather
+# than injected as an undeclared `_ontos_warning` key — which the MCP SDK
+# rejects when the schema is `additionalProperties: false`. (Issue #115.)
+WARNINGS_LIST_TOOL_NAMES = {
+    "get_context_bundle",
 }
 
 

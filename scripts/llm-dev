@@ -10,6 +10,22 @@
 #   doctor                                 — environment + config health check
 #   new <deliverable-id>                   — scaffold manifest + tracker
 #   verify <manifest-path>                 — run framework verify-adopter.sh
+#                                            (manifest conformance only;
+#                                            does NOT prove lifecycle
+#                                            execution or reviewer dispatch)
+#   verify-lifecycle <manifest-path>       — run framework verify-lifecycle.sh
+#                                            in --mode strict-p3 by default;
+#                                            v1.8.0+ accepts --mode
+#                                            provider-limited-fallback for
+#                                            honest fallback verification
+#                                            (issue #5 + issue #10)
+#   re-adjudication list|verify <manifest> — v1.8.0+ inspect or validate
+#                                            the manifest's
+#                                            re_adjudication_queue[]
+#                                            (issue #10)
+#   strict-p3-commands <manifest-path>      — v1.9.0+ emit canonical final
+#                                            verification commands for a
+#                                            strict-P3 lifecycle
 #   update --to latest|vX.Y.Z|<ref>        — re-pin framework checkout
 #   agents install                         — insert/refresh AGENTS.md block
 #
@@ -29,9 +45,34 @@ usage:
   scripts/llm-dev doctor
   scripts/llm-dev new <deliverable-id>
   scripts/llm-dev verify <manifest-path>
+  scripts/llm-dev verify-lifecycle [--mode strict-p3|provider-limited-fallback]
+                                    [--allow-warn] [--explain-recovery]
+                                    <manifest-path>
+  scripts/llm-dev verify-staging [--manifest <path>] [--expect <p>] ...
+                                  [--forbid <p>] ... [--summary-untracked]
+  scripts/llm-dev re-adjudication <list|verify> <manifest-path>
+  scripts/llm-dev strict-p3-commands <manifest-path>
   scripts/llm-dev update --to latest|vX.Y.Z|<ref>
   scripts/llm-dev agents install
   scripts/llm-dev --help
+
+Note:
+  `verify`            — manifest conformance only (does not prove
+                        lifecycle execution or reviewer dispatch).
+  `verify-lifecycle`  — strict-P3 lifecycle receipt verification (the
+                        gate that proves real multi-family review +
+                        verifier dispatch happened — see issue #5).
+                        v1.8.0+ accepts --mode provider-limited-fallback
+                        for honest fallback verification (issue #10).
+  `verify-staging`    — (v1.7.1+) inspects git index + working tree +
+                        framework-submodule state against expected /
+                        forbidden paths BEFORE commit and before D.6
+                        final approval.
+  `re-adjudication`   — (v1.8.0+) inspect or validate the manifest's
+                        re_adjudication_queue[] (issue #10).
+  `strict-p3-commands` — (v1.9.0+) print canonical verifier command
+                        blocks derived from the manifest, so handoffs
+                        do not drift on argument shape (issue #11).
 
 Environment:
   LLM_DEV_CONFIG  Override config path (default: .llm-dev/config.yaml under repo root)
@@ -256,6 +297,209 @@ cmd_verify() {
   [[ -n "$manifest" ]] || die "verify requires <manifest-path>"
   fw="$(framework_path)"
   bash "$fw/scripts/verify-adopter.sh" "$(abs_path "$manifest")"
+}
+
+# ---------------------------------------------------------------------------
+# verify-lifecycle <manifest-path> — issue #5 strict-P3 receipt verifier.
+#
+# Delegates to scripts/verify-lifecycle.sh in --mode strict-p3. Unlike
+# `verify`, this command requires the deliverable's lifecycle receipt
+# inventory to exist and prove that real multi-family review + verifier
+# dispatch happened — D.6 cannot self-attest closure without it.
+# ---------------------------------------------------------------------------
+cmd_verify_lifecycle() {
+  local manifest="" fw allow_warn=0 explain_recovery=0 mode="strict-p3"
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --allow-warn) allow_warn=1 ;;
+      --mode)
+        shift
+        mode="${1:-}"
+        [[ -n "$mode" ]] || die "verify-lifecycle: missing value after --mode"
+        ;;
+      --explain-recovery)
+        # F35/F36/F37 (v1.7.0, Issue #17): diagnostic flag — classifies
+        # each strict-P3 failure into one of eight recovery classes
+        # (v1.7.0) or one of thirteen (v1.8.0, Issue #10) and prints
+        # the next action. Diagnostic only; no file mutation.
+        explain_recovery=1
+        ;;
+      -h|--help)
+        cat <<'USAGE'
+usage: scripts/llm-dev verify-lifecycle [--mode strict-p3|provider-limited-fallback]
+                                         [--allow-warn]
+                                         [--explain-recovery]
+                                         <manifest-path>
+
+Run scripts/verify-lifecycle.sh against <manifest-path>. Default mode
+is strict-p3. v1.8.0 (Issue #10) adds --mode provider-limited-fallback
+for honest fallback verification (mutually exclusive with --allow-warn).
+
+With --explain-recovery, each failure is tagged with a recovery class
+(v1.7.0: missing-receipt,
+ failed-dispatch-raw-verdict-candidate-available,
+ receipt-present-artifact-frontmatter-invalid,
+ stderr-throttle-valid-artifact, artifact-summary-stub,
+ true-no-evidence, dispatch-attestation-failed,
+ parallelism-attestation-missing; v1.8.0 adds
+ blocked-family-evidence-missing, fallback-receipt-missing,
+ re-adjudication-missing, mechanical-stub-only,
+ provider-limited-fallback-incomplete) and a next-action hint.
+USAGE
+        exit 0
+        ;;
+      --*)
+        die "verify-lifecycle: unknown flag: $1"
+        ;;
+      *)
+        if [[ -z "$manifest" ]]; then
+          manifest="$1"
+        else
+          die "verify-lifecycle: unexpected positional arg: $1"
+        fi
+        ;;
+    esac
+    shift || true
+  done
+  [[ -n "$manifest" ]] || die "verify-lifecycle requires <manifest-path>"
+  case "$mode" in
+    strict-p3|provider-limited-fallback) ;;
+    *) die "verify-lifecycle: unknown --mode $mode (use strict-p3 or provider-limited-fallback)" ;;
+  esac
+  if [[ "$mode" == "provider-limited-fallback" && "$allow_warn" == "1" ]]; then
+    die "verify-lifecycle: --allow-warn is incompatible with --mode provider-limited-fallback"
+  fi
+  fw="$(framework_path)"
+  local args=("$(abs_path "$manifest")" --mode "$mode")
+  [[ "$allow_warn" == "1" ]] && args+=(--allow-warn)
+  [[ "$explain_recovery" == "1" ]] && args+=(--explain-recovery)
+  bash "$fw/scripts/verify-lifecycle.sh" "${args[@]}"
+}
+
+# ---------------------------------------------------------------------------
+# re-adjudication list|verify <manifest> — v1.8.0 (Issue #10).
+#
+# Wraps scripts/verify-re-adjudication.sh and provides a friendly
+# "list" subcommand that pretty-prints queue items as a table for
+# operator triage. Pre-v1.8.0 manifests with no queue block exit
+# cleanly.
+# ---------------------------------------------------------------------------
+cmd_re_adjudication() {
+  local sub="" manifest="" fw
+  if [[ $# -lt 1 ]]; then
+    cat <<'USAGE' >&2
+usage: scripts/llm-dev re-adjudication <list|verify> <manifest-path>
+
+  list   — pretty-print manifest.re_adjudication_queue[] entries.
+  verify — run scripts/verify-re-adjudication.sh against the manifest.
+
+Pre-v1.8.0 manifests with no queue block exit 0 trivially.
+USAGE
+    exit 64
+  fi
+  sub="$1"; shift
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -h|--help)
+        echo "usage: scripts/llm-dev re-adjudication <list|verify> <manifest-path>"
+        exit 0
+        ;;
+      --*)
+        die "re-adjudication: unknown flag: $1"
+        ;;
+      *)
+        if [[ -z "$manifest" ]]; then
+          manifest="$1"
+        else
+          die "re-adjudication: unexpected positional arg: $1"
+        fi
+        ;;
+    esac
+    shift || true
+  done
+  [[ -n "$manifest" ]] || die "re-adjudication: requires <manifest-path>"
+  fw="$(framework_path)"
+  case "$sub" in
+    verify)
+      bash "$fw/scripts/verify-re-adjudication.sh" "$(abs_path "$manifest")"
+      ;;
+    list)
+      python3 - "$(abs_path "$manifest")" <<'PY'
+import sys
+import yaml
+
+manifest_path = sys.argv[1]
+try:
+    with open(manifest_path) as f:
+        m = yaml.safe_load(f) or {}
+except (OSError, yaml.YAMLError) as e:
+    print(f"re-adjudication: cannot read manifest: {e}", file=sys.stderr)
+    sys.exit(1)
+
+queue = m.get("re_adjudication_queue") or []
+if not isinstance(queue, list) or not queue:
+    print("re-adjudication: queue is empty or absent")
+    sys.exit(0)
+
+headers = ("id", "status", "priority", "blocked_family_ref", "owner", "rerun_trigger")
+widths = {h: len(h) for h in headers}
+rows = []
+for item in queue:
+    if not isinstance(item, dict):
+        continue
+    row = {h: str(item.get(h, "")) for h in headers}
+    rows.append(row)
+    for h in headers:
+        widths[h] = max(widths[h], len(row[h]))
+
+def fmt(row):
+    return "  ".join(row[h].ljust(widths[h]) for h in headers)
+
+print(fmt({h: h for h in headers}))
+print(fmt({h: "-" * widths[h] for h in headers}))
+for row in rows:
+    print(fmt(row))
+
+print(f"\nre-adjudication: {len(rows)} item(s)")
+PY
+      ;;
+    *)
+      die "re-adjudication: unknown subcommand '$sub' (use list or verify)"
+      ;;
+  esac
+}
+
+# ---------------------------------------------------------------------------
+# strict-p3-commands <manifest> — v1.9.0 draft (Issue #11).
+#
+# Emits canonical final verification command blocks from the manifest.
+# ---------------------------------------------------------------------------
+cmd_strict_p3_commands() {
+  local manifest="${1:-}" fw
+  [[ -n "$manifest" ]] || die "strict-p3-commands requires <manifest-path>"
+  fw="$(framework_path)"
+  bash "$fw/scripts/emit-strict-p3-commands.sh" "$(abs_path "$manifest")"
+}
+
+# ---------------------------------------------------------------------------
+# verify-staging [flags] — v1.7.1 Workstream E.
+#
+# Inspects git index + working tree + framework-submodule state against
+# expected / forbidden paths BEFORE commit. Delegates to
+# scripts/verify-staging.sh with the adopter's auto-resolved roots.
+# Default: when the framework is installed under .llm-dev/framework,
+# auto-forbids staging under that path (the v1.7.1 Workstream A class
+# of bug: artifacts landing in the submodule instead of the adopter
+# tree). Adopters opt-in to this check by invoking it; legacy adopters
+# remain unaffected.
+# ---------------------------------------------------------------------------
+cmd_verify_staging() {
+  local fw
+  fw="$(framework_path)"
+  bash "$fw/scripts/verify-staging.sh" \
+    --adopter-root "$repo_root" \
+    --framework-root "$fw" \
+    "$@"
 }
 
 # ---------------------------------------------------------------------------
@@ -505,13 +749,17 @@ main() {
   local command="${1:-}"
   shift || true
   case "$command" in
-    doctor)        cmd_doctor "$@" ;;
-    new)           cmd_new "$@" ;;
-    verify)        cmd_verify "$@" ;;
-    update)        cmd_update "$@" ;;
-    agents)        cmd_agents_install "$@" ;;
-    -h|--help|"")  usage ;;
-    *)             die "unknown command: $command" ;;
+    doctor)             cmd_doctor "$@" ;;
+    new)                cmd_new "$@" ;;
+    verify)             cmd_verify "$@" ;;
+    verify-lifecycle)   cmd_verify_lifecycle "$@" ;;
+    verify-staging)     cmd_verify_staging "$@" ;;
+    re-adjudication)    cmd_re_adjudication "$@" ;;
+    strict-p3-commands) cmd_strict_p3_commands "$@" ;;
+    update)             cmd_update "$@" ;;
+    agents)             cmd_agents_install "$@" ;;
+    -h|--help|"")       usage ;;
+    *)                  die "unknown command: $command" ;;
   esac
 }
 

@@ -430,6 +430,25 @@ pipx install --force 'ontos[mcp]'
 - **From v3.x:** See the [Migration Guide v3→v4](Migration_v3_to_v4.md) for what's new.
 - **From v2.x:** See the [Migration Guide v2→v3](Migration_v2_to_v3.md) for step-by-step instructions.
 
+#### Restarting MCP hosts after upgrade
+
+Long-lived MCP hosts (Claude Code, Cursor, Antigravity) spawn `ontos serve` once and keep that child process alive across upgrades. After any of:
+
+```bash
+pipx upgrade ontos
+pip install --upgrade ontos
+pipx install --force 'ontos[mcp]'
+```
+
+**restart the MCP host** (or reload the Ontos plugin) so it picks up the new version. Until the host process is recycled, MCP `health` responses and `serverInfo.version` will continue reporting the old version.
+
+Verify the new binary independently with a fresh CLI invocation — each CLI run is its own process, so `ontos --version` reflects the upgrade immediately:
+
+```bash
+ontos --version
+ontos serve --workspace . --read-only   # fresh child reports new serverInfo.version
+```
+
 ### Configuration
 
 Edit `ontos_config.py` in your project root:

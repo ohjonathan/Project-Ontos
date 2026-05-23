@@ -29,7 +29,14 @@ class CurationLevel(IntEnum):
 # =============================================================================
 
 class DocumentType(str, Enum):
-    """Document types in the Ontos ontology."""
+    """Document types in the Ontos ontology.
+
+    Canonical types: kernel/strategy/product/atom/log/reference/concept.
+    (#117) Lifecycle artifact types added so real engineering workspaces
+    (handoffs, trackers, retros, reviews, specs, reports, ADRs, policies)
+    are not silently demoted to `unknown`. Conservative repair still
+    falls back to `unknown` when the value matches nothing.
+    """
     KERNEL = "kernel"
     STRATEGY = "strategy"
     PRODUCT = "product"
@@ -37,11 +44,26 @@ class DocumentType(str, Enum):
     LOG = "log"
     REFERENCE = "reference"
     CONCEPT = "concept"
+    HANDOFF = "handoff"
+    TRACKER = "tracker"
+    RETRO = "retro"
+    REVIEW = "review"
+    SPEC = "spec"
+    REPORT = "report"
+    ADR = "adr"
+    POLICY = "policy"
     UNKNOWN = "unknown"
 
 
 class DocumentStatus(str, Enum):
-    """Document lifecycle status."""
+    """Document lifecycle status.
+
+    Canonical statuses: draft/active/deprecated/archived/rejected/complete/
+    auto-generated/scaffold/pending_curation/in_progress.
+    (#117) Lifecycle workflow statuses (proposed, ready, completed,
+    revised, in-lifecycle) added for non-kernel artifacts; `completed` is
+    an alias of `complete` retained to preserve real-world variation.
+    """
     DRAFT = "draft"
     ACTIVE = "active"
     DEPRECATED = "deprecated"
@@ -52,6 +74,11 @@ class DocumentStatus(str, Enum):
     SCAFFOLD = "scaffold"
     PENDING_CURATION = "pending_curation"
     IN_PROGRESS = "in_progress"
+    PROPOSED = "proposed"
+    READY = "ready"
+    COMPLETED = "completed"
+    REVISED = "revised"
+    IN_LIFECYCLE = "in-lifecycle"
     UNKNOWN = "unknown"
 
 
@@ -68,6 +95,10 @@ class ValidationErrorType(Enum):
     CURATION = "curation"
     IMPACTS = "impacts"
     DEPTH = "depth"
+    # (#117) depends_on entry resolved as a path against the filesystem but
+    # the target is not a loaded doc — treat as a soft external dependency
+    # rather than a hard broken-link error.
+    OUT_OF_SCOPE_DEPENDENCY = "out_of_scope_dependency"
 
 
 # =============================================================================

@@ -9,11 +9,12 @@ Phase 2 Decomposition - Created from Phase2-Implementation-Spec.md Section 4.3
 
 from __future__ import annotations
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, List, Set, Optional, Tuple, Union
 
 from ontos.core.types import DocumentData, ValidationError, ValidationErrorType
 from ontos.core.suggestions import suggest_candidates_for_broken_ref
- 
+
 # SEVERITY RATIONALE (v3.3 Track A1)
 # ---------------------------------
 # - ERROR (depends_on): Structural, defines the graph integrity.
@@ -21,6 +22,67 @@ from ontos.core.suggestions import suggest_candidates_for_broken_ref
 DEPENDS_ON_SEVERITY_DEFAULT = "error"
 IMPACTS_SEVERITY_DEFAULT = "warning"
 DESCRIBES_SEVERITY_DEFAULT = "warning"
+
+# (#117) depends_on entries that resolve to a real file outside the loaded
+# doc set are downgraded to a soft warning. The constant lives here so
+# verify-frontmatter and link-check share the same severity floor.
+OUT_OF_SCOPE_DEPENDENCY_SEVERITY = "warning"
+
+
+def _looks_like_path(dep_id: str) -> bool:
+    # A pure doc-id never contains a path separator or '.md' suffix.
+    return "/" in dep_id or "\\" in dep_id or dep_id.lower().endswith(".md")
+
+
+def _resolve_depends_on_path(
+    dep_id: str,
+    doc: DocumentData,
+    docs_by_resolved_path: Dict[Path, str],
+    workspace_root: Optional[Path],
+    workspace_root_resolved: Optional[Path],
+) -> Tuple[Optional[str], Optional[Path]]:
+    """Try to resolve a `depends_on` entry as a filesystem path.
+
+    Returns (resolved_doc_id, external_path):
+        (id, None) — path resolved to a loaded doc; caller treats as a graph edge.
+        (None, p)  — path exists on disk inside the workspace but is not loaded;
+                      caller treats as an out-of-scope dependency (warning).
+        (None, None) — no path resolution OR resolved path escapes the
+                       workspace; caller falls back to broken-link.
+
+    Containment: any candidate whose resolved path (with symlinks followed)
+    is outside `workspace_root_resolved` is rejected (no fall-through to
+    external-dep emission). This is the gemini-B.1-F1 fix — `Path.resolve`
+    follows symlinks, so a malicious or buggy `depends_on: '../../etc/passwd'`
+    must not leak filesystem state through the activation warnings channel.
+    """
+    if workspace_root is None or not _looks_like_path(dep_id):
+        return None, None
+
+    candidates: List[Path] = []
+    raw = Path(dep_id)
+    if raw.is_absolute():
+        candidates.append(raw)
+    else:
+        candidates.append(workspace_root / raw)
+        doc_dir = doc.filepath.parent if doc.filepath else workspace_root
+        candidates.append(doc_dir / raw)
+
+    for candidate in candidates:
+        try:
+            resolved = candidate.resolve(strict=False)
+        except (OSError, RuntimeError):
+            continue
+        if workspace_root_resolved is not None:
+            try:
+                resolved.relative_to(workspace_root_resolved)
+            except ValueError:
+                continue
+        if resolved in docs_by_resolved_path:
+            return docs_by_resolved_path[resolved], None
+        if candidate.exists():
+            return None, candidate
+    return None, None
 
 
 @dataclass
@@ -51,52 +113,105 @@ class DependencyGraph:
 
 def build_graph(
     docs: Dict[str, DocumentData],
-    severity_map: Optional[Dict[str, str]] = None
+    severity_map: Optional[Dict[str, str]] = None,
+    workspace_root: Optional[Path] = None,
 ) -> Tuple[DependencyGraph, List[ValidationError]]:
     """Build dependency graph from document dictionary.
 
     Args:
         docs: Dictionary mapping doc_id to DocumentData
         severity_map: Optional mapping of error types to severities
+        workspace_root: Optional workspace root. When provided, `depends_on`
+            entries that don't match a loaded doc id are tried as
+            workspace-relative, declaring-doc-relative, or absolute paths
+            before being reported as broken (#117). Loaded-doc-path matches
+            become normal edges; existing-but-not-loaded paths become a
+            soft OUT_OF_SCOPE_DEPENDENCY warning instead of a hard error.
 
     Returns:
-        Tuple of (DependencyGraph, list of broken link errors)
+        Tuple of (DependencyGraph, list of broken/out-of-scope link errors)
     """
     severity_map = severity_map or {}
     graph = DependencyGraph()
-    errors = []
+    errors: List[ValidationError] = []
     existing_ids = set(docs.keys())
     depends_on_severity = severity_map.get(
         "depends_on",
         severity_map.get("broken_link", DEPENDS_ON_SEVERITY_DEFAULT),
     )
     circular_severity = severity_map.get("circular", depends_on_severity)
+    out_of_scope_severity = severity_map.get(
+        "out_of_scope_dependency", OUT_OF_SCOPE_DEPENDENCY_SEVERITY
+    )
+
+    docs_by_resolved_path: Dict[Path, str] = {}
+    workspace_root_resolved: Optional[Path] = None
+    if workspace_root is not None:
+        try:
+            workspace_root_resolved = workspace_root.resolve()
+        except (OSError, RuntimeError):
+            workspace_root_resolved = None
+        for d in docs.values():
+            try:
+                docs_by_resolved_path[d.filepath.resolve()] = d.id
+            except (OSError, RuntimeError):
+                continue
 
     for doc_id, doc in docs.items():
         depends_on = doc.depends_on
-        # Handle enum types
         doc_type = doc.type.value
-        graph.add_node(doc_id, doc_type, str(doc.filepath), depends_on)
-
-        # Check for broken links
+        # (#117) Resolve each declared dep BEFORE building the graph node so
+        # the edges + reverse_edges record doc-id targets, not raw path
+        # strings. Doc-id matches and path-resolved-to-loaded-doc both
+        # become regular edges; out-of-scope or broken entries are dropped
+        # from the edge list and reported as ValidationErrors.
+        resolved_depends_on: List[str] = []
         for dep_id in depends_on:
-            if dep_id not in existing_ids:
-                # Generate candidate suggestions (v3.2)
-                candidates = suggest_candidates_for_broken_ref(dep_id, docs)
-                fix_suggestion = f"Remove '{dep_id}' from depends_on or create the missing document"
-                
-                if candidates:
-                    suggestion_text = ", ".join(c[0] for c in candidates)
-                    fix_suggestion += f". Did you mean: {suggestion_text}?"
+            if dep_id in existing_ids:
+                resolved_depends_on.append(dep_id)
+                continue
 
+            resolved_id, external_path = _resolve_depends_on_path(
+                dep_id, doc, docs_by_resolved_path, workspace_root, workspace_root_resolved
+            )
+            if resolved_id is not None:
+                resolved_depends_on.append(resolved_id)
+                continue
+            if external_path is not None:
                 errors.append(ValidationError(
-                    error_type=ValidationErrorType.BROKEN_LINK,
+                    error_type=ValidationErrorType.OUT_OF_SCOPE_DEPENDENCY,
                     doc_id=doc_id,
                     filepath=str(doc.filepath),
-                    message=f"Broken dependency: '{dep_id}' (declared in {doc_id}) does not exist",
-                    fix_suggestion=fix_suggestion,
-                    severity=circular_severity if dep_id == doc_id else depends_on_severity
+                    message=(
+                        f"External dependency resolved from disk: '{dep_id}' "
+                        f"(declared in {doc_id}) exists at "
+                        f"'{external_path}' but is not a loaded document."
+                    ),
+                    fix_suggestion=(
+                        "If the target should be tracked as a doc, add an "
+                        "Ontos frontmatter id; otherwise this can be left as a "
+                        "soft external reference."
+                    ),
+                    severity=out_of_scope_severity,
                 ))
+                continue
+
+            candidates = suggest_candidates_for_broken_ref(dep_id, docs)
+            fix_suggestion = f"Remove '{dep_id}' from depends_on or create the missing document"
+            if candidates:
+                suggestion_text = ", ".join(c[0] for c in candidates)
+                fix_suggestion += f". Did you mean: {suggestion_text}?"
+
+            errors.append(ValidationError(
+                error_type=ValidationErrorType.BROKEN_LINK,
+                doc_id=doc_id,
+                filepath=str(doc.filepath),
+                message=f"Broken dependency: '{dep_id}' (declared in {doc_id}) does not exist",
+                fix_suggestion=fix_suggestion,
+                severity=circular_severity if dep_id == doc_id else depends_on_severity
+            ))
+
+        graph.add_node(doc_id, doc_type, str(doc.filepath), resolved_depends_on)
 
     return graph, errors
 
