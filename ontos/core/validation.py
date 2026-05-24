@@ -150,7 +150,13 @@ class ValidationOrchestrator:
 
         # Detect orphans
         allowed_orphans = set(self.config.get("allowed_orphan_types", ["atom", "log"]))
-        orphans = detect_orphans(graph, allowed_orphans)
+        allowed_paths = list(self.config.get("allowed_orphan_paths", []))
+        orphans = detect_orphans(
+            graph,
+            allowed_orphans,
+            allowed_orphan_paths=allowed_paths,
+            workspace_root=self.workspace_root,
+        )
         for orphan_id in orphans:
             if orphan_id in self.docs:
                 self.warnings.append(ValidationError(

@@ -80,7 +80,14 @@ def create_snapshot(
     # Run structural validation only (no vocabulary check).
     # Snapshot is an IO-layer operation — vocabulary checking requires
     # project-level config (known_concepts) which is a command-layer concern.
-    orchestrator = ValidationOrchestrator(filtered_docs, {}, workspace_root=root)
+    orchestrator = ValidationOrchestrator(
+        filtered_docs,
+        {
+            "allowed_orphan_types": config.validation.allowed_orphan_types,
+            "allowed_orphan_paths": config.validation.allowed_orphan_paths,
+        },
+        workspace_root=root,
+    )
     validation_result = orchestrator.validate_all()
     
     # Get git commit

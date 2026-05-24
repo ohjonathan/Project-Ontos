@@ -13,6 +13,18 @@ skip_patterns = ["_template.md", "archive/*", "*/docs/reviews/*/.prompts/*"]
 [validation]
 max_dependency_depth = 5
 allowed_orphan_types = ["atom"]
+# Path globs (workspace-relative) whose docs are intentional root artifacts
+# and should not surface as orphan warnings. Use trailing `/**` for "any depth"
+# and `*`/`?` for fnmatch-style globbing within a segment. Adding a path here
+# is an explicit acknowledgement that the directory hosts root-shaped docs.
+allowed_orphan_paths = [
+    "docs/logs/**",                  # session logs — historical artifacts
+    "docs/releases/**",              # release notes — historical artifacts
+    "docs/reviews/**",               # lifecycle review packets — per-project rollups
+    "docs/retros/**",                # project retros — per-project rollups
+    "docs/trackers/**",              # project trackers — top-level index docs
+    "docs/reference/Migration_*.md", # version migration guides
+]
 
 [workflow]
 log_retention_count = 20

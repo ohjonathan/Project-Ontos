@@ -343,6 +343,124 @@ class TestDetectOrphans:
         orphans = detect_orphans(graph, allowed_orphan_types=set())
         assert set(orphans) == {"a", "b"}
 
+    def test_allowed_orphan_paths_filters_by_directory(self, tmp_path):
+        ws = tmp_path
+        log_file = ws / "docs" / "logs" / "2026-05-23_session.md"
+        log_file.parent.mkdir(parents=True)
+        log_file.write_text("---\nid: log_a\n---\n")
+        review_file = ws / "docs" / "reviews" / "proj-x" / "B.1.md"
+        review_file.parent.mkdir(parents=True)
+        review_file.write_text("---\nid: review_b\n---\n")
+        loose_file = ws / "docs" / "specs" / "loose.md"
+        loose_file.parent.mkdir(parents=True)
+        loose_file.write_text("---\nid: loose_c\n---\n")
+
+        docs = {
+            "log_a": DocumentData(
+                id="log_a",
+                type=DocumentType("kernel"),
+                status=DocumentStatus.ACTIVE,
+                filepath=log_file,
+                frontmatter={"id": "log_a"},
+                content="",
+                depends_on=[],
+            ),
+            "review_b": DocumentData(
+                id="review_b",
+                type=DocumentType("kernel"),
+                status=DocumentStatus.ACTIVE,
+                filepath=review_file,
+                frontmatter={"id": "review_b"},
+                content="",
+                depends_on=[],
+            ),
+            "loose_c": DocumentData(
+                id="loose_c",
+                type=DocumentType("kernel"),
+                status=DocumentStatus.ACTIVE,
+                filepath=loose_file,
+                frontmatter={"id": "loose_c"},
+                content="",
+                depends_on=[],
+            ),
+        }
+        graph, _ = build_graph(docs)
+        orphans = detect_orphans(
+            graph,
+            allowed_orphan_types=set(),
+            allowed_orphan_paths=["docs/logs/**", "docs/reviews/**"],
+            workspace_root=ws,
+        )
+        assert orphans == ["loose_c"]
+
+    def test_allowed_orphan_paths_glob_pattern(self, tmp_path):
+        ws = tmp_path
+        match_file = ws / "docs" / "reference" / "Migration_v3_to_v4.md"
+        match_file.parent.mkdir(parents=True)
+        match_file.write_text("---\nid: migration_a\n---\n")
+        miss_file = ws / "docs" / "reference" / "Glossary.md"
+        miss_file.write_text("---\nid: glossary_b\n---\n")
+
+        docs = {
+            "migration_a": DocumentData(
+                id="migration_a",
+                type=DocumentType("kernel"),
+                status=DocumentStatus.ACTIVE,
+                filepath=match_file,
+                frontmatter={"id": "migration_a"},
+                content="",
+                depends_on=[],
+            ),
+            "glossary_b": DocumentData(
+                id="glossary_b",
+                type=DocumentType("kernel"),
+                status=DocumentStatus.ACTIVE,
+                filepath=miss_file,
+                frontmatter={"id": "glossary_b"},
+                content="",
+                depends_on=[],
+            ),
+        }
+        graph, _ = build_graph(docs)
+        orphans = detect_orphans(
+            graph,
+            allowed_orphan_types=set(),
+            allowed_orphan_paths=["docs/reference/Migration_*.md"],
+            workspace_root=ws,
+        )
+        assert orphans == ["glossary_b"]
+
+    def test_allowed_orphan_paths_star_is_segment_local(self, tmp_path):
+        """`*` must not span `/` — `docs/reference/Migration_*.md` must NOT
+        match `docs/reference/Migration_v5/foo.md`. Otherwise the allowlist
+        becomes wider than documented and silently hides orphan docs that
+        happen to live under a `Migration_*` subdirectory.
+        """
+        ws = tmp_path
+        nested = ws / "docs" / "reference" / "Migration_v5" / "foo.md"
+        nested.parent.mkdir(parents=True)
+        nested.write_text("---\nid: nested_a\n---\n")
+
+        docs = {
+            "nested_a": DocumentData(
+                id="nested_a",
+                type=DocumentType("kernel"),
+                status=DocumentStatus.ACTIVE,
+                filepath=nested,
+                frontmatter={"id": "nested_a"},
+                content="",
+                depends_on=[],
+            ),
+        }
+        graph, _ = build_graph(docs)
+        orphans = detect_orphans(
+            graph,
+            allowed_orphan_types=set(),
+            allowed_orphan_paths=["docs/reference/Migration_*.md"],
+            workspace_root=ws,
+        )
+        assert orphans == ["nested_a"]
+
 
 # ---------------------------------------------------------------------------
 # calculate_depths

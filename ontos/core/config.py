@@ -61,7 +61,11 @@ class ScanningConfig:
 class ValidationConfig:
     """[validation] section."""
     max_dependency_depth: int = 5
-    allowed_orphan_types: List[str] = field(default_factory=lambda: ["atom"])
+    # Default mirrors the historical snapshot/inline fallback so projects
+    # without an explicit [validation] section keep the pre-v4.7 behavior
+    # (logs are intentional root artifacts and tolerated as orphans).
+    allowed_orphan_types: List[str] = field(default_factory=lambda: ["atom", "log"])
+    allowed_orphan_paths: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -138,6 +142,24 @@ def _validate_types(data: dict) -> None:
                     f"{section}.{key} must be {expected_type.__name__}, "
                     f"got {type(value).__name__}"
                 )
+
+    list_of_str_requirements = [
+        ("validation", "allowed_orphan_types"),
+        ("validation", "allowed_orphan_paths"),
+    ]
+    for section, key in list_of_str_requirements:
+        if section in data and key in data[section]:
+            value = data[section][key]
+            if not isinstance(value, list):
+                raise ConfigError(
+                    f"{section}.{key} must be list, got {type(value).__name__}"
+                )
+            for index, item in enumerate(value):
+                if not isinstance(item, str):
+                    raise ConfigError(
+                        f"{section}.{key}[{index}] must be str, "
+                        f"got {type(item).__name__}"
+                    )
 
 
 def dict_to_config(data: dict, repo_root: Optional[Path] = None) -> OntosConfig:

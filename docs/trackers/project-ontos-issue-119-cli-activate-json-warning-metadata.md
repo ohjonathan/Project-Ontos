@@ -1,3 +1,13 @@
+---
+id: project_ontos_issue_119_cli_activate_json_warning_metadata_tracker
+type: log
+status: complete
+event_type: chore
+source: legacy-curation
+branch: main
+concepts: [docs, workflow]
+---
+
 # project-ontos-issue-119-cli-activate-json-warning-metadata — Tracker
 
 | Phase | Owner | Status | Artifact | Evidence | Timestamp |

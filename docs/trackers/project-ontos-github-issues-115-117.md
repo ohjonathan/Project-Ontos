@@ -1,3 +1,13 @@
+---
+id: project_ontos_github_issues_115_117_tracker
+type: log
+status: complete
+event_type: chore
+source: legacy-curation
+branch: main
+concepts: [docs, workflow]
+---
+
 # project-ontos-github-issues-115-117 — Tracker
 
 | Phase | Owner | Status | Artifact | Evidence | Timestamp |

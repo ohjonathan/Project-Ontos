@@ -84,6 +84,18 @@ class TestValidateTypes:
         with pytest.raises(ConfigError, match="must be bool"):
             _validate_types({"hooks": {"pre_push": "yes"}})
 
+    def test_validate_types_rejects_non_list_allowed_orphan_paths(self):
+        with pytest.raises(ConfigError, match=r"validation\.allowed_orphan_paths must be list"):
+            _validate_types({"validation": {"allowed_orphan_paths": "docs/logs/**"}})
+
+    def test_validate_types_rejects_non_str_item_in_allowed_orphan_paths(self):
+        with pytest.raises(ConfigError, match=r"validation\.allowed_orphan_paths\[0\] must be str"):
+            _validate_types({"validation": {"allowed_orphan_paths": [123]}})
+
+    def test_validate_types_rejects_non_list_allowed_orphan_types(self):
+        with pytest.raises(ConfigError, match=r"validation\.allowed_orphan_types must be list"):
+            _validate_types({"validation": {"allowed_orphan_types": "atom"}})
+
     def test_validate_types_accepts_correct_types(self):
         """Type validation passes for correct types."""
         # Should not raise
