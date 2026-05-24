@@ -97,6 +97,42 @@ status: active
         assert "docs_doc" in snapshot.documents
         assert "internal_doc" not in snapshot.documents
 
+    def test_create_snapshot_minimal_config_tolerates_orphan_log(self, tmp_path):
+        """Minimal `[ontos]`-only config must NOT surface a standalone log
+        doc as orphan. Snapshots back doctor and the MCP cache; preserving the
+        pre-v4.7 default (``["atom", "log"]``) keeps the "default behavior
+        unless .ontos.toml opts in" contract for those surfaces.
+        """
+        from ontos.core.types import ValidationErrorType
+
+        config = tmp_path / ".ontos.toml"
+        config.write_text("[ontos]\nversion = '3.2'\n")
+        docs = tmp_path / "docs"
+        docs.mkdir()
+        (docs / "session.md").write_text(
+            "---\n"
+            "id: log_session_abc\n"
+            "type: log\n"
+            "status: active\n"
+            "event_type: chore\n"
+            "source: pytest\n"
+            "branch: main\n"
+            "concepts: [docs]\n"
+            "---\n"
+        )
+
+        snapshot = create_snapshot(tmp_path)
+
+        orphan_warnings = [
+            w for w in snapshot.validation_result.warnings
+            if w.error_type == ValidationErrorType.ORPHAN
+        ]
+        assert orphan_warnings == [], (
+            "log-type docs should be tolerated as orphans by default in the "
+            "snapshot path; otherwise doctor/MCP would warn on every clean "
+            "session log in projects without an explicit allowed_orphan_types."
+        )
+
     def test_create_snapshot_library_scope_includes_internal_docs(self, tmp_path):
         """Library scope snapshot includes .ontos-internal docs."""
         config = tmp_path / ".ontos.toml"

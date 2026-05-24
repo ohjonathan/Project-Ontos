@@ -135,7 +135,7 @@ def generate_context_map(
         docs,
         {
             "max_dependency_depth": options.max_dependency_depth,
-            "allowed_orphan_types": config.get("allowed_orphan_types", ["atom"]),
+            "allowed_orphan_types": config.get("allowed_orphan_types", ["atom", "log"]),
             "allowed_orphan_paths": config.get("allowed_orphan_paths", []),
             "severity_map": {
                 "broken_link": "warning",

@@ -149,7 +149,7 @@ class ValidationOrchestrator:
             ))
 
         # Detect orphans
-        allowed_orphans = set(self.config.get("allowed_orphan_types", ["atom"]))
+        allowed_orphans = set(self.config.get("allowed_orphan_types", ["atom", "log"]))
         allowed_paths = list(self.config.get("allowed_orphan_paths", []))
         orphans = detect_orphans(
             graph,

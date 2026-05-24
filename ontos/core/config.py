@@ -61,7 +61,10 @@ class ScanningConfig:
 class ValidationConfig:
     """[validation] section."""
     max_dependency_depth: int = 5
-    allowed_orphan_types: List[str] = field(default_factory=lambda: ["atom"])
+    # Default mirrors the historical snapshot/inline fallback so projects
+    # without an explicit [validation] section keep the pre-v4.7 behavior
+    # (logs are intentional root artifacts and tolerated as orphans).
+    allowed_orphan_types: List[str] = field(default_factory=lambda: ["atom", "log"])
     allowed_orphan_paths: List[str] = field(default_factory=list)
 
 
