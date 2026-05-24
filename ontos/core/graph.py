@@ -263,19 +263,29 @@ def detect_cycles(graph: DependencyGraph) -> List[List[str]]:
 def _path_matches_allowlist(rel_path: str, patterns: Sequence[str]) -> bool:
     """Return True if rel_path matches any allowlist glob pattern.
 
-    Patterns use POSIX-style forward slashes. A trailing ``/**`` means
-    "any file at any depth under this directory". Other patterns are matched
-    with ``fnmatch.fnmatchcase``. The function is Python 3.9+ compatible and
-    does not depend on ``PurePath.full_match`` (3.13+).
+    Patterns use POSIX-style forward slashes. A trailing ``/**`` is treated as
+    "any file at any depth under this directory" (prefix match). Otherwise the
+    path is matched segment-by-segment with ``fnmatch.fnmatchcase`` so ``*``
+    and ``?`` stay segment-local and do not span ``/``. Patterns and paths must
+    have the same number of segments for a non-``/**`` match to succeed.
+    Python 3.9+ compatible (no dependency on ``PurePath.full_match`` from 3.13).
     """
     rel = rel_path.replace("\\", "/")
+    rel_parts = rel.split("/")
     for pattern in patterns:
         pat = pattern.replace("\\", "/")
         if pat.endswith("/**"):
             prefix = pat[:-3]
             if rel == prefix or rel.startswith(prefix + "/"):
                 return True
-        elif fnmatch.fnmatchcase(rel, pat):
+            continue
+        pat_parts = pat.split("/")
+        if len(pat_parts) != len(rel_parts):
+            continue
+        if all(
+            fnmatch.fnmatchcase(seg, pat_seg)
+            for seg, pat_seg in zip(rel_parts, pat_parts)
+        ):
             return True
     return False
 

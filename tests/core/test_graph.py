@@ -430,6 +430,37 @@ class TestDetectOrphans:
         )
         assert orphans == ["glossary_b"]
 
+    def test_allowed_orphan_paths_star_is_segment_local(self, tmp_path):
+        """`*` must not span `/` — `docs/reference/Migration_*.md` must NOT
+        match `docs/reference/Migration_v5/foo.md`. Otherwise the allowlist
+        becomes wider than documented and silently hides orphan docs that
+        happen to live under a `Migration_*` subdirectory.
+        """
+        ws = tmp_path
+        nested = ws / "docs" / "reference" / "Migration_v5" / "foo.md"
+        nested.parent.mkdir(parents=True)
+        nested.write_text("---\nid: nested_a\n---\n")
+
+        docs = {
+            "nested_a": DocumentData(
+                id="nested_a",
+                type=DocumentType("kernel"),
+                status=DocumentStatus.ACTIVE,
+                filepath=nested,
+                frontmatter={"id": "nested_a"},
+                content="",
+                depends_on=[],
+            ),
+        }
+        graph, _ = build_graph(docs)
+        orphans = detect_orphans(
+            graph,
+            allowed_orphan_types=set(),
+            allowed_orphan_paths=["docs/reference/Migration_*.md"],
+            workspace_root=ws,
+        )
+        assert orphans == ["nested_a"]
+
 
 # ---------------------------------------------------------------------------
 # calculate_depths

@@ -140,6 +140,24 @@ def _validate_types(data: dict) -> None:
                     f"got {type(value).__name__}"
                 )
 
+    list_of_str_requirements = [
+        ("validation", "allowed_orphan_types"),
+        ("validation", "allowed_orphan_paths"),
+    ]
+    for section, key in list_of_str_requirements:
+        if section in data and key in data[section]:
+            value = data[section][key]
+            if not isinstance(value, list):
+                raise ConfigError(
+                    f"{section}.{key} must be list, got {type(value).__name__}"
+                )
+            for index, item in enumerate(value):
+                if not isinstance(item, str):
+                    raise ConfigError(
+                        f"{section}.{key}[{index}] must be str, "
+                        f"got {type(item).__name__}"
+                    )
+
 
 def dict_to_config(data: dict, repo_root: Optional[Path] = None) -> OntosConfig:
     """Convert dict from TOML to config dataclass."""
