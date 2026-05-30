@@ -23,9 +23,20 @@
 #                                            the manifest's
 #                                            re_adjudication_queue[]
 #                                            (issue #10)
+#   rebind-artifact --result ...           — validate and rebind a dispatch
+#                                            result row to a moved artifact
+#   post-merge --pr ... --branch ...       — reconcile/report PR branch
+#                                            reachability after merge
+#   review-chain report <manifest>         — non-gating review-chain depth
+#                                            report
+#   verify-live-docs [--policy <path>]     — stale live-doc phrase sweep
 #   strict-p3-commands <manifest-path>      — v1.9.0+ emit canonical final
 #                                            verification commands for a
 #                                            strict-P3 lifecycle
+#   generate-overlays --target ... --out ... — emit non-evidence runtime
+#                                            overlay packages for skills,
+#                                            plugins, and extensions
+#                                            (codex|claude|gemini|agy|all)
 #   update --to latest|vX.Y.Z|<ref>        — re-pin framework checkout
 #   agents install                         — insert/refresh AGENTS.md block
 #
@@ -51,7 +62,15 @@ usage:
   scripts/llm-dev verify-staging [--manifest <path>] [--expect <p>] ...
                                   [--forbid <p>] ... [--summary-untracked]
   scripts/llm-dev re-adjudication <list|verify> <manifest-path>
+  scripts/llm-dev rebind-artifact --result <path> --dispatch-id <id>
+                                  --artifact <path> --reason <text>
+  scripts/llm-dev post-merge --pr <number> --branch <branch> [--verify-all]
+  scripts/llm-dev review-chain report <manifest-path>
+  scripts/llm-dev verify-live-docs [--policy <path>]
   scripts/llm-dev strict-p3-commands <manifest-path>
+  scripts/llm-dev generate-overlays --target codex|claude|gemini|agy|all
+                                    --out <dir> [--force]
+                                    [--agy-import-manifest <path>]
   scripts/llm-dev update --to latest|vX.Y.Z|<ref>
   scripts/llm-dev agents install
   scripts/llm-dev --help
@@ -70,9 +89,22 @@ Note:
                         final approval.
   `re-adjudication`   — (v1.8.0+) inspect or validate the manifest's
                         re_adjudication_queue[] (issue #10).
+  `rebind-artifact`   — validate a moved review artifact and update the
+                        matching dispatch-result row with its new path/hash.
+  `post-merge`        — fetch origin/main, fast-forward local main when
+                        safe, check branch reachability, and run default
+                        post-merge validations.
+  `review-chain`      — non-gating review family/round depth report.
+  `verify-live-docs`  — stale live-doc phrase sweep with version-aware
+                        historical allowlists; extend with --policy,
+                        docs/live-docs-policy.yaml, or
+                        .llm-dev/live-docs-policy.yaml.
   `strict-p3-commands` — (v1.9.0+) print canonical verifier command
                         blocks derived from the manifest, so handoffs
                         do not drift on argument shape (issue #11).
+  `generate-overlays` — emit generated, non-evidence skills/plugins/
+                        extensions. Rendered prompts and lifecycle
+                        receipts remain the only strict-P3 evidence path.
 
 Environment:
   LLM_DEV_CONFIG  Override config path (default: .llm-dev/config.yaml under repo root)
@@ -156,6 +188,14 @@ framework_path() {
   abs_path "$(config_required framework_path)"
 }
 
+framework_path_or_self() {
+  if [[ -r "$config_path" ]]; then
+    framework_path
+  else
+    printf '%s\n' "$repo_root"
+  fi
+}
+
 manifest_dir() {
   config_get manifest_dir || true
 }
@@ -210,6 +250,35 @@ checkout_framework_ref() {
   fi
 }
 
+wrapper_drift_status() {
+  local fw="$1"
+  local wrapper="$repo_root/scripts/llm-dev"
+  local framework_wrapper="$fw/scripts/llm-dev"
+  if [[ ! -r "$framework_wrapper" ]]; then
+    printf 'missing-framework-wrapper:%s\n' "$framework_wrapper"
+    return
+  fi
+  if [[ ! -r "$wrapper" ]]; then
+    printf 'missing-adopter-wrapper:%s\n' "$wrapper"
+    return
+  fi
+  if cmp -s "$framework_wrapper" "$wrapper"; then
+    printf 'ok\n'
+  else
+    printf 'drift:%s:%s\n' "$wrapper" "$framework_wrapper"
+  fi
+}
+
+refresh_adopter_wrapper() {
+  local fw="$1"
+  local wrapper="$repo_root/scripts/llm-dev"
+  local framework_wrapper="$fw/scripts/llm-dev"
+  [[ -r "$framework_wrapper" ]] || die "framework wrapper missing at $framework_wrapper"
+  mkdir -p "$repo_root/scripts"
+  cp "$framework_wrapper" "$wrapper"
+  chmod +x "$wrapper"
+}
+
 # ---------------------------------------------------------------------------
 # doctor
 # ---------------------------------------------------------------------------
@@ -257,6 +326,26 @@ cmd_doctor() {
     echo "  FAIL framework scripts missing or not executable" >&2
     failed=1
   fi
+
+  case "$(wrapper_drift_status "$fw")" in
+    ok)
+      echo "  PASS adopter wrapper: scripts/llm-dev matches framework copy"
+      ;;
+    missing-adopter-wrapper:*)
+      echo "  FAIL adopter wrapper missing: scripts/llm-dev" >&2
+      echo "       run: bash $fw/scripts/install-adopter.sh <repo>  # or scripts/llm-dev update --to ${ref:-latest}" >&2
+      failed=1
+      ;;
+    missing-framework-wrapper:*)
+      echo "  FAIL framework wrapper missing: $fw/scripts/llm-dev" >&2
+      failed=1
+      ;;
+    drift:*)
+      echo "  FAIL adopter wrapper drift: scripts/llm-dev differs from $fw/scripts/llm-dev" >&2
+      echo "       run: scripts/llm-dev update --to ${ref:-latest}" >&2
+      failed=1
+      ;;
+  esac
 
   for cli in claude codex gemini; do
     if command -v "$cli" >/dev/null 2>&1; then
@@ -470,6 +559,463 @@ PY
 }
 
 # ---------------------------------------------------------------------------
+# rebind-artifact --result <path> --dispatch-id <id> --artifact <path> --reason <text>
+# ---------------------------------------------------------------------------
+cmd_rebind_artifact() {
+  local result="" dispatch_id="" artifact="" reason=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --result) shift; result="${1:-}" ;;
+      --dispatch-id) shift; dispatch_id="${1:-}" ;;
+      --artifact) shift; artifact="${1:-}" ;;
+      --reason) shift; reason="${1:-}" ;;
+      -h|--help)
+        echo "usage: scripts/llm-dev rebind-artifact --result <path> --dispatch-id <id> --artifact <path> --reason <text>"
+        exit 0
+        ;;
+      *) die "rebind-artifact: unknown argument: $1" ;;
+    esac
+    shift || true
+  done
+  [[ -n "$result" && -n "$dispatch_id" && -n "$artifact" && -n "$reason" ]] \
+    || die "rebind-artifact requires --result, --dispatch-id, --artifact, and --reason"
+  local fw
+  fw="$(framework_path_or_self)"
+  python3 - "$repo_root" "$fw" "$(abs_path "$result")" "$dispatch_id" "$(abs_path "$artifact")" "$reason" <<'PY'
+import datetime as dt
+import hashlib
+import sys
+import tempfile
+from pathlib import Path
+
+import yaml
+
+repo = Path(sys.argv[1]).resolve()
+framework = Path(sys.argv[2]).resolve()
+sys.path.insert(0, str(framework / "scripts" / "_lib"))
+from verdict_shape import classify_verdict_shape  # noqa: E402
+
+result_path = Path(sys.argv[3]).resolve()
+dispatch_id = sys.argv[4]
+artifact_path = Path(sys.argv[5]).resolve()
+reason = sys.argv[6].strip()
+
+if not result_path.is_file():
+    raise SystemExit(f"rebind-artifact: result file not found: {result_path}")
+if not artifact_path.is_file():
+    raise SystemExit(f"rebind-artifact: artifact file not found: {artifact_path}")
+try:
+    rel_artifact = artifact_path.relative_to(repo)
+except ValueError:
+    raise SystemExit("rebind-artifact: artifact must live under the adopter root")
+try:
+    result_path.relative_to(repo)
+except ValueError:
+    raise SystemExit("rebind-artifact: result file must live under the adopter root")
+
+data = yaml.safe_load(result_path.read_text()) or {}
+rows = data.get("results") or []
+if not isinstance(rows, list):
+    raise SystemExit("rebind-artifact: result YAML has no results[] list")
+matches = [row for row in rows if isinstance(row, dict) and row.get("dispatch_id") == dispatch_id]
+if len(matches) != 1:
+    raise SystemExit(f"rebind-artifact: expected exactly one dispatch_id={dispatch_id!r}, found {len(matches)}")
+
+h = hashlib.sha256()
+with artifact_path.open("rb") as fh:
+    for chunk in iter(lambda: fh.read(65536), b""):
+        h.update(chunk)
+row = matches[0]
+shape = classify_verdict_shape(artifact_path.read_text(encoding="utf-8", errors="replace"))
+if shape.get("shape") != "verdict_shaped":
+    missing = "; ".join(str(x) for x in shape.get("missing") or [])
+    raise SystemExit(f"rebind-artifact: artifact is not verdict-shaped; refusing status repair ({missing})")
+
+old_status = row.get("status")
+row["artifact_path"] = str(rel_artifact)
+row["artifact_sha256"] = h.hexdigest()
+if old_status != "completed":
+    row["status_before_rebind"] = old_status
+row["status"] = "completed"
+row["artifact_rebind_reason"] = reason
+row["artifact_rebound_at"] = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+with tempfile.NamedTemporaryFile("w", delete=False, dir=str(result_path.parent)) as tmp:
+    yaml.safe_dump(data, tmp, sort_keys=False)
+    tmp_path = Path(tmp.name)
+tmp_path.replace(result_path)
+print(
+    f"rebind-artifact: updated {result_path.relative_to(repo)} dispatch_id={dispatch_id} "
+    f"artifact_path={rel_artifact} status={old_status!r}->'completed'"
+)
+PY
+}
+
+# ---------------------------------------------------------------------------
+# post-merge --pr <number> --branch <branch> [--verify-all]
+# ---------------------------------------------------------------------------
+cmd_post_merge() {
+  local pr="" branch="" verify_all=0
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --pr) shift; pr="${1:-}" ;;
+      --branch) shift; branch="${1:-}" ;;
+      --verify-all) verify_all=1 ;;
+      -h|--help)
+        echo "usage: scripts/llm-dev post-merge --pr <number> --branch <branch> [--verify-all]"
+        exit 0
+        ;;
+      *) die "post-merge: unknown argument: $1" ;;
+    esac
+    shift || true
+  done
+  [[ -n "$pr" && -n "$branch" ]] || die "post-merge requires --pr and --branch"
+  local post_merge_fail=0
+  echo "llm-dev post-merge report"
+  echo "  repo:   $repo_root"
+  echo "  pr:     #$pr"
+  echo "  branch: $branch"
+  git -C "$repo_root" rev-parse --short HEAD | sed 's/^/  head:   /'
+
+  echo "  fetch:  origin main"
+  if ! git -C "$repo_root" fetch origin main >/dev/null 2>&1; then
+    echo "  fetch:  FAILED (origin/main unavailable)"
+    post_merge_fail=1
+  fi
+
+  if git -C "$repo_root" show-ref --verify --quiet "refs/heads/$branch"; then
+    echo "  local branch: present"
+  else
+    echo "  local branch: absent"
+  fi
+  if git -C "$repo_root" ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+    echo "  remote branch: origin/$branch present"
+  else
+    echo "  remote branch: origin/$branch absent or origin unavailable"
+  fi
+  local github_state="" github_merge_commit="" github_head="" github_base="" github_merged_at=""
+  if command -v gh >/dev/null 2>&1; then
+    local github_meta="" github_summary=""
+    github_meta="$(gh pr view "$pr" --json state,mergedAt,mergeCommit,headRefName,baseRefName 2>/dev/null || true)"
+    if [[ -n "$github_meta" ]]; then
+      github_summary="$(python3 - "$github_meta" <<'PY'
+import json
+import sys
+
+doc = json.loads(sys.argv[1])
+merge_commit = doc.get("mergeCommit") or {}
+print("|".join([
+    str(doc.get("state") or ""),
+    str(merge_commit.get("oid") or ""),
+    str(doc.get("headRefName") or ""),
+    str(doc.get("baseRefName") or ""),
+    str(doc.get("mergedAt") or ""),
+]))
+PY
+)"
+      IFS='|' read -r github_state github_merge_commit github_head github_base github_merged_at <<<"$github_summary"
+      echo "  github: $github_state head=$github_head base=$github_base mergedAt=$github_merged_at mergeCommit=$github_merge_commit"
+    else
+      echo "  github: gh could not read PR #$pr"
+    fi
+  else
+    echo "  github: gh not installed; skipped PR metadata"
+  fi
+
+  if git -C "$repo_root" show-ref --verify --quiet refs/remotes/origin/main; then
+    if git -C "$repo_root" show-ref --verify --quiet refs/heads/main; then
+      if git -C "$repo_root" merge-base --is-ancestor main refs/remotes/origin/main; then
+        if [[ "$(git -C "$repo_root" branch --show-current)" == "main" ]]; then
+          if git -C "$repo_root" merge --ff-only refs/remotes/origin/main >/dev/null; then
+            echo "  local main: fast-forwarded to origin/main"
+          else
+            echo "  local main: fast-forward FAILED"
+            post_merge_fail=1
+          fi
+        else
+          if git -C "$repo_root" branch -f main refs/remotes/origin/main >/dev/null; then
+            echo "  local main: fast-forwarded to origin/main"
+          else
+            echo "  local main: fast-forward FAILED"
+            post_merge_fail=1
+          fi
+        fi
+      else
+        echo "  local main: diverged from origin/main; refusing non-ff update"
+        post_merge_fail=1
+      fi
+    else
+      if git -C "$repo_root" branch main refs/remotes/origin/main >/dev/null; then
+        echo "  local main: created at origin/main"
+      else
+        echo "  local main: create FAILED"
+        post_merge_fail=1
+      fi
+    fi
+  fi
+
+  local branch_ref=""
+  if git -C "$repo_root" show-ref --verify --quiet "refs/heads/$branch"; then
+    branch_ref="$branch"
+  elif git -C "$repo_root" show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+    branch_ref="refs/remotes/origin/$branch"
+  fi
+  if git -C "$repo_root" show-ref --verify --quiet refs/heads/main; then
+    if [[ -n "$branch_ref" ]] && git -C "$repo_root" merge-base --is-ancestor "$branch_ref" main; then
+      echo "  reachability: $branch is contained in local main"
+    elif [[ "$github_state" == "MERGED" && -n "$github_merge_commit" ]] \
+      && git -C "$repo_root" cat-file -e "$github_merge_commit^{commit}" 2>/dev/null \
+      && git -C "$repo_root" merge-base --is-ancestor "$github_merge_commit" main; then
+      echo "  reachability: PR merge commit ${github_merge_commit:0:12} is contained in local main (squash/rebase merge accepted)"
+    else
+      echo "  reachability: $branch is NOT contained in local main"
+      post_merge_fail=1
+    fi
+  else
+    echo "  reachability: skipped (local main missing)"
+    post_merge_fail=1
+  fi
+
+  local fw
+  fw="$(framework_path_or_self)"
+  echo "  validation: git diff --check"
+  git -C "$repo_root" diff --check || post_merge_fail=1
+  echo "  validation: verify-schema.sh"
+  bash "$fw/scripts/verify-schema.sh" || post_merge_fail=1
+  echo "  validation: verify-frontmatter.sh"
+  bash "$fw/scripts/verify-frontmatter.sh" || post_merge_fail=1
+
+  echo "  destructive actions: none (fast-forward only)"
+  if [[ "$verify_all" -eq 1 ]]; then
+    echo "  verify-all: running $fw/scripts/verify-all.sh"
+    bash "$fw/scripts/verify-all.sh" || post_merge_fail=1
+  fi
+  return "$post_merge_fail"
+}
+
+# ---------------------------------------------------------------------------
+# review-chain report <manifest>
+# ---------------------------------------------------------------------------
+cmd_review_chain() {
+  local sub="${1:-}" manifest="${2:-}"
+  [[ "$sub" == "report" && -n "$manifest" ]] || die "usage: scripts/llm-dev review-chain report <manifest-path>"
+  python3 - "$repo_root" "$(abs_path "$manifest")" <<'PY'
+import sys
+from pathlib import Path
+
+import yaml
+
+repo = Path(sys.argv[1]).resolve()
+manifest_path = Path(sys.argv[2]).resolve()
+manifest = yaml.safe_load(manifest_path.read_text()) or {}
+inventory_ref = manifest.get("lifecycle_receipt_inventory_path")
+if not inventory_ref:
+    print("review-chain: no lifecycle_receipt_inventory_path in manifest")
+    raise SystemExit(0)
+candidate = Path(inventory_ref)
+if not candidate.is_absolute():
+    for base in (manifest_path.parent, repo):
+        maybe = (base / candidate).resolve()
+        if maybe.is_file():
+            candidate = maybe
+            break
+inventory = yaml.safe_load(Path(candidate).read_text()) or {}
+rows = inventory.get("receipts") or []
+groups = {}
+for row in rows:
+    if not isinstance(row, dict):
+        continue
+    key = (row.get("phase") or "", row.get("role") or "")
+    groups.setdefault(key, []).append(row)
+print(f"review-chain report: {manifest_path.relative_to(repo) if manifest_path.is_relative_to(repo) else manifest_path}")
+print(f"inventory: {Path(candidate).relative_to(repo) if Path(candidate).is_relative_to(repo) else candidate}")
+for (phase, role), items in sorted(groups.items()):
+    families = sorted({str(i.get("family") or "") for i in items if i.get("family")})
+    rounds = sorted({int(i.get("round") or 1) for i in items})
+    providers = sorted({str(i.get("provider") or "") for i in items if i.get("provider")})
+    fallback = sum(1 for i in items if i.get("provider_limited_fallback") or i.get("operator_judged"))
+    print(
+        f"- {phase or '<none>'} / {role or '<none>'}: "
+        f"receipts={len(items)} families={len(families)} providers={len(providers)} "
+        f"rounds={','.join(map(str, rounds)) or '-'} fallback={fallback}"
+    )
+    print(f"  families: {', '.join(families) if families else '-'}")
+print("review-chain: report only; no gate decision made")
+PY
+}
+
+# ---------------------------------------------------------------------------
+# verify-live-docs
+# ---------------------------------------------------------------------------
+cmd_verify_live_docs() {
+  local policy=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --policy) shift; policy="${1:-}" ;;
+      -h|--help)
+        echo "usage: scripts/llm-dev verify-live-docs [--policy <path>]"
+        exit 0
+        ;;
+      *) die "verify-live-docs: unknown argument: $1" ;;
+    esac
+    shift || true
+  done
+  python3 - "$repo_root" "${policy:+$(abs_path "$policy")}" <<'PY'
+import sys
+import re
+from pathlib import Path
+
+import yaml
+
+repo = Path(sys.argv[1]).resolve()
+explicit_policy = Path(sys.argv[2]).resolve() if len(sys.argv) > 2 and sys.argv[2] else None
+if explicit_policy and not explicit_policy.is_file():
+    raise SystemExit(f"verify-live-docs: policy file not found: {explicit_policy}")
+roots = [
+    repo / "CHANGELOG.md",
+    repo / "ROADMAP.md",
+    repo / "framework.md",
+    repo / "playbook.md",
+    repo / "tokens.md",
+    repo / "templates",
+    repo / "docs",
+]
+policy = {
+    "current_version": "1.10.1",
+    "excluded_prefixes": [
+        "docs/logs",
+        "docs/handoffs",
+        "docs/retros",
+        "docs/trackers",
+    ],
+    "patterns": [
+        {"id": "stale-v1.9.7", "text": "v1.9.7"},
+        {"id": "agy-argv-prompt-body", "text": "agy --sandbox --print --print-timeout <duration> <prompt-body>"},
+        {"id": "stdin-codex-only", "text": "codex only; else null"},
+    ],
+    "historical_allow": [
+        {
+            "id": "stale-v1.9.7",
+            "path": "docs/v1.10.0-antigravity-cli-migration-proposal.md",
+            "max_target_release": "1.10.0",
+        },
+        {
+            "id": "stale-v1.9.7",
+            "path": "docs/specs/v1.9.6-self-receipting-dogfood-readjudication-spec.md",
+            "max_target_release": "1.9.6",
+        },
+    ],
+}
+
+def merge_policy_file(path):
+    if not path or not path.is_file():
+        return
+    doc = yaml.safe_load(path.read_text()) or {}
+    if not isinstance(doc, dict):
+        raise SystemExit(f"verify-live-docs: policy must be a mapping: {path}")
+    if doc.get("current_version"):
+        policy["current_version"] = str(doc["current_version"])
+    for key in ("excluded_prefixes", "patterns", "historical_allow"):
+        if key in doc:
+            if not isinstance(doc[key], list):
+                raise SystemExit(f"verify-live-docs: policy.{key} must be a list: {path}")
+            policy[key].extend(doc[key])
+
+for policy_path in (
+    repo / "docs" / "live-docs-policy.yaml",
+    repo / ".llm-dev" / "live-docs-policy.yaml",
+    explicit_policy,
+):
+    merge_policy_file(policy_path)
+
+def version_tuple(value):
+    text = str(value or "").strip()
+    text = text[1:] if text.startswith("v") else text
+    nums = [int(x) for x in re.findall(r"\d+", text)[:3]]
+    while len(nums) < 3:
+        nums.append(0)
+    return tuple(nums)
+
+def frontmatter_target_release(text):
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return ""
+    for line in lines[1:80]:
+        if line.strip() == "---":
+            break
+        if line.startswith("target_release:"):
+            return line.split(":", 1)[1].strip().strip('"').strip("'")
+    return ""
+
+def is_excluded(rel):
+    rel_s = rel.as_posix()
+    for prefix in policy["excluded_prefixes"]:
+        prefix_s = str(prefix).strip().strip("/")
+        if rel_s == prefix_s or rel_s.startswith(prefix_s + "/"):
+            return True
+    return False
+
+def is_allowed(pattern_id, rel, target_release):
+    rel_s = rel.as_posix()
+    target_v = version_tuple(target_release)
+    current_v = version_tuple(policy["current_version"])
+    for entry in policy["historical_allow"]:
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("id") not in (None, pattern_id):
+            continue
+        if str(entry.get("path") or "").strip().strip("/") != rel_s:
+            continue
+        max_release = entry.get("max_target_release")
+        if max_release and target_v > version_tuple(max_release):
+            continue
+        min_release = entry.get("min_target_release")
+        if min_release and target_v < version_tuple(min_release):
+            continue
+        expires_after = entry.get("expires_after_current_version")
+        if expires_after and current_v > version_tuple(expires_after):
+            continue
+        return True
+    return False
+
+patterns = []
+for item in policy["patterns"]:
+    if not isinstance(item, dict) or not item.get("id") or not item.get("text"):
+        raise SystemExit("verify-live-docs: each policy pattern must include id and text")
+    patterns.append((str(item["id"]), str(item["text"])))
+
+files = []
+for root in roots:
+    if root.is_file():
+        files.append(root)
+    elif root.is_dir():
+        files.extend(p for p in root.rglob("*.md") if p.is_file())
+
+hits = []
+for path in sorted(set(files)):
+    rel = path.relative_to(repo)
+    if is_excluded(rel):
+        continue
+    text = path.read_text(encoding="utf-8", errors="replace")
+    target_release = frontmatter_target_release(text)
+    for line_no, line in enumerate(text.splitlines(), 1):
+        for label, needle in patterns:
+            if needle not in line:
+                continue
+            if is_allowed(label, rel, target_release):
+                continue
+            hits.append((label, rel, line_no, line.strip()))
+
+if hits:
+    print("verify-live-docs: FAIL")
+    for label, rel, line_no, line in hits:
+        print(f"  {label}: {rel}:{line_no}: {line}")
+    raise SystemExit(1)
+print("verify-live-docs: PASS")
+PY
+}
+
+# ---------------------------------------------------------------------------
 # strict-p3-commands <manifest> — v1.9.0 draft (Issue #11).
 #
 # Emits canonical final verification command blocks from the manifest.
@@ -477,8 +1023,25 @@ PY
 cmd_strict_p3_commands() {
   local manifest="${1:-}" fw
   [[ -n "$manifest" ]] || die "strict-p3-commands requires <manifest-path>"
-  fw="$(framework_path)"
-  bash "$fw/scripts/emit-strict-p3-commands.sh" "$(abs_path "$manifest")"
+  fw="$(framework_path_or_self)"
+  bash "$fw/scripts/emit-strict-p3-commands.sh" \
+    --adopter-root "$repo_root" \
+    --framework-root "$fw" \
+    "$(abs_path "$manifest")"
+}
+
+# ---------------------------------------------------------------------------
+# generate-overlays --target codex|claude|gemini|all --out <dir>
+#
+# Emits generated runtime overlays only. The output is ergonomic and never
+# replaces rendered prompt bytes, lifecycle receipts, or verifier evidence.
+# ---------------------------------------------------------------------------
+cmd_generate_overlays() {
+  local fw
+  fw="$(framework_path_or_self)"
+  [[ -x "$fw/scripts/generate-overlays.sh" ]] \
+    || die "generate-overlays requires an installed framework config or a framework checkout with scripts/generate-overlays.sh"
+  bash "$fw/scripts/generate-overlays.sh" "$@"
 }
 
 # ---------------------------------------------------------------------------
@@ -536,6 +1099,18 @@ cmd_update() {
 
   checkout_framework_ref "$fw" "$resolved"
   set_config_value framework_ref "$resolved"
+  case "$(wrapper_drift_status "$fw")" in
+    ok)
+      info "adopter wrapper already matches framework copy"
+      ;;
+    missing-adopter-wrapper:*|drift:*)
+      refresh_adopter_wrapper "$fw"
+      info "adopter wrapper refreshed at scripts/llm-dev"
+      ;;
+    missing-framework-wrapper:*)
+      die "updated framework checkout does not contain scripts/llm-dev"
+      ;;
+  esac
 
   bash "$fw/scripts/verify-schema.sh" >/dev/null
   bash "$fw/scripts/verify-tokens.sh" >/dev/null
@@ -755,7 +1330,12 @@ main() {
     verify-lifecycle)   cmd_verify_lifecycle "$@" ;;
     verify-staging)     cmd_verify_staging "$@" ;;
     re-adjudication)    cmd_re_adjudication "$@" ;;
+    rebind-artifact)    cmd_rebind_artifact "$@" ;;
+    post-merge)         cmd_post_merge "$@" ;;
+    review-chain)       cmd_review_chain "$@" ;;
+    verify-live-docs)   cmd_verify_live_docs "$@" ;;
     strict-p3-commands) cmd_strict_p3_commands "$@" ;;
+    generate-overlays)  cmd_generate_overlays "$@" ;;
     update)             cmd_update "$@" ;;
     agents)             cmd_agents_install "$@" ;;
     -h|--help|"")       usage ;;
