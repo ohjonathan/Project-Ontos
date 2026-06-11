@@ -146,7 +146,7 @@ def run_activation(
         warnings_page, warnings_total, warnings_truncated = select_warning_records(
             validation_warnings, rule_id=warning_rule, limit=limit
         )
-        info_page, _, _ = select_warning_records(
+        info_page, info_total, _ = select_warning_records(
             validation_infos, rule_id=warning_rule, limit=limit
         )
     else:
@@ -156,6 +156,11 @@ def run_activation(
         warnings_page = []
         warnings_truncated = warnings_total > 0
         info_page = []
+        # info_total honors the rule filter just like warnings_total
+        # (Codex review finding 7 on #140).
+        _, info_total, _ = select_warning_records(
+            validation_infos, rule_id=warning_rule
+        )
     # (#134) Info records (allowlisted external file deps) get the same
     # grouping budget — 188 inline records would re-create the #132 flood.
     info_groups = group_warning_records(validation_infos, rule_id=warning_rule)
@@ -181,7 +186,7 @@ def run_activation(
                 groups, include_samples=(warnings_mode != "summary")
             ),
             "info": info_page,
-            "info_total": len(validation_infos),
+            "info_total": info_total,
             "info_groups": groups_to_payload(
                 info_groups, include_samples=(warnings_mode != "summary")
             ),

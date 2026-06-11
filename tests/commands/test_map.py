@@ -425,3 +425,21 @@ def test_map_strict_json_carries_grouped_diagnostics(tmp_path):
     sample = orphan_group["samples"][0]
     assert sample["document_id"] == "kernel_doc"
     assert {"severity", "message", "rule_id"} <= set(sample)
+
+
+def test_map_json_non_strict_warnings_report_warnings_status(tmp_path):
+    """(#139 review) Non-strict runs exit 0 with warnings; result_status
+    must still say "warnings", not "clean"."""
+    (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n")
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "kernel.md").write_text(
+        "---\nid: kernel_doc\ntype: kernel\nstatus: active\n---\n"
+    )
+
+    result, envelope = _run_map_json(tmp_path)  # no --strict
+
+    assert result.returncode == 0
+    data = envelope["data"]
+    assert data["warnings"] >= 1
+    assert data["result_status"] == "warnings"
+    assert data["diagnostics"], "diagnostics must accompany the warnings status"

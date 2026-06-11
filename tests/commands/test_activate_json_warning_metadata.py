@@ -752,3 +752,45 @@ def test_activate_json_info_groups_follow_warning_budget(tmp_path: Path) -> None
     assert groups[0]["rule_id"] == "external_file_dependency"
     assert groups[0]["count"] == 1
     assert groups[0]["samples"]
+
+
+def test_activate_json_rejects_invalid_limit_with_envelope(tmp_path: Path) -> None:
+    """(#138 review) --limit < 1 must fail inside the JSON envelope, not as
+    plain text on stdout."""
+    root = _orphan_workspace(tmp_path)
+
+    for bad in ("0", "-1"):
+        result = _run(root, "--json", "activate", "--limit", bad)
+        assert result.returncode == 1
+        envelope = json.loads(result.stdout)  # stdout must stay valid JSON
+        assert envelope["command"] == "activate"
+        assert envelope["status"] == "error"
+        assert envelope["error"]["code"] == "E_USER_INPUT"
+        assert "--limit" in envelope["message"]
+
+    human = _run(root, "activate", "--limit", "0")
+    assert human.returncode == 1
+    assert "--limit must be >= 1" in human.stdout
+
+
+def test_activate_warning_rule_filters_info_total(tmp_path: Path) -> None:
+    """(#140 review) --warning-rule must filter info_total/info_groups the
+    same way it filters warnings_total."""
+    root = _external_dep_workspace(tmp_path)
+
+    result = _run(root, "--json", "activate", "--warning-rule", "orphan")
+    assert result.returncode == 0, result.stderr
+    validation = json.loads(result.stdout)["data"]["validation"]
+
+    # The only info record is external_file_dependency; under an orphan
+    # filter the info channel must be empty AND its total must say so.
+    assert validation["info"] == []
+    assert validation["info_groups"] == []
+    assert validation["info_total"] == 0
+
+    matching = _run(
+        root, "--json", "activate", "--warning-rule", "external_file_dependency"
+    )
+    validation = json.loads(matching.stdout)["data"]["validation"]
+    assert validation["info_total"] == 1
+    assert validation["info_groups"][0]["rule_id"] == "external_file_dependency"

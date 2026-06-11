@@ -652,6 +652,22 @@ def _task_check_links(ctx: MaintainContext) -> TaskResult:
     if len(diagnostics.duplicates) > 5:
         details.append(f"... and {len(diagnostics.duplicates) - 5} more duplicate IDs")
 
+    # (#134 review) Unallowlisted file deps drive exit 1 — they must be
+    # visible in the failure details, not just the metrics.
+    unallowlisted = [
+        item for item in diagnostics.file_dependencies if not item.allowlisted
+    ]
+    for item in unallowlisted[:10]:
+        details.append(
+            f"❌ {item.source_doc_id} [depends_on] -> {item.value} "
+            f"(file exists at {item.resolved_path}; not in "
+            "allowed_external_dependency_paths)"
+        )
+    if len(unallowlisted) > 10:
+        details.append(
+            f"... and {len(unallowlisted) - 10} more unallowlisted file dependencies"
+        )
+
     metrics = {
         "broken_links": diagnostics.summary.broken_references,
         "orphans": diagnostics.summary.orphans,
@@ -669,8 +685,12 @@ def _task_check_links(ctx: MaintainContext) -> TaskResult:
     if diagnostics.exit_code == 1:
         return _fail(
             (
-                "Found broken references or duplicate IDs "
-                f"(broken={diagnostics.summary.broken_references}, duplicates={diagnostics.summary.duplicate_ids})."
+                "Found broken references, duplicate IDs, or unallowlisted "
+                "file dependencies "
+                f"(broken={diagnostics.summary.broken_references}, "
+                f"duplicates={diagnostics.summary.duplicate_ids}, "
+                "unallowlisted_file_deps="
+                f"{diagnostics.summary.unallowlisted_file_dependencies})."
             ),
             details=details,
             metrics=metrics,

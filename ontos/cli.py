@@ -917,10 +917,32 @@ def _cmd_map(args) -> int:
     return map_command(options)
 
 
+def _reject_invalid_limit(command: str, args, limit) -> bool:
+    """Emit a usage error for --limit < 1; JSON mode keeps the envelope."""
+    if limit is None or limit >= 1:
+        return False
+    message = "--limit must be >= 1"
+    if getattr(args, "json", False):
+        from ontos.ui.json_output import emit_command_error
+
+        emit_command_error(
+            command=command,
+            exit_code=1,
+            code="E_USER_INPUT",
+            message=message,
+        )
+    else:
+        print(f"Error: {message}")
+    return True
+
+
 def _cmd_activate(args) -> int:
     """Handle activate command."""
     from ontos.commands.activate import ActivateOptions, activate_command
 
+    limit = getattr(args, "limit", None)
+    if _reject_invalid_limit("activate", args, limit):
+        return 1
     return activate_command(
         ActivateOptions(
             json_output=args.json,
@@ -928,7 +950,7 @@ def _cmd_activate(args) -> int:
             scope=getattr(args, "scope", None),
             warnings_mode=getattr(args, "warnings_mode", "grouped"),
             warning_rule=getattr(args, "warning_rule", None),
-            limit=getattr(args, "limit", None),
+            limit=limit,
         )
     )
 
@@ -1019,8 +1041,7 @@ def _cmd_link_check(args) -> int:
     from ontos.commands.link_check import LinkCheckOptions, link_check_command
 
     limit = getattr(args, "limit", None)
-    if limit is not None and limit < 1:
-        print("Error: --limit must be >= 1")
+    if _reject_invalid_limit("link-check", args, limit):
         return 1
     options = LinkCheckOptions(
         scope=getattr(args, "scope", None),
