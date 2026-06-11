@@ -190,7 +190,7 @@ class TestCommandEnvelopeHelpers:
         captured = capsys.readouterr()
         result = json.loads(captured.out)
 
-        assert result["schema_version"] == "3.3"
+        assert result["schema_version"] == "3.4"
         assert result["command"] == "query"
         assert result["status"] == "success"
         assert result["exit_code"] == 0
@@ -212,7 +212,7 @@ class TestCommandEnvelopeHelpers:
         captured = capsys.readouterr()
         result = json.loads(captured.out)
 
-        assert result["schema_version"] == "3.3"
+        assert result["schema_version"] == "3.4"
         assert result["command"] == "maintain"
         assert result["status"] == "error"
         assert result["exit_code"] == 2

@@ -982,11 +982,31 @@ def map_command(options: MapOptions) -> int:
 
     # Output result
     if options.json_output:
+        # (#131) Group validation records by rule so --strict failures carry
+        # triage data instead of bare counts. Reuses the activation grouping
+        # utility so record samples share the CLI/MCP warning shape.
+        from ontos.core.warning_groups import group_warning_records, groups_to_payload
+
+        diagnostic_records = [
+            issue.to_dict() for issue in [*result.errors, *result.warnings]
+        ]
         payload = {
             "path": str(output_path),
             "documents": len(docs),
             "errors": len(result.errors),
             "warnings": len(result.warnings),
+            # Derived from validation counts, not exit code: non-strict runs
+            # exit 0 with warnings present, and result_status must still say
+            # "warnings" (Codex review finding on #139).
+            "result_status": (
+                "failing" if result.errors
+                else ("warnings" if result.warnings else "clean")
+            ),
+            "strict": options.strict,
+            "diagnostics": groups_to_payload(
+                group_warning_records(diagnostic_records, sample_size=5)
+            ),
+            "generator_version": ONTOS_VERSION,
         }
         if exit_code == 0:
             emit_command_success(

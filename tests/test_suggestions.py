@@ -130,3 +130,75 @@ def test_suggest_deterministic_order(mock_docs):
     if len(matches) >= 2:
         assert matches[0][0] == "alligator_doc"
         assert matches[1][0] == "apple_doc"
+
+
+# =============================================================================
+# (#135) SuggestionIndex parity — the pruned/index path must return identical
+# results to the legacy per-call path across all strategy branches.
+# =============================================================================
+
+
+def _legacy_suggest(broken_ref, all_docs, threshold=0.5):
+    """Reference implementation: the pre-#135 unpruned algorithm."""
+    from difflib import SequenceMatcher
+
+    if not broken_ref or not broken_ref.strip():
+        return []
+    candidates = []
+    broken_lower = broken_ref.lower()
+    for doc_id, doc in all_docs.items():
+        doc_id_lower = doc_id.lower()
+        if broken_lower in doc_id_lower or doc_id_lower in broken_lower:
+            candidates.append((doc_id, 0.85, "substring match"))
+            continue
+        aliases = doc.aliases
+        if aliases and any(broken_lower in alias.lower() for alias in aliases):
+            candidates.append((doc_id, 0.85, "alias match"))
+            continue
+        ratio = SequenceMatcher(None, broken_lower, doc_id_lower).ratio()
+        if ratio >= threshold:
+            candidates.append((doc_id, ratio, f"similarity: {ratio:.0%}"))
+    return sorted(candidates, key=lambda x: (-x[1], x[0]))[:3]
+
+
+def test_index_path_matches_legacy_results(mock_docs):
+    from ontos.core.suggestions import SuggestionIndex, suggest_candidates
+
+    index = SuggestionIndex(mock_docs)
+    probes = [
+        "auth",                # substring
+        "authentication",      # substring both directions
+        "login",               # alias (if present in fixture)
+        "auth_systme",         # fuzzy near-match
+        "atuh_system",         # transposition
+        "zzz_nothing_alike",   # below threshold
+        "a",                   # very short
+        "",                    # empty
+        "  ",                  # whitespace
+    ]
+    for probe in probes:
+        assert suggest_candidates(probe, index) == _legacy_suggest(probe, mock_docs), (
+            f"index/legacy divergence for probe {probe!r}"
+        )
+
+
+def test_wrapper_remains_equivalent(mock_docs):
+    from ontos.core.suggestions import suggest_candidates_for_broken_ref
+
+    for probe in ("auth", "auth_systme", "nope_nothing"):
+        assert suggest_candidates_for_broken_ref(probe, mock_docs) == _legacy_suggest(
+            probe, mock_docs
+        )
+
+
+def test_index_threshold_boundary_parity(mock_docs):
+    """Near the 0.5 threshold the quick-ratio gates must not drop survivors."""
+    from ontos.core.suggestions import SuggestionIndex, suggest_candidates
+
+    index = SuggestionIndex(mock_docs)
+    # Construct probes of varying overlap against fixture ids.
+    for doc_id in mock_docs:
+        half = doc_id[: max(1, len(doc_id) // 2)]
+        scrambled = doc_id[::-1]
+        for probe in (half, scrambled, half + "_x"):
+            assert suggest_candidates(probe, index) == _legacy_suggest(probe, mock_docs)

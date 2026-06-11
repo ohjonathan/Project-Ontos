@@ -149,6 +149,71 @@ def validate_concepts(
     return valid, unknown
 
 
+class SuggestionIndex:
+    """Precomputed per-corpus index for repeated broken-ref suggestion lookups.
+
+    (#135) Generating suggestions used to construct a fresh SequenceMatcher
+    per (broken_ref, doc) pair — O(refs * docs) full ratio computations.
+    The index lowers doc ids/aliases once and caches one SequenceMatcher per
+    doc with seq2 preprocessing done up front. seq1/seq2 roles match the
+    original ``SequenceMatcher(None, broken_lower, doc_id_lower)`` exactly,
+    so surviving ratios are bit-identical.
+    """
+
+    def __init__(self, all_docs: Dict[str, DocumentData]) -> None:
+        self.entries: List[Tuple[str, str, Tuple[str, ...], SequenceMatcher]] = []
+        for doc_id, doc in all_docs.items():
+            doc_id_lower = doc_id.lower()
+            aliases = tuple(alias.lower() for alias in (doc.aliases or []))
+            matcher = SequenceMatcher()
+            matcher.set_seq2(doc_id_lower)
+            self.entries.append((doc_id, doc_id_lower, aliases, matcher))
+
+
+def suggest_candidates(
+    broken_ref: str,
+    index: SuggestionIndex,
+    threshold: float = 0.5,
+) -> List[Tuple[str, float, str]]:
+    """Index-backed suggestion lookup; same contract as
+    :func:`suggest_candidates_for_broken_ref`.
+
+    Fuzzy matching is pruned losslessly: ``real_quick_ratio`` and
+    ``quick_ratio`` are documented upper bounds on ``ratio``, so any
+    candidate skipped by the gates could never have reached the threshold.
+    """
+    if not broken_ref or not broken_ref.strip():
+        return []
+
+    candidates = []
+    broken_lower = broken_ref.lower()
+
+    for doc_id, doc_id_lower, aliases, matcher in index.entries:
+        # Strategy 1: Substring match (high confidence: 0.85)
+        # broken_ref is contained in doc_id OR doc_id is contained in broken_ref
+        if broken_lower in doc_id_lower or doc_id_lower in broken_lower:
+            candidates.append((doc_id, 0.85, "substring match"))
+            continue
+
+        # Strategy 2: Alias match (high confidence: 0.85)
+        if aliases and any(broken_lower in alias for alias in aliases):
+            candidates.append((doc_id, 0.85, "alias match"))
+            continue
+
+        # Strategy 3: Levenshtein distance via SequenceMatcher (variable confidence)
+        matcher.set_seq1(broken_lower)
+        if matcher.real_quick_ratio() < threshold:
+            continue
+        if matcher.quick_ratio() < threshold:
+            continue
+        ratio = matcher.ratio()
+        if ratio >= threshold:
+            candidates.append((doc_id, ratio, f"similarity: {ratio:.0%}"))
+
+    # v1.1: Sort by confidence descending, then alphabetically by doc_id for deterministic ties
+    return sorted(candidates, key=lambda x: (-x[1], x[0]))[:3]
+
+
 def suggest_candidates_for_broken_ref(
     broken_ref: str,
     all_docs: Dict[str, DocumentData],
@@ -173,32 +238,8 @@ def suggest_candidates_for_broken_ref(
     Returns:
         List of (doc_id, confidence_score, reason) tuples,
         sorted by confidence descending (then alphabetically for ties), max 3 results
+
+    Callers comparing many refs against the same corpus should build one
+    :class:`SuggestionIndex` and call :func:`suggest_candidates` instead.
     """
-    if not broken_ref or not broken_ref.strip():
-        return []
-        
-    candidates = []
-    broken_lower = broken_ref.lower()
-
-    for doc_id, doc in all_docs.items():
-        doc_id_lower = doc_id.lower()
-
-        # Strategy 1: Substring match (high confidence: 0.85)
-        # broken_ref is contained in doc_id OR doc_id is contained in broken_ref
-        if broken_lower in doc_id_lower or doc_id_lower in broken_lower:
-            candidates.append((doc_id, 0.85, "substring match"))
-            continue
-
-        # Strategy 2: Alias match (high confidence: 0.85)
-        aliases = doc.aliases
-        if aliases and any(broken_lower in alias.lower() for alias in aliases):
-            candidates.append((doc_id, 0.85, "alias match"))
-            continue
-
-        # Strategy 3: Levenshtein distance via SequenceMatcher (variable confidence)
-        ratio = SequenceMatcher(None, broken_lower, doc_id_lower).ratio()
-        if ratio >= threshold:
-            candidates.append((doc_id, ratio, f"similarity: {ratio:.0%}"))
-
-    # v1.1: Sort by confidence descending, then alphabetically by doc_id for deterministic ties
-    return sorted(candidates, key=lambda x: (-x[1], x[0]))[:3]
+    return suggest_candidates(broken_ref, SuggestionIndex(all_docs), threshold)
