@@ -630,7 +630,9 @@ def _task_check_links(ctx: MaintainContext) -> TaskResult:
         scope=scope,
         include_body=False,
         include_external_scope_resolution=True,
-        include_suggestions=True,
+        # (#135) maintain never surfaces finding.suggestions in its output, so
+        # skipping suggestion generation is a free speedup with identical results.
+        include_suggestions=False,
         load_result=load_result,
     )
 

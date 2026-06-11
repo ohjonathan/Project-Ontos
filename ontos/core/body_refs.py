@@ -138,6 +138,14 @@ def scan_body_references(
     if not lines:
         lines = [""]
 
+    # (#135) Sorting the known-id set used to happen per text segment —
+    # O(lines * ids log ids) across a corpus. Hoist it to once per scan.
+    ordered_known_ids = (
+        _order_known_ids(known_ids)
+        if known_ids is not None and rename_target is None
+        else None
+    )
+
     line_texts = [_strip_line_ending(line) for line in lines]
     line_offsets: List[int] = []
     cursor = 0
@@ -233,6 +241,7 @@ def scan_body_references(
                     known_ids=known_ids,
                     line_is_reference_definition=line_is_reference_definition,
                     include_generic_bare_id_token=include_generic_bare_id_token,
+                    ordered_known_ids=ordered_known_ids,
                 )
             )
 
@@ -389,6 +398,7 @@ def _scan_normal_text_segment(
     known_ids: Optional[set[str]],
     line_is_reference_definition: bool,
     include_generic_bare_id_token: bool = True,
+    ordered_known_ids: Optional[List[str]] = None,
 ) -> List[BodyReferenceMatch]:
     if line_is_reference_definition:
         return []
@@ -431,8 +441,9 @@ def _scan_normal_text_segment(
             (start, end, rename_target) for start, end in _iter_exact_id_matches(segment_text, rename_target)
         )
     elif known_ids is not None:
-        ordered_ids = sorted(known_ids, key=lambda item: (-len(item), item))
-        bare_candidates = _iter_known_id_candidates(segment_text, ordered_ids)
+        bare_candidates = _iter_known_id_candidates(
+            segment_text, ordered_known_ids or _order_known_ids(known_ids)
+        )
     elif include_generic_bare_id_token:
         bare_candidates = _iter_generic_id_candidates(segment_text)
     else:
@@ -660,8 +671,17 @@ def _iter_exact_id_matches(text: str, target: str) -> Iterable[Tuple[int, int]]:
             yield start, end
 
 
+def _order_known_ids(known_ids: set[str]) -> List[str]:
+    return sorted(known_ids, key=lambda item: (-len(item), item))
+
+
 def _iter_known_id_candidates(text: str, ids: Sequence[str]) -> Iterable[Tuple[int, int, str]]:
     for doc_id in ids:
+        # (#135) C-speed substring gate before the regex: finditer matches
+        # iff the literal occurs, so skipping absent ids is lossless and
+        # avoids an escape+finditer per (segment, id) pair.
+        if doc_id not in text:
+            continue
         for start, end in _iter_exact_id_matches(text, doc_id):
             yield start, end, doc_id
 

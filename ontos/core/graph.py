@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Dict, List, Sequence, Set, Optional, Tuple, Union
 
 from ontos.core.types import DocumentData, ValidationError, ValidationErrorType
-from ontos.core.suggestions import suggest_candidates_for_broken_ref
+from ontos.core.suggestions import SuggestionIndex, suggest_candidates
 
 # SEVERITY RATIONALE (v3.3 Track A1)
 # ---------------------------------
@@ -145,6 +145,12 @@ def build_graph(
         "out_of_scope_dependency", OUT_OF_SCOPE_DEPENDENCY_SEVERITY
     )
 
+    # (#135) One suggestion index per build, with results memoized per unique
+    # dep value — the same broken target declared from many docs used to
+    # recompute fuzzy matches against the whole corpus each time.
+    suggestion_index: Optional[SuggestionIndex] = None
+    suggestion_memo: Dict[str, List[Tuple[str, float, str]]] = {}
+
     docs_by_resolved_path: Dict[Path, str] = {}
     workspace_root_resolved: Optional[Path] = None
     if workspace_root is not None:
@@ -197,7 +203,11 @@ def build_graph(
                 ))
                 continue
 
-            candidates = suggest_candidates_for_broken_ref(dep_id, docs)
+            if dep_id not in suggestion_memo:
+                if suggestion_index is None:
+                    suggestion_index = SuggestionIndex(docs)
+                suggestion_memo[dep_id] = suggest_candidates(dep_id, suggestion_index)
+            candidates = suggestion_memo[dep_id]
             fix_suggestion = f"Remove '{dep_id}' from depends_on or create the missing document"
             if candidates:
                 suggestion_text = ", ".join(c[0] for c in candidates)

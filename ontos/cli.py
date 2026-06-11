@@ -295,6 +295,38 @@ def _register_link_check(subparsers, parent):
         parents=[parent],
     )
     _add_scope_argument(p)
+    p.add_argument(
+        "--summary",
+        action="store_true",
+        help="Fast summary-only mode: counters without findings lists (skips suggestions)",
+    )
+    p.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Cap each findings list at N entries (summary counters stay complete)",
+    )
+    p.add_argument(
+        "--no-suggestions",
+        action="store_true",
+        dest="no_suggestions",
+        help="Skip fix-suggestion generation for broken references",
+    )
+    p.add_argument(
+        "--frontmatter-only",
+        action="store_true",
+        dest="frontmatter_only",
+        help="Skip body reference scanning (frontmatter refs only); "
+             "not recommended for CI gates — body findings are skipped",
+    )
+    p.add_argument(
+        "--no-orphans",
+        action="store_true",
+        dest="no_orphans",
+        help="Skip orphan detection; removes the exit-2 (orphans-only) outcome — "
+             "not recommended for CI gates",
+    )
     p.set_defaults(func=_cmd_link_check)
 
 
@@ -986,10 +1018,19 @@ def _cmd_link_check(args) -> int:
     """Handle link-check command."""
     from ontos.commands.link_check import LinkCheckOptions, link_check_command
 
+    limit = getattr(args, "limit", None)
+    if limit is not None and limit < 1:
+        print("Error: --limit must be >= 1")
+        return 1
     options = LinkCheckOptions(
         scope=getattr(args, "scope", None),
         json_output=args.json,
         quiet=args.quiet,
+        suggestions=not getattr(args, "no_suggestions", False),
+        summary=getattr(args, "summary", False),
+        limit=limit,
+        frontmatter_only=getattr(args, "frontmatter_only", False),
+        include_orphans=not getattr(args, "no_orphans", False),
     )
     return link_check_command(options)
 

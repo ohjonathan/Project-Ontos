@@ -135,7 +135,7 @@ def emit_command_success(
     data: Optional[Any] = None,
     warnings: Optional[List[str]] = None,
     *,
-    schema_version: str = "3.3",
+    schema_version: str = "3.4",
 ) -> None:
     """Emit command success envelope with stable top-level schema."""
     emit_json(
@@ -161,7 +161,7 @@ def emit_command_error(
     data: Optional[Any] = None,
     warnings: Optional[List[str]] = None,
     *,
-    schema_version: str = "3.3",
+    schema_version: str = "3.4",
 ) -> None:
     """Emit command error envelope with stable top-level schema."""
     error_payload: Dict[str, Any] = {"code": code}

@@ -357,7 +357,7 @@ def test_rename_end_to_end_dry_run_apply_then_link_check(tmp_path: Path):
 
     link_check = _run_ontos(tmp_path, "--json", "link-check")
     assert link_check.returncode == 0
-    payload = json.loads(link_check.stdout)
+    payload = json.loads(link_check.stdout)["data"]
     assert payload["summary"]["broken_references"] == 0
     assert payload["summary"]["duplicate_ids"] == 0
 

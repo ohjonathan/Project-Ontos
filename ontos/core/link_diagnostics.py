@@ -4,14 +4,15 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 from ontos.core.body_refs import MatchType, scan_body_references
 from ontos.core.config import OntosConfig
 from ontos.core.graph import build_graph, detect_orphans
-from ontos.core.suggestions import suggest_candidates_for_broken_ref
+from ontos.core.suggestions import SuggestionIndex, suggest_candidates
 from ontos.core.types import DocumentData, ValidationErrorType
 from ontos.core.validation import ValidationOrchestrator
 from ontos.io.files import DocumentLoadIssue, DocumentLoadResult, load_documents, scan_documents
@@ -120,9 +121,30 @@ class LinkDiagnosticsResult:
     parse_failed_candidates: List[ParseFailedCandidate]
     orphans: List[OrphanDocument]
     load_warnings: List[DocumentLoadIssue]
+    timings_ms: Dict[str, int] = field(default_factory=dict)
 
-    def to_json(self) -> Dict[str, object]:
-        """Convert diagnostics to JSON-compatible payload."""
+    @property
+    def result_status(self) -> str:
+        """Result quality, distinct from transport status (#131)."""
+        if self.exit_code == 0:
+            return "clean"
+        if self.exit_code == 2:
+            return "warnings"
+        return "failing"
+
+    def to_data_payload(
+        self,
+        *,
+        limit: Optional[int] = None,
+        summary_only: bool = False,
+        options_echo: Optional[Dict[str, object]] = None,
+    ) -> Dict[str, object]:
+        """Build the `data` payload for the standard JSON envelope (#131/#135).
+
+        Summary counters always reflect FULL totals; ``limit`` caps only the
+        findings lists, and ``summary_only`` empties them. Keys are stable in
+        every mode so consumers never branch on key presence.
+        """
 
         duplicates = [
             {
@@ -164,22 +186,7 @@ class LinkDiagnosticsResult:
                 }
             )
 
-        payload = {
-            "status": self.status,
-            "scope": self.scope.value,
-            "exit_code": self.exit_code,
-            "summary": {
-                "files_scanned": self.summary.files_scanned,
-                "documents_loaded": self.summary.documents_loaded,
-                "load_warnings": self.summary.load_warnings,
-                "duplicate_ids": self.summary.duplicate_ids,
-                "broken_references": self.summary.broken_references,
-                "broken_frontmatter": self.summary.broken_frontmatter,
-                "broken_body": self.summary.broken_body,
-                "external_references": self.summary.external_references,
-                "parse_failed_candidates": self.summary.parse_failed_candidates,
-                "orphans": self.summary.orphans,
-            },
+        sections: Dict[str, List[object]] = {
             "duplicates": duplicates,
             "broken_references": broken,
             "external_references": [
@@ -218,10 +225,45 @@ class LinkDiagnosticsResult:
                 for issue in self.load_warnings
             ],
         }
+
+        truncated_sections: List[str] = []
+        for name, items in sections.items():
+            if summary_only:
+                if items:
+                    truncated_sections.append(name)
+                sections[name] = []
+            elif limit is not None and len(items) > limit:
+                truncated_sections.append(name)
+                sections[name] = items[:limit]
+
+        payload: Dict[str, object] = {
+            "result_status": self.result_status,
+            "mode": "summary" if summary_only else "full",
+            "scope": self.scope.value,
+            "options": dict(options_echo or {}),
+            "summary": {
+                "files_scanned": self.summary.files_scanned,
+                "documents_loaded": self.summary.documents_loaded,
+                "load_warnings": self.summary.load_warnings,
+                "duplicate_ids": self.summary.duplicate_ids,
+                "broken_references": self.summary.broken_references,
+                "broken_frontmatter": self.summary.broken_frontmatter,
+                "broken_body": self.summary.broken_body,
+                "external_references": self.summary.external_references,
+                "parse_failed_candidates": self.summary.parse_failed_candidates,
+                "orphans": self.summary.orphans,
+            },
+            "timings_ms": dict(self.timings_ms),
+            "findings_truncated": bool(truncated_sections),
+            "truncated_sections": sorted(truncated_sections),
+        }
+        payload.update(sections)
         return payload
 
     def to_json_text(self) -> str:
-        return json.dumps(self.to_json(), ensure_ascii=False)
+        """Deprecated: retained for any out-of-tree callers; emits the
+        envelope `data` payload, not the pre-3.4 root shape."""
+        return json.dumps(self.to_data_payload(), ensure_ascii=False)
 
 
 @dataclass(frozen=True)
@@ -239,21 +281,43 @@ def run_link_diagnostics(
     include_body: bool = True,
     include_external_scope_resolution: bool = True,
     include_suggestions: bool = True,
+    include_orphans: bool = True,
+    progress: Optional[Callable[[str], None]] = None,
     load_result: Optional[DocumentLoadResult] = None,
 ) -> LinkDiagnosticsResult:
-    """Run shared link diagnostics for a loaded scope."""
+    """Run shared link diagnostics for a loaded scope.
 
+    ``progress`` is invoked with a short stage marker at the start of each
+    phase (#135); pass None for silent runs. ``include_orphans=False`` skips
+    orphan detection entirely, which also removes the exit-2 possibility.
+    Per-phase wall-clock timings land in ``LinkDiagnosticsResult.timings_ms``.
+    """
+
+    timings_ms: Dict[str, int] = {}
+    total_start = time.perf_counter()
+
+    def _notify(message: str) -> None:
+        if progress is not None:
+            progress(message)
+
+    phase_start = time.perf_counter()
     if load_result is None:
+        _notify(f"Loading {len(doc_paths)} documents...")
         load_result = load_documents(list(doc_paths), parse_frontmatter_content)
+        timings_ms["load"] = _elapsed_ms(phase_start)
+    else:
+        timings_ms["load"] = 0
 
     docs = load_result.documents
     active_ids = set(docs.keys())
+    phase_start = time.perf_counter()
     external_scope = _load_external_scope_info(
         repo_root=repo_root,
         config=config,
         scope=scope,
         include_external_scope_resolution=include_external_scope_resolution,
     )
+    timings_ms["external_scope"] = _elapsed_ms(phase_start)
     external_ids = external_scope.external_ids
 
     broken_references: List[BrokenReference] = []
@@ -261,6 +325,8 @@ def run_link_diagnostics(
     broken_seen: Set[Tuple[str, str, str, Optional[int], Optional[int], Optional[str]]] = set()
     external_seen: Set[Tuple[str, str, str, str]] = set()
 
+    _notify("Checking frontmatter references...")
+    phase_start = time.perf_counter()
     # (#117) Thread repo_root through so depends_on entries that resolve to
     # workspace-relative paths can fall back from hard broken-link to either
     # edge-resolution (loaded doc) or soft out-of-scope dependency.
@@ -282,8 +348,6 @@ def run_link_diagnostics(
             location=None,
             active_ids=active_ids,
             external_ids=external_ids,
-            all_docs=docs,
-            include_suggestions=include_suggestions,
             broken_references=broken_references,
             external_references=external_references,
             broken_seen=broken_seen,
@@ -318,15 +382,16 @@ def run_link_diagnostics(
             location=None,
             active_ids=active_ids,
             external_ids=external_ids,
-            all_docs=docs,
-            include_suggestions=include_suggestions,
             broken_references=broken_references,
             external_references=external_references,
             broken_seen=broken_seen,
             external_seen=external_seen,
         )
+    timings_ms["frontmatter"] = _elapsed_ms(phase_start)
 
+    phase_start = time.perf_counter()
     if include_body:
+        _notify(f"Scanning body references in {len(docs)} documents...")
         for doc in docs.values():
             # Pass 1: Known-ID scan — bypasses _looks_like_doc_id filters,
             # ensuring references to existing docs with filtered-pattern
@@ -388,43 +453,62 @@ def run_link_diagnostics(
                     location=location,
                     active_ids=active_ids,
                     external_ids=external_ids,
-                    all_docs=docs,
-                    include_suggestions=include_suggestions,
                     broken_references=broken_references,
                     external_references=external_references,
                     broken_seen=broken_seen,
                     external_seen=external_seen,
                 )
+    timings_ms["body_scan"] = _elapsed_ms(phase_start)
 
+    # (#135) Suggestions run as a memoized post-pass over the collected
+    # broken references instead of inline per finding, so the phase is
+    # timeable, skippable, and never recomputes the same broken value.
+    phase_start = time.perf_counter()
+    if include_suggestions and broken_references:
+        _notify(
+            f"Generating suggestions for {len(broken_references)} broken references..."
+        )
+        _attach_suggestions(broken_references, docs)
+    timings_ms["suggestions"] = _elapsed_ms(phase_start)
+
+    phase_start = time.perf_counter()
+    if load_result.issues:
+        _notify("Scanning parse-failed files...")
     parse_failed_candidates = _collect_parse_failed_candidates(
         issues=load_result.issues,
         known_ids=active_ids | external_ids,
     )
+    timings_ms["parse_failed_scan"] = _elapsed_ms(phase_start)
 
-    allowed_orphan_types = set(config.validation.allowed_orphan_types)
-    allowed_orphan_paths = list(config.validation.allowed_orphan_paths)
-    orphan_ids = detect_orphans(
-        graph,
-        allowed_orphan_types,
-        allowed_orphan_paths=allowed_orphan_paths,
-        workspace_root=repo_root,
-    )
-    if scope == ScanScope.DOCS and external_scope.external_depends_on_index:
-        orphan_ids = [
-            orphan_id
-            for orphan_id in orphan_ids
-            if orphan_id not in external_scope.external_depends_on_index
-        ]
-
-    orphans = [
-        OrphanDocument(
-            doc_id=doc_id,
-            path=docs[doc_id].filepath,
-            doc_type=docs[doc_id].type.value,
+    phase_start = time.perf_counter()
+    orphans: List[OrphanDocument] = []
+    if include_orphans:
+        _notify("Detecting orphans...")
+        allowed_orphan_types = set(config.validation.allowed_orphan_types)
+        allowed_orphan_paths = list(config.validation.allowed_orphan_paths)
+        orphan_ids = detect_orphans(
+            graph,
+            allowed_orphan_types,
+            allowed_orphan_paths=allowed_orphan_paths,
+            workspace_root=repo_root,
         )
-        for doc_id in sorted(orphan_ids)
-        if doc_id in docs
-    ]
+        if scope == ScanScope.DOCS and external_scope.external_depends_on_index:
+            orphan_ids = [
+                orphan_id
+                for orphan_id in orphan_ids
+                if orphan_id not in external_scope.external_depends_on_index
+            ]
+
+        orphans = [
+            OrphanDocument(
+                doc_id=doc_id,
+                path=docs[doc_id].filepath,
+                doc_type=docs[doc_id].type.value,
+            )
+            for doc_id in sorted(orphan_ids)
+            if doc_id in docs
+        ]
+    timings_ms["orphans"] = _elapsed_ms(phase_start)
 
     broken_frontmatter = len(
         [
@@ -456,6 +540,8 @@ def run_link_diagnostics(
         orphans=len(orphans),
     )
 
+    timings_ms["total"] = _elapsed_ms(total_start)
+
     return LinkDiagnosticsResult(
         status="success",
         scope=scope,
@@ -467,6 +553,7 @@ def run_link_diagnostics(
         parse_failed_candidates=parse_failed_candidates,
         orphans=orphans,
         load_warnings=load_result.issues,
+        timings_ms=timings_ms,
     )
 
 
@@ -480,8 +567,6 @@ def _classify_reference(
     location: Optional[ReferenceLocation],
     active_ids: Set[str],
     external_ids: Set[str],
-    all_docs: Dict[str, DocumentData],
-    include_suggestions: bool,
     broken_references: List[BrokenReference],
     external_references: List[ExternalReference],
     broken_seen: Set[Tuple[str, str, str, Optional[int], Optional[int], Optional[str]]],
@@ -513,7 +598,6 @@ def _classify_reference(
         return
     broken_seen.add(key)
 
-    suggestions = _build_suggestions(value, all_docs) if include_suggestions else []
     broken_references.append(
         BrokenReference(
             source_doc_id=source_doc_id,
@@ -522,17 +606,28 @@ def _classify_reference(
             value=value,
             severity=severity or "error",
             location=location,
-            suggestions=suggestions,
         )
     )
 
 
-def _build_suggestions(value: str, docs: Dict[str, DocumentData]) -> List[ReferenceSuggestion]:
-    candidates = suggest_candidates_for_broken_ref(value, docs)
-    return [
-        ReferenceSuggestion(candidate=candidate, confidence=confidence, reason=reason)
-        for candidate, confidence, reason in candidates
-    ]
+def _attach_suggestions(
+    broken_references: List[BrokenReference],
+    docs: Dict[str, DocumentData],
+) -> None:
+    """Populate suggestions on broken references, memoized per unique value."""
+    index = SuggestionIndex(docs)
+    memo: Dict[str, List[ReferenceSuggestion]] = {}
+    for finding in broken_references:
+        if finding.value not in memo:
+            memo[finding.value] = [
+                ReferenceSuggestion(candidate=candidate, confidence=confidence, reason=reason)
+                for candidate, confidence, reason in suggest_candidates(finding.value, index)
+            ]
+        finding.suggestions = list(memo[finding.value])
+
+
+def _elapsed_ms(start: float) -> int:
+    return int((time.perf_counter() - start) * 1000)
 
 
 def _extract_reference_value(message: str) -> Optional[str]:

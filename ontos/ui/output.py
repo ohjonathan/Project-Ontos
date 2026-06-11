@@ -85,12 +85,16 @@ class OutputHandler:
     
     def progress(self, message: str) -> None:
         """Display a progress message.
-        
+
+        Emitted to stderr so stage markers never pollute machine-readable
+        stdout (#135).
+
         Args:
             message: Progress message to display.
         """
+        import sys
         if not self.quiet:
-            print(f"⏳ {message}")
+            print(f"⏳ {message}", file=sys.stderr)
     
     def detail(self, message: str) -> None:
         """Display a detail message (indented, for additional context).

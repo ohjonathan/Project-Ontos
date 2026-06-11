@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,6 +11,8 @@ from ontos.core.link_diagnostics import LinkDiagnosticsResult, run_link_diagnost
 from ontos.io.config import load_project_config
 from ontos.io.files import find_project_root
 from ontos.io.scan_scope import build_scope_roots, collect_scoped_documents, resolve_scan_scope
+from ontos.ui.json_output import emit_command_error, emit_command_success
+from ontos.ui.output import OutputHandler
 
 
 @dataclass
@@ -22,6 +23,11 @@ class LinkCheckOptions:
     json_output: bool = False
     quiet: bool = False
     suggestions: bool = True
+    # (#135) Output / work controls.
+    summary: bool = False
+    limit: Optional[int] = None
+    frontmatter_only: bool = False
+    include_orphans: bool = True
 
 
 def link_check_command(options: LinkCheckOptions) -> int:
@@ -30,12 +36,12 @@ def link_check_command(options: LinkCheckOptions) -> int:
     try:
         repo_root = find_project_root()
     except FileNotFoundError as exc:
-        return _emit_command_error(options, str(exc))
+        return _emit_link_check_error(options, str(exc))
 
     try:
         config = load_project_config(repo_root=repo_root)
     except Exception as exc:
-        return _emit_command_error(options, f"Config error: {exc}")
+        return _emit_link_check_error(options, f"Config error: {exc}")
 
     scope = resolve_scan_scope(options.scope, config.scanning.default_scope)
     roots = build_scope_roots(repo_root, config, scope)
@@ -46,40 +52,72 @@ def link_check_command(options: LinkCheckOptions) -> int:
         base_skip_patterns=list(config.scanning.skip_patterns),
     )
 
+    include_suggestions = options.suggestions and not options.summary
+    include_body = not options.frontmatter_only
+
+    # Stage markers go to stderr for human runs only — stdout must stay a
+    # single parseable JSON document in --json mode (#135).
+    progress = None
+    if not options.json_output and not options.quiet:
+        handler = OutputHandler(quiet=False)
+        progress = handler.progress
+
     result = run_link_diagnostics(
         repo_root=repo_root,
         config=config,
         doc_paths=doc_paths,
         scope=scope,
-        include_body=True,
+        include_body=include_body,
         include_external_scope_resolution=True,
-        include_suggestions=options.suggestions,
+        include_suggestions=include_suggestions,
+        include_orphans=options.include_orphans,
+        progress=progress,
     )
 
     if options.json_output:
-        print(result.to_json_text())
+        emit_command_success(
+            command="link-check",
+            exit_code=result.exit_code,
+            message=_status_text(result),
+            data=result.to_data_payload(
+                limit=options.limit,
+                summary_only=options.summary,
+                options_echo={
+                    "suggestions": include_suggestions,
+                    "body_scan": include_body,
+                    "orphans": options.include_orphans,
+                    "limit": options.limit,
+                },
+            ),
+        )
     else:
-        _emit_human_report(result, roots=roots, quiet=options.quiet)
+        _emit_human_report(
+            result, roots=roots, quiet=options.quiet, summary_only=options.summary
+        )
 
     return result.exit_code
 
 
-def _emit_command_error(options: LinkCheckOptions, message: str) -> int:
+def _emit_link_check_error(options: LinkCheckOptions, message: str) -> int:
     if options.json_output:
-        print(
-            json.dumps(
-                {
-                    "status": "error",
-                    "message": message,
-                }
-            )
+        emit_command_error(
+            command="link-check",
+            exit_code=1,
+            code="E_COMMAND_FAILED",
+            message=message,
         )
     else:
         print(f"Error: {message}")
     return 1
 
 
-def _emit_human_report(result: LinkDiagnosticsResult, *, roots: List[Path], quiet: bool) -> None:
+def _emit_human_report(
+    result: LinkDiagnosticsResult,
+    *,
+    roots: List[Path],
+    quiet: bool,
+    summary_only: bool = False,
+) -> None:
     if quiet:
         _emit_fatal_sections(result)
         print(_status_line(result))
@@ -104,14 +142,25 @@ def _emit_human_report(result: LinkDiagnosticsResult, *, roots: List[Path], quie
     print(f"  exit_code: {result.exit_code}")
     print()
 
-    _emit_duplicates(result)
-    _emit_broken_by_field(result)
-    _emit_external_refs(result)
-    _emit_parse_failed_candidates(result)
-    _emit_suggestions(result)
-    _emit_orphans(result)
-    _emit_load_warnings(result)
+    if not summary_only:
+        _emit_duplicates(result)
+        _emit_broken_by_field(result)
+        _emit_external_refs(result)
+        _emit_parse_failed_candidates(result)
+        _emit_suggestions(result)
+        _emit_orphans(result)
+        _emit_load_warnings(result)
+    _emit_timings(result)
     print(_status_line(result))
+
+
+def _emit_timings(result: LinkDiagnosticsResult) -> None:
+    if not result.timings_ms:
+        return
+    print("Timings (ms)")
+    for phase, elapsed in result.timings_ms.items():
+        print(f"  {phase}: {elapsed}")
+    print()
 
 
 def _emit_fatal_sections(result: LinkDiagnosticsResult) -> None:
@@ -210,10 +259,14 @@ def _emit_load_warnings(result: LinkDiagnosticsResult) -> None:
     print()
 
 
-def _status_line(result: LinkDiagnosticsResult) -> str:
+def _status_text(result: LinkDiagnosticsResult) -> str:
     if result.exit_code == 0:
-        return "link-check status: clean (exit 0)"
+        return "clean (exit 0)"
     if result.exit_code == 1:
-        return "link-check status: broken references or duplicates found (exit 1)"
-    return "link-check status: orphan-only findings (exit 2)"
+        return "broken references or duplicates found (exit 1)"
+    return "orphan-only findings (exit 2)"
+
+
+def _status_line(result: LinkDiagnosticsResult) -> str:
+    return f"link-check status: {_status_text(result)}"
 

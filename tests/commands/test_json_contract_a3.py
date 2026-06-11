@@ -59,6 +59,9 @@ def test_json_envelope_keys_for_multiple_commands(tmp_path: Path) -> None:
         ("--json", "scaffold"),
         ("--json", "maintain", "--dry-run"),
         ("--json", "rename", "sample", "sample_new"),
+        # (#131) Envelope conformance for previously divergent commands.
+        ("--json", "link-check"),
+        ("--json", "map"),
     ]
 
     for command in command_sets:

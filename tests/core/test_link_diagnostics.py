@@ -166,3 +166,117 @@ def test_body_broken_reference_gets_suggestion(tmp_path: Path):
     body_broken = [finding for finding in result.broken_references if finding.field == "body.bare_id_token"]
     assert body_broken
     assert body_broken[0].suggestions
+
+
+# =============================================================================
+# (#135) include_orphans, timings, progress, suggestion memoization
+# =============================================================================
+
+
+def test_include_orphans_false_skips_orphan_detection(tmp_path: Path):
+    _init_project(tmp_path)
+    _write_doc(tmp_path / "docs" / "orphan.md", "orphan_doc", doc_type="strategy")
+
+    config = load_project_config(config_path=tmp_path / ".ontos.toml", repo_root=tmp_path)
+    paths = collect_scoped_documents(
+        tmp_path, config, ScanScope.LIBRARY,
+        base_skip_patterns=list(config.scanning.skip_patterns),
+    )
+    result = run_link_diagnostics(
+        repo_root=tmp_path,
+        config=config,
+        doc_paths=paths,
+        scope=ScanScope.LIBRARY,
+        include_orphans=False,
+    )
+
+    assert result.orphans == []
+    assert result.summary.orphans == 0
+    assert result.exit_code == 0  # exit-2 outcome removed
+
+
+def test_timings_ms_records_all_phases(tmp_path: Path):
+    _init_project(tmp_path)
+    _write_doc(tmp_path / "docs" / "a.md", "a")
+
+    result = _run(tmp_path, ScanScope.LIBRARY)
+
+    for phase in ("load", "external_scope", "frontmatter", "body_scan",
+                  "suggestions", "parse_failed_scan", "orphans", "total"):
+        assert phase in result.timings_ms
+        assert isinstance(result.timings_ms[phase], int)
+    # load_result was pre-supplied in _run, so load time is recorded as 0.
+    assert result.timings_ms["load"] == 0
+
+
+def test_progress_callback_receives_stage_markers(tmp_path: Path):
+    _init_project(tmp_path)
+    _write_doc(tmp_path / "docs" / "source.md", "source_doc", depends_on="[missing_doc]")
+
+    config = load_project_config(config_path=tmp_path / ".ontos.toml", repo_root=tmp_path)
+    paths = collect_scoped_documents(
+        tmp_path, config, ScanScope.LIBRARY,
+        base_skip_patterns=list(config.scanning.skip_patterns),
+    )
+    stages = []
+    run_link_diagnostics(
+        repo_root=tmp_path,
+        config=config,
+        doc_paths=paths,
+        scope=ScanScope.LIBRARY,
+        progress=stages.append,
+    )
+
+    joined = " | ".join(stages)
+    assert "Loading" in joined
+    assert "frontmatter references" in joined
+    assert "body references" in joined
+    assert "suggestions" in joined
+    assert "orphans" in joined
+
+
+def test_suggestions_memoized_for_repeated_values(tmp_path: Path):
+    """The same broken value declared from several docs gets identical
+    suggestion objects without recomputation."""
+    _init_project(tmp_path)
+    _write_doc(tmp_path / "docs" / "target_document.md", "target_document")
+    for i in range(3):
+        _write_doc(
+            tmp_path / "docs" / f"source_{i}.md",
+            f"source_{i}",
+            depends_on="[target_documnet]",
+        )
+
+    result = _run(tmp_path, ScanScope.LIBRARY)
+
+    findings = [f for f in result.broken_references if f.value == "target_documnet"]
+    assert len(findings) == 3
+    suggestion_lists = [
+        [(s.candidate, s.confidence, s.reason) for s in f.suggestions]
+        for f in findings
+    ]
+    assert suggestion_lists[0] == suggestion_lists[1] == suggestion_lists[2]
+    assert suggestion_lists[0][0][0] == "target_document"
+
+
+def test_to_data_payload_summary_and_limit_modes(tmp_path: Path):
+    _init_project(tmp_path)
+    _write_doc(tmp_path / "docs" / "s1.md", "s1", depends_on="[missing_1]")
+    _write_doc(tmp_path / "docs" / "s2.md", "s2", depends_on="[missing_2]")
+
+    result = _run(tmp_path, ScanScope.LIBRARY)
+
+    full = result.to_data_payload()
+    assert full["mode"] == "full"
+    assert full["findings_truncated"] is False
+    assert len(full["broken_references"]) == 2
+
+    capped = result.to_data_payload(limit=1)
+    assert len(capped["broken_references"]) == 1
+    assert capped["findings_truncated"] is True
+    assert capped["summary"]["broken_references"] == 2
+
+    summary = result.to_data_payload(summary_only=True)
+    assert summary["mode"] == "summary"
+    assert summary["broken_references"] == []
+    assert summary["summary"]["broken_references"] == 2
