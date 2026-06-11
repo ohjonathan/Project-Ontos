@@ -85,6 +85,9 @@ def create_snapshot(
         {
             "allowed_orphan_types": config.validation.allowed_orphan_types,
             "allowed_orphan_paths": config.validation.allowed_orphan_paths,
+            "allowed_external_dependency_paths": (
+                config.validation.allowed_external_dependency_paths
+            ),
         },
         workspace_root=root,
     )

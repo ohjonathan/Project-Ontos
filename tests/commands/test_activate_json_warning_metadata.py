@@ -678,3 +678,77 @@ def test_cli_and_mcp_grouping_parity() -> None:
     cli_payload = groups_to_payload(group_warning_records(list(records)))
     mcp_payload = groups_to_payload(group_warning_records(list(records)))
     assert cli_payload == mcp_payload
+
+
+# =============================================================================
+# (#134) Allowlisted external file dependencies land in the info bucket
+# =============================================================================
+
+
+def _external_dep_workspace(root: Path) -> Path:
+    _write(
+        root / ".ontos.toml",
+        """
+        [ontos]
+        version = "4.6"
+
+        [validation]
+        allowed_orphan_types = ["atom", "log"]
+        allowed_external_dependency_paths = ["external/**"]
+        """,
+    )
+    _write(root / "external/notes.txt", "not a doc\n")
+    _write(
+        root / "docs/anchor.md",
+        """
+        ---
+        id: anchor_doc
+        type: atom
+        status: active
+        depends_on: [external/notes.txt]
+        ---
+        Anchor body.
+        """,
+    )
+    return root
+
+
+def test_activate_json_allowlisted_dep_lands_in_info_not_warnings(tmp_path: Path) -> None:
+    root = _external_dep_workspace(tmp_path)
+
+    result = _run(root, "--json", "activate", "--warnings", "full")
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+
+    validation = payload["data"]["validation"]
+    assert validation["info"], "expected the allowlisted dep in validation.info"
+    record = validation["info"][0]
+    assert record["rule_id"] == "external_file_dependency"
+    assert record["severity"] == "info"
+    assert record["document_id"] == "anchor_doc"
+    assert payload["data"]["summary"]["validation_info"] == 1
+
+    # The allowlisted dep must NOT appear among warnings or flip status.
+    assert all(
+        w.get("rule_id") != "external_file_dependency" for w in validation["warnings"]
+    )
+    # atom is an allowed orphan type, so the workspace is fully clean -> usable.
+    assert payload["data"]["status"] == "usable"
+    assert payload["data"]["summary"]["validation_warnings"] == 0
+
+
+def test_activate_json_info_groups_follow_warning_budget(tmp_path: Path) -> None:
+    root = _external_dep_workspace(tmp_path)
+
+    result = _run(root, "--json", "activate")  # default grouped mode
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+
+    validation = payload["data"]["validation"]
+    assert validation["info"] == []  # inline records only in full mode
+    assert validation["info_total"] == 1
+    groups = validation["info_groups"]
+    assert len(groups) == 1
+    assert groups[0]["rule_id"] == "external_file_dependency"
+    assert groups[0]["count"] == 1
+    assert groups[0]["samples"]

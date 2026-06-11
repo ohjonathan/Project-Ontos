@@ -66,6 +66,10 @@ class ValidationConfig:
     # (logs are intentional root artifacts and tolerated as orphans).
     allowed_orphan_types: List[str] = field(default_factory=lambda: ["atom", "log"])
     allowed_orphan_paths: List[str] = field(default_factory=list)
+    # (#134) Workspace-relative globs (same segment-aware semantics as
+    # allowed_orphan_paths) marking depends_on targets that exist on disk
+    # outside the doc scope as intentional external file dependencies.
+    allowed_external_dependency_paths: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -146,6 +150,7 @@ def _validate_types(data: dict) -> None:
     list_of_str_requirements = [
         ("validation", "allowed_orphan_types"),
         ("validation", "allowed_orphan_paths"),
+        ("validation", "allowed_external_dependency_paths"),
     ]
     for section, key in list_of_str_requirements:
         if section in data and key in data[section]:

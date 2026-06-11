@@ -178,3 +178,32 @@ class TestDictToConfig:
         """Unknown top-level sections raise ConfigError with section name."""
         with pytest.raises(ConfigError, match="hokks"):
             dict_to_config({"hokks": {"strict": True}})
+
+
+# (#134) allowed_external_dependency_paths type validation — mirrors the
+# allowed_orphan_paths checks above.
+
+def test_validate_types_rejects_non_list_allowed_external_dependency_paths():
+    with pytest.raises(ConfigError, match="must be list"):
+        _validate_types({"validation": {"allowed_external_dependency_paths": "apps/**"}})
+
+
+def test_validate_types_rejects_non_str_item_in_allowed_external_dependency_paths():
+    with pytest.raises(ConfigError, match=r"\[1\] must be str"):
+        _validate_types(
+            {"validation": {"allowed_external_dependency_paths": ["apps/**", 7]}}
+        )
+
+
+def test_allowed_external_dependency_paths_defaults_to_empty():
+    config = dict_to_config({})
+    assert config.validation.allowed_external_dependency_paths == []
+
+
+def test_allowed_external_dependency_paths_round_trips():
+    config = dict_to_config(
+        {"validation": {"allowed_external_dependency_paths": ["apps/**", "manifests/**"]}}
+    )
+    assert config.validation.allowed_external_dependency_paths == [
+        "apps/**", "manifests/**",
+    ]

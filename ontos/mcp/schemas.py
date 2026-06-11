@@ -30,6 +30,9 @@ class ValidationIssue(StrictModel):
 class ValidationPayload(StrictModel):
     errors: List[ValidationIssue]
     warnings: List[ValidationIssue]
+    # (#134) Info-severity records (allowlisted external file dependencies).
+    # Default keeps payloads from older snapshots schema-valid.
+    info: List[ValidationIssue] = Field(default_factory=list)
 
 
 class WarningGroup(StrictModel):
@@ -128,6 +131,11 @@ class ActivateResponse(StrictModel):
     warnings_truncated: bool
     warning_groups: List[WarningGroup]
     warnings: List[ValidationIssue]
+    # (#134) Allowlisted external file deps: grouped summary only; page full
+    # records via list_validation_warnings(severity="info"). Never merged
+    # into warnings — info must not flip activation status.
+    info_total: int = 0
+    info_groups: List[WarningGroup] = Field(default_factory=list)
 
 
 class ListValidationWarningsResponse(StrictModel):

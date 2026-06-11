@@ -136,6 +136,11 @@ def _emit_human_report(
     print("Summary")
     print(f"  duplicate_ids: {result.summary.duplicate_ids}")
     print(f"  broken_references: {result.summary.broken_references}")
+    print(f"  file_dependencies: {result.summary.file_dependencies}")
+    print(
+        "  unallowlisted_file_dependencies: "
+        f"{result.summary.unallowlisted_file_dependencies}"
+    )
     print(f"  external_references: {result.summary.external_references}")
     print(f"  parse_failed_candidates: {result.summary.parse_failed_candidates}")
     print(f"  orphans: {result.summary.orphans}")
@@ -145,6 +150,7 @@ def _emit_human_report(
     if not summary_only:
         _emit_duplicates(result)
         _emit_broken_by_field(result)
+        _emit_file_dependencies(result)
         _emit_external_refs(result)
         _emit_parse_failed_candidates(result)
         _emit_suggestions(result)
@@ -194,6 +200,20 @@ def _emit_broken_by_field(result: LinkDiagnosticsResult) -> None:
             if finding.location is not None:
                 base += f" (line {finding.location.line}, {finding.location.match_type})"
             print(base)
+    print()
+
+
+def _emit_file_dependencies(result: LinkDiagnosticsResult) -> None:
+    if not result.file_dependencies:
+        return
+    print("File Dependencies (resolved on disk)")
+    for item in result.file_dependencies:
+        marker = "allowlisted" if item.allowlisted else "review"
+        print(
+            "  - "
+            f"{item.source_doc_id} [{item.field}] -> {item.value} "
+            f"[{marker}] ({item.resolved_path})"
+        )
     print()
 
 

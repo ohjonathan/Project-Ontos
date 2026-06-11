@@ -100,11 +100,16 @@ class ValidationOrchestrator:
         self.workspace_root = workspace_root
         self.errors: List[ValidationError] = []
         self.warnings: List[ValidationError] = []
+        # (#134) Info-severity records (allowlisted external file deps) are
+        # tracked separately so they never count as warnings.
+        self.infos: List[ValidationError] = []
 
     def _report(self, error: ValidationError) -> None:
-        """Report an error or warning based on its severity."""
+        """Report an error, warning, or info based on its severity."""
         if error.severity == "error":
             self.errors.append(error)
+        elif error.severity == "info":
+            self.infos.append(error)
         else:
             self.warnings.append(error)
 
@@ -112,7 +117,7 @@ class ValidationOrchestrator:
         """Run all validations and return collected results.
 
         Returns:
-            ValidationResult with all errors and warnings
+            ValidationResult with all errors, warnings, and infos
         """
         self.validate_graph()
         self.validate_log_schema()
@@ -122,7 +127,8 @@ class ValidationOrchestrator:
 
         return ValidationResult(
             errors=self.errors,
-            warnings=self.warnings
+            warnings=self.warnings,
+            infos=self.infos,
         )
 
     def validate_graph(self) -> None:
@@ -131,9 +137,12 @@ class ValidationOrchestrator:
             self.docs,
             severity_map=self.severity_map,
             workspace_root=self.workspace_root,
+            allowed_external_dependency_paths=self.config.get(
+                "allowed_external_dependency_paths", []
+            ),
         )
-        self.errors.extend([e for e in broken_link_errors if e.severity == "error"])
-        self.warnings.extend([e for e in broken_link_errors if e.severity == "warning"])
+        for link_error in broken_link_errors:
+            self._report(link_error)
 
         # Detect cycles
         cycles = detect_cycles(graph)

@@ -278,3 +278,73 @@ def test_mcp_groups_match_cli_grouping_for_same_records(tmp_path):
     expected = groups_to_payload(group_warning_records(records))
     assert payload["warning_groups"] == expected
     assert payload["warnings_total"] == len(records)
+
+
+# =============================================================================
+# (#134) Info bucket (allowlisted external file deps) on the MCP surface
+# =============================================================================
+
+
+def test_activate_emits_info_groups_separate_from_warnings(tmp_path):
+    root = create_workspace(tmp_path)
+    # Add an allowlisted external file dep to the fixture workspace.
+    (root / "apps").mkdir(exist_ok=True)
+    (root / "apps" / "real.py").write_text("code", encoding="utf-8")
+    config_path = root / ".ontos.toml"
+    config_path.write_text(
+        config_path.read_text(encoding="utf-8")
+        + "\n[validation]\nallowed_external_dependency_paths = ['apps/**']\n",
+        encoding="utf-8",
+    )
+    (root / "docs" / "with_file_dep.md").write_text(
+        "---\nid: with_file_dep\ntype: atom\nstatus: active\n"
+        "depends_on: [apps/real.py]\n---\nBody\n",
+        encoding="utf-8",
+    )
+    server = build_server(root)
+
+    activation = _call(server, "activate", {})
+
+    assert activation.isError is False
+    content = activation.structuredContent
+    assert content["info_total"] == 1
+    assert content["info_groups"][0]["rule_id"] == "external_file_dependency"
+    assert content["info_groups"][0]["by_severity"] == {"info": 1}
+    # Info never merges into the warning channel or its totals.
+    rule_ids = {group["rule_id"] for group in content["warning_groups"]}
+    assert "external_file_dependency" not in rule_ids
+
+
+def test_list_validation_warnings_pages_info_records(tmp_path):
+    root = create_workspace(tmp_path)
+    (root / "apps").mkdir(exist_ok=True)
+    (root / "apps" / "real.py").write_text("code", encoding="utf-8")
+    config_path = root / ".ontos.toml"
+    config_path.write_text(
+        config_path.read_text(encoding="utf-8")
+        + "\n[validation]\nallowed_external_dependency_paths = ['apps/**']\n",
+        encoding="utf-8",
+    )
+    (root / "docs" / "with_file_dep.md").write_text(
+        "---\nid: with_file_dep\ntype: atom\nstatus: active\n"
+        "depends_on: [apps/real.py]\n---\nBody\n",
+        encoding="utf-8",
+    )
+    server = build_server(root)
+    _call(server, "activate", {})
+
+    result = _call(server, "list_validation_warnings", {"severity": "info"})
+
+    assert result.isError is False
+    records = result.structuredContent["warnings"]
+    assert records
+    assert all(record["severity"] == "info" for record in records)
+    assert records[0]["rule_id"] == "external_file_dependency"
+
+
+def test_snapshot_issue_classifies_external_file_dependency_prefix():
+    issue = _snapshot_issue(
+        "External file dependency (allowlisted): 'apps/real.py' "
+        "(declared in handoff) resolved to 'apps/real.py'."
+    )
+    assert issue["rule_id"] == "external_file_dependency"

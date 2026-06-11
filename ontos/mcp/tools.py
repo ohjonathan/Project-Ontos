@@ -178,9 +178,12 @@ def activate(
         key=lambda doc: (-len(view.snapshot.graph.reverse_edges.get(doc.id, [])), doc.id),
     )[:5]]
     # Status derives from the full record list; the budget below only
-    # shapes what is inlined in the response.
+    # shapes what is inlined in the response. (#134) Info records are
+    # excluded from the status formula by construction.
     status = "usable" if not records else "usable_with_warnings"
     groups = group_warning_records(records)
+    info_records = _validation_issues(view.snapshot.validation_result.infos)
+    info_groups = group_warning_records(info_records)
     return {
         "status": status,
         "workspace": view.workspace_root.name,
@@ -197,6 +200,10 @@ def activate(
             groups, include_samples=(warnings_mode == "grouped")
         ),
         "warnings": [],
+        "info_total": len(info_records),
+        "info_groups": groups_to_payload(
+            info_groups, include_samples=(warnings_mode == "grouped")
+        ),
     }
 
 
@@ -220,6 +227,9 @@ def list_validation_warnings(
         cache.snapshot.validation_result,
         cache.snapshot.warnings,
     )
+    # (#134) Info records are pageable here (filter severity="info") even
+    # though activate only inlines their grouped summary.
+    records = records + _validation_issues(cache.snapshot.validation_result.infos)
     page, total, _ = select_warning_records(
         records, rule_id=rule_id, severity=severity, offset=offset, limit=limit
     )
@@ -257,6 +267,9 @@ def context_map(
         "scope": resolve_scan_scope(None, cache.config.scanning.default_scope).value,
         "allowed_orphan_types": cache.config.validation.allowed_orphan_types,
         "allowed_orphan_paths": cache.config.validation.allowed_orphan_paths,
+        "allowed_external_dependency_paths": (
+            cache.config.validation.allowed_external_dependency_paths
+        ),
         "docs_dir": str(cache.config.paths.docs_dir),
         "logs_dir": str(cache.config.paths.logs_dir),
         "is_contributor_mode": (cache.workspace_root / ".ontos-internal").is_dir(),
@@ -677,6 +690,7 @@ def _validation_payload(validation: ValidationResult) -> dict[str, Any]:
     return {
         "errors": _validation_issues(validation.errors),
         "warnings": _validation_issues(validation.warnings),
+        "info": _validation_issues(getattr(validation, "infos", [])),
     }
 
 
@@ -702,6 +716,7 @@ _SNAPSHOT_RULE_PREFIXES = (
     ("invalid frontmatter", "schema.invalid_frontmatter"),
     ("Impact reference", "impacts.broken"),
     ("Broken dependency", "broken_link"),
+    ("External file dependency", "external_file_dependency"),
     ("External dependency resolved from disk", "out_of_scope_dependency"),
     ("Document has no incoming dependencies", "orphan"),
     ("Dependency depth", "depth"),

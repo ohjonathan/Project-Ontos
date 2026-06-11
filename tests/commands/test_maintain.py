@@ -244,6 +244,8 @@ def test_check_links_task_uses_shared_link_diagnostics(tmp_path, monkeypatch):
                 external_references=0,
                 duplicate_ids=0,
                 load_warnings=0,
+                file_dependencies=0,
+                unallowlisted_file_dependencies=0,
             ),
         )
 

@@ -658,6 +658,12 @@ def _task_check_links(ctx: MaintainContext) -> TaskResult:
         "external_refs": diagnostics.summary.external_references,
         "duplicates": diagnostics.summary.duplicate_ids,
         "load_issues": diagnostics.summary.load_warnings,
+        # (#134) Resolved-on-disk deps re-bucketed out of broken_links;
+        # surfaced here so the broken_links drop is not silent.
+        "file_dependencies": diagnostics.summary.file_dependencies,
+        "unallowlisted_file_dependencies": (
+            diagnostics.summary.unallowlisted_file_dependencies
+        ),
     }
 
     if diagnostics.exit_code == 1:
