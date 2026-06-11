@@ -227,6 +227,7 @@ def _register_core_tools(
     register_fn: Callable[..., None],
 ) -> None:
     def handle_activate(
+        warnings: str = "grouped",
         workspace_id: str | None = None,
     ) -> CallToolResult:
         return _invoke_read_tool(
@@ -235,6 +236,25 @@ def _register_core_tools(
             tool_impl.activate,
             ensure_fresh=False,
             use_live_cache=True,
+            warnings=warnings,
+            workspace_id=workspace_id,
+        )
+
+    def handle_list_validation_warnings(
+        rule_id: str | None = None,
+        severity: str | None = None,
+        offset: int = 0,
+        limit: int = 50,
+        workspace_id: str | None = None,
+    ) -> CallToolResult:
+        return _invoke_read_tool(
+            "list_validation_warnings",
+            cache,
+            tool_impl.list_validation_warnings,
+            rule_id=rule_id,
+            severity=severity,
+            offset=offset,
+            limit=limit,
             workspace_id=workspace_id,
         )
 
@@ -344,7 +364,21 @@ def _register_core_tools(
         description=f"Performs mandatory agent activation for the {workspace_name} workspace.",
         handler=handle_activate,
         annotations=_readonly_annotations(),
-        meta={"anthropic/maxResultSizeChars": 8000},
+        # (#132) Grouped worst case is ~18 rule buckets x 3 samples x ~250
+        # chars; 16000 covers it with headroom while summary mode remains
+        # the guaranteed-fit fallback.
+        meta={"anthropic/maxResultSizeChars": 16000},
+    )
+    register_fn(
+        name="list_validation_warnings",
+        title="List Validation Warnings",
+        description=(
+            f"Pages full validation warning records for the {workspace_name} "
+            "workspace; filter by rule_id/severity."
+        ),
+        handler=handle_list_validation_warnings,
+        annotations=_readonly_annotations(),
+        meta={"anthropic/maxResultSizeChars": 32000},
     )
     register_fn(
         name="workspace_overview",
@@ -911,7 +945,9 @@ def _render_instructions(
         "and log (session history). All tools are deterministic, local-only, "
         "and fast (<100ms cached after warmup). "
         "Start with `activate` before any other Ontos tool; it returns the "
-        "Loaded IDs and activation status for the session. "
+        "Loaded IDs, activation status, and grouped warning summaries for "
+        "the session — use `list_validation_warnings` to page full warning "
+        "records by rule_id. "
         "Use `workspace_overview` for project orientation. "
         "Use `context_map` for the full markdown narrative. "
         "Use `get_document` to read one document. "

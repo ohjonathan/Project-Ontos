@@ -67,6 +67,7 @@ def test_success_payloads_validate_against_declared_schemas(tmp_path):
         "context_map": tools.context_map(cache),
         "get_document": tools.get_document(cache, document_id="atom_doc"),
         "list_documents": tools.list_documents(cache),
+        "list_validation_warnings": tools.list_validation_warnings(cache),
         "export_graph": tools.export_graph(cache, summary_only=True),
         "query": tools.query(cache, entity_id="atom_doc"),
         "health": tools.health(cache),
@@ -108,8 +109,26 @@ def test_write_tool_models_validate_success_payload_shapes():
             "workspace_path": "/tmp/workspace",
             "doc_count": 1,
             "loaded_ids": ["doc_1"],
-            "warnings": [],
             "recommendation": "continue",
+            "warnings_total": 1,
+            "warnings_truncated": True,
+            "warning_groups": [
+                {
+                    "rule_id": "orphan",
+                    "count": 1,
+                    "by_severity": {"warning": 1},
+                    "samples": [
+                        {
+                            "severity": "warning",
+                            "message": "Document has no incoming dependencies",
+                            "rule_id": "orphan",
+                            "document_id": "doc_1",
+                            "file_path": "docs/doc_1.md",
+                        }
+                    ],
+                }
+            ],
+            "warnings": [],
         }
     )
     ScaffoldDocumentResponse.model_validate(

@@ -9,6 +9,12 @@ from typing import Any, Dict, List, Optional, Tuple
 from ontos.commands.map import GenerateMapOptions, generate_context_map
 from ontos.core.frontmatter_repair import enum_issue_summary
 from ontos.core.types import DocumentData
+from ontos.core.warning_groups import (
+    format_group_lines,
+    group_warning_records,
+    groups_to_payload,
+    select_warning_records,
+)
 from ontos.io.config import load_project_config
 from ontos.io.files import DocumentLoadIssue, find_project_root, load_documents
 from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
@@ -21,10 +27,22 @@ class ActivateOptions:
     json_output: bool = False
     quiet: bool = False
     scope: Optional[str] = None
+    # (#132) Warning output budget: "grouped" (default) summarizes by rule_id
+    # with bounded samples, "summary" drops samples too, "full" inlines the
+    # complete record list (optionally rule-filtered / limit-capped).
+    warnings_mode: str = "grouped"
+    warning_rule: Optional[str] = None
+    limit: Optional[int] = None
 
 
 def activate_command(options: ActivateOptions) -> int:
-    exit_code, payload = run_activation(options.scope, write_map=True)
+    exit_code, payload = run_activation(
+        options.scope,
+        write_map=True,
+        warnings_mode=options.warnings_mode,
+        warning_rule=options.warning_rule,
+        limit=options.limit,
+    )
     if options.json_output:
         if exit_code == 0:
             emit_command_success(
@@ -52,6 +70,9 @@ def run_activation(
     *,
     write_map: bool,
     root: Optional[Path] = None,
+    warnings_mode: str = "grouped",
+    warning_rule: Optional[str] = None,
+    limit: Optional[int] = None,
 ) -> Tuple[int, Dict[str, Any]]:
     """Return best-effort activation payload and exit code."""
     try:
@@ -109,9 +130,24 @@ def run_activation(
             output_path.write_text(content, encoding="utf-8")
             map_refreshed = True
 
+    # Status / summary counts always derive from the FULL untruncated lists,
+    # so the warning budget below never changes activation semantics (#132).
     warning_count = len(load_result.issues) + len(validation_warnings) + len(validation_errors)
     status = "usable" if warning_count == 0 else "usable_with_warnings"
     loaded_ids = _select_loaded_ids(docs)
+
+    groups = group_warning_records(validation_warnings, rule_id=warning_rule)
+    if warnings_mode == "full":
+        warnings_page, warnings_total, warnings_truncated = select_warning_records(
+            validation_warnings, rule_id=warning_rule, limit=limit
+        )
+    else:
+        _, warnings_total, _ = select_warning_records(
+            validation_warnings, rule_id=warning_rule
+        )
+        warnings_page = []
+        warnings_truncated = warnings_total > 0
+
     payload = {
         "status": status,
         "map": {
@@ -126,7 +162,12 @@ def run_activation(
         "diagnostics": [issue.to_dict(root=project_root) for issue in load_result.issues],
         "validation": {
             "errors": validation_errors,
-            "warnings": validation_warnings,
+            "warnings": warnings_page,
+            "warnings_total": warnings_total,
+            "warnings_truncated": warnings_truncated,
+            "warning_groups": groups_to_payload(
+                groups, include_samples=(warnings_mode != "summary")
+            ),
         },
         "summary": {
             "load_issues": len(load_result.issues),
@@ -164,6 +205,10 @@ def format_activation_output(payload: Dict[str, Any]) -> List[str]:
     if enum_diagnostics:
         lines.append("Top enum diagnostics:")
         lines.extend(f"  - {item}" for item in enum_issue_summary(enum_diagnostics, limit=5))
+    warning_groups = payload.get("validation", {}).get("warning_groups", [])
+    if warning_groups:
+        lines.append("Top warning groups:")
+        lines.extend(f"  - {item}" for item in format_group_lines(warning_groups, limit=5))
     lines.append(f"Recommended agent action: {payload.get('recommendation', 'continue')}")
     lines.append(f"Loaded: {payload.get('loaded_ids', [])}")
     return lines
@@ -196,7 +241,13 @@ def _not_usable(
         "diagnostics": [
             issue.to_dict(root=project_root) for issue in (issues or [])
         ],
-        "validation": {"errors": [], "warnings": []},
+        "validation": {
+            "errors": [],
+            "warnings": [],
+            "warnings_total": 0,
+            "warnings_truncated": False,
+            "warning_groups": [],
+        },
         "summary": {
             "load_issues": len(issues or []),
             "validation_errors": 0,

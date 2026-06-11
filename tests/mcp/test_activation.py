@@ -134,3 +134,147 @@ def test_snapshot_issue_classifies_well_known_prefixes():
     assert _snapshot_issue("Dependency depth 8 exceeds max 5")["rule_id"] == "depth"
     # Unknown shape falls back to a generic snapshot rule_id.
     assert _snapshot_issue("Completely novel message")["rule_id"] == "snapshot"
+
+
+# =============================================================================
+# (#132) Grouped activation warnings + list_validation_warnings pagination
+# =============================================================================
+
+
+def test_activate_returns_grouped_warnings_with_empty_inline_list(tmp_path):
+    root = create_workspace(tmp_path)
+    server = build_server(root)
+
+    activation = _call(server, "activate", {})
+
+    assert activation.isError is False
+    content = activation.structuredContent
+    # Orientation fields stay at the top of the declared schema.
+    assert list(content)[:6] == [
+        "status", "workspace", "workspace_path", "doc_count",
+        "loaded_ids", "recommendation",
+    ]
+    assert content["warnings"] == []
+    assert isinstance(content["warnings_total"], int)
+    if content["warnings_total"]:
+        assert content["warnings_truncated"] is True
+        groups = content["warning_groups"]
+        assert sum(group["count"] for group in groups) == content["warnings_total"]
+        for group in groups:
+            assert len(group["samples"]) <= 3
+            for sample in group["samples"]:
+                assert {"severity", "message"} <= set(sample)
+    else:
+        assert content["warnings_truncated"] is False
+        assert content["warning_groups"] == []
+
+
+def test_activate_summary_mode_has_empty_samples(tmp_path):
+    root = create_workspace(tmp_path)
+    server = build_server(root)
+
+    activation = _call(server, "activate", {"warnings": "summary"})
+
+    assert activation.isError is False
+    for group in activation.structuredContent["warning_groups"]:
+        assert group["samples"] == []
+
+
+def test_activate_rejects_full_warnings_mode(tmp_path):
+    root = create_workspace(tmp_path)
+    server = build_server(root)
+
+    result = _call(server, "activate", {"warnings": "full"})
+
+    assert result.isError is True
+    text = result.content[0].text
+    assert "E_INVALID_WARNINGS_MODE" in text or "list_validation_warnings" in text
+
+
+def test_list_validation_warnings_pages_full_records(tmp_path):
+    root = create_workspace(tmp_path)
+    server = build_server(root)
+    _call(server, "activate", {})
+
+    full = _call(server, "list_validation_warnings", {})
+    assert full.isError is False
+    content = full.structuredContent
+    assert content["offset"] == 0
+    assert content["total_count"] == len(content["warnings"]) or (
+        content["total_count"] > len(content["warnings"])
+    )
+    total = content["total_count"]
+    # Record shape parity with activate samples / CLI records.
+    for record in content["warnings"]:
+        assert {"severity", "message"} <= set(record)
+
+    if total > 1:
+        page = _call(
+            server, "list_validation_warnings", {"offset": 1, "limit": 1}
+        ).structuredContent
+        assert page["offset"] == 1
+        assert len(page["warnings"]) == 1
+        assert page["total_count"] == total
+        assert page["warnings"][0] == content["warnings"][1]
+
+
+def test_list_validation_warnings_filters_by_rule_id(tmp_path):
+    root = create_workspace(tmp_path)
+    server = build_server(root)
+    _call(server, "activate", {})
+
+    full = _call(server, "list_validation_warnings", {}).structuredContent
+    rules = {record.get("rule_id") for record in full["warnings"]}
+    if not rules:
+        return  # clean fixture; nothing to filter
+    rule = next(iter(r for r in rules if r))
+    filtered = _call(
+        server, "list_validation_warnings", {"rule_id": rule}
+    ).structuredContent
+    assert filtered["warnings"], f"expected records for rule {rule}"
+    assert all(record["rule_id"] == rule for record in filtered["warnings"])
+    assert filtered["total_count"] <= full["total_count"]
+
+
+def test_list_validation_warnings_rejects_bad_pagination(tmp_path):
+    root = create_workspace(tmp_path)
+    server = build_server(root)
+
+    bad_offset = _call(server, "list_validation_warnings", {"offset": -1})
+    assert bad_offset.isError is True
+    bad_limit = _call(server, "list_validation_warnings", {"limit": 0})
+    assert bad_limit.isError is True
+    too_big = _call(server, "list_validation_warnings", {"limit": 501})
+    assert too_big.isError is True
+
+
+def test_list_validation_warnings_carries_pre_activate_warning(tmp_path):
+    root = create_workspace(tmp_path)
+    server = build_server(root)
+
+    result = _call(server, "list_validation_warnings", {})
+
+    assert result.isError is False
+    assert result.structuredContent["_ontos_warning"] == (
+        "Ontos activation not performed this MCP session; call activate first."
+    )
+
+
+def test_mcp_groups_match_cli_grouping_for_same_records(tmp_path):
+    """The MCP activate warning_groups are exactly what the shared core
+    utility produces for the same normalized record list (#132 parity)."""
+    from ontos.core.warning_groups import group_warning_records, groups_to_payload
+    from ontos.mcp.tools import _normalize_warnings
+    from tests.mcp import build_cache
+
+    cache = build_cache(create_workspace(tmp_path))
+    from ontos.mcp import tools
+
+    payload = tools.activate(cache)
+    view = cache.get_fresh_view()
+    records = _normalize_warnings(
+        view.snapshot.validation_result, view.snapshot.warnings
+    )
+    expected = groups_to_payload(group_warning_records(records))
+    assert payload["warning_groups"] == expected
+    assert payload["warnings_total"] == len(records)
