@@ -678,3 +678,22 @@ def test_cli_and_mcp_grouping_parity() -> None:
     cli_payload = groups_to_payload(group_warning_records(list(records)))
     mcp_payload = groups_to_payload(group_warning_records(list(records)))
     assert cli_payload == mcp_payload
+
+
+def test_activate_json_rejects_invalid_limit_with_envelope(tmp_path: Path) -> None:
+    """(#138 review) --limit < 1 must fail inside the JSON envelope, not as
+    plain text on stdout."""
+    root = _orphan_workspace(tmp_path)
+
+    for bad in ("0", "-1"):
+        result = _run(root, "--json", "activate", "--limit", bad)
+        assert result.returncode == 1
+        envelope = json.loads(result.stdout)  # stdout must stay valid JSON
+        assert envelope["command"] == "activate"
+        assert envelope["status"] == "error"
+        assert envelope["error"]["code"] == "E_USER_INPUT"
+        assert "--limit" in envelope["message"]
+
+    human = _run(root, "activate", "--limit", "0")
+    assert human.returncode == 1
+    assert "--limit must be >= 1" in human.stdout
