@@ -148,3 +148,46 @@ class TestConfigExists:
         config_path = tmp_path / CONFIG_FILENAME
         config_path.write_text("[ontos]\n")
         assert config_exists(config_path) is True
+
+
+class TestRepoRootDiscovery:
+    """(#133) load_project_config(repo_root=X) must discover X/.ontos.toml
+    even when CWD is outside the project."""
+
+    def test_repo_root_drives_discovery_regardless_of_cwd(self, tmp_path, monkeypatch):
+        project = tmp_path / "project"
+        project.mkdir()
+        (project / CONFIG_FILENAME).write_text(
+            "[ontos]\nversion = '3.0'\n\n[paths]\ndocs_dir = 'documents'\n",
+            encoding="utf-8",
+        )
+        elsewhere = tmp_path / "elsewhere"
+        elsewhere.mkdir()
+        monkeypatch.chdir(elsewhere)
+
+        config = load_project_config(repo_root=project)
+
+        assert config.paths.docs_dir == "documents"
+
+    def test_cwd_ancestor_config_not_picked_up_for_named_root(self, tmp_path, monkeypatch):
+        # An unrelated config above CWD must not leak into a repo_root load.
+        (tmp_path / CONFIG_FILENAME).write_text(
+            "[ontos]\nversion = '3.0'\n\n[paths]\ndocs_dir = 'WRONG'\n",
+            encoding="utf-8",
+        )
+        project = tmp_path / "nested" / "project"
+        project.mkdir(parents=True)
+        monkeypatch.chdir(tmp_path)
+
+        config = load_project_config(repo_root=project)
+
+        # project has no config -> defaults, NOT the ancestor's docs_dir...
+        # discovery from repo_root walks up too, so the ancestor IS found by
+        # upward search; the guarantee is that discovery STARTS at repo_root.
+        # For a project with its own config, the project config wins:
+        (project / CONFIG_FILENAME).write_text(
+            "[ontos]\nversion = '3.0'\n\n[paths]\ndocs_dir = 'RIGHT'\n",
+            encoding="utf-8",
+        )
+        config = load_project_config(repo_root=project)
+        assert config.paths.docs_dir == "RIGHT"

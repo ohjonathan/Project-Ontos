@@ -23,6 +23,9 @@ class CheckResult:
     status: str  # "success", "failed", "warning"
     message: str
     details: Optional[str] = None
+    # (#133) Structured counts + count_basis labels so doctor's numbers can
+    # be reconciled with the surface they came from (e.g. activate).
+    data: Optional[dict] = None
 
 
 @dataclass
@@ -376,17 +379,19 @@ def check_activation_health(
     scope: Optional[str] = None,
     repo_root: Optional[Path] = None,
 ) -> CheckResult:
-    """(#117) Align doctor severity with activation/link-check health.
+    """(#117/#133) Align doctor counts with `ontos activate` by construction.
 
-    Runs the same snapshot + validation pipeline as `ontos activate` and
-    reports `failed` when any hard error-severity entry is present. Warnings
-    alone remain `warning` (today's behavior); a clean snapshot is `success`.
+    Delegates to the SAME activation pipeline (`run_activation` with
+    write_map=False — read-only) instead of running a parallel snapshot
+    validation, so doctor's warning/error counts can never drift from what
+    `ontos activate` reports. Hard errors → `failed`; warnings alone stay
+    `warning`; clean is `success`.
     """
     try:
-        from ontos.io.snapshot import create_snapshot
+        from ontos.commands.activate import run_activation
 
         root = resolve_project_root(repo_root=repo_root)
-        snapshot = create_snapshot(root, include_content=False, scope=scope)
+        code, payload = run_activation(scope, write_map=False, root=root)
     except Exception as exc:
         return CheckResult(
             name="activation_health",
@@ -395,31 +400,61 @@ def check_activation_health(
             details=str(exc),
         )
 
-    errors = snapshot.validation_result.errors
-    warnings_list = snapshot.validation_result.warnings
-    if errors:
-        details = "; ".join(
-            f"[{e.error_type.value}] {e.message}" for e in errors[:5]
+    summary = payload.get("summary", {})
+    error_count = summary.get("validation_errors", 0)
+    warning_count = summary.get("validation_warnings", 0)
+    load_issue_count = summary.get("load_issues", 0)
+    info_count = summary.get("validation_info", 0)
+    data = {
+        "validation_errors": error_count,
+        "validation_warnings": warning_count,
+        "validation_info": info_count,
+        "load_issues": load_issue_count,
+        "scope": payload.get("scope"),
+        "count_basis": "activation_pipeline",
+    }
+
+    if code != 0:
+        return CheckResult(
+            name="activation_health",
+            status="warning",
+            message="Activation context unavailable",
+            details=payload.get("reason"),
+            data=data,
         )
+
+    if error_count:
+        error_records = payload.get("validation", {}).get("errors", [])
+        details = "; ".join(
+            f"[{record.get('rule_id', 'unknown')}] {record.get('message', '')}"
+            for record in error_records[:5]
+        ) or None
         return CheckResult(
             name="activation_health",
             status="failed",
             message=(
-                f"{len(errors)} activation error(s), "
-                f"{len(warnings_list)} warning(s) — doctor exit aligns with hard errors"
+                f"{error_count} activation error(s), "
+                f"{warning_count} warning(s) — counts match `ontos activate` "
+                "(basis: activation pipeline)"
             ),
             details=details,
+            data=data,
         )
-    if warnings_list:
+    if warning_count or load_issue_count:
         return CheckResult(
             name="activation_health",
             status="warning",
-            message=f"{len(warnings_list)} activation warning(s); no hard errors",
+            message=(
+                f"{warning_count} activation warning(s); no hard errors — "
+                "counts match `ontos activate` (basis: activation pipeline)"
+            ),
+            data=data,
         )
     return CheckResult(
         name="activation_health",
         status="success",
         message="Activation clean (no errors or warnings)",
+        data=data,
     )
 
 
@@ -457,18 +492,29 @@ def check_validation(scope: Optional[str] = None, repo_root: Optional[Path] = No
             except Exception:
                 issues += 1
 
+        # (#133) This is a bounded heuristic, not full validation — label it
+        # as such so its count is never read against activation totals.
+        data = {
+            "count_basis": "frontmatter_quick_scan",
+            "files_checked": min(len(md_files), 50),
+        }
         if issues > 0:
             return CheckResult(
                 name="validation",
                 status="warning",
-                message=f"{issues} potential issues found",
-                details="Run 'ontos map --strict' for full validation"
+                message=(
+                    f"{issues} file(s) missing frontmatter "
+                    "(quick scan, first 50 files; full counts in activation_health)"
+                ),
+                details="Run 'ontos map --strict' for full validation",
+                data=data,
             )
 
         return CheckResult(
             name="validation",
             status="success",
-            message="No obvious issues"
+            message="No obvious issues (quick scan, first 50 files)",
+            data=data,
         )
 
     except Exception as e:

@@ -41,7 +41,11 @@ def load_project_config(
         ConfigError: If config file exists but is malformed
     """
     if config_path is None:
-        config_path = find_config()
+        # (#133) When the caller names a repo root, discovery starts there —
+        # previously discovery always walked up from CWD, so the same command
+        # could silently load an unrelated ancestor config when invoked from
+        # outside the project.
+        config_path = find_config(repo_root) if repo_root is not None else find_config()
 
     if config_path is None:
         return default_config()
