@@ -571,3 +571,69 @@ def test_check_activation_health_reports_failed_on_broken_depends_on(tmp_path):
     assert result.status == "failed"
     assert "error" in result.message.lower()
     assert "broken_link" in result.details
+
+
+# --- #136: check_context_map verifies generator provenance ---
+
+def _write_context_map(root: Path, frontmatter_lines: str) -> None:
+    (root / "Ontos_Context_Map.md").write_text(
+        f"---\n{frontmatter_lines}\n---\n\n# Context Map\n",
+        encoding="utf-8",
+    )
+
+
+def test_check_context_map_success_with_current_generator(tmp_path):
+    import ontos
+    from ontos.commands.doctor import check_context_map
+
+    _init_workspace(tmp_path)
+    _write_context_map(
+        tmp_path,
+        "id: ontos_context_map\nontos_map_version: 2\n"
+        f"generator_version: {ontos.__version__}",
+    )
+
+    result = check_context_map(repo_root=tmp_path)
+
+    assert result.status == "success"
+    assert ontos.__version__ in result.message
+
+
+def test_check_context_map_warns_when_generator_metadata_missing(tmp_path):
+    from ontos.commands.doctor import check_context_map
+
+    _init_workspace(tmp_path)
+    _write_context_map(tmp_path, "id: ontos_context_map\nontos_map_version: 2")
+
+    result = check_context_map(repo_root=tmp_path)
+
+    assert result.status == "warning"
+    assert "predates generator metadata" in result.message
+
+
+def test_check_context_map_warns_on_stale_generator_version(tmp_path):
+    import ontos
+    from ontos.commands.doctor import check_context_map
+
+    _init_workspace(tmp_path)
+    _write_context_map(
+        tmp_path,
+        "id: ontos_context_map\nontos_map_version: 2\ngenerator_version: 3.0",
+    )
+
+    result = check_context_map(repo_root=tmp_path)
+
+    assert result.status == "warning"
+    assert "3.0" in result.message
+    assert ontos.__version__ in result.message
+
+
+def test_check_context_map_still_warns_on_missing_frontmatter(tmp_path):
+    from ontos.commands.doctor import check_context_map
+
+    _init_workspace(tmp_path)  # writes a map with no frontmatter
+
+    result = check_context_map(repo_root=tmp_path)
+
+    assert result.status == "warning"
+    assert "frontmatter" in result.message.lower()

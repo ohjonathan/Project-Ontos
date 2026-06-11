@@ -16,6 +16,7 @@ from ontos.core.content_hash import compute_content_hash
 from ontos.core.errors import OntosUserError
 from ontos.core.snapshot import DocumentSnapshot
 from ontos.core.types import DocumentData, ValidationError, ValidationResult
+from ontos.io.scan_scope import resolve_scan_scope
 from ontos.io.snapshot import create_snapshot
 from ontos.mcp._types import PortfolioIndexLike
 from ontos.mcp.scanner import slugify
@@ -192,7 +193,7 @@ def context_map(
     config_dict = {
         "project_root": str(cache.workspace_root),
         "project_name": cache.workspace_root.name,
-        "version": cache.config.ontos.version,
+        "scope": resolve_scan_scope(None, cache.config.scanning.default_scope).value,
         "allowed_orphan_types": cache.config.validation.allowed_orphan_types,
         "allowed_orphan_paths": cache.config.validation.allowed_orphan_paths,
         "docs_dir": str(cache.config.paths.docs_dir),
