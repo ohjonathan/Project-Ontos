@@ -5,10 +5,12 @@ from tests.mcp import build_cache, create_empty_workspace, create_workspace
 
 
 def _map_config(cache):
+    from ontos.io.scan_scope import resolve_scan_scope
+
     return {
         "project_root": str(cache.workspace_root),
         "project_name": cache.workspace_root.name,
-        "version": cache.config.ontos.version,
+        "scope": resolve_scan_scope(None, cache.config.scanning.default_scope).value,
         "allowed_orphan_types": cache.config.validation.allowed_orphan_types,
         "docs_dir": str(cache.config.paths.docs_dir),
         "logs_dir": str(cache.config.paths.logs_dir),

@@ -85,7 +85,7 @@ def run_activation(
 
     gen_config = {
         "project_name": project_root.name,
-        "version": config.ontos.version,
+        "scope": effective_scope.value,
         "allowed_orphan_types": config.validation.allowed_orphan_types,
         "allowed_orphan_paths": config.validation.allowed_orphan_paths,
         "project_root": str(project_root),
