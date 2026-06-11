@@ -513,3 +513,131 @@ class TestCalculateDepths:
         # Cyclic nodes are treated as depth 0 to prevent infinite recursion
         assert depths["a"] >= 0
         assert depths["b"] >= 0
+
+
+class TestExternalDependencyAllowlist:
+    """(#134) Resolved-on-disk deps matching allowed_external_dependency_paths
+    are reported as EXTERNAL_FILE_DEPENDENCY at info severity; non-matching
+    ones keep today's OUT_OF_SCOPE_DEPENDENCY warning; missing paths stay
+    broken-link errors."""
+
+    def _docs(self, tmp_path, layout):
+        docs = {}
+        for doc_id, rel_path, depends_on in layout:
+            abs_path = tmp_path / rel_path
+            abs_path.parent.mkdir(parents=True, exist_ok=True)
+            abs_path.write_text(f"# {doc_id}\n")
+            docs[doc_id] = DocumentData(
+                id=doc_id,
+                type=DocumentType.ATOM,
+                status=DocumentStatus.ACTIVE,
+                filepath=abs_path,
+                frontmatter={"id": doc_id, "type": "atom"},
+                content="",
+                depends_on=list(depends_on),
+            )
+        return docs
+
+    def test_allowlisted_dep_is_info_with_context(self, tmp_path):
+        (tmp_path / "apps/audio/src").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "apps/audio/src/embed.py").write_text("code")
+        docs = self._docs(
+            tmp_path,
+            [("handoff", "docs/handoff.md", ["apps/audio/src/embed.py"])],
+        )
+
+        graph, errors = build_graph(
+            docs,
+            workspace_root=tmp_path,
+            allowed_external_dependency_paths=["apps/**"],
+        )
+
+        assert len(errors) == 1
+        error = errors[0]
+        assert error.error_type.value == "external_file_dependency"
+        assert error.severity == "info"
+        assert error.context == {
+            "dep_value": "apps/audio/src/embed.py",
+            "resolved_path": "apps/audio/src/embed.py",
+            "allowlisted": True,
+        }
+
+    def test_non_allowlisted_dep_keeps_exact_out_of_scope_message(self, tmp_path):
+        (tmp_path / "tools").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "tools/script.py").write_text("code")
+        docs = self._docs(
+            tmp_path,
+            [("handoff", "docs/handoff.md", ["tools/script.py"])],
+        )
+
+        graph, errors = build_graph(
+            docs,
+            workspace_root=tmp_path,
+            allowed_external_dependency_paths=["apps/**"],
+        )
+
+        assert len(errors) == 1
+        error = errors[0]
+        assert error.error_type.value == "out_of_scope_dependency"
+        assert error.severity == "warning"
+        # Message stays byte-identical to the pre-#134 text.
+        assert error.message == (
+            "External dependency resolved from disk: 'tools/script.py' "
+            "(declared in handoff) exists at "
+            f"'{tmp_path / 'tools/script.py'}' but is not a loaded document."
+        )
+        assert error.context["allowlisted"] is False
+
+    def test_missing_path_still_broken_link(self, tmp_path):
+        docs = self._docs(
+            tmp_path,
+            [("a", "docs/a.md", ["apps/does-not-exist.py"])],
+        )
+
+        graph, errors = build_graph(
+            docs,
+            workspace_root=tmp_path,
+            allowed_external_dependency_paths=["apps/**"],
+        )
+
+        assert len(errors) == 1
+        assert errors[0].error_type.value == "broken_link"
+
+    def test_glob_is_segment_local(self, tmp_path):
+        # apps/*.py must NOT match apps/sub/x.py (segment-local *).
+        (tmp_path / "apps/sub").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "apps/sub/x.py").write_text("code")
+        docs = self._docs(
+            tmp_path,
+            [("a", "docs/a.md", ["apps/sub/x.py"])],
+        )
+
+        graph, errors = build_graph(
+            docs,
+            workspace_root=tmp_path,
+            allowed_external_dependency_paths=["apps/*.py"],
+        )
+
+        assert errors[0].error_type.value == "out_of_scope_dependency"
+
+    def test_symlink_matches_on_resolved_path(self, tmp_path):
+        # A dep declared through a symlink must be allowlisted by its
+        # RESOLVED location, not the symlink's apparent path.
+        (tmp_path / "real").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "real/target.py").write_text("code")
+        (tmp_path / "apps").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "apps/linked.py").symlink_to(tmp_path / "real/target.py")
+        docs = self._docs(
+            tmp_path,
+            [("a", "docs/a.md", ["apps/linked.py"])],
+        )
+
+        graph, errors = build_graph(
+            docs,
+            workspace_root=tmp_path,
+            allowed_external_dependency_paths=["apps/**"],
+        )
+
+        # Resolves to real/target.py which is NOT under apps/ -> not allowlisted.
+        assert errors[0].error_type.value == "out_of_scope_dependency"
+        assert errors[0].context["allowlisted"] is False

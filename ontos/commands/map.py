@@ -138,6 +138,9 @@ def generate_context_map(
             "max_dependency_depth": options.max_dependency_depth,
             "allowed_orphan_types": config.get("allowed_orphan_types", ["atom", "log"]),
             "allowed_orphan_paths": config.get("allowed_orphan_paths", []),
+            "allowed_external_dependency_paths": config.get(
+                "allowed_external_dependency_paths", []
+            ),
             "severity_map": {
                 "broken_link": "warning",
                 "concepts": "warning"
@@ -486,10 +489,20 @@ def _generate_validation_section(result: ValidationResult, errors_only: bool = F
             lines.append(f"- ⚠️ **{warning.doc_id}**: {warning.message}")
             if warning.fix_suggestion:
                 lines.append(f"    {warning.fix_suggestion}")
-    
+
+    # (#134) Allowlisted external file deps are informational; show a bounded
+    # sample so they are visible without dominating the section.
+    if not errors_only and result.infos:
+        lines.append("")
+        lines.append(f"### Info ({len(result.infos)})")
+        for info in result.infos[:10]:
+            lines.append(f"- ℹ️ **{info.doc_id}**: {info.message}")
+        if len(result.infos) > 10:
+            lines.append(f"- ... and {len(result.infos) - 10} more")
+
     if errors_only and not result.errors:
         return ""
-        
+
     return "\n".join(lines)
 
 
@@ -919,6 +932,9 @@ def map_command(options: MapOptions) -> int:
         "scope": effective_scope.value,
         "allowed_orphan_types": config.validation.allowed_orphan_types,
         "allowed_orphan_paths": config.validation.allowed_orphan_paths,
+        "allowed_external_dependency_paths": (
+            config.validation.allowed_external_dependency_paths
+        ),
         "project_root": str(project_root),
         "docs_dir": str(config.paths.docs_dir),
         "logs_dir": str(config.paths.logs_dir),
@@ -988,13 +1004,15 @@ def map_command(options: MapOptions) -> int:
         from ontos.core.warning_groups import group_warning_records, groups_to_payload
 
         diagnostic_records = [
-            issue.to_dict() for issue in [*result.errors, *result.warnings]
+            issue.to_dict()
+            for issue in [*result.errors, *result.warnings, *result.infos]
         ]
         payload = {
             "path": str(output_path),
             "documents": len(docs),
             "errors": len(result.errors),
             "warnings": len(result.warnings),
+            "info": len(result.infos),
             # Derived from validation counts, not exit code: non-strict runs
             # exit 0 with warnings present, and result_status must still say
             # "warnings" (Codex review finding on #139).

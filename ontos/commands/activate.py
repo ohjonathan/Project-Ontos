@@ -109,6 +109,9 @@ def run_activation(
         "scope": effective_scope.value,
         "allowed_orphan_types": config.validation.allowed_orphan_types,
         "allowed_orphan_paths": config.validation.allowed_orphan_paths,
+        "allowed_external_dependency_paths": (
+            config.validation.allowed_external_dependency_paths
+        ),
         "project_root": str(project_root),
         "docs_dir": str(config.paths.docs_dir),
         "logs_dir": str(config.paths.logs_dir),
@@ -117,6 +120,7 @@ def run_activation(
     map_refreshed = False
     validation_errors = []
     validation_warnings = []
+    validation_infos = []
     if docs:
         content, validation = generate_context_map(
             docs,
@@ -125,6 +129,7 @@ def run_activation(
         )
         validation_errors = [issue.to_dict() for issue in validation.errors]
         validation_warnings = [issue.to_dict() for issue in validation.warnings]
+        validation_infos = [issue.to_dict() for issue in validation.infos]
         if write_map:
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(content, encoding="utf-8")
@@ -141,12 +146,24 @@ def run_activation(
         warnings_page, warnings_total, warnings_truncated = select_warning_records(
             validation_warnings, rule_id=warning_rule, limit=limit
         )
+        info_page, info_total, _ = select_warning_records(
+            validation_infos, rule_id=warning_rule, limit=limit
+        )
     else:
         _, warnings_total, _ = select_warning_records(
             validation_warnings, rule_id=warning_rule
         )
         warnings_page = []
         warnings_truncated = warnings_total > 0
+        info_page = []
+        # info_total honors the rule filter just like warnings_total
+        # (Codex review finding 7 on #140).
+        _, info_total, _ = select_warning_records(
+            validation_infos, rule_id=warning_rule
+        )
+    # (#134) Info records (allowlisted external file deps) get the same
+    # grouping budget — 188 inline records would re-create the #132 flood.
+    info_groups = group_warning_records(validation_infos, rule_id=warning_rule)
 
     payload = {
         "status": status,
@@ -168,11 +185,17 @@ def run_activation(
             "warning_groups": groups_to_payload(
                 groups, include_samples=(warnings_mode != "summary")
             ),
+            "info": info_page,
+            "info_total": info_total,
+            "info_groups": groups_to_payload(
+                info_groups, include_samples=(warnings_mode != "summary")
+            ),
         },
         "summary": {
             "load_issues": len(load_result.issues),
             "validation_errors": len(validation_errors),
             "validation_warnings": len(validation_warnings),
+            "validation_info": len(validation_infos),
         },
         "recommendation": (
             "continue; use direct reads for task-critical docs"
@@ -247,11 +270,15 @@ def _not_usable(
             "warnings_total": 0,
             "warnings_truncated": False,
             "warning_groups": [],
+            "info": [],
+            "info_total": 0,
+            "info_groups": [],
         },
         "summary": {
             "load_issues": len(issues or []),
             "validation_errors": 0,
             "validation_warnings": 0,
+            "validation_info": 0,
         },
         "recommendation": "halt; no usable Ontos context is available",
     }

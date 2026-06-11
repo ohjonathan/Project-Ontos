@@ -73,6 +73,24 @@ class ExternalReference:
 
 
 @dataclass(frozen=True)
+class FileDependencyReference:
+    """(#134) depends_on target that exists on disk but is not a loaded doc.
+
+    `allowlisted` is True when the resolved path matches the project's
+    allowed_external_dependency_paths globs (intentional doc-to-file edge);
+    False means the dep resolved on disk but is not declared intentional.
+    """
+
+    source_doc_id: str
+    source_path: Path
+    value: str
+    resolved_path: str
+    allowlisted: bool
+    severity: str
+    field: str = "depends_on"
+
+
+@dataclass(frozen=True)
 class ParseFailedCandidate:
     """Reference candidate found in parse-failed raw scan."""
 
@@ -105,6 +123,10 @@ class LinkDiagnosticsSummary:
     external_references: int
     parse_failed_candidates: int
     orphans: int
+    # (#134) Resolved-on-disk depends_on targets, re-bucketed out of
+    # broken_references. Only the unallowlisted subset drives exit code 1.
+    file_dependencies: int = 0
+    unallowlisted_file_dependencies: int = 0
 
 
 @dataclass
@@ -122,6 +144,7 @@ class LinkDiagnosticsResult:
     orphans: List[OrphanDocument]
     load_warnings: List[DocumentLoadIssue]
     timings_ms: Dict[str, int] = field(default_factory=dict)
+    file_dependencies: List[FileDependencyReference] = field(default_factory=list)
 
     @property
     def result_status(self) -> str:
@@ -189,6 +212,18 @@ class LinkDiagnosticsResult:
         sections: Dict[str, List[object]] = {
             "duplicates": duplicates,
             "broken_references": broken,
+            "file_dependencies": [
+                {
+                    "source_doc_id": item.source_doc_id,
+                    "source_path": str(item.source_path),
+                    "field": item.field,
+                    "value": item.value,
+                    "resolved_path": item.resolved_path,
+                    "allowlisted": item.allowlisted,
+                    "severity": item.severity,
+                }
+                for item in self.file_dependencies
+            ],
             "external_references": [
                 {
                     "source_doc_id": finding.source_doc_id,
@@ -252,6 +287,10 @@ class LinkDiagnosticsResult:
                 "external_references": self.summary.external_references,
                 "parse_failed_candidates": self.summary.parse_failed_candidates,
                 "orphans": self.summary.orphans,
+                "file_dependencies": self.summary.file_dependencies,
+                "unallowlisted_file_dependencies": (
+                    self.summary.unallowlisted_file_dependencies
+                ),
             },
             "timings_ms": dict(self.timings_ms),
             "findings_truncated": bool(truncated_sections),
@@ -334,8 +373,35 @@ def run_link_diagnostics(
         docs,
         severity_map=_LINK_CHECK_SEVERITY,
         workspace_root=repo_root,
+        allowed_external_dependency_paths=(
+            config.validation.allowed_external_dependency_paths
+        ),
     )
+    file_dependencies: List[FileDependencyReference] = []
+    file_dep_seen: Set[Tuple[str, str, str]] = set()
     for error in broken_depends_on:
+        # (#134) Resolved-on-disk deps carry structured context and land in
+        # the file_dependencies bucket instead of broken_references.
+        if error.error_type in (
+            ValidationErrorType.OUT_OF_SCOPE_DEPENDENCY,
+            ValidationErrorType.EXTERNAL_FILE_DEPENDENCY,
+        ):
+            dep_value = error.context.get("dep_value", "")
+            key = (error.doc_id, str(error.filepath), dep_value)
+            if key in file_dep_seen:
+                continue
+            file_dep_seen.add(key)
+            file_dependencies.append(
+                FileDependencyReference(
+                    source_doc_id=error.doc_id,
+                    source_path=Path(error.filepath),
+                    value=dep_value,
+                    resolved_path=error.context.get("resolved_path", ""),
+                    allowlisted=bool(error.context.get("allowlisted", False)),
+                    severity=error.severity,
+                )
+            )
+            continue
         value = _extract_reference_value(error.message)
         if value is None:
             continue
@@ -521,10 +587,15 @@ def run_link_diagnostics(
 
     duplicates = {doc_id: sorted(paths) for doc_id, paths in load_result.duplicate_ids.items()}
 
+    unallowlisted_file_deps = len(
+        [item for item in file_dependencies if not item.allowlisted]
+    )
+
     exit_code = _resolve_exit_code(
         duplicate_count=len(duplicates),
         broken_count=len(broken_references),
         orphan_count=len(orphans),
+        unallowlisted_file_dependency_count=unallowlisted_file_deps,
     )
 
     summary = LinkDiagnosticsSummary(
@@ -538,6 +609,8 @@ def run_link_diagnostics(
         external_references=len(external_references),
         parse_failed_candidates=len(parse_failed_candidates),
         orphans=len(orphans),
+        file_dependencies=len(file_dependencies),
+        unallowlisted_file_dependencies=unallowlisted_file_deps,
     )
 
     timings_ms["total"] = _elapsed_ms(total_start)
@@ -554,6 +627,7 @@ def run_link_diagnostics(
         orphans=orphans,
         load_warnings=load_result.issues,
         timings_ms=timings_ms,
+        file_dependencies=file_dependencies,
     )
 
 
@@ -637,8 +711,16 @@ def _extract_reference_value(message: str) -> Optional[str]:
     return match.group(1)
 
 
-def _resolve_exit_code(duplicate_count: int, broken_count: int, orphan_count: int) -> int:
-    if duplicate_count > 0 or broken_count > 0:
+def _resolve_exit_code(
+    duplicate_count: int,
+    broken_count: int,
+    orphan_count: int,
+    unallowlisted_file_dependency_count: int = 0,
+) -> int:
+    # (#134) Unallowlisted resolved-on-disk deps preserve the pre-rebucketing
+    # exit-1 semantics for unconfigured repos; allowlisted ones never drive
+    # exit codes.
+    if duplicate_count > 0 or broken_count > 0 or unallowlisted_file_dependency_count > 0:
         return 1
     if orphan_count > 0:
         return 2

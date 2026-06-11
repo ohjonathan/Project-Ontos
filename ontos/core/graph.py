@@ -29,6 +29,10 @@ DESCRIBES_SEVERITY_DEFAULT = "warning"
 # verify-frontmatter and link-check share the same severity floor.
 OUT_OF_SCOPE_DEPENDENCY_SEVERITY = "warning"
 
+# (#134) Resolved-on-disk deps matching allowed_external_dependency_paths
+# are intentional doc-to-file edges, not graph damage.
+EXTERNAL_FILE_DEPENDENCY_SEVERITY = "info"
+
 
 def _looks_like_path(dep_id: str) -> bool:
     # A pure doc-id never contains a path separator or '.md' suffix.
@@ -41,14 +45,19 @@ def _resolve_depends_on_path(
     docs_by_resolved_path: Dict[Path, str],
     workspace_root: Optional[Path],
     workspace_root_resolved: Optional[Path],
-) -> Tuple[Optional[str], Optional[Path]]:
+) -> Tuple[Optional[str], Optional[Path], Optional[Path]]:
     """Try to resolve a `depends_on` entry as a filesystem path.
 
-    Returns (resolved_doc_id, external_path):
-        (id, None) — path resolved to a loaded doc; caller treats as a graph edge.
-        (None, p)  — path exists on disk inside the workspace but is not loaded;
-                      caller treats as an out-of-scope dependency (warning).
-        (None, None) — no path resolution OR resolved path escapes the
+    Returns (resolved_doc_id, external_path, external_resolved):
+        (id, None, None) — path resolved to a loaded doc; caller treats as a
+                      graph edge.
+        (None, p, r) — path exists on disk inside the workspace but is not
+                      loaded; caller treats as an out-of-scope dependency
+                      (warning). `p` is the matched candidate (kept for
+                      message stability), `r` its fully resolved form —
+                      allowlist checks must use `r` so symlinked candidates
+                      cannot dodge or false-match patterns (#134).
+        (None, None, None) — no path resolution OR resolved path escapes the
                        workspace; caller falls back to broken-link.
 
     Containment: any candidate whose resolved path (with symlinks followed)
@@ -58,7 +67,7 @@ def _resolve_depends_on_path(
     must not leak filesystem state through the activation warnings channel.
     """
     if workspace_root is None or not _looks_like_path(dep_id):
-        return None, None
+        return None, None, None
 
     candidates: List[Path] = []
     raw = Path(dep_id)
@@ -80,10 +89,10 @@ def _resolve_depends_on_path(
             except ValueError:
                 continue
         if resolved in docs_by_resolved_path:
-            return docs_by_resolved_path[resolved], None
+            return docs_by_resolved_path[resolved], None, None
         if candidate.exists():
-            return None, candidate
-    return None, None
+            return None, candidate, resolved
+    return None, None, None
 
 
 @dataclass
@@ -116,6 +125,7 @@ def build_graph(
     docs: Dict[str, DocumentData],
     severity_map: Optional[Dict[str, str]] = None,
     workspace_root: Optional[Path] = None,
+    allowed_external_dependency_paths: Optional[Sequence[str]] = None,
 ) -> Tuple[DependencyGraph, List[ValidationError]]:
     """Build dependency graph from document dictionary.
 
@@ -128,6 +138,10 @@ def build_graph(
             before being reported as broken (#117). Loaded-doc-path matches
             become normal edges; existing-but-not-loaded paths become a
             soft OUT_OF_SCOPE_DEPENDENCY warning instead of a hard error.
+        allowed_external_dependency_paths: (#134) Workspace-relative globs;
+            a resolved-on-disk dep matching one is reported as an
+            EXTERNAL_FILE_DEPENDENCY at info severity instead of an
+            out-of-scope warning.
 
     Returns:
         Tuple of (DependencyGraph, list of broken/out-of-scope link errors)
@@ -144,6 +158,10 @@ def build_graph(
     out_of_scope_severity = severity_map.get(
         "out_of_scope_dependency", OUT_OF_SCOPE_DEPENDENCY_SEVERITY
     )
+    external_file_severity = severity_map.get(
+        "external_file_dependency", EXTERNAL_FILE_DEPENDENCY_SEVERITY
+    )
+    external_allowlist = list(allowed_external_dependency_paths or [])
 
     # (#135) One suggestion index per build, with results memoized per unique
     # dep value — the same broken target declared from many docs used to
@@ -178,29 +196,67 @@ def build_graph(
                 resolved_depends_on.append(dep_id)
                 continue
 
-            resolved_id, external_path = _resolve_depends_on_path(
+            resolved_id, external_path, external_resolved = _resolve_depends_on_path(
                 dep_id, doc, docs_by_resolved_path, workspace_root, workspace_root_resolved
             )
             if resolved_id is not None:
                 resolved_depends_on.append(resolved_id)
                 continue
             if external_path is not None:
-                errors.append(ValidationError(
-                    error_type=ValidationErrorType.OUT_OF_SCOPE_DEPENDENCY,
-                    doc_id=doc_id,
-                    filepath=str(doc.filepath),
-                    message=(
-                        f"External dependency resolved from disk: '{dep_id}' "
-                        f"(declared in {doc_id}) exists at "
-                        f"'{external_path}' but is not a loaded document."
-                    ),
-                    fix_suggestion=(
-                        "If the target should be tracked as a doc, add an "
-                        "Ontos frontmatter id; otherwise this can be left as a "
-                        "soft external reference."
-                    ),
-                    severity=out_of_scope_severity,
-                ))
+                rel_posix: Optional[str] = None
+                if external_resolved is not None and workspace_root_resolved is not None:
+                    try:
+                        rel_posix = external_resolved.relative_to(
+                            workspace_root_resolved
+                        ).as_posix()
+                    except ValueError:
+                        rel_posix = None
+                allowlisted = bool(
+                    external_allowlist
+                    and rel_posix is not None
+                    and _path_matches_allowlist(rel_posix, external_allowlist)
+                )
+                if allowlisted:
+                    errors.append(ValidationError(
+                        error_type=ValidationErrorType.EXTERNAL_FILE_DEPENDENCY,
+                        doc_id=doc_id,
+                        filepath=str(doc.filepath),
+                        message=(
+                            f"External file dependency (allowlisted): '{dep_id}' "
+                            f"(declared in {doc_id}) resolved to '{rel_posix}'."
+                        ),
+                        fix_suggestion="",
+                        severity=external_file_severity,
+                        context={
+                            "dep_value": dep_id,
+                            "resolved_path": rel_posix,
+                            "allowlisted": True,
+                        },
+                    ))
+                else:
+                    errors.append(ValidationError(
+                        error_type=ValidationErrorType.OUT_OF_SCOPE_DEPENDENCY,
+                        doc_id=doc_id,
+                        filepath=str(doc.filepath),
+                        message=(
+                            f"External dependency resolved from disk: '{dep_id}' "
+                            f"(declared in {doc_id}) exists at "
+                            f"'{external_path}' but is not a loaded document."
+                        ),
+                        fix_suggestion=(
+                            "If the target should be tracked as a doc, add an "
+                            "Ontos frontmatter id; otherwise this can be left as a "
+                            "soft external reference."
+                        ),
+                        severity=out_of_scope_severity,
+                        context={
+                            "dep_value": dep_id,
+                            "resolved_path": (
+                                rel_posix if rel_posix is not None else str(external_path)
+                            ),
+                            "allowlisted": False,
+                        },
+                    ))
                 continue
 
             if dep_id not in suggestion_memo:

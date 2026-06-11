@@ -280,3 +280,107 @@ def test_to_data_payload_summary_and_limit_modes(tmp_path: Path):
     assert summary["mode"] == "summary"
     assert summary["broken_references"] == []
     assert summary["summary"]["broken_references"] == 2
+
+
+# =============================================================================
+# (#134) file_dependencies re-bucketing and exit codes
+# =============================================================================
+
+
+def _file_dep_project(tmp_path: Path, allowlist: str = "") -> None:
+    extra = ""
+    if allowlist:
+        extra = f"\n[validation]\nallowed_external_dependency_paths={allowlist}\n"
+    _init_project(tmp_path, extra_config=extra)
+    (tmp_path / "apps").mkdir(exist_ok=True)
+    (tmp_path / "apps" / "real.py").write_text("code", encoding="utf-8")
+    (tmp_path / "tools").mkdir(exist_ok=True)
+    (tmp_path / "tools" / "other.py").write_text("code", encoding="utf-8")
+
+
+def test_allowlisted_file_dep_rebucketed_and_exit_0(tmp_path: Path):
+    _file_dep_project(tmp_path, allowlist="['apps/**']")
+    _write_doc(
+        tmp_path / "docs" / "handoff.md",
+        "handoff_doc",
+        depends_on="[apps/real.py]",
+    )
+
+    result = _run(tmp_path, ScanScope.LIBRARY)
+
+    assert result.summary.file_dependencies == 1
+    assert result.summary.unallowlisted_file_dependencies == 0
+    assert result.summary.broken_references == 0
+    assert result.summary.broken_frontmatter == 0
+    assert result.exit_code == 0
+    item = result.file_dependencies[0]
+    assert item.allowlisted is True
+    assert item.value == "apps/real.py"
+    assert item.resolved_path == "apps/real.py"
+    assert item.severity == "info"
+
+
+def test_unallowlisted_file_dep_keeps_exit_1(tmp_path: Path):
+    _file_dep_project(tmp_path, allowlist="['apps/**']")
+    _write_doc(
+        tmp_path / "docs" / "handoff.md",
+        "handoff_doc",
+        depends_on="[tools/other.py]",
+    )
+
+    result = _run(tmp_path, ScanScope.LIBRARY)
+
+    assert result.summary.file_dependencies == 1
+    assert result.summary.unallowlisted_file_dependencies == 1
+    assert result.summary.broken_references == 0
+    assert result.exit_code == 1
+
+
+def test_unconfigured_repo_file_dep_still_exit_1(tmp_path: Path):
+    # No allowlist configured: resolved-on-disk deps move buckets but keep
+    # the historical exit-1 semantics.
+    _file_dep_project(tmp_path)
+    _write_doc(
+        tmp_path / "docs" / "handoff.md",
+        "handoff_doc",
+        depends_on="[apps/real.py]",
+    )
+
+    result = _run(tmp_path, ScanScope.LIBRARY)
+
+    assert result.summary.unallowlisted_file_dependencies == 1
+    assert result.exit_code == 1
+
+
+def test_missing_dep_still_broken_reference(tmp_path: Path):
+    _file_dep_project(tmp_path, allowlist="['apps/**']")
+    _write_doc(
+        tmp_path / "docs" / "handoff.md",
+        "handoff_doc",
+        depends_on="[apps/missing.py]",
+    )
+
+    result = _run(tmp_path, ScanScope.LIBRARY)
+
+    assert result.summary.file_dependencies == 0
+    assert result.summary.broken_references == 1
+    assert result.exit_code == 1
+
+
+def test_to_data_payload_includes_file_dependencies(tmp_path: Path):
+    _file_dep_project(tmp_path, allowlist="['apps/**']")
+    _write_doc(
+        tmp_path / "docs" / "handoff.md",
+        "handoff_doc",
+        depends_on="[apps/real.py, tools/other.py]",
+    )
+
+    result = _run(tmp_path, ScanScope.LIBRARY)
+    payload = result.to_data_payload()
+
+    assert payload["summary"]["file_dependencies"] == 2
+    assert payload["summary"]["unallowlisted_file_dependencies"] == 1
+    items = {item["value"]: item for item in payload["file_dependencies"]}
+    assert items["apps/real.py"]["allowlisted"] is True
+    assert items["tools/other.py"]["allowlisted"] is False
+    assert items["tools/other.py"]["field"] == "depends_on"

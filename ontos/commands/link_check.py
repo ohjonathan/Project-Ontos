@@ -141,6 +141,11 @@ def _emit_human_report(
     print("Summary")
     print(f"  duplicate_ids: {result.summary.duplicate_ids}")
     print(f"  broken_references: {result.summary.broken_references}")
+    print(f"  file_dependencies: {result.summary.file_dependencies}")
+    print(
+        "  unallowlisted_file_dependencies: "
+        f"{result.summary.unallowlisted_file_dependencies}"
+    )
     print(f"  external_references: {result.summary.external_references}")
     print(f"  parse_failed_candidates: {result.summary.parse_failed_candidates}")
     print(f"  orphans: {result.summary.orphans}")
@@ -150,6 +155,7 @@ def _emit_human_report(
     if not summary_only:
         _emit_duplicates(result, limit=limit)
         _emit_broken_by_field(result, limit=limit)
+        _emit_file_dependencies(result, limit=limit)
         _emit_external_refs(result, limit=limit)
         _emit_parse_failed_candidates(result, limit=limit)
         _emit_suggestions(result, limit=limit)
@@ -213,6 +219,23 @@ def _emit_broken_by_field(result: LinkDiagnosticsResult, limit: Optional[int] = 
             print(base)
         if hidden:
             print(f"    ... and {hidden} more")
+    print()
+
+
+def _emit_file_dependencies(result: LinkDiagnosticsResult, limit: Optional[int] = None) -> None:
+    if not result.file_dependencies:
+        return
+    print("File Dependencies (resolved on disk)")
+    visible, hidden = _capped(result.file_dependencies, limit)
+    for item in visible:
+        marker = "allowlisted" if item.allowlisted else "review"
+        print(
+            "  - "
+            f"{item.source_doc_id} [{item.field}] -> {item.value} "
+            f"[{marker}] ({item.resolved_path})"
+        )
+    if hidden:
+        print(f"  ... and {hidden} more")
     print()
 
 

@@ -484,6 +484,70 @@ def test_link_check_json_and_quiet_keep_stderr_silent(tmp_path: Path):
     assert quiet_run.stderr.strip() == ""
 
 
+# =============================================================================
+# (#134) file_dependencies bucket in CLI JSON
+# =============================================================================
+
+
+def test_link_check_json_file_dependencies_bucket(tmp_path: Path):
+    _init_repo(
+        tmp_path,
+        extra_config=(
+            "\n[validation]\n"
+            "allowed_orphan_types=['atom']\n"
+            "allowed_external_dependency_paths=['apps/**']\n"
+        ),
+    )
+    (tmp_path / "apps").mkdir()
+    (tmp_path / "apps" / "real.py").write_text("code", encoding="utf-8")
+    (tmp_path / "tools").mkdir()
+    (tmp_path / "tools" / "other.py").write_text("code", encoding="utf-8")
+    _write_doc(
+        tmp_path / "docs" / "handoff.md",
+        "handoff_doc",
+        depends_on="[apps/real.py, tools/other.py]",
+    )
+
+    result = _run_ontos(tmp_path, "--json", "link-check")
+    envelope = json.loads(result.stdout)
+    data = envelope["data"]
+
+    assert data["summary"]["file_dependencies"] == 2
+    assert data["summary"]["unallowlisted_file_dependencies"] == 1
+    assert data["summary"]["broken_references"] == 0
+    assert data["summary"]["broken_frontmatter"] == 0
+    items = {item["value"]: item for item in data["file_dependencies"]}
+    assert items["apps/real.py"]["allowlisted"] is True
+    assert items["apps/real.py"]["severity"] == "info"
+    assert items["tools/other.py"]["allowlisted"] is False
+    # The unallowlisted file dep preserves exit-1 semantics.
+    assert result.returncode == envelope["exit_code"] == 1
+
+
+def test_link_check_all_allowlisted_file_deps_exit_0(tmp_path: Path):
+    _init_repo(
+        tmp_path,
+        extra_config=(
+            "\n[validation]\n"
+            "allowed_orphan_types=['atom']\n"
+            "allowed_external_dependency_paths=['apps/**']\n"
+        ),
+    )
+    (tmp_path / "apps").mkdir()
+    (tmp_path / "apps" / "real.py").write_text("code", encoding="utf-8")
+    _write_doc(
+        tmp_path / "docs" / "handoff.md",
+        "handoff_doc",
+        depends_on="[apps/real.py]",
+    )
+
+    result = _run_ontos(tmp_path, "--json", "link-check")
+    envelope = json.loads(result.stdout)
+
+    assert result.returncode == envelope["exit_code"] == 0
+    assert envelope["data"]["result_status"] == "clean"
+
+
 def test_link_check_json_invalid_limit_keeps_envelope(tmp_path: Path):
     """(#139 review) --limit < 1 must fail inside the JSON envelope."""
     _init_repo(tmp_path)

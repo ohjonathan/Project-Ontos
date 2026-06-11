@@ -99,6 +99,10 @@ class ValidationErrorType(Enum):
     # the target is not a loaded doc — treat as a soft external dependency
     # rather than a hard broken-link error.
     OUT_OF_SCOPE_DEPENDENCY = "out_of_scope_dependency"
+    # (#134) Same resolution as OUT_OF_SCOPE_DEPENDENCY but the path matches
+    # the project's allowed_external_dependency_paths allowlist — an
+    # intentional doc-to-file edge, reported at info severity.
+    EXTERNAL_FILE_DEPENDENCY = "external_file_dependency"
 
 
 # =============================================================================
@@ -130,6 +134,12 @@ class ValidationError:
     message: str
     fix_suggestion: str
     severity: str  # 'error', 'warning', 'info'
+    # (#134) Structured machine context (e.g. dep_value / resolved_path /
+    # allowlisted) so consumers never parse messages. Deliberately NOT
+    # serialized by to_dict(): the public record shape {severity, message,
+    # rule_id, document_id, file_path} is asserted byte-for-byte by CLI/MCP
+    # parity tests and must stay stable.
+    context: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         record: Dict[str, Any] = {"severity": self.severity, "message": self.message}
@@ -148,6 +158,9 @@ class ValidationResult:
     """Result of running all validations."""
     errors: List[ValidationError] = field(default_factory=list)
     warnings: List[ValidationError] = field(default_factory=list)
+    # (#134) Info-severity records (e.g. allowlisted external file deps) are
+    # kept out of warnings so they never flip activation status.
+    infos: List[ValidationError] = field(default_factory=list)
 
     @property
     def exit_code(self) -> int:
@@ -157,6 +170,8 @@ class ValidationResult:
         """Add an error to the result."""
         if error.severity == "error":
             self.errors.append(error)
+        elif error.severity == "info":
+            self.infos.append(error)
         else:
             self.warnings.append(error)
 

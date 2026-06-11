@@ -238,12 +238,15 @@ def test_check_links_task_uses_shared_link_diagnostics(tmp_path, monkeypatch):
             external_references=[],
             parse_failed_candidates=[],
             orphans=[],
+            file_dependencies=[],
             summary=SimpleNamespace(
                 broken_references=0,
                 orphans=0,
                 external_references=0,
                 duplicate_ids=0,
                 load_warnings=0,
+                file_dependencies=0,
+                unallowlisted_file_dependencies=0,
             ),
         )
 
@@ -576,3 +579,25 @@ def test_promote_check_excludes_non_ready_from_ready_count(tmp_path, monkeypatch
     assert "1 ready for promotion" in result.message
     assert "2 candidates" in result.message
 
+
+
+def test_check_links_task_reports_unallowlisted_file_dependencies(tmp_path):
+    """(#140 review) Exit 1 caused by unallowlisted file deps must name the
+    cause in the message and list the offending deps in details."""
+    _init_project(tmp_path)
+    (tmp_path / "tools").mkdir()
+    (tmp_path / "tools" / "real.py").write_text("code", encoding="utf-8")
+    (tmp_path / "docs" / "handoff.md").write_text(
+        "---\nid: handoff_doc\ntype: atom\nstatus: active\n"
+        "depends_on: [tools/real.py]\n---\n",
+        encoding="utf-8",
+    )
+
+    ctx = _build_context(tmp_path, quiet=True)
+    result = _task_check_links(ctx)
+
+    assert result.status == "failed"
+    assert result.metrics["broken_links"] == 0
+    assert result.metrics["unallowlisted_file_dependencies"] == 1
+    assert "unallowlisted_file_deps=1" in result.message
+    assert any("tools/real.py" in line for line in result.details)
