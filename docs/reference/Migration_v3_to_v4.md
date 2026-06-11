@@ -58,6 +58,7 @@ pip install 'ontos[mcp]'    # Adds mcp>=1.27.0 and pydantic>=2.0
 | `query` | Dependency details for a single document |
 | `health` | Server uptime, document count, index freshness, version |
 | `refresh` | Force cache rebuild after bulk changes |
+| `list_validation_warnings` | Paginated full validation warning records, filterable by rule/severity (v4.7) |
 
 ### Additional MCP Tools (v4.1+)
 
@@ -90,7 +91,7 @@ All write tools use advisory flock locking (`workspace_lock()`) for cross-proces
 
 All tools are read-only except `export_graph` with `export_to_file` (writes within workspace root) and the write tools above. In read-only mode, use the CLI fallback `ontos log -e "slug"` for session archives.
 
-### v4.4-v4.6 Activation and Diagnostics
+### v4.4-v4.7 Activation and Diagnostics
 
 `ontos activate` is additive and safe for existing workflows. It refreshes the context map when possible, returns `usable`, `usable_with_warnings`, or `not_usable`, and exits non-zero only when no actionable context can be produced.
 
@@ -108,6 +109,8 @@ Frontmatter diagnostics now include path, line when available, field, observed v
 v4.5 makes common lifecycle artifact tagging first-class. In addition to the core `kernel`, `strategy`, `product`, `atom`, and `log` hierarchy, Ontos accepts `reference`, `concept`, `handoff`, `tracker`, `retro`, `review`, `spec`, `report`, `adr`, and `policy`. Lifecycle workflow statuses such as `proposed`, `ready`, `completed`, `revised`, and `in-lifecycle` are also accepted so review and handoff documents keep their source semantics.
 
 v4.6 changes only the `activate --json` validation payload shape. `payload.data.validation.warnings` and `payload.data.validation.errors` are now lists of objects carrying `severity`, `message`, and, when available, `rule_id`, `document_id`, and `file_path`. Consumers that previously expected `list[str]` should read `record["message"]`.
+
+v4.7 groups activation warnings by default: `data.validation.warnings` is `[]` unless you pass `--warnings full`, with grouped summaries in `warning_groups` and totals in `warnings_total`/`warnings_truncated` (`validation.errors` is always complete). `link-check --json` now emits the standard command envelope — read counts from `.data.summary` and result quality from `.data.result_status`; shell exit codes are unchanged, and `schema_version` is `3.4`. Resolved-on-disk `depends_on` targets move from broken references to `data.file_dependencies`, controllable via `[validation] allowed_external_dependency_paths` (note: ontos ≤ 4.6.0 rejects configs containing this key — upgrade every CLI install before adopting it).
 
 ### File-Mtime Cache Invalidation
 

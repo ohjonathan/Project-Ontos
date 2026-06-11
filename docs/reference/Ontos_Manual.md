@@ -108,7 +108,7 @@ Say **"Ontos"** to your AI agent. It will:
 3. Load relevant files based on your request
     print("Loaded: [id1, id2]")
 
-`ontos activate --json` returns `usable`, `usable_with_warnings`, or `not_usable`. Warnings are non-blocking when the command can still produce actionable context.
+`ontos activate --json` returns `usable`, `usable_with_warnings`, or `not_usable`. Warnings are non-blocking when the command can still produce actionable context. Since v4.7 warnings are grouped by rule by default (`warning_groups` with counts and bounded samples); use `--warnings full` for inline records, `--warning-rule <rule_id>` to filter, and `--limit N` to cap inline output. The MCP equivalent pages full records through the `list_validation_warnings` tool.
     
 ### Query Graph
 Say **"Query Ontos"** to find connections:
@@ -654,7 +654,7 @@ ontos env --write --force
 -   **Node.js:** `package.json`
 -   **Generic:** `.tool-versions` (asdf), `Makefile`, `Dockerfile`
 
-### 10.2 Link Check (v3.3)
+### 10.2 Link Check (v3.3, expanded v4.7)
 
 The `link-check` command scans all documents for broken references, duplicate IDs, and orphaned documents.
 
@@ -662,18 +662,43 @@ The `link-check` command scans all documents for broken references, duplicate ID
 # Check for broken references
 ontos link-check
 
-# JSON output for CI
+# JSON output for CI (standard envelope since v4.7; counts under .data.summary)
 ontos link-check --json
 
 # Limit scan scope
 ontos link-check --scope docs
+
+# v4.7 output controls
+ontos link-check --summary            # counters only, skips suggestions
+ontos link-check --limit 20           # cap each findings list (JSON and human)
+ontos link-check --no-suggestions     # skip fix-suggestion generation
+ontos link-check --frontmatter-only   # skip body reference scanning
+ontos link-check --no-orphans         # skip orphan detection (removes exit 2)
 ```
+
+Since v4.7 the JSON output uses the standard command envelope: top-level
+`status` is transport status, result quality lives in `data.result_status`
+(`clean` | `warnings` | `failing`), and per-phase timings appear under
+`data.timings_ms`. Shell exit codes are unchanged.
+
+`depends_on` entries that resolve to real files outside the doc scope are
+reported under `data.file_dependencies` instead of broken references. Mark
+intentional doc-to-file edges with workspace-relative globs:
+
+```toml
+[validation]
+allowed_external_dependency_paths = ["apps/**", "manifests/**"]
+```
+
+Allowlisted entries become info-severity `external_file_dependency` records
+and never affect exit codes; unallowlisted ones keep the historical exit-1
+behavior.
 
 **Exit codes:**
 | Code | Meaning |
 |------|---------|
 | `0`  | No issues found |
-| `1`  | Broken references or duplicates detected |
+| `1`  | Broken references, duplicates, or unallowlisted file dependencies detected |
 | `2`  | Orphan-only findings (no broken references or duplicates) |
 
 ### 10.3 Rename (v3.3)
@@ -816,6 +841,7 @@ The managed MCP client config is separate from repo-local instruction artifacts 
 | `context_map` | Full context map markdown | `compact`: basic, rich, tiered, or full |
 | `get_document` | Read one document with full frontmatter and metadata | `document_id` or `path`, `include_content` |
 | `list_documents` | Paginated listing of canonical documents | `type`, `status`, `offset`, `limit` |
+| `list_validation_warnings` | Paginated full validation warning records (v4.7) | `rule_id`, `severity`, `offset`, `limit` |
 | `export_graph` | Structured graph export (nodes, edges, summary) | `summary_only`, `export_to_file` |
 | `query` | Dependency details for a single document | `entity_id` |
 | `health` | Server uptime, document count, index freshness | — |
