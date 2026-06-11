@@ -363,9 +363,9 @@ The managed MCP client config is separate from repo-local instruction artifacts 
 
 ### 4. Available Tools
 
-The MCP server exposes up to 17 tools depending on server flags:
+The MCP server exposes up to 18 tools depending on server flags:
 
-**Core (10 tools — always available):**
+**Core (11 tools — always available):**
 
 | Tool | Purpose | Read-only |
 |------|---------|:---------:|
@@ -374,6 +374,7 @@ The MCP server exposes up to 17 tools depending on server flags:
 | `context_map` | Full context map (supports compact modes) | ✅ |
 | `get_document` | Read one document by ID or path | ✅ |
 | `list_documents` | Paginated listing with type/status filters | ✅ |
+| `list_validation_warnings` | Paginated full validation warning records (filter by rule/severity) — v4.7 | ✅ |
 | `export_graph` | Structured graph export (optional file output) | ⚠️ |
 | `query` | Dependency details for a single document | ✅ |
 | `health` | Server uptime, document count, version | ✅ |

@@ -7,8 +7,8 @@ depends_on: [ontos_manual]
 
 # Ontos Agent Instructions
 
-> **v4.3:** All CLI commands use `ontos <command>` (package installed via pip).
-> Agents can also connect via MCP server (`ontos serve`) for native integration — up to 15 tools including 4 write tools and portfolio search.
+> **v4.7:** All CLI commands use `ontos <command>` (package installed via pip).
+> Agents can also connect via MCP server (`ontos serve`) for native integration — up to 18 tools including 5 write tools and portfolio search.
 > `ontos retrofit --obsidian` is the CLI write path for landing computed `tags` and `aliases` into on-disk frontmatter for Obsidian.
 > Use `python3 -m ontos <command>` if not installed globally.
 > See [Ontos Manual](Ontos_Manual.md) for details.
@@ -35,7 +35,7 @@ ontos init --no-scaffold # Skip scaffold prompt
 If the IDE supports MCP and the Ontos server is configured:
 
 1. The IDE connects to `ontos serve` automatically on startup
-2. Call `activate` first; it marks the MCP session activated and returns status plus loaded IDs
+2. Call `activate` first; it marks the MCP session activated and returns status, loaded IDs, and grouped warning summaries (v4.7) — page full warning records with `list_validation_warnings` when needed
 3. Use `workspace_overview` to get project orientation (key documents, graph stats)
 4. Use `get_document` to read specific documents by ID
 5. Use `context_map` for the full context narrative
@@ -52,6 +52,7 @@ If a read tool is used before `activate`, the server includes `_ontos_warning` i
 | `context_map` | Full context map (supports compact modes) |
 | `get_document` | Read one document by ID or path |
 | `list_documents` | Browse documents with type/status filters |
+| `list_validation_warnings` | Page full validation warning records by rule/severity (v4.7) |
 | `export_graph` | Structured graph export |
 | `query` | Dependency details for one document |
 | `health` | Server health and index freshness |
