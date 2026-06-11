@@ -221,3 +221,50 @@ def test_query_health_connectivity_with_kernel_docs(fixture_repo: Path) -> None:
     assert query_data["kernel_docs"] == 1
     assert query_data["connectivity"] is not None
     assert query_data["connectivity_basis"] == "reverse_reachability_from_kernel"
+
+
+def test_external_dependent_orphan_divergence_is_labeled(fixture_repo: Path) -> None:
+    """(#133 review) A docs-scope orphan depended on from .ontos-internal is
+    filtered by link-check but not by activate/query (which never load the
+    external scope). The counts legitimately differ — and link-check must
+    LABEL its basis so the difference is explained, not contradictory."""
+    _write(
+        fixture_repo / ".ontos-internal/internal_doc.md",
+        """
+        ---
+        id: internal_doc
+        type: atom
+        status: active
+        depends_on: [strategy_orphan]
+        ---
+        Internal body.
+        """,
+    )
+
+    activate = _payload(_run(fixture_repo, "--json", "activate", "--warnings", "full"))
+    link_check = _payload(_run(fixture_repo, "--json", "link-check"))
+    query = _payload(_run(fixture_repo, "--json", "query", "--health"))
+
+    activate_orphans = [
+        w for w in activate["data"]["validation"]["warnings"]
+        if w.get("rule_id") == "orphan"
+    ]
+    query_data = query["data"]["results"] if "results" in query["data"] else query["data"]
+
+    # activate/query still see the orphan (docs scope only)...
+    assert len(activate_orphans) == 1
+    assert query_data["orphans"] == 1
+    # ...link-check filters it because an internal doc depends on it,
+    # and says so via its basis label.
+    assert link_check["data"]["summary"]["orphans"] == 0
+    assert link_check["data"]["count_basis"]["orphans"] == (
+        "graph_validation_excluding_external_dependents"
+    )
+
+
+def test_human_health_output_carries_basis_labels(fixture_repo: Path) -> None:
+    """(#133 review) The text report mirrors the JSON basis labels."""
+    result = _run(fixture_repo, "query", "--health")
+    assert result.returncode == 0
+    assert "Orphans: 1 (allowed types: atom)" in result.stdout
+    assert "Count basis: graph_validation" in result.stdout

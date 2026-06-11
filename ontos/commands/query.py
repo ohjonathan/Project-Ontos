@@ -170,10 +170,16 @@ def format_health(health: dict) -> str:
         connectivity_line = (
             f"Connectivity: {health['connectivity']:.1f}% reachable from kernel"
         )
+    # (#133 review) Mirror the JSON basis labels so the human report also
+    # says which pipeline produced the counts.
+    allowed_types = health.get('allowed_orphan_types')
+    orphan_line = f"Orphans: {health['orphans']}"
+    if allowed_types is not None:
+        orphan_line += f" (allowed types: {', '.join(allowed_types) or 'none'})"
     lines.extend([
         "",
         connectivity_line,
-        f"Orphans: {health['orphans']}",
+        orphan_line,
         f"Cycles: {health.get('cycles', 0)}",
     ])
 
@@ -193,7 +199,10 @@ def format_health(health: dict) -> str:
     
     if health['empty_impact_ids']:
         lines.append(f"  → {', '.join(health['empty_impact_ids'])}")
-    
+
+    if health.get('count_basis'):
+        lines.append(f"Count basis: {health['count_basis']}")
+
     return '\n'.join(lines)
 
 

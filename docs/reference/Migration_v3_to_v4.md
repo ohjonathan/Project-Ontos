@@ -7,7 +7,7 @@ depends_on: [ontos_manual]
 
 # Migration Guide: v3.x → v4.x
 
-This guide covers the new capabilities in Ontos v4.0 through v4.6 and how to enable them. Existing CLI commands, configuration, and frontmatter files remain supported. The one machine-contract change is in v4.6: `ontos activate --json` now emits structured validation issue objects instead of bare warning/error strings.
+This guide covers the new capabilities in Ontos v4.0 through v4.7 and how to enable them. Existing CLI commands, configuration, and frontmatter files remain supported. Machine-contract changes: v4.6 made `ontos activate --json` emit structured validation issue objects instead of bare warning/error strings; v4.7 wraps `ontos link-check --json` in the standard command envelope (shell exit codes unchanged) and returns grouped activation warnings by default (`--warnings full` restores inline records).
 
 ## What's New in v4.0
 

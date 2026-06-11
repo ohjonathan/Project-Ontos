@@ -169,10 +169,15 @@ class TestRepoRootDiscovery:
 
         assert config.paths.docs_dir == "documents"
 
-    def test_cwd_ancestor_config_not_picked_up_for_named_root(self, tmp_path, monkeypatch):
-        # An unrelated config above CWD must not leak into a repo_root load.
+    def test_ancestor_config_never_leaks_into_named_root(self, tmp_path, monkeypatch):
+        """(#133 review) A repo_root WITHOUT its own .ontos.toml gets pure
+        defaults — never an ancestor's config. Verified leak before the fix:
+        a child repo inherited the parent's allowed_orphan_types, changing
+        query --health orphan counts."""
         (tmp_path / CONFIG_FILENAME).write_text(
-            "[ontos]\nversion = '3.0'\n\n[paths]\ndocs_dir = 'WRONG'\n",
+            "[ontos]\nversion = '3.0'\n\n"
+            "[validation]\nallowed_orphan_types = ['kernel']\n\n"
+            "[paths]\ndocs_dir = 'WRONG'\n",
             encoding="utf-8",
         )
         project = tmp_path / "nested" / "project"
@@ -181,10 +186,11 @@ class TestRepoRootDiscovery:
 
         config = load_project_config(repo_root=project)
 
-        # project has no config -> defaults, NOT the ancestor's docs_dir...
-        # discovery from repo_root walks up too, so the ancestor IS found by
-        # upward search; the guarantee is that discovery STARTS at repo_root.
-        # For a project with its own config, the project config wins:
+        # Pure defaults — the ancestor's values must not appear.
+        assert config.paths.docs_dir == "docs"
+        assert config.validation.allowed_orphan_types == ["atom", "log"]
+
+        # With its own config, the project config wins:
         (project / CONFIG_FILENAME).write_text(
             "[ontos]\nversion = '3.0'\n\n[paths]\ndocs_dir = 'RIGHT'\n",
             encoding="utf-8",

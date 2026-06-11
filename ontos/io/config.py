@@ -41,11 +41,18 @@ def load_project_config(
         ConfigError: If config file exists but is malformed
     """
     if config_path is None:
-        # (#133) When the caller names a repo root, discovery starts there —
-        # previously discovery always walked up from CWD, so the same command
-        # could silently load an unrelated ancestor config when invoked from
-        # outside the project.
-        config_path = find_config(repo_root) if repo_root is not None else find_config()
+        # (#133) When the caller names a repo root, that root IS the project:
+        # use exactly repo_root/.ontos.toml or defaults. No upward walk —
+        # discovery above repo_root silently inherited an unrelated ancestor
+        # config (verified leak: a child repo without .ontos.toml picked up
+        # the parent's allowed_orphan_types, changing orphan counts).
+        if repo_root is not None:
+            candidate = Path(repo_root) / CONFIG_FILENAME
+            if not candidate.exists():
+                return default_config()
+            config_path = candidate
+        else:
+            config_path = find_config()
 
     if config_path is None:
         return default_config()
