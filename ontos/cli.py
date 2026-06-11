@@ -1041,8 +1041,7 @@ def _cmd_link_check(args) -> int:
     from ontos.commands.link_check import LinkCheckOptions, link_check_command
 
     limit = getattr(args, "limit", None)
-    if limit is not None and limit < 1:
-        print("Error: --limit must be >= 1")
+    if _reject_invalid_limit("link-check", args, limit):
         return 1
     options = LinkCheckOptions(
         scope=getattr(args, "scope", None),

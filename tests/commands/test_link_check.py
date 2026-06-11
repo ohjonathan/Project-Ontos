@@ -482,3 +482,36 @@ def test_link_check_json_and_quiet_keep_stderr_silent(tmp_path: Path):
 
     quiet_run = _run_ontos(tmp_path, "link-check", "--quiet")
     assert quiet_run.stderr.strip() == ""
+
+
+def test_link_check_json_invalid_limit_keeps_envelope(tmp_path: Path):
+    """(#139 review) --limit < 1 must fail inside the JSON envelope."""
+    _init_repo(tmp_path)
+    _write_doc(tmp_path / "docs" / "a.md", "a")
+
+    result = _run_ontos(tmp_path, "--json", "link-check", "--limit", "0")
+    assert result.returncode == 1
+    envelope = json.loads(result.stdout)
+    assert envelope["command"] == "link-check"
+    assert envelope["status"] == "error"
+    assert envelope["error"]["code"] == "E_USER_INPUT"
+
+    human = _run_ontos(tmp_path, "link-check", "--limit", "-1")
+    assert human.returncode == 1
+    assert "--limit must be >= 1" in human.stdout
+
+
+def test_link_check_human_output_respects_limit(tmp_path: Path):
+    """(#139 review) --limit bounds the human findings sections too."""
+    _broken_repo(tmp_path)  # 3 broken depends_on + 3 broken body refs
+
+    result = _run_ontos(tmp_path, "link-check", "--limit", "1")
+    out = result.stdout
+    assert "... and" in out  # capped sections advertise the remainder
+    # Only one depends_on finding line is printed.
+    depends_lines = [
+        line for line in out.splitlines()
+        if line.startswith("    - source_") and "missing_doc" in line
+    ]
+    # one for depends_on group + one for body group at most
+    assert len(depends_lines) <= 2

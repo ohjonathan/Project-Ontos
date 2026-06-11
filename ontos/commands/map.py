@@ -995,8 +995,12 @@ def map_command(options: MapOptions) -> int:
             "documents": len(docs),
             "errors": len(result.errors),
             "warnings": len(result.warnings),
+            # Derived from validation counts, not exit code: non-strict runs
+            # exit 0 with warnings present, and result_status must still say
+            # "warnings" (Codex review finding on #139).
             "result_status": (
-                "clean" if exit_code == 0 else ("warnings" if exit_code == 2 else "failing")
+                "failing" if result.errors
+                else ("warnings" if result.warnings else "clean")
             ),
             "strict": options.strict,
             "diagnostics": groups_to_payload(

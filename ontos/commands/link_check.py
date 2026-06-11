@@ -92,7 +92,11 @@ def link_check_command(options: LinkCheckOptions) -> int:
         )
     else:
         _emit_human_report(
-            result, roots=roots, quiet=options.quiet, summary_only=options.summary
+            result,
+            roots=roots,
+            quiet=options.quiet,
+            summary_only=options.summary,
+            limit=options.limit,
         )
 
     return result.exit_code
@@ -117,6 +121,7 @@ def _emit_human_report(
     roots: List[Path],
     quiet: bool,
     summary_only: bool = False,
+    limit: Optional[int] = None,
 ) -> None:
     if quiet:
         _emit_fatal_sections(result)
@@ -143,13 +148,13 @@ def _emit_human_report(
     print()
 
     if not summary_only:
-        _emit_duplicates(result)
-        _emit_broken_by_field(result)
-        _emit_external_refs(result)
-        _emit_parse_failed_candidates(result)
-        _emit_suggestions(result)
-        _emit_orphans(result)
-        _emit_load_warnings(result)
+        _emit_duplicates(result, limit=limit)
+        _emit_broken_by_field(result, limit=limit)
+        _emit_external_refs(result, limit=limit)
+        _emit_parse_failed_candidates(result, limit=limit)
+        _emit_suggestions(result, limit=limit)
+        _emit_orphans(result, limit=limit)
+        _emit_load_warnings(result, limit=limit)
     _emit_timings(result)
     print(_status_line(result))
 
@@ -168,18 +173,29 @@ def _emit_fatal_sections(result: LinkDiagnosticsResult) -> None:
     _emit_broken_by_field(result)
 
 
-def _emit_duplicates(result: LinkDiagnosticsResult) -> None:
+def _capped(items, limit):
+    """Return (visible_items, hidden_count) for a section cap (#135)."""
+    items = list(items)
+    if limit is None or len(items) <= limit:
+        return items, 0
+    return items[:limit], len(items) - limit
+
+
+def _emit_duplicates(result: LinkDiagnosticsResult, limit: Optional[int] = None) -> None:
     if not result.duplicates:
         return
     print("Duplicate IDs")
-    for doc_id, paths in sorted(result.duplicates.items()):
+    visible, hidden = _capped(sorted(result.duplicates.items()), limit)
+    for doc_id, paths in visible:
         print(f"  - {doc_id}")
         for path in paths:
             print(f"      {path}")
+    if hidden:
+        print(f"  ... and {hidden} more")
     print()
 
 
-def _emit_broken_by_field(result: LinkDiagnosticsResult) -> None:
+def _emit_broken_by_field(result: LinkDiagnosticsResult, limit: Optional[int] = None) -> None:
     if not result.broken_references:
         return
     grouped: Dict[str, List[object]] = defaultdict(list)
@@ -189,46 +205,56 @@ def _emit_broken_by_field(result: LinkDiagnosticsResult) -> None:
     print("Broken References")
     for field in sorted(grouped.keys()):
         print(f"  {field}")
-        for finding in grouped[field]:
+        visible, hidden = _capped(grouped[field], limit)
+        for finding in visible:
             base = f"    - {finding.source_doc_id}: {finding.value}"
             if finding.location is not None:
                 base += f" (line {finding.location.line}, {finding.location.match_type})"
             print(base)
+        if hidden:
+            print(f"    ... and {hidden} more")
     print()
 
 
-def _emit_external_refs(result: LinkDiagnosticsResult) -> None:
+def _emit_external_refs(result: LinkDiagnosticsResult, limit: Optional[int] = None) -> None:
     if not result.external_references:
         return
     print("External References (docs scope informational)")
-    for finding in result.external_references:
+    visible, hidden = _capped(result.external_references, limit)
+    for finding in visible:
         print(
             "  - "
             f"{finding.source_doc_id} [{finding.field}] -> {finding.value} "
             "(resolved outside active scope)"
         )
+    if hidden:
+        print(f"  ... and {hidden} more")
     print()
 
 
-def _emit_parse_failed_candidates(result: LinkDiagnosticsResult) -> None:
+def _emit_parse_failed_candidates(result: LinkDiagnosticsResult, limit: Optional[int] = None) -> None:
     if not result.parse_failed_candidates:
         return
     print("Parse-Failed Candidate References")
-    for candidate in result.parse_failed_candidates:
+    visible, hidden = _capped(result.parse_failed_candidates, limit)
+    for candidate in visible:
         print(
             "  - "
             f"{candidate.path}:{candidate.line} "
             f"{candidate.match_type}={candidate.candidate}"
         )
+    if hidden:
+        print(f"  ... and {hidden} more")
     print()
 
 
-def _emit_suggestions(result: LinkDiagnosticsResult) -> None:
+def _emit_suggestions(result: LinkDiagnosticsResult, limit: Optional[int] = None) -> None:
     suggested = [finding for finding in result.broken_references if finding.suggestions]
     if not suggested:
         return
     print("Suggestions")
-    for finding in suggested:
+    visible, hidden = _capped(suggested, limit)
+    for finding in visible:
         print(f"  - {finding.source_doc_id} [{finding.field}] {finding.value}")
         for suggestion in finding.suggestions:
             print(
@@ -236,26 +262,32 @@ def _emit_suggestions(result: LinkDiagnosticsResult) -> None:
                 f"{suggestion.candidate} "
                 f"(confidence={suggestion.confidence:.2f}, {suggestion.reason})"
             )
+    if hidden:
+        print(f"  ... and {hidden} more")
     print()
 
 
-def _emit_orphans(result: LinkDiagnosticsResult) -> None:
+def _emit_orphans(result: LinkDiagnosticsResult, limit: Optional[int] = None) -> None:
     if not result.orphans:
         return
     print("Orphans (scope-relative)")
-    for orphan in result.orphans[:20]:
+    cap = limit if limit is not None else 20
+    for orphan in result.orphans[:cap]:
         print(f"  - {orphan.doc_id} ({orphan.doc_type}) [{orphan.path}]")
-    if len(result.orphans) > 20:
-        print(f"  ... and {len(result.orphans) - 20} more")
+    if len(result.orphans) > cap:
+        print(f"  ... and {len(result.orphans) - cap} more")
     print()
 
 
-def _emit_load_warnings(result: LinkDiagnosticsResult) -> None:
+def _emit_load_warnings(result: LinkDiagnosticsResult, limit: Optional[int] = None) -> None:
     if not result.load_warnings:
         return
     print("Parse/Load Warnings")
-    for issue in result.load_warnings:
+    visible, hidden = _capped(result.load_warnings, limit)
+    for issue in visible:
         print(f"  - {issue.code}: {issue.message}")
+    if hidden:
+        print(f"  ... and {hidden} more")
     print()
 
 
