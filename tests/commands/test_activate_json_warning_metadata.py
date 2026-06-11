@@ -248,7 +248,7 @@ def test_activate_json_emits_structured_validation_warnings(tmp_path: Path) -> N
     """
     root = _orphan_workspace(tmp_path)
 
-    result = _run(root, "--json", "activate")
+    result = _run(root, "--json", "activate", "--warnings", "full")
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
 
@@ -330,7 +330,7 @@ def test_activate_json_depth_warning_carries_structured_metadata(tmp_path: Path)
     """D.2 codex F1, Case 2 — CLI JSON path emits depth warnings as structured records."""
     root = _depth_chain_workspace(tmp_path)
 
-    result = _run(root, "--json", "activate")
+    result = _run(root, "--json", "activate", "--warnings", "full")
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
 
@@ -381,7 +381,7 @@ def test_activate_json_out_of_scope_dependency_carries_structured_metadata(tmp_p
     """D.2 codex F1, Case 4 — CLI JSON path emits out-of-scope dependency warnings."""
     root = _out_of_scope_workspace(tmp_path)
 
-    result = _run(root, "--json", "activate")
+    result = _run(root, "--json", "activate", "--warnings", "full")
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
 
@@ -452,7 +452,7 @@ def test_activate_json_schema_class_warning_carries_structured_metadata(tmp_path
     """
     root = _log_schema_workspace(tmp_path)
 
-    result = _run(root, "--json", "activate")
+    result = _run(root, "--json", "activate", "--warnings", "full")
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
 
@@ -531,7 +531,9 @@ def test_activate_json_error_severity_lands_under_errors_with_structured_shape(
 
     monkeypatch.setattr(activate_mod, "generate_context_map", _patched_generate_context_map)
 
-    exit_code, payload = activate_mod.run_activation(scope=None, write_map=False, root=tmp_path)
+    exit_code, payload = activate_mod.run_activation(
+        scope=None, write_map=False, root=tmp_path, warnings_mode="full"
+    )
     # Exit code is 0 because errors are still load_result + validation_warnings,
     # not validation_errors specifically; activation considers all-with-warnings
     # as 'usable_with_warnings' (exit 0). The key assertion is the payload shape.
@@ -577,3 +579,102 @@ def test_activate_json_not_usable_path_emits_empty_lists(tmp_path: Path) -> None
     validation = payload["data"]["validation"]
     assert validation["errors"] == []
     assert validation["warnings"] == []
+    # (#132) The stable empty budget shape is present on the not-usable path too.
+    assert validation["warnings_total"] == 0
+    assert validation["warnings_truncated"] is False
+    assert validation["warning_groups"] == []
+
+
+# =============================================================================
+# (#132) Warning grouping / budgeting modes
+# =============================================================================
+
+
+def test_activate_json_default_is_grouped(tmp_path: Path) -> None:
+    """Default (no flag) returns grouped warnings: empty inline list, groups
+    with bounded full-record samples, and summary counts from the full list."""
+    root = _orphan_workspace(tmp_path)
+
+    result = _run(root, "--json", "activate")
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+
+    validation = payload["data"]["validation"]
+    assert validation["warnings"] == []
+    assert validation["warnings_truncated"] is True
+    groups = validation["warning_groups"]
+    assert groups, "expected at least one warning group"
+    assert sum(group["count"] for group in groups) == validation["warnings_total"]
+    assert validation["warnings_total"] == payload["data"]["summary"]["validation_warnings"]
+    orphan_group = next(g for g in groups if g["rule_id"] == "orphan")
+    assert 0 < len(orphan_group["samples"]) <= 3
+    sample = orphan_group["samples"][0]
+    assert sample["severity"] == "warning"
+    assert sample["rule_id"] == "orphan"
+    assert "message" in sample
+    # Status/exit semantics are unchanged by the budget.
+    assert payload["data"]["status"] == "usable_with_warnings"
+
+
+def test_activate_json_summary_mode_drops_samples(tmp_path: Path) -> None:
+    root = _orphan_workspace(tmp_path)
+
+    result = _run(root, "--json", "activate", "--warnings", "summary")
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+
+    validation = payload["data"]["validation"]
+    assert validation["warnings"] == []
+    assert all(group["samples"] == [] for group in validation["warning_groups"])
+    assert validation["warnings_total"] > 0
+
+
+def test_activate_json_warning_rule_filters_full_records(tmp_path: Path) -> None:
+    root = _orphan_workspace(tmp_path)
+
+    result = _run(
+        root, "--json", "activate",
+        "--warnings", "full", "--warning-rule", "orphan",
+    )
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+
+    validation = payload["data"]["validation"]
+    assert validation["warnings"], "expected inline records in full mode"
+    assert all(record["rule_id"] == "orphan" for record in validation["warnings"])
+    assert validation["warnings_total"] == len(validation["warnings"])
+    assert validation["warnings_truncated"] is False
+    # Summary counts stay computed from the unfiltered list.
+    assert payload["data"]["summary"]["validation_warnings"] >= validation["warnings_total"]
+
+
+def test_activate_json_full_with_limit_truncates(tmp_path: Path) -> None:
+    root = _orphan_workspace(tmp_path)
+
+    result = _run(root, "--json", "activate", "--warnings", "full", "--limit", "1")
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+
+    validation = payload["data"]["validation"]
+    assert len(validation["warnings"]) == 1
+    assert validation["warnings_total"] >= 1
+    if validation["warnings_total"] > 1:
+        assert validation["warnings_truncated"] is True
+    # The full record shape is preserved under --warnings full.
+    record = validation["warnings"][0]
+    assert {"severity", "message"} <= set(record)
+
+
+def test_cli_and_mcp_grouping_parity() -> None:
+    """Feeding identical record lists to the shared grouping utility yields
+    identical payloads — the single-source-of-truth guarantee for #132."""
+    from ontos.core.warning_groups import group_warning_records, groups_to_payload
+
+    records = [
+        _orphan_warning("kernel_doc", "docs/kernel/kernel_doc.md").to_dict(),
+        {"severity": "warning", "rule_id": "schema.log_missing_fields",
+         "message": "Log missing fields: date"},
+    ]
+    cli_payload = groups_to_payload(group_warning_records(list(records)))
+    mcp_payload = groups_to_payload(group_warning_records(list(records)))
+    assert cli_payload == mcp_payload

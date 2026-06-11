@@ -19,6 +19,7 @@ def test_server_lists_all_tools_with_correct_annotations(tmp_path):
         "context_map",
         "get_document",
         "list_documents",
+        "list_validation_warnings",
         "export_graph",
         "query",
         "health",
@@ -44,7 +45,7 @@ def test_server_lists_all_tools_with_correct_annotations(tmp_path):
 
     # Read-only tools
     for name in ("activate", "workspace_overview", "context_map", "get_document",
-                 "list_documents", "query", "health"):
+                 "list_documents", "list_validation_warnings", "query", "health"):
         assert tool_map[name].annotations.readOnlyHint is True, f"{name} should be readOnly"
 
 

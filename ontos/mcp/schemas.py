@@ -32,6 +32,15 @@ class ValidationPayload(StrictModel):
     warnings: List[ValidationIssue]
 
 
+class WarningGroup(StrictModel):
+    """(#132) One rule_id bucket with counts and bounded record samples."""
+
+    rule_id: str
+    count: int
+    by_severity: Dict[str, int]
+    samples: List[ValidationIssue]
+
+
 class GraphNodeSummary(StrictModel):
     id: str
     type: str
@@ -104,13 +113,27 @@ class WorkspaceOverviewResponse(StrictModel):
 
 
 class ActivateResponse(StrictModel):
+    # (#132) Orientation fields are declared first so pydantic's
+    # declaration-order dump keeps them at the top of the payload; the
+    # warning budget fields follow. `warnings` is always [] under the
+    # summary/grouped modes — full records are paged through the
+    # list_validation_warnings tool.
     status: Literal["usable", "usable_with_warnings", "not_usable"]
     workspace: str
     workspace_path: str
     doc_count: int
     loaded_ids: List[str]
-    warnings: List[ValidationIssue]
     recommendation: str
+    warnings_total: int
+    warnings_truncated: bool
+    warning_groups: List[WarningGroup]
+    warnings: List[ValidationIssue]
+
+
+class ListValidationWarningsResponse(StrictModel):
+    total_count: int
+    offset: int
+    warnings: List[ValidationIssue]
 
 
 class ContextMapResponse(StrictModel):
@@ -309,6 +332,7 @@ TOOL_SUCCESS_MODELS: Dict[str, Type[BaseModel]] = {
     "context_map": ContextMapResponse,
     "get_document": GetDocumentResponse,
     "list_documents": ListDocumentsResponse,
+    "list_validation_warnings": ListValidationWarningsResponse,
     "export_graph": ExportGraphResponse,
     "query": QueryResponse,
     "health": HealthResponse,
@@ -344,6 +368,7 @@ READ_WARNING_TOOL_NAMES = {
     "context_map",
     "get_document",
     "list_documents",
+    "list_validation_warnings",
     "query",
     "health",
     "refresh",

@@ -16,6 +16,11 @@ from ontos.core.content_hash import compute_content_hash
 from ontos.core.errors import OntosUserError
 from ontos.core.snapshot import DocumentSnapshot
 from ontos.core.types import DocumentData, ValidationError, ValidationResult
+from ontos.core.warning_groups import (
+    group_warning_records,
+    groups_to_payload,
+    select_warning_records,
+)
 from ontos.io.scan_scope import resolve_scan_scope
 from ontos.io.snapshot import create_snapshot
 from ontos.mcp._types import PortfolioIndexLike
@@ -141,12 +146,30 @@ def workspace_overview(cache: Any, *, workspace_id: Optional[str] = None) -> dic
     }
 
 
-def activate(cache: Any, *, workspace_id: Optional[str] = None) -> dict[str, Any]:
-    """Mark the MCP session activated and return orientation status."""
+def activate(
+    cache: Any,
+    *,
+    warnings: str = "grouped",
+    workspace_id: Optional[str] = None,
+) -> dict[str, Any]:
+    """Mark the MCP session activated and return orientation status.
+
+    (#132) Warnings are grouped by rule_id with bounded samples so the
+    activation payload stays within tool-result budgets. There is
+    deliberately no "full" mode here — page complete records through the
+    ``list_validation_warnings`` tool instead.
+    """
     _enforce_workspace_scope(cache, workspace_id)
+    warnings_mode = str(warnings).strip().lower()
+    if warnings_mode not in {"summary", "grouped"}:
+        raise OntosUserError(
+            f"Invalid warnings mode '{warnings}'. Expected 'summary' or 'grouped'; "
+            "use the list_validation_warnings tool for full records.",
+            code="E_INVALID_WARNINGS_MODE",
+        )
     view = cache.get_fresh_view()
     setattr(cache, "activation_performed", True)
-    warnings = _normalize_warnings(
+    records = _normalize_warnings(
         view.snapshot.validation_result,
         view.snapshot.warnings,
     )
@@ -154,18 +177,56 @@ def activate(cache: Any, *, workspace_id: Optional[str] = None) -> dict[str, Any
         view.snapshot.documents.values(),
         key=lambda doc: (-len(view.snapshot.graph.reverse_edges.get(doc.id, [])), doc.id),
     )[:5]]
-    status = "usable" if not warnings else "usable_with_warnings"
+    # Status derives from the full record list; the budget below only
+    # shapes what is inlined in the response.
+    status = "usable" if not records else "usable_with_warnings"
+    groups = group_warning_records(records)
     return {
         "status": status,
         "workspace": view.workspace_root.name,
         "workspace_path": str(view.workspace_root),
         "doc_count": view.canonical_view.total_count,
         "loaded_ids": loaded_ids,
-        "warnings": warnings,
         "recommendation": (
             "continue; use direct reads for task-critical docs"
-            if warnings else "continue"
+            if records else "continue"
         ),
+        "warnings_total": len(records),
+        "warnings_truncated": bool(records),
+        "warning_groups": groups_to_payload(
+            groups, include_samples=(warnings_mode == "grouped")
+        ),
+        "warnings": [],
+    }
+
+
+def list_validation_warnings(
+    cache: Any,
+    *,
+    rule_id: Optional[str] = None,
+    severity: Optional[str] = None,
+    offset: int = 0,
+    limit: int = 50,
+    workspace_id: Optional[str] = None,
+) -> dict[str, Any]:
+    """Return paginated full validation warning records (#132)."""
+    _enforce_workspace_scope(cache, workspace_id)
+    if offset < 0:
+        raise OntosUserError("offset must be >= 0.", code="E_INVALID_OFFSET")
+    if limit <= 0 or limit > 500:
+        raise OntosUserError("limit must be between 1 and 500.", code="E_INVALID_LIMIT")
+
+    records = _normalize_warnings(
+        cache.snapshot.validation_result,
+        cache.snapshot.warnings,
+    )
+    page, total, _ = select_warning_records(
+        records, rule_id=rule_id, severity=severity, offset=offset, limit=limit
+    )
+    return {
+        "total_count": total,
+        "offset": offset,
+        "warnings": page,
     }
 
 

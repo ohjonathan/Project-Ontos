@@ -147,6 +147,30 @@ def _register_activate(subparsers, parent):
         parents=[parent],
     )
     _add_scope_argument(p)
+    p.add_argument(
+        "--warnings",
+        choices=["summary", "grouped", "full"],
+        default="grouped",
+        dest="warnings_mode",
+        help=(
+            "Warning detail level: grouped (default) buckets by rule_id with "
+            "bounded samples, summary drops samples, full inlines every record"
+        ),
+    )
+    p.add_argument(
+        "--warning-rule",
+        default=None,
+        dest="warning_rule",
+        metavar="RULE_ID",
+        help="Only report warnings for one rule_id (e.g. orphan)",
+    )
+    p.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Cap inline warning records (applies with --warnings full)",
+    )
     p.set_defaults(func=_cmd_activate)
 
 def _register_init(subparsers, parent):
@@ -870,6 +894,9 @@ def _cmd_activate(args) -> int:
             json_output=args.json,
             quiet=args.quiet,
             scope=getattr(args, "scope", None),
+            warnings_mode=getattr(args, "warnings_mode", "grouped"),
+            warning_rule=getattr(args, "warning_rule", None),
+            limit=getattr(args, "limit", None),
         )
     )
 
