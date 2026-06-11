@@ -268,3 +268,29 @@ def test_human_health_output_carries_basis_labels(fixture_repo: Path) -> None:
     assert result.returncode == 0
     assert "Orphans: 1 (allowed types: atom)" in result.stdout
     assert "Count basis: graph_validation" in result.stdout
+
+
+def test_orphan_basis_stays_default_when_filter_removes_nothing(fixture_repo: Path) -> None:
+    """(#133 polish) An .ontos-internal doc whose deps are path-style (or
+    point at non-orphans) must not flip the orphan basis label — the
+    exclusion label is reserved for runs where an orphan was actually
+    filtered."""
+    _write(
+        fixture_repo / ".ontos-internal/internal_doc.md",
+        """
+        ---
+        id: internal_doc
+        type: atom
+        status: active
+        depends_on: [apps/real.py]
+        ---
+        Internal body with a path-style dep only.
+        """,
+    )
+
+    link_check = _payload(_run(fixture_repo, "--json", "link-check"))
+
+    # The docs-scope orphan is untouched by the external index...
+    assert link_check["data"]["summary"]["orphans"] == 1
+    # ...so the basis stays the shared default.
+    assert link_check["data"]["count_basis"]["orphans"] == "graph_validation"

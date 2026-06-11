@@ -160,7 +160,7 @@ pipx install --force 'ontos[mcp]'
 ### 2. Verify
 
 ```bash
-ontos --version  # Should show 4.3.x
+ontos --version  # Should show 4.7.x
 ontos doctor     # Check graph health
 ```
 
@@ -239,10 +239,10 @@ path when the Ontos launcher path changes on your shell `PATH`.
 ### Universal `print-config` Fallback
 
 `ontos mcp print-config --client ...` emits a complete config document without
-writing to disk. In `v4.6`, Claude Code, Codex, and VS Code are supported via
+writing to disk. In `v4.7`, Claude Code, Codex, and VS Code are supported via
 this fallback path rather than managed install / uninstall / doctor support.
 
-Managed MCP automation remains POSIX-only in `v4.6`; Windows users should use
+Managed MCP automation remains POSIX-only in `v4.7`; Windows users should use
 `print-config`.
 
 ### 4. Configure Your IDE (Optional)
@@ -302,7 +302,7 @@ ontos mcp uninstall --client cursor --scope project
 ontos mcp print-config --client codex
 ```
 
-Rerunning `ontos mcp install --client cursor ...` refreshes the launcher path if Ontos moves on your shell `PATH`. Managed install, uninstall, and doctor support are POSIX-only in `v4.6`; Windows users should use `print-config`.
+Rerunning `ontos mcp install --client cursor ...` refreshes the launcher path if Ontos moves on your shell `PATH`. Managed install, uninstall, and doctor support are POSIX-only in `v4.7`; Windows users should use `print-config`.
 
 ### Client Support Policy
 
@@ -313,7 +313,7 @@ Ontos now treats MCP enablement as two separate jobs:
 
 That philosophy should stay consistent across clients, while the automation level stays client-specific:
 
-- **First-class** clients get `ontos mcp install --client ...`, `ontos mcp uninstall --client ...`, and `ontos doctor` checks once their native config contract is stable. Antigravity and Cursor are the first examples in `v4.6`.
+- **First-class** clients get `ontos mcp install --client ...`, `ontos mcp uninstall --client ...`, and `ontos doctor` checks once their native config contract is stable. Antigravity and Cursor are the first examples in `v4.7`.
 - **Print-config only** clients keep explicit manual setup docs plus a copy-pastable fallback document. Claude Code, Codex, and VS Code fit here.
 - **Docs-only** clients remain manual in this release. Claude Desktop and Windsurf are the examples here.
 

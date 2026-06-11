@@ -571,13 +571,18 @@ def run_link_diagnostics(
             # (#133 review) Docs-scope orphans depended on from
             # .ontos-internal are filtered here but NOT by activate/query,
             # which never load the external scope — so this surface labels
-            # its basis instead of silently disagreeing.
-            orphan_basis = "graph_validation_excluding_external_dependents"
-            orphan_ids = [
+            # its basis instead of silently disagreeing. The label is set
+            # only when the filter actually removed an orphan: the external
+            # index also holds path-style deps that match no orphan id, and
+            # those must not claim an exclusion that never happened.
+            filtered_ids = [
                 orphan_id
                 for orphan_id in orphan_ids
                 if orphan_id not in external_scope.external_depends_on_index
             ]
+            if len(filtered_ids) != len(orphan_ids):
+                orphan_basis = "graph_validation_excluding_external_dependents"
+            orphan_ids = filtered_ids
 
         orphans = [
             OrphanDocument(
