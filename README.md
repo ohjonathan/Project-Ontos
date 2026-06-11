@@ -147,7 +147,7 @@ Run `ontos serve` to start an MCP server that exposes your knowledge graph direc
 }
 ```
 
-**Cursor** uses the same direct-file pattern introduced in `v4.2`, and remains first-class in `v4.6` for the managed clients Ontos owns directly:
+**Cursor** uses the same direct-file pattern introduced in `v4.2`, and remains first-class in `v4.7` for the managed clients Ontos owns directly:
 
 - project scope: `.cursor/mcp.json`
 - user scope: `~/.cursor/mcp.json`
@@ -161,7 +161,7 @@ ontos mcp uninstall --client cursor --scope project
 ontos mcp print-config --client codex
 ```
 
-Rerunning `ontos mcp install --client cursor ...` refreshes the launcher path if Ontos moves on your shell `PATH`. Windows users should use `print-config`; managed install, uninstall, and doctor support remain POSIX-only in `v4.6`.
+Rerunning `ontos mcp install --client cursor ...` refreshes the launcher path if Ontos moves on your shell `PATH`. Windows users should use `print-config`; managed install, uninstall, and doctor support remain POSIX-only in `v4.7`.
 
 ### Documentation Health
 CI validation catches broken links, circular dependencies, and architectural violations before they become tribal knowledge buried in someone's head.
@@ -356,7 +356,7 @@ Ontos treats MCP integration as two separate concerns:
 Support is client-specific:
 
 - **First-class** — stable native config contract, so Ontos can ship `ontos mcp install --client ...`, `ontos mcp uninstall --client ...`, and `ontos doctor` coverage. Antigravity and Cursor are the first clients in this tier.
-- **Print-config only** — docs and a copy-pastable config snippet, but no Ontos-managed install / doctor promises in `v4.6`. Claude Code, Codex, and VS Code fit here.
+- **Print-config only** — docs and a copy-pastable config snippet, but no Ontos-managed install / doctor promises in `v4.7`. Claude Code, Codex, and VS Code fit here.
 - **Docs-only** — native config is not managed by Ontos in this release. Claude Desktop and Windsurf stay here.
 
 The managed MCP client config is separate from repo-local instruction artifacts such as `AGENTS.md` and `.cursorrules`.
@@ -402,7 +402,7 @@ Write tools are registered only when the server runs without `--read-only`. In r
 ### 5. Verify
 
 ```bash
-ontos --version   # Should show 4.6.x
+ontos --version   # Should show 4.7.x
 ontos serve       # Starts the stdio server (Ctrl+C to stop)
 ```
 
@@ -486,7 +486,7 @@ The server binds to one **primary workspace** (the `cwd` or `--workspace` path).
 Calling a core tool with a `workspace_id` that doesn't match the primary workspace returns `E_CROSS_WORKSPACE_NOT_SUPPORTED`. This is a deliberate safety boundary. To read another project's documents, change your `cwd` or run a second `ontos serve` instance.
 
 > [!NOTE]
-> Cross-workspace document reads and writes are not supported in v4.6.0.
+> Cross-workspace document reads and writes are not supported in v4.7.0.
 
 #### Example Workflow
 
@@ -594,18 +594,18 @@ Version 3 is when Ontos became public. The earlier versions live on in the desig
 
 | Version | Status | Highlights |
 |---------|--------|------------|
-| **v4.6.0** | Current | CLI `activate --json` warning/error metadata parity with MCP |
+| **v4.7.0** | Current | Grouped activation warnings, link-check JSON envelope + ~200x faster scans, external file dependency allowlist, cross-command health consistency |
+| **v4.6.0** | Previous | CLI `activate --json` warning/error metadata parity with MCP |
 | **v4.5.0** | Previous | Schema-safe bundle warnings, lifecycle type/status widening, MCP upgrade docs |
-| **v4.4.0** | Previous | Agentic activation resilience, MCP `activate`, `session_end`, frontmatter diagnostics |
 | **Future** | Next | HTTP / Streamable HTTP transport, daemon mode, security hardening |
 
-v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python. v3.2 added re-architecture support, environment detection, and activation resilience. v3.3 ships 62 audit-derived hardening fixes plus `link-check`, `rename`, unified JSON envelopes, and a canonical document loader. v3.3.1 reduced link-check false positives by 89% and added `promote_check` to the maintenance pipeline. v3.4 adds `--compact tiered` context maps for token-constrained agents. v4.0 adds an MCP server mode with 8 read-only tools, enabling native integration with AI IDEs like Claude Desktop and Cursor without CLI overhead. v4.1 expands MCP to 15 tools, a portfolio index with FTS5 search, advisory flock locking, and a shared rename orchestrator used by both CLI and MCP. v4.2.0 makes Cursor a first-class managed MCP client alongside Antigravity and adds `ontos mcp print-config` for Claude Code, Codex, and VS Code. v4.3.0 adds `ontos retrofit --obsidian`, a dry-run-first write path that lands computed `tags` and `aliases` on disk for Obsidian-compatible browsing. v4.4.0 adds `ontos activate`, MCP session activation state, `session_end`, precise frontmatter diagnostics, enum repair, and shared scan exclusions. v4.5.0 hardens activation/link-check diagnostics, widens lifecycle artifact type/status vocabulary, and documents MCP host restarts after upgrades. v4.6.0 makes CLI `activate --json` validation warnings/errors structured objects, matching MCP activation metadata. The next transport work remains on the roadmap.
+v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python. v3.2 added re-architecture support, environment detection, and activation resilience. v3.3 ships 62 audit-derived hardening fixes plus `link-check`, `rename`, unified JSON envelopes, and a canonical document loader. v3.3.1 reduced link-check false positives by 89% and added `promote_check` to the maintenance pipeline. v3.4 adds `--compact tiered` context maps for token-constrained agents. v4.0 adds an MCP server mode with 8 read-only tools, enabling native integration with AI IDEs like Claude Desktop and Cursor without CLI overhead. v4.1 expands MCP to 15 tools, a portfolio index with FTS5 search, advisory flock locking, and a shared rename orchestrator used by both CLI and MCP. v4.2.0 makes Cursor a first-class managed MCP client alongside Antigravity and adds `ontos mcp print-config` for Claude Code, Codex, and VS Code. v4.3.0 adds `ontos retrofit --obsidian`, a dry-run-first write path that lands computed `tags` and `aliases` on disk for Obsidian-compatible browsing. v4.4.0 adds `ontos activate`, MCP session activation state, `session_end`, precise frontmatter diagnostics, enum repair, and shared scan exclusions. v4.5.0 hardens activation/link-check diagnostics, widens lifecycle artifact type/status vocabulary, and documents MCP host restarts after upgrades. v4.6.0 makes CLI `activate --json` validation warnings/errors structured objects, matching MCP activation metadata. v4.7.0 closes the issue #131–#136 stability batch: grouped activation warnings with a paginated `list_validation_warnings` MCP tool, the standard JSON envelope plus output controls and ~200x faster scans for `link-check`, an `allowed_external_dependency_paths` allowlist with info-severity classification, context-map generator provenance, and basis-labeled, mutually consistent health counts across doctor/activate/query/link-check. The next transport work remains on the roadmap.
 
 ---
 
 ## Documentation
 
-> *Note: Documentation links below point to the latest source on GitHub. During release cutover, source docs may reflect `v4.6.0` before PyPI finishes publishing the same version.*
+> *Note: Documentation links below point to the latest source on GitHub. During release cutover, source docs may reflect `v4.7.0` before PyPI finishes publishing the same version.*
 
 - **[Ontos Manual](https://github.com/ohjonathan/Project-Ontos/blob/main/docs/reference/Ontos_Manual.md)**: Complete reference—installation, workflow, configuration, errors
 - **[Agent Instructions](https://github.com/ohjonathan/Project-Ontos/blob/main/docs/reference/Ontos_Agent_Instructions.md)**: Commands for AI agents

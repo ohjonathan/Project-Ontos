@@ -9,7 +9,12 @@ from typing import Dict, List, Optional, Tuple, Any
 
 from ontos.core.types import DocumentData, DocumentType
 from ontos.core.graph import build_graph as core_build_graph, detect_cycles
-from ontos.core.config import get_git_last_modified
+from ontos.core.config import ValidationConfig, get_git_last_modified
+from ontos.core.health import (
+    BASIS_GRAPH_VALIDATION,
+    connectivity_summary,
+    orphan_summary,
+)
 from ontos.io.git import get_file_mtime as git_mtime_provider
 from ontos.io.config import load_project_config
 from ontos.io.files import find_project_root, load_documents, DocumentLoadResult
@@ -86,53 +91,61 @@ def query_stale(files_data: Dict[str, DocumentData], days: int) -> List[Tuple[st
     return sorted(stale, key=lambda x: -x[1])
 
 
-def query_health(files_data: Dict[str, DocumentData]) -> dict:
-    """Calculate graph health metrics using core graph primitives."""
-    graph, _ = core_build_graph(files_data)
+def query_health(
+    files_data: Dict[str, DocumentData],
+    *,
+    validation_config: Optional[Any] = None,
+    workspace_root: Optional[Path] = None,
+) -> dict:
+    """Calculate graph health metrics using core graph primitives.
+
+    (#133) Orphan detection delegates to the same ``detect_orphans`` call the
+    validator and link-check use, driven by the project's configured
+    ``allowed_orphan_types``/``allowed_orphan_paths`` — this command used to
+    hard-code a different type list and reimplement the loop inline, which is
+    why query --health reported different orphan counts than activate.
+    Connectivity reports ``None`` with a basis marker when no kernel docs
+    exist instead of a misleading 0.0.
+    """
+    graph, _ = core_build_graph(files_data, workspace_root=workspace_root)
     cycles = detect_cycles(graph)
-    
+
     by_type = defaultdict(int)
     for doc in files_data.values():
         doc_type = doc.type.value
         by_type[doc_type] += 1
-    
-    orphans = []
-    allowed_orphan_types = ['kernel', 'strategy', 'product', 'log']
-    for doc_id, node in graph.nodes.items():
-        if node.doc_type not in allowed_orphan_types:
-            if doc_id not in graph.reverse_edges or not graph.reverse_edges[doc_id]:
-                orphans.append(doc_id)
-    
+
+    if validation_config is None:
+        validation_config = ValidationConfig()
+    orphan_info = orphan_summary(
+        graph,
+        allowed_orphan_types=validation_config.allowed_orphan_types,
+        allowed_orphan_paths=validation_config.allowed_orphan_paths,
+        workspace_root=workspace_root,
+    )
+
     empty_impacts = []
     for doc_id, doc in files_data.items():
         if doc.type.value == 'log':
             if not doc.impacts:
                 empty_impacts.append(doc_id)
-    
-    kernels = [d for d, node in graph.nodes.items() if node.doc_type == 'kernel']
-    reachable = set()
-    
-    def traverse(node):
-        if node in reachable:
-            return
-        reachable.add(node)
-        for child in graph.reverse_edges.get(node, []):
-            traverse(child)
-    
-    for k in kernels:
-        traverse(k)
-    
-    connectivity = len(reachable) / len(files_data) * 100 if files_data else 0
-    
+
+    connectivity_info = connectivity_summary(graph, files_data)
+
     return {
         'total_docs': len(files_data),
         'by_type': dict(by_type),
-        'orphans': len(orphans),
-        'orphan_ids': orphans[:5],
+        'orphans': orphan_info['orphans'],
+        'orphan_ids': orphan_info['orphan_ids'],
+        'orphan_basis': orphan_info['orphan_basis'],
+        'allowed_orphan_types': orphan_info['allowed_orphan_types'],
         'empty_impacts': len(empty_impacts),
         'empty_impact_ids': empty_impacts[:5],
-        'connectivity': connectivity,
-        'reachable_from_kernel': len(reachable),
+        'connectivity': connectivity_info['connectivity'],
+        'reachable_from_kernel': connectivity_info['reachable_from_kernel'],
+        'kernel_docs': connectivity_info['kernel_docs'],
+        'connectivity_basis': connectivity_info['connectivity_basis'],
+        'count_basis': BASIS_GRAPH_VALIDATION,
         'cycles': len(cycles),
         'cycle_samples': cycles[:10],
     }
@@ -151,10 +164,22 @@ def format_health(health: dict) -> str:
     for t, count in sorted(health['by_type'].items()):
         lines.append(f"  {t}: {count}")
     
+    if health.get('connectivity') is None:
+        connectivity_line = "Connectivity: n/a (no kernel documents)"
+    else:
+        connectivity_line = (
+            f"Connectivity: {health['connectivity']:.1f}% reachable from kernel"
+        )
+    # (#133 review) Mirror the JSON basis labels so the human report also
+    # says which pipeline produced the counts.
+    allowed_types = health.get('allowed_orphan_types')
+    orphan_line = f"Orphans: {health['orphans']}"
+    if allowed_types is not None:
+        orphan_line += f" (allowed types: {', '.join(allowed_types) or 'none'})"
     lines.extend([
         "",
-        f"Connectivity: {health['connectivity']:.1f}% reachable from kernel",
-        f"Orphans: {health['orphans']}",
+        connectivity_line,
+        orphan_line,
         f"Cycles: {health.get('cycles', 0)}",
     ])
 
@@ -174,7 +199,10 @@ def format_health(health: dict) -> str:
     
     if health['empty_impact_ids']:
         lines.append(f"  → {', '.join(health['empty_impact_ids'])}")
-    
+
+    if health.get('count_basis'):
+        lines.append(f"Count basis: {health['count_basis']}")
+
     return '\n'.join(lines)
 
 
@@ -252,7 +280,16 @@ def _run_query_command(options: QueryOptions) -> Tuple[int, str]:
             output.success(f"All documents updated within {options.stale} days")
             
     elif options.health:
-        health = query_health(files_data)
+        try:
+            project_config = load_project_config(repo_root=root)
+            validation_config = project_config.validation
+        except Exception:
+            validation_config = None
+        health = query_health(
+            files_data,
+            validation_config=validation_config,
+            workspace_root=root,
+        )
         options.runtime_data = health
         output.plain(format_health(health))
         

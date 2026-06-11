@@ -4,6 +4,97 @@ All notable changes to this project will be documented in this file.
 
 > For the full historical changelog with Ontos frontmatter (from v0.1.0), see [`Ontos_CHANGELOG.md`](Ontos_CHANGELOG.md).
 
+## [4.7.0] - 2026-06-11
+
+Minor release closing Issues #131–#136 — the "Ontos feels unstable" RCA
+batch. Health/diagnostic surfaces are now bounded, mutually consistent,
+and fast on medium repos.
+
+### Added
+- **Warning grouping (#132)** — `ontos activate` returns grouped warning
+  summaries by default: `data.validation.warning_groups` (rule_id, count,
+  by_severity, ≤3 full-record samples), `warnings_total`, and
+  `warnings_truncated`. New flags `--warnings {summary,grouped,full}`,
+  `--warning-rule RULE_ID`, `--limit N`. The MCP `activate` tool gains a
+  `warnings: summary|grouped` parameter, and the new paginated
+  **`list_validation_warnings`** MCP tool (rule_id/severity/offset/limit)
+  pages complete records.
+- **External file dependencies (#134)** — New
+  `[validation] allowed_external_dependency_paths` config (workspace-relative
+  globs). A `depends_on` target that exists on disk and matches the allowlist
+  is classified `external_file_dependency` at **info** severity (new
+  `validation.info` / `info_groups` surfaces; never flips
+  `usable_with_warnings`). link-check re-buckets all resolved-on-disk deps
+  into `data.file_dependencies` with `summary.file_dependencies` /
+  `summary.unallowlisted_file_dependencies` counters.
+- **link-check output controls (#135)** — `--summary`, `--limit N`,
+  `--no-suggestions`, `--frontmatter-only`, `--no-orphans`; per-phase
+  `data.timings_ms`; stderr stage markers on human runs;
+  `findings_truncated` + `truncated_sections` indicators.
+- **Map provenance (#136)** — Context map frontmatter gains
+  `generator_version`, `scope`, and `documents_loaded`; the banner reports
+  the installed package version. `ontos doctor` warns when the map's
+  generator version is missing or doesn't match the installed CLI.
+- **Health basis labels (#133)** — `query --health` reports
+  `count_basis`/`orphan_basis`/`connectivity_basis` and echoes
+  `allowed_orphan_types`; doctor checks carry a structured `data` block
+  with their `count_basis`.
+
+### Changed
+- **link-check JSON envelope (#131, breaking)** — `ontos link-check --json`
+  now emits the standard command envelope; the legacy root-level payload is
+  gone. Top-level `status` is transport status; result quality lives in
+  `data.result_status` (`clean|warnings|failing`). **Shell exit codes 0/1/2
+  are unchanged** — exit-code-based CI needs no migration. JSON consumers:
+  `.summary` → `.data.summary`, `.broken_references` →
+  `.data.broken_references`, legacy root `.status` → `.data.result_status`.
+  Detect the new shape via top-level `schema_version` (now **3.4** for all
+  commands).
+- **Activate default output (#132, behavioral)** — `data.validation.warnings`
+  is `[]` unless `--warnings full`; consumers should check
+  `warnings_truncated`/`warnings_total`. `validation.errors` is always the
+  complete list, and status/exit semantics derive from full counts —
+  CI keyed on hard errors sees no change.
+- **link-check re-bucketing (#134, behavioral)** — resolved-on-disk
+  `depends_on` targets no longer count as `broken_references` /
+  `broken_frontmatter`; they appear under `file_dependencies` with an
+  `allowlisted` flag. Exit-1 semantics are preserved for unconfigured repos
+  via `unallowlisted_file_dependencies`; CI parsing broken counters should
+  read the new fields.
+- **`query --health` orphan counts (#133, bugfix)** — orphan detection now
+  uses the same `detect_orphans` + configured `allowed_orphan_types`/
+  `allowed_orphan_paths` as activate/link-check (previously a hard-coded
+  type list produced contradictory counts). Connectivity reports `null` +
+  `connectivity_basis: not_applicable_no_kernel_docs` when no kernel docs
+  exist instead of a misleading `0.0`.
+- **doctor (#133)** — `activation_health` delegates to the activation
+  pipeline (read-only), so its counts match `ontos activate` by
+  construction; the `validation` check is labeled as the bounded
+  frontmatter quick scan it is.
+- **map --strict --json (#131)** — `data` gains `result_status`, `strict`,
+  and grouped `diagnostics` (rule_id/count/by_severity/samples) so strict
+  failures carry triage data, not bare counts.
+
+### Fixed
+- **link-check performance (#135)** — ~200x faster on medium repos
+  (709-doc benchmark: 13+ min → 3.3 s). The known-ID body scan no longer
+  sorts the id set per line nor compiles a regex per (line × id); fuzzy
+  suggestion generation is index-backed, gated by lossless
+  `real_quick_ratio`/`quick_ratio` bounds, and memoized per broken value.
+  Results are byte-identical.
+- **Config discovery (#133)** — `load_project_config(repo_root=…)` starts
+  discovery at the named root instead of CWD, so commands invoked from
+  outside a project no longer silently load an unrelated ancestor config.
+
+### Compatibility notes
+- Ontos ≤ 4.6.0 **rejects** configs containing
+  `allowed_external_dependency_paths` (strict unknown-key validation, same
+  rollout tradeoff as `allowed_orphan_paths`): upgrade all CLI installs
+  before adopting the key.
+- MCP `ActivateResponse` schema changed (new required warning-budget fields,
+  new optional info fields); strict clients revalidate via `tools/list` on
+  reconnect.
+
 ## [4.6.0] - 2026-05-23
 
 Patch release closing Issue #119, the final v4.5.0 follow-up for activation

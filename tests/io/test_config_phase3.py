@@ -148,3 +148,52 @@ class TestConfigExists:
         config_path = tmp_path / CONFIG_FILENAME
         config_path.write_text("[ontos]\n")
         assert config_exists(config_path) is True
+
+
+class TestRepoRootDiscovery:
+    """(#133) load_project_config(repo_root=X) must discover X/.ontos.toml
+    even when CWD is outside the project."""
+
+    def test_repo_root_drives_discovery_regardless_of_cwd(self, tmp_path, monkeypatch):
+        project = tmp_path / "project"
+        project.mkdir()
+        (project / CONFIG_FILENAME).write_text(
+            "[ontos]\nversion = '3.0'\n\n[paths]\ndocs_dir = 'documents'\n",
+            encoding="utf-8",
+        )
+        elsewhere = tmp_path / "elsewhere"
+        elsewhere.mkdir()
+        monkeypatch.chdir(elsewhere)
+
+        config = load_project_config(repo_root=project)
+
+        assert config.paths.docs_dir == "documents"
+
+    def test_ancestor_config_never_leaks_into_named_root(self, tmp_path, monkeypatch):
+        """(#133 review) A repo_root WITHOUT its own .ontos.toml gets pure
+        defaults — never an ancestor's config. Verified leak before the fix:
+        a child repo inherited the parent's allowed_orphan_types, changing
+        query --health orphan counts."""
+        (tmp_path / CONFIG_FILENAME).write_text(
+            "[ontos]\nversion = '3.0'\n\n"
+            "[validation]\nallowed_orphan_types = ['kernel']\n\n"
+            "[paths]\ndocs_dir = 'WRONG'\n",
+            encoding="utf-8",
+        )
+        project = tmp_path / "nested" / "project"
+        project.mkdir(parents=True)
+        monkeypatch.chdir(tmp_path)
+
+        config = load_project_config(repo_root=project)
+
+        # Pure defaults — the ancestor's values must not appear.
+        assert config.paths.docs_dir == "docs"
+        assert config.validation.allowed_orphan_types == ["atom", "log"]
+
+        # With its own config, the project config wins:
+        (project / CONFIG_FILENAME).write_text(
+            "[ontos]\nversion = '3.0'\n\n[paths]\ndocs_dir = 'RIGHT'\n",
+            encoding="utf-8",
+        )
+        config = load_project_config(repo_root=project)
+        assert config.paths.docs_dir == "RIGHT"

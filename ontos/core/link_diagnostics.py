@@ -145,6 +145,9 @@ class LinkDiagnosticsResult:
     load_warnings: List[DocumentLoadIssue]
     timings_ms: Dict[str, int] = field(default_factory=dict)
     file_dependencies: List[FileDependencyReference] = field(default_factory=list)
+    # (#133) Basis label for the orphan counter: docs-scope runs that
+    # filtered out orphans depended on from .ontos-internal say so.
+    orphan_basis: str = "graph_validation"
 
     @property
     def result_status(self) -> str:
@@ -293,6 +296,11 @@ class LinkDiagnosticsResult:
                 ),
             },
             "timings_ms": dict(self.timings_ms),
+            "count_basis": {
+                "orphans": self.orphan_basis,
+                "broken_references": "frontmatter_plus_body",
+                "file_dependencies": "depends_on_resolved_on_disk",
+            },
             "findings_truncated": bool(truncated_sections),
             "truncated_sections": sorted(truncated_sections),
         }
@@ -548,6 +556,7 @@ def run_link_diagnostics(
 
     phase_start = time.perf_counter()
     orphans: List[OrphanDocument] = []
+    orphan_basis = "graph_validation"
     if include_orphans:
         _notify("Detecting orphans...")
         allowed_orphan_types = set(config.validation.allowed_orphan_types)
@@ -559,11 +568,21 @@ def run_link_diagnostics(
             workspace_root=repo_root,
         )
         if scope == ScanScope.DOCS and external_scope.external_depends_on_index:
-            orphan_ids = [
+            # (#133 review) Docs-scope orphans depended on from
+            # .ontos-internal are filtered here but NOT by activate/query,
+            # which never load the external scope — so this surface labels
+            # its basis instead of silently disagreeing. The label is set
+            # only when the filter actually removed an orphan: the external
+            # index also holds path-style deps that match no orphan id, and
+            # those must not claim an exclusion that never happened.
+            filtered_ids = [
                 orphan_id
                 for orphan_id in orphan_ids
                 if orphan_id not in external_scope.external_depends_on_index
             ]
+            if len(filtered_ids) != len(orphan_ids):
+                orphan_basis = "graph_validation_excluding_external_dependents"
+            orphan_ids = filtered_ids
 
         orphans = [
             OrphanDocument(
@@ -628,6 +647,7 @@ def run_link_diagnostics(
         load_warnings=load_result.issues,
         timings_ms=timings_ms,
         file_dependencies=file_dependencies,
+        orphan_basis=orphan_basis,
     )
 
 
