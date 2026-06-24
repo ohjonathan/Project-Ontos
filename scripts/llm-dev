@@ -25,6 +25,10 @@
 #                                            (issue #10)
 #   rebind-artifact --result ...           — validate and rebind a dispatch
 #                                            result row to a moved artifact
+#   repair-redispatch --manifest ...       — mark redispatch supersession
+#                                            and optionally freeze shared
+#                                            captures to capture-specific
+#                                            paths
 #   post-merge --pr ... --branch ...       — reconcile/report PR branch
 #                                            reachability after merge
 #   review-chain report <manifest>         — non-gating review-chain depth
@@ -64,6 +68,10 @@ usage:
   scripts/llm-dev re-adjudication <list|verify> <manifest-path>
   scripts/llm-dev rebind-artifact --result <path> --dispatch-id <id>
                                   --artifact <path> --reason <text>
+  scripts/llm-dev repair-redispatch --manifest <path> --old-run-id <id>
+                                    --new-run-id <id> --reason <text>
+                                    --issue-ref <ref>
+                                    [--freeze-new-captures]
   scripts/llm-dev post-merge --pr <number> --branch <branch> [--verify-all]
   scripts/llm-dev review-chain report <manifest-path>
   scripts/llm-dev verify-live-docs [--policy <path>]
@@ -91,6 +99,10 @@ Note:
                         re_adjudication_queue[] (issue #10).
   `rebind-artifact`   — validate a moved review artifact and update the
                         matching dispatch-result row with its new path/hash.
+  `repair-redispatch` — mark an older receipt superseded by a later round
+                        with an issue reference, and with
+                        --freeze-new-captures, copy the new prompt/raw/stderr
+                        evidence to capture-specific immutable paths.
   `post-merge`        — fetch origin/main, fast-forward local main when
                         safe, check branch reachability, and run default
                         post-merge validations.
@@ -648,6 +660,454 @@ print(
     f"rebind-artifact: updated {result_path.relative_to(repo)} dispatch_id={dispatch_id} "
     f"artifact_path={rel_artifact} status={old_status!r}->'completed'"
 )
+PY
+}
+
+# ---------------------------------------------------------------------------
+# repair-redispatch --manifest <path> --old-run-id <id> --new-run-id <id>
+#                    --reason <text> --issue-ref <ref>
+#                    [--freeze-new-captures]
+# ---------------------------------------------------------------------------
+cmd_repair_redispatch() {
+  local manifest="" old_run_id="" new_run_id="" reason="" issue_ref="" freeze_new_captures=0
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --manifest) shift; manifest="${1:-}" ;;
+      --old-run-id) shift; old_run_id="${1:-}" ;;
+      --new-run-id) shift; new_run_id="${1:-}" ;;
+      --reason) shift; reason="${1:-}" ;;
+      --issue-ref) shift; issue_ref="${1:-}" ;;
+      --freeze-new-captures) freeze_new_captures=1 ;;
+      -h|--help)
+        echo "usage: scripts/llm-dev repair-redispatch --manifest <path> --old-run-id <id> --new-run-id <id> --reason <text> --issue-ref <ref> [--freeze-new-captures]"
+        exit 0
+        ;;
+      *) die "repair-redispatch: unknown argument: $1" ;;
+    esac
+    shift || true
+  done
+  [[ -n "$manifest" && -n "$old_run_id" && -n "$new_run_id" && -n "$reason" && -n "$issue_ref" ]] \
+    || die "repair-redispatch requires --manifest, --old-run-id, --new-run-id, --reason, and --issue-ref"
+  python3 - "$repo_root" "$(abs_path "$manifest")" "$old_run_id" "$new_run_id" "$reason" "$freeze_new_captures" "$issue_ref" <<'PY'
+import atexit
+import datetime as dt
+import hashlib
+import os
+import re
+import shutil
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+import yaml
+
+repo = Path(sys.argv[1]).resolve()
+manifest_path = Path(sys.argv[2]).resolve()
+old_run_id = sys.argv[3].strip()
+new_run_id = sys.argv[4].strip()
+reason = sys.argv[5].strip()
+freeze_new_captures = sys.argv[6] == "1"
+issue_ref = sys.argv[7].strip()
+
+ID_RE = re.compile(r"^[A-Za-z0-9._-]+$")
+
+
+def fail(message):
+    raise SystemExit(f"repair-redispatch: {message}")
+
+
+def load_yaml(path):
+    try:
+        return yaml.safe_load(path.read_text()) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        fail(f"cannot read YAML {path}: {exc}")
+
+
+def atomic_write_yaml(path, doc):
+    with tempfile.NamedTemporaryFile("w", delete=False, dir=str(path.parent)) as tmp:
+        yaml.safe_dump(doc, tmp, sort_keys=False)
+        tmp_path = Path(tmp.name)
+    tmp_path.replace(path)
+
+
+def acquire_inventory_lock(path):
+    lock_path = Path(str(path) + ".lock")
+    for _ in range(50):
+        try:
+            fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            with os.fdopen(fd, "w") as fh:
+                fh.write(str(os.getpid()))
+            atexit.register(lambda: lock_path.exists() and lock_path.unlink())
+            return
+        except FileExistsError:
+            owner = ""
+            try:
+                owner = lock_path.read_text().strip()
+                if owner and not Path(f"/proc/{owner}").exists():
+                    try:
+                        os.kill(int(owner), 0)
+                    except ProcessLookupError:
+                        lock_path.unlink()
+                        continue
+                    except (PermissionError, ValueError):
+                        pass
+            except OSError:
+                pass
+            time.sleep(0.1)
+    fail(f"could not acquire receipt-inventory lock on {lock_path}")
+
+
+def resolve_ref(ref, *bases):
+    if not isinstance(ref, str) or not ref.strip():
+        return None
+    p = Path(ref)
+    if p.is_absolute():
+        return p.resolve()
+    for base in bases:
+        candidate = (base / p).resolve()
+        if candidate.exists():
+            return candidate
+    return (bases[0] / p).resolve()
+
+
+def rel_to_repo(path):
+    try:
+        return path.resolve().relative_to(repo).as_posix()
+    except ValueError:
+        fail(f"path must live under adopter root: {path}")
+
+
+def sha256_file(path):
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def normalize_sha(value):
+    if not isinstance(value, str):
+        return ""
+    value = value.strip()
+    if value.startswith("sha256:"):
+        value = value[7:]
+    if re.fullmatch(r"[0-9a-fA-F]{64}", value):
+        return value.lower()
+    return ""
+
+
+def optional_str(value, field):
+    if value is None:
+        return ""
+    if not isinstance(value, str):
+        fail(f"{field} must be a string")
+    return value.strip()
+
+
+def parse_round(receipt, label):
+    raw = receipt.get("round", 1)
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        fail(f"{label} receipt has invalid round={raw!r}")
+    if value < 1:
+        fail(f"{label} receipt has invalid round={raw!r}")
+    return value
+
+
+def safe_component(value):
+    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "-", str(value or "").strip()).strip(".-")
+    return cleaned or "capture"
+
+
+def declared_matches(path, declared, label):
+    if not path.is_file():
+        fail(f"{label} file not found: {path}")
+    if path.is_symlink():
+        fail(f"{label} file must be a regular file, not a symlink: {path}")
+    try:
+        path.resolve().relative_to(repo)
+    except ValueError:
+        fail(f"{label} file must live under adopter root: {path}")
+    actual = sha256_file(path)
+    normalized = normalize_sha(declared)
+    if normalized and normalized != actual:
+        fail(
+            f"{label} hash mismatch before freeze: declared={normalized} actual={actual} path={path}"
+        )
+    return actual
+
+
+def copy_capture(source, target, label):
+    if not source.is_file():
+        fail(f"{label} source not found: {source}")
+    if source.is_symlink():
+        fail(f"{label} source must be a regular file, not a symlink: {source}")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if source.resolve() != target.resolve():
+        if target.exists() or target.is_symlink():
+            fail(f"{label} target already exists; refusing to overwrite: {target}")
+        shutil.copyfile(source, target)
+    return sha256_file(target)
+
+
+if not old_run_id or not new_run_id or old_run_id == new_run_id:
+    fail("--old-run-id and --new-run-id must be distinct non-empty ids")
+if not reason:
+    fail("--reason must be non-empty")
+if len(reason) < 12:
+    fail("--reason must be at least 12 characters")
+if not issue_ref or len(issue_ref) < 2:
+    fail("--issue-ref must be a non-empty issue, PR, or decision reference")
+if not manifest_path.is_file():
+    fail(f"manifest not found: {manifest_path}")
+
+manifest = load_yaml(manifest_path)
+inventory_ref = manifest.get("lifecycle_receipt_inventory_path")
+inventory_path = resolve_ref(inventory_ref, manifest_path.parent, repo)
+if inventory_path is None or not inventory_path.is_file():
+    fail(f"manifest has no readable lifecycle_receipt_inventory_path: {inventory_ref!r}")
+
+acquire_inventory_lock(inventory_path)
+inventory = load_yaml(inventory_path)
+receipts = inventory.get("receipts") or []
+if not isinstance(receipts, list):
+    fail(f"inventory has no receipts[] list: {inventory_path}")
+
+old_receipt = None
+new_receipt = None
+for receipt in receipts:
+    if not isinstance(receipt, dict):
+        continue
+    rid = optional_str(receipt.get("run_id"), "receipt.run_id")
+    if rid == old_run_id:
+        old_receipt = receipt
+    if rid == new_run_id:
+        new_receipt = receipt
+
+if old_receipt is None:
+    fail(f"old receipt run_id not found: {old_run_id!r}")
+if new_receipt is None:
+    fail(f"new receipt run_id not found: {new_run_id!r}")
+
+for field in ("deliverable_id", "phase", "role", "family"):
+    old_value = (old_receipt.get(field) or "").strip()
+    new_value = (new_receipt.get(field) or "").strip()
+    if not old_value or old_value != new_value:
+        fail(
+            f"old/new receipts must share {field}: "
+            f"old={old_value!r} new={new_value!r}"
+        )
+
+old_round = parse_round(old_receipt, "old")
+new_round = parse_round(new_receipt, "new")
+if new_round <= old_round:
+    fail(f"new receipt must be a later round: old={old_round} new={new_round}")
+if optional_str(new_receipt.get("superseded_by_run_id"), "new receipt superseded_by_run_id"):
+    fail(f"new receipt is already superseded by {new_receipt.get('superseded_by_run_id')!r}")
+
+existing_old_target = optional_str(old_receipt.get("superseded_by_run_id"), "old receipt superseded_by_run_id")
+if existing_old_target and existing_old_target != new_run_id:
+    fail(
+        f"old receipt is already superseded by {existing_old_target!r}; "
+        f"refusing to retarget to {new_run_id!r}"
+    )
+
+now = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+old_receipt["superseded_by_run_id"] = new_run_id
+old_receipt.setdefault("superseded_at", now)
+old_receipt["supersession_reason"] = reason
+old_receipt["supersession_issue_ref"] = issue_ref
+old_receipt["supersession_repaired_at"] = now
+old_receipt["supersession_repair_tool"] = "scripts/llm-dev repair-redispatch"
+supersedes = new_receipt.get("supersedes_run_ids")
+if supersedes is None:
+    supersedes = []
+elif not isinstance(supersedes, list) or not all(isinstance(x, str) and x.strip() for x in supersedes):
+    fail("new receipt supersedes_run_ids must be a list of non-empty strings")
+if old_run_id not in supersedes:
+    supersedes.append(old_run_id)
+new_receipt["supersedes_run_ids"] = supersedes
+new_receipt["supersession_reason"] = reason
+new_receipt["supersession_issue_ref"] = issue_ref
+new_receipt["supersession_repaired_at"] = now
+new_receipt["supersession_repair_tool"] = "scripts/llm-dev repair-redispatch"
+
+frozen = {}
+result_doc = None
+result_path = None
+matching_row = None
+
+if freeze_new_captures:
+    result_ref = new_receipt.get("dispatch_result_path")
+    result_path = resolve_ref(result_ref, manifest_path.parent, repo)
+    if result_path is None or not result_path.is_file():
+        fail(f"new receipt has no readable dispatch_result_path: {result_ref!r}")
+    result_doc = load_yaml(result_path)
+    rows = result_doc.get("results") or []
+    if not isinstance(rows, list):
+        fail(f"dispatch result has no results[] list: {result_path}")
+
+    receipt_capture_id = optional_str(new_receipt.get("capture_id"), "new receipt capture_id")
+    receipt_dispatch_id = optional_str(new_receipt.get("dispatch_id"), "new receipt dispatch_id")
+    if receipt_capture_id and not ID_RE.match(receipt_capture_id):
+        fail(f"new receipt capture_id has invalid characters: {receipt_capture_id!r}")
+    if receipt_dispatch_id and not ID_RE.match(receipt_dispatch_id):
+        fail(f"new receipt dispatch_id has invalid characters: {receipt_dispatch_id!r}")
+
+    def row_family_role_ok(row):
+        return (
+            optional_str(row.get("family"), "result family")
+            == optional_str(new_receipt.get("family"), "new receipt family")
+            and optional_str(row.get("role"), "result role")
+            == optional_str(new_receipt.get("role"), "new receipt role")
+        )
+
+    candidates = []
+    if receipt_capture_id:
+        candidates = [
+            row for row in rows
+            if isinstance(row, dict)
+            and optional_str(row.get("capture_id"), "result capture_id") == receipt_capture_id
+            and row_family_role_ok(row)
+        ]
+    if not candidates and receipt_dispatch_id:
+        candidates = [
+            row for row in rows
+            if isinstance(row, dict)
+            and optional_str(row.get("dispatch_id"), "result dispatch_id") == receipt_dispatch_id
+            and row_family_role_ok(row)
+        ]
+    if not candidates:
+        receipt_artifact_sha = normalize_sha(new_receipt.get("output_artifact_sha256"))
+        candidates = [
+            row for row in rows
+            if isinstance(row, dict)
+            and row_family_role_ok(row)
+            and (
+                not receipt_artifact_sha
+                or normalize_sha(row.get("artifact_sha256")) == receipt_artifact_sha
+            )
+        ]
+    active_candidates = [row for row in candidates if not row.get("superseded_by_capture_id")]
+    if len(active_candidates) == 1:
+        matching_row = active_candidates[0]
+    elif not active_candidates and candidates:
+        fail(
+            f"new receipt run_id={new_run_id!r} matches only superseded dispatch-result rows; "
+            "refusing to repair against non-active evidence"
+        )
+    else:
+        fail(
+            f"expected exactly one new dispatch-result row for run_id={new_run_id!r}; "
+            f"found active={len(active_candidates)} total={len(candidates)}"
+        )
+
+    row_dispatch_id = optional_str(matching_row.get("dispatch_id"), "result dispatch_id")
+    if not receipt_dispatch_id:
+        receipt_dispatch_id = row_dispatch_id
+        if receipt_dispatch_id:
+            new_receipt["dispatch_id"] = receipt_dispatch_id
+    if not receipt_dispatch_id:
+        receipt_dispatch_id = safe_component(new_run_id)
+        matching_row["dispatch_id"] = receipt_dispatch_id
+        new_receipt["dispatch_id"] = receipt_dispatch_id
+
+    capture_id = receipt_capture_id or optional_str(matching_row.get("capture_id"), "result capture_id")
+    if not capture_id:
+        stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        capture_id = f"{safe_component(receipt_dispatch_id)}.repair.{stamp}"
+    if not ID_RE.match(capture_id):
+        fail(f"capture_id has invalid characters: {capture_id!r}")
+    safe_capture = safe_component(capture_id)
+    matching_row["capture_id"] = capture_id
+    matching_row["round"] = new_round
+    new_receipt["capture_id"] = capture_id
+
+    prompt_ref = matching_row.get("prompt_path")
+    prompt_path = resolve_ref(prompt_ref, manifest_path.parent, repo)
+    if prompt_path is None or not prompt_path.is_file():
+        fail(f"matched result row has no readable prompt_path: {prompt_ref!r}")
+    declared_matches(prompt_path, matching_row.get("prompt_sha256"), "prompt")
+    declared_matches(prompt_path, new_receipt.get("prompt_sha256"), "receipt prompt")
+    prompt_target = prompt_path.parent / f"{safe_capture}.md"
+    prompt_hash = copy_capture(prompt_path, prompt_target, "prompt")
+    matching_row["prompt_path"] = rel_to_repo(prompt_target)
+    matching_row["prompt_sha256"] = f"sha256:{prompt_hash}"
+    new_receipt["prompt_sha256"] = prompt_hash
+    new_receipt["input_artifact_sha256"] = prompt_hash
+    frozen["prompt"] = rel_to_repo(prompt_target)
+
+    raw_ref = matching_row.get("raw_output_path") or new_receipt.get("transcript_or_log_path")
+    raw_path = resolve_ref(raw_ref, manifest_path.parent, repo)
+    if raw_path is None or not raw_path.is_file():
+        fail(f"matched result row has no readable raw_output_path/transcript_or_log_path: {raw_ref!r}")
+    declared_matches(raw_path, matching_row.get("raw_output_hash"), "raw output")
+    raw_target = raw_path.parent / f"{safe_capture}.raw.txt"
+    raw_hash = copy_capture(raw_path, raw_target, "raw output")
+    matching_row["raw_output_path"] = rel_to_repo(raw_target)
+    matching_row["raw_output_hash"] = f"sha256:{raw_hash}"
+    new_receipt["transcript_or_log_path"] = rel_to_repo(raw_target)
+    frozen["raw"] = rel_to_repo(raw_target)
+
+    stderr_ref = matching_row.get("stderr_path") or new_receipt.get("stderr_path")
+    if stderr_ref:
+        stderr_path = resolve_ref(stderr_ref, manifest_path.parent, repo)
+        if stderr_path is None or not stderr_path.is_file():
+            fail(f"declared stderr capture is not readable: {stderr_ref!r}")
+        declared_matches(stderr_path, matching_row.get("stderr_hash"), "stderr")
+        declared_matches(stderr_path, new_receipt.get("stderr_sha256"), "receipt stderr")
+        stderr_target = stderr_path.parent / f"{safe_capture}.stderr.txt"
+        stderr_hash = copy_capture(stderr_path, stderr_target, "stderr")
+        matching_row["stderr_path"] = rel_to_repo(stderr_target)
+        matching_row["stderr_hash"] = f"sha256:{stderr_hash}"
+        new_receipt["stderr_path"] = rel_to_repo(stderr_target)
+        new_receipt["stderr_sha256"] = stderr_hash
+        frozen["stderr"] = rel_to_repo(stderr_target)
+
+    old_capture = (
+        optional_str(old_receipt.get("capture_id"), "old receipt capture_id")
+        or optional_str(old_receipt.get("dispatch_id"), "old receipt dispatch_id")
+    )
+    superseded_capture_ids = set(matching_row.get("supersedes_capture_ids") or [])
+    for row in rows:
+        if not isinstance(row, dict) or row is matching_row:
+            continue
+        if optional_str(row.get("dispatch_id"), "result dispatch_id") != receipt_dispatch_id:
+            continue
+        row_capture = optional_str(row.get("capture_id"), "result capture_id") or optional_str(row.get("dispatch_id"), "result dispatch_id")
+        if old_capture and row_capture != old_capture:
+            continue
+        if not row.get("superseded_by_capture_id"):
+            row["superseded_by_capture_id"] = capture_id
+            row["superseded_at"] = now
+            row["supersession_reason"] = reason
+            row["supersession_issue_ref"] = issue_ref
+            row["supersession_repaired_at"] = now
+            row["supersession_repair_tool"] = "scripts/llm-dev repair-redispatch"
+            if row_capture:
+                superseded_capture_ids.add(row_capture)
+    if superseded_capture_ids:
+        matching_row["supersedes_capture_ids"] = sorted(superseded_capture_ids)
+    matching_row["supersession_reason"] = reason
+    matching_row["supersession_issue_ref"] = issue_ref
+    matching_row["supersession_repaired_at"] = now
+    matching_row["supersession_repair_tool"] = "scripts/llm-dev repair-redispatch"
+
+if freeze_new_captures and result_path is not None and result_doc is not None:
+    atomic_write_yaml(result_path, result_doc)
+atomic_write_yaml(inventory_path, inventory)
+
+inventory_label = rel_to_repo(inventory_path) if str(inventory_path).startswith(str(repo)) else str(inventory_path)
+print(f"repair-redispatch: superseded {old_run_id} -> {new_run_id} in {inventory_label}")
+if freeze_new_captures:
+    for label in ("prompt", "raw", "stderr"):
+        if label in frozen:
+            print(f"repair-redispatch: froze {label}: {frozen[label]}")
+    if "stderr" not in frozen:
+        print("repair-redispatch: no stderr capture declared on the new receipt/result; skipped stderr freeze")
+print("repair-redispatch: old receipt retained as superseded historical evidence; no old bytes were fabricated")
 PY
 }
 
@@ -1331,6 +1791,7 @@ main() {
     verify-staging)     cmd_verify_staging "$@" ;;
     re-adjudication)    cmd_re_adjudication "$@" ;;
     rebind-artifact)    cmd_rebind_artifact "$@" ;;
+    repair-redispatch)  cmd_repair_redispatch "$@" ;;
     post-merge)         cmd_post_merge "$@" ;;
     review-chain)       cmd_review_chain "$@" ;;
     verify-live-docs)   cmd_verify_live_docs "$@" ;;
