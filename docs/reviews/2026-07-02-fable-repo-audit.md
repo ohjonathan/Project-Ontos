@@ -1299,7 +1299,7 @@ Derived from `Co-Authored-By` trailers across 835 commits (~560 carry no trailer
 
 | Slice | Model | Commits / window | Owned surface (churn) | Confirmed findings (inferred) | Worst |
 |---|---|---|---|---:|---|
-| **A** | **Claude Opus 4.5** | 183 commits, 2025-12-09→2026-01-29 (v2.x→v3.0.0→v3.2.0) | Script→package migration and most of `ontos/core` + `commands`; the CLI; the v2-era Manual/Agent docs; the `.ontos/scripts` legacy layer + vendored fork; `_templates`/`_hooks` packaging | ~54 | **D2b-roundtrip-3 (P0 serializer)** |
+| **A** | **Claude Opus 4.5** | 183 commits, 2025-12-09→2026-01-29 (v2.x→v3.0.0→v3.2.0) | Script→package migration and most of `ontos/core` + `commands`; the CLI; the v2-era Manual/Agent docs; the `.ontos/scripts` legacy layer + vendored fork; `_templates`/`_hooks` packaging | ~57 | **D2b-roundtrip-3 (P0 serializer)** |
 | **B** | **Claude Opus 4.6 / 4.6 (1M)** | 37 commits, 2026-02-06→2026-04-15 (v3.3→v4.3.0) | MCP write-tools/portfolio/retrofit/rename expansion (`writes.py`, `rename_tool.py`, `portfolio.py`, `retrofit.py`, `snapshot.py`) | ~14 | **D2a-write-safety-3 (MCP rename scope bypass → duplicate IDs)** |
 | — | *unattributed* | 4 commits, v4.3.0→v4.4.0 | One squash ("v4.4 agentic activation resilience", 0260880); model tracked only in `manifests/…v44….yaml` | (folded into C) | — |
 | **C** | **Claude Opus 4.7 (1M)** | 33 commits, 2026-05-21→2026-05-23 (v4.4.0→v4.6.0, #115-117/#119 + v4.7-window hygiene #122-130) | `core/graph.py`, `core/body_refs.py`, `core/types.py`, `mcp/tools.py`, `commands/doctor.py`, activation resilience | ~13 | **D4b-trust-1 (RCE via `ontos doctor`)** |
