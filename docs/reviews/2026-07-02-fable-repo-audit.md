@@ -8,6 +8,8 @@ status: complete
 
 *HEAD `589d919` · date 2026-07-02 · auditor: Claude Fable 5 · method: 15-dimension multi-agent audit with adversarial verification. Every finding below survived at least one hostile refutation pass; P0s survived two.*
 
+*Post-review corrections (2026-07-02): three independent reviewers — Gemini, GLM-5.2 (via opencode), and ChatGPT — reproduced the findings against HEAD `589d919`. All three confirmed the P0 and the `ontos doctor` RCE end-to-end; none refuted any confirmed finding. Their factual corrections are applied throughout and flagged inline as `[corrected post-review]`: the omitted sixth `split('---',2)` consumer (`verify.py:96`), the coverage-basis clarification, the `.ontos-internal/` on-disk size, and the 91-vs-88 attribution reconciliation.*
+
 ---
 
 ## 1. Executive summary
@@ -47,9 +49,9 @@ Ontos is a genuinely capable, self-hosting documentation-integrity tool with a w
 
 ### Q2 — Quality/execution/purpose-fit of the Opus-authored slices (per version-slice)
 
-Fable authored only the v4.7.0 slice; everything else is Opus. Attribution below is inferred from the file/feature churn map in Appendix C, not per-line `git blame`, so cross-slice findings are flagged explicitly. Of 88 confirmed findings, **81 land in Opus-authored slices and 7 in the Fable slice.**
+Fable authored only the v4.7.0 slice; everything else is Opus. Attribution below is inferred from the file/feature churn map in Appendix C, not per-line `git blame`, so cross-slice findings are flagged explicitly. Of **91** confirmed findings, **84 land in Opus-authored slices and 7 in the Fable slice** [corrected post-review: the earlier "88" basis predated re-inclusion of `D3a-parsers-2` and two same-root-cause entries into the register; the per-slice sub-tallies below are approximate and sum to the 84 Opus total within rounding].
 
-- **Opus 4.5 — foundational core + CLI + commands + v2-era docs + the legacy migration layer (v2.x→v3.2): ~54 confirmed findings. Worst: `D2b-roundtrip-3` (the P0).** This slice carries the structural debt: the non-YAML-safe serializer (`D2b-roundtrip-3`), the copy-pasted `split('---',2)` family (`D3a-parsers-3`), the divergent fallback parser (`D3a-parsers-2`), `commands/log.py`'s hand-rolled frontmatter and dead `ontos_config` import (`D3b-structure-1/2`), incomplete config validation (`D4a-config-2`), the exit-code overload and 1,880-line `cli.py` boilerplate (`D7-cli-consistency-3`, `D3b-structure-6`), the phantom-modes Manual (`D8-docs-clarity-5`), the stale Agent Instructions (`D8-docs-clarity-1`), and the entire `.ontos/scripts` legacy layer + vendored fork that still gates commits (`D5a-repo-redundancy-1/2`). Purpose-fit: the *design* is right (surgical edit helpers exist, shared serializer exists) but the older command code doesn't use its own better primitives. This is the slice most in need of consolidation.
+- **Opus 4.5 — foundational core + CLI + commands + v2-era docs + the legacy migration layer (v2.x→v3.2): ~57 confirmed findings. Worst: `D2b-roundtrip-3` (the P0).** This slice carries the structural debt: the non-YAML-safe serializer (`D2b-roundtrip-3`), the copy-pasted `split('---',2)` family (`D3a-parsers-3`), the divergent fallback parser (`D3a-parsers-2`), `commands/log.py`'s hand-rolled frontmatter and dead `ontos_config` import (`D3b-structure-1/2`), incomplete config validation (`D4a-config-2`), the exit-code overload and 1,880-line `cli.py` boilerplate (`D7-cli-consistency-3`, `D3b-structure-6`), the phantom-modes Manual (`D8-docs-clarity-5`), the stale Agent Instructions (`D8-docs-clarity-1`), and the entire `.ontos/scripts` legacy layer + vendored fork that still gates commits (`D5a-repo-redundancy-1/2`). Purpose-fit: the *design* is right (surgical edit helpers exist, shared serializer exists) but the older command code doesn't use its own better primitives. This is the slice most in need of consolidation.
 - **Opus 4.6 — MCP write-tools / portfolio / retrofit / rename (v3.3→v4.3): ~14 confirmed findings. Worst: `D2a-write-safety-3` (MCP rename's forced-LIBRARY scope is guard-only → duplicate IDs and dangling cross-scope refs, reproduced end-to-end).** Also `D2a-write-safety-5` (rename's `git checkout -- .` rollback can revert unrelated user edits made after the pre-lock clean check) and `D2b-roundtrip-1` (the shared surgical helper bakes U+FFFD into any non-UTF-8 file). Execution quality here is high on the happy path — the locking and A3 rollback design is thoughtful — but the failure/edge paths are under-hardened, and `rename_tool.py` copy-pastes ~115 lines of `writes.py` (`D3b-structure-3`). The shipped personal-machine portfolio default (`D4a-config-1`) also lives here.
 - **Opus 4.7 — graph / body_refs / mcp tools / doctor / activation (v4.4→v4.6): ~13 confirmed findings. Worst: `D4b-trust-1` (arbitrary code execution via `ontos doctor` reading a repo-committed `.cursor/mcp.json`).** The body-reference scanner (`body_refs.py`) is the recurring theme: silent partial renames on aliased wikilinks (`D1a-graph-link-1`), the non-CommonMark fence machine (`D1a-graph-link-2`), body-relative line numbers (`D1a-graph-link-3`), and the source-file/stem-vs-id false positives whose normalization lives here (`D1a-graph-link-6`, straddling into Fable's classifier). Plus the `map`-vs-`activate` concept-vocabulary count split (`D1b-counts-1`) and the graph recursion cliff (`D1a-graph-link-4`). This slice's core algorithms are solid (graph orchestration scored clean); the defects are in edge-case correctness and the trust boundary.
 - **Fable 5 — v4.7.0 link-diagnostics / link-check / warning-grouping + client docs (v4.7.0): 7 confirmed findings, the cleanest slice. Worst: `D7-cli-consistency-4` / `D1b-counts-4` (the new link-check surface reports findings as `status:"success"` while sibling commands report `error`, and `maintain`'s frontmatter-only scan vouches "No broken references" while `link-check` exits 1 on the same repo).** Notably, most Fable findings are *consistency gaps the new link-check surface exposed in older commands* rather than fresh bugs it introduced, plus one provably output-neutral perf pass it added (`D1a-graph-link-7`) and the exit-code-derived `result_status` (`D1c-envelope-5`, P2). The one clear execution miss is docs-scope: the v4.7 doc-refresh commit `b458ab6` fixed only the MCP tool table and left the stale Agent Instructions untouched (`D8-docs-clarity-1`).
@@ -63,7 +65,7 @@ The repo carries roughly 60% dead-or-duplicated weight by file count, but very l
 - **`.ontos/scripts/` (8,781 lines of v2 scripts + a 3,053-line vendored fork of the whole package)** still gates every commit and CI run and is coupled to 11 test files (`D5a-repo-redundancy-1/2`). 63% of the v2 scripts already exist verbatim in the archive. **Rewire → then archive**, never plain-delete.
 - **Genuinely dead and safe to remove:** `ontos/_hooks/*` (ships to PyPI, imports a nonexistent `ontos._scripts`, `D5a-repo-redundancy-3`); `ontos/_templates/` (dead package data, `D5b-dead-code-2`); 11 tracked `.bak` files that violate the repo's own `.gitignore` (`D5a-repo-redundancy-6`); `io/obsidian.py` (dead duplicate, `D5b-dead-code-6`); a dozen v2-compat functions in `paths.py` (`D5b-dead-code-3`); three uncalled command wrappers + two re-export shims (`D5b-dead-code-8`); six scattered dead helpers (`D5b-dead-code-10`, worst: a second MCP error-envelope helper `tool_error`); `_create_directories` (`D5b-dead-code-9`); the dead `required_version` config key (`D5b-dead-code-7`); the dead `_cmd_export` handler pinned by a test asserting the wrong behavior (`D3b-structure-7`).
 - **Structural duplication to collapse:** the 5-copy MCP exception cascade (`D3b-structure-4`), `rename_tool.py`↔`writes.py` substrate (`D3b-structure-3`), the double cross-workspace guard (`D3b-structure-5`), and the output-neutral known-ID body-scan pass costing ~65% of `body_scan` time (`D1a-graph-link-7`).
-- **Extraction candidates:** `.ontos-internal/` (643 files, 50.5% of tree, 7.4M) and `.project-internal/` (25 stale files) — but note the verifier corrected the "only two couplings" premise: `.ontos-internal/` is the actively dogfooded contributor-mode store with ~50 live references, so only the frozen `archive/` (460 files) is cleanly extractable (`D5a-repo-redundancy-4`).
+- **Extraction candidates:** `.ontos-internal/` (643 tracked files, 50.5% of tree, ~7.6M on disk [size corrected post-review from 7.4M; `git ls-files` basis = 643, a working-tree `find` counts 644]) and `.project-internal/` (25 stale files) — but note the verifier corrected the "only two couplings" premise: `.ontos-internal/` is the actively dogfooded contributor-mode store with ~50 live references, so only the frozen `archive/` (460 files) is cleanly extractable (`D5a-repo-redundancy-4`).
 
 ### Q4 — Code smells, anti-patterns, God classes/functions
 
@@ -96,7 +98,7 @@ Mixed, and the hardcoding is the problem.
 
 ### Q7 — Concrete recommendations: refactoring, standardizing, improving context clarity
 
-- **Serializer/parser consolidation:** one YAML-safe `serialize_frontmatter` (`D2b-roundtrip-3/-4`, `D3b-structure-1`), one fence-aware `^---$` splitter consumed by all five readers (`D3a-parsers-3`), delete `_fallback_yaml_parse` (PyYAML is a hard dep, so its rationale is dead — `D3a-parsers-2`).
+- **Serializer/parser consolidation:** one YAML-safe `serialize_frontmatter` (`D2b-roundtrip-3/-4`, `D3b-structure-1`), one fence-aware `^---$` splitter consumed by all six readers (`D3a-parsers-3`), delete `_fallback_yaml_parse` (PyYAML is a hard dep, so its rationale is dead — `D3a-parsers-2`).
 - **CLI/MCP dispatch unification:** a declarative command table to collapse `cli.py` (`D3b-structure-6`); one `_write_common.py` for the MCP substrate (`D3b-structure-3/-4/-5`); route promote/migrate/log through the surgical `frontmatter_edit` helpers (`D2b-roundtrip-4`).
 - **Standardize the machine contract:** publish an exit-code taxonomy (`D7-cli-consistency-3`), pick one envelope-status rule (`D7-cli-consistency-4`), migrate the `Tuple[int,str]` wrapper commands to structured `data` payloads (`D7-cli-consistency-5`), fix `map --json` stream discipline (`D7-cli-consistency-1`), align `verify --portfolio` and `env --json` (`D7-cli-consistency-6/-7`).
 - **Context clarity for contributors:** add a current `Architecture.md`/`CONTRIBUTING.md` (the two existing arch maps are v3.0-era and unindexed — `D8-docs-clarity-6`), regenerate the root `CLAUDE.md` via `ontos export claude --force` so the two root instruction files stop contradicting (`D8-docs-clarity-8`), rewrite Manual §1/§6 to the real `.ontos.toml` surface (`D8-docs-clarity-5`), and make the Tier-1 map table carry real summaries (`D8-docs-clarity-4`).
@@ -255,18 +257,18 @@ new_content = f"---\n{fm_yaml}\n---{body}"
 
 **Verification evidence.** Real `apply_promotion()` + `ctx.commit()` on a CRLF file with a comment and `version: "4.10"`: comment survived False, CRLF survived False (body included), keys reordered, title requoted, version reparsed as float 4.1. `promote.py:33.3%` coverage — the entire rewrite chain is untested.
 
-### D3a-parsers-3 — The `---` substring split is copy-pasted across five frontmatter splitters; any `---` inside a value truncates parsing
+### D3a-parsers-3 — The `---` substring split is copy-pasted across six frontmatter splitters; any `---` inside a value truncates parsing
 **File:** `ontos/io/yaml.py:60` · **Effort:** M · **Owner Q:** 3 · **Verification: CONFIRMED** · merges D2b-roundtrip-2
 
 ```
     parts = content.split('---', 2)
 ```
 
-**Claim.** All splitters use substring `split('---', 2)` instead of matching fence lines (`^---$`): `io/yaml.py:60`, `frontmatter_edit.py:74`, `frontmatter.py:56`, `history.py:111`, `promote.py:128`. A `---` inside a value — e.g. `title: "phase --- two"` with a proper closing fence (valid per Jekyll/Hugo) — truncates the YAML: the canonical parser raises (doc ejected as `parse_error`), while `_split_frontmatter` mis-splits silently.
+**Claim.** All splitters use substring `split('---', 2)` instead of matching fence lines (`^---$`): `io/yaml.py:60`, `frontmatter_edit.py:74`, `frontmatter.py:56`, `history.py:111`, `promote.py:128`, and `commands/verify.py:96` [the last added post-review — GLM correctly caught that the original enumeration listed only five; the copy-paste is therefore *more* widespread than first stated, `frontmatter_edit.py:74` using double-quoted `"---"` which a naïve grep misses]. A `---` inside a value — e.g. `title: "phase --- two"` with a proper closing fence (valid per Jekyll/Hugo) — truncates the YAML: the canonical parser raises (doc ejected as `parse_error`), while `_split_frontmatter` mis-splits silently.
 
-**Impact.** Users with legitimate `---` substrings (em-dash runs, date ranges) lose those documents from map/query/health; the edit path's silent mis-split shifts fields into the body. Fixing correctly requires five synchronized changes today.
+**Impact.** Users with legitimate `---` substrings (em-dash runs, date ranges) lose those documents from map/query/health; the edit path's silent mis-split shifts fields into the body. Fixing correctly requires six synchronized changes today.
 
-**Fix.** Introduce one shared fence-aware splitter (first `^---\s*$` after line 0) in `io/yaml.py` (or a new `core/fm_split.py`) and have all five consumers use it; delete the four inline copies as part of parser consolidation.
+**Fix.** Introduce one shared fence-aware splitter (first `^---\s*$` after line 0) in `io/yaml.py` (or a new `core/fm_split.py`) and have all six consumers use it; delete the five inline copies as part of parser consolidation. (Following the earlier "five/four" wording would have silently left `verify.py:96` un-migrated.)
 
 **Verification evidence.** Reproduced on `title: "phase --- two"`: `parse_frontmatter_content` raises `ValueError('while scanning a quoted scalar')`; `_split_frontmatter` returns frontmatter `'\nid: doc_e\ntitle: "phase '`. Separately `parse_yaml` accepts the same block, proving the split alone is the cause.
 
@@ -372,8 +374,8 @@ new_content = f"---\n{fm_yaml}\n---{body}"
 
 **Verification evidence.** Toy with the map inside scope: `activate` documents=2/clean; `link-check` exit 2, orphans `['ontos_context_map']`; `query --health` total_docs=3; `create_snapshot` doc_count=3 with orphan warning; identical `graph_validation` basis on the two disagreeing surfaces.
 
-### D1b-counts-4 — `maintain` check_links reports "No broken references" while link-check exits 1 with broken_references=1 for identical state
-**File:** `ontos/commands/maintain.py:631` · **Effort:** S · **Owner Q:** 1 · **Verification: CONFIRMED**
+### D1b-counts-4 — the `check_links` task inside the `maintain` pipeline reports "No broken references" while standalone `link-check` exits 1 with broken_references=1 for identical state
+**File:** `ontos/commands/maintain.py:631` · **Effort:** S · **Owner Q:** 1 · **Verification: CONFIRMED** · [wording tightened post-review: `check_links` is a task within the `maintain` pipeline (`_task_check_links`), not a standalone `ontos maintain check-links` subcommand]
 
 ```
         doc_paths=doc_paths,
@@ -837,7 +839,7 @@ python3 -m ontos._scripts.ontos_pre_commit_check
 
 **Claim.** `pyproject.toml:61` ships these hooks, but nothing consumes them (`ontos init` writes its own shim calling `ontos hook <type>`), and they delegate to `ontos._scripts`, which does not exist — so the guard makes the hook silently exit 0 forever. **Impact.** Shipped dead weight plus a trap: manually wiring these "v3.0" hooks yields a no-op that looks installed. **Fix.** Delete the files and the package-data line, or rewrite to call `ontos hook <type>` and use them from `_install_hooks`. **Verification.** `find_spec('ontos._scripts...')` → ModuleNotFoundError; built wheel ships the hooks and zero `_scripts` entries.
 
-### D5a-repo-redundancy-4 — `.ontos-internal/` is 643 files (50.5% of the tree, 7.4M) with a narrow but non-trivial live coupling
+### D5a-repo-redundancy-4 — `.ontos-internal/` is 643 tracked files (50.5% of the tree, ~7.6M on disk) with a narrow but non-trivial live coupling
 **File:** `tests/conftest.py:69` · **Effort:** L · **Owner Q:** 3 · **Verification: CONFIRMED** (impact partially corrected) · merges D5a-repo-redundancy-8
 
 ```
@@ -1222,7 +1224,7 @@ Ordered so that quick wins land first, characterization tests bracket every refa
 - Clean the rotted tests that would otherwise give false green during refactors: `D6b-test-quality-1/2/5/6`.
 
 **Then the structural work (with the net in place):**
-- **Parser consolidation** — one fence-aware `^---$` splitter for all five readers, delete `_fallback_yaml_parse`, route `history.py` through the canonical loader (`D3a-parsers-3`, `D3a-parsers-2`). The `D1a-graph-link` line-number and fence fixes become tractable in the same pass (`D1a-graph-link-2/3`).
+- **Parser consolidation** — one fence-aware `^---$` splitter for all six readers, delete `_fallback_yaml_parse`, route `history.py` through the canonical loader (`D3a-parsers-3`, `D3a-parsers-2`). The `D1a-graph-link` line-number and fence fixes become tractable in the same pass (`D1a-graph-link-2/3`).
 - **Write-path unification** — route promote/migrate/promote_document through `frontmatter_edit` (`D2b-roundtrip-4`, `D2b-roundtrip-5`); fix the body-reference scanner (`D1a-graph-link-1/6`, then `-7` output-neutral pass removal).
 - **MCP dispatch unification** — extract `_write_common.py` and one error boundary (`D3b-structure-3/4/5/8`); harden rename locking/rollback (`D2a-write-safety-3/5/6/8/9`).
 
@@ -1245,7 +1247,9 @@ Ordered so that quick wins land first, characterization tests bracket every refa
 
 ## 7. Appendix B — Measured coverage table
 
-**Suite:** 1,442 passed, 2 skipped, 0 failed in 85.84s (Python 3.14.6). **Overall coverage: 77.76%** over 13,521 statements. The two skipped tests are the disabled golden-master pair (`D6a-test-gaps-6`).
+**Suite:** 1,442 passed, 2 skipped, 0 failed in 85.84s (Python 3.14.6). **Overall coverage: 77.76%** over 13,521 statements — reproduced with the exact command `pytest tests/ --cov=ontos` on the editable install (`pip install -e ".[dev,mcp]"`) at HEAD `589d919` (confirmed: yields `13521` statements / `78%`). The two skipped tests are the disabled golden-master pair (`D6a-test-gaps-6`).
+
+*Coverage-basis note [added post-review]:* the 13,521-statement denominator is the shipping `ontos/` package **only**. A reviewer (ChatGPT) running the same command in a fresh clone measured **~26,005 statements / ~57%** — an *environment-dependent* inflation, not a contradiction: when coverage's `source=["ontos"]` also sweeps the vendored legacy fork under `.ontos/scripts/ontos/` (frozen v2.8.0) plus the `.ontos/scripts/*.py` v2 scripts, the denominator roughly doubles while the real-package cold-spots are unchanged. That inflation is itself the harm described in `D5a-repo-redundancy-1/2` — the legacy fork pollutes even the coverage number — and is the reason to measure against the editable-installed package, not a fresh-clone path that picks up the fork. The module-level cold-spot rows below (e.g. `promote.py` 33.3%) are unaffected by the basis choice.
 
 *Note on "claimed-untested" modules: most are in fact well covered; earlier confusion traced to basename collisions with the vendored legacy copies under `.ontos/scripts/ontos/` (see `D5a-repo-redundancy-2`).*
 
@@ -1302,4 +1306,4 @@ Derived from `Co-Authored-By` trailers across 835 commits (~560 carry no trailer
 | **D** | **Claude Fable 5** | 13 commits, 2026-06-10→2026-06-24 (v4.7.0 #131-136, docs PR #143) | `core/link_diagnostics.py` (+321), `commands/link_check.py`, `core/warning_groups.py` (new), `core/ontology.py`, shared `graph.py`, ~1,700 test lines, v4.7 client docs | 7 | **D7-cli-consistency-4 / D1b-counts-4 (link-check surface diverges from sibling commands)** |
 | — | *one-off* | 1 commit | "Codex Adversarial Reviewer" trailer | — | — |
 
-**Reading of the map for Q2:** 81 of 88 confirmed findings fall in Opus-authored slices; the Fable v4.7 slice is the cleanest (7 findings), and most of those are cross-surface consistency gaps the new link-check surface *exposed* in older commands rather than fresh regressions, plus one provably output-neutral perf pass (`D1a-graph-link-7`). The foundational Opus 4.5 slice carries the lone P0 and the bulk of the structural/legacy debt; the Opus 4.6/4.7 slices carry the write-safety and graph/trust-boundary defects. The recurring cross-slice pattern is a new parallel surface added without reconciling it against the existing ones — the root cause of the count, envelope, and exit-code contradictions catalogued above.
+**Reading of the map for Q2:** 84 of 91 confirmed findings fall in Opus-authored slices; the Fable v4.7 slice is the cleanest (7 findings), and most of those are cross-surface consistency gaps the new link-check surface *exposed* in older commands rather than fresh regressions, plus one provably output-neutral perf pass (`D1a-graph-link-7`). The foundational Opus 4.5 slice carries the lone P0 and the bulk of the structural/legacy debt; the Opus 4.6/4.7 slices carry the write-safety and graph/trust-boundary defects. The recurring cross-slice pattern is a new parallel surface added without reconciling it against the existing ones — the root cause of the count, envelope, and exit-code contradictions catalogued above.
