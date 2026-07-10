@@ -1,0 +1,22 @@
+manifest_version: "1.10.2"
+authoring_session_family: gpt
+meta_orchestrator_family: codex
+deliverable_author_family: codex
+deliverable_id: project-ontos-audit-serializer-corruption
+artifact_root: docs/reviews/project-ontos-audit-serializer-corruption
+dispatches:
+  - dispatch_id: project-ontos-audit-serializer-corruption-B.1-gpt-alignment
+    family: gpt
+    role: alignment
+    review_mode: full-3-lens
+    expected_provider: gpt
+    expected_cli: codex
+    expected_model: gpt-5
+    expected_artifact: docs/reviews/project-ontos-audit-serializer-corruption/B.1-gpt-alignment.md
+    prompt_path: docs/reviews/project-ontos-audit-serializer-corruption/.prompts/B.1-gpt-alignment.prompt.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    fallback_models: []
+    status: pending
+    scope: |
+      Alignment review the Phase A spec for #146 against the dispatch, audit D2b-roundtrip-3, O5 scope lock, and O6 release decision. Focus on scope, lifecycle, author-family exclusion, release-action deferral, and helper/layer constraints.

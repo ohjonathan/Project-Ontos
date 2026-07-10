@@ -1,0 +1,22 @@
+manifest_version: "1.10.2"
+authoring_session_family: claude
+meta_orchestrator_family: codex
+deliverable_author_family: codex
+deliverable_id: project-ontos-audit-serializer-corruption
+artifact_root: docs/reviews/project-ontos-audit-serializer-corruption
+dispatches:
+  - dispatch_id: project-ontos-audit-serializer-corruption-B.1-claude-sonnet-peer
+    family: claude-sonnet
+    role: peer
+    review_mode: full-3-lens
+    expected_provider: claude
+    expected_cli: claude
+    expected_model: sonnet
+    expected_artifact: docs/reviews/project-ontos-audit-serializer-corruption/B.1-claude-sonnet-peer.md
+    prompt_path: docs/reviews/project-ontos-audit-serializer-corruption/.prompts/B.1-claude-sonnet-peer.prompt.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    fallback_models: []
+    status: pending
+    scope: |
+      Peer review the Phase A spec for #146. Focus on whether the spec is implementable, complete, and clear enough to fix D2b-roundtrip-3 without touching excluded paths or accidentally changing log.py.

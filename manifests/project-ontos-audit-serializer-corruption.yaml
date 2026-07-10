@@ -1,0 +1,287 @@
+manifest_version: "1.10.2"
+id: project-ontos-audit-serializer-corruption
+slug: project-ontos-audit-serializer-corruption
+summary: "Fix #146 / D2b-roundtrip-3 so Ontos frontmatter write paths preserve valid YAML and semantic values across promote, schema-migrate, and MCP promote_document."
+
+lifecycle_mode: framework lifecycle
+deliverable_type: standard
+user_facing: false
+fallback_evidence_mode: strict_p3
+require_lifecycle_dispatch_bundles: true
+strict_p3_required_phases: ["B.1", "D.2", "D.5"]
+
+owners:
+  - "Project Ontos Maintainers"
+
+scope:
+  allowed_paths:
+    - "manifests/project-ontos-audit-serializer-corruption.yaml"
+    - "docs/trackers/project-ontos-audit-serializer-corruption.md"
+    - "docs/specs/project-ontos-audit-serializer-corruption-spec.md"
+    - "docs/reviews/project-ontos-audit-serializer-corruption/"
+    - "docs/retros/project-ontos-audit-serializer-corruption-retro.md"
+    - "docs/logs/"
+    - "ontos/core/schema.py"
+    - "ontos/io/yaml.py"
+    - "ontos/commands/promote.py"
+    - "ontos/commands/migrate.py"
+    - "ontos/mcp/writes.py"
+    - "tests/test_frontmatter_roundtrip_regression.py"
+  allowed_path_patterns: []
+  composition_targets: []
+  forbidden_paths:
+    - "ontos/core/body_refs.py"
+    - "ontos/cli.py"
+    - "ontos/commands/log.py"
+    - "ontos/mcp/rename_tool.py"
+    - "ontos/mcp/server.py"
+    - "ontos/mcp/tools.py"
+    - ".pre-commit-config.yaml"
+    - ".ontos/scripts/"
+    - "docs/reviews/project-ontos-audit-doctor-rce/"
+    - "docs/reviews/project-ontos-audit-relN-quick-wins/"
+    - "docs/reviews/project-ontos-audit-relN-sweep/"
+  forbidden_symbols:
+    - "git reset --hard"
+    - "git checkout -- ."
+  cardinality_assertions:
+    - name: "four serializer regression fixtures are declared"
+      command: "grep -cE 'Q3 plan|design_v1,final|4.10|#42 follow-up' tests/test_frontmatter_roundtrip_regression.py"
+      expect: "gte:4"
+    - name: "roundtrip assertion helper exists"
+      command: "python -c \"from ontos.io.yaml import assert_frontmatter_roundtrip; print(callable(assert_frontmatter_roundtrip))\""
+      expect: "literal:True"
+
+artifacts:
+  spec:              "docs/specs/project-ontos-audit-serializer-corruption-spec.md"
+  family_verdict:    "docs/reviews/project-ontos-audit-serializer-corruption/<phase>-<family>-<role>.md"
+  canonical_verdict: "docs/reviews/project-ontos-audit-serializer-corruption/<phase>-verdict.md"
+  fix_summary:       "docs/reviews/project-ontos-audit-serializer-corruption/D.4-fix-summary.md"
+  verification:      "docs/reviews/project-ontos-audit-serializer-corruption/D.5-<family>-verifier.md"
+  final_approval:    "docs/reviews/project-ontos-audit-serializer-corruption/final-approval.md"
+  retro:             "docs/retros/project-ontos-audit-serializer-corruption-retro.md"
+
+model_assignments:
+  - phase: "A"
+    assignments:
+      codex: spec-author
+  - phase: "B.1"
+    assignments:
+      claude-sonnet: peer
+      gpt: alignment
+      gemini: adversarial
+  - phase: "B.3"
+    assignments:
+      codex: meta-consolidator
+  - phase: "C"
+    assignments:
+      codex: implementation-author
+  - phase: "D.2"
+    assignments:
+      claude-sonnet: peer
+      gpt: alignment
+      gemini: adversarial
+  - phase: "D.3"
+    assignments:
+      codex: meta-consolidator
+  - phase: "D.4"
+    assignments:
+      codex: fix-author
+  - phase: "D.5"
+    assignments:
+      claude-sonnet: verifier
+      gpt: verifier
+      gemini: verifier
+  - phase: "D.6"
+    assignments:
+      codex: final-approval
+  - phase: "E"
+    assignments:
+      codex: retro
+
+cli_capability_matrix:
+  codex:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+  claude-sonnet:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+    model_restrictions:
+      allowed_models:
+        - sonnet
+  gpt:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+  gemini:
+    shell: false
+    git: false
+    test_runner: false
+    doc_index: true
+    evidence_cap: static-inspection
+    writes_files_non_interactively: false
+    expected_version_regex: "^[0-9]+[.][0-9]+[.][0-9]+"
+
+smoke_checks:
+  - phase: "C"
+    checks:
+      - name: "serializer regression test"
+        command: ".venv/bin/python -m pytest tests/test_frontmatter_roundtrip_regression.py -q"
+        expect: "exit-0"
+      - name: "frontmatter and write-tool nearby tests"
+        command: ".venv/bin/python -m pytest tests/core/test_schema.py tests/commands/test_promote_parity.py tests/commands/test_migrate_parity.py tests/mcp/test_write_tools.py -q"
+        expect: "exit-0"
+  - phase: "D.6"
+    checks:
+      - name: "full test suite"
+        command: ".venv/bin/python -m pytest tests/ -q"
+        expect: "exit-0"
+      - name: "diff whitespace check"
+        command: "git diff --check"
+        expect: "exit-0"
+      - name: "framework verify-all"
+        command: "bash .llm-dev/framework/scripts/verify-all.sh"
+        expect: "exit-0"
+
+regression_guards:
+  - name: "D2b-roundtrip-3 fixtures remain byte-semantically intact"
+    command: ".venv/bin/python -m pytest tests/test_frontmatter_roundtrip_regression.py -q"
+
+sibling_deliverable_ids: []
+self_review_caveats:
+  - family: codex
+    phases: ["D.3"]
+    rationale: "Codex authors Phase C and consolidates D.3 after three external D.2 review families; D.5 verification remains non-author families only."
+reviewer_family_substitutes: []
+review_rounds: []
+consolidation_mode: author-direct-with-external-lens
+# Opt-in Template 13 §11/§18 anchor heuristic. This spec does not use that
+# section shape (neither does the sibling doctor-rce spec), so it stays off.
+anchor_parity_strict: false
+
+lifecycle_receipt_inventory_path: "docs/reviews/project-ontos-audit-serializer-corruption/lifecycle-receipt-inventory.yaml"
+required_dispatch_bundles:
+  - phase: "B.1"
+    intent_path: "docs/reviews/project-ontos-audit-serializer-corruption/B.1-claude-sonnet-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-serializer-corruption/B.1-claude-sonnet-dispatch-result.yaml"
+  - phase: "B.1"
+    intent_path: "docs/reviews/project-ontos-audit-serializer-corruption/B.1-gpt-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-serializer-corruption/B.1-gpt-dispatch-result.yaml"
+  - phase: "B.1"
+    intent_path: "docs/reviews/project-ontos-audit-serializer-corruption/B.1-gemini-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-serializer-corruption/B.1-gemini-dispatch-result.yaml"
+  - phase: "D.2"
+    intent_path: "docs/reviews/project-ontos-audit-serializer-corruption/D.2-claude-sonnet-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-serializer-corruption/D.2-claude-sonnet-dispatch-result.yaml"
+  - phase: "D.2"
+    intent_path: "docs/reviews/project-ontos-audit-serializer-corruption/D.2-gpt-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-serializer-corruption/D.2-gpt-dispatch-result.yaml"
+  - phase: "D.2"
+    intent_path: "docs/reviews/project-ontos-audit-serializer-corruption/D.2-gemini-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-serializer-corruption/D.2-gemini-dispatch-result.yaml"
+  - phase: "D.5"
+    intent_path: "docs/reviews/project-ontos-audit-serializer-corruption/D.5-claude-sonnet-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-serializer-corruption/D.5-claude-sonnet-dispatch-result.yaml"
+  - phase: "D.5"
+    intent_path: "docs/reviews/project-ontos-audit-serializer-corruption/D.5-gpt-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-serializer-corruption/D.5-gpt-dispatch-result.yaml"
+  - phase: "D.5"
+    intent_path: "docs/reviews/project-ontos-audit-serializer-corruption/D.5-gemini-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-serializer-corruption/D.5-gemini-dispatch-result.yaml"
+
+gate_prerequisites:
+  - id: G-test-1
+    category: test
+    description: "The dedicated serializer regression fixtures pass."
+    verification:
+      command: ".venv/bin/python -m pytest tests/test_frontmatter_roundtrip_regression.py -q"
+      expect: "exit-0"
+  - id: G-test-2
+    category: test
+    description: "The full Ontos test suite passes."
+    verification:
+      command: ".venv/bin/python -m pytest tests/ -q"
+      expect: "exit-0"
+  - id: G-scope-1
+    category: scope
+    description: "Code changes under ontos/ and tests/ are confined to the #146 lease."
+    verification:
+      command: "git diff --name-only -- ontos tests | grep -vE '^(ontos/core/schema.py|ontos/io/yaml.py|ontos/commands/promote.py|ontos/commands/migrate.py|ontos/mcp/writes.py|tests/test_frontmatter_roundtrip_regression.py)$'"
+      expect: "exit-nonzero"
+  - id: G-scope-2
+    category: scope
+    description: "The explicitly forbidden log.py and body_refs.py surfaces are unchanged."
+    verification:
+      command: "git diff --name-only -- ontos/commands/log.py ontos/core/body_refs.py"
+      expect: "empty"
+  - id: G-cardinality-1
+    category: cardinality
+    description: "All four audit fixtures are present in the regression test."
+    verification:
+      command: "grep -cE 'Q3 plan|design_v1,final|4.10|#42 follow-up' tests/test_frontmatter_roundtrip_regression.py"
+      expect: "gte:4"
+  - id: G-cardinality-2
+    category: cardinality
+    description: "The serializer implementation has no remaining _serialize_field function."
+    verification:
+      command: "grep -c '^def _serialize_field' ontos/core/schema.py"
+      expect: "exit-nonzero"
+  - id: G-verdict-1
+    category: verdict-presence
+    description: "Canonical Phase B.3 verdict exists."
+    verification:
+      command: "test -f docs/reviews/project-ontos-audit-serializer-corruption/B.3-verdict.md"
+      expect: "exit-0"
+  - id: G-verdict-2
+    category: verdict-presence
+    description: "Canonical Phase D.3 verdict exists."
+    verification:
+      command: "test -f docs/reviews/project-ontos-audit-serializer-corruption/D.3-verdict.md"
+      expect: "exit-0"
+  - id: G-verdict-3
+    category: verdict-presence
+    description: "D.5 verifier artifacts from all three non-author families exist."
+    verification:
+      command: "ls docs/reviews/project-ontos-audit-serializer-corruption/D.5-*-verifier.md 2>/dev/null | wc -l"
+      expect: "eq:3"
+  - id: G-blocker-1
+    category: blocker-closure
+    description: "No unresolved blocker rows remain in canonical verdicts."
+    verification:
+      command: "awk '/^## Preserved blockers/,/^## /' docs/reviews/project-ontos-audit-serializer-corruption/*-verdict.md | grep -E '^- \\*\\*ID:\\*\\*'"
+      expect: "exit-nonzero"
+  - id: G-branch-1
+    category: branch
+    description: "Session remains on the maintainer review branch/worktree and does not perform release actions."
+    verification:
+      command: "git branch --show-current"
+      expect: "literal:main"
+
+tracker:
+  path: "docs/trackers/project-ontos-audit-serializer-corruption.md"
+  columns: [phase, owner, status, artifact, evidence, timestamp]
+
+branch_map:
+  default: "codex/project-ontos-audit-serializer-corruption-<PHASE_ID>-<ROLE>-<FAMILY>"
+
+cross_repo_dependencies: []
+historical_receipt_gaps: []
+gate_only_invariants: []
+convergence_metrics: []
+merge_authority:
+  mode: recommendation_only
+
+references:
+  - path: "docs/handoffs/project-ontos-audit-remediation-2026-07-dispatch-146-serializer-corruption.md"
+    relevance: "Primary dispatch contract for issue #146."
+  - path: "docs/reviews/2026-07-02-fable-repo-audit.md"
+    relevance: "Source audit finding D2b-roundtrip-3 and fixture evidence."
+  - path: "docs/trackers/project-ontos-audit-remediation-release-line.md"
+    relevance: "O5 scope-lock lease for #146 shared paths."
+  - path: "docs/handoffs/project-ontos-audit-remediation-2026-07-release-line-decision.md"
+    relevance: "O6 v4.7.1 release-line and provider fallback policy."
