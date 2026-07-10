@@ -1,0 +1,89 @@
+authoring_session_family: codex
+deliverable_id: project-ontos-audit-doctor-rce
+artifact_root: docs/reviews/project-ontos-audit-doctor-rce
+fallback_authorization_ref: docs/trackers/project-ontos-audit-doctor-rce.md#fallback-authorization
+dispatches:
+  - dispatch_id: project-ontos-audit-doctor-rce-B.1-claude-sonnet-peer
+    family: claude-sonnet
+    role: peer
+    expected_provider: claude
+    expected_cli: claude
+    expected_model: sonnet
+    expected_artifact: docs/reviews/project-ontos-audit-doctor-rce/B.1-claude-sonnet-peer.md
+    evidence_cap: static-inspection
+    dispatch_method: provider-limited-fallback
+  - dispatch_id: project-ontos-audit-doctor-rce-B.1-gemini-adversarial
+    family: gemini
+    role: adversarial
+    expected_provider: gemini
+    expected_cli: gemini
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-audit-doctor-rce/B.1-gemini-adversarial.md
+    evidence_cap: static-inspection
+    dispatch_method: provider-limited-fallback
+  - dispatch_id: project-ontos-audit-doctor-rce-B.1-gpt-alignment
+    family: gpt
+    role: alignment
+    expected_provider: openai
+    expected_cli: codex
+    expected_model: gpt-*
+    expected_artifact: docs/reviews/project-ontos-audit-doctor-rce/B.1-gpt-alignment.md
+    evidence_cap: not-run
+    dispatch_method: provider-limited-fallback
+    blocked_by: docs/reviews/project-ontos-audit-doctor-rce/gpt-model-access-blockage.md
+  - dispatch_id: project-ontos-audit-doctor-rce-D.2-claude-sonnet-peer
+    family: claude-sonnet
+    role: peer
+    expected_provider: claude
+    expected_cli: claude
+    expected_model: sonnet
+    expected_artifact: docs/reviews/project-ontos-audit-doctor-rce/D.2-claude-sonnet-peer.md
+    evidence_cap: static-inspection
+    dispatch_method: provider-limited-fallback
+  - dispatch_id: project-ontos-audit-doctor-rce-D.2-gemini-adversarial
+    family: gemini
+    role: adversarial
+    expected_provider: gemini
+    expected_cli: gemini
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-audit-doctor-rce/D.2-gemini-adversarial.md
+    evidence_cap: static-inspection
+    dispatch_method: provider-limited-fallback
+  - dispatch_id: project-ontos-audit-doctor-rce-D.2-gpt-alignment
+    family: gpt
+    role: alignment
+    expected_provider: openai
+    expected_cli: codex
+    expected_model: gpt-*
+    expected_artifact: docs/reviews/project-ontos-audit-doctor-rce/D.2-gpt-alignment.md
+    evidence_cap: not-run
+    dispatch_method: provider-limited-fallback
+    blocked_by: docs/reviews/project-ontos-audit-doctor-rce/gpt-model-access-blockage.md
+  - dispatch_id: project-ontos-audit-doctor-rce-D.5-claude-verifier
+    family: claude
+    role: verifier
+    expected_provider: claude
+    expected_cli: claude
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-audit-doctor-rce/D.5-claude-verifier.md
+    evidence_cap: static-inspection
+    dispatch_method: provider-limited-fallback
+  - dispatch_id: project-ontos-audit-doctor-rce-D.5-gemini-verifier
+    family: gemini
+    role: verifier
+    expected_provider: gemini
+    expected_cli: gemini
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-audit-doctor-rce/D.5-gemini-verifier.md
+    evidence_cap: static-inspection
+    dispatch_method: provider-limited-fallback
+  - dispatch_id: project-ontos-audit-doctor-rce-D.5-gpt-verifier
+    family: gpt
+    role: verifier
+    expected_provider: openai
+    expected_cli: codex
+    expected_model: gpt-*
+    expected_artifact: docs/reviews/project-ontos-audit-doctor-rce/D.5-gpt-verifier.md
+    evidence_cap: not-run
+    dispatch_method: provider-limited-fallback
+    blocked_by: docs/reviews/project-ontos-audit-doctor-rce/gpt-model-access-blockage.md

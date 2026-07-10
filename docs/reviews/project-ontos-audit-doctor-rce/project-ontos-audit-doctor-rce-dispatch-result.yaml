@@ -1,0 +1,18 @@
+deliverable_id: project-ontos-audit-doctor-rce
+provider_limited_fallback: true
+strict_p3_gap: "GPT-family dispatch blocked; all probed gpt-* models were rejected by the local Codex+ChatGPT account."
+canonical_p3_evidence: false
+fallback_authorization_ref: "docs/trackers/project-ontos-audit-doctor-rce.md fallback authorization row"
+results:
+  - dispatch_id: project-ontos-audit-doctor-rce-B.1-gpt-alignment
+    status: blocked
+    blocked_by: docs/reviews/project-ontos-audit-doctor-rce/gpt-model-access-blockage.md
+  - dispatch_id: project-ontos-audit-doctor-rce-D.2-gpt-alignment
+    status: blocked
+    blocked_by: docs/reviews/project-ontos-audit-doctor-rce/gpt-model-access-blockage.md
+  - dispatch_id: project-ontos-audit-doctor-rce-D.5-gpt-verifier
+    status: blocked
+    blocked_by: docs/reviews/project-ontos-audit-doctor-rce/gpt-model-access-blockage.md
+  - dispatch_id: fallback-artifacts
+    status: completed-warning-only
+    note: "Review artifacts were completed under maintainer-authorized provider-limited fallback labeling and do not certify strict P3."
