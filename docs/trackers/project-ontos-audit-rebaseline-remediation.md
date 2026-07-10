@@ -107,8 +107,8 @@ and requires fresh D.5 verification.
 | Phase | Owner / roster | Status | Required artifact or exit condition | Current evidence |
 |---|---|---|---|---|
 | 0 — scope lock and route preflight | Codex orchestrator | **complete** | Conforming manifest, exact scope, empty receipt inventory, stable user gate and I0 | Manifest conformance, review-seat check, doctor, scope parity, isolated full suite (`1439 passed`) |
-| A — specification | Codex spec-author worker | pending | Ten-section code-first spec with diagrams, exclusions, acceptance gates, and I0 reconciliation contract | — |
-| B.1 — first design board | Claude adversarial; Gemini alignment; GLM peer; Product if declared | pending | Complete hash-bound dispatch bundles and three engineering verdicts | — |
+| A — specification | Independent Codex spec-author worker | **complete** | Ten-section code-first spec with diagrams, exclusions, acceptance gates, and I0 reconciliation contract | `docs/specs/project-ontos-audit-rebaseline-remediation-spec.md`; commit `25252a2` |
+| B.1 — first design board | Claude adversarial; Gemini alignment; GLM peer; Claude Product (separate session) | **in progress** | Complete hash-bound dispatch bundles and four verdicts | Intent and prompts frozen before dispatch |
 | B.2 — corrected-spec board | Same engineering seats; Product if declared | pending | Re-review of the B.1-corrected spec and I0 | — |
 | B.3 — design consolidation | Non-author consolidator selected by manifest | pending | Canonical approved design verdict with every preserved blocker | — |
 | C — code-first reconciliation | Codex implementation-author worker | pending | I0 and any authorized deltas reconcile exactly to the approved spec | — |
