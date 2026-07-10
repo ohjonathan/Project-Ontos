@@ -2,5 +2,5 @@
 # All paths are repo-relative. Do not introduce absolute paths here.
 framework_path: .llm-dev/framework
 framework_repo_url: https://github.com/ohjonathan/llm-dev-framework.git
-framework_ref: v2.0.0
+framework_ref: v2.0.1
 manifest_dir: manifests

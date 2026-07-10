@@ -24,6 +24,10 @@
 #                                            the manifest's
 #                                            re_adjudication_queue[]
 #                                            (issue #10)
+#   record-fallback-receipt --manifest ...  — append a hash-bound
+#                                            provider-limited fallback
+#                                            receipt for a declared
+#                                            blocked family/provider
 #   rebind-artifact --result ...           — validate and rebind a dispatch
 #                                            result row to a moved artifact
 #   repair-redispatch --manifest ...       — mark redispatch supersession
@@ -76,6 +80,14 @@ usage:
   scripts/llm-dev verify-staging [--manifest <path>] [--expect <p>] ...
                                   [--forbid <p>] ... [--summary-untracked]
   scripts/llm-dev re-adjudication <list|verify> <manifest-path>
+  scripts/llm-dev record-fallback-receipt --manifest <path>
+                                  --inventory <path>
+                                  --phase <phase> --role <role>
+                                  --family <blocked-family>
+                                  [--round <n>]
+                                  --from-failed-dispatch <result.yaml>
+                                  --dispatch-id <id>
+                                  [--re-adjudication-ref <id>]
   scripts/llm-dev rebind-artifact --result <path> --dispatch-id <id>
                                   --artifact <path> --reason <text>
   scripts/llm-dev repair-redispatch --manifest <path> --old-run-id <id>
@@ -123,6 +135,12 @@ Note:
                         final approval.
   `re-adjudication`   — (v1.8.0+) inspect or validate the manifest's
                         re_adjudication_queue[] (issue #10).
+  `record-fallback-receipt` — append a provider-limited-fallback
+                        receipt for a manifest-declared blocked
+                        family/provider. Verifies a pre-existing
+                        failed dispatch row, recomputes blockage
+                        evidence hashes, and writes a fallback dispatch
+                        bundle; never emits strict-P3 candidate receipts.
   `rebind-artifact`   — validate a moved review artifact and update the
                         matching dispatch-result row with its new path/hash.
   `repair-redispatch` — mark an older receipt superseded by a later round
@@ -767,6 +785,532 @@ USAGE
       die "capability: unknown subcommand '$sub' (use assess)"
       ;;
   esac
+}
+
+# ---------------------------------------------------------------------------
+# record-fallback-receipt --manifest <path> --inventory <path>
+#                         --phase <phase> --role <role>
+#                         --family <blocked-family>
+#                         [--round <n>]
+#                         --from-failed-dispatch <result.yaml>
+#                         --dispatch-id <id>
+#                         [--re-adjudication-ref <id>]
+# ---------------------------------------------------------------------------
+cmd_record_fallback_receipt() {
+  local manifest="" inventory="" phase="" role="" family="" round="1"
+  local from_failed_dispatch="" dispatch_id="" re_adjudication_ref=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --manifest) shift; manifest="${1:-}" ;;
+      --inventory) shift; inventory="${1:-}" ;;
+      --phase) shift; phase="${1:-}" ;;
+      --role|--lens) shift; role="${1:-}" ;;
+      --family) shift; family="${1:-}" ;;
+      --round) shift; round="${1:-}" ;;
+      --from-failed-dispatch) shift; from_failed_dispatch="${1:-}" ;;
+      --dispatch-id) shift; dispatch_id="${1:-}" ;;
+      --re-adjudication-ref) shift; re_adjudication_ref="${1:-}" ;;
+      --strict|--strict-p3|--strict-p3-candidate|--strict_p3_candidate)
+        die "record-fallback-receipt is fallback-only and never emits strict_p3_candidate=true"
+        ;;
+      -h|--help)
+        cat <<'USAGE'
+usage: scripts/llm-dev record-fallback-receipt --manifest <path>
+                                  --inventory <path>
+                                  --phase <phase> --role <role>
+                                  --family <blocked-family>
+                                  [--round <n>]
+                                  --from-failed-dispatch <result.yaml>
+                                  --dispatch-id <id>
+                                  [--re-adjudication-ref <id>]
+
+Appends one provider_limited_fallback receipt for a manifest-declared
+blocked family/provider. The command verifies a pre-existing failed
+dispatch row against the manifest blockage evidence, recomputes the
+evidence sha256, writes a generator-owned fallback dispatch bundle, and
+never emits strict-P3 candidate receipts.
+USAGE
+        exit 0
+        ;;
+      *) die "record-fallback-receipt: unknown argument: $1" ;;
+    esac
+    shift || true
+  done
+  [[ -n "$manifest" && -n "$inventory" && -n "$phase" && -n "$role" && -n "$family" ]] \
+    || die "record-fallback-receipt requires --manifest, --inventory, --phase, --role, and --family"
+  if [[ -z "$from_failed_dispatch" || -z "$dispatch_id" ]]; then
+    die "record-fallback-receipt requires --from-failed-dispatch and --dispatch-id so fallback receipts cannot self-create failed attempts"
+  fi
+  python3 - \
+    "$repo_root" \
+    "$(abs_path "$manifest")" \
+    "$(abs_path "$inventory")" \
+    "$phase" "$role" "$family" "$round" \
+    "${from_failed_dispatch:+$(abs_path "$from_failed_dispatch")}" \
+    "$dispatch_id" "$re_adjudication_ref" <<'PY'
+import atexit
+import datetime as dt
+import hashlib
+import os
+import re
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+import yaml
+
+repo = Path(sys.argv[1]).resolve()
+manifest_path = Path(sys.argv[2]).resolve()
+inventory_path = Path(sys.argv[3]).resolve()
+phase = sys.argv[4].strip()
+role = sys.argv[5].strip()
+family = sys.argv[6].strip()
+round_text = sys.argv[7].strip() or "1"
+from_failed_path = Path(sys.argv[8]).resolve() if sys.argv[8].strip() else None
+dispatch_id_arg = sys.argv[9].strip()
+re_adj_arg = sys.argv[10].strip()
+
+ID_RE = re.compile(r"^[A-Za-z0-9._-]+$")
+SHA_RE = re.compile(r"^(?:sha256:)?([0-9a-f]{64})$")
+PROVIDER_EQUIVALENCE = {
+    "codex": "openai",
+    "gpt": "openai",
+    "claude": "anthropic",
+    "gemini": "google",
+}
+
+
+def fail(message):
+    raise SystemExit(f"record-fallback-receipt: {message}")
+
+
+def load_yaml(path):
+    try:
+        return yaml.safe_load(path.read_text()) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        fail(f"cannot read YAML {path}: {exc}")
+
+
+def sha256_file(path):
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def normalize_sha(value):
+    if not isinstance(value, str):
+        return ""
+    value = value.strip()
+    m = SHA_RE.match(value)
+    return m.group(1) if m else ""
+
+
+def atomic_write_text(path, text):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile("w", delete=False, dir=str(path.parent)) as tmp:
+        tmp.write(text)
+        tmp_path = Path(tmp.name)
+    tmp_path.replace(path)
+
+
+def atomic_write_yaml(path, doc):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile("w", delete=False, dir=str(path.parent)) as tmp:
+        yaml.safe_dump(doc, tmp, sort_keys=False)
+        tmp_path = Path(tmp.name)
+    tmp_path.replace(path)
+
+
+def acquire_lock(path):
+    lock_path = Path(str(path) + ".lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    for _ in range(50):
+        try:
+            fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            with os.fdopen(fd, "w") as fh:
+                fh.write(str(os.getpid()))
+            atexit.register(lambda: lock_path.exists() and lock_path.unlink())
+            return
+        except FileExistsError:
+            try:
+                owner = lock_path.read_text().strip()
+                if owner:
+                    try:
+                        os.kill(int(owner), 0)
+                    except ProcessLookupError:
+                        lock_path.unlink()
+                        continue
+                    except (PermissionError, ValueError):
+                        pass
+            except OSError:
+                pass
+            time.sleep(0.1)
+    fail(f"could not acquire receipt-inventory lock on {lock_path}")
+
+
+def rel_to_repo(path):
+    try:
+        return path.resolve().relative_to(repo).as_posix()
+    except ValueError:
+        fail(f"path must live under repo root: {path}")
+
+
+def resolve_declared_path(raw):
+    if not isinstance(raw, str) or not raw.strip():
+        fail("blockage_evidence_path is missing")
+    p = Path(raw.strip())
+    if p.is_absolute():
+        return p.resolve()
+    for base in (manifest_path.parent, repo):
+        candidate = (base / p).resolve()
+        if candidate.exists():
+            return candidate
+    return (manifest_path.parent / p).resolve()
+
+
+def provider_of(fam):
+    return fam.split("-", 1)[0]
+
+
+def equivalence_class(stem):
+    return PROVIDER_EQUIVALENCE.get(stem, stem)
+
+
+def phase_covers(entry):
+    phases = entry.get("affected_phases") or []
+    return isinstance(phases, list) and phase in [str(p).strip() for p in phases]
+
+
+def role_covers(entry):
+    affected_role = (entry.get("affected_role") or "").strip()
+    return not affected_role or affected_role == role
+
+
+def find_blockage(manifest):
+    for entry in manifest.get("harness_blocked_families") or []:
+        if not isinstance(entry, dict):
+            continue
+        if (entry.get("family") or "").strip() == family and phase_covers(entry) and role_covers(entry):
+            return "family", entry
+    stem = provider_of(family)
+    family_provider_class = equivalence_class(stem)
+    for entry in manifest.get("harness_blocked_providers") or []:
+        if not isinstance(entry, dict) or not phase_covers(entry):
+            continue
+        affected = [str(x).strip() for x in (entry.get("affected_families") or []) if isinstance(x, str)]
+        provider = (entry.get("provider") or "").strip()
+        provider_class = equivalence_class(provider)
+        if affected:
+            if family in affected or stem in affected:
+                return "provider", entry
+            continue
+        if provider in {family, stem, family_provider_class} or provider_class == family_provider_class:
+            return "provider", entry
+    fail(f"no harness_blocked_families[]/harness_blocked_providers[] entry covers family={family!r} phase={phase!r} role={role!r}")
+
+
+def find_failed_row(path, wanted_dispatch_id):
+    doc = load_yaml(path)
+    rows = doc.get("results") or []
+    if not isinstance(rows, list):
+        fail(f"{path} has no results[] list")
+    matches = [
+        row for row in rows
+        if isinstance(row, dict)
+        and (row.get("dispatch_id") or "").strip() == wanted_dispatch_id
+    ]
+    if len(matches) != 1:
+        fail(f"expected exactly one dispatch_id={wanted_dispatch_id!r} in {path}, found {len(matches)}")
+    row = dict(matches[0])
+    if (row.get("family") or "").strip() != family:
+        fail(f"failed dispatch family {row.get('family')!r} does not match requested family={family!r}")
+    if (row.get("role") or "").strip() != role:
+        fail(f"failed dispatch role {row.get('role')!r} does not match requested role={role!r}")
+    row_phase = (row.get("phase") or phase).strip()
+    if row_phase != phase:
+        fail(f"failed dispatch phase {row_phase!r} does not match requested phase={phase!r}")
+    status = (row.get("status") or "").strip()
+    if status != "failed":
+        fail(f"failed dispatch row status={status!r} must be 'failed'")
+    try:
+        row_exit = int(row.get("exit_code"))
+    except (TypeError, ValueError):
+        fail(f"failed dispatch row exit_code={row.get('exit_code')!r} is not an integer")
+    if row_exit == 0:
+        fail("failed dispatch row exit_code=0 is not a failed external attempt")
+    method = (row.get("dispatch_method") or "").strip()
+    if method != "external-cli":
+        fail(f"failed dispatch row dispatch_method={method!r} must be 'external-cli'")
+    return row
+
+
+try:
+    receipt_round = int(round_text)
+except ValueError:
+    fail(f"--round must be an integer, got {round_text!r}")
+if receipt_round < 1:
+    fail("--round must be >= 1")
+for label, value in (("phase", phase), ("role", role), ("family", family)):
+    if not value:
+        fail(f"{label} is required")
+if not ID_RE.match(family):
+    fail(f"family {family!r} contains unsafe characters")
+for label, value in (("phase", phase), ("role", role)):
+    if not ID_RE.match(value):
+        fail(f"{label} {value!r} contains unsafe characters")
+
+manifest = load_yaml(manifest_path)
+mode = (manifest.get("fallback_evidence_mode") or "strict_p3").strip()
+if mode != "provider_limited_fallback":
+    fail(
+        "manifest fallback_evidence_mode must be provider_limited_fallback; "
+        f"got {mode!r}"
+    )
+deliverable_id = (manifest.get("id") or manifest.get("slug") or "").strip()
+if not deliverable_id:
+    fail("manifest id/slug is required")
+
+blockage_kind, blockage = find_blockage(manifest)
+evidence_rel = (blockage.get("blockage_evidence_path") or "").strip()
+evidence_path = resolve_declared_path(evidence_rel)
+if not evidence_path.is_file():
+    fail(f"blockage evidence file not found: {evidence_rel}")
+actual_evidence_sha = sha256_file(evidence_path)
+declared_evidence_sha = normalize_sha(blockage.get("blockage_evidence_sha256"))
+if declared_evidence_sha != actual_evidence_sha:
+    fail(
+        "blockage evidence sha mismatch: "
+        f"declared={declared_evidence_sha or '<missing>'} actual={actual_evidence_sha}"
+    )
+
+blockage_provider = (blockage.get("provider") or provider_of(family)).strip()
+provider = provider_of(family)
+blocked_ref = (
+    (blockage.get("family") or "").strip()
+    if blockage_kind == "family"
+    else (blockage.get("provider") or provider_of(family)).strip()
+)
+re_adj_ref = re_adj_arg or (blockage.get("re_adjudication_ref") or "").strip()
+
+now = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+safe_phase = phase.replace(".", "-")
+run_id = f"{deliverable_id}-{phase}-{family}-{role}-fallback-r{receipt_round}"
+dispatch_id = dispatch_id_arg or f"{deliverable_id}-{safe_phase}-{family}-{role}-fallback"
+if not ID_RE.match(dispatch_id):
+    fail(f"dispatch_id {dispatch_id!r} contains unsafe characters")
+capture_id = f"{dispatch_id}.generated-r{receipt_round}"
+bundle_dir = inventory_path.parent / "fallback-receipts" / run_id
+intent_path = bundle_dir / "dispatch-intent.yaml"
+result_path = bundle_dir / "dispatch-result.yaml"
+artifact_path = bundle_dir / "fallback-artifact.md"
+
+failed_row = find_failed_row(from_failed_path, dispatch_id_arg)
+failed_artifact_rel = (failed_row.get("artifact_path") or "").strip()
+if not failed_artifact_rel:
+    fail("failed dispatch row artifact_path is required")
+failed_artifact_path = resolve_declared_path(failed_artifact_rel)
+if not failed_artifact_path.is_file():
+    fail(f"failed dispatch row artifact_path not found: {failed_artifact_rel}")
+if failed_artifact_path.resolve() != evidence_path.resolve():
+    fail(
+        "failed dispatch row artifact_path must match manifest blockage_evidence_path: "
+        f"row={failed_artifact_rel!r} manifest={evidence_rel!r}"
+    )
+failed_artifact_sha = normalize_sha(failed_row.get("artifact_sha256"))
+if not failed_artifact_sha:
+    fail("failed dispatch row artifact_sha256 must be a lowercase 64-char sha256")
+if failed_artifact_sha != actual_evidence_sha:
+    fail(
+        "failed dispatch row artifact_sha256 must match manifest blockage_evidence_sha256: "
+        f"row={failed_artifact_sha} manifest={actual_evidence_sha}"
+    )
+
+started_at = failed_row.get("started_at") or now
+ended_at = now
+prompt_sha = normalize_sha(failed_row.get("prompt_sha256"))
+if not prompt_sha:
+    fail("failed dispatch row prompt_sha256 must be a lowercase 64-char sha256")
+raw_rel = (failed_row.get("raw_output_path") or failed_row.get("transcript_or_log_path") or evidence_rel).strip()
+stderr_rel = (failed_row.get("stderr_path") or evidence_rel).strip()
+stderr_sha = normalize_sha(failed_row.get("stderr_hash") or failed_row.get("stderr_sha256")) or actual_evidence_sha
+
+artifact_text = f"""---
+id: {run_id}
+deliverable_id: {deliverable_id}
+phase: {phase}
+role: {role}
+family: {family}
+status: completed
+provider_limited_fallback: true
+canonical_p3_evidence: false
+evidence_labels_used: [orchestrator-preflight]
+---
+
+# Provider-Limited Fallback Receipt Artifact
+
+## Summary
+
+Generated fallback artifact for blocked family `{family}` in phase `{phase}` role `{role}`.
+
+## Blockage Evidence
+
+- blocked_family_ref: `{blocked_ref}`
+- blocked_evidence_path: `{evidence_rel}`
+- blocked_evidence_sha256: `{actual_evidence_sha}`
+- manifest_provider: `{blockage_provider}`
+
+## Verdict
+
+approve
+"""
+artifact_rel = rel_to_repo(artifact_path)
+artifact_sha = hashlib.sha256(artifact_text.encode()).hexdigest()
+
+intent_doc = {
+    "intents": [
+        {
+            "dispatch_id": dispatch_id,
+            "family": family,
+            "role": role,
+            "phase": phase,
+            "deliverable_id": deliverable_id,
+            "dispatch_method": "external-cli",
+            "expected_provider": provider,
+            "expected_cli": family,
+            "expected_model": "auto",
+            "expected_artifact": artifact_rel,
+        }
+    ]
+}
+attempt_row = {
+    "dispatch_id": dispatch_id,
+    "capture_id": failed_row.get("capture_id") or f"{capture_id}.attempt",
+    "family": family,
+    "role": role,
+    "phase": phase,
+    "deliverable_id": deliverable_id,
+    "status": failed_row.get("status") or "failed",
+    "exit_code": int(failed_row.get("exit_code")),
+    "prompt_sha256": prompt_sha,
+    "artifact_path": failed_artifact_rel,
+    "artifact_sha256": failed_artifact_sha,
+    "raw_output_path": raw_rel,
+    "stderr_path": stderr_rel,
+    "stderr_hash": stderr_sha,
+    "started_at": started_at,
+    "ended_at": failed_row.get("ended_at") or now,
+    "evidence_cap": failed_row.get("evidence_cap") or "orchestrator-preflight",
+    "execution_provider": failed_row.get("execution_provider") or provider,
+    "execution_cli": failed_row.get("execution_cli") or family,
+    "dispatch_method": "external-cli",
+    "fallback_reason": failed_row.get("fallback_reason") or f"{family} blocked: {evidence_rel}",
+}
+fallback_row = {
+    "dispatch_id": dispatch_id,
+    "capture_id": capture_id,
+    "family": family,
+    "role": role,
+    "phase": phase,
+    "deliverable_id": deliverable_id,
+    "status": "provider-limited-fallback-complete",
+    "exit_code": 0,
+    "prompt_sha256": prompt_sha,
+    "artifact_path": artifact_rel,
+    "artifact_sha256": artifact_sha,
+    "raw_output_path": raw_rel,
+    "stderr_path": stderr_rel,
+    "stderr_hash": stderr_sha,
+    "started_at": started_at,
+    "ended_at": now,
+    "evidence_cap": "orchestrator-preflight",
+    "execution_provider": provider,
+    "execution_cli": family,
+    "dispatch_method": "provider-limited-fallback",
+    "fallback_reason": f"{family} declared blocked in {rel_to_repo(manifest_path)}: {evidence_rel}",
+}
+result_doc = {"results": [attempt_row, fallback_row]}
+
+receipt = {
+    "run_id": run_id,
+    "dispatch_id": dispatch_id,
+    "capture_id": capture_id,
+    "deliverable_id": deliverable_id,
+    "phase": phase,
+    "round": receipt_round,
+    "role": role,
+    "family": family,
+    "actual_executed_family": family,
+    "provider": provider,
+    "template_id": "record-fallback-receipt",
+    "template_version": "1.0.0",
+    "prompt_sha256": prompt_sha,
+    "input_artifact_sha256": actual_evidence_sha,
+    "output_artifact_path": artifact_rel,
+    "output_artifact_sha256": artifact_sha,
+    "transcript_or_log_path": raw_rel,
+    "stderr_path": stderr_rel,
+    "stderr_sha256": stderr_sha,
+    "started_at": started_at,
+    "ended_at": now,
+    "exit_code": 0,
+    "strict_p3_candidate": False,
+    "provider_limited_fallback": True,
+    "dispatch_intent_path": rel_to_repo(intent_path),
+    "dispatch_result_path": rel_to_repo(result_path),
+    "fallback_disclosure": {
+        "blocked_family_ref": blocked_ref,
+        "blocked_evidence_path": evidence_rel,
+        "blocked_evidence_sha256": actual_evidence_sha,
+        "fallback_route": "provider-limited fallback receipt generator",
+    },
+}
+if re_adj_ref:
+    receipt["fallback_disclosure"]["re_adjudication_ref"] = re_adj_ref
+
+acquire_lock(inventory_path)
+if inventory_path.is_file():
+    inventory = load_yaml(inventory_path)
+else:
+    inventory = {"schema_version": 2, "deliverable_id": deliverable_id, "receipts": []}
+schema_version = inventory.get("schema_version")
+if schema_version is None:
+    inventory["schema_version"] = 2
+elif not isinstance(schema_version, int) or schema_version < 2:
+    fail(f"inventory schema_version={schema_version!r} cannot store fallback_disclosure; use schema_version >= 2")
+if (inventory.get("deliverable_id") or "").strip() != deliverable_id:
+    fail(
+        f"inventory.deliverable_id={inventory.get('deliverable_id')!r} "
+        f"does not match manifest id={deliverable_id!r}"
+    )
+receipts = inventory.get("receipts") or []
+if not isinstance(receipts, list):
+    fail("inventory receipts must be a list")
+for existing in receipts:
+    if not isinstance(existing, dict):
+        continue
+    if (
+        (existing.get("phase") or "").strip(),
+        (existing.get("role") or "").strip(),
+        (existing.get("family") or "").strip(),
+        int(existing.get("round") or 1),
+    ) == (phase, role, family, receipt_round):
+        fail(f"receipt already exists for ({phase}, {role}, {family}, round={receipt_round})")
+
+atomic_write_text(artifact_path, artifact_text)
+atomic_write_yaml(intent_path, intent_doc)
+atomic_write_yaml(result_path, result_doc)
+receipts.append(receipt)
+inventory["receipts"] = receipts
+atomic_write_yaml(inventory_path, inventory)
+
+print(f"record-fallback-receipt: appended provider_limited_fallback receipt for ({phase}, {role}, {family})")
+print(f"record-fallback-receipt: inventory={rel_to_repo(inventory_path)}")
+print(f"record-fallback-receipt: dispatch_intent={rel_to_repo(intent_path)}")
+print(f"record-fallback-receipt: dispatch_result={rel_to_repo(result_path)}")
+PY
 }
 
 # ---------------------------------------------------------------------------
@@ -2212,6 +2756,7 @@ main() {
     verify-lifecycle)   cmd_verify_lifecycle "$@" ;;
     verify-staging)     cmd_verify_staging "$@" ;;
     re-adjudication)    cmd_re_adjudication "$@" ;;
+    record-fallback-receipt) cmd_record_fallback_receipt "$@" ;;
     rebind-artifact)    cmd_rebind_artifact "$@" ;;
     repair-redispatch)  cmd_repair_redispatch "$@" ;;
     post-merge)         cmd_post_merge "$@" ;;
