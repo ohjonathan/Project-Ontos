@@ -1,0 +1,528 @@
+[0m
+> build · glm-5.2
+[0m
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>
+[0m
+[0m$ [0mgit log --oneline -10 && echo "---BRANCH---" && git branch --show-current && echo "---REV---" && git rev-parse --short HEAD
+5367842 Freeze B.2 review dispatch
+02afc68 Record B.1 audit design review
+eb045e9 Make B.1 GLM route-redaction safe
+5c73c3d Prepare B.1 provenance redispatch
+ce60f6e Incorporate B.1 design findings
+469d4c1 Route B.1 GLM through F38 capture
+dfd9143 Pin B.1 Gemini artifact fields
+d24e1b7 Harden B.1 capture prompts
+a29e446 Clarify B.1 Gemini verdict shape
+1973cca Freeze B.1 review dispatch
+---BRANCH---
+codex/audit-rebaseline-remediation-lifecycle
+---REV---
+5367842
+[0m
+[0m$ [0mls -la docs/reviews/ 2>/dev/null; echo "==="; find docs -maxdepth 3 -type d 2>/dev/null | head -50
+total 320
+drwxr-xr-x@ 10 jonathanoh  wheel     320 Jul 10 10:27 .
+drwxr-xr-x@ 12 jonathanoh  wheel     384 Jul 10 10:23 ..
+-rw-r--r--@  1 jonathanoh  wheel  141873 Jul 10 10:23 2026-07-02-fable-repo-audit.md
+-rw-r--r--@  1 jonathanoh  wheel   20363 Jul 10 10:23 2026-07-10-codex-audit-revalidation.md
+drwxr-xr-x@ 28 jonathanoh  wheel     896 Jul 10 10:23 project-ontos-audit-doctor-rce
+drwxr-xr-x@ 16 jonathanoh  wheel     512 Jul 10 11:50 project-ontos-audit-rebaseline-remediation
+drwxr-xr-x@ 11 jonathanoh  wheel     352 Jul 10 10:23 project-ontos-audit-serializer-corruption
+drwxr-xr-x@ 24 jonathanoh  wheel     768 Jul 10 10:23 project-ontos-github-issues-115-117
+drwxr-xr-x@ 24 jonathanoh  wheel     768 Jul 10 10:23 <redacted:secret>
+drwxr-xr-x@  8 jonathanoh  wheel     256 Jul 10 10:23 project-ontos-v44-agentic-activation-resilience
+===
+docs
+docs/releases
+docs/specs
+docs/trackers
+docs/retros
+docs/logs
+docs/assets
+docs/handoffs
+docs/reference
+docs/reviews
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+docs/reviews/project-ontos-v44-agentic-activation-resilience
+docs/reviews/project-ontos-audit-serializer-corruption
+<redacted:secret>
+<redacted:secret>
+docs/reviews/project-ontos-audit-doctor-rce
+docs/reviews/project-ontos-audit-doctor-rce/.prompts
+docs/reviews/project-ontos-audit-doctor-rce/.raw
+<redacted:secret>
+<redacted:secret>
+docs/reviews/project-ontos-audit-rebaseline-remediation/.route-attestation
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+[0m
+[0m$ [0mls -la <redacted:secret>/ && echo "===.raw===" && ls -la <redacted:secret>/ && echo "===.prompts===" && ls -la <redacted:secret>/ && echo "===.route-attestation===" && ls -la docs/reviews/project-ontos-audit-rebaseline-remediation/.route-attestation/
+total 344
+drwxr-xr-x@ 16 jonathanoh  wheel    512 Jul 10 11:50 .
+drwxr-xr-x@ 10 jonathanoh  wheel    320 Jul 10 10:27 ..
+drwxr-xr-x@ 32 jonathanoh  wheel   1024 Jul 10 11:50 .prompts
+drwxr-xr-x@ 46 jonathanoh  wheel   1472 Jul 10 11:50 .raw
+drwxr-xr-x@  5 jonathanoh  wheel    160 Jul 10 11:46 .route-attestation
+-rw-r--r--@  1 jonathanoh  wheel  13188 Jul 10 10:52 B.1-claude-adversarial.md
+-rw-r--r--@  1 jonathanoh  wheel  16852 Jul 10 10:52 B.1-claude-product.md
+-rw-r--r--@  1 jonathanoh  wheel   3812 Jul 10 10:35 B.1-dispatch-intent.yaml
+-rw-r--r--@  1 jonathanoh  wheel  67628 Jul 10 11:46 B.1-dispatch-result.yaml
+-rw-r--r--@  1 jonathanoh  wheel    959 Jul 10 11:47 B.1-dispatch-verification.txt
+-rw-r--r--@  1 jonathanoh  wheel   1991 Jul 10 11:21 B.1-gemini-alignment.md
+-rw-r--r--@  1 jonathanoh  wheel  16970 Jul 10 11:46 B.1-glm-peer.md
+-rw-r--r--@  1 jonathanoh  wheel   3685 Jul 10 11:14 B.2-dispatch-intent.yaml
+-rw-r--r--@  1 jonathanoh  wheel   3460 Jul 10 11:50 B.2-dispatch-result.yaml
+-rw-r--r--@  1 jonathanoh  wheel   1462 Jul 10 11:50 B.2-gemini-alignment.md
+-rw-r--r--@  1 jonathanoh  wheel  20776 Jul 10 11:46 lifecycle-receipt-inventory.yaml
+===.raw===
+total 560
+drwxr-xr-x@ 46 jonathanoh  wheel   1472 Jul 10 11:50 .
+drwxr-xr-x@ 16 jonathanoh  wheel    512 Jul 10 11:50 ..
+-rw-r--r--@  1 jonathanoh  wheel   2201 Jul 10 10:52 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:45 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   2314 Jul 10 10:52 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:46 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   1190 Jul 10 10:46 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:46 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   8466 Jul 10 10:51 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:50 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   1506 Jul 10 10:53 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:53 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  20030 Jul 10 10:57 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:55 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   2052 Jul 10 11:00 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:59 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   1777 Jul 10 11:01 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 11:01 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   1552 Jul 10 11:19 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 11:19 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   1991 Jul 10 11:21 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 11:21 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  15572 Jul 10 11:14 <redacted:secret>.md.txt
+-rw-r--r--@  1 jonathanoh  wheel   1642 Jul 10 10:56 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel     75 Jul 10 10:56 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  16844 Jul 10 11:05 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  16848 Jul 10 11:05 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel     70 Jul 10 11:05 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   3010 Jul 10 11:14 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel     84 Jul 10 11:14 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   1590 Jul 10 11:28 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  50908 Jul 10 11:28 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   2446 Jul 10 11:35 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  23482 Jul 10 11:35 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel    612 Jul 10 11:46 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel     85 Jul 10 11:46 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  16380 Jul 10 11:35 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  16970 Jul 10 11:46 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 11:49 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 11:49 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 11:49 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 11:49 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   1462 Jul 10 11:50 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 11:50 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel    241 Jul 10 11:51 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   3016 Jul 10 11:50 <redacted:secret>
+===.prompts===
+total 240
+drwxr-xr-x@ 32 jonathanoh  wheel  1024 Jul 10 11:50 .
+drwxr-xr-x@ 16 jonathanoh  wheel   512 Jul 10 11:50 ..
+-rw-r--r--@  1 jonathanoh  wheel  1419 Jul 10 10:35 B.1-claude-adversarial.prompt.md
+-rw-r--r--@  1 jonathanoh  wheel  1108 Jul 10 10:35 B.1-claude-product.prompt.md
+-rw-r--r--@  1 jonathanoh  wheel  2445 Jul 10 11:20 B.1-gemini-alignment.prompt.md
+-rw-r--r--@  1 jonathanoh  wheel  1882 Jul 10 11:38 B.1-glm-peer.prompt.md
+-rw-r--r--@  1 jonathanoh  wheel  1085 Jul 10 11:14 B.2-claude-adversarial.prompt.md
+-rw-r--r--@  1 jonathanoh  wheel   831 Jul 10 11:14 B.2-claude-product.prompt.md
+-rw-r--r--@  1 jonathanoh  wheel  1548 Jul 10 11:14 B.2-gemini-alignment.prompt.md
+-rw-r--r--@  1 jonathanoh  wheel  1069 Jul 10 11:38 B.2-glm-peer.prompt.md
+-rw-r--r--@  1 jonathanoh  wheel  1419 Jul 10 10:45 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  1108 Jul 10 10:46 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  1396 Jul 10 10:46 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  1396 Jul 10 10:49 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  1396 Jul 10 10:50 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  1600 Jul 10 10:53 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  1600 Jul 10 10:55 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  1965 Jul 10 10:59 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  2312 Jul 10 11:01 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  2312 Jul 10 11:19 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  2312 Jul 10 11:20 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  2445 Jul 10 11:21 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  1067 Jul 10 10:46 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  1288 Jul 10 11:00 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  1626 Jul 10 11:08 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  1838 Jul 10 11:22 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  1866 Jul 10 11:32 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  1882 Jul 10 11:38 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  1085 Jul 10 11:49 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   831 Jul 10 11:49 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  1548 Jul 10 11:50 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  1069 Jul 10 11:50 <redacted:secret>
+===.route-attestation===
+total 24
+drwxr-xr-x@  5 jonathanoh  wheel  160 Jul 10 11:46 .
+drwxr-xr-x@ 16 jonathanoh  wheel  512 Jul 10 11:50 ..
+-rw-r--r--@  1 jonathanoh  wheel  383 Jul 10 10:56 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  402 Jul 10 11:35 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  402 Jul 10 11:46 <redacted:secret>
+[0m
+[0m$ [0mls -la docs/specs/ 2>/dev/null; echo "===manifest==="; find . -path ./.venv -prune -o -name "*manifest*.yaml" -print 2>/dev/null | grep -i audit-rebaseline | head; echo "===dispatch-intent==="; find <redacted:secret> -name "*.yaml" 2>/dev/null; echo "===review-board dir==="; find . -path "*audit-rebaseline*dispatch*" 2>/dev/null | head
+total 184
+drwxr-xr-x@  8 jonathanoh  wheel    256 Jul 10 11:08 .
+drwxr-xr-x@ 12 jonathanoh  wheel    384 Jul 10 10:23 ..
+-rw-r--r--@  1 jonathanoh  wheel   5451 Jul 10 10:23 project-ontos-audit-doctor-rce-spec.md
+-rw-r--r--@  1 jonathanoh  wheel  21694 Jul 10 11:09 project-ontos-audit-rebaseline-remediation-spec.md
+-rw-r--r--@  1 jonathanoh  wheel  11248 Jul 10 10:23 project-ontos-audit-serializer-corruption-spec.md
+-rw-r--r--@  1 jonathanoh  wheel  22325 Jul 10 10:23 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  18250 Jul 10 10:23 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   2496 Jul 10 10:23 project-ontos-v44-agentic-activation-resilience-spec.md
+===manifest===
+===dispatch-intent===
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+===review-board dir===
+./<redacted:secret>
+./<redacted:secret>
+./<redacted:secret>
+./<redacted:secret>
+./<redacted:secret>
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m
+[0m$ [0mecho "=== base ===" && git rev-parse --short bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95 2>/dev/null; git rev-parse --short b6f89d77e7fb684b8bd9a181a24c773d5777397a 2>/dev/null; echo "=== HEAD ===" && git rev-parse --short HEAD; echo "=== spec version line ===" && git log --oneline -1 -- <redacted:secret>
+=== base ===
+bf91b42
+b6f89d7
+=== HEAD ===
+5367842
+=== spec version line ===
+ce60f6e Incorporate B.1 design findings
+[0m
+[0m→ [0mRead <redacted:secret>[90m [limit=30][0m
+[0m
+[0m$ [0mfind . -path ./.venv -prune -o -name "verdict_shape.py" -print 2>/dev/null; ls scripts/_lib/ 2>/dev/null | head -40
+./.<redacted:secret>
+[0m
+[0m→ [0mRead .<redacted:secret>
+[0m
+[0m$ [0mecho "=== 188-file diff ===" && git diff --stat bf91b42 b6f89d7 | tail -1
+echo "=== registry counts (working tree) ===" && python3 -c "
+import yaml
+d=yaml.safe_load(open('<redacted:secret>'))
+rows=d.get('findings') or d.get('rows') or []
+print('total',len(rows))
+import collections
+orig=[r for r in rows if not str(r.get('id','')).startswith('R2-')]
+r2=[r for r in rows if str(r.get('id','')).startswith('R2-')]
+print('orig',len(orig),'r2',len(r2))
+st=collections.Counter(str(r.get('status')) for r in orig)
+print('orig status',dict(st))
+lf=collections.Counter(str(r.get('lifecycle_state')) for r in orig)
+print('orig lifecycle',dict(lf))
+"
+echo "=== JSON envelope keys @ b6f89d7 ===" && git show b6f89d7:ontos/ui/json_output.py | sed -n '16,49p;300,350p'
+=== 188-file diff ===
+ 188 files changed, 9520 insertions(+), 4356 deletions(-)
+=== registry counts (working tree) ===
+total 100
+orig 91 r2 9
+orig status {'code_fixed_evidence_pending': 1, 'code_fixed': 2, 'confirmed_open': 41, 'implemented_uncommitted_verification_pending': 40, 'partial_implementation_uncommitted_verification_pending': 7}
+orig lifecycle {'code_fixed_evidence_pending': 3, 'partial_implementation_uncommitted_lifecycle_pending': 48, 'implementation_uncommitted_lifecycle_pending': 40}
+=== JSON envelope keys @ b6f89d7 ===
+COMMAND_ENVELOPE_SCHEMA_VERSION = "4.0"
+
+
+class ResultStatus(str, Enum):
+    """Domain outcome, independent of whether command execution succeeded."""
+
+    CLEAN = "clean"
+    FINDINGS = "findings"
+    WARNINGS = "warnings"
+    INCOMPLETE = "incomplete"
+    ERROR = "error"
+
+
+class ExitCode(IntEnum):
+    """Public numeric exit-code taxonomy introduced with schema v4."""
+
+    CLEAN = 0
+    FINDINGS = 1
+    USAGE = 2
+    WARNINGS = 3
+    INTERNAL = 5
+    INTERRUPTED = 130
+
+
+class ExitCategory(str, Enum):
+    """Machine-readable exit category for the v4 command contract."""
+
+    CLEAN = "clean"
+    FINDINGS = "findings"
+    WARNINGS = "warnings"
+    USAGE = "usage"
+    INTERNAL = "internal"
+    INTERRUPTED = "interrupted"
+    ERROR = "error"
+    result_kind: Optional[str],
+    diagnostic_counts: Optional[Mapping[str, int]],
+    diagnostic_basis: Optional[str],
+    diagnostics_complete: Optional[bool],
+    exit_category: Optional[str],
+) -> None:
+    serialized_data = to_json(data if data is not None else {})
+    diagnostics = _diagnostics_payload(
+        serialized_data,
+        counts=diagnostic_counts,
+        basis=diagnostic_basis,
+        complete=diagnostics_complete,
+    )
+    normalized_result = _result_status(
+        execution_status=execution_status,
+        exit_code=exit_code,
+        data=serialized_data,
+        diagnostics=diagnostics,
+        explicit=result_status,
+    )
+    normalized_kind = result_kind or (
+        "diagnostic" if diagnostics["basis"] is not None else "operation"
+    )
+    normalized_exit_category = exit_category or _exit_category(
+        execution_status=execution_status,
+        exit_code=exit_code,
+        result_status=normalized_result,
+    )
+
+    emit_json(
+        {
+            "schema_version": schema_version,
+            "command": command,
+            "status": execution_status,
+            "exit_code": exit_code,
+            "message": message,
+            "result": {
+                "status": normalized_result,
+                "kind": normalized_kind,
+                "exit_category": normalized_exit_category,
+                "diagnostics": diagnostics,
+            },
+            "data": serialized_data,
+            "warnings": warnings or [],
+            "error": error,
+        }
+    )
+
+
+def _has_structured_diagnostics(data: Optional[Any]) -> bool:
+    if not isinstance(data, Mapping):
+[0m
+[0m$ [0mecho "=== doctor.py 590-690 @ b6f89d7 (P-3 boundary check) ===" && git show b6f89d7:ontos/commands/doctor.py | sed -n '590,690p' | grep -nE "def |class " 
+=== doctor.py 590-690 @ b6f89d7 (P-3 boundary check) ===
+4:def check_cli_availability(repo_root: Optional[Path] = None) -> CheckResult:
+[0m
+[0m$ [0mecho "=== config.py 223-345 boundaries @ b6f89d7 (P-1 check: 279-345 exists?) ===" && git show b6f89d7:ontos/core/config.py | sed -n '223,345p' | grep -nE "def |class |[Ii]nvalid|required_version|clause"
+=== config.py 223-345 boundaries @ b6f89d7 (P-1 check: 279-345 exists?) ===
+1:def version_satisfies_requirement(running_version: str, requirement: Optional[str]) -> bool:
+4:    Supported clauses match the public ``required_version`` contract:
+11:        ConfigError: If either the running version or requirement is invalid.
+18:    clauses = [clause.strip() for clause in required.split(",")]
+19:    if not clauses or any(not clause for clause in clauses):
+21:            "ontos.required_version must be a valid semver range "
+24:    return all(_version_clause_matches(running, clause) for clause in clauses)
+27:def required_version_incompatibility(
+38:        return f"Invalid [ontos].required_version {required!r}: {exc}"
+47:def _parse_version(value: str, *, label: str) -> tuple[int, int, int]:
+57:def _version_clause_matches(running: tuple[int, int, int], clause: str) -> bool:
+58:    if clause.startswith("~"):
+59:        raw_base = clause[1:].strip()
+60:        base, component_count = _parse_requirement_base(raw_base, clause)
+67:    comparator_match = _COMPARATOR_PATTERN.fullmatch(clause)
+69:        raise ConfigError(f"invalid version clause {clause!r}")
+76:                f"wildcard version clause {clause!r} cannot use {comparator!r}"
+78:        return _wildcard_clause_matches(running, raw_version, clause)
+80:    expected = _parse_version(raw_version, label=f"version clause {clause!r}")
+92:def _parse_requirement_base(
+94:    clause: str,
+99:        raise ConfigError(f"invalid version clause {clause!r}")
+100:    return _parse_version(raw_version, label=f"version clause {clause!r}"), component_count
+103:def _wildcard_clause_matches(
+106:    clause: str,
+111:        raise ConfigError(f"invalid wildcard version clause {clause!r}")
+120:            raise ConfigError(f"invalid wildcard version clause {clause!r}")
+123:        raise ConfigError(f"invalid wildcard version clause {clause!r}")
+[0m
+[0m$ [0mecho "=== doctor.py 660-700 @ b6f89d7 ===" && git show b6f89d7:ontos/commands/doctor.py | awk 'NR>=660 && NR<=700{printf "%d: %s\n", NR, $0}'
+=== doctor.py 660-700 @ b6f89d7 ===
+660:             required_version,
+661:             path_version,
+662:         )
+663:         if version_issue:
+664:             return CheckResult(
+665:                 name="cli_availability",
+666:                 status="failed",
+667:                 message=f"PATH ontos {path_version} is incompatible with this project",
+668:                 details=(
+669:                     f"{version_issue} The running Python package is {running_version}; "
+670:                     f"retry with '{sys.executable} -m ontos'."
+671:                 ),
+672:             )
+673: 
+674:         if not version_satisfies_requirement(path_version, f"={running_version}"):
+675:             return CheckResult(
+676:                 name="cli_availability",
+677:                 status="warning",
+678:                 message=(
+679:                     f"PATH ontos reports {path_version}, but the running package is "
+680:                     f"{running_version}"
+681:                 ),
+682:                 details=(
+683:                     f"{ontos_path} shadows the running package. Activation should "
+684:                     f"retry with '{sys.executable} -m ontos'."
+685:                 ),
+686:             )
+687: 
+688:         return CheckResult(
+689:             name="cli_availability",
+690:             status="success",
+691:             message=f"ontos {path_version} available at {ontos_path}",
+692:         )
+693: 
+694:     # Check if python -m ontos works
+695:     try:
+696:         result = subprocess.run(
+697:             [sys.executable, "-m", "ontos", "--version"],
+698:             capture_output=True,
+699:             text=True,
+700:             timeout=5
+[0m
+[0m$ [0mecho "=== X-M1 log.py symlink site @ b6f89d7 (lines 110-120, 333-342) ===" && git show b6f89d7:ontos/commands/log.py | awk 'NR>=110 && NR<=120{printf "%d: %s\n",NR,$0} NR>=333 && NR<=342{printf "%d: %s\n",NR,$0}'
+echo "=== X-M2 validator missing-id site @ b6f89d7 (lines 244-285) ===" && git show b6f89d7:<redacted:secret> | awk 'NR>=244 && NR<=285{printf "%d: %s\n",NR,$0}' | grep -nE 'id|KeyError|missing|original|for |append'
+=== X-M1 log.py symlink site @ b6f89d7 (lines 110-120, 333-342) ===
+110:     
+111:     # Combine content
+112:     content = f"---\n{frontmatter}\n---\n\n{body}"
+113:     
+114:     config = load_project_config(repo_root=project_root)
+115:     logs_dir = (project_root / config.paths.logs_dir).resolve()
+116:     
+117:     filename = f"{date_str}_{topic_slug}.md"
+118:     output_path = logs_dir / filename
+119:     
+120:     return content, output_path
+333: 
+334: def _write_log_exclusively(output_path: Path, content: str) -> None:
+335:     """Create a UTF-8 log atomically with collision refusal."""
+336:     output_path.parent.mkdir(parents=True, exist_ok=True)
+337:     with output_path.open("x", encoding="utf-8", newline="") as handle:
+338:         handle.write(content)
+339:         handle.flush()
+340:         os.fsync(handle.fileno())
+341: 
+342: 
+=== X-M2 validator missing-id site @ b6f89d7 (lines 244-285) ===
+1:244:     original = {row["id"]: row for row in findings if row.get("origin") == "fable_audit"}
+2:245:     r2 = {row["id"]: row for row in findings if row.get("origin") == "codex_revalidation"}
+3:246:     if set(original) != set(audit):
+4:247:         errors.append(
+5:248:             "original register mismatch: "
+6:249:             f"missing={sorted(set(audit) - set(original))}, extra={sorted(set(original) - set(audit))}"
+8:251:     for finding_id in sorted(set(original) & set(audit)):
+9:252:         if original[finding_id].get("severity") != audit[finding_id]:
+10:253:             errors.append(
+11:254:                 f"severity mismatch for {finding_id}: registry={original[finding_id].get('severity')} "
+12:255:                 f"report={audit[finding_id]}"
+14:257:     original_counts = Counter(row.get("severity") for row in original.values())
+15:258:     if original_counts != Counter({"P0": 1, "P1": 27, "P2": 63}):
+16:259:         errors.append(f"original severity totals are wrong: {dict(original_counts)}")
+18:261:         errors.append(
+19:262:             f"R2 register mismatch: missing={sorted(EXPECTED_R2_IDS - set(r2))}, "
+22:265:     if "D6a-test-gaps-3" in original:
+23:266:         errors.append("phantom roadmap ID D6a-test-gaps-3 must not enter the registry")
+25:268:     fixed_original = {row["id"] for row in original.values() if row.get("status") == "code_fixed"}
+26:269:     if fixed_original != {"D4b-trust-1", "D4b-trust-2"}:
+27:270:         errors.append(f"unexpected committed code-fixed original set: {sorted(fixed_original)}")
+28:271:     serializer_row = original.get("D2b-roundtrip-3", {})
+29:272:     if serializer_row.get("status") != "code_fixed_evidence_pending" or serializer_row.get("fix_commit") is not None:
+30:273:         errors.append("D2b-roundtrip-3 must be uncommitted code_fixed_evidence_pending")
+31:274:     implemented_original = {
+32:275:         row["id"]
+33:276:         for row in original.values()
+36:279:     if implemented_original != EXPECTED_IMPLEMENTED_UNCOMMITTED_ORIGINAL_IDS:
+37:280:         errors.append(
+38:281:             "implemented-uncommitted original set mismatch: "
+39:282:             f"missing={sorted(EXPECTED_IMPLEMENTED_UNCOMMITTED_ORIGINAL_IDS - implemented_original)}, "
+40:283:             f"extra={sorted(implemented_original - EXPECTED_IMPLEMENTED_UNCOMMITTED_ORIGINAL_IDS)}"
+42:285:     partial_original = {
+[0m
+[0m$ [0mecho "=== ID pattern + error strings @ b6f89d7 schema.py:83-97 ===" && git show b6f89d7:ontos/core/schema.py | awk 'NR>=83 && NR<=97{printf "%d: %s\n",NR,$0}'
+=== ID pattern + error strings @ b6f89d7 schema.py:83-97 ===
+83: def validate_document_id(value: Any) -> str:
+84:     """Return a valid document ID or raise a user-actionable ``ValueError``."""
+85:     if not isinstance(value, str):
+86:         raise ValueError(
+87:             f"Document id must be a string, got {type(value).__name__}: {value!r}"
+88:         )
+89:     normalized = value.strip()
+90:     if not normalized:
+91:         raise ValueError("Document id must not be empty")
+92:     if not DOCUMENT_ID_PATTERN.fullmatch(normalized):
+93:         raise ValueError(
+94:             "Document id must start and end with an alphanumeric character "
+95:             "and contain only letters, numbers, '_', '-', or '.'"
+96:         )
+97:     return normalized
+[0m
+[0m← [0mWrite <redacted:secret>
+Wrote file successfully.
+[0m
+[0m← [0mWrite <redacted:secret>
+Wrote file successfully.
+[0m
+[0m$ [0mpython3 - <<'PY'
+import sys
+sys.path.insert(0, ".llm-dev/framework/scripts/_lib")
+from verdict_shape import classify_verdict_shape
+t = open("<redacted:secret>").read()
+r = classify_verdict_shape(t, require_h1=True)
+print("shape:", r["shape"], "| vocab:", r["verdict_vocab"], "| missing:", r["missing"])
+PY
+echo "=== git status (expect 2 new files, no commit) ===" && git status --short && echo "HEAD unchanged:" && git rev-parse --short HEAD
+shape: verdict_shaped | vocab: approve | missing: []
+=== git status (expect 2 new files, no commit) ===
+ M <redacted:secret>
+ M <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+HEAD unchanged:
+5367842
+[0m

@@ -1,0 +1,18 @@
+B.2 Product review written to `docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-claude-product.md`. No commit, no other edits (review-phase worker per Template 01).
+
+**Verdict: Approve**
+
+The B.2 mandate — confirm spec v1.1 turns B.1's user-facing gaps into testable Phase C contracts — is satisfied, verified against I0 `b6f89d7` (ancestor of HEAD, sources unchanged since freeze) with direct-run of the load-bearing copy:
+
+- **PRD-1** (required-version + string-ID breaking changes undiscoverable) → §7 promotes it from should-fix to a **gated** Phase C obligation: migration + manual copy must document required-version ranges, the exact activation exit/code/message contract, string-only ID rules (incl. quoting date-like/numeric/`null` scalars), `parse_error`, `E_USER_INPUT`, schema 4.0, exit taxonomy — and drift from the §4.2/§4.4 anchors **blocks D.1**. `git grep` confirmed `required_version` is in no `docs/reference/` file, so the gap is real and now scheduled.
+- **PRD-2** (implicit copy contract) → §4.2/§4.4 now inventory codes + message stems with anchors; every stem re-ran matches.
+- **PRD-3** (doubled invalid-clause copy) → §4.4 "each malformed clause appears once."
+
+Confirmed live at I0: `E_ACTIVATION_UNUSABLE`/`not_usable`, `E_LOG_EXISTS` (no overwrite), `E_USER_INPUT`, string-ID date/int rejection, exit taxonomy `0/1/2/3/5/130` + `schema_version 4.0`.
+
+**Findings** (none blocking): 
+- **PRD-B1** (should-fix): §4.4 anchors the doubled-copy fix to `config.py:239-266,279-345`, but the doubling actually originates at `_parse_version` `config.py:273` — outside both ranges. A scoped fix could leave the garbled user message live.
+- **PRD-B2** (should-fix): §7's "must document" list omits the invalid-range and empty/`null` message stems a migrator can actually hit.
+- **PRD-B3** (minor): ID error shows the Python repr `datetime.date(2026, 7, 10)` rather than the source scalar.
+
+External release-evidence wording (Windows/TestPyPI/PyPI/GitHub parity kept as explicit pending/blocking external proofs; umbrella ≠ per-issue/release certification) is honest and trust-positive.

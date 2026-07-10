@@ -1,0 +1,33 @@
+---
+id: project-ontos-audit-rebaseline-remediation-B.2-gemini-alignment
+deliverable_id: project-ontos-audit-rebaseline-remediation
+phase: B.2
+role: alignment
+family: gemini
+evidence_labels_used: [static-inspection]
+status: completed
+---
+
+# B.2 Alignment Dispatch — Closed Static Packet
+
+## Overview
+This dispatch assesses the alignment of Spec v1.1 (binding `bf91b42...b6f89d7`) under the B.2 phase static-inspection cap. It preserves 41 open and 7 partial certification nonclaims, converting B.1 findings into Phase C requirements.
+
+## Authority Alignment
+* **Revalidation & Registry**: Aligns with approved authorities including revalidation, registry, release ledger, lifecycle tracker, and original roadmap §5.
+* **Scope**: Conforms strictly to authorized scope limits. No overclaiming of I0.
+
+## Design Gaps & Phase C Requirements
+* **Sentinel Test**: Implementation of no-follow `logs_dir` with an outside sentinel test.
+* **Registry Validation**: Graceful validation of missing-ID registries.
+* **Diagnostic Rules**: Single-copy invalid-required-version diagnostic output.
+* **Taxonomy**: Exact schema-v4/exit taxonomy mapping.
+* **Migration**: Manual and migration coverage for required-version and string/YAML IDs.
+* **Anchors**: Version locking and exact Windows anchor validation.
+
+## Notes
+* External Windows and TestPyPI execution remain pending.
+* The design successfully closes B.1 gaps while holding I0 claims out of scope.
+
+## Verdict
+PASSED

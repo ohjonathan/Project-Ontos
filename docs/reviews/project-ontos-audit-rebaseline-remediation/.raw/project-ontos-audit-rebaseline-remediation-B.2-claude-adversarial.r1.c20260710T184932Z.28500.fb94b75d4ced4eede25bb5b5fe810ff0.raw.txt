@@ -1,0 +1,20 @@
+All six shape-contract rules pass. The artifact is written to the single allowed path, is shape-valid, and I did not commit (review-phase worker — orchestrator stages/commits).
+
+## Final report — project-ontos-audit-rebaseline-remediation / B.2 / adversarial / claude
+
+- **Status:** completed
+- **Artifacts written:** `docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-claude-adversarial.md`
+- **Verdict:** Approve (no reproducible blocker; two should-fix items for Phase C)
+- **Smoke check (self output-hygiene):** verdict-shape 6/6 rules = pass (evidence: direct-run, manual predicate — `scripts/llm-dev` wrapper is itself broken at HEAD by a stray em-dash `SyntaxError`, noted but out of scope)
+- **Cardinality/scope:** wrote exactly one file inside `ARTIFACT_OUTPUT_PATHS`; no no-touch/`docs/logs` writes; did not commit
+- **Commit:** none (review-phase worker leaves staging to orchestrator)
+
+**What I found (all direct-run, cross-provider: author=codex / reviewer=claude):**
+
+1. **X-1 (should-fix) — X-M2 requirement is under-scoped.** §4.1 names only field `id` and lines `244-285`, but `id` and `issue` are both required and `row["id"]`/`row["issue"]` are subscripted at 6+ sites. Repro: a `fable_audit` row missing `issue` raises an uncaught `KeyError: 'issue'` at `validate-audit-remediation-registry.py:338` — a *different* field the requirement never names, *outside* the cited range. A literal-compliant fix plus a §6 "malformed registry rows" regression feeding only a missing-`id` row would pass while the crash class persists — a test that falsely passes. Fail-closed (crash still exits non-zero), hence should-fix not blocker.
+
+2. **X-2 (should-fix) — X-M1 regression can pass vacuously.** X-M1 is genuinely reachable: the *default* `docs/logs` path escapes the workspace via a symlinked `docs` component (`/tmp/repro_xm1b.py` wrote outside the workspace), because `config._validate_path` only guards *explicitly-configured* paths. Conversely, an explicitly-configured outside `logs_dir` is rejected at config load (`ConfigError` at config.py:363) — so a Phase C symlink test built on that vector never exercises log.py and passes vacuously. The spec should require the regression to use the reachable default-path vector and apply the no-follow check *before* line 115's `.resolve()`.
+
+3. Public-contract citations (§4.2 ID regex/messages, §4.4 required-version copy) verified accurate against frozen code; §4.4's "duplicated invalid-clause copy" defect is real (clause literal appears twice).
+
+**Notes:** No B.1 verdicts, approvals, or test summaries were read. Blockers: none — both concrete defects are already committed Phase C requirements and both fail closed.

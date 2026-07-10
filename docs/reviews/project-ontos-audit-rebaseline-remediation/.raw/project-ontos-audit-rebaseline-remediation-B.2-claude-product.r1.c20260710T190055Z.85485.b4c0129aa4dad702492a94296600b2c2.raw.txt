@@ -1,0 +1,22 @@
+Done. B.2 Product review written to `docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-claude-product.md` (fresh, at current HEAD `19af0c9` — overwrote the stale untracked prior capture that was pinned to `5367842`). Not committed, per Template 01 review-phase discipline; no other files touched.
+
+## Verdict: Approve
+
+**Confirmed:** spec v1.1 turns every B.1 user-facing gap into a testable, anchored Phase C contract:
+
+| B.1 finding | v1.1 contract | Testable? |
+|---|---|---|
+| PRD-1 (docs omit breaking changes) | §7 — required migration/manual copy; "doc drift from §§4.2/4.4 anchors **blocks D.1**" | Yes (D.1 gate) |
+| PRD-2 (spec copy contract implicit) | §§4.2–4.4 now name exact codes/prefixes | Yes |
+| PRD-3 / C-1 (doubled clause literal) | §4.4 "remove duplicated invalid-clause copy… once in one actionable message" | Yes |
+| X-M1 (log symlink parent) | §4.3 "must reject every symlinked `logs_dir` component… a test must prove an outside-workspace sentinel unchanged" | Yes |
+| X-M2 (validator `KeyError`) | §4.1 "collected missing-fields error + non-zero exit, never an uncaught `KeyError`" | Yes |
+| — | §6 names all three regressions (`logs_dir` symlink, malformed rows, one-copy `required_version` diagnostics) | Yes |
+
+**Direct-run evidence** (I0 unchanged since freeze, so it's the real snapshot): the doubled-clause string still reproduces (`'not-a-range' 'not-a-range'`), and `git grep required_version -- docs/reference/*` returns exit 1 (no matches) — so the contracts target real, still-present defects, not fictional ones. Error-code/envelope anchors all resolve (`E_ACTIVATION_UNUSABLE` `activate.py:60`, `E_LOG_EXISTS` `log.py:294`, `schema_version "4.0"` `json_output.py:16`, `E_USER_INPUT` `errors.py:14`). External release-evidence wording (Windows/TestPyPI/GitHub) stays honestly pending, not certified.
+
+**Non-blocking findings** (fold into Phase C docs, don't gate B.2):
+- **PRD-B2-1 (should-fix):** §7 mandates documenting the `required_version` *mechanics* but not the *pre-adoption caution* ("upgrade collaborators before enabling") that B.1's U-1 concern needs and that `Migration_v3_to_v4.md:113` already models.
+- **PRD-B2-2 (minor):** §7's required content + the D.1 drift gate (anchored to §§4.2/4.4 only) omit the `E_LOG_EXISTS` log-collision contract (§4.3, surface S-1).
+
+Verdict line follows F35 (bare unnumbered `## Verdict`, bare `Approve` token).

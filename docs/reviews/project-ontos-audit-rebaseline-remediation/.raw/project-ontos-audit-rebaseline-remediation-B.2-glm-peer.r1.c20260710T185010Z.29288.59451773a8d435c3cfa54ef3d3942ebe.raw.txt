@@ -1,0 +1,17 @@
+I'll start by reading the three template files to understand the workflow contracts, and exploring the relevant directories in parallel.
+Now let me find the spec v1.1 that I need to review, the manifest, and the reviews directory structure.
+Let me explore the deliverable's review directory and find the spec.
+Let me read the B.2 dispatch intent, dispatch result, the latest B.2-glm-peer prompt, the raw output, and the spec.
+The previous r1 capture was a non-verdict narration (no artifact written, no result row for glm-peer in the result file). Let me read the spec v1.1 and the B.1 reviews to understand what was incorporated.
+Let me verify short SHAs and inspect the verdict-shape predicate (F35) so my artifact passes the shape gate, plus check the B.1 raw review format that did pass.
+Let me read the verdict-shape predicate to confirm exact requirements before writing.
+I now understand the F35 verdict-shape contract exactly (requires frontmatter keys `phase/role/family/deliverable_id/status`, an H1, a `## Verdict` heading, and a bare verdict token). Let me gather direct-run evidence against the frozen I0 snapshot `b6f89d7` to ground my findings, and re-verify the B.1 should-fix findings (which appear unfixed in v1.1).
+The 188-file diff, registry counts (91 orig + 9 R2; 41 `confirmed_open`; 7 partial), and JSON envelope's 9 keys all check out. Let me settle the doctor.py boundary question (P-3) and confirm a couple of remaining anchors (ID pattern, X-M1/X-M2 defect sites) before writing.
+I have direct-run grounding. Key findings confirmed against `b6f89d7`:
+- 188-file diff, 100-row registry (91+9; 41 `confirmed_open`; 7 partial), JSON envelope 9 keys, ID pattern — all match.
+- X-M1 (`log.py:115` `.resolve()` follows symlinks; 334-340 rejects nothing) and X-M2 (`validate-audit-remediation-registry.py:244` direct `row["id"]` access) defects confirmed — B.1 incorporation accurate.
+- B.1 should-fix P-1/P-2/P-3 **persist unfixed** in v1.1: §11 omits `config.py:279-345`; §11 has no B.1-regression rows; `doctor.py` anchor splits 593-675 (§4.4) vs 593-685 (§11) — and both lie *inside* `check_cli_availability` (to ~692), correcting B.1's "test class at 676-685" claim (actually the warning `CheckResult` branch).
+
+Writing the placeholder `.md` first, then the verdict to the `.raw` review file.
+Both files written. Let me verify the verdict passes the F35 shape predicate and confirm only the two target files changed (no commit).
+Created `docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/project-ontos-audit-rebaseline-remediation-B.2-glm-peer.review.txt`
