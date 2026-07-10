@@ -1,0 +1,13 @@
+Only my artifact is modified in this worktree; the throwaway I0 checkout is removed and the pre-existing registry edit was present at session start (I never touched this worktree's registry — mutations happened only in the removed `/tmp` checkout). Session complete.
+
+## Final report — project-ontos-audit-rebaseline-remediation / B.2 / adversarial / claude
+- **Status:** completed
+- **Artifacts written:** `docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-recert-claude-adversarial.md`
+- **Verdict:** Request changes (1 blocker X-1, 1 should-fix S-1, 1 minor N-1)
+- **Smoke checks:** validator baseline run at frozen I0 = pass/exit-0 (evidence: direct-run); mutated-input reproduction = exit-2 crash as reported (evidence: direct-run)
+- **Cardinality/scope:** wrote only the single allowed artifact path; no no-touch path modified; throwaway detached I0 worktree created and removed for reproduction; blind-review honored (no other verdict/receipt/approval read)
+- **Commit:** none — Adversarial (Template 05) review workers do not commit; orchestrator stages/commits
+
+**Blocker X-1 (direct-run).** Spec §4.1 states a *universal* invariant — malformed registry metadata must fail-closed to exit `1`, "never an exception-derived exit `2`," and "quarantine before all consumers" — but the concrete mandatory structural-pass gate (and its named §4.1/§6 table-driven acceptance test) is scoped only to `findings`, `programs`, and GitHub metadata. The frozen I0 validator also consumes `shared_path_leases` rows (L456-458) and `shared_tree_integration` (L421/427) via `.get()`; a non-mapping value in either crashes with exit `2` (`audit-registry: ERROR: '…' object has no attribute 'get'`), reproduced on a throwaway detached `b6f89d7` checkout against the real registry with only that one collection mutated (baseline = exit 0 PASS). A Phase C authored exactly to §4.1 still violates the invariant, and the test greens vacuously. A `KeyError` at `program_by_issue[146/147]` (L444) corroborates that shape-only validation is insufficient. Fix: extend the structural/quarantine pass + acceptance table + §11 matrix to every consumed registry collection (plus required-issue membership), or explicitly narrow the "never exit `2`" invariant.
+
+Everything else the recert targeted — reachable log/archive-marker symlinks, both `.ontos.lock` opens, the `stub.py` canonical-CLI-ID divergence, the malformed-clause duplication, and the deliberately non-vacuous default-`logs_dir` construction — is **accurately described against frozen I0 and specified reachably**; the spec makes no committed-but-uncertified status claim within the blind-review inputs.

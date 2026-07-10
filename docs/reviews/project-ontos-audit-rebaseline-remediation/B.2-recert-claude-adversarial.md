@@ -10,169 +10,177 @@ status: completed
 
 # Adversarial Review — project-ontos-audit-rebaseline-remediation / B.2 / claude
 
+Blind recertification of corrected spec v1.3 and frozen diff `bf91b42…b6f89d7`
+(single commit `b6f89d7 Implement audit rebaseline remediation`). All
+reproductions use frozen `git show b6f89d7:…` bytes or a throwaway detached I0
+worktree (`git worktree add --detach <tmp> b6f89d7`); no current-worktree byte
+was used as proof of a Phase C gate. Author family is `codex`; reviewer family
+`claude` is provider-distinct, so no same-provider halt.
+
 ## 1. Input boundary attestation
 
-The prompt exposed only: (a) operational preflight (identity, worktree, frozen
-SHA pair, throwaway-checkout permission, the no-current-bytes-as-Phase-C-proof
-constraint); (b) the artifact under review — corrected spec v1.2 and the frozen
-diff `bf91b42…b6f89d7`; (c) governing references (the spec itself, review
-templates 01/02/05). No suite outcome, prior approval, guard-discharge,
-coverage-sufficiency, or "implementation matches spec" claim was handed to me as
-a prefilled fact. I did not read any sibling verdict, receipt, or green-result
-summary. Boundary is clean; no prompt-assembly blocker.
-
-Author family is `codex` (spec frontmatter); this adversarial family is `claude`
-— cross-provider, so the v1.2 family-diversity invariant is satisfied and this is
-strict (non-fallback) adversarial evidence.
+The prompt exposed only: (a) operational preflight (identity, frozen SHA pair,
+output path, the do-not-read constraint), (b) the diff/artifact bytes, and (c)
+the governing spec. No suite outcome, prior approval, guard-discharge, coverage,
+or "already-green" claim was supplied as a prefilled fact. I read no other
+reviewer verdict, receipt, or approval. No prompt-assembly blocker.
 
 ## 2. Invariant re-derivation
 
-Re-derived from spec §§2, 4.1, 4.3, 4.4, 7 and the frozen I0 code, independent of
-author claims:
+From spec §4.1 / §4.4 / §11 and the frozen validator I derive the spec's own
+**universal** invariants (not author claims):
 
-- **INV-1 (malformed-registry closure, §4.1).** For **any** finding row missing
-  **any** required field, the validator must yield *collected* `missing fields`
-  errors and a non-zero exit **at every direct-subscript site** — never surfacing
-  a bare key fault instead of the collected list. Regressions must cover ≥2
-  distinct omissions (`id`, `issue`), and duplicate-ID analysis must skip
-  missing/`None` IDs rather than report `[None]`.
-- **INV-2 (reachable log-parent no-follow, §4.3).** Log creation must reject a
-  symlinked `logs_dir` component using the same anchored no-follow parent pin as
-  `SessionContext`, **before and without collapsing the path through
-  `.resolve()`**. The regression must exercise a *config-contained* path (not one
-  rejected by config) and prove an outside-workspace sentinel is unchanged.
-- **INV-3 (singular invalid-clause copy, §4.4).** A malformed `required_version`
-  clause must appear **once** in one actionable message.
-- **INV-4 (status/lifecycle independence, §4.1/§2).** Registry status and
-  lifecycle state are independent; the umbrella I0 commit does not retroactively
-  certify per-issue leases; 41 open / 7 partial states are preserved.
-- **INV-5 (public-contract fidelity, §§4.2/4.4/7).** Cited ID/version/exit copy
-  and patterns must match I0 code, and Phase-C migration/manual copy must document
-  them; drift blocks D.1.
+- **INV-Q (quarantine-before-all-consumers).** §4.1: "Before any indexing,
+  hashing, `set`/`Counter`, sorting, … count, lookup, or … GitHub parity
+  operation, the validator must perform a structural and type-validation pass …
+  Invalid rows are … quarantined from every downstream collection, and produce
+  the ordinary validation-failure exit `1`—**never** an exception-derived exit
+  `2`, bare `KeyError`/`TypeError`". §4.1 closes: "quarantine before all
+  consumers is [the safety boundary]." This is stated as an absolute over
+  *malformed local metadata*, but the concrete pass is scoped to "**both**
+  `findings` and `programs`" plus a second paragraph covering GitHub metadata
+  (snapshot maps + `external_drift`).
+- **INV-LOG / INV-LOCK.** Every `ontos log`-caused write (document, archive
+  marker, ancillary) and both `.ontos.lock` entry points must be
+  workspace-anchored no-follow (§4.3).
+- **INV-ID.** Every CLI-supplied ID calls the canonical validator; no divergent
+  regex/error string (§4.2).
+- **INV-VER.** Each non-empty malformed `required_version` clause literal
+  appears exactly once in one actionable message (§4.4).
+
+## Fresh attack-surface derivation
+
+| Attack surface | In scope? | Evidence attempted | Result |
+|---|---|---|---|
+| Registry validator: malformed `findings`/`programs` rows | Yes | direct-run I0 + spec read | Gate present & accurate; I0 crashes as spec admits |
+| Registry validator: malformed `shared_path_leases` / `shared_tree_integration` | Yes | **direct-run I0** + spec read | **BLOCKER X-1**: crash-class reachable, uncovered by §4.1 gate/test |
+| Registry validator: required-issue `program_by_issue[146/147]` lookup | Yes | static-inspection I0 | Corroborates X-1 (Key→exit 2 survives a shape-only pass) |
+| `github_snapshot` unconditional `.get().get()` (line 336) | Yes | static-inspection | Covered by §4.1 GitHub-metadata clause — no finding |
+| Log `logs_dir` symlink (default `docs/logs`) | Yes | direct-run I0 | Defect real; §4.3 gate reachable & non-vacuous |
+| Archive marker `.ontos/session_archived` follow-write | Yes | direct-run I0 | Defect real (`write_text` follows); §4.3 gate accurate |
+| Both `.ontos.lock` opens (`SessionContext.commit`, MCP `workspace_lock`) | Yes | direct-run I0 | Both `open("a+")`, no no-follow; §4.3 gate accurate |
+| CLI ID copy divergence (`stub.py`) | Yes | direct-run I0 | Divergent regex-only string present; §4.2 gate accurate |
+| `required_version` malformed-clause dedup/count | Yes | direct-run I0 | Duplication real; count rule satisfiable — see S-1 |
+| Committed-but-uncertified status transitions | Yes | spec read | Spec claims none (status:draft, §11 "Phase C required"); receipts out of blind-review inputs |
+| Serializer round-trip / release-wheel / MCP read-only | Partial | static-inspection | Left to Peer/Alignment + D.5; no adversarial catch derived |
 
 ## 3. Assumption attack
 
 | Assumption | Why it might be wrong | Impact if wrong | Reproduction / proof |
-|------------|------------------------|-----------------|----------------------|
-| The §4.1 enumerated "current sites" list is the complete inventory of direct-subscript sites Phase C must harden | The list omits reachable direct subscripts: `row["issue"]` at 348/369/622 and `row["severity"]` at **404** | A site-by-site Phase-C fix that follows the list literally leaves `severity`-omission unprotected | direct-run, see X-1 |
-| The mandated regression floor (`id`, `issue`) forces protection of all directly-subscripted required fields | Only `id` and `issue` are directly subscripted *and* regression-forced; `severity` is directly subscripted at 404 but has no mandated omission test | Named test `…_collected_without_traceback` can go green while `severity`-omission still bypasses the collected-fields path | direct-run, see X-1 |
-| A "reported once" test proves INV-3 | The already-singular token at I0 is the `Invalid [ontos].required_version` **prefix**; the *duplicated* token is the clause literal (`'garbage' 'garbage'`) | A test asserting `count(prefix)==1` passes on unfixed code — vacuous | direct-run, see X-2 |
-| INV-2's "config-contained path" and "outside-workspace sentinel" are jointly realizable as written | `_validate_path` uses `.resolve()`; a symlink resolving outside is rejected by config, one resolving inside has no outside target | A literal reading yields a vacuous rejection test unless the no-follow pin + plant-timing is spelled out | static-inspection, see M-1 |
+|---|---|---|---|
+| A structural pass over `findings`+`programs` (+GitHub meta) makes the validator never exit `2` | Two other top-level registry collections (`shared_path_leases`, `shared_tree_integration`) are consumed via `.get()`/subscript with no structural pass | Spec-compliant Phase C still crashes exit `2` on malformed control-plane input; INV-Q falsified; acceptance test vacuous for those inputs | Direct-run, §8 X-1 |
+| Naming the exact malformed clause and "count-once" are jointly achievable for multi-clause inputs | Full-requirement `repr` necessarily contains the bad clause as a substring | Dedup that keeps clause-identification counts 2; dedup that counts 1 may drop *which* clause is bad | static-inspection, §8 S-1 |
 
 ## 4. Failure mode analysis
 
 | Failure | How it happens | Would we notice? | Reproduction / proof |
-|---------|----------------|------------------|----------------------|
-| `severity`-missing row raises `KeyError` at un-enumerated site 404, bypassing collected `missing fields` | Per-row loop collects `missing` but does **not** `continue`; no `return errors` exists between the loop (224) and final return (694); first direct `row["severity"]` subscript is line 404 | Only if a `severity` regression exists — spec mandates none; named test covers `id`/`issue` only | X-1 (direct-run traceback) |
-| Named `…_reported_once` test green on unfixed code | Test asserts on the `Invalid [ontos].required_version` prefix (already count 1) instead of the doubled clause literal | Prefix count is 1 even at I0 | X-2 (direct-run) |
-| Log-symlink regression passes because config rejected the path, never exercising the no-follow pin | Symlinked `logs_dir` resolving outside is rejected by `_validate_path`; test asserts non-zero exit and mis-attributes it | Spec warns against it but leaves the non-vacuous construction implicit | M-1 (static-inspection) |
+|---|---|---|---|
+| Validator aborts with `audit-registry: ERROR … has no attribute 'get'`, exit `2` | `shared_path_leases` contains a non-mapping row, or `shared_tree_integration` is a non-mapping | **No** — §4.1 table-driven acceptance test omits these collections; a green suite hides it | direct-run (below) |
+| Validator `KeyError` exit `2` | `programs` well-formed but missing required issue `#146`/`#147` → `program_by_issue[issue]` (I0 line 444) | No — a shape-only structural pass does not assert membership | `git show b6f89d7:scripts/validate-audit-remediation-registry.py` L439-444 |
+
+Direct-run (throwaway detached I0 worktree, real committed registry, single
+collection mutated; baseline unmutated run = `exit 0 PASS`):
+
+```
+$ git worktree add --detach /tmp/i0 b6f89d7
+# mutate only manifests/project-ontos-audit-remediation-registry.yaml, then:
+$ python3 scripts/validate-audit-remediation-registry.py; echo exit=$?
+shared_path_leases += "not-a-mapping"      -> audit-registry: ERROR: 'str' object has no attribute 'get'      exit=2
+shared_path_leases += None                 -> audit-registry: ERROR: 'NoneType' object has no attribute 'get'  exit=2
+shared_tree_integration = ["x"]  (a list)  -> audit-registry: ERROR: 'list' object has no attribute 'get'      exit=2
+shared_tree_integration = "unproven"       -> audit-registry: ERROR: 'str' object has no attribute 'get'       exit=2
+```
+
+Frozen anchors: `shared_path_leases` consumed at L456 (`lease.get("path")`),
+L457 (`lease.get("programs")`), L458 (`lease.get("order")`) with no preceding
+structural pass; `shared_tree_integration` consumed at L421/L427
+(`integration.get(...)`); `main()` maps every `validate()` exception to
+`return 2` (L705-707).
 
 ## 5. Diagram completeness attack
 
-§10.1/§10.2 diagrams cover the control-plane, writer, contract, and lifecycle
-retry/fail edges (`D3→D4`, `D5→D4`, `Loose_Falsification→D4`) and mark the three
-external boundaries (GitHub / Windows / TestPyPI). No prose error path is missing
-from the diagrams that I could reduce to a cited-line reproducible mismatch. No
-blocking diagram finding.
+§10.1 marks GitHub/Windows/TestPyPI as external and routes GitHub parity into
+the validator; §10.2 shows the D.3→D.4→D.2 retry loop and the D.5+falsification
+stop boundary. No prose error-path is missing from the diagrams. No blocking
+diagram/prose mismatch.
 
 ## 6. Edge case inventory
 
-- Finding row missing `severity` only (has `id`, `issue`, `origin: fable_audit`)
-  → reaches line 404 → `KeyError` (X-1).
-- Two rows both missing `id` → `Counter([None,None])` → `duplicate registry IDs:
-  [None]` unless skipped (INV-1 `[None]` clause; current I0 uses `.get("id")` at
-  219 so the `[None]` risk is real and the spec correctly names it).
-- `required_version` with one malformed clause (`foo`, `garbage`, `~4.7.8.9`,
-  `4.x.y.z`) → clause literal doubled in message (X-2).
-- Empty inner clause (`>=4.7.0, , <5.0.0`) → different message shape ("valid
-  semver range", clause not echoed) — INV-3 message-shape divergence noted under
-  X-2.
-- Symlinked `logs_dir` planted after config-load vs. resolving-inside vs.
-  resolving-outside (M-1).
+- Empty/None/duplicate-missing `id` findings: §4.1 gate + I0 line 219 filter
+  handles non-dicts; dict-missing-`id` still yields the `[None]` Counter artifact
+  pre-quarantine — spec correctly names this as a Phase C fix.
+- Non-mapping `shared_path_leases` row / non-mapping `shared_tree_integration`
+  / list-typed integration: **uncovered by the gate** — X-1.
+- Programs list missing required issue `#146`/`#147`: `KeyError` exit `2`
+  (corroborates X-1).
+- Multi-clause vs single-clause malformed `required_version`: S-1.
+- Default `docs/logs` symlink (config shadow-guard at `config.py:360-363` only
+  validates *explicit* `paths.logs_dir`, so the default path is unvalidated and
+  reachable): §4.3's default-path/post-config-plant construction is genuinely
+  non-vacuous — no finding.
 
 ## 7. Security surface
 
-The relevant surface is filesystem escape via symlinked `logs_dir` (INV-2). At I0,
-`create_session_log` collapses the path through `.resolve()` at
-`ontos/commands/log.py:115` and `_write_log_exclusively` does
-`parent.mkdir(parents=True, exist_ok=True)` then `open("x", …)` with no no-follow
-pin (`ontos/commands/log.py:334-340`, frozen `git show b6f89d7`), so I0 follows a
-symlinked parent — the defect the spec targets is genuinely present. The §4.3
-requirement is otherwise soundly specified; my only concern is regression vacuity
-(M-1), not the fix direction. No injection/authZ/secret surface is introduced by
-the reviewed change.
+The write/lock no-follow gates (§4.3) and the CLI-ID canonicalization (§4.2) are
+the security-relevant surfaces; the frozen I0 defects they target are real
+(`.resolve()` collapse at `log.py:115`; `write_text` follow at the archive
+marker; `open("a+")` on both `.ontos.lock` opens; `stub.py` divergent
+regex-only string with `_ID_PATTERN.match` not `fullmatch`). The spec's
+remediation requirements for these are accurate and reachable. No new
+injection/authZ vector derived beyond the validator crash-class in X-1.
 
 ## 8. Issues found
 
 ### Blocking (Critical)
 
-None. No finding reaches an uncaught traceback at the user surface at I0 (main()'s
-`except Exception → exit 2` catches subscript faults), and INV-5 fidelity checks
-passed, so nothing clears the blocker bar.
+| ID | Description | Location | Evidence | Reproduction | Observed vs expected | Suggested action |
+|----|-------------|----------|----------|--------------|----------------------|------------------|
+| X-1 | Spec §4.1's mandatory structural/quarantine pass is scoped to `findings`, `programs`, and GitHub metadata, but the validator also consumes `shared_path_leases` rows and `shared_tree_integration` via `.get()`/subscript. A non-mapping value in either crashes with an exception-derived exit `2` — the exact class §4.1 says must "never" occur — while the §4.1/§6 table-driven acceptance test (which omits these collections) stays green. A Phase C authored to the letter of §4.1 still violates INV-Q and passes a vacuous test w.r.t. the universal "never exit `2`/quarantine before all consumers" invariant. | spec §4.1 (gate scope) + §11 matrix rows; `scripts/validate-audit-remediation-registry.py` L421/427, L456-458 (I0); `main()` L705-707 | direct-run | Detached I0 worktree; mutate only `shared_path_leases`/`shared_tree_integration` in the committed registry (baseline run = exit 0) → 4 cases all `exit=2 audit-registry: ERROR: … has no attribute 'get'` (§4 block) | Observed: exit `2` traceback-message on malformed lease/integration. Expected per INV-Q: accumulated exit-`1` validation error. Extend the structural/quarantine pass (and the §4.1/§6 table-driven test + a §11 matrix row) to every registry-owned collection the validator consumes — at minimum `shared_path_leases` (row-mapping + `path`/`programs`/`order` shape) and `shared_tree_integration` (mapping) — and add required-issue membership fail-closed for `program_by_issue[146/147]`; OR explicitly narrow the "never exit `2`" invariant to name the collections it does not cover. |
 
 ### Should-fix (Major)
 
 | ID | Description | Location | Evidence | Reproduction | Observed vs expected | Suggested action |
 |----|-------------|----------|----------|--------------|----------------------|------------------|
-| X-1 | §4.1's operative anchors permit a vacuous pass against INV-1's universal clause: the enumerated site list omits the reachable `row["severity"]` subscript at line 404 (and `row["issue"]` at 348/369/622), and the mandated omission set (`id`,`issue`) does not force a `severity` case. A spec-conformant Phase C can green the named test while a `severity`-missing row bypasses the collected-`missing fields` path and falls to the generic `except Exception → exit 2` (`ERROR: 'severity'`). | spec §4.1 + §11 anchor `scripts/validate-audit-remediation-registry.py:219-223,244-286,338,372-387,632,656-661`; actual crash `…:404` | direct-run | throwaway detached I0 (`git worktree add --detach … b6f89d7`); drop `severity` from one `origin: fable_audit` row; call `validate(False)` → `KeyError: 'severity'` at line 404 (`min((row["severity"] for row in rows), …)`) | Expected: collected `… missing fields: ['severity']` + exit 1. Observed: `KeyError`/`ERROR: 'severity'` exit 2, no row context | Either complete the enumeration (add 348/369/404/622), OR mandate a row-level skip (`continue` + filter malformed rows out of `findings`/`original` before all downstream comprehensions), OR add `severity` to the mandated omission regressions. Prefer the row-level skip so INV-1's universal clause holds by construction. |
-| X-2 | INV-3's named test `test_invalid_required_version_clause_is_reported_once` can pass vacuously: the `Invalid [ontos].required_version` prefix is already singular at I0, while the token actually duplicated is the clause literal. | spec §4.4 anchor `ontos/core/config.py:239-266,279-345`; test `tests/core/test_config_phase3.py::test_invalid_required_version_clause_is_reported_once` | direct-run | throwaway I0; `required_version_incompatibility(">=4.7.0, garbage, <5.0.0","4.7.1")` → `…: version clause 'garbage' 'garbage' is not a valid semantic version`; prefix `count==1` (already), clause `'garbage'` `count==2` | Expected: assertion pins the *clause token* to count 1. Risk: a prefix-count assertion is true even unfixed | Spec should require the regression to assert the malformed **clause literal** appears exactly once (e.g., `msg.count(clause)==1`), not the prefix; and reconcile the empty-inner-clause message shape (`>=4.7.0, , <5.0.0` echoes no clause) with the "each malformed clause appears once" wording. |
+| S-1 | §4.4's "each non-empty malformed clause literal appears exactly once … in one **actionable** message" is under-specified for multi-clause requirements. At I0 the message is `Invalid [ontos].required_version {required!r}: {exc}`; the outer `{required!r}` (full string) always contains the bad clause as a substring, so "count == 1" can be satisfied *either* by dropping the outer full-requirement repr (loses input echo) *or* by dropping the specific-clause diagnosis (loses *which* clause is bad in a multi-clause range). The count-once regression, if written only with single-clause inputs (token == whole requirement), cannot distinguish these and can bless a less-actionable fix. | spec §4.4; §6 required-version bullet; `ontos/core/config.py` L250-267 (I0) | static-inspection | `git show b6f89d7:ontos/core/config.py` L250-267: outer wrapper always emits `{required!r}`; clause-level `ConfigError` (`invalid version clause {clause!r}`) repeats it → count 2 today | Observed: rule counts occurrences but does not pin *clause identification*. Expected: a multi-clause malformed input must still name which clause failed while counting the literal once. Add a §6 assertion that a representative **multi-clause** malformed requirement keeps clause identification (e.g., asserts the offending clause is unambiguously indicated) while the literal count is 1. |
 
 ### Minor
 
 | ID | Description | Location | Evidence | Reproduction | Observed vs expected | Suggested action |
 |----|-------------|----------|----------|--------------|----------------------|------------------|
-| M-1 | INV-2's regression recipe leaves the non-vacuous construction implicit: "config-contained path… not rejected by config" and "prove an outside-workspace sentinel is unchanged" are only jointly realizable via no-follow rejection of an inside-resolving symlinked component (with a separate outside sentinel dir) or a plant-after-config-load ordering, because `_validate_path` `.resolve()`s and rejects any `logs_dir` that resolves outside. A literal reading risks a test that config-rejects the path and never exercises the log no-follow pin. | spec §4.3; `ontos/core/config.py:128-135` (`_validate_path` uses `.resolve()`), guard cite `…:360-363` | static-inspection | Read frozen `git show b6f89d7:ontos/core/config.py` `_validate_path` — `resolved = (repo_root/path_str).resolve(); return resolved.is_relative_to(repo_root)` | Expected: spec pins how the symlink both survives config and would redirect the write | Add one sentence to §4.3 fixing the construction (inside-resolving symlinked component + outside sentinel, OR symlink planted between config-load and write) so the named test cannot be written vacuously. |
-
-## Reachability gaps
-
-- The `row["issue"]` subscripts at **348/369/622** are un-enumerated but are, in
-  practice, protected by the mandated `issue`-omission regression: an
-  `issue`-missing row runs the whole validator, so any unfixed `issue` subscript
-  crashes the test. They are therefore *forced* by the regression floor and are
-  **not** an independent gap.
-- The `row["severity"]` subscript at **404** is the one directly-subscripted
-  required field that is **both** un-enumerated **and** unforced by any mandated
-  regression — this is the genuine gap driving X-1.
-- I could construct a reaching input for every §4.1 rule I attacked; no rule was
-  unreachable end-to-end.
-
-## Fresh attack-surface table
-
-| Attack surface | In scope? | Evidence attempted | Result |
-| --- | --- | --- | --- |
-| Malformed registry row, every required field, every subscript site | Yes | direct-run on throwaway I0 (`id`/`issue`/`severity` omissions) | Gap on `severity`@404 → X-1 |
-| Duplicate-ID `[None]` reporting | Yes | static-inspection of `…:219` (`.get("id")`→`None`) | Spec correctly requires skip; no new finding |
-| `required_version` malformed-clause copy | Yes | direct-run of frozen `required_version_incompatibility` | Real duplication + test-vacuity → X-2 |
-| Log-symlink no-follow reachability | Yes | direct-read of `log.py:115,334-340` + `config._validate_path` | Fix direction sound; regression-vacuity → M-1 |
-| Status/lifecycle independence (committed-but-uncertified) | Yes | static-inspection of validator status/count pinning (268-333) | Exact per-status count pins block cross-bucket flips; no reproducible transition escape — no finding |
-| Public-contract fidelity (ID copy/pattern, exit taxonomy) | Yes | direct-read of `schema.py:78-97,315`, pattern literal | Copy + regex match spec §4.2 exactly — no drift |
-| Migration/manual copy | Partial — Phase-C deliverable, absent at I0 | static-inspection of §7 requirement list | Correctly deferred to Phase C; blocks D.1 per spec — no finding |
-| Serializer round-trip / writer commit internals | Out of scope | — | Not attacked; no reachable spec-anchor defect surfaced in the targeted pass |
+| N-1 | §4.1 / §11 cite the validator direct-read at `…:18-50,209-266` / `:249-266`; frozen I0's malformed-input consumers extend to L336 (`github_snapshot`), L370, L421-427, L444, L456-458. The narrow anchor ranges under-represent the consumer surface the quarantine boundary must precede. | spec §4.1, §11 | static-inspection | Compare cited ranges to `git show b6f89d7:scripts/validate-audit-remediation-registry.py` consumer lines above | Anchors accurate but non-exhaustive | Broaden the cited consumer anchors so Phase C sees the full "before all consumers" surface. |
 
 ## Verdict
 
 Request changes
 
-Two Major should-fix findings (X-1, X-2) show the spec's operative anchors for two
-of its three headline Phase-C gates permit vacuous passes against their own
-universal requirements — a `severity`-missing registry row escapes the
-collected-`missing fields` contract at un-enumerated line 404, and the
-`…_reported_once` version test can green on unfixed code. Both are direct-run
-reproduced and cheaply corrected at the spec layer before Phase C. No blockers:
-public-contract fidelity holds, the log-symlink and status/lifecycle designs are
-sound, and no user-surface uncaught traceback exists at I0. Tighten §4.1 (complete
-the site inventory or mandate a row-level skip; add `severity` coverage), §4.4
-(assert on the clause token), and §4.3 (M-1 construction) and the deliverable is
-clear to proceed.
+X-1 is a reproducible (direct-run) falsification of the spec's own universal
+INV-Q "never an exception-derived exit `2` / quarantine before all consumers"
+invariant: the §4.1 gate and its named table-driven acceptance test do not cover
+`shared_path_leases` or `shared_tree_integration`, so a Phase C authored exactly
+to spec ships a validator that still crashes exit `2` on malformed control-plane
+input, and the test greens vacuously. Everything else the recert targets —
+reachable log/archive-marker symlinks, both `.ontos.lock` entry points, the
+canonical-CLI-ID divergence, the malformed-clause duplication, and the
+non-vacuous default-`logs_dir` construction — is accurately described against
+frozen I0 and specified reachably; the spec makes no committed-but-uncertified
+status claim within the blind-review inputs. Close X-1 (extend the structural/
+quarantine pass + acceptance table + matrix to all consumed registry
+collections, or narrow the invariant) and address S-1; the remaining v1.3 gates
+stand.
 
 ## Notes
 
-- Evidence produced against frozen bytes only: `git show b6f89d7:…` and a
-  clearly-identified throwaway detached I0 worktree (`git worktree add --detach
-  /tmp/b2-i0-throwaway b6f89d7`, removed after use). Current worktree Phase-C bytes
-  were not used as proof of any gate.
-- Standalone-module import was used for `config.py`/the validator to bypass the
-  package `__init__` chain (`tomli_w` absent in this environment); this affects
-  only import mechanics, not the reproduced behavior.
-- Adversarial family `claude` differs in provider from author `codex`; strict-P3
-  adversarial evidence, no fallback labeling applied.
+- Evidence: X-1 crash-class and the I0 log/lock/CLI defects = `direct-run` on a
+  throwaway detached `b6f89d7` worktree (removed after use); spec-scoping,
+  membership-lookup (X-1 corroboration), S-1, and N-1 = `static-inspection` on
+  frozen `git show b6f89d7:…` bytes. No cap violation (labels ⊆ {direct-run,
+  static-inspection}).
+- File-existence attestation: `git branch --show-current` =
+  `codex/audit-rebaseline-remediation-lifecycle`; `git rev-parse HEAD` =
+  `c1047589…`; all cited impl/test paths are tracked at `b6f89d7`
+  (`git cat-file -e b6f89d7:<path>` succeeded for each).
+- No current-worktree byte was used as proof of a Phase C gate; the in-progress
+  Phase C tree was not read for reproduction.
+- Blind-review honored: no other reviewer verdict, approval, receipt, dispatch
+  result, or green-result summary was read.
+</content>

@@ -1,0 +1,18 @@
+Product recertification complete. Verdict: **Approve**.
+
+## Summary
+
+I reviewed corrected spec **v1.3** against frozen I0 `b6f89d7` as the Product reviewer for phase B.2, writing only `docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-recert-claude-product.md` (overwrote a stale v1.2-round artifact at that path). No commit — review-phase workers leave staging to the orchestrator per Template 01.
+
+**Method.** Manifest declares `implementation_sequencing.mode: code-first-user-gated` (`implementation_ref: b6f89d7`), so I ran the §2.2 spec-vs-implementation cross-reference against I0 bytes via `git show b6f89d77:<path>` — not the current Phase C worktree. Branch/commit/tracked-file attestations are direct-run.
+
+**Key findings across the dispatched focus areas:**
+- Every user-visible contract (required-version adoption + guidance pointer, canonical string/YAML ID copy, exact error codes/copy, actionable log-collision recovery, lock/log/MCP fail-closed visibility, warnings-only exit `3`, schema-v4 JSON/exit taxonomy with reserved `4`, doc discoverability, external release-evidence wording) is inventoried with an exact code/prefix/status and made **testable at spec level**.
+- Verified against I0 that every gate the spec marks "Phase C direct-run required" is **genuinely unsatisfied** at `b6f89d7`: CLI stub uses a divergent regex-only ID error (`stub.py:186`), log collision has no recovery hint (`log.py:289`), the required-version clause literal is duplicated (`config.py:260`), and Migration/Manual lack `required_version` adoption copy. The spec's framing and I0 reality agree — no overclaim.
+- Spec does **not** claim release readiness or per-issue certification; external evidence (Windows/TestPyPI/GitHub) is worded as explicit pending/blocking.
+
+**Two should-fix (both static-inspection, non-blocking):**
+- **PRD-1** — §4.2 says CLI must "surface" the canonical message but §6 pins tests to "message equality," which would strip the useful `--id` locus. Recommend "contain/surface" over strict equality.
+- **PRD-2** — the best-effort `.ontos/session_archived` marker's non-fatal failure is silent; recommend a `warnings[]`/visible note so a skipped marker is discoverable.
+
+Neither changes the Approve.

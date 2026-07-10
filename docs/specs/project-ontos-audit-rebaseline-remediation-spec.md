@@ -5,13 +5,13 @@ type: atom
 status: draft
 role: spec-author
 family: codex
-version: 1.3
+version: 1.4
 depends_on:
   - project-ontos-codex-audit-revalidation-2026-07
   - project_ontos_audit_remediation_release_line_tracker
 ---
 
-# Spec v1.3 — project-ontos-audit-rebaseline-remediation
+# Spec v1.4 — project-ontos-audit-rebaseline-remediation
 
 ## 1. Overview
 
@@ -26,6 +26,8 @@ Evidence baseline: the 100-row registry contains the 91 original findings and ni
 **B.2 incorporation note:** v1.2 widens malformed-row handling to every required field and reachable subscript, makes the log-symlink regression non-vacuous, and sharpens control-plane, diagram, exit-code, documentation, and evidence anchors. B.2 approval likewise does not certify Phase C, D.5, any child lifecycle, or a release.
 
 **B.2 recertification / Phase C incorporation note:** v1.3 converts Claude X-1/X-2 and the independently reproduced Phase C gaps into construction-level gates rather than finite call-site promises. Finding and program rows must be typed and quarantined before every downstream consumer; malformed-clause tests count the offending literal rather than an already-singular prefix; all log-side writes and both workspace-lock entry points are no-follow; CLI ID copy comes from the canonical validator; and migration/error copy is actionable. These are requirements to implement and verify, not claims that the current Phase C worktree or its tests already satisfy them. The immutable SHA/count boundary and every external, per-issue, D.6, merge, tag, publication, and release nonclaim remain unchanged.
+
+**B.2 recertification follow-up:** v1.4 closes fresh Claude blocker X-1 by extending the typed/quarantine-before-consumers boundary to every registry-owned collection the validator consumes, explicitly including shared-path lease rows and the shared-tree integration record, and by requiring exact child-program membership before downstream lookup. It closes Claude should-fix S-1 by requiring a multi-clause malformed range to identify the offending clause while emitting that clause's literal/repr exactly once. It also closes GLM peer P-1/P-2/P-3 by separating advisory-lock backend selection from the no-follow open anchors, identifying the frozen-I0 validator references as the pre-upgrade consumer surface, and showing the code-first Phase C reconciliation explicitly in the lifecycle diagram. These are acceptance requirements, not retroactive proof about I0. All immutable SHA/count, external-proof, per-issue certification, D.6, merge, tag, publication, and release nonclaims remain unchanged.
 
 ## 2. Scope
 
@@ -66,13 +68,15 @@ No dependency may be converted into a synthetic receipt. An unavailable provider
 
 **CREATE:** `manifests/project-ontos-audit-remediation-registry.yaml`, `scripts/validate-audit-remediation-registry.py`, and `docs/reviews/2026-07-10-codex-audit-revalidation.md`. **MODIFY:** the historical report only for an addendum pointer, the release-line ledger, issue-linked lifecycle documents, and workflow metadata.
 
-The validator requires every finding field, exact original and R2 cardinality, severity parity, non-phantom IDs, evidence paths, program containment, shared-path lease integrity, and optional live GitHub parity (direct-read: `scripts/validate-audit-remediation-registry.py:18-50,209-266`). It must treat status and lifecycle state as independent. I0 is a real fix commit for this umbrella diff, but it does not retroactively prove earlier issue leases.
+The validator requires every finding field, exact original and R2 cardinality, severity parity, non-phantom IDs, evidence paths, program containment, shared-path lease integrity, and optional live GitHub parity. The frozen-I0 consumer surface is the pre-upgrade shape (static-inspection: `b6f89d7:scripts/validate-audit-remediation-registry.py:18-715`); the typed/quarantine boundary below is a Phase C upgrade and is not represented as already satisfied by I0. Status and lifecycle state remain independent. I0 is a real fix commit for this umbrella diff, but it does not retroactively prove earlier issue leases.
 
 O4 is the generated 12-deliverable human verification ledger showing status, evidence, and active blockers; O5 is the generated file-ownership lease table derived from deliverable manifests/allowed paths, and it blocks overlapping leases among simultaneously active work.
 
-Phase C must close B.1 X-M2 and both rounds of B.2 X-1 by construction. Before any indexing, hashing, `set`/`Counter`, sorting, severity aggregation, path normalization/overlap, count, lookup, or local/external GitHub parity operation, the validator must perform a structural and type-validation pass over **both** `findings` and `programs`. Each collection must be a list; every row must be a mapping; every required field must be present and have its registry-schema type; nullable fields are nullable only where the schema says so; issues and milestones are integers but not booleans; IDs and other keyed values are hashable strings; and path/evidence collections contain strings rather than `None` or nested/unhashable values. Invalid rows are diagnosed with row context, quarantined from every downstream collection, and produce the ordinary validation-failure exit `1`—never an exception-derived exit `2`, bare `KeyError`/`TypeError`, or misleading secondary error such as duplicate ID `[None]`.
+Phase C must close B.1 X-M2 and every round of B.2 X-1 by construction. Before any indexing, hashing, `set`/`Counter`, sorting, severity aggregation, path normalization/overlap, count, lookup, or local/external GitHub parity operation, the validator must perform a structural and type-validation pass over **every registry-owned collection it consumes**. That boundary includes `findings`, `programs`, `shared_path_leases`, `shared_tree_integration`, GitHub snapshot count maps, and `external_drift`; it also covers collection-valued fields inside those records. `findings`, `programs`, and `shared_path_leases` must be lists, each row must be a mapping, and every required field must be present with its registry-schema type. Each lease has a non-empty string `path`, non-empty integer issue lists for `programs` and `order`, and an optional non-empty string `policy`. `shared_tree_integration` is a mapping with non-empty string `status`/`reason`, a real boolean `release_blocking`, and a non-empty, duplicate-free integer `affected_issues` list. Nullable fields are nullable only where the schema says so; issues and milestones are integers but not booleans; IDs and other keyed values are hashable strings; and path/evidence collections contain strings rather than `None` or nested/unhashable values.
 
-The same fail-closed boundary applies to registry-owned GitHub metadata used by external parity, including snapshot count maps and every `external_drift` entry, before issue lookup, comparison, or formatting. Live GitHub transport/service failures remain explicit external blockers, but malformed local or returned metadata must be reported as parity/validation errors rather than crash the validator. The acceptance proof is table-driven: omit every required finding field and every required program field in turn, then exercise non-mapping rows, wrong and unhashable keyed values, `None` path elements, malformed GitHub metadata, and duplicate missing/`None` IDs. No finite list of current subscript line numbers is the safety boundary; quarantine before all consumers is.
+After malformed program rows are quarantined, the normalized program issue set must equal exactly `#146` through `#157`. Missing required program rows, including `#146` or `#147`, are ordinary validation failures; downstream child-manifest, lease, milestone, integration, and GitHub consumers must use the normalized membership and may never raise a `KeyError`. Invalid collection roots or rows are diagnosed with collection/row context, quarantined from every downstream collection, and produce validation exit `1`—never an exception-derived exit `2`, bare `KeyError`/`TypeError`, or misleading secondary error such as duplicate ID `[None]`.
+
+The same fail-closed boundary applies to registry-owned GitHub metadata used by external parity before issue lookup, comparison, or formatting. Live GitHub transport/service failures remain explicit external blockers, but malformed local or returned metadata must be reported as parity/validation errors rather than crash the validator. The acceptance proof is table-driven: omit every required finding, program, lease, and shared-tree integration field in turn; remove required program rows `#146` and `#147`; then exercise non-mapping collection rows/roots, wrong and unhashable keyed values, `None` path/issue elements, malformed GitHub metadata, and duplicate missing/`None` IDs. Each malformed lease, integration, and missing-program construction must exercise `main()` and assert exit `1` with `FAILED`, never exit `2` with `ERROR`. No finite list of current subscript line numbers is the safety boundary; quarantine before all consumers is.
 
 ### 4.2 Canonical Loader and Serializer
 
@@ -107,10 +111,15 @@ validated and activation fails explicitly when incompatible; doctor executes the
 PATH program and compares its reported version (direct-read:
 `ontos/core/config.py:223-266`, `ontos/commands/doctor.py:593-692`).
 
-The shared lock abstraction selects `fcntl` or `msvcrt` without unconditional
-Windows-incompatible imports (direct-read: `ontos/core/locking.py:13-81`) and
-implements the no-follow workspace-lock open contract from §4.3 for both CLI
-and MCP callers. MCP
+The shared advisory-lock abstraction selects `fcntl` or `msvcrt` without
+unconditional Windows-incompatible imports (frozen-I0 backend anchor:
+`b6f89d7:ontos/core/locking.py:13-81`). Phase C must separately centralize the
+no-follow workspace-lock open contract from §4.3 for both CLI and MCP callers.
+The frozen CLI open/path-check surface is in
+`b6f89d7:ontos/core/context.py:485-501,645-695`; the MCP gap is the plain open at
+`b6f89d7:ontos/mcp/locking.py:21-27`. The final implementation may place the
+shared no-follow opener beside the advisory backend, but the backend anchor is
+not evidence that the opener already existed. MCP
 read-only mode omits write tools, refuses persistent graph export, suppresses
 usage logs, and opens only an existing immutable portfolio snapshot (direct-read:
 `ontos/mcp/server.py:191-204,1055-1077`, `ontos/mcp/tools.py:384-405`). Type counts
@@ -118,7 +127,7 @@ must enumerate every canonical lifecycle type, including zero-count types.
 
 The schema-v4 CLI envelope has exactly the top-level keys `schema_version`, `command`, `status`, `exit_code`, `message`, `result`, `data`, `warnings`, and `error`; `result` separates domain status, result kind, exit category, and diagnostic basis/count completeness. Public exit codes are `0` clean, `1` findings, `2` usage, `3` warnings, `5` internal, and `130` interrupted; code `4` is reserved and must not be emitted or reassigned without an explicit schema-version change (code: `ontos/ui/json_output.py:16-49,202-345,414-472`; tests: `tests/test_cli_contract_v4.py:78-155`, `tests/commands/test_link_check.py:315-325`).
 
-`[ontos].required_version` mismatch is exact public behavior: activation returns shell `1`, JSON `error.code: E_ACTIVATION_UNUSABLE`, `data.status: not_usable`, and reason beginning `Incompatible Ontos version`; invalid ranges begin `Invalid [ontos].required_version`. Both failure forms must point users to the Migration/Manual `required_version` guidance without changing those leading prefixes, codes, or status. Phase C must remove duplicated invalid-clause copy so each non-empty malformed clause's literal/repr appears exactly once in one actionable message (current branches: `ontos/core/config.py:239-266,279-345`). The regression must count the malformed clause token itself, across representative malformed clauses, not the already-singular `Invalid [ontos].required_version` prefix; empty-clause diagnostics must remain actionable without inventing a literal that was not present.
+`[ontos].required_version` mismatch is exact public behavior: activation returns shell `1`, JSON `error.code: E_ACTIVATION_UNUSABLE`, `data.status: not_usable`, and reason beginning `Incompatible Ontos version`; invalid ranges begin `Invalid [ontos].required_version`. Both failure forms must point users to the Migration/Manual `required_version` guidance without changing those leading prefixes, codes, or status. Phase C must remove duplicated invalid-clause copy so each non-empty malformed clause's literal/repr appears exactly once in one actionable message (current branches: `ontos/core/config.py:239-266,279-345`). For a multi-clause requirement, the diagnostic must explicitly identify which clause failed (for example, `version clause '>='`) while that offending clause literal/repr still appears exactly once; echoing the whole requirement is optional and is not a substitute for clause identification. The regression must count the malformed clause token itself, across representative single- and multi-clause malformed ranges, not the already-singular `Invalid [ontos].required_version` prefix; empty-clause diagnostics must remain actionable without inventing a literal that was not present.
 
 ### 4.5 Release Pipeline, Tests, and Generated Metadata
 
@@ -147,7 +156,6 @@ identical generation must produce no timestamp or content diff.
 |---|---|---|---|
 | Can local review certify Windows behavior? | Emulation / real runner | Require real Windows CI; local inspection is supplemental. | Resolved |
 | Can D.5 certify TestPyPI availability? | Workflow inspection / tag-run | Keep external proof pending until a tagged run downloads exact bytes. | Resolved |
-| Does umbrella D.5 certify child issues? | Yes / no | No; require each child manifest's own strict receipts. | Resolved |
 | What map count is correct? | Fixed baseline / derived snapshot | Derive after lifecycle artifacts from clean tracked inputs. | Resolved |
 
 ## 6. Test Strategy
@@ -170,12 +178,15 @@ Unit and integration evidence must include:
   and `.github/workflows/ci.yml:139-170`.
 - B.1/B.2 regressions for a non-vacuously reached symlinked `logs_dir`; safe
   no-follow archive-marker creation; and table-driven registry validation that
-  omits every finding/program required field and covers non-mappings,
-  wrong/unhashable types, `None` paths, malformed external-parity metadata, and
-  no exception/exit `2`.
+  omits every finding/program/lease/integration required field, removes required
+  programs `#146`/`#147`, and covers non-mapping roots/rows, wrong or unhashable
+  types, `None` paths/issues, malformed external-parity metadata, and `main()`
+  validation exit `1` with no exception/exit `2`.
 - Required-version regressions assert each malformed non-empty clause literal or
-  repr exactly once (not the message prefix), and public-copy tests require the
-  Migration/Manual pointer while retaining the leading prefix/code/status.
+  repr exactly once (not the message prefix); representative multi-clause cases
+  also assert that the diagnostic names the offending clause. Public-copy tests
+  require the Migration/Manual pointer while retaining the leading
+  prefix/code/status.
 - CLI invalid-ID tests assert message equality with the canonical validator and
   preserve `E_USER_INPUT`; log-collision tests assert no overwrite plus the
   title/slug-or-move/remove recovery hint.
@@ -267,7 +278,8 @@ stateDiagram-v2
   I0_Frozen --> Phase_A_Spec
   Phase_A_Spec --> B1_Design_Review
   B1_Design_Review --> B2_CodeFirst_Review
-  B2_CodeFirst_Review --> D1_Implementation_Snapshot
+  B2_CodeFirst_Review --> Phase_C_Reconciliation
+  Phase_C_Reconciliation --> D1_Implementation_Snapshot
   D1_Implementation_Snapshot --> D2_PostImpl_Review
   D2_PostImpl_Review --> D3_Verdict
   D3_Verdict --> D4_Fix: blocking finding
@@ -292,7 +304,7 @@ stateDiagram-v2
 | Schema-v4 JSON and exit taxonomy | `ontos/ui/json_output.py:16-49,202-345,414-472` | `tests/test_cli_contract_v4.py:78-155`; `tests/commands/test_link_check.py:315-325` | direct-run |
 | X-M1 reachable log-parent no-follow | `ontos/commands/log.py`; `ontos/core/config.py` path guard | default-path provenance or post-config plant + external-sentinel regression | Phase C direct-run required |
 | Every log write, including archive marker, is no-follow | `ontos.commands.log`; `SessionContext` safe writer | primary log + `.ontos/session_archived` symlink/reparse regressions | Phase C direct-run required |
-| Finding/program malformed rows are typed and quarantined | `validate-audit-remediation-registry.py` structural pass before all consumers | every required field + non-mapping/wrong/unhashable/`None` path tests; validation exit `1`, never exception/exit `2` | Phase C direct-run required |
+| Every consumed registry collection is typed and quarantined | `validate-audit-remediation-registry.py` normalization of findings, programs, leases, integration, and parity metadata before all consumers | every required field + non-mapping/wrong/unhashable/`None` tests; missing `#146`/`#147`; `main()` exit `1`/`FAILED`, never exit `2`/`ERROR` | Phase C direct-run required |
 | Local/external GitHub metadata fails closed | registry validator parity input boundary | malformed snapshot/drift/live-response metadata regressions | Phase C direct-run required; live service proof external pending |
 | Required-version clause copy is singular and actionable | `ontos/core/config.py:249-266,279-345` | malformed clause literal/repr count plus guidance-pointer contract tests | Phase C direct-run required |
 | Workspace lock open is no-follow for CLI and MCP | `SessionContext` lock acquisition; `ontos.mcp.locking.workspace_lock` | symlink/reparse lock attacks; external contents/inode unchanged | Phase C direct-run required; Windows reparse proof external pending |
@@ -340,3 +352,14 @@ stateDiagram-v2
   both `.ontos.lock` entry points, and requires canonical CLI ID copy plus
   actionable recovery/guidance and warnings-exit-`3` migration copy. None of
   these specification gates is represented here as already implemented or green.
+- v1.4 extends quarantine-before-consumers to leases and shared-tree integration,
+  requires exact `#146`–`#157` program membership, and makes malformed-control-
+  plane `main()` exit behavior directly testable as `1`/`FAILED`, never
+  `2`/`ERROR` (spec review; execution still requires lifecycle evidence).
+- v1.4 also makes multi-clause `required_version` diagnostics identify the
+  offending clause while counting its literal/repr once. The immutable SHA,
+  counts/statuses, external proof, child certification, and release nonclaims
+  remain unchanged.
+- v1.4 distinguishes the frozen advisory-lock backend from the Phase C
+  no-follow opener, labels the I0 validator anchors as pre-upgrade evidence,
+  and shows Phase C reconciliation in the code-first lifecycle diagram.
