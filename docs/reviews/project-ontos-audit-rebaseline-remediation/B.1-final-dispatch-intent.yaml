@@ -50,7 +50,7 @@ dispatches:
     expected_model: glm-5.2
     expected_artifact: docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-final-glm-peer.md
     prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/B.1-final-glm-peer.prompt.md
-    evidence_cap: static-inspection
+    evidence_cap: direct-run
     dispatch_method: external-cli
     serving_provider: neuralwatt
     wire_protocol: openai-compatible

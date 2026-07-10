@@ -1,0 +1,2272 @@
+[0m
+> build · glm-5.2
+[0m
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>[90m [offset=878][0m
+[0m
+[0m$ [0mgit status --short --branch 2>&1; echo "---LOG---"; git log --oneline -10 2>&1
+## codex/audit-rebaseline-remediation-lifecycle
+ M Ontos_Context_Map.md
+ M docs/reference/Migration_v3_to_v4.md
+ M docs/reference/Ontos_Manual.md
+ M <redacted:secret>
+ M <redacted:secret>
+ M <redacted:secret>
+ M <redacted:secret>
+ M docs/trackers/project-ontos-audit-remediation-release-line.md
+ M <redacted:secret>
+ M ontos/commands/log.py
+ M ontos/commands/stub.py
+ M ontos/core/config.py
+ M ontos/core/context.py
+ M ontos/core/locking.py
+ M ontos/mcp/locking.py
+ M <redacted:secret>
+ M tests/commands/test_doctor_phase4.py
+ M tests/commands/test_log.py
+ M tests/commands/test_stub_parity.py
+ M tests/core/test_config_phase3.py
+ M tests/mcp/test_write_tools.py
+ M tests/test_cli_contract_v4.py
+ M tests/test_context_contention.py
+ M tests/test_session_context.py
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? tests/test_audit_remediation_registry_validator.py
+---LOG---
+43dd7dc Prepare final design receipt recertification
+af1e6ac Record failed B.2 recertification and revise design
+c104758 Recertify audit design and revise spec
+5e04094 Authorize Phase C registry regression
+3827a65 Approve audit remediation design
+e63a0a5 Incorporate B.2 design findings
+7145b39 Record B.2 audit design review
+19af0c9 Clarify B.2 verdict shapes
+5367842 Freeze B.2 review dispatch
+02afc68 Record B.1 audit design review
+[0m
+[0m← [0mWrite <redacted:secret>
+Wrote file successfully.
+[0m
+[0m✱ [0mGlob "docs/specs/**/*.md"[90m 6 matches[0m
+[0m
+[0m$ [0mgit show --stat b6f89d7 2>&1 | head -80
+commit b6f89d77e7fb684b8bd9a181a24c773d5777397a
+Author: Jonathan Oh <38262248+ohjonathan@users.noreply.github.com>
+Date:   Fri Jul 10 10:22:22 2026 -0700
+
+    Implement audit rebaseline remediation
+
+ .github/workflows/ci.yml                           |   95 +-
+ .github/workflows/publish.yml                      |  282 +++++-
+ .ontos-internal/logs/2026-07-02_init.md            |   21 -
+ .<redacted:secret>            |   21 -
+ .<redacted:secret>            |   21 -
+ .ontos.toml                                        |    2 +-
+ .ontos/hooks/pre-commit                            |   14 +-
+ .ontos/hooks/pre-push                              |   14 +-
+ .ontos/scripts/tests/test_context.py               |   14 +-
+ .ontos/scripts/tests/test_schema.py                |   21 +-
+ .pre-commit-config.yaml                            |   19 +-
+ AGENTS.md                                          |   29 +-
+ Ontos_Context_Map.md                               |   52 +-
+ ..._merge-pr-118-v4-5-closes-issues-115-116-117.md |    2 +-
+ .../<redacted:secret>     |   58 ++
+ docs/reference/Migration_v3_to_v4.md               |    2 +-
+ docs/reference/Ontos_Manual.md                     |   11 +-
+ .../retros/project-ontos-audit-doctor-rce-retro.md |   82 +-
+ <redacted:secret>        |    8 +-
+ .../<redacted:secret> |  262 +++++
+ .../.<redacted:secret>      |   61 ++
+ .../.prompts/B.1-gpt-alignment.prompt.md           |   55 +
+ .../.<redacted:secret>      |   55 +
+ .../.prompts/D.2-gpt-alignment.prompt.md           |   55 +
+ .../.prompts/D.5-gemini-verifier.prompt.md         |   43 +
+ .../.prompts/D.5-gpt-verifier.prompt.md            |   45 +
+ ...<redacted:secret> |   61 ++
+ ....<redacted:secret> |    0
+ ...<redacted:secret> |   19 +
+ .../B.1-gemini-dispatch-intent.yaml                |   32 +
+ .../B.1-gemini-dispatch-result.yaml                |   72 ++
+ .../B.1-gpt-dispatch-intent.yaml                   |   31 +
+ .../D.2-gemini-dispatch-intent.yaml                |   32 +
+ .../D.2-gpt-dispatch-intent.yaml                   |   31 +
+ .../D.5-gemini-dispatch-intent.yaml                |   32 +
+ .../D.5-gpt-dispatch-intent.yaml                   |   31 +
+ .../final-approval.md                              |   68 +-
+ .../lifecycle-receipt-inventory.yaml               |   35 +-
+ .../strict-p3-dispatch-readiness.txt               |   64 ++
+ docs/specs/project-ontos-audit-doctor-rce-spec.md  |   35 +-
+ docs/trackers/project-ontos-audit-doctor-rce.md    |   89 +-
+ ...project-ontos-audit-remediation-release-line.md |  304 +++---
+ <redacted:secret>      |  160 ++-
+ .../<redacted:secret>  | 1046 ++++++++++++++++++++
+ .../<redacted:secret> |   82 +-
+ ontos/_hooks/pre-commit                            |   12 +-
+ ontos/_hooks/pre-push                              |   12 +-
+ ontos/cli.py                                       |  376 ++++---
+ ontos/command_registry.py                          |  123 +++
+ ontos/commands/activate.py                         |    9 +
+ ontos/commands/doctor.py                           |  136 ++-
+ ontos/commands/init.py                             |    1 +
+ ontos/commands/link_check.py                       |    4 +-
+ ontos/commands/log.py                              |   88 +-
+ ontos/commands/map.py                              |    9 +-
+ ontos/commands/migrate.py                          |   12 +-
+ ontos/commands/promote.py                          |   20 +-
+ ontos/commands/retrofit.py                         |   73 +-
+ ontos/commands/scaffold.py                         |   42 +-
+ ontos/commands/stub.py                             |   11 +-
+ ontos/commands/verify.py                           |   41 +-
+ ontos/core/body_refs.py                            |   95 +-
+ ontos/core/config.py                               |  181 +++-
+ ontos/core/context.py                              |  762 +++++++++++++-
+ ontos/core/errors.py                               |    4 +-
+ ontos/core/frontmatter.py                          |  116 +--
+ ontos/core/frontmatter_edit.py                     |  211 +++-
+ ontos/core/frontmatter_repair.py                   |   47 +-
+ ontos/core/git.py                                  |   51 +-
+ ontos/core/graph.py                                |  333 +++++--
+ ontos/core/history.py                              |    9 +-
+ ontos/core/instruction_protocol.py                 |   30 +-
+ ontos/core/link_diagnostics.py                     |  324 +++++-
+ ontos/core/locking.py                              |   81 ++
+[0m
+[0m$ [0mgit show --stat b6f89d7 2>&1 | tail -120
+ontos/core/graph.py                                |  333 +++++--
+ ontos/core/history.py                              |    9 +-
+ ontos/core/instruction_protocol.py                 |   30 +-
+ ontos/core/link_diagnostics.py                     |  324 +++++-
+ ontos/core/locking.py                              |   81 ++
+ ontos/core/schema.py                               |  156 ++-
+ ontos/io/files.py                                  |   29 +-
+ ontos/io/git.py                                    |    6 +-
+ ontos/io/toml.py                                   |   53 +-
+ ontos/io/yaml.py                                   |   68 +-
+ ontos/mcp/locking.py                               |   14 +-
+ ontos/mcp/portfolio.py                             |   41 +-
+ ontos/mcp/schemas.py                               |   13 +-
+ ontos/mcp/server.py                                |   53 +-
+ ontos/mcp/tools.py                                 |   69 +-
+ ontos/mcp/writes.py                                |   11 +-
+ ontos/ui/json_output.py                            |  330 +++++-
+ pyproject.toml                                     |    3 -
+ scripts/check_release_artifact.py                  |  144 +++
+ <redacted:secret>     |  728 ++++++++++++++
+ tests/commands/golden/query_help.txt               |   39 +-
+ tests/commands/golden/scaffold_help.txt            |   22 +-
+ <redacted:secret>              |    5 +-
+ .../test_activate_json_warning_metadata.py         |    6 +-
+ .../commands/test_agentic_activation_resilience.py |   21 +
+ tests/commands/test_consolidate_parity.py          |   35 +-
+ tests/commands/test_doctor_phase4.py               |   74 +-
+ tests/commands/test_env.py                         |   17 +-
+ tests/commands/test_hook_phase4.py                 |   24 +
+ tests/commands/test_instruction_protocol.py        |   45 +
+ tests/commands/test_link_check.py                  |   21 +-
+ tests/commands/test_log.py                         |   45 +
+ tests/commands/test_map.py                         |    2 +-
+ tests/commands/test_mcp_command.py                 |    2 +-
+ tests/commands/test_query_parity.py                |   24 +
+ tests/commands/test_rename.py                      |   21 +
+ tests/commands/test_retrofit.py                    |   21 +-
+ tests/commands/test_scaffold_parity.py             |    1 +
+ tests/commands/test_stub_parity.py                 |   31 +-
+ tests/commands/test_verify_parity.py               |   10 +-
+ tests/commands/test_verify_portfolio.py            |   10 +-
+ tests/conftest.py                                  |   36 +-
+ tests/core/test_body_refs.py                       |   66 ++
+ tests/core/test_config_phase3.py                   |   52 +
+ tests/core/test_frontmatter_edit_pipeline.py       |   61 ++
+ tests/core/test_frontmatter_repair.py              |   22 +-
+ tests/core/test_git_safety.py                      |   41 +
+ tests/core/test_graph.py                           |  123 +++
+ tests/core/test_link_diagnostics.py                |  147 ++-
+ tests/core/test_schema.py                          |   34 +-
+ tests/golden/README.md                             |   12 +-
+ tests/golden/baselines/medium/context_map.md       |  292 +++---
+ tests/golden/baselines/medium/log_metadata.json    |    4 +-
+ tests/golden/baselines/medium/log_stdout.txt       |    2 +-
+ tests/golden/baselines/medium/map_metadata.json    |    4 +-
+ tests/golden/baselines/medium/map_stdout.txt       |   21 +-
+ tests/golden/baselines/medium/session_log.md       |   28 +-
+ tests/golden/baselines/small/context_map.md        |  111 ++-
+ tests/golden/baselines/small/log_metadata.json     |    4 +-
+ tests/golden/baselines/small/log_stdout.txt        |    2 +-
+ tests/golden/baselines/small/map_metadata.json     |    4 +-
+ tests/golden/baselines/small/map_stdout.txt        |   16 +-
+ tests/golden/baselines/small/session_log.md        |   25 +-
+ tests/golden/capture_golden_master.py              |   23 +-
+ tests/golden/compare_golden_master.py              |  104 +-
+ tests/golden/test_golden_master.py                 |    3 -
+ tests/io/test_git_empty_diff.py                    |   29 +
+ tests/io/test_toml_roundtrip.py                    |   38 +
+ tests/mcp/test_activation.py                       |   26 +-
+ tests/mcp/test_bundler.py                          |    2 +-
+ tests/mcp/test_cache.py                            |    2 +-
+ tests/mcp/test_context_bundle.py                   |    2 +-
+ tests/mcp/test_context_bundle_config.py            |    2 +-
+ tests/mcp/test_context_map.py                      |    2 +-
+ tests/mcp/test_error_paths.py                      |    2 +-
+ tests/mcp/test_export_graph.py                     |    2 +-
+ tests/mcp/test_get_document.py                     |    2 +-
+ tests/mcp/test_health.py                           |    2 +-
+ tests/mcp/test_list_documents.py                   |    2 +-
+ tests/mcp/test_parity.py                           |    2 +-
+ tests/mcp/test_portfolio.py                        |    2 +-
+ tests/mcp/test_portfolio_integration.py            |    2 +-
+ tests/mcp/test_query.py                            |    2 +-
+ tests/mcp/test_read_only_registration.py           |  119 ++-
+ tests/mcp/test_refresh.py                          |    2 +-
+ tests/mcp/test_rename_document.py                  |    2 +-
+ <redacted:secret>      |    2 +-
+ tests/mcp/test_schemas.py                          |    2 +-
+ tests/mcp/test_server_integration.py               |    2 +-
+ tests/mcp/test_server_portfolio_mode.py            |    2 +-
+ tests/mcp/test_stream_routing.py                   |    2 +-
+ tests/mcp/test_workspace_overview.py               |   44 +-
+ tests/mcp/test_write_tools.py                      |    2 +-
+ tests/{mcp/__init__.py => mcp_helpers.py}          |   85 +-
+ tests/test_ci_release_workflows.py                 |   88 ++
+ tests/test_cli.py                                  |   44 +-
+ tests/test_cli_contract_v4.py                      |  222 +++++
+ tests/test_config.py                               |  113 ---
+ tests/test_consolidate.py                          |   88 --
+ tests/test_cycle_detection.py                      |  168 ----
+ tests/test_describes.py                            |    5 -
+ <redacted:secret>         |   21 +
+ tests/test_dual_mode.py                            |    4 -
+ tests/test_end_session.py                          |  263 -----
+ tests/test_frontmatter_roundtrip_regression.py     |   90 ++
+ tests/test_immutable_history.py                    |    5 -
+ tests/test_lint.py                                 |  192 ----
+ tests/test_maintain.py                             |   46 -
+ tests/test_orphan_detection.py                     |  252 -----
+ tests/test_pre_commit_check.py                     |  319 ------
+ tests/test_pre_push_check.py                       |   61 --
+ tests/test_query.py                                |   91 --
+ tests/test_release_artifact.py                     |   91 ++
+ tests/test_session_context.py                      |  238 +++++
+ tests/test_test_isolation.py                       |   41 +
+ tests/test_v284_refactor.py                        |  149 ---
+ tests/test_validation.py                           |  436 --------
+ tests/test_yaml_edge_cases.py                      |  236 -----
+ tests/ui/test_json_output.py                       |   16 +-
+ 188 files changed, 9520 insertions(+), 4356 deletions(-)
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m
+[0m$ [0mgit show b6f89d7:<redacted:secret> 2>&1 | head -120
+#!/usr/bin/env python3
+"""Validate the audit registry and its local rendered control-plane artifacts."""
+
+from __future__ import annotations
+
+import argparse
+from collections import Counter, defaultdict
+import json
+from pathlib import Path
+import re
+import subprocess
+import sys
+from typing import Any
+
+import yaml
+
+
+ROOT = Path(__file__).resolve().parents[1]
+REGISTRY_PATH = ROOT / "<redacted:secret>"
+AUDIT_PATH = ROOT / "<redacted:secret>"
+LEDGER_PATH = ROOT / "docs/trackers/project-ontos-audit-remediation-release-line.md"
+REVALIDATION_PATH = ROOT / "<redacted:secret>"
+DOCTOR_MANIFEST_PATH = ROOT / "<redacted:secret>"
+SERIALIZER_MANIFEST_PATH = ROOT / "<redacted:secret>"
+GITHUB_REPOSITORY = "ohjonathan/Project-Ontos"
+
+REQUIRED_FINDING_FIELDS = {
+    "id",
+    "baseline_commit",
+    "severity",
+    "root_program",
+    "issue",
+    "release",
+    "status",
+    "fix_commit",
+    "verification_evidence",
+    "allowed_paths",
+    "lifecycle_state",
+    "base_sha",
+}
+EXPECTED_R2_IDS = {
+    "R2-test-hermeticity-1",
+    "R2-context-tmp-symlink-1",
+    "R2-loader-id-type-1",
+    "R2-windows-fcntl-import-1",
+    "R2-lifecycle-type-enumeration-1",
+    "R2-testpypi-provenance-1",
+    "R2-activation-version-skew-1",
+    "R2-mcp-readonly-export-1",
+    "R2-control-plane-parity-1",
+}
+EXPECTED_IMPLEMENTED_UNCOMMITTED_ORIGINAL_IDS = {
+    "D1a-graph-link-1",
+    "D1a-graph-link-2",
+    "D1a-graph-link-3",
+    "D1a-graph-link-4",
+    "D1a-graph-link-5",
+    "D1a-graph-link-6",
+    "D1a-graph-link-7",
+    "D1a-graph-link-8",
+    "D1a-graph-link-9",
+    "D1c-envelope-4",
+    "D1c-envelope-5",
+    "D2a-write-safety-2",
+    "D2a-write-safety-7",
+    "D2a-write-safety-9",
+    "D2b-roundtrip-1",
+    "D2b-roundtrip-4",
+    "D2b-roundtrip-5",
+    "D3a-parsers-2",
+    "D3a-parsers-3",
+    "D3b-structure-1",
+    "D3b-structure-2",
+    "D4a-config-2",
+    "D5a-repo-redundancy-1",
+    "D5a-repo-redundancy-2",
+    "D5b-dead-code-7",
+    "D6a-test-gaps-10",
+    "D6a-test-gaps-2",
+    "D6a-test-gaps-4",
+    "D6a-test-gaps-6",
+    "D6a-test-gaps-8",
+    "D6b-test-quality-1",
+    "D6b-test-quality-5",
+    "D6b-test-quality-9",
+    "D7-cli-consistency-10",
+    "D7-cli-consistency-2",
+    "D7-cli-consistency-3",
+    "D7-cli-consistency-4",
+    "D7-cli-consistency-6",
+    "D7-cli-consistency-7",
+    "D7-cli-consistency-8",
+}
+EXPECTED_PARTIAL_UNCOMMITTED_ORIGINAL_IDS = {
+    "D2a-write-safety-6",
+    "D3b-structure-6",
+    "D5a-repo-redundancy-3",
+    "D6a-test-gaps-7",
+    "D6a-test-gaps-9",
+    "D6b-test-quality-6",
+    "D7-cli-consistency-5",
+}
+
+
+def load_yaml(path: Path) -> dict[str, Any]:
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError(f"{path} must contain a YAML mapping")
+    return data
+
+
+def audit_register() -> dict[str, str]:
+    severity: str | None = None
+    result: dict[str, str] = {}
+    for line in AUDIT_PATH.read_text(encoding="utf-8").splitlines():
+        if line.startswith("## P0 "):
+            severity = "P0"
+        elif line.startswith("## P1 "):
+            severity = "P1"
+        elif line.startswith("## P2 "):
+[0m
+[0m$ [0mgit show b6f89d7:ontos/commands/log.py 2>&1 | sed -n '100,350p'
+impacts=options.impacts,
+    )
+    
+    # Get template body (with alias support for Bug 3 fix)
+    template = _get_template(options.event_type)
+    
+    # Fill in section placeholders
+    body = f"# {topic}\n\n{template}"
+    for section, placeholder in SECTION_TEMPLATES.items():
+        body = body.replace(f"## {section}\n\n", f"## {section}\n\n{placeholder}\n\n")
+    
+    # Combine content
+    content = f"---\n{frontmatter}\n---\n\n{body}"
+    
+    config = load_project_config(repo_root=project_root)
+    logs_dir = (project_root / config.paths.logs_dir).resolve()
+    
+    filename = f"{date_str}_{topic_slug}.md"
+    output_path = logs_dir / filename
+    
+    return content, output_path
+
+
+def suggest_session_impacts(
+    context_map_path: Path,
+    changed_files: List[str],
+    commit_messages: List[str]
+) -> List[str]:
+    """Suggest impacts for a session log.
+
+    Args:
+        context_map_path: Path to context map file
+        changed_files: List of changed file paths
+        commit_messages: List of commit messages
+
+    Returns:
+        List of suggested impact doc_ids
+    """
+    if not context_map_path.exists():
+        return []
+    
+    content = context_map_path.read_text(encoding="utf-8")
+    doc_index = load_document_index(content)
+    
+    return suggest_impacts(changed_files, doc_index, commit_messages)
+
+
+def validate_session_concepts(
+    context_map_path: Path,
+    concepts: List[str]
+) -> Tuple[List[str], List[str]]:
+    """Validate concepts for a session log.
+
+    Args:
+        context_map_path: Path to context map file
+        concepts: List of concepts to validate
+
+    Returns:
+        Tuple of (valid_concepts, unknown_concepts)
+    """
+    if not context_map_path.exists():
+        return concepts, []
+    
+    from ontos.core.suggestions import load_common_concepts
+    content = context_map_path.read_text(encoding="utf-8")
+    known = load_common_concepts(content)
+    
+    return validate_concepts(concepts, known)
+
+
+def _build_frontmatter(
+    log_id: str,
+    event_type: str,
+    source: str,
+    branch: str,
+    concepts: List[str],
+    impacts: List[str]
+) -> str:
+    """Build safely quoted YAML frontmatter for a session log."""
+    frontmatter: Dict[str, Any] = {
+        "id": log_id,
+        "type": "log",
+        "status": "active",
+        "event_type": event_type,
+        "source": source,
+        "branch": branch,
+        "created": datetime.now().strftime("%Y-%m-%d"),
+    }
+    if concepts:
+        frontmatter["concepts"] = list(concepts)
+    if impacts:
+        frontmatter["impacts"] = list(impacts)
+    return serialize_frontmatter(frontmatter)
+
+
+def _slugify(text: str) -> str:
+    """Convert text to URL-friendly slug."""
+    if not text:
+        return "session"
+    
+    # Lowercase and replace non-alphanumeric with hyphens
+    slug = re.sub(r'[^a-z0-9]+', '-', text.lower())
+    # Remove leading/trailing hyphens
+    slug = slug.strip('-')
+    # Limit length
+    if len(slug) > 50:
+        slug = slug[:50].rstrip('-')
+    
+    return slug or "session"
+
+
+def _generate_auto_topic(commits: List[str]) -> str:
+    """Generate topic from commit messages."""
+    if not commits:
+        return "session"
+
+    # Use first commit message as topic basis
+    first_commit = commits[0]
+
+    # Clean up common prefixes
+    prefixes = ["feat:", "fix:", "chore:", "docs:", "refactor:", "test:"]
+    for prefix in prefixes:
+        if first_commit.lower().startswith(prefix):
+            first_commit = first_commit[len(prefix):].strip()
+            break
+
+    # Take first 50 chars
+    return first_commit[:50] if first_commit else "session"
+
+
+def log_command(options: LogOptions) -> int:
+    """Execute log command from CLI.
+
+    Orchestrates git info gathering, log creation, and file writing.
+
+    Args:
+        options: CLI-level log options
+
+    Returns:
+        Exit code (0 for success)
+    """
+    from ontos.io.git import (
+        get_git_root,
+        get_current_branch,
+        get_commits_since_push,
+        get_changed_files_since_push,
+    )
+
+    output = OutputHandler(quiet=options.quiet or options.json_output)
+
+    # Get project root
+    project_root = get_git_root()
+    if not project_root:
+        if options.json_output:
+            emit_command_error(
+                command="log",
+                exit_code=1,
+                code="E_COMMAND_FAILED",
+                message="Not in a git repository",
+            )
+        else:
+            output.error("Not in a git repository")
+        return 1
+
+    # Gather git info
+    git_info = {
+        "branch": get_current_branch() or "unknown",
+        "commits": get_commits_since_push(),
+        "changed_files": get_changed_files_since_push(),
+    }
+
+    # Map CLI options to session options
+    event_type = options.event_type or "chore"
+    if options.epoch and not options.source:
+        options.source = options.epoch
+
+    session_options = EndSessionOptions(
+        event_type=event_type,
+        topic=options.title or options.topic or None,
+        auto_mode=options.auto,
+        source=options.source or "cli",
+    )
+
+    # Create the log content
+    content, output_path = create_session_log(project_root, session_options, git_info)
+
+    try:
+        _write_log_exclusively(output_path, content)
+    except FileExistsError:
+        message = f"Session log already exists: {output_path}"
+        if options.json_output:
+            emit_command_error(
+                command="log",
+                exit_code=1,
+                code="E_LOG_EXISTS",
+                message=message,
+                data={"path": str(output_path)},
+            )
+        else:
+            output.error(message)
+        return 1
+    except OSError as exc:
+        message = f"Unable to create session log {output_path}: {exc}"
+        if options.json_output:
+            emit_command_error(
+                command="log",
+                exit_code=1,
+                code="E_COMMAND_FAILED",
+                message=message,
+            )
+        else:
+            output.error(message)
+        return 1
+
+    # Create marker for pre-push enforcement (best effort)
+    _create_archive_marker(project_root, output_path)
+
+    # Output result
+    if options.json_output:
+        emit_command_success(
+            command="log",
+            exit_code=0,
+            message="Session log created",
+            data={
+                "path": str(output_path),
+                "log_id": output_path.stem,
+            },
+        )
+    elif not options.quiet:
+        output.success(f"Session log created: {output_path}")
+
+    return 0
+
+
+def _write_log_exclusively(output_path: Path, content: str) -> None:
+    """Create a UTF-8 log atomically with collision refusal."""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("x", encoding="utf-8", newline="") as handle:
+        handle.write(content)
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def _create_archive_marker(project_root: Path, log_path: Path) -> None:
+    """Create marker file to signal that a session was archived."""
+    marker_path = project_root / ".ontos" / "session_archived"
+    try:
+        marker_path.parent.mkdir(parents=True, exist_ok=True)
+        marker_path.write_text(str(log_path), encoding="utf-8")
+    except OSError:
+        # Non-fatal: marker creation failure shouldn't break logging
+[0m
+[0m$ [0mgit show b6f89d7:ontos/mcp/locking.py 2>&1
+"""Workspace-level advisory locking for MCP and CLI write paths."""
+
+from __future__ import annotations
+
+from contextlib import contextmanager
+from pathlib import Path
+import time
+from typing import Iterator
+
+from ontos.core.errors import OntosUserError
+from ontos.core.locking import (
+    release_exclusive,
+    set_non_inheritable,
+    try_acquire_exclusive,
+)
+
+
+@contextmanager
+def workspace_lock(workspace_root: Path, timeout: float = 5.0) -> Iterator[None]:
+    """Acquire an exclusive flock on ``<workspace>/.ontos.lock``."""
+    lock_path = workspace_root / ".ontos.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+
+    handle = lock_path.open("a+", encoding="utf-8")
+    set_non_inheritable(handle)
+    start = time.monotonic()
+    try:
+        while True:
+            try:
+                if not try_acquire_exclusive(handle):
+                    raise BlockingIOError
+                break
+            except BlockingIOError:
+                if time.monotonic() - start >= timeout:
+                    raise OntosUserError(
+                        "Workspace is locked by another process.",
+                        code="E_WORKSPACE_BUSY",
+                    )
+                time.sleep(0.1)
+        yield
+    finally:
+        try:
+            release_exclusive(handle)
+        except OSError:
+            pass
+        handle.close()
+[0m
+[0m$ [0mgit show b6f89d7:ontos/core/config.py 2>&1 | sed -n '220,370p'
+raise ConfigError("workflow.log_retention_count must be >= 1")
+
+
+def version_satisfies_requirement(running_version: str, requirement: Optional[str]) -> bool:
+    """Return whether ``running_version`` satisfies an Ontos semver range.
+
+    Supported clauses match the public ``required_version`` contract:
+    comma-separated comparisons (for example ``>=4.7.0, <5.0.0``), tilde
+    ranges (``~4.7``), and ``x``/``*`` wildcards (``4.7.x``). An empty
+    requirement is intentionally compatible for projects that do not pin a
+    runtime.
+
+    Raises:
+        ConfigError: If either the running version or requirement is invalid.
+    """
+    required = str(requirement or "").strip()
+    if not required:
+        return True
+
+    running = _parse_version(running_version, label="running Ontos version")
+    clauses = [clause.strip() for clause in required.split(",")]
+    if not clauses or any(not clause for clause in clauses):
+        raise ConfigError(
+            "ontos.required_version must be a valid semver range "
+            "(for example '>=4.7.0, <5.0.0')"
+        )
+    return all(_version_clause_matches(running, clause) for clause in clauses)
+
+
+def required_version_incompatibility(
+    requirement: Optional[str],
+    running_version: str,
+) -> Optional[str]:
+    """Return an actionable incompatibility message, or ``None`` if valid."""
+    required = str(requirement or "").strip()
+    if not required:
+        return None
+    try:
+        compatible = version_satisfies_requirement(running_version, required)
+    except ConfigError as exc:
+        return f"Invalid [ontos].required_version {required!r}: {exc}"
+    if compatible:
+        return None
+    return (
+        f"Incompatible Ontos version: running {running_version}, but this project "
+        f"requires {required!r}. Use a compatible Ontos installation."
+    )
+
+
+def _parse_version(value: str, *, label: str) -> tuple[int, int, int]:
+    text = str(value).strip()
+    match = _VERSION_PATTERN.fullmatch(text)
+    if match is None:
+        raise ConfigError(f"{label} {text!r} is not a valid semantic version")
+    return tuple(
+        int(match.group(name) or 0) for name in ("major", "minor", "patch")
+    )
+
+
+def _version_clause_matches(running: tuple[int, int, int], clause: str) -> bool:
+    if clause.startswith("~"):
+        raw_base = clause[1:].strip()
+        base, component_count = _parse_requirement_base(raw_base, clause)
+        if component_count == 1:
+            upper = (base[0] + 1, 0, 0)
+        else:
+            upper = (base[0], base[1] + 1, 0)
+        return base <= running < upper
+
+    comparator_match = _COMPARATOR_PATTERN.fullmatch(clause)
+    if comparator_match is None:
+        raise ConfigError(f"invalid version clause {clause!r}")
+    comparator = comparator_match.group(1) or "="
+    raw_version = comparator_match.group(2).strip()
+
+    if "x" in raw_version.lower() or "*" in raw_version:
+        if comparator not in {"=", "=="}:
+            raise ConfigError(
+                f"wildcard version clause {clause!r} cannot use {comparator!r}"
+            )
+        return _wildcard_clause_matches(running, raw_version, clause)
+
+    expected = _parse_version(raw_version, label=f"version clause {clause!r}")
+    comparisons = {
+        "=": running == expected,
+        "==": running == expected,
+        ">=": running >= expected,
+        "<=": running <= expected,
+        ">": running > expected,
+        "<": running < expected,
+    }
+    return comparisons[comparator]
+
+
+def _parse_requirement_base(
+    raw_version: str,
+    clause: str,
+) -> tuple[tuple[int, int, int], int]:
+    component_text = raw_version[1:] if raw_version.startswith("v") else raw_version
+    component_count = len(component_text.split("."))
+    if component_count > 3:
+        raise ConfigError(f"invalid version clause {clause!r}")
+    return _parse_version(raw_version, label=f"version clause {clause!r}"), component_count
+
+
+def _wildcard_clause_matches(
+    running: tuple[int, int, int],
+    raw_version: str,
+    clause: str,
+) -> bool:
+    text = raw_version[1:] if raw_version.startswith("v") else raw_version
+    components = text.split(".")
+    if not 1 <= len(components) <= 3:
+        raise ConfigError(f"invalid wildcard version clause {clause!r}")
+
+    wildcard_seen = False
+    expected_prefix = []
+    for component in components:
+        if component.lower() == "x" or component == "*":
+            wildcard_seen = True
+            continue
+        if wildcard_seen or not component.isdigit():
+            raise ConfigError(f"invalid wildcard version clause {clause!r}")
+        expected_prefix.append(int(component))
+    if not wildcard_seen:
+        raise ConfigError(f"invalid wildcard version clause {clause!r}")
+    return running[:len(expected_prefix)] == tuple(expected_prefix)
+
+
+def dict_to_config(data: dict, repo_root: Optional[Path] = None) -> OntosConfig:
+    """Convert dict from TOML to config dataclass."""
+    data = _normalize_legacy_config(data)
+    _validate_section_names(data)
+
+    # Type validation
+    _validate_types(data)
+
+    # Path validation
+    if repo_root is not None and "paths" in data:
+        paths_section = data["paths"]
+        for key in ["docs_dir", "logs_dir", "context_map"]:
+            if key in paths_section:
+                if not _validate_path(paths_section[key], repo_root):
+                    raise ConfigError(
+                        f"paths.{key} must resolve within repository root"
+                    )
+
+    # Build config with defaults for missing fields
+    ontos = OntosSection(**_section_kwargs(OntosSection, "ontos", data.get("ontos")))
+    paths = PathsConfig(**_section_kwargs(PathsConfig, "paths", data.get("paths")))
+    scanning = ScanningConfig(**_section_kwargs(ScanningConfig, "scanning", data.get("scanning")))
+[0m
+[0m$ [0mgit show b6f89d7:ontos/core/context.py 2>&1 | sed -n '480,520p'; echo "===640-775==="; git show b6f89d7:ontos/core/context.py 2>&1 | sed -n '640,775p'
+return _DirectoryAnchor(path=path.parent)
+
+    def _open_posix_parent(self, path: Path, *, create: bool) -> _DirectoryAnchor:
+        root = self.repo_root.expanduser().resolve()
+        relative_parent = path.parent.relative_to(root)
+        flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+        flags |= getattr(os, "O_CLOEXEC", 0)
+        current_fd = os.open(root, flags)
+        try:
+            for component in relative_parent.parts:
+                try:
+                    next_fd = os.open(component, flags, dir_fd=current_fd)
+                except FileNotFoundError:
+                    if not create:
+                        raise
+                    try:
+                        os.mkdir(component, 0o755, dir_fd=current_fd)
+                    except FileExistsError:
+                        # A racing creator is safe only if the no-follow open
+                        # below proves it created a real directory.
+                        pass
+                    next_fd = os.open(component, flags, dir_fd=current_fd)
+                except OSError as exc:
+                    if exc.errno in (errno.ELOOP, errno.ENOTDIR):
+                        raise ValueError(
+                            f"operation path parent must contain only real "
+                            f"directories: {path.parent}"
+                        ) from exc
+                    raise
+                os.close(current_fd)
+                current_fd = next_fd
+            return _DirectoryAnchor(path=path.parent, fd=current_fd)
+        except BaseException:
+            os.close(current_fd)
+            raise
+
+    def _open_windows_parent(
+        self,
+        path: Path,
+        *,
+        create: bool,
+===640-775===
+        # Windows handles exclude FILE_SHARE_DELETE and therefore pin every
+        # component. This recheck catches a pre-existing reparse point on
+        # generic platforms and makes the invariant explicit.
+        self._reject_parent_symlinks(anchor.path / ".ontos-anchor-probe")
+
+    def _reject_parent_symlinks(self, path: Path) -> None:
+        root = self.repo_root.expanduser().resolve()
+        current = root
+        for component in path.parent.relative_to(root).parts:
+            current /= component
+            info = os.lstat(current)
+            if stat.S_ISLNK(info.st_mode):
+                raise ValueError(f"operation path must not contain a symlink: {current}")
+            if not stat.S_ISDIR(info.st_mode):
+                raise ValueError(f"operation path parent must be a directory: {current}")
+
+    def _entry_stat(self, anchor: _DirectoryAnchor, name: str) -> Optional[os.stat_result]:
+        try:
+            if anchor.fd is not None:
+                return os.stat(name, dir_fd=anchor.fd, follow_symlinks=False)
+            return os.lstat(anchor.path / name)
+        except FileNotFoundError:
+            return None
+
+    def _entry_is_regular(self, anchor: _DirectoryAnchor, name: str) -> bool:
+        info = self._entry_stat(anchor, name)
+        if info is None:
+            return False
+        path = anchor.path / name
+        if stat.S_ISLNK(info.st_mode):
+            raise ValueError(f"destination must not be a symlink: {path}")
+        if not stat.S_ISREG(info.st_mode):
+            raise ValueError(f"operation path must name a regular file: {path}")
+        return True
+
+    def _create_unique_file(
+        self,
+        anchor: _DirectoryAnchor,
+        *,
+        prefix: str,
+        suffix: str,
+    ) -> tuple[int, str]:
+        if anchor.fd is None:
+            fd, path = tempfile.mkstemp(
+                dir=str(anchor.path),
+                prefix=prefix,
+                suffix=suffix,
+            )
+            return fd, Path(path).name
+
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
+        flags |= getattr(os, "O_CLOEXEC", 0)
+        while True:
+            name = f"{prefix}{secrets.token_hex(12)}{suffix}"
+            try:
+                fd = os.open(name, flags, 0o600, dir_fd=anchor.fd)
+            except FileExistsError:
+                continue
+            return fd, name
+
+    def _stage_text(
+        self,
+        anchor: _DirectoryAnchor,
+        final_name: str,
+        content: str,
+    ) -> str:
+        """Write and fsync UTF-8 content to an anchored exclusive temp file."""
+        self._verify_anchor_binding(anchor)
+        final_info = self._entry_stat(anchor, final_name)
+        if final_info is not None:
+            if stat.S_ISLNK(final_info.st_mode):
+                raise ValueError(
+                    f"destination must not be a symlink: {anchor.path / final_name}"
+                )
+            if not stat.S_ISREG(final_info.st_mode):
+                raise ValueError(
+                    f"destination must be a regular file: {anchor.path / final_name}"
+                )
+
+        fd, temp_name = self._create_unique_file(
+            anchor,
+            prefix=f".{final_name}.",
+            suffix=".tmp",
+        )
+        try:
+            if hasattr(os, "fchmod"):
+                mode = stat.S_IMODE(final_info.st_mode) if final_info else 0o644
+                os.fchmod(fd, mode)
+            with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
+                fd = -1
+                handle.write(content)
+                handle.flush()
+                os.fsync(handle.fileno())
+            return temp_name
+        except BaseException:
+            if fd >= 0:
+                os.close(fd)
+            self._unlink_entry(anchor, temp_name, missing_ok=True)
+            raise
+
+    def _reserve_backup(self, anchor: _DirectoryAnchor, final_name: str) -> str:
+        fd, backup_name = self._create_unique_file(
+            anchor,
+            prefix=f".{final_name}.",
+            suffix=".bak",
+        )
+        os.close(fd)
+        return backup_name
+
+    def _replace_entry(
+        self,
+        source_anchor: _DirectoryAnchor,
+        source_name: str,
+        destination_anchor: _DirectoryAnchor,
+        destination_name: str,
+    ) -> None:
+        if source_anchor.fd is not None and destination_anchor.fd is not None:
+            os.replace(
+                source_name,
+                destination_name,
+                src_dir_fd=source_anchor.fd,
+                dst_dir_fd=destination_anchor.fd,
+            )
+            return
+        self._verify_anchor_binding(source_anchor)
+        if destination_anchor is not source_anchor:
+            self._verify_anchor_binding(destination_anchor)
+        os.replace(
+            source_anchor.path / source_name,
+            destination_anchor.path / destination_name,
+        )
+
+    @staticmethod
+    def _unlink_entry(
+        anchor: _DirectoryAnchor,
+        name: str,
+[0m
+[0m$ [0mgit show b6f89d7:<redacted:secret> 2>&1 | grep -nE "^- |program_id|issue|#146|#147|#157|#158|programs:|^programs" | head -60
+11:  epic_issue: 158
+16:  source_issues: [146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157]
+17:  issue_finding_counts:
+45:    - issue: 147
+51:    - issue: 149
+61:  affected_issues: [146, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157]
+93:programs:
+97:    issue: 146
+127:    issue: 147
+153:    issue: 148
+184:    issue: 149
+224:    issue: 150
+245:    issue: 151
+281:    issue: 152
+306:    issue: 153
+331:    issue: 154
+362:    issue: 155
+378:    issue: 156
+400:    issue: 157
+415:  - {path: "docs/logs/", programs: [146, 147], order: [146, 147]}
+416:  - {path: ".github/workflows/", programs: [148, 156], order: [148, 156]}
+417:  - {path: "ontos/core/schema.py", programs: [146, 151], order: [146, 151]}
+418:  - {path: "ontos/io/yaml.py", programs: [146, 151], order: [146, 151]}
+419:  - {path: "ontos/commands/promote.py", programs: [146, 151, 152], order: [146, 151, 152]}
+420:  - {path: "ontos/commands/migrate.py", programs: [146, 152], order: [146, 152]}
+421:  - {path: "ontos/mcp/writes.py", programs: [146, 152, 153, 154], order: [146, 152, 153, 154]}
+422:  - {path: "ontos/commands/log.py", programs: [148, 151], order: [148, 151]}
+423:  - {path: "ontos/commands/activate.py", programs: [148, 149], order: [148, 149]}
+424:  - {path: "ontos/commands/doctor.py", programs: [147, 149], order: [147, 149]}
+425:  - {path: "ontos/commands/link_check.py", programs: [148, 154], order: [148, 154]}
+426:  - {path: "ontos/commands/map.py", programs: [148, 149, 154], order: [148, 149, 154]}
+427:  - {path: "ontos/core/config.py", programs: [148, 149], order: [148, 149]}
+428:  - {path: "ontos/core/context.py", programs: [148, 153], order: [148, 153]}
+429:  - {path: "ontos/core/frontmatter_edit.py", programs: [148, 151, 152], order: [148, 151, 152]}
+430:  - {path: "ontos/core/git.py", programs: [148, 150], order: [148, 150]}
+431:  - {path: "ontos/mcp/portfolio_config.py", programs: [148, 149], order: [148, 149]}
+432:  - {path: "ontos/cli.py", programs: [149, 154, 155], order: [149, 154, 155]}
+433:  - {path: "ontos/commands/consolidate.py", programs: [149, 154], order: [149, 154]}
+434:  - {path: "ontos/core/paths.py", programs: [149, 150], order: [149, 150]}
+435:  - {path: "ontos/mcp/tools.py", programs: [149, 151, 153, 154], order: [149, 151, 153, 154]}
+436:  - {path: "ontos/commands/query.py", programs: [150, 154], order: [150, 154]}
+437:  - {path: "ontos/commands/verify.py", programs: [151, 154], order: [151, 154]}
+438:  - {path: "ontos/core/body_refs.py", programs: [151, 152], order: [151, 152]}
+439:  - {path: "ontos/core/link_diagnostics.py", programs: [151, 152, 154], order: [151, 152, 154]}
+440:  - {path: "ontos/mcp/server.py", programs: [153, 154], order: [153, 154]}
+441:  - {path: "ontos/core/graph.py", programs: [154, 157], order: [154, 157]}
+443:    programs: [146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157]
+1033:    issue: 158
+[0m
+[0m$ [0mgit show b6f89d7:<redacted:secret> 2>&1 | sed -n '120,420p'
+elif line.startswith("## P2 "):
+            severity = "P2"
+        elif line.startswith("### D"):
+            finding_id = line[4:].split(" — ", 1)[0].strip()
+            if severity is None:
+                raise ValueError(f"finding {finding_id} appears outside a severity section")
+            if finding_id in result:
+                raise ValueError(f"duplicate audit finding heading: {finding_id}")
+            result[finding_id] = severity
+    return result
+
+
+def path_is_directory(path: str) -> bool:
+    return path.endswith("/")
+
+
+def overlapping_path(left: str, right: str) -> str | None:
+    if left == right:
+        return left
+    if path_is_directory(left) and right.startswith(left):
+        return right
+    if path_is_directory(right) and left.startswith(right):
+        return left
+    return None
+
+
+def lease_covers(lease_path: str, overlap: str) -> bool:
+    return lease_path == overlap or (path_is_directory(lease_path) and overlap.startswith(lease_path))
+
+
+def path_scope_covers(parent: str, child: str) -> bool:
+    return parent == child or (path_is_directory(parent) and child.startswith(parent))
+
+
+def normalized_manifest_scope(manifest: dict[str, Any]) -> set[str]:
+    scope = manifest.get("scope", {})
+    paths = set(scope.get("allowed_paths", []))
+    for pattern in scope.get("allowed_path_patterns", []):
+        if isinstance(pattern, str) and pattern.endswith("/**"):
+            paths.add(pattern[:-2])
+    return paths
+
+
+def live_github_issue(issue: int) -> dict[str, Any]:
+    result = subprocess.run(
+        [
+            "gh",
+            "issue",
+            "view",
+            str(issue),
+            "--repo",
+            GITHUB_REPOSITORY,
+            "--json",
+            "number,state,title,labels,milestone,body",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"unable to read live GitHub issue #{issue}: "
+            f"{(result.stderr or result.stdout).strip()}"
+        )
+    payload = json.loads(result.stdout)
+    if not isinstance(payload, dict):
+        raise ValueError(f"live GitHub issue #{issue} did not return an object")
+    return payload
+
+
+def github_checkbox_states(body: str) -> dict[str, bool]:
+    states: dict[str, bool] = {}
+    for line in body.splitlines():
+        match = re.match(r"^\s*-\s*\[([ xX])\]", line)
+        if match is None:
+            continue
+        finding_ids = re.findall(
+            r"(?<![A-Za-z0-9-])(?:D[0-9][A-Za-z0-9-]*|R2-[A-Za-z0-9-]+)",
+            line,
+        )
+        for finding_id in finding_ids:
+            if finding_id in states:
+                raise ValueError(f"duplicate GitHub checklist row for {finding_id}")
+            states[finding_id] = match.group(1).lower() == "x"
+    return states
+
+
+def validate(require_external_parity: bool) -> list[str]:
+    errors: list[str] = []
+    registry = load_yaml(REGISTRY_PATH)
+    audit = audit_register()
+    findings = registry.get("findings")
+    programs = registry.get("programs")
+    leases = registry.get("shared_path_leases")
+    if not isinstance(findings, list) or not isinstance(programs, list) or not isinstance(leases, list):
+        return ["registry findings, programs, and shared_path_leases must be lists"]
+
+    ids = [row.get("id") for row in findings if isinstance(row, dict)]
+    duplicate_ids = sorted(key for key, count in Counter(ids).items() if count > 1)
+    if duplicate_ids:
+        errors.append(f"duplicate registry IDs: {duplicate_ids}")
+
+    for index, row in enumerate(findings):
+        if not isinstance(row, dict):
+            errors.append(f"finding row {index} is not a mapping")
+            continue
+        missing = sorted(REQUIRED_FINDING_FIELDS - row.keys())
+        if missing:
+            errors.append(f"{row.get('id', index)} missing fields: {missing}")
+        if not isinstance(row.get("verification_evidence"), list) or not row.get("verification_evidence"):
+            errors.append(f"{row.get('id', index)} has no verification evidence")
+        else:
+            for evidence_path in row["verification_evidence"]:
+                if not isinstance(evidence_path, str) or not (ROOT / evidence_path).exists():
+                    errors.append(
+                        f"{row.get('id', index)} evidence path is missing: {evidence_path!r}"
+                    )
+        if not isinstance(row.get("allowed_paths"), list) or not row.get("allowed_paths"):
+            errors.append(f"{row.get('id', index)} has no allowed paths")
+        if row.get("issue") not in range(146, 159):
+            errors.append(f"{row.get('id', index)} has invalid issue assignment {row.get('issue')!r}")
+
+    original = {row["id"]: row for row in findings if row.get("origin") == "fable_audit"}
+    r2 = {row["id"]: row for row in findings if row.get("origin") == "codex_revalidation"}
+    if set(original) != set(audit):
+        errors.append(
+            "original register mismatch: "
+            f"missing={sorted(set(audit) - set(original))}, extra={sorted(set(original) - set(audit))}"
+        )
+    for finding_id in sorted(set(original) & set(audit)):
+        if original[finding_id].get("severity") != audit[finding_id]:
+            errors.append(
+                f"severity mismatch for {finding_id}: registry={original[finding_id].get('severity')} "
+                f"report={audit[finding_id]}"
+            )
+    original_counts = Counter(row.get("severity") for row in original.values())
+    if original_counts != Counter({"P0": 1, "P1": 27, "P2": 63}):
+        errors.append(f"original severity totals are wrong: {dict(original_counts)}")
+    if set(r2) != EXPECTED_R2_IDS:
+        errors.append(
+            f"R2 register mismatch: missing={sorted(EXPECTED_R2_IDS - set(r2))}, "
+            f"extra={sorted(set(r2) - EXPECTED_R2_IDS)}"
+        )
+    if "D6a-test-gaps-3" in original:
+        errors.append("phantom roadmap ID D6a-test-gaps-3 must not enter the registry")
+
+    fixed_original = {row["id"] for row in original.values() if row.get("status") == "code_fixed"}
+    if fixed_original != {"D4b-trust-1", "D4b-trust-2"}:
+        errors.append(f"unexpected committed code-fixed original set: {sorted(fixed_original)}")
+    serializer_row = original.get("D2b-roundtrip-3", {})
+    if serializer_row.get("status") != "code_fixed_evidence_pending" or serializer_row.get("fix_commit") is not None:
+        errors.append("D2b-roundtrip-3 must be uncommitted code_fixed_evidence_pending")
+    implemented_original = {
+        row["id"]
+        for row in original.values()
+        if row.get("status") == "implemented_uncommitted_verification_pending"
+    }
+    if implemented_original != EXPECTED_IMPLEMENTED_UNCOMMITTED_ORIGINAL_IDS:
+        errors.append(
+            "implemented-uncommitted original set mismatch: "
+            f"missing={sorted(EXPECTED_IMPLEMENTED_UNCOMMITTED_ORIGINAL_IDS - implemented_original)}, "
+            f"extra={sorted(implemented_original - EXPECTED_IMPLEMENTED_UNCOMMITTED_ORIGINAL_IDS)}"
+        )
+    partial_original = {
+        row["id"]
+        for row in original.values()
+        if row.get("status") == "partial_implementation_uncommitted_verification_pending"
+    }
+    if partial_original != EXPECTED_PARTIAL_UNCOMMITTED_ORIGINAL_IDS:
+        errors.append(
+            "partial-uncommitted original set mismatch: "
+            f"missing={sorted(EXPECTED_PARTIAL_UNCOMMITTED_ORIGINAL_IDS - partial_original)}, "
+            f"extra={sorted(partial_original - EXPECTED_PARTIAL_UNCOMMITTED_ORIGINAL_IDS)}"
+        )
+    expected_status_counts = Counter(
+        {
+            "confirmed_open": 41,
+            "implemented_uncommitted_verification_pending": 40,
+            "partial_implementation_uncommitted_verification_pending": 7,
+            "code_fixed": 2,
+            "code_fixed_evidence_pending": 1,
+        }
+    )
+    status_counts = Counter(row.get("status") for row in original.values())
+    if status_counts != expected_status_counts:
+        errors.append(
+            f"original working-tree status totals are wrong: {dict(status_counts)}"
+        )
+    for finding_id in sorted(implemented_original | partial_original):
+        row = original[finding_id]
+        if row.get("fix_commit") is not None:
+            errors.append(f"{finding_id} must not claim a fix commit for dirty-tree work")
+        expected_lifecycle = (
+            "implementation_uncommitted_lifecycle_pending"
+            if finding_id in implemented_original
+            else "partial_implementation_uncommitted_lifecycle_pending"
+        )
+        if row.get("lifecycle_state") != expected_lifecycle:
+            errors.append(
+                f"{finding_id} lifecycle mismatch: {row.get('lifecycle_state')!r} "
+                f"!= {expected_lifecycle!r}"
+            )
+    for finding_id, row in r2.items():
+        expected_status = (
+            "implemented_uncommitted_parity_verified"
+            if finding_id == "R2-control-plane-parity-1"
+            else "implemented_uncommitted_verification_pending"
+        )
+        if row.get("status") != expected_status:
+            errors.append(
+                f"{finding_id} status mismatch: {row.get('status')!r} != {expected_status!r}"
+            )
+        if row.get("fix_commit") is not None:
+            errors.append(f"{finding_id} must not claim a fix commit for dirty-tree work")
+
+    snapshot_counts = registry.get("github_snapshot", {}).get("issue_finding_counts", {})
+    calculated_counts = Counter(row["issue"] for row in original.values())
+    normalized_snapshot_counts = {int(key): int(value) for key, value in snapshot_counts.items()}
+    if dict(sorted(calculated_counts.items())) != dict(sorted(normalized_snapshot_counts.items())):
+        errors.append(
+            "GitHub issue finding-count snapshot mismatch: "
+            f"registry={dict(sorted(calculated_counts.items()))}, snapshot={normalized_snapshot_counts}"
+        )
+    registry_snapshot_counts = (
+        registry.get("github_snapshot", {}).get("registry_finding_counts", {})
+    )
+    calculated_registry_counts = Counter(row["issue"] for row in findings)
+    normalized_registry_counts = {
+        int(key): int(value) for key, value in registry_snapshot_counts.items()
+    }
+    if dict(sorted(calculated_registry_counts.items())) != dict(
+        sorted(normalized_registry_counts.items())
+    ):
+        errors.append(
+            "GitHub all-finding count snapshot mismatch: "
+            f"registry={dict(sorted(calculated_registry_counts.items()))}, "
+            f"snapshot={normalized_registry_counts}"
+        )
+    if sum(calculated_registry_counts.values()) != len(findings) or len(findings) != 100:
+        errors.append(
+            "registry count invariant failed: "
+            f"mapped={sum(calculated_registry_counts.values())}, rows={len(findings)}, expected=100"
+        )
+
+    severity_rank = {"P0": 0, "P1": 1, "P2": 2}
+    by_issue: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for row in original.values():
+        by_issue[row["issue"]].append(row)
+    program_by_issue = {program["issue"]: program for program in programs}
+    for row in findings:
+        program = program_by_issue.get(row["issue"])
+        if program is None:
+            if row["issue"] != 158:
+                errors.append(f"{row['id']} has no owning program row")
+            continue
+        uncovered = [
+            path
+            for path in row.get("allowed_paths", [])
+            if not any(
+                path_scope_covers(program_path, path)
+                for program_path in program.get("allowed_paths", [])
+            )
+        ]
+        if uncovered:
+            errors.append(
+                f"{row['id']} finding scope exceeds program #{row['issue']}: {uncovered}"
+            )
+    expected_milestones = {
+        146: 1,
+        147: 1,
+        148: 2,
+        149: 2,
+        150: 2,
+        151: 2,
+        152: 2,
+        153: 2,
+        154: 3,
+        155: 3,
+        156: 2,
+        157: 3,
+    }
+    for issue, rows in sorted(by_issue.items()):
+        maximum = min((row["severity"] for row in rows), key=severity_rank.__getitem__)
+        if program_by_issue.get(issue, {}).get("max_severity") != maximum:
+            errors.append(
+                f"issue #{issue} max severity mismatch: registry rows={maximum}, "
+                f"program={program_by_issue.get(issue, {}).get('max_severity')}"
+            )
+    if program_by_issue.get(149, {}).get("max_severity") != "P1":
+        errors.append("issue #149 must be classified P1-containing")
+    for issue, milestone in expected_milestones.items():
+        program = program_by_issue.get(issue, {})
+        if program.get("github_state") != "open":
+            errors.append(f"issue #{issue} must be open in the synchronized GitHub snapshot")
+        if program.get("github_milestone") != milestone:
+            errors.append(
+                f"issue #{issue} milestone mismatch: {program.get('github_milestone')} != {milestone}"
+            )
+[0m
+[0m$ [0mgit show b6f89d7:<redacted:secret> 2>&1 | sed -n '440,480p'; echo "===COUNTS==="; git show b6f89d7:<redacted:secret> 2>&1 | grep -cE "^  - id: D" ; echo "===R2==="; git show b6f89d7:<redacted:secret> 2>&1 | grep -cE "^  - id: R2-"
+- {path: "ontos/mcp/server.py", programs: [153, 154], order: [153, 154]}
+  - {path: "ontos/core/graph.py", programs: [154, 157], order: [154, 157]}
+  - path: tests/
+    programs: [146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157]
+    order: [146, 147, 150, 148, 149, 151, 152, 153, 154, 155, 156, 157]
+    policy: "#150 owns shared characterization infrastructure; every other program uses a uniquely named regression file and may not edit another program's test."
+
+findings:
+  - <<: [*original_open, *p146]
+    id: D2b-roundtrip-3
+    severity: P0
+    release: v4.7.1
+    status: code_fixed_evidence_pending
+    lifecycle_state: code_fixed_evidence_pending
+    verification_evidence:
+      - tests/core/test_schema.py
+      - tests/test_frontmatter_roundtrip_regression.py
+  - {<<: [*original_fixed, *p147], id: D4b-trust-1, severity: P1, release: v4.7.1}
+  - {<<: [*original_fixed, *p147], id: D4b-trust-2, severity: P2, release: v4.7.1}
+  - {<<: [*original_open, *p148], id: D1b-counts-1, severity: P1, release: v4.8.0}
+  - {<<: [*original_open, *p148], id: D1b-counts-2, severity: P1, release: v4.8.0}
+  - {<<: [*original_open, *p148], id: D1b-counts-3, severity: P1, release: v4.8.0}
+  - {<<: [*original_open, *p148], id: D1b-counts-4, severity: P1, release: v4.8.0}
+  - <<: [*original_open, *p148]
+    id: D2a-write-safety-2
+    severity: P1
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/core/test_git_safety.py
+  - <<: [*original_open, *p148]
+    id: D2b-roundtrip-1
+    severity: P1
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - ontos/core/frontmatter_edit.py
+  - <<: [*original_open, *p148]
+    id: D3b-structure-2
+===COUNTS===
+0
+===R2===
+0
+[0m
+[0m$ [0mgit show b6f89d7:<redacted:secret> 2>&1 | sed -n '420,730p'
+integration = registry.get("shared_tree_integration", {})
+    expected_integration_issues = {
+        program["issue"]
+        for program in programs
+        if program.get("lease_state") == "implementation_uncommitted_integration_pending"
+    } | {146}
+    observed_integration_issues = set(integration.get("affected_issues", []))
+    if integration.get("status") != "unproven_rebaseline_integration":
+        errors.append("shared-tree integration must remain explicitly unproven")
+    if integration.get("release_blocking") is not True:
+        errors.append("unproven shared-tree integration must remain release-blocking")
+    if observed_integration_issues != expected_integration_issues:
+        errors.append(
+            "shared-tree integration issue set mismatch: "
+            f"expected={sorted(expected_integration_issues)}, "
+            f"observed={sorted(observed_integration_issues)}"
+        )
+
+    for issue, manifest_path in (
+        (146, SERIALIZER_MANIFEST_PATH),
+        (147, DOCTOR_MANIFEST_PATH),
+    ):
+        manifest_scope = normalized_manifest_scope(load_yaml(manifest_path))
+        registry_scope = set(program_by_issue[issue].get("allowed_paths", []))
+        if registry_scope != manifest_scope:
+            errors.append(
+                f"program #{issue} scope/manifest mismatch: "
+                f"missing={sorted(manifest_scope - registry_scope)}, "
+                f"extra={sorted(registry_scope - manifest_scope)}"
+            )
+
+    lease_rows: list[tuple[str, set[int]]] = []
+    for lease in leases:
+        path = lease.get("path")
+        issue_set = set(lease.get("programs", []))
+        order = lease.get("order", [])
+        if not path or len(issue_set) < 2:
+            errors.append(f"invalid shared-path lease: {lease}")
+            continue
+        if set(order) != issue_set or len(order) != len(issue_set):
+            errors.append(f"lease order does not enumerate each program once for {path}")
+        lease_rows.append((path, issue_set))
+
+    for left_index, left in enumerate(programs):
+        for right in programs[left_index + 1 :]:
+            for left_path in left.get("allowed_paths", []):
+                for right_path in right.get("allowed_paths", []):
+                    overlap = overlapping_path(left_path, right_path)
+                    if overlap is None:
+                        continue
+                    pair = {left["issue"], right["issue"]}
+                    matching_leases = [
+                        path
+                        for path, issues in lease_rows
+                        if pair <= issues and lease_covers(path, overlap)
+                    ]
+                    if not matching_leases:
+                        errors.append(
+                            f"unleased overlap {overlap}: #{left['issue']} and #{right['issue']}"
+                        )
+                    elif len(matching_leases) > 1:
+                        errors.append(
+                            f"multiply leased overlap {overlap}: #{left['issue']} and "
+                            f"#{right['issue']} via {matching_leases}"
+                        )
+
+    for lease_path, issues in lease_rows:
+        participants: set[int] = set()
+        issue_list = sorted(issues)
+        for left_index, left_issue in enumerate(issue_list):
+            left = program_by_issue.get(left_issue, {})
+            for right_issue in issue_list[left_index + 1 :]:
+                right = program_by_issue.get(right_issue, {})
+                if any(
+                    (overlap := overlapping_path(left_path, right_path)) is not None
+                    and lease_covers(lease_path, overlap)
+                    for left_path in left.get("allowed_paths", [])
+                    for right_path in right.get("allowed_paths", [])
+                ):
+                    participants.update({left_issue, right_issue})
+        if not participants:
+            errors.append(f"lease {lease_path} does not correspond to an actual overlap")
+        nonparticipants = issues - participants
+        if nonparticipants:
+            errors.append(
+                f"lease {lease_path} lists programs without an actual overlap: "
+                f"{sorted(nonparticipants)}"
+            )
+
+    active_programs = [program for program in programs if program.get("lease_state") == "active"]
+    for left_index, left in enumerate(active_programs):
+        for right in active_programs[left_index + 1 :]:
+            for left_path in left.get("allowed_paths", []):
+                for right_path in right.get("allowed_paths", []):
+                    overlap = overlapping_path(left_path, right_path)
+                    if overlap is not None:
+                        errors.append(
+                            f"simultaneously active leases overlap at {overlap}: "
+                            f"#{left['issue']} and #{right['issue']}"
+                        )
+
+    ledger_text = LEDGER_PATH.read_text(encoding="utf-8")
+    audit_text = AUDIT_PATH.read_text(encoding="utf-8")
+    revalidation_text = REVALIDATION_PATH.read_text(encoding="utf-8")
+    if "2026-07-10-codex-audit-revalidation.md" not in audit_text:
+        errors.append("historical audit is missing the revalidation pointer")
+    for marker in (
+        "40 other original findings",
+        "partial implementations for seven",
+        "41 confirmed-open rows",
+    ):
+        if marker not in revalidation_text:
+            errors.append(f"revalidation addendum is missing status summary marker: {marker!r}")
+    for program in programs:
+        marker = f"#{program['issue']}"
+        state = f"`{program['lifecycle_state']}`"
+        if not any(marker in line and state in line for line in ledger_text.splitlines()):
+            errors.append(f"O4 is missing #{program['issue']} lifecycle state {state}")
+    for path, issues in lease_rows:
+        expected_path = f"`{path}`"
+        matching_lines = [line for line in ledger_text.splitlines() if expected_path in line]
+        if not matching_lines:
+            errors.append(f"O5 is missing shared-path lease {path}")
+            continue
+        if not any(all(f"#{issue}" in line for issue in issues) for line in matching_lines):
+            errors.append(f"O5 lease {path} is missing one or more program issue IDs")
+    if not any("#149" in line and "P1-containing" in line for line in ledger_text.splitlines()):
+        errors.append("O4 must label #149 P1-containing")
+
+    doctor_manifest = load_yaml(DOCTOR_MANIFEST_PATH)
+    if doctor_manifest.get("fallback_evidence_mode") != "strict_p3":
+        errors.append("#147 manifest must require fresh strict-P3 evidence")
+    sequencing = doctor_manifest.get("implementation_sequencing", {})
+    if sequencing.get("implementation_ref") != "03c36e6ac999d2c411c13252baa2e8fcff60e6ed":
+        errors.append("#147 manifest is not pinned to the exact-argv implementation")
+    if len(doctor_manifest.get("required_dispatch_bundles", [])) != 9:
+        errors.append("#147 manifest must declare nine fresh B.1/D.2/D.5 dispatch bundles")
+    if len(doctor_manifest.get("historical_receipt_gaps", [])) != 3:
+        errors.append("#147 manifest must mark B.1/D.2/D.5 historical prose replay-required")
+    inventory = load_yaml(
+        ROOT / "<redacted:secret>"
+    )
+    if inventory.get("receipts") != []:
+        errors.append("#147 receipt inventory must stay empty until fresh wrapper dispatch")
+    for relative in (
+        "docs/specs/project-ontos-audit-doctor-rce-spec.md",
+        "<redacted:secret>",
+        "docs/retros/project-ontos-audit-doctor-rce-retro.md",
+        "docs/trackers/project-ontos-audit-doctor-rce.md",
+    ):
+        text = (ROOT / relative).read_text(encoding="utf-8")
+        if "code_fixed_evidence_pending" not in text:
+            errors.append(f"#147 lifecycle artifact lacks reopened status: {relative}")
+    doctor_spec = (
+        ROOT / "docs/specs/project-ontos-audit-doctor-rce-spec.md"
+    ).read_text(encoding="utf-8")
+    if "is_ontos_managed_serve_argv" not in doctor_spec or "five-case executable contract" not in doctor_spec:
+        errors.append("#147 spec does not describe the exact-argv five-test contract")
+
+    serializer_manifest = load_yaml(SERIALIZER_MANIFEST_PATH)
+    if serializer_manifest.get("fallback_evidence_mode") != "provider_limited_fallback":
+        errors.append("#146 manifest must declare its authorized provider-limited mode")
+    serializer_scope = serializer_manifest.get("scope", {})
+    if not serializer_scope.get("allowed_path_patterns"):
+        errors.append("#146 manifest must activate the framework changed-path scope verifier")
+    serializer_gates = {gate.get("id"): gate for gate in serializer_manifest.get("gate_prerequisites", [])}
+    scope_command = serializer_gates.get("G-scope-1", {}).get("verification", {}).get("command", "")
+    branch_command = serializer_gates.get("G-branch-1", {}).get("verification", {}).get("command", "")
+    if "verify-changed-path-scope.sh" not in scope_command or "bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95" not in scope_command:
+        errors.append("#146 scope gate must cover the registry base SHA")
+    if "git branch --show-current" in branch_command or "merge-base --is-ancestor" not in branch_command:
+        errors.append("#146 branch gate must use base ancestry, not a literal branch name")
+
+    if require_external_parity:
+        github_snapshot = registry.get("github_snapshot", {})
+        if github_snapshot.get("epic_release_line_synced") is not True:
+            errors.append("external parity drift: epic #158 release line is not synchronized")
+        if github_snapshot.get("r2_checklists_synced") is not True:
+            errors.append("external parity drift: R2 checklist rows are not synchronized")
+        if github_snapshot.get("original_checklist_policy") != "merged_and_verified_only":
+            errors.append("external parity drift: original checklist completion policy is not recorded")
+        if github_snapshot.get("uncommitted_original_checklists_remain_unchecked") is not True:
+            errors.append(
+                "external parity drift: uncommitted original rows must remain unchecked until merged and verified"
+            )
+        drift = github_snapshot.get("external_drift", [])
+        unresolved = [item for item in drift if item.get("status") != "resolved"]
+        for item in unresolved:
+            errors.append(
+                f"external parity drift: issue #{item.get('issue')} {item.get('field')} "
+                f"observed={item.get('observed')} expected={item.get('expected')}"
+            )
+        for item in drift:
+            if item.get("status") == "resolved" and item.get("observed") != item.get("expected"):
+                errors.append(
+                    f"external parity drift marked resolved with unequal values: "
+                    f"issue #{item.get('issue')} {item.get('field')}"
+                )
+
+        rows_by_issue: dict[int, list[dict[str, Any]]] = defaultdict(list)
+        for row in findings:
+            rows_by_issue[row["issue"]].append(row)
+        milestone_markers = {
+            1: "Audit Release N",
+            2: "Audit Release N+1",
+            3: "Audit Release N+2",
+        }
+        for issue in range(146, 159):
+            live = live_github_issue(issue)
+            program = program_by_issue.get(issue)
+            expected_rows = rows_by_issue.get(issue, [])
+            expected_ids = {row["id"] for row in expected_rows}
+            body = live.get("body") or ""
+
+            if issue == 158 and not expected_ids <= set(body.split()):
+                # Epic punctuation/backticks make token equality inconvenient;
+                # require every epic-owned ID literally in the body.
+                missing = sorted(item for item in expected_ids if item not in body)
+                if missing:
+                    errors.append(f"live GitHub epic #158 is missing rows: {missing}")
+
+            checkbox_states = github_checkbox_states(body)
+            if issue <= 157 and set(checkbox_states) != expected_ids:
+                errors.append(
+                    f"live GitHub issue #{issue} finding checklist mismatch: "
+                    f"missing={sorted(expected_ids - set(checkbox_states))}, "
+                    f"extra={sorted(set(checkbox_states) - expected_ids)}"
+                )
+            missing_checkboxes = expected_ids - set(checkbox_states)
+            if missing_checkboxes:
+                errors.append(
+                    f"live GitHub issue #{issue} is missing checklist rows: "
+                    f"{sorted(missing_checkboxes)}"
+                )
+            for row in expected_rows:
+                if row["id"] not in checkbox_states:
+                    continue
+                expected_checked = row.get("status") == "code_fixed"
+                if checkbox_states[row["id"]] != expected_checked:
+                    errors.append(
+                        f"live GitHub checklist status mismatch for {row['id']}: "
+                        f"checked={checkbox_states[row['id']]} expected={expected_checked}"
+                    )
+
+            expected_state = (program or {}).get("github_state", "open").upper()
+            if live.get("state") != expected_state:
+                errors.append(
+                    f"live GitHub issue #{issue} state mismatch: "
+                    f"{live.get('state')!r} != {expected_state!r}"
+                )
+            expected_milestone = (program or {}).get("github_milestone", 1)
+            milestone_title = (live.get("milestone") or {}).get("title", "")
+            marker = milestone_markers[expected_milestone]
+            if not milestone_title.startswith(marker):
+                errors.append(
+                    f"live GitHub issue #{issue} milestone mismatch: "
+                    f"{milestone_title!r} does not start with {marker!r}"
+                )
+            if program is not None:
+                label_names = {
+                    item.get("name", "") for item in live.get("labels", [])
+                }
+                expected_label_prefix = program["max_severity"]
+                if not any(name.startswith(expected_label_prefix) for name in label_names):
+                    errors.append(
+                        f"live GitHub issue #{issue} lacks {expected_label_prefix} severity label"
+                    )
+        live_epic = live_github_issue(158)
+        if "v4.7.1" not in (live_epic.get("body") or "") or "v4.9.0" not in (
+            live_epic.get("body") or ""
+        ):
+            errors.append("live GitHub epic #158 lacks the revised three-release line")
+
+    return errors
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--require-external-parity",
+        action="store_true",
+        help="query live GitHub issues and fail on state/milestone/label/checklist drift",
+    )
+    args = parser.parse_args()
+    try:
+        errors = validate(args.require_external_parity)
+    except Exception as exc:  # validation should fail closed with useful context
+        print(f"audit-registry: ERROR: {exc}", file=sys.stderr)
+        return 2
+    if errors:
+        print("audit-registry: FAILED", file=sys.stderr)
+        for error in errors:
+            print(f"- {error}", file=sys.stderr)
+        return 1
+    mode = "local+external" if args.require_external_parity else "local"
+    print("audit-registry: PASS")
+    print(f"mode: {mode}")
+    print("original findings: 91 (P0=1, P1=27, P2=63)")
+    print(
+        "original status: committed_fixed=2, code_fixed_evidence_pending=1, "
+        "implemented_uncommitted=40, partial_uncommitted=7, confirmed_open=41"
+    )
+    print("revalidation findings: 9")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+[0m
+[0m$ [0mgit show b6f89d7:<redacted:secret> 2>&1 | grep -nE "shared_tree_integration|external_drift|shared_path_leases" | head -20
+44:  external_drift:
+58:shared_tree_integration:
+414:shared_path_leases:
+[0m
+[0m$ [0mecho "=== VALIDATOR LINE COUNT ==="; git show b6f89d7:<redacted:secret> 2>&1 | wc -l; echo "=== SHARED_TREE_INTEGRATION RECORD ==="; git show b6f89d7:<redacted:secret> 2>&1 | sed -n '58,75p'; echo "=== LOCKING.PY 13-81 ==="; git show b6f89d7:ontos/core/locking.py 2>&1 | sed -n '13,81p'
+=== VALIDATOR LINE COUNT ===
+     728
+=== SHARED_TREE_INTEGRATION RECORD ===
+shared_tree_integration:
+  status: unproven_rebaseline_integration
+  release_blocking: true
+  affected_issues: [146, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157]
+  reason: >-
+    Implementations were assembled in one dirty working tree without
+    per-deliverable base-SHA scope receipts. Structural lease parity is valid,
+    but historical simultaneous-lease compliance cannot be reconstructed or
+    certified. Split/review each deliverable from its recorded base before
+    release.
+
+row_templates:
+  original_open: &original_open
+    origin: fable_audit
+    baseline_commit: 589d919
+    status: confirmed_open
+    fix_commit: null
+    verification_evidence:
+=== LOCKING.PY 13-81 ===
+try:  # pragma: no branch - exactly one backend is available per platform.
+    import fcntl as _fcntl
+except ImportError:  # pragma: no cover - exercised on Windows CI.
+    _fcntl = None
+
+try:  # pragma: no branch - imported only on Windows.
+    import msvcrt as _msvcrt
+except ImportError:  # pragma: no cover - normal on POSIX.
+    _msvcrt = None
+
+
+def set_non_inheritable(handle: IO[str]) -> None:
+    """Prevent a child process from inheriting a held workspace lock."""
+    os.set_inheritable(handle.fileno(), False)
+
+
+def try_acquire_exclusive(handle: IO[str]) -> bool:
+    """Attempt a non-blocking exclusive lock on ``handle``.
+
+    Returns ``False`` when another process owns the lock and raises for other
+    operating-system errors.
+    """
+    if _fcntl is not None:
+        try:
+            _fcntl.flock(handle.fileno(), _fcntl.LOCK_EX | _fcntl.LOCK_NB)
+        except BlockingIOError:
+            return False
+        return True
+
+    if _msvcrt is None:  # pragma: no cover - defensive unsupported platform.
+        raise RuntimeError("No supported file-locking backend is available")
+
+    # msvcrt locks a byte range from the current file position.  Ensure the
+    # lockfile has at least one byte without parsing or replacing legacy text.
+    handle.seek(0, os.SEEK_END)
+    if handle.tell() == 0:
+        handle.write("\0")
+        handle.flush()
+    handle.seek(0)
+    try:  # pragma: no cover - exercised on Windows CI.
+        _msvcrt.locking(handle.fileno(), _msvcrt.LK_NBLCK, 1)
+    except OSError as exc:
+        # Windows reports lock contention as EACCES/EDEADLK (and sometimes
+        # EAGAIN depending on the runtime).  Other failures remain actionable.
+        if getattr(exc, "errno", None) in {11, 13, 36}:
+            return False
+        raise
+    return True
+
+
+def release_exclusive(handle: IO[str]) -> None:
+    """Release an advisory lock previously acquired on ``handle``."""
+    if _fcntl is not None:
+        _fcntl.flock(handle.fileno(), _fcntl.LOCK_UN)
+        return
+
+    if _msvcrt is None:  # pragma: no cover - defensive unsupported platform.
+        raise RuntimeError("No supported file-locking backend is available")
+    handle.seek(0)
+    _msvcrt.locking(handle.fileno(), _msvcrt.LK_UNLCK, 1)  # pragma: no cover
+
+
+def backend_name() -> str:
+    """Return the active backend name for diagnostics and smoke tests."""
+    if _fcntl is not None:
+        return "fcntl"
+    if _msvcrt is not None:  # pragma: no cover - exercised on Windows CI.
+        return "msvcrt"
+    return "unavailable"  # pragma: no cover
+[0m
+[0m$ [0mecho "=== STUB.PY 180-195 ==="; git show b6f89d7:ontos/commands/stub.py 2>&1 | sed -n '180,195p'; echo "=== SCHEMA.PY 83-97 ==="; git show b6f89d7:ontos/core/schema.py 2>&1 | sed -n '83,97p'; echo "=== SCHEMA.PY 315-343 ==="; git show b6f89d7:ontos/core/schema.py 2>&1 | sed -n '315,343p'
+=== STUB.PY 180-195 ===
+    return exit_code
+
+
+def _validate_stub_params(params: dict) -> None:
+    """Validate non-interactive and interactive stub payload before create_stub."""
+    doc_id = str(params.get("id", "")).strip()
+    if not doc_id:
+        raise OntosUserError("Document ID is required.", code="E_USER_INPUT")
+    if not _ID_PATTERN.match(doc_id):
+        raise OntosUserError(
+            "Invalid --id. Expected ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$",
+            code="E_USER_INPUT",
+        )
+
+    doc_type = str(params.get("type", "")).strip().lower()
+    if doc_type not in _VALID_DOC_TYPES:
+=== SCHEMA.PY 83-97 ===
+def validate_document_id(value: Any) -> str:
+    """Return a valid document ID or raise a user-actionable ``ValueError``."""
+    if not isinstance(value, str):
+        raise ValueError(
+            f"Document id must be a string, got {type(value).__name__}: {value!r}"
+        )
+    normalized = value.strip()
+    if not normalized:
+        raise ValueError("Document id must not be empty")
+    if not DOCUMENT_ID_PATTERN.fullmatch(normalized):
+        raise ValueError(
+            "Document id must start and end with an alphanumeric character "
+            "and contain only letters, numbers, '_', '-', or '.'"
+        )
+    return normalized
+=== SCHEMA.PY 315-343 ===
+def serialize_frontmatter(fm: Dict[str, Any]) -> str:
+    """Serialize frontmatter as safe YAML with semantic round-trip checks.
+
+    Args:
+        fm: Frontmatter dictionary.
+
+    Returns:
+        YAML-formatted string without the surrounding --- markers.
+
+    Examples:
+        >>> serialize_frontmatter({"id": "test", "type": "atom"})
+        'id: test\\ntype: atom'
+        >>> serialize_frontmatter({"id": "test", "depends_on": ["foo", "bar"]})
+        'id: test\\ndepends_on: [foo, bar]'
+    """
+    from ontos.io.yaml import assert_frontmatter_roundtrip, dump_yaml
+
+    if not isinstance(fm, dict):
+        raise TypeError("Frontmatter must be a dictionary")
+    if "id" in fm:
+        validate_document_id(fm["id"])
+
+    blocks: List[str] = []
+    
+    # Define field order for consistent output
+    field_order = [
+        'id', 'type', 'status', 'ontos_schema', 'curation_level',
+        'depends_on', 'concepts', 'describes', 'describes_verified',
+        'event_type', 'impacts', 'implements', 'tests', 'deprecates'
+[0m
+[0m$ [0mecho "=== test_session_context.py exists at I0? ==="; git show b6f89d7:tests/test_session_context.py 2>&1 | head -5; echo "=== test_cli_contract_v4.py exists at I0? ==="; git show b6f89d7:tests/test_cli_contract_v4.py 2>&1 | head -5; echo "=== test_frontmatter_roundtrip_regression.py exists? ==="; git show b6f89d7:tests/test_frontmatter_roundtrip_regression.py 2>&1 | head -5; echo "=== test_locking.py exists? ==="; git show b6f89d7:tests/mcp/test_locking.py 2>&1 | head -5
+=== test_session_context.py exists at I0? ===
+"""Tests for SessionContext and backwards compatibility.
+
+Tests the v2.8 refactoring deliverables:
+- SessionContext buffer/commit/rollback operations
+- File locking with flock
+=== test_cli_contract_v4.py exists at I0? ===
+"""Characterization tests for the schema-v4 CLI contract and registry."""
+
+from __future__ import annotations
+
+import argparse
+=== test_frontmatter_roundtrip_regression.py exists? ===
+"""P0 regression net for every document-frontmatter writer surface."""
+
+from __future__ import annotations
+
+from pathlib import Path
+=== test_locking.py exists? ===
+from __future__ import annotations
+
+from multiprocessing import Event, Process
+import os
+from pathlib import Path
+[0m
+[0m$ [0mecho "=== JSON_OUTPUT.PY 16-49 ==="; git show b6f89d7:ontos/ui/json_output.py 2>&1 | sed -n '16,49p'; echo "=== JSON_OUTPUT.PY 414-472 ==="; git show b6f89d7:ontos/ui/json_output.py 2>&1 | sed -n '414,472p'
+=== JSON_OUTPUT.PY 16-49 ===
+COMMAND_ENVELOPE_SCHEMA_VERSION = "4.0"
+
+
+class ResultStatus(str, Enum):
+    """Domain outcome, independent of whether command execution succeeded."""
+
+    CLEAN = "clean"
+    FINDINGS = "findings"
+    WARNINGS = "warnings"
+    INCOMPLETE = "incomplete"
+    ERROR = "error"
+
+
+class ExitCode(IntEnum):
+    """Public numeric exit-code taxonomy introduced with schema v4."""
+
+    CLEAN = 0
+    FINDINGS = 1
+    USAGE = 2
+    WARNINGS = 3
+    INTERNAL = 5
+    INTERRUPTED = 130
+
+
+class ExitCategory(str, Enum):
+    """Machine-readable exit category for the v4 command contract."""
+
+    CLEAN = "clean"
+    FINDINGS = "findings"
+    WARNINGS = "warnings"
+    USAGE = "usage"
+    INTERNAL = "internal"
+    INTERRUPTED = "interrupted"
+    ERROR = "error"
+=== JSON_OUTPUT.PY 414-472 ===
+def _result_status(
+    *,
+    execution_status: str,
+    exit_code: int,
+    data: Any,
+    diagnostics: Mapping[str, Any],
+    explicit: Optional[str],
+) -> str:
+    if execution_status == "error":
+        return ResultStatus.ERROR.value
+
+    selected: Optional[ResultStatus] = None
+    raw = explicit
+    if raw is None and isinstance(data, Mapping):
+        candidate = data.get("result_status")
+        if isinstance(candidate, str):
+            raw = candidate
+    if raw is not None:
+        selected = _LEGACY_RESULT_STATUS.get(str(raw).lower())
+        if selected is None:
+            try:
+                selected = ResultStatus(str(raw).lower())
+            except ValueError:
+                selected = None
+
+    if selected == ResultStatus.FINDINGS:
+        return selected.value
+
+    counts = diagnostics.get("counts", {})
+    if isinstance(counts, Mapping) and any(
+        counts.get(key, 0) > 0 for key in _INCOMPLETE_COUNT_KEYS
+    ):
+        return ResultStatus.INCOMPLETE.value
+    if selected is not None:
+        return selected.value
+    if exit_code == 0:
+        return ResultStatus.CLEAN.value
+    return ResultStatus.FINDINGS.value
+
+
+def _exit_category(
+    *,
+    execution_status: str,
+    exit_code: int,
+    result_status: str,
+) -> str:
+    if exit_code == 130:
+        return ExitCategory.INTERRUPTED.value
+    if execution_status == "success":
+        if result_status == ResultStatus.CLEAN.value:
+            return ExitCategory.CLEAN.value
+        if result_status == ResultStatus.WARNINGS.value:
+            return ExitCategory.WARNINGS.value
+        return ExitCategory.FINDINGS.value
+    if exit_code == 2:
+        return ExitCategory.USAGE.value
+    if exit_code == 5:
+        return ExitCategory.INTERNAL.value
+    return ExitCategory.ERROR.value
+[0m
+[0m$ [0mecho "=== test_cli_contract_v4.py 78-155 ==="; git show b6f89d7:tests/test_cli_contract_v4.py 2>&1 | sed -n '78,120p'
+=== test_cli_contract_v4.py 78-155 ===
+def test_json_argparse_errors_use_the_v4_envelope(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(
+        "sys.argv",
+        ["ontos", "--json", "stub", "--definitely-invalid"],
+    )
+    assert main() == 2
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert captured.err == ""
+    assert payload["schema_version"] == "4.0"
+    assert payload["command"] == "stub"
+    assert payload["error"]["code"] == "E_USAGE"
+    assert payload["result"]["exit_category"] == "usage"
+
+
+def test_json_verify_missing_target_is_a_usage_envelope(monkeypatch, capsys) -> None:
+    monkeypatch.setattr("sys.argv", ["ontos", "--json", "verify"])
+    assert main() == 2
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert captured.err == ""
+    assert payload["command"] == "verify"
+    assert payload["error"]["code"] == "E_USER_INPUT"
+    assert payload["result"]["exit_category"] == "usage"
+
+
+def test_canonical_nested_command_paths() -> None:
+    assert command_path(Namespace(command="mcp", mcp_command="install")) == "mcp install"
+    assert command_path(Namespace(command="export", export_command="data")) == "export data"
+    assert command_path(Namespace(command="verify")) == "verify"
+
+
+def test_v4_envelope_separates_execution_findings_and_count_basis(capsys) -> None:
+    emit_command_error(
+        command="map",
+        exit_code=1,
+        code="E_COMMAND_FAILED",
+        message="Generated with issues",
+        data={
+            "result_status": "failing",
+            "summary": {"errors": 2, "warnings": 3},
+        },
+    )
+[0m
+[0m$ [0mecho "=== FILES.PY 388-414 ==="; git show b6f89d7:ontos/io/files.py 2>&1 | sed -n '388,414p'; echo "=== CONTEXT.PY LOCK AREA ==="; git show b6f89d7:ontos/core/context.py 2>&1 | grep -n "\.ontos\.lock\|workspace_lock\|_acquire_lock\|flock\|advisory" | head -20
+=== FILES.PY 388-414 ===
+def load_document_from_content(
+    path: Path,
+    content: str,
+    frontmatter_parser: Callable[[str], Tuple[Dict[str, Any], str]]
+) -> Tuple[DocumentData, List[DocumentLoadIssue]]:
+    """Load and normalize a document from provided content.
+
+    Args:
+        path: Original file path (for ID fallback and metadata)
+        content: File content string
+        frontmatter_parser: Function to parse frontmatter from content
+
+    Returns:
+        Tuple of (DocumentData, List[DocumentLoadIssue])
+    """
+    from ontos.core.frontmatter import (
+    normalize_depends_on, 
+    normalize_type, 
+    normalize_status, 
+    normalize_tags, 
+    normalize_aliases
+)
+    from ontos.core.staleness import normalize_describes
+    from ontos.core.schema import validate_document_id
+    from ontos.core.cache import DocumentCache # This import is not used in this function, but kept as per instruction.
+    
+    fm, body = frontmatter_parser(content)
+=== CONTEXT.PY LOCK AREA ===
+10:- Uses cross-platform advisory locking to serialize commit attempts
+94:    # When True (default), commit() acquires and releases an advisory lock on
+95:    # <repo_root>/.ontos.lock around the critical section. When False,
+96:    # commit() assumes the caller already holds that flock (for example,
+97:    # via an outer workspace-lock context manager) and _acquire_lock /
+193:        lock_path = self.repo_root / ".ontos.lock"
+194:        if not self._acquire_lock(lock_path):
+916:    def _acquire_lock(self, lock_path: Path, timeout: float = 5.0) -> bool:
+917:        """Acquire an exclusive advisory lock for this workspace.
+920:        the flock on the workspace lockfile (acquired by an outer
+940:                # flock succeeded — hand ownership of the handle to the
+946:            # successful flock (signals, OSError from sleep, etc.) must
+959:        the outer flock and is responsible for releasing it.
+[0m
+[0m$ [0mgit show b6f89d7:ontos/core/context.py 2>&1 | sed -n '916,980p'
+def _acquire_lock(self, lock_path: Path, timeout: float = 5.0) -> bool:
+        """Acquire an exclusive advisory lock for this workspace.
+
+        When ``self.owns_lock`` is False the caller is expected to hold
+        the flock on the workspace lockfile (acquired by an outer
+        workspace-lock context manager) and this method is a no-op —
+        see v4.1 spec addendum A1.
+        """
+        if not self.owns_lock:
+            return True
+
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        start = time.monotonic()
+        handle = lock_path.open("a+", encoding="utf-8")
+        set_non_inheritable(handle)
+
+        try:
+            while time.monotonic() - start < timeout:
+                try:
+                    if not try_acquire_exclusive(handle):
+                        raise BlockingIOError
+                except BlockingIOError:
+                    time.sleep(0.1)
+                    continue
+                # flock succeeded — hand ownership of the handle to the
+                # instance so _release_lock can close it.
+                self._lock_handle = handle
+                return True
+        except BaseException:
+            # m-12: any non-BlockingIOError raised between open() and a
+            # successful flock (signals, OSError from sleep, etc.) must
+            # not leak the file handle. Close and re-raise.
+            handle.close()
+            raise
+
+        # Timed out waiting for the lock — close the handle and report.
+        handle.close()
+        return False
+
+    def _release_lock(self, lock_path: Path) -> None:
+        """Release the file lock.
+
+        When ``self.owns_lock`` is False this is a no-op — the caller owns
+        the outer flock and is responsible for releasing it.
+
+        Args:
+            lock_path: Path to lock file.
+        """
+        _ = lock_path
+        if not self.owns_lock:
+            return
+        if self._lock_handle is None:
+            return
+        try:
+            release_exclusive(self._lock_handle)
+        except OSError:
+            pass
+        finally:
+            self._lock_handle.close()
+            self._lock_handle = None
+[0m
+[0m$ [0mecho "=== files.py 388-414 full (ID validation path) ==="; git show b6f89d7:ontos/io/files.py 2>&1 | sed -n '400,440p'
+=== files.py 388-414 full (ID validation path) ===
+    Returns:
+        Tuple of (DocumentData, List[DocumentLoadIssue])
+    """
+    from ontos.core.frontmatter import (
+    normalize_depends_on, 
+    normalize_type, 
+    normalize_status, 
+    normalize_tags, 
+    normalize_aliases
+)
+    from ontos.core.staleness import normalize_describes
+    from ontos.core.schema import validate_document_id
+    from ontos.core.cache import DocumentCache # This import is not used in this function, but kept as per instruction.
+    
+    fm, body = frontmatter_parser(content)
+    issues: List[DocumentLoadIssue] = []
+
+    def report_warning(msg: str, field_name: str):
+        issues.append(DocumentLoadIssue(
+            code="invalid_reference_type",
+            path=path,
+            message=msg,
+            doc_id=fm.get('id', path.stem),
+            field=field_name,
+            suggested_fix=f"Use a scalar string or list of strings for '{field_name}'.",
+        ))
+
+    def report_enum_error(field_name: str):
+        def inner(msg: str, val: Any, options: List[str]):
+            line = _frontmatter_line_for_field(content, field_name)
+            location = f"{path}:{line}" if line is not None else str(path)
+            issues.append(DocumentLoadIssue(
+                code="invalid_enum",
+                path=path,
+                message=(
+                    f"{location}: invalid frontmatter field '{field_name}' value "
+                    f"{val!r}. Expected one of: {', '.join(options)}"
+                ),
+                doc_id=fm.get('id', path.stem),
+                field=field_name,
+                value=val,
+[0m
+[0m$ [0mecho "=== BRANCH ==="; git branch --show-current; echo "=== HEAD ==="; git rev-parse HEAD; echo "=== SPEC TRACKED? ==="; git ls-files <redacted:secret>; echo "=== SHORT SHAS ==="; git rev-parse --short b6f89d7; git rev-parse --short bf91b42 2>/dev/null || echo "bf91b42 not found as short"; echo "=== commit msg b6f89d7 ==="; git log --format=%s -1 b6f89d7
+=== BRANCH ===
+codex/audit-rebaseline-remediation-lifecycle
+=== HEAD ===
+43dd7dc2e0723e7f888e2254b9f49ac90ad4494a
+=== SPEC TRACKED? ===
+<redacted:secret>
+=== SHORT SHAS ===
+b6f89d7
+bf91b42
+=== commit msg b6f89d7 ===
+Implement audit rebaseline remediation
+[0m
+[0m$ [0mecho "=== check_release_artifact.py exists at I0? ==="; git show b6f89d7:scripts/check_release_artifact.py 2>&1 | head -3; echo "=== test_release_artifact.py exists at I0? ==="; git show b6f89d7:tests/test_release_artifact.py 2>&1 | head -3; echo "=== test_ci_release_workflows.py exists at I0? ==="; git show b6f89d7:tests/test_ci_release_workflows.py 2>&1 | head -3; echo "=== test_read_only_registration.py exists at I0? ==="; git show b6f89d7:tests/mcp/test_read_only_registration.py 2>&1 | head -3
+=== check_release_artifact.py exists at I0? ===
+#!/usr/bin/env python3
+"""Validate an Ontos wheel's identity and SHA-256 release manifest."""
+
+=== test_release_artifact.py exists at I0? ===
+"""Tests for release-wheel identity and integrity verification."""
+
+import json
+=== test_ci_release_workflows.py exists at I0? ===
+"""Static regression checks for CI isolation and release provenance gates."""
+
+from pathlib import Path
+=== test_read_only_registration.py exists at I0? ===
+"""CB-B2 regression: ``read_only=True`` must skip write-tool registration.
+
+v4.1 Track B Phase D verdict flagged that invocation-time refusal (existing
+[0m
+[0m← [0mWrite <redacted:secret>
+Wrote file successfully.
+[0m
+[0m$ [0mgit show --stat b6f89d7 2>&1 | tail -1; echo "===VERIFY SHAPE==="; f="<redacted:secret>"; head -1 "$f" | grep -q '^---$' && echo "frontmatter-start: OK" || echo "frontmatter-start: FAIL"; sed -n '8p' "$f" | grep -q '^---$' && echo "frontmatter-end: OK" || echo "frontmatter-end: FAIL"; grep -c '^# ' "$f" | xargs -I{} echo "H1 count: {}"; grep '^## Verdict$' "$f" >/dev/null && echo "verdict-heading: OK" || echo "verdict-heading: FAIL"; awk '/^## Verdict$/{found=1;next} found && NF{print;exit}' "$f"
+188 files changed, 9520 insertions(+), 4356 deletions(-)
+===VERIFY SHAPE===
+frontmatter-start: OK
+frontmatter-end: OK
+H1 count: 1
+verdict-heading: OK
+Approve
+[0m

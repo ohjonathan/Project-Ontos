@@ -1,0 +1,14 @@
+Artifact written. Per Template 01, review-phase (Adversarial) workers do not commit — the orchestrator stages and commits. I wrote only the single allowed path and touched no other file.
+
+## Final report — project-ontos-audit-rebaseline-remediation / B.1 / adversarial / claude
+
+- **Status:** completed
+- **Artifacts written:** `docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-final-claude-adversarial.md`
+- **Verdict:** **Approve** (bare canonical token under unnumbered `## Verdict`)
+- **Blockers:** 0 · **Should-fix:** 0 · **Minor:** 1 (X-A1, anchor line-range parity between §4.4 and §11)
+- **Smoke checks:** not-run (spec review; no suite executed, per worker constraints) — evidence: static-inspection
+- **Cardinality checks:** program membership = exactly `#146`–`#157` = pass (evidence: static-inspection); registry = 91 original + 9 R2 = 100 rows = pass; quarantine enumeration complete vs. consumed collections = pass
+- **Commit:** none — review-phase worker; orchestrator stages + commits (Template 01)
+- **Notes:** Blind review of spec v1.4 + I0 `b6f89d7` vs base `bf91b42`, inspected only via bounded `git show`/`git diff`. No prior verdict, receipt, result bundle, or Phase C byte read. Cross-provider (author `codex` / adversarial `claude`), no same-provider halt.
+
+**What I falsified and the result:** Every demanded axis was attacked. Program set is exactly `#146`–`#157` (`#158` is finding-only; no lease/integration references it). The spec's quarantine-before-all-consumers enumeration is **complete** against the collections the I0 validator actually consumes (findings, programs, shared_path_leases, shared_tree_integration, github_snapshot count maps, external_drift; `generated_artifacts`/`row_templates`/hardcoded `expected_milestones` are not registry-collection consumers). Serializer round-trip fail-closed, string-ID pattern, exit taxonomy (`4` reserved), read-only MCP write-tool omission, and one-wheel/TestPyPI/OIDC publishing provenance all match committed I0 bytes. Every no-follow, canonical-CLI, typed-validator, and version-copy gate maps to a **real, correctly-cited I0 defect** (`log.py:115` `.resolve()`, `mcp/locking.py:24` plain open, `stub.py:189-192` divergent regex, validator unguarded subscripts, `config.py:260` clause double-echo) that the spec honestly labels Phase C rather than claiming as satisfied — the spec under-claims, not over-claims. No blocking finding with a reproduction exists; the lifecycle/release/per-issue/D.6/merge/tag/publication nonclaims are intact.

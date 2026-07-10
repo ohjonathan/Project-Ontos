@@ -1,0 +1,15 @@
+I'll begin by reading the three framework templates and then activate Ontos context as required by AGENTS.md.
+Let me read the rest of template 02 and then activate Ontos context.
+Now I understand the structure. Let me write the placeholder file first (before analysis, as required), then find the committed spec v1.4 and inspect I0 at `b6f89d7`.
+Let me see the rest of the I0 commit stat and read the committed spec.
+Now I need to inspect I0 at `b6f89d7` using only `git show`. Let me examine the key files referenced by the spec: the registry validator, log.py, mcp/locking.py, config.py, and context.py.
+The key I0 inspection confirms the spec's defect claims. The log.py `.resolve()` at line 115 follows symlinks, the archive marker uses plain `write_text`, and mcp/locking.py uses plain `open("a+")` with no no-follow protection. Let me inspect config.py and context.py next, plus the registry YAML for program membership.
+The config.py, context.py, and registry membership all confirm the spec's claims. Let me inspect the validator's consumption boundaries and the registry's `shared_tree_integration` record, plus the test files the spec anchors to I0.
+Let me see the rest of the validator (lease/integration handling) and check for `shared_tree_integration` consumption, plus inspect the registry's integration record.
+Let me verify a few remaining I0 anchors: the validator line count, the `shared_tree_integration` record structure, locking.py, and test file existence at I0.
+Let me verify the JSON output exit-code taxonomy and a few remaining I0 test anchors.
+Let me verify the `_acquire_lock` implementation to confirm the spec's claim about the workspace lock boundary at I0.
+I've now thoroughly inspected I0. The key confirmation: `_acquire_lock` at context.py:916 uses plain `open("a+")` — the same no-follow gap as MCP's `workspace_lock`. Let me run the Template 03 file-existence attestation, then verify the spec's self-claimed closure of prior GLM peer findings.
+I now have all evidence needed. Let me compile my comprehensive review. I verified every I0 anchor the spec cites and confirmed all defect claims. Writing the verdict to the `.raw` path now.
+Let me verify the written file has the correct verdict shape before emitting the final output.
+Created `docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/project-ontos-audit-rebaseline-remediation-B.1-final-glm-peer.review.txt`

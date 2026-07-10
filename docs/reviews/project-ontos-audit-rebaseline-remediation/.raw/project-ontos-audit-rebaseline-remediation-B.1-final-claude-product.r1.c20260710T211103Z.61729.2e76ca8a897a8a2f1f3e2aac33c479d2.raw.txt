@@ -1,0 +1,18 @@
+Written. Per the worker contract, review-phase workers do not commit — the orchestrator stages and commits. I've written only the one declared artifact.
+
+## Final report — project-ontos-audit-rebaseline-remediation / B.1 / product / claude
+
+- **Status:** completed
+- **Artifacts written:** `docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-final-claude-product.md`
+- **Verdict:** Approve
+- **Smoke checks:** none required for a spec-review Product seat = not-run (evidence: not-run) — no worktree, no suite, no nested agents, no implementation edits, per prompt constraints.
+- **Cardinality checks:** single-artifact scope = pass (evidence: static-inspection) — one file written to the declared path only.
+- **Commit:** not committed (review-phase worker; orchestrator commits per Template 01 § Commit split by role)
+- **Blockers:** 0
+- **Should-fix:** 1 — PRD-1 (silent `.ontos/session_archived` marker failure has no user-visible signal and surfaces downstream at `git push`; §4.3 preserves the non-fatal policy without requiring discoverability).
+- **Minor:** 1 — PRD-2 (§4.4 requires a Migration/Manual `required_version` pointer but does not pin its section/text).
+
+**Notes:**
+- The spec (v1.4) delivers its operator-facing value: explicit failure states, actionable recovery copy, and scrupulous non-overstatement of Windows/TestPyPI/child-lifecycle/D.6/release. No blocking Product finding; approval is spec-contract-only.
+- Under `implementation_sequencing.mode: code-first-user-gated`, §2.2 was executed against frozen I0 `b6f89d7` (not marked n/a). The cross-reference confirmed the spec accurately describes the I0 baseline and correctly labels the copy/recovery upgrades (canonical CLI ID message, log-collision recovery hint, activation guidance pointer, migration copy) as Phase C gates rather than I0 state.
+- All evidence is `static-inspection` via `git show b6f89d7:…`; per P5 this caps findings at should-fix, which is why PRD-1 is not raised as Blocking despite the real pre-push interaction.

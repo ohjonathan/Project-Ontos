@@ -1,0 +1,85 @@
+---
+id: project-ontos-audit-rebaseline-remediation-B.1-final-gemini-alignment
+deliverable_id: project-ontos-audit-rebaseline-remediation
+phase: B.1
+role: alignment
+family: gemini
+evidence_labels_used: [static-inspection]
+reference_documents_consulted: ['spec v1.4 (SHA-256: ec50f7e92dea56af86c1ce6b94925808c6207b04660841ffcc45cadfea6a1d30)', 'base bf91b42', 'frozen I0 b6f89d7']
+status: completed
+---
+
+# B.1 Final Gemini Alignment Recertification
+
+## 1. Executive Summary
+This static-inspection report recertifies the alignment of Ontos specification v1.4 (SHA-256: `ec50f7e92dea56af86c1ce6b94925808c6207b04660841ffcc45cadfea6a1d30`) with the approved project rebaseline and release authorities. All downstream testing, checks, and runtime execution proofs remain pending.
+
+## 2. Architecture Alignment
+The system architecture flows through defined internal pipelines and connects to external boundaries:
+- **Core Pipeline**: Registry → Validator → O4/O5.
+- **Support Modules**: Loader/Serializer → Writer/Logging → CLI/MCP.
+- **Control Paths**: Activation/Doctor and Locking feed both the interface layers and the Writer.
+- **Map Feeds**: Generated maps are populated by the test suite outputs.
+- **External Boundaries**: GitHub, Windows environment hosts, and the TestPyPI distribution repository are represented as external nodes, separated by dashed boundaries from the core validation modules.
+
+The registry is canonical, while Fable is designated as historical.
+
+## 3. Lifecycle Alignment
+The project lifecycle conforms to the rebaseline path. The verified sequence of transitions is:
+Pre-existing I0 → Phase A → Phase B.1 → Phase B.2 → Phase C Reconciliation → Phase D.1 → Phase D.2 → Phase D.3/D.4 loops → Phase D.5 → Loose Falsification → Phase D.6 Pending Stop.
+All transitions following B.1 (including Phase C, D.5, and D.6 loops) are noted as prospective; downstream proof of transition completion remains pending.
+
+## 4. Compatibility Evaluation
+Compatibility contracts verified via static structural inspection include:
+- Serialization mapping and string IDs.
+- No-follow writer, log outputs, archive markers, and double-locking mechanisms.
+- Version activation/copy.
+- Read-only MCP integration restrictions.
+- Schema version 4 alignment and explicit exit taxonomy.
+- Exact-wheel provenance verification.
+
+## 5. Scope and Boundaries
+The scope of verification encompasses:
+- Tracked paths including committed, staged, unstaged, and untracked files relative to the immutable base SHA `bf91b42` and frozen I0 `b6f89d7`.
+- Context-map counts derived from the final clean tracked snapshot.
+- Exclusion of D.6 loops, branch merges, tags, publication, releases, child certifications, and user-document edits, which are not authorized in Phase B.1.
+
+## 6. Constraints Tracking
+| Constraint | Source (doc:lines) | Verified? | Evidence |
+| :--- | :--- | :--- | :--- |
+| Registry must be canonical; Fable is historical. | spec-v1.4:§11 | Yes (Static) | Static definition asserts registry canonicality; downstream runtime execution proof is pending. |
+| Core findings count must equal exactly 91 originals (P0/P1/P2 = 1/27/63) and 9 R2 findings. | spec-v1.4:§11 | Yes (Static) | Static structure contains 91 original items and 9 R2 items; downstream runtime execution proof is pending. |
+| Open findings must preserve 41 confirmed-open and 7 partial originals. | spec-v1.4:§11 | Yes (Static) | Registry records preserve 41 confirmed-open and 7 partial original findings; downstream runtime execution proof is pending. |
+| Issues #146 and #147 must remain code-fixed and evidence-pending. | spec-v1.4:§11 | Yes (Static) | Status tracking designates #146 and #147 as code-fixed/evidence-pending; no umbrella receipt exists. |
+| Shared-tree integration remains designated as `unproven_rebaseline_integration`. | spec-v1.4:§11 | Yes (Static) | Path definitions verify integration block; O5 is marked prospective. Downstream runtime execution proof is pending. |
+| Scope proof must span committed, staged, unstaged, and untracked paths from base bf91b42. | spec-v1.4:§11 | Yes (Static) | Workspace snapshot definitions verify path tracking; downstream runtime execution proof is pending. |
+| Typed quarantine must precede all consumers of findings, programs, leases, integration, and parity metadata. | spec-v1.4:§11 | Yes (Static) | Schema layout places quarantine layers ahead of consumers; downstream runtime execution proof is pending. |
+| Normalized programs must correspond exactly to #146-#157. | spec-v1.4:§11 | Yes (Static) | Validator configuration limits normalized program range. Downstream runtime execution proof is pending. |
+| Malformed input must result in validation exit 1, never exception exit 2. | spec-v1.4:§11 | Yes (Static) | Control flow specifies exit 1 for malformed input validations. Downstream runtime execution proof is pending. |
+| Serializer, string IDs, no-follow logs, locks, version activation, and read-only MCP must be compliant. | spec-v1.4:§11 | Yes (Static) | System contracts establish explicit requirements; downstream runtime execution proof is pending. |
+| Exit code 4 must be reserved; emitted codes restricted to 0, 1, 2, 3, 5, 130. | spec-v1.4:§11 | Yes (Static) | Exception handling schema limits exit codes. Downstream runtime execution proof is pending. |
+| Context-map count is derived from the final clean tracked snapshot. | spec-v1.4:§11 | Yes (Static) | Map generation design conforms to the tracked snapshot. Downstream runtime execution proof is pending. |
+
+## 7. Deviation Analysis
+| Divergence | Authority cited? | Authority source | Severity |
+| :--- | :--- | :--- | :--- |
+| None | N/A | N/A | Low |
+
+## 8. Issue Classifications
+### Contradictions
+None.
+
+### Omissions
+None.
+
+### Pending External Certifications
+None.
+
+## Verdict
+
+COMPLIANT
+
+## 10. Notes
+- Phase C reconciliation, Phase D.5 verification, and TestPyPI distribution check remain pending downstream execution.
+- Windows-specific path validations are excluded from this static-inspection packet.
+- No child issue certification is covered by this review.
