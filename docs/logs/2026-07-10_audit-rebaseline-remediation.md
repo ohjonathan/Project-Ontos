@@ -56,3 +56,33 @@ contract defects that could be verified in this release line.
 - Lifecycle and per-deliverable scope gates executed and retained as expected
   release blockers.
 - Wheel build/metadata/hash/import smoke and `git diff --check HEAD`.
+
+## Lifecycle authorization and start — 2026-07-10
+
+After the implementation snapshot and initial technical verification were
+complete, the user gave the following explicit directive:
+
+> Okay, run the full llm-dev lifecycle, until the D.5 and falsification review done. Go.
+
+This directive is the auditable user gate for a new
+`project-ontos-audit-rebaseline-remediation` branch-level integration
+deliverable using `code-first-user-gated` sequencing. The immutable inputs are:
+
+- base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`;
+- implementation snapshot I0
+  `b6f89d77e7fb684b8bd9a181a24c773d5777397a`;
+- lifecycle branch `codex/audit-rebaseline-remediation-lifecycle`; and
+- dedicated worktree
+  `/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation`.
+
+Phase 0 began by freezing the integration boundary, route roster, exact scope,
+and empty receipt inventory. The lifecycle runs every code-first phase through
+D.5, including mandatory B.2, and then runs the framework's separate loose
+falsification convention. Reproduced falsification findings return to D.4 and
+require fresh D.5 verification.
+
+This authorization does not clear the historical shared-tree lease blocker,
+does not certify #146–#157 individually, and does not authorize D.6, Phase E,
+merge, tag, publication, release, GitHub closure, or completion of registry rows
+still recorded as open or partial. The two pre-existing user documents excluded
+from I0 remain outside lifecycle scope and untouched.

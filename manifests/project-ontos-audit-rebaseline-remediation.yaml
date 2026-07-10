@@ -1,0 +1,467 @@
+manifest_version: "2.0.0"
+id: project-ontos-audit-rebaseline-remediation
+slug: project-ontos-audit-rebaseline-remediation
+summary: "Review and certify the frozen audit-rebaseline integration snapshot without claiming per-issue lifecycle closure or release readiness."
+
+lifecycle_mode: framework lifecycle
+deliverable_type: closeout-proof
+user_facing: true
+fallback_evidence_mode: strict_p3
+require_lifecycle_dispatch_bundles: true
+strict_p3_required_phases: ["B.1", "D.2", "D.5"]
+
+implementation_sequencing:
+  mode: code-first-user-gated
+  user_gate_ref: "decision:codex-task-2026-07-10-user-directive-run-full-lifecycle-through-d5-and-falsification-review"
+  implementation_ref: "b6f89d77e7fb684b8bd9a181a24c773d5777397a"
+  rationale: "The user explicitly requested a full lifecycle review of the already implemented and verified integration snapshot."
+
+owners:
+  - "Project Ontos Maintainers"
+
+authorship:
+  deliverable_author_families: [codex]
+  structural_orchestrator_families: [codex]
+
+scope:
+  allowed_paths:
+    - ".github/workflows/ci.yml"
+    - ".github/workflows/publish.yml"
+    - ".ontos-internal/logs/2026-07-02_init.md"
+    - ".ontos-internal/logs/2026-07-03_init.md"
+    - ".ontos-internal/logs/2026-07-09_init.md"
+    - ".ontos.toml"
+    - ".ontos/hooks/pre-commit"
+    - ".ontos/hooks/pre-push"
+    - ".ontos/scripts/tests/test_context.py"
+    - ".ontos/scripts/tests/test_schema.py"
+    - ".pre-commit-config.yaml"
+    - "AGENTS.md"
+    - "Ontos_Context_Map.md"
+    - "docs/logs/2026-05-22_merge-pr-118-v4-5-closes-issues-115-116-117.md"
+    - "docs/logs/2026-07-10_audit-rebaseline-remediation.md"
+    - "docs/reference/Migration_v3_to_v4.md"
+    - "docs/reference/Ontos_Manual.md"
+    - "docs/retros/project-ontos-audit-doctor-rce-retro.md"
+    - "docs/reviews/2026-07-02-fable-repo-audit.md"
+    - "docs/reviews/2026-07-10-codex-audit-revalidation.md"
+    - "docs/reviews/project-ontos-audit-doctor-rce/.prompts/B.1-gemini-adversarial.prompt.md"
+    - "docs/reviews/project-ontos-audit-doctor-rce/.prompts/B.1-gpt-alignment.prompt.md"
+    - "docs/reviews/project-ontos-audit-doctor-rce/.prompts/D.2-gemini-adversarial.prompt.md"
+    - "docs/reviews/project-ontos-audit-doctor-rce/.prompts/D.2-gpt-alignment.prompt.md"
+    - "docs/reviews/project-ontos-audit-doctor-rce/.prompts/D.5-gemini-verifier.prompt.md"
+    - "docs/reviews/project-ontos-audit-doctor-rce/.prompts/D.5-gpt-verifier.prompt.md"
+    - "docs/reviews/project-ontos-audit-doctor-rce/.prompts/project-ontos-audit-doctor-rce-B.1-gemini-adversarial.r1.c20260710T141400Z.84663.3f5a1693dca6cb90f2d5532289375508.md"
+    - "docs/reviews/project-ontos-audit-doctor-rce/.raw/project-ontos-audit-doctor-rce-B.1-gemini-adversarial.r1.c20260710T141400Z.84663.3f5a1693dca6cb90f2d5532289375508.raw.txt"
+    - "docs/reviews/project-ontos-audit-doctor-rce/.raw/project-ontos-audit-doctor-rce-B.1-gemini-adversarial.r1.c20260710T141400Z.84663.3f5a1693dca6cb90f2d5532289375508.stderr.txt"
+    - "docs/reviews/project-ontos-audit-doctor-rce/B.1-gemini-dispatch-intent.yaml"
+    - "docs/reviews/project-ontos-audit-doctor-rce/B.1-gemini-dispatch-result.yaml"
+    - "docs/reviews/project-ontos-audit-doctor-rce/B.1-gpt-dispatch-intent.yaml"
+    - "docs/reviews/project-ontos-audit-doctor-rce/D.2-gemini-dispatch-intent.yaml"
+    - "docs/reviews/project-ontos-audit-doctor-rce/D.2-gpt-dispatch-intent.yaml"
+    - "docs/reviews/project-ontos-audit-doctor-rce/D.5-gemini-dispatch-intent.yaml"
+    - "docs/reviews/project-ontos-audit-doctor-rce/D.5-gpt-dispatch-intent.yaml"
+    - "docs/reviews/project-ontos-audit-doctor-rce/final-approval.md"
+    - "docs/reviews/project-ontos-audit-doctor-rce/lifecycle-receipt-inventory.yaml"
+    - "docs/reviews/project-ontos-audit-doctor-rce/strict-p3-dispatch-readiness.txt"
+    - "docs/specs/project-ontos-audit-doctor-rce-spec.md"
+    - "docs/trackers/project-ontos-audit-doctor-rce.md"
+    - "docs/trackers/project-ontos-audit-remediation-release-line.md"
+    - "manifests/project-ontos-audit-doctor-rce.yaml"
+    - "manifests/project-ontos-audit-remediation-registry.yaml"
+    - "manifests/project-ontos-audit-serializer-corruption.yaml"
+    - "ontos/_hooks/pre-commit"
+    - "ontos/_hooks/pre-push"
+    - "ontos/cli.py"
+    - "ontos/command_registry.py"
+    - "ontos/commands/activate.py"
+    - "ontos/commands/doctor.py"
+    - "ontos/commands/init.py"
+    - "ontos/commands/link_check.py"
+    - "ontos/commands/log.py"
+    - "ontos/commands/map.py"
+    - "ontos/commands/migrate.py"
+    - "ontos/commands/promote.py"
+    - "ontos/commands/retrofit.py"
+    - "ontos/commands/scaffold.py"
+    - "ontos/commands/stub.py"
+    - "ontos/commands/verify.py"
+    - "ontos/core/body_refs.py"
+    - "ontos/core/config.py"
+    - "ontos/core/context.py"
+    - "ontos/core/errors.py"
+    - "ontos/core/frontmatter.py"
+    - "ontos/core/frontmatter_edit.py"
+    - "ontos/core/frontmatter_repair.py"
+    - "ontos/core/git.py"
+    - "ontos/core/graph.py"
+    - "ontos/core/history.py"
+    - "ontos/core/instruction_protocol.py"
+    - "ontos/core/link_diagnostics.py"
+    - "ontos/core/locking.py"
+    - "ontos/core/schema.py"
+    - "ontos/io/files.py"
+    - "ontos/io/git.py"
+    - "ontos/io/toml.py"
+    - "ontos/io/yaml.py"
+    - "ontos/mcp/locking.py"
+    - "ontos/mcp/portfolio.py"
+    - "ontos/mcp/schemas.py"
+    - "ontos/mcp/server.py"
+    - "ontos/mcp/tools.py"
+    - "ontos/mcp/writes.py"
+    - "ontos/ui/json_output.py"
+    - "pyproject.toml"
+    - "scripts/check_release_artifact.py"
+    - "scripts/validate-audit-remediation-registry.py"
+    - "tests/commands/golden/query_help.txt"
+    - "tests/commands/golden/scaffold_help.txt"
+    - "tests/commands/golden/verify_help.txt"
+    - "tests/commands/test_activate_json_warning_metadata.py"
+    - "tests/commands/test_agentic_activation_resilience.py"
+    - "tests/commands/test_consolidate_parity.py"
+    - "tests/commands/test_doctor_phase4.py"
+    - "tests/commands/test_env.py"
+    - "tests/commands/test_hook_phase4.py"
+    - "tests/commands/test_instruction_protocol.py"
+    - "tests/commands/test_link_check.py"
+    - "tests/commands/test_log.py"
+    - "tests/commands/test_map.py"
+    - "tests/commands/test_mcp_command.py"
+    - "tests/commands/test_query_parity.py"
+    - "tests/commands/test_rename.py"
+    - "tests/commands/test_retrofit.py"
+    - "tests/commands/test_scaffold_parity.py"
+    - "tests/commands/test_stub_parity.py"
+    - "tests/commands/test_verify_parity.py"
+    - "tests/commands/test_verify_portfolio.py"
+    - "tests/conftest.py"
+    - "tests/core/test_body_refs.py"
+    - "tests/core/test_config_phase3.py"
+    - "tests/core/test_frontmatter_edit_pipeline.py"
+    - "tests/core/test_frontmatter_repair.py"
+    - "tests/core/test_git_safety.py"
+    - "tests/core/test_graph.py"
+    - "tests/core/test_link_diagnostics.py"
+    - "tests/core/test_schema.py"
+    - "tests/golden/README.md"
+    - "tests/golden/baselines/medium/context_map.md"
+    - "tests/golden/baselines/medium/log_metadata.json"
+    - "tests/golden/baselines/medium/log_stdout.txt"
+    - "tests/golden/baselines/medium/map_metadata.json"
+    - "tests/golden/baselines/medium/map_stdout.txt"
+    - "tests/golden/baselines/medium/session_log.md"
+    - "tests/golden/baselines/small/context_map.md"
+    - "tests/golden/baselines/small/log_metadata.json"
+    - "tests/golden/baselines/small/log_stdout.txt"
+    - "tests/golden/baselines/small/map_metadata.json"
+    - "tests/golden/baselines/small/map_stdout.txt"
+    - "tests/golden/baselines/small/session_log.md"
+    - "tests/golden/capture_golden_master.py"
+    - "tests/golden/compare_golden_master.py"
+    - "tests/golden/test_golden_master.py"
+    - "tests/io/test_git_empty_diff.py"
+    - "tests/io/test_toml_roundtrip.py"
+    - "tests/mcp/test_activation.py"
+    - "tests/mcp/test_bundler.py"
+    - "tests/mcp/test_cache.py"
+    - "tests/mcp/test_context_bundle.py"
+    - "tests/mcp/test_context_bundle_config.py"
+    - "tests/mcp/test_context_map.py"
+    - "tests/mcp/test_error_paths.py"
+    - "tests/mcp/test_export_graph.py"
+    - "tests/mcp/test_get_document.py"
+    - "tests/mcp/test_health.py"
+    - "tests/mcp/test_list_documents.py"
+    - "tests/mcp/test_parity.py"
+    - "tests/mcp/test_portfolio.py"
+    - "tests/mcp/test_portfolio_integration.py"
+    - "tests/mcp/test_query.py"
+    - "tests/mcp/test_read_only_registration.py"
+    - "tests/mcp/test_refresh.py"
+    - "tests/mcp/test_rename_document.py"
+    - "tests/mcp/test_rename_scope_forced_library.py"
+    - "tests/mcp/test_schemas.py"
+    - "tests/mcp/test_server_integration.py"
+    - "tests/mcp/test_server_portfolio_mode.py"
+    - "tests/mcp/test_stream_routing.py"
+    - "tests/mcp/test_workspace_overview.py"
+    - "tests/mcp/test_write_tools.py"
+    - "tests/mcp_helpers.py"
+    - "tests/test_ci_release_workflows.py"
+    - "tests/test_cli.py"
+    - "tests/test_cli_contract_v4.py"
+    - "tests/test_config.py"
+    - "tests/test_consolidate.py"
+    - "tests/test_cycle_detection.py"
+    - "tests/test_describes.py"
+    - "tests/test_document_loading_contract_a1.py"
+    - "tests/test_dual_mode.py"
+    - "tests/test_end_session.py"
+    - "tests/test_frontmatter_roundtrip_regression.py"
+    - "tests/test_immutable_history.py"
+    - "tests/test_lint.py"
+    - "tests/test_maintain.py"
+    - "tests/test_orphan_detection.py"
+    - "tests/test_pre_commit_check.py"
+    - "tests/test_pre_push_check.py"
+    - "tests/test_query.py"
+    - "tests/test_release_artifact.py"
+    - "tests/test_session_context.py"
+    - "tests/test_test_isolation.py"
+    - "tests/test_v284_refactor.py"
+    - "tests/test_validation.py"
+    - "tests/test_yaml_edge_cases.py"
+    - "tests/ui/test_json_output.py"
+    - "manifests/project-ontos-audit-rebaseline-remediation.yaml"
+    - "docs/trackers/project-ontos-audit-rebaseline-remediation.md"
+    - "docs/specs/project-ontos-audit-rebaseline-remediation-spec.md"
+    - "docs/retros/project-ontos-audit-rebaseline-remediation-retro.md"
+  allowed_path_patterns:
+    - "docs/reviews/project-ontos-audit-rebaseline-remediation/**"
+  composition_targets: []
+  forbidden_paths:
+    - "docs/specs/project-ontos-rationale-capture-template-proposal.md"
+    - "docs/zeta.md"
+    - ".llm-dev/framework/"
+    - ".venv/"
+    - ".git/"
+  forbidden_symbols: []
+  cardinality_assertions:
+    - name: "Audit remediation registry contains exactly 100 findings"
+      command: >-
+        python3 -c "import yaml; print(len(yaml.safe_load(open('manifests/project-ontos-audit-remediation-registry.yaml'))['findings']))"
+      expect: "eq:100"
+    - name: "Frozen implementation snapshot exists"
+      command: "git cat-file -e b6f89d77e7fb684b8bd9a181a24c773d5777397a^{commit}"
+      expect: "exit-0"
+    - name: "User-owned documents remain absent from the isolated lifecycle worktree"
+      command: "test ! -e docs/specs/project-ontos-rationale-capture-template-proposal.md && test ! -e docs/zeta.md"
+      expect: "exit-0"
+  cleanliness:
+    pathspecs: []
+    exclude_pathspecs: []
+
+artifacts:
+  spec: "docs/specs/project-ontos-audit-rebaseline-remediation-spec.md"
+  family_verdict: "docs/reviews/project-ontos-audit-rebaseline-remediation/<phase>-<family>-<role>.md"
+  canonical_verdict: "docs/reviews/project-ontos-audit-rebaseline-remediation/<phase>-verdict.md"
+  product_verdict: "docs/reviews/project-ontos-audit-rebaseline-remediation/<phase>-<family>-product.md"
+  fix_summary: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.4-fix-summary.md"
+  verification: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-<family>-verifier.md"
+  final_approval: "docs/reviews/project-ontos-audit-rebaseline-remediation/final-approval.md"
+  retro: "docs/retros/project-ontos-audit-rebaseline-remediation-retro.md"
+
+model_assignments:
+  - phase: "A"
+    assignments:
+      codex: spec-author
+  - phase: "B.1"
+    assignments:
+      claude: adversarial
+      gemini: alignment
+      glm: peer
+  - phase: "B.1"
+    assignments:
+      claude: product
+  - phase: "B.2"
+    assignments:
+      claude: adversarial
+      gemini: alignment
+      glm: peer
+  - phase: "B.2"
+    assignments:
+      claude: product
+  - phase: "B.3"
+    assignments:
+      codex: meta-consolidator
+  - phase: "C"
+    assignments:
+      codex: implementation-author
+  - phase: "D.1"
+    assignments:
+      claude: peer
+  - phase: "D.2"
+    assignments:
+      claude: peer
+      gemini: adversarial
+      glm: alignment
+  - phase: "D.2"
+    assignments:
+      claude: product
+  - phase: "D.3"
+    assignments:
+      codex: meta-consolidator
+  - phase: "D.4"
+    assignments:
+      codex: fix-author
+  - phase: "D.5"
+    assignments:
+      claude: verifier
+      gemini: verifier
+      glm: verifier
+  - phase: "D.6"
+    assignments:
+      codex: final-approval
+  - phase: "E"
+    assignments:
+      codex: retro
+
+cli_capability_matrix:
+  codex:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+  claude:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+  gemini:
+    shell: false
+    git: false
+    test_runner: false
+    doc_index: true
+    evidence_cap: static-inspection
+    writes_files_non_interactively: false
+    execution_clis:
+      agy:
+        expected_version_regex: "^[0-9]+[.][0-9]+[.][0-9]+"
+        writes_files_non_interactively: false
+  glm:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+
+smoke_checks:
+  - phase: "C"
+    checks:
+      - name: "Full frozen-snapshot test suite"
+        command: "python3 -m pytest tests/ -q"
+        expect: "exit-0"
+      - name: "Audit remediation registry validates locally"
+        command: "python3 scripts/validate-audit-remediation-registry.py"
+        expect: "exit-0"
+  - phase: "D.2"
+    checks:
+      - name: "Snapshot diff has no whitespace errors"
+        command: "git diff --check bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95..HEAD"
+        expect: "exit-0"
+  - phase: "D.5"
+    checks:
+      - name: "Post-fix full suite"
+        command: "python3 -m pytest tests/ -q"
+        expect: "exit-0"
+
+regression_guards: []
+sibling_deliverable_ids: []
+review_rounds: []
+reviewer_family_substitutes: []
+consolidation_mode: fast-path
+self_review_caveats:
+  - family: codex
+    phases: ["D.3"]
+    rationale: "Codex authored the frozen implementation snapshot and performs structural fast-path consolidation only after three non-author D.2 engineering reviews plus the Product review; D.5 remains fully external."
+
+lifecycle_receipt_inventory_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/lifecycle-receipt-inventory.yaml"
+required_dispatch_bundles:
+  - phase: "B.1"
+    intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-dispatch-result.yaml"
+  - phase: "B.2"
+    intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-dispatch-result.yaml"
+  - phase: "D.2"
+    intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-dispatch-result.yaml"
+  - phase: "D.5"
+    intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-dispatch-result.yaml"
+
+gate_prerequisites:
+  - id: G-test-1
+    category: test
+    description: "The complete Ontos test suite passes from the isolated lifecycle worktree."
+    verification:
+      command: "python3 -m pytest tests/ -q"
+      expect: "exit-0"
+  - id: G-test-2
+    category: test
+    description: "Registry state still matches the live GitHub tracker and milestones."
+    verification:
+      command: "python3 scripts/validate-audit-remediation-registry.py --require-external-parity"
+      expect: "exit-0"
+  - id: G-scope-1
+    category: scope
+    description: "Every committed, staged, unstaged, and untracked lifecycle path since main is within this exact snapshot scope and outside all hard-forbidden paths."
+    verification:
+      command: "bash .llm-dev/framework/scripts/verify-changed-path-scope.sh --manifest manifests/project-ontos-audit-rebaseline-remediation.yaml --base bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95"
+      expect: "exit-0"
+  - id: G-cardinality-1
+    category: cardinality
+    description: "The authoritative audit-remediation registry validates with all 100 findings assigned exactly once."
+    verification:
+      command: "python3 scripts/validate-audit-remediation-registry.py"
+      expect: "exit-0"
+  - id: G-verdict-1
+    category: verdict-presence
+    description: "B.3 and D.3 canonical verdicts and all three D.5 verifier artifacts exist."
+    verification:
+      command: >-
+        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/B.3-verdict.md &&
+        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/D.3-verdict.md &&
+        test "$(find docs/reviews/project-ontos-audit-rebaseline-remediation -maxdepth 1 -type f -name 'D.5-*-verifier.md' | wc -l | tr -d ' ')" -eq 3
+      expect: "exit-0"
+  - id: G-verdict-2
+    category: verdict-presence
+    description: "The user-facing Product verdict exists for B.1, B.2, and D.2."
+    verification:
+      command: >-
+        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-claude-product.md &&
+        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-claude-product.md &&
+        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-claude-product.md
+      expect: "exit-0"
+  - id: G-blocker-1
+    category: blocker-closure
+    description: "The umbrella D.3 canonical verdict retains no unresolved lifecycle blocker."
+    verification:
+      command: >-
+        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/D.3-verdict.md &&
+        ! awk '/^## Preserved blockers/{f=1;next} /^## /{f=0} f' docs/reviews/project-ontos-audit-rebaseline-remediation/D.3-verdict.md |
+        grep -E '^- \*\*ID:\*\*'
+      expect: "exit-0"
+  - id: G-blocker-2
+    category: blocker-closure
+    description: "The umbrella review does not erase the registry's external per-deliverable release blocker or claim release readiness."
+    verification:
+      command: >-
+        python3 -c "import yaml; s=yaml.safe_load(open('manifests/project-ontos-audit-remediation-registry.yaml'))['shared_tree_integration']; assert s['status']=='unproven_rebaseline_integration' and s['release_blocking'] is True"
+      expect: "exit-0"
+  - id: G-branch-1
+    category: branch
+    description: "The frozen implementation snapshot remains an ancestor and the isolated lifecycle worktree is clean."
+    verification:
+      command: >-
+        git merge-base --is-ancestor b6f89d77e7fb684b8bd9a181a24c773d5777397a HEAD &&
+        test -z "$(git status --porcelain=v1 --untracked-files=all)"
+      expect: "exit-0"
+
+tracker:
+  path: "docs/trackers/project-ontos-audit-rebaseline-remediation.md"
+  columns: [phase, owner, status, artifact, evidence, timestamp]
+
+branch_map:
+  default: "codex/project-ontos-audit-rebaseline-remediation-<PHASE_ID>-<ROLE>-<FAMILY>"
+
+merge_authority:
+  mode: recommendation_only
+
+references:
+  - path: "docs/reviews/2026-07-10-codex-audit-revalidation.md"
+    relevance: "Human re-baseline and scope boundary for the frozen integration snapshot."
+  - path: "manifests/project-ontos-audit-remediation-registry.yaml"
+    relevance: "Machine-readable truth for implemented, partial, open, and externally blocked findings."
+  - path: "docs/trackers/project-ontos-audit-remediation-release-line.md"
+    relevance: "Release ledger and explicit shared-tree integration blocker that this umbrella lifecycle must preserve."
