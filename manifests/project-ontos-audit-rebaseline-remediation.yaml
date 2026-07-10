@@ -208,6 +208,7 @@ scope:
     - "tests/test_pre_push_check.py"
     - "tests/test_query.py"
     - "tests/test_release_artifact.py"
+    - "tests/test_audit_remediation_registry_validator.py"
     - "tests/test_session_context.py"
     - "tests/test_test_isolation.py"
     - "tests/test_v284_refactor.py"
