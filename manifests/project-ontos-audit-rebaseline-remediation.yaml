@@ -358,7 +358,13 @@ smoke_checks:
 
 regression_guards: []
 sibling_deliverable_ids: []
-review_rounds: []
+review_rounds:
+  - phase: "B.1"
+    round: 1
+    preserved_blocker_ids: []
+  - phase: "B.2"
+    round: 1
+    preserved_blocker_ids: []
 reviewer_family_substitutes: []
 consolidation_mode: fast-path
 self_review_caveats:
