@@ -1,0 +1,34 @@
+---
+deliverable_id: project-ontos-audit-rebaseline-remediation-b1
+phase: B.1
+role: Gemini-family Alignment Reviewer
+family: Gemini
+status: approved
+evidence_labels_used:
+  - static-inspection-packet
+---
+# B.1 Alignment Dispatch — Closed Static Packet
+
+## Architecture
+The B.1 phase preserves the alignment established in Phase A, binding base commit `bf91b42` to frozen integration state `b6f89d7`. The design implements semantic YAML round trips and string identifiers. Writes are strictly workspace-contained, utilizing no-follow symlink strategies and refusing log collisions. System validation relies on repository-version activation, doctor checks, non-mutating read-only MCP tools, and schema-v4 CLI contracts.
+
+## Roadmap
+Execution paths align with §5 of the original audit roadmap and the approved lifecycle tracker. The transition state accounts for 91 original and 9 R2 findings, preserving 41 open and 7 partial rows. Registry parity and one-wheel publishing provenance define the remaining milestones.
+
+## Constraints
+All operations enforce cross-platform lock files and exhaustive lifecycle types. Environment execution on Windows and TestPyPI is treated as external pending separate evidence, maintaining the boundary of the closed static packet. Context-map counts are derived directly from clean tracked snapshots.
+
+## Backward Compatibility
+Public compatibility is maintained through strict schema-v4 CLI interfaces. The scope explicitly disclaims historical lease proof, per-issue certification, D.6, release, and modifications to the two preserved user documents.
+
+## Deviations
+No deviations from the Phase A specification are identified within the closed static evidence packet.
+
+## Issues
+No open blocking issues are reported. The 41 open and 7 partial rows are successfully tracked and aligned with revalidation authorities.
+
+## Verdict
+The static evidence packet satisfies all alignment criteria for Phase B.1.
+
+## Notes
+Static review is based entirely on the provided evidence packet without assuming or claiming execution.

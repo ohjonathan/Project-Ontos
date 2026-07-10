@@ -1,0 +1,19 @@
+The `--print-timeout` option is a command-line flag for the Antigravity CLI (`agy`). 
+
+### Usage and Details
+
+* **Purpose:** Sets the maximum duration the CLI waits for a response from the model when running in non-interactive print mode (using the `--print` or `-p` / `--prompt` flags).
+* **Default Value:** `5m0s` (5 minutes).
+* **Syntax:** Accepts standard duration format strings (e.g., `2m`, `10s`, `1h`).
+
+**Example usage:**
+```bash
+agy --print --print-timeout 2m "Refactor this code to be more concise"
+```
+
+***
+
+### Summary of Work
+1. **Listed directories and settings:** Examined the `antigravity-cli` structure, finding relevant skill guides in [SKILL.md](file:///Users/jonathanoh/.gemini/antigravity-cli/builtin/skills/antigravity_guide/SKILL.md) and [cli.md](file:///Users/jonathanoh/.gemini/antigravity-cli/builtin/skills/antigravity_guide/references/cli.md).
+2. **Searched logs & codebase:** Identified usages of `--print-timeout` in previous runs, confirming it is used to pass timeout durations (like `2m`) to the `agy` CLI call.
+3. **Executed CLI Help:** Ran `agy --help` in the terminal sandbox to extract the exact flag definitions and defaults directly from the binary.

@@ -1,0 +1,18 @@
+I wrote exactly the one artifact (the `.prompts/…` file is the orchestrator-captured prompt, pre-existing from dispatch, not mine). I did not commit, touch `docs/logs/`, or modify other files.
+
+## Product review complete — B.1 / claude
+
+**Verdict: Approve** (shape-gate validated: `verdict_shaped`, `verdict_vocab: approve`).
+
+This was a code-first B.1, so I cross-referenced the spec against the real frozen implementation at I0 `b6f89d7` (confirmed unchanged since freeze) and exercised the core user-facing copy directly via the repo's `.venv`.
+
+**What I found:**
+- **User value is real and delivered.** The deliverable hardens exactly the failures where a user's trust collapses after the fact — silent doc corruption, log overwrites, malformed IDs, false-read-only MCP, wrong-wheel publishing. Every reviewed failure path is non-silent, carries an error code in JSON, and points at a next action (direct-run verified for ID validation and version-gating; static-inspection for log-collision, read-only export, doctor, release checker).
+- **No blocking findings.** No user-facing regression, dead-end, or misleading error copy.
+- **Should-fix PRD-1:** the intentional breaking changes for `[ontos].required_version` activation-gating and string-ID validation appear in **no** tracked user-facing doc — even though `Migration_v3_to_v4.md:113` already sets the precedent of pre-warning about a config-driven compat break. A maintainer enabling `required_version` silently breaks collaborators on older CLIs. Attested via `git grep` (branch/HEAD recorded).
+- **Should-fix PRD-2:** the spec declares S-1…S-8 in prose but doesn't inventory the copy contract or cite where it lives (satisfiable under code-first since the impl supplies it).
+- **Minor PRD-3:** the invalid-`required_version` config error echoes the clause literal twice (`'not-a-range' 'not-a-range'`) — `config.py:302` passes a label already containing the repr into `_parse_version:273`, which re-appends it.
+
+These are doc/copy gaps to close before the v4.7.1/v4.8.0/v4.9.0 releases — they don't gate B.1, and this umbrella review explicitly isn't a release.
+
+Artifact: `docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-claude-product.md` (uncommitted, per review-phase worker discipline — orchestrator stages/commits).

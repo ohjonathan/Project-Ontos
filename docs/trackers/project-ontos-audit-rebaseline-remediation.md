@@ -108,8 +108,8 @@ and requires fresh D.5 verification.
 |---|---|---|---|---|
 | 0 — scope lock and route preflight | Codex orchestrator | **complete** | Conforming manifest, exact scope, empty receipt inventory, stable user gate and I0 | Manifest conformance, review-seat check, doctor, scope parity, isolated full suite (`1439 passed`) |
 | A — specification | Independent Codex spec-author worker | **complete** | Ten-section code-first spec with diagrams, exclusions, acceptance gates, and I0 reconciliation contract | `docs/specs/project-ontos-audit-rebaseline-remediation-spec.md`; commit `25252a2` |
-| B.1 — first design board | Claude adversarial; Gemini alignment; GLM peer; Claude Product (separate session) | **in progress** | Complete hash-bound dispatch bundles and four verdicts | Intent and prompts frozen before dispatch |
-| B.2 — corrected-spec board | Same engineering seats; Product if declared | pending | Re-review of the B.1-corrected spec and I0 | — |
+| B.1 — first design board | Claude adversarial; Gemini alignment; GLM peer; Claude Product (separate session) | **complete** | Complete hash-bound dispatch bundles and four verdicts | 4/4 complete; verification SHA-256 `6b9efb14c42faf9662e0a8c75c04b3060229e3933d40bb55c091c2a24cfd350c`; failed route/capture attempts preserved |
+| B.2 — corrected-spec board | Same engineering seats; Claude Product (separate session) | **in progress** | Re-review of spec v1.1 and I0 | B.1 findings incorporated in spec commit `ce60f6e`; dispatch frozen next |
 | B.3 — design consolidation | Non-author consolidator selected by manifest | pending | Canonical approved design verdict with every preserved blocker | — |
 | C — code-first reconciliation | Codex implementation-author worker | pending | I0 and any authorized deltas reconcile exactly to the approved spec | — |
 | D.1 — pre-review | Claude peer worker | pending | Non-certifying, non-author implementation/spec alignment review | — |

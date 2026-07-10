@@ -1,0 +1,12 @@
+I'll start by reading the required template files, the spec, and checking the review directory structure in parallel.
+I've read the spec and Template 03. Now let me finish reading Template 02, check git state, the review directory structure, and the frozen implementation reference in parallel.
+Let me examine the current state of both target files, the dispatch intent, the prompt, and the prior failed attempt to understand context.
+The destination already holds `pending wrapper F38 promotion` and a prior verdict exists in the sibling file. The prior verdict used a different `id` and referenced non-named commit hashes — I must rewrite it per the literal requirements (`id: audit-rb-B1-glm-peer`, short forms only). Let me verify the spec's load-bearing claims against the frozen commit before writing the fresh verdict.
+The registry confirms 100 rows, 41 `confirmed_open`, 7 partial — matching the spec's §1 evidence baseline. But note the prior review carried incorrect severity/implemented counts (P1=35/P2=64 actual, not 27/63). Let me verify the 91+9 R2 split and a few key cited code ranges so my fresh verdict is grounded.
+The validator splits by `origin` field and enforces exact severity totals for originals. I confirmed the X-M2 defect (`row["id"]` KeyError at validate script:244) and X-M1 defect (`logs_dir.resolve()` follows symlinks at log.py:115). Let me confirm the origin split (91+9) and a couple more cited ranges to ground the verdict precisely.
+All load-bearing spec claims verified: 91 fable_audit (P0=1/P1=27/P2=63) + 9 codex_revalidation R2 findings = 100; the validator's hardcoded severity totals match; X-M1/X-M2 defect citations are accurate. Let me verify the config.py duplication range and cited test anchors, then write both files.
+All spec claims verified against the frozen commit: 91 fable_audit originals (P0=1/P1=27/P2=63) + 9 codex_revalidation R2-* = 100; X-M1/X-M2 defect citations accurate; all 7 cited test files exist at I0; config.py duplication ranges confirmed. The spec is well-designed, complete, and honest — verdict **Approve**.
+
+Now writing the destination guard file first, then the complete verdict to the sibling file.
+Let me verify both files landed correctly — the guard line in the destination and the verdict-shape of the sibling file.
+Created `docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/project-ontos-audit-rebaseline-remediation-B.1-glm-peer.review.md`

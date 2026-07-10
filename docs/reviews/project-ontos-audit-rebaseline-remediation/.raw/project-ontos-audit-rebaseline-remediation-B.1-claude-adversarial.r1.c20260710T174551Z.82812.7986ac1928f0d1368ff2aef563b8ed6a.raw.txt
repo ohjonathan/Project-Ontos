@@ -1,0 +1,13 @@
+Artifact written. Not committing (Adversarial role — orchestrator stages/commits).
+
+## Final report — project-ontos-audit-rebaseline-remediation / B.1 / adversarial / claude
+
+- **Status:** completed
+- **Artifacts written:** `docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-claude-adversarial.md`
+- **Verdict:** Approve — no reproducible blocking or gating defect found
+- **Smoke checks:** registry validator = pass (direct-run: 91 original [P0=1/P1=27/P2=63] + 9 R2, confirmed_open=41, partial=7); 118 spec invariant-matrix regression tests = pass (direct-run)
+- **Cardinality checks:** 91 original + 9 R2 = 100 rows = pass (direct-run); status/scope parity (41 open, 7 partial) = pass (direct-run)
+- **Commit:** none — Adversarial review role does not commit; orchestrator stages on my behalf. Branch `codex/audit-rebaseline-remediation-lifecycle` @ `1973cca`
+- **Notes:** Two minor, non-gating, fail-closed findings — X-M1 (log writer follows a symlinked `logs_dir` parent, spec-honest asymmetry, static-inspection) and X-M2 (registry validator raises uncaught `KeyError: 'id'` on an id-less `origin` row instead of its graceful error list, direct-run repro at `validate-audit-remediation-registry.py:244`). No same-provider halt (author `codex` ≠ my provider `claude`). Context-map double-generation determinism left `not-run` to avoid dirtying the no-touch tracked tree; deferred to D.5. `docs/logs/` untouched; no writes outside the artifact path.
+
+What I found, briefly: the implementation is unusually defensive and the spec is notably non-overclaiming. The serializer is fail-closed by construction (unconditional full-dict reparse-equality guard), the safe writer uses lexical containment plus per-component `O_NOFOLLOW` `dir_fd` anchoring with a `st_dev/st_ino` rebind check, log collisions refuse via `O_EXCL`, version-skew checks fail closed including invalid ranges, and the registry validator carries real hardcoded negative controls (severity totals, R2 ID set, phantom-ID guard, exact status sets) rather than count-and-report. The external proofs (Windows CI, TestPyPI tag-run, live GitHub parity) are correctly spec-declared pending and are not B.1 blockers.

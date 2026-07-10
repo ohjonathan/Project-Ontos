@@ -1,0 +1,231 @@
+---
+id: project-ontos-audit-rebaseline-remediation-B.1-glm-peer
+deliverable_id: project-ontos-audit-rebaseline-remediation
+phase: B.1
+role: peer
+family: glm
+evidence_labels_used: [direct-run, static-inspection]
+status: completed
+---
+
+# Peer Review — project-ontos-audit-rebaseline-remediation / B.1 / glm
+
+Artifact under review: `docs/specs/project-ontos-audit-rebaseline-remediation-spec.md`
+(v1.1) and the frozen implementation reference I0 `b6f89d7` (base `bf91b42`).
+Review mode: code-first — the spec plus the implemented diff are reviewed together
+per the framework's code-first sequencing note; every phase still runs.
+
+File-existence attestation (run before any "missing" claim):
+`git branch --show-current` -> `codex/audit-rebaseline-remediation-lifecycle`;
+`git rev-parse HEAD` -> `469d4c1` (lifecycle worktree, clean for read);
+`git ls-files docs/specs/project-ontos-audit-rebaseline-remediation-spec.md`
+returned the tracked path. All citation checks below were direct-run against
+commit `b6f89d7` via `git show`.
+
+## 1. Completeness check
+
+The spec carries all expected sections (Overview, Scope, Dependencies, Technical
+Design §4.1–4.5, Open Questions, Test Strategy, Migration, Risk, Exclusion,
+Diagrams, Contract/Invariant-to-Evidence Matrix, Helper-Divergence Disclosure,
+Self-Review). No TBD/placeholder remains; all four open questions carry a
+recommendation and a `Resolved` state. CREATE/MODIFY/DELETE intent is explicit
+per area, and Phase C gates (X-M1, X-M2, migration copy, duplicate
+`required_version` copy) are named with current-defect citations.
+
+The user-posed confirmation ask — does the spec distinguish branch-level
+integration evidence from per-issue/release certification — is satisfied and
+consistent across sections: §1 ("this deliverable itself is a branch-level
+lifecycle review, not a release"; "The B.1 approval does not discharge those
+requirements or any lifecycle/release nonclaim below"); §2 out-of-scope
+("treating this umbrella review as #146/#147 per-issue certification");
+§5 ("Does umbrella D.5 certify child issues? No; require each child manifest's
+own strict receipts"); §9 ("Do not claim per-issue strict-P3 certification,
+D.6 approval, merge, tag, publication, or release readiness from this
+deliverable"). The 41 `confirmed_open` / seven partial originals are preserved
+as explicit release-blocking truth, not reinterpreted as fixed.
+
+The external-evidence honesty ask is also satisfied: §3 names Windows and
+TestPyPI/PyPI as external blockers ("local POSIX emulation is not release
+evidence"; "only a tag-run proves service behavior"); §5 keeps TestPyPI proof
+pending until a tagged run downloads exact bytes; §11 matrix marks the
+cross-platform lock backend and exact wheel provenance as "external pending".
+No dependency is converted into a synthetic receipt (§3 closing line; §9).
+
+Direct-run cardinality checks against `b6f89d7` corroborate the spec's
+baseline numbers (see §6): the registry at
+`manifests/project-ontos-audit-remediation-registry.yaml` parses to 100
+findings (91 original + nine `R2-*`), with 41 `confirmed_open` and seven
+`partial_implementation_uncommitted_verification_pending`; the base-to-I0 diff
+touches exactly 188 files. All match §1/§4.1.
+
+## 2. Diagram-prose cross-reference
+
+| Diagram component | In prose? | Prose component | In diagrams? |
+|-------------------|-----------|-----------------|--------------|
+| Audit Registry (A) | yes — §4.1 | §4.1 registry/validator | yes (A) |
+| Validator / Control Plane (V) | yes — §4.1 | §4.1 control plane | yes (V) |
+| O4 Ledger + O5 Leases (L) | yes — §4.1/§2 | §4.1 ledger/lease graph | yes (L) |
+| Canonical Loader + Serializer (S) | yes — §4.2 | §4.2 loader/serializer | yes (S) |
+| Safe Writer + CLI Logging (W) | yes — §4.3 | §4.3 writer/logging | yes (W) |
+| CLI / MCP Contracts (C) | yes — §4.4 | §4.4 CLI/MCP | yes (C) |
+| Activation + Doctor (X) | yes — §4.4 | §4.4 activation/doctor | yes (X) |
+| Cross-platform Locking (K) | yes — §4.4 | §4.4 locking.py | yes (K) |
+| Release Pipeline (P) | yes — §4.5 | §4.5 workflows | yes (P) |
+| Tests + Lifecycle Evidence (T) | yes — §4.5/§6 | §4.5/§6 | yes (T) |
+| Generated Context Map + AGENTS (M) | yes — §4.5 | §4.5 map/agents | yes (M) |
+| EXTERNAL: GitHub (G) | yes — §3/§4.1 | parity external | yes (G, dashed) |
+| EXTERNAL: Windows Runner (R) | yes — §3/§4.5 | platform proof external | yes (R, dashed) |
+| EXTERNAL: TestPyPI/PyPI (Y) | yes — §3/§4.5 | artifact proof external | yes (Y, dashed) |
+
+All components appear in both diagram and prose; the three external nodes are
+correctly dashed and marked `external`. No component exists in only one place.
+One edge-level clarity gap is logged as M-2 (the K→W edge is drawn but the
+prose link from writer to the locking backend is only implicit). The lifecycle
+state machine (§10.2) reproduces the failure/retry paths (D3→D4 on blocking,
+D5→D4 on FAIL/reproducible defect, Loose Falsification as a separate stop
+boundary into D6_Pending with no release claim) consistent with §2 scope; one
+code-first sequencing nit is logged as M-1.
+
+## 3. Quality assessment
+
+The spec is high quality, clear, and implementable without follow-up questions.
+Its defining strength is direct-read precision: nearly every contract is pinned
+to a concrete `file:line` anchor in I0, and I sampled the load-bearing ones
+against `b6f89d7` by direct-run. All checked anchors are honest:
+
+- ID contract — `ontos/core/schema.py:83-97` `validate_document_id` raises
+  `Document id must be a string` / `Document id must not be empty` / the
+  pattern copy, and `:315-343` `serialize_frontmatter(fm) -> str` preserves the
+  public signature and validates `id`.
+- JSON v4 — `ontos/ui/json_output.py:331-344` emits exactly the nine top-level
+  keys (`schema_version`, `command`, `status`, `exit_code`, `message`,
+  `result`, `data`, `warnings`, `error`); exit taxonomy at `:32-37` is
+  0/1/2/3/5/130 (CLEAN/FINDINGS/USAGE/WARNINGS/INTERNAL/INTERRUPTED).
+- Locking — `ontos/core/locking.py:13-81` selects `fcntl`/`msvcrt` via guarded
+  imports (no unconditional Windows-incompatible import); `backend_name()`
+  returns the backend for the CI smoke assertion.
+- MCP read-only — `ontos/mcp/server.py:191-204` omits write tools when
+  read-only; `:1055-1077` consumes an existing immutable portfolio snapshot;
+  `ontos/mcp/tools.py:384-405` `export_graph` refuses persistent export in
+  read-only mode.
+- Safe writer — `ontos/core/context.py:645-770` rejects parent symlinks
+  (`follow_symlinks=False`), non-regular targets, stages unique exclusive
+  files, fsyncs, and replaces through anchored directories.
+- X-M1 defect (real, unfixed at I0) — `ontos/commands/log.py:115`
+  `logs_dir.resolve()` follows symlinked components; `:336-340`
+  `_write_log_exclusively` has no anchored no-follow pin; collision refusal
+  `E_LOG_EXISTS` at `:283-300` is correct.
+- X-M2 defect (real, unfixed at I0) — `scripts/validate-audit-remediation-
+  registry.py:228-230` collects `missing fields` (REQUIRED_FINDING_FIELDS
+  includes `id`), but `:244` `row["id"]` (and `:245,:268,:275,:286/:348/:375`)
+  raises an uncaught `KeyError` before the collected error can drive a clean
+  non-zero exit. The spec's Phase C gate ("never an uncaught `KeyError`") is
+  the correct, accurately-cited fix direction.
+- Release pipeline — `.github/workflows/ci.yml:135-172` runs real
+  `windows-latest` jobs (Python 3.9/3.14) for import, `msvcrt` lock backend,
+  and CLI smoke; `.github/workflows/publish.yml` builds exactly one wheel,
+  records version/hash via `scripts/check_release_artifact.py`, verifies the
+  downloaded wheel, downloads `ontos==<tag>` from TestPyPI with `--no-deps`,
+  compares the manifest, and grants `id-token: write` only to the
+  `publish-testpypi`/`publish-pypi` jobs (read-only `contents: read`
+  elsewhere).
+
+A mid-level engineer can build B.2/D.5 from this artifact without ambiguity.
+The Helper-Divergence Disclosure (§12) is a notably good clarity device: it
+distinguishes "extend internals / preserve public signature" from "diverge
+with registry substrate" and explicitly declines to claim full registrar
+removal is done — an honest partial-state nonclaim.
+
+## 4. UX review
+
+User-facing implications are intentional and documented: semantic YAML round
+trips; non-string/invalid IDs fail loudly; log collisions fail with
+`E_LOG_EXISTS`; unsafe buffered paths fail; MCP type counts become exhaustive;
+read-only MCP performs no writes; activation reports version incompatibility
+with exact public codes (`E_ACTIVATION_UNUSABLE`, `data.status: not_usable`);
+CLI JSON/exit semantics use the documented schema; exit codes use the public
+taxonomy. Migration copy (§7) is a declared Phase C gate (`Migration_v3_to_v4`
++ `Ontos_Manual`) with an explicit drift-blocks-D.1 hook, so the user-visible
+contract changes land with reference docs. No error-message quality issues
+found; the duplicate invalid-clause copy gate (§4.4) is a genuine
+diagnostic-quality improvement (one actionable message per malformed clause).
+
+## 5. Issues found
+
+### Blocking (Critical)
+| ID | Description | Location | Evidence | Reproduction | Suggested action |
+|----|-------------|----------|----------|--------------|------------------|
+| — | No blocking Peer findings. | — | — | — | — |
+
+### Should-fix (Major)
+| ID | Description | Location | Evidence | Reproduction | Suggested action |
+|----|-------------|----------|----------|--------------|------------------|
+| S-1 | Doctor version-probe anchor is inconsistent and under-reaches. §4.4 cites `ontos/commands/doctor.py:593-675`; §11 matrix cites `:593-685` for the same anchor. The actual "Check 7: execute the PATH CLI" function runs to ~`:692` (the `version_satisfies_requirement(path_version, ="running")` skew return at ~`:687-692`), so `593-675` cuts off mid-function before the package-vs-CLI skew branch. | `docs/specs/...-spec.md` §4.4 vs §11; ref `ontos/commands/doctor.py` at `b6f89d7` | direct-run | `git show b6f89d7:ontos/commands/doctor.py \| sed -n '593,695p'` — see docstring at :594, probe at :659-667, skew check/return at :687-692 | Reconcile to one accurate range covering :593-692 in both §4.4 and §11. |
+| S-2 | The X-M2 Phase C gate (missing `id` must yield the collected `missing fields` error + non-zero exit, never an uncaught `KeyError`) is not explicitly named in the test strategy. §6 "B.1 regressions for ... malformed registry rows" subsumes it only vaguely, unlike the explicit X-M1 symlinked-`logs_dir` regression alongside it. | `docs/specs/...-spec.md` §6 vs §4.1; ref `scripts/validate-audit-remediation-registry.py:228-244` at `b6f89d7` | direct-run | `git show b6f89d7:scripts/validate-audit-remediation-registry.py \| sed -n '219,246p'` — `missing` collected at :228-230, `row["id"]` KeyError at :244 | Add an explicit §6 regression bullet: "missing-`id` registry row yields the collected `missing fields` error and non-zero exit with no `KeyError` traceback." |
+
+### Minor
+| ID | Description | Location | Evidence | Reproduction | Suggested action |
+|----|-------------|----------|----------|--------------|------------------|
+| M-1 | §10.2 lifecycle state machine diagrams a spec-first sequence (`Phase_A_Spec → ... → D1_Implementation_Snapshot → D2`) without annotating the code-first entry. For this code-first deliverable I0 is frozen before Phase A and feeds both Phase A and B.1, and D.1 is the snapshot-of-existing-code point. A one-line annotation would prevent a Phase C author from misreading the temporal order. | `docs/specs/...-spec.md` §10.2 | static-inspection | n/a (diagram/prose) | Add a code-first entry annotation on `I0_Frozen` (e.g. "code-first: snapshot precedes Phase A; every phase still runs"). |
+| M-2 | §10.1 architecture diagram draws edge `K (Cross-platform Locking) → W (Safe Writer + CLI Logging)`, but §4.3 prose does not explicitly state the safe writer consumes the `ontos/core/locking.py` backend; the link is only implicit via "serializes cooperative writers" (§1). | `docs/specs/...-spec.md` §10.1 / §4.3 | static-inspection | n/a (diagram/prose) | Either state in §4.3 that the writer uses the shared cross-platform lock backend, or drop the K→W edge. |
+
+### Reachability gaps
+None. Every new validation rule the spec introduces (registry cardinality,
+severity parity, phantom-ID refusal, lease collision, missing-field
+collection, one-wheel promotion, OIDC-only publish permissions, exhaustive
+lifecycle type counts, read-only MCP no-write) has a citable triggering case in
+§6 or §11 and is reachable end-to-end via the validator / CI / pytest paths at
+I0. The X-M2 cited rule is currently reachable only as an uncaught `KeyError`
+(S-2), which the spec correctly flags as the defect to close rather than as
+dead code.
+
+## 6. Positive observations
+
+- Direct-read discipline is exemplary and, on the sample I verified, honest:
+  registry cardinality (100 = 91 original + nine `R2-*`; 41 `confirmed_open`;
+  seven partial) and the 188-file I0 footprint match `b6f89d7` exactly by
+  direct-run.
+- The two carried-forward Claude adversarial findings (X-M1 symlinked
+  `logs_dir`, X-M2 missing-`id` `KeyError`) are accurately described as
+  current, unfixed defects at the exact cited lines and converted into
+  Phase C gates rather than claimed fixed — exactly the code-first honesty the
+  B.1 note promises.
+- Branch-level integration evidence vs per-issue/release certification is
+  separated cleanly and consistently in four sections; the 41-open/7-partial
+  truth is preserved as release-blocking.
+- External Windows and TestPyPI/PyPI evidence is honestly marked pending
+  pending a real Windows runner and a tagged TestPyPI run; no synthetic
+  receipts. The publish graph's `--no-deps`/single-wheel/OIDC-only-publisher
+  chain is real at I0 and matches §4.5.
+- Helper-Divergence Disclosure (§12) explicitly declines to overclaim (e.g.
+  "full registrar removal remains partial and is not claimed"), calibrating
+  credibility.
+
+## Verdict
+
+Approve
+
+The spec is complete, clear, well-designed, implementable, and diagram/prose
+consistent (two minor gaps). Test strategy is thorough and honestly labeled.
+The user-posed confirmations pass by direct-run: the spec distinguishes
+branch-level integration evidence from per-issue/release certification, and
+external Windows/TestPyPI evidence is honest (pending, not synthesized). No
+blocking Peer findings; the two Should-fix items (S-1 doctor anchor
+reconciliation, S-2 explicit X-M2 regression naming) are citation/test-precision
+improvements that do not block B.1 advance and fold naturally into the Phase C
+gates the spec already declares.
+
+## 8. Notes
+
+- Reviewer family: glm, routed via the Neuralwatt/OpenCode attested route with
+  direct-run capability (`direct-run` permitted for factual claims;
+  diagram/prose reasoning labelled `static-inspection`). No
+  `provider_limited_fallback` fields are set; this is a strict (non-fallback)
+  artifact.
+- Only short commit forms `bf91b42` (base) and `b6f89d7` (I0) are used by
+  design; no full hashes, credentials, or token-bearing URLs are emitted.
+- Per Template 03 (workers write, orchestrator commits): no `git commit` was
+  run; only this sibling review file was written and no other file was edited.
+- Evidence labels used: `direct-run` (git show / python parse / grep against
+  `b6f89d7` for all file:line anchors and cardinality), `static-inspection`
+  (§10.1/§10.2 diagram-prose reasoning only).

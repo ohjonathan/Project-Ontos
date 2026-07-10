@@ -1,0 +1,23 @@
+---
+id: project-ontos-audit-rebaseline-remediation-B.1-gemini-alignment
+deliverable_id: project-ontos-audit-rebaseline-remediation
+phase: B.1
+role: alignment
+family: gemini
+evidence_labels_used: [static-inspection]
+status: completed
+---
+# Gemini Alignment Assessment - Phase B.1
+
+1. **Alignment**: The evidence provided in the static packet matches the Codex-authored Phase A specification, specifically binding base `bf91b42` to frozen I0 `b6f89d7`.
+2. **Status/Cardinality Claims**: The cardinality is verified at 91 original plus nine R2 findings, preserving 41 open and seven partial rows. The context-map count is correctly derived from a clean tracked snapshot.
+3. **Implementation/Test-Anchor Specificity**: Validation verifies repository-version activation, doctor checks, cross-platform locks, and schema-v4 CLI contracts. No code execution was performed.
+4. **Public-Compatibility Disclosure**: The registry parity, one-wheel publishing provenance, and semantic YAML contracts are fully disclosed.
+5. **External Blockers**: Windows and TestPyPI execution environments are properly marked as external pending evidence.
+6. **Nonclaims**: Historical lease proof, per-issue certification, D.6, release, and edits to the two preserved user documents are explicitly and correctly disclaimed.
+
+## Verdict
+Approve
+
+## Notes
+All alignment criteria for project-ontos-audit-rebaseline-remediation phase B.1 have been successfully satisfied via static inspection. The structural, cardinality, and compatibility specs align with the Phase A requirements.

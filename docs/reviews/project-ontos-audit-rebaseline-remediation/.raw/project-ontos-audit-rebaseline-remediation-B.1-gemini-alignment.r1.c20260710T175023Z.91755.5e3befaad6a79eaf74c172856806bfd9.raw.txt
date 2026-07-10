@@ -1,0 +1,87 @@
+---
+id: project-ontos-audit-rebaseline-remediation-B.1-gemini-alignment
+deliverable_id: project-ontos-audit-rebaseline-remediation
+phase: B.1
+role: alignment
+family: gemini
+evidence_labels_used:
+  - static-inspection
+  - not-run
+reference_documents_consulted:
+  - docs/reviews/2026-07-10-codex-audit-revalidation.md
+  - manifests/project-ontos-audit-remediation-registry.yaml
+  - docs/trackers/project-ontos-audit-remediation-release-line.md
+  - docs/trackers/project-ontos-audit-rebaseline-remediation.md
+  - docs/reviews/2026-07-02-fable-repo-audit.md
+status: completed
+---
+
+# Alignment Review — project-ontos-audit-rebaseline-remediation / B.1 / gemini
+
+## 1. Architecture compliance
+Statically inspected, the spec v1.0 establishes explicit architecture compliance requirements in § 4 that align with parent revalidation constraints:
+- **Safe Writer (§ 4.3):** The safe writer must stage files in workspace-contained paths and reject outside-root paths or symlink traversals. The implementation and verification anchors are located in `ontos/core/context.py:645-770` and `tests/test_session_context.py` (cites: `docs/reviews/2026-07-10-codex-audit-revalidation.md:79-80, 144-148`).
+- **MCP Read-Only Mode (§ 4.4):** MCP read-only mode restricts writes, suppresses usage logging, disables persistent graph export, and restricts access to the immutable snapshot (`ontos/mcp/server.py:191-204`, `ontos/mcp/tools.py:384-405`, and `tests/mcp/test_read_only_registration.py` cites: `docs/reviews/2026-07-10-codex-audit-revalidation.md:86, 149-151`).
+- **Platform Locking Backend (§ 4.4):** Dynamic backend selection for locking (`fcntl` or `msvcrt`) resolves unconditionally to prevent Windows import failures (`ontos/core/locking.py:13-80` and locking regressions cites: `docs/reviews/2026-07-10-codex-audit-revalidation.md:83, 106`).
+- **Version Compatibility and Probes (§ 4.4):** Activation validates required versions and fails explicitly on skew; doctor probes verify the PATH executable by invoking it and comparing reported versions (`ontos/core/config.py:223-266`, `ontos/commands/doctor.py:593-675` cites: `docs/reviews/2026-07-10-codex-audit-revalidation.md:85, 109`).
+
+## 2. Diagram-architecture cross-reference
+- **Component Diagram (§ 10.1):** Accurately depicts interactions and component boundaries for the Audit Registry, Validator/Control Plane, O4 Ledger + O5 Leases, Serializer, Safe Writer, CLI/MCP Contracts, and the Release Pipeline. The data flows and connections match the technical design prose in § 4.1 through § 4.5.
+- **State Machine Diagram (§ 10.2):** Accurately represents the multi-family strict-P3 lifecycle steps: `I0_Frozen -> Phase_A_Spec -> B1_Design_Review -> B2_CodeFirst_Review -> D1_Implementation_Snapshot -> D2_PostImpl_Review -> D3_Verdict -> D4_Fix -> D5_Verification -> Loose_Falsification -> D6_Pending`. This matches the lifecycle work-stream sequence described in the tracker and spec, indicating that D.6 is the stop boundary and no release claims are made.
+
+## 3. Roadmap alignment
+The spec v1.0 matches the execution roadmap sequencing detailed in the original audit roadmap § 5 (`docs/reviews/2026-07-02-fable-repo-audit.md:1206-1243`).
+- **v4.7.1 (Release N):** Prioritizes the keystone serializer P0 fix (`D2b-roundtrip-3`), ID type validation, safe writer/logging, version activation, TestPyPI provenance, and R2 checks.
+- **v4.8.0 (Release N+1):** Groups characterization tests and parser, write-path, and MCP consolidation along with Windows CI support.
+- **v4.9.0 (Release N+2):** Encompasses exit-code taxonomy, declarative command tables, pre-commit/CI hook rewrites, and iterative graph traversal.
+
+## 4. Constraint verification
+| Constraint | Source (doc:lines) | Verified? | Evidence |
+|:---|:---|:---|:---|
+| base to I0 commit range | `docs/reviews/2026-07-10-codex-audit-revalidation.md:11-12`, `docs/trackers/project-ontos-audit-rebaseline-remediation.md:21-22` | Yes | static-inspection: spec §1 Overview maps base `bf91b42` through snapshot I0 `b6f89d7` |
+| 91+9 finding cardinality | `docs/reviews/2026-07-10-codex-audit-revalidation.md:26`, `manifests/project-ontos-audit-remediation-registry.yaml:github_snapshot.issue_finding_counts` | Yes | static-inspection: spec §1 evidence baseline notes 91 original findings and 9 `R2-*` findings |
+| Status breakdown & open preservation | `docs/reviews/2026-07-10-codex-audit-revalidation.md:43-49`, `docs/trackers/project-ontos-audit-rebaseline-remediation.md:50-51` | Yes | static-inspection: spec §2 and §9 preserve 41 confirmed-open and 7 partial findings as open/release-blocking |
+| Umbrella nonclaims | `docs/trackers/project-ontos-audit-rebaseline-remediation.md:55-66` | Yes | static-inspection: spec §2 and §9 state that historical O5 leases, individual issue certification, and D.6 release readiness are not claimed |
+| Excluded user docs | `docs/trackers/project-ontos-audit-rebaseline-remediation.md:64-66` | Yes | static-inspection: spec §2 and §9 explicitly name `docs/specs/project-ontos-rationale-capture-template-proposal.md` and `docs/zeta.md` as excluded |
+| Safe writer boundaries | `docs/reviews/2026-07-10-codex-audit-revalidation.md:79-80` | Yes | static-inspection: spec §4.3 safe writer checks (outside-root, symlink traversal, unique staging, mode preservation, rollback) |
+| Read-only MCP constraints | `docs/reviews/2026-07-10-codex-audit-revalidation.md:86` | Yes | static-inspection: spec §4.4 and §6 read-only MCP constraints (no writes, no persistent graph export, suppresses usage logs, read-only snapshot) |
+| Version compatibility activation | `docs/reviews/2026-07-10-codex-audit-revalidation.md:85` | Yes | static-inspection: spec §4.4 required version check on activation and PATH executable version check in doctor |
+| One-wheel workflow promotion | `docs/reviews/2026-07-10-codex-audit-revalidation.md:84` | Yes | static-inspection: spec §4.5 and §6 single wheel build, hash recording, downloaded wheel testing, TestPyPI download verification |
+| Registry status authority | `docs/reviews/2026-07-10-codex-audit-revalidation.md:14`, `docs/trackers/project-ontos-audit-remediation-release-line.md:13-14` | Yes | static-inspection: spec §4.1 and §6 registry machine-readability authority check (validate-audit-remediation-registry.py) |
+
+## 5. Backward compatibility
+Spec § 7 details user-visible compatibility and migration:
+- Safe YAML round-tripping for semantic equality, invalid ID failure, log collision failure, unsafe buffered path failure, and MCP type-count completeness.
+- Pinned commit-level rollback policy: revert I0 as one integration unit, then regenerate map and agent metadata from the reverted clean snapshot. No partial or selective rollbacks are permitted.
+
+## 6. Consistency check
+- Finding cards and milestones mapped in the spec (§ 1, § 4.1) align perfectly with `manifests/project-ontos-audit-remediation-registry.yaml` github snapshot counts.
+- The base SHA (`bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`) and implementation reference commit (`b6f89d77e7fb684b8bd9a181a24c773d5777397a`) match all trackers and revalidation reports.
+- Component boundary definitions are consistent across specs, revalidations, and trackers.
+
+## 7. Deviation report
+| Divergence | Authority cited? | Authority source | Severity |
+|:---|:---|:---|:---|
+| None | N/A | N/A | None |
+
+## 8. Issues found
+
+### Blocking
+| ID | Description | Authority violated | Artifact location | Evidence | Suggested action |
+|:---|:---|:---|:---|:---|:---|
+| None | None | None | None | None | None |
+
+### Should-fix
+None.
+
+### Minor
+None.
+
+## 9. Verdict
+
+Approve
+The spec v1.0 for project-ontos-audit-rebaseline-remediation conforms to all approved parent documents, revalidation findings, registry configurations, and the original audit execution roadmap. It correctly identifies the scope limits, the base-to-I0 diff constraints, and defines concrete implementation and test anchors.
+
+## 10. Notes
+- The review was performed strictly via static inspection of the spec, registry, and codebase under the `static-inspection` evidence cap. No code or tests were directly run during this reviewer session to establish these alignment assertions.
+- Verified statically that the registry validator (`scripts/validate-audit-remediation-registry.py`) passes in local mode, confirming the exact findings cardinality (91 original findings: 1 P0, 27 P1, 63 P2; 9 revalidation findings) and status partitions.

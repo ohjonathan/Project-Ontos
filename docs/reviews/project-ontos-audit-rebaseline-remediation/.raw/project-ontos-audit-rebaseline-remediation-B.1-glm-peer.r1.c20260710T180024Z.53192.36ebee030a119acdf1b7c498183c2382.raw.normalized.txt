@@ -1,0 +1,104 @@
+I'll start by reading the three template files and the spec, then examine the frozen implementation reference. Let me batch these reads.
+I've read all three templates and the spec. Now I need to verify the spec's direct-read claims against the frozen implementation reference. Let me check git state and locate the cited files in parallel.
+I've confirmed the git topology: the working tree is at `dfd9143` (several lifecycle/spec commits past the frozen I0 `b6f89d7`). The spec claims its direct-read citations come from I0. Since I have direct-run capability, I'll verify those citations at the frozen commit. Let me check the load-bearing implementation anchors and test files at `b6f89d7`.
+All cited paths exist at the frozen commit. Now let me verify the implementation files are stable between I0 and HEAD (to know if the working tree matches the frozen snapshot for these paths), and read the specific cited line ranges to confirm the spec's direct-read claims.
+The cited implementation and test files are byte-identical between the frozen I0 and HEAD — so reading the working tree faithfully verifies the spec's I0 direct-read claims. Let me read the load-bearing cited line ranges in parallel.
+The first batch of direct-read claims all check out. Let me verify the remaining load-bearing citations: locking, MCP read-only, doctor, the registry validator, and the CI/publish workflows, plus the registry row cardinality claim.
+Citations continue to verify accurately. Let me run the registry validator directly (a strong direct-run cardinality check) and verify the CI/publish workflow citations plus the registry's row/status claims.
+The validator runs clean (PASS) and confirms the spec's exact quantitative claims: 91 originals (P0=1, P1=27, P2=63), 9 R2 revalidations, 41 confirmed_open, 7 partial_uncommitted — matching spec §1 verbatim. Windows CI job confirms real Windows runners. Let me verify the TestPyPI exact-download + OIDC scoping citations in publish.yml and the doctor PATH-probe range.
+All TestPyPI + doctor citations verify. Let me confirm the OIDC-scoping claim ("OIDC only to publisher jobs") precisely by grepping permission grants across publish.yml, and double-check no other jobs hold write tokens.
+All publish.yml OIDC grants confirmed: only `publish-testpypi` (L165) and `publish-pypi` (L318) hold `id-token: write` — matching "OIDC only to publisher jobs." Every direct-read citation I sampled resolves accurately against frozen I0. Let me make a final targeted check: the §11 evidence-matrix rows are otherwise path-anchored, but the "Cross-platform lock backend" row cites no concrete test file. Let me see whether a locking regression test exists.
+Verification complete. Every direct-read citation I sampled resolves accurately against frozen I0 `b6f89d7`; the "188 files" claim and the 91/9/41/7 registry counts are exact (validator PASSES); Windows CI, TestPyPI exact-download, and OIDC-only-to-publisher grants all confirmed. The implementation files are byte-identical between I0 and HEAD. One defensible should-fix (§11 lock-backend matrix row omits a concrete test anchor that demonstrably exists) plus minor clarity nits; nothing blocks B.1→B.2. Emitting the verdict to stdout only (no file writes) per the route contract.
+```markdown
+---
+id: project-ontos-audit-rebaseline-remediation-B.1-glm-peer
+deliverable_id: project-ontos-audit-rebaseline-remediation
+phase: B.1
+role: peer
+family: glm
+evidence_labels_used: [direct-run, static-inspection]
+status: completed
+---
+
+# Peer Review — project-ontos-audit-rebaseline-remediation / B.1 / glm
+
+## 1. Completeness check
+
+The spec carries all Template-12 load-bearing sections (Overview, Scope, Dependencies, Technical Design, Open Questions, Test Strategy, Migration/Compatibility, Risk, Exclusion List, Diagrams, Invariant-to-Evidence Matrix, Helper-Divergence Disclosure, Self-Review) and no TBD/placeholder survives — §A.5's "no TBD remains" claim holds on `static-inspection` of the full file. All four Open Questions carry recommendations and `Resolved` states (spec §5).
+
+Direct-read anchoring is the strong dimension. I verified the spec's claimed citations against frozen snapshot I0 `b6f89d7` — the cited implementation and test files are byte-identical between I0 and current HEAD (`git diff --quiet b6f89d7 dfd9143` clean for every cited impl/test path), so reading the tree faithfully verifies the I0 claims. Every sampled anchor resolves: `ontos/core/schema.py:315-343` (`serialize_frontmatter(fm)->str`, stable signature, `assert_frontmatter_roundtrip`, field order); `ontos/core/context.py:645-770` (no-follow symlink/non-regular rejection, `O_EXCL|O_NOFOLLOW`, UTF-8, `fchmod` mode-preservation, `fsync`, `os.replace`); `ontos/commands/log.py:283-300` (`E_LOG_EXISTS`, return 1, no overwrite); `ontos/command_registry.py:15-84` (`ResultKind`/`CommandSpec`/duplicate guard); `ontos/core/config.py:223-266` (`version_satisfies_requirement`/`required_version_incompatibility`); `ontos/commands/doctor.py:593-675` (`check_cli_availability` executes the PATH program + compares version); `ontos/core/locking.py:13-80` (guarded `fcntl`/`msvcrt` selection, no unconditional POSIX import); `ontos/mcp/server.py:191-204,1055-1077` (read-only omits write tools, portfolio snapshot-only); `ontos/mcp/tools.py:384-405` (`export_graph` refuses persistent export with `E_READ_ONLY`); `scripts/validate-audit-remediation-registry.py:18-50,209-266` (required fields, R2 cardinality, severity parity, phantom-ID rejection, issue-range 146–158, status/lifecycle-state independence).
+
+The quantitative claims are exact, confirmed by running the validator (`python3 scripts/validate-audit-remediation-registry.py`, `direct-run`): `original findings: 91 (P0=1, P1=27, P2=63)`, `revalidation findings: 9`, `confirmed_open=41`, `partial_uncommitted=7` — matching spec §1 verbatim. The "I0 changes 188 files" claim is also exact (`git diff --name-only bf91b42 b6f89d7 | wc -l` = 188, `direct-run`). The §11 matrix test anchors all resolve at I0 (`tests/test_frontmatter_roundtrip_regression.py`, `tests/test_document_loading_contract_a1.py`, `tests/test_session_context.py`, `tests/commands/test_log.py`, `tests/mcp/test_read_only_registration.py`).
+
+Branch-level-vs-per-issue/release separation is complete and consistent (see §3); external Windows/TestPyPI evidence is honestly framed (see §5 S-1, §3). The one completeness gap is the §11 lock-backend matrix row's missing test anchor (§5 S-1) — the test demonstrably exists, so the matrix undersells coverage rather than a true gap in the test base.
+
+## 2. Diagram-prose cross-reference
+
+§10.1 architecture diagram → §4 prose; §10.2 state machine → §2/§6 lifecycle scope.
+
+| Diagram component | In prose? | Prose component | In diagrams? |
+|---|---|---|---|
+| Audit Registry | §4.1, §1 | §4.1 registry/validator | ✓ |
+| Validator / Control Plane | §4.1 | §4.1 validator | ✓ |
+| O4 Ledger + O5 Leases | §2, §3 (but undefined — M-1) | §2 "O4 ledger, O5 lease graph" | ✓ |
+| Canonical Loader + Serializer | §4.2 | §4.2 | ✓ |
+| Safe Writer + CLI Logging | §4.3 | §4.3 | ✓ |
+| CLI / MCP Contracts | §4.4 | §4.4 | ✓ |
+| Activation + Doctor | §4.4 | §4.4 | ✓ |
+| Cross-platform Locking | §4.4 | §4.4 | ✓ |
+| Release Pipeline | §4.5 | §4.5 | ✓ |
+| Tests + Lifecycle Evidence | §6 | §6 | ✓ |
+| Generated Context Map + AGENTS | §4.5 | §4.5 | ✓ |
+| EXTERNAL: GitHub | §3 (external blocker) | §3 GitHub parity | ✓ |
+| EXTERNAL: Windows Runner | §3 | §3 Windows | ✓ |
+| EXTERNAL: TestPyPI / PyPI | §3, §4.5 | §3 TestPyPI/PyPI | ✓ |
+
+State-machine transitions (§10.2) align with §2's mandatory code-first B.2 and D.5 + loose-falsification charter: `B1→B2→D1→D2→D3→(D4↔D2 / D5→Loose_Falsification→D6_Pending)`, and `D6_Pending→[*]: stop boundary; no release claim` honestly mirrors §2's D.6 exclusion. No diagram/prose mismatch reached blocking severity.
+
+## 3. Quality assessment
+
+The spec is high-quality, dense, and unusually well-grounded. Its direct-read discipline is exemplary for a Phase-A artifact: assertions are anchored to concrete file:line ranges at a frozen I0, and on direct verification every one I sampled is accurate — including the load-bearing cardinalities the validator mechanically enforces. This is the pattern that prevents the "writing from memory" defects the worker contract (Template 01 Direct-read preflight) calls out, and the spec's §A.5 self-review honestly tags which lines were `direct-run` vs `static-inspection`. A mid-level engineer can implement each §4 subsection from the cited anchors without follow-up questions; the §11 invariant-to-evidence matrix and §12 helper-divergence disclosure make the contract surface and the extend-vs-diverge decisions explicit, which materially de-risks B.2/D.2.
+
+Clarity is strong overall. The concurrency envelope ("single-operator-crash-safe") is scoped honestly — §1 and §4.3 explicitly retain durable crash recovery as one of the seven partial areas rather than overclaiming a distributed transaction, and that retention is mechanically consistent with the registry's `partial_uncommitted=7`. The integrity-vs-release boundary stays clean across §1 ("branch-level lifecycle review, not a release"), §2 (per-issue and D.6 excluded), §4.1 ("does not retroactively prove earlier issue leases"), §5 (umbrella does not certify child issues), §8 (Scope-overclaim risk), and §9 (no synthesized GitHub/Windows/TestPyPI). This directly satisfies the requested confirmation: branch-level integration evidence is sharply distinguished from per-issue/release certification, and external Windows/TestPyPI evidence is treated as pending, never synthesized into a receipt.
+
+Implementability is sound. Migration/rollback (§7) is commit-level and warns against selective rollbacks of interdependent pieces. Error ergonomics are concrete (`E_LOG_EXISTS`, `E_READ_ONLY`, `E_COMMAND_FAILED` named). Remaining items are refinements, not blockers: the O4/O5 lead terms are used as load-bearing nouns without an in-spec definition (M-1); the lifecycle diagram silently elides B.3/D.3 consolidation without stating `consolidation_mode` (M-2); and one matrix row under-anchors its test evidence despite the test existing (S-1). None impede B.1→B.2 advance.
+
+## 4. UX review
+
+The deliverable is internal-facing, but it intentionally changes public CLI/MCP contracts. §7 enumerates the user-visible changes (semantic YAML round trips, string-only IDs, log-collision failures, exhaustive MCP type counts, read-only MCP no-writes, activation version reporting, documented JSON/exit semantics) and states existing valid call signatures remain compatible where declared — appropriate for an operator reading the release notes. Error-message quality is good: failure modes surface user-visible codes with actionable data (e.g., `E_LOG_EXISTS` carries the path; doctor returns a retry hint to `python -m ontos`). The compatibility/rollback guidance in §7 is operator-actionable. No UX-blocking issue.
+
+## 5. Issues found
+
+### Blocking (Critical)
+None. No direct-run-verified defect blocks implementability, diagram/prose consistency, or the B.1→B.2 transition.
+
+### Should-fix (Major)
+| ID | Description | Location | Evidence | Reproduction | Suggested action |
+|----|-------------|----------|----------|--------------|------------------|
+| S-1 | §11 "Cross-platform lock backend" row omits a concrete test anchor and understates local evidence. Every other matrix row names a specific `tests/...` path; this row cites only "Windows CI + locking regressions." A runnable local locking test exists but is not named, and the row's evidence label "local static-inspection; external pending" is internally inconsistent with §6, which lists runnable "Linux/Windows lock smoke" — the POSIX half is `direct-run`, not static-inspection. | spec §11 (matrix, lock row) vs §6; impl/tests at `b6f89d7` | `direct-run` | `git ls-tree -r --name-only b6f89d7 -- tests \| grep lock` → `tests/mcp/test_locking.py` (also `tests/test_context_contention.py`); compare to §11 lock row's empty test-anchor cell | Name `tests/mcp/test_locking.py` (and `tests/test_context_contenton.py`) in the test/verification anchor column; relabel the local half of the lock evidence to `direct-run` to match §6, keeping Windows CI as the external-pending half. |
+
+### Minor
+| ID | Description | Location | Evidence | Reproduction | Suggested action |
+|----|-------------|----------|----------|--------------|------------------|
+| M-1 | "O4 ledger" and "O5 lease graph" are used as load-bearing nouns in §2 and as diagram nodes in §10.1, but no §4 subsection or glossary defines them; a reader six months out must consult dependency docs. | spec §2, §10.1 | `static-inspection` | — | Add a one-line definition each (or a short glossary entry) where first introduced in §2/§3. |
+| M-2 | The §10.2 state machine jumps D2→`D3_Verdict` and B1→B2→D1 without showing B.3/D.3 consolidation, and the spec does not declare `consolidation_mode`. Per Template 02, B.3/D.3 absence is only permitted under fast-path consolidation, so the consolidation posture is left implicit for a downstream reviewer/engineer. | spec §10.2 vs §2 | `static-inspection` | — | State the consolidation mode (e.g. fast-path) in §2 or note the diagram is illustrative, so the B.3/D.3 expectation is unambiguous. |
+| M-3 | §4.2 "IDs are strings matching the documented ID pattern" cites `ontos/io/files.py:388-414`, but that range is `load_document_from_content`, which only imports `validate_document_id` at L411; the pattern/validator live in schema.py (also cited). The files.py anchor is secondary, not the pattern source. | spec §4.2; `ontos/io/files.py:388-414` at `b6f89d7` | `direct-run` | `git show b6f89d7:ontos/io/files.py` lines 388-414 | Drop the files.py anchor or relabel it as the call-site, keeping schema.py as the pattern authority. |
+
+## 6. Positive observations
+
+- Direct-read discipline is exemplary: every sampled file:line citation resolves accurately at frozen I0, and the load-bearing cardinalities (188 changed files; 91 originals P0=1/P1=27/P2=63; 9 R2; 41 `confirmed_open`; 7 partial) are exact under `direct-run` (validator PASSES).
+- Evidence honesty is strong and consistent with the framework's anti-synthesis rule: Windows and TestPyPI are external blockers/pending across §3/§5/§9/§11, "No dependency may be converted into a synthetic receipt," and the concurrency envelope honestly retains durable crash recovery as partial rather than overclaiming.
+- Branch-level integration evidence is cleanly and repeatedly separated from per-issue/release certification (§1/§2/§4.1/§5/§8/§9) and the `D6_Pending→[*]: no release claim` terminal honestly caps the lifecycle.
+- Code-first sequencing is reflected truthfully: the implementation at `b6f89d7` predates the spec authoring commit, and the §10.2 machine encodes mandatory B.2 code-first review + independent D.5 verification + a separate loose-falsification charter.
+- The §11 invariant-to-evidence matrix and §12 helper-divergence disclosure are high-quality, implementable artifacts that pin each contract to an implementation anchor, a test anchor, and an evidence label.
+
+## Verdict
+Approve
+
+The spec is well-designed, complete, clear, implementable, and testable; direct-read claims verify against frozen I0 and both requested confirmations hold (branch-level integration evidence is sharply separated from per-issue/release certification; external Windows/TestPyPI evidence is honestly framed as pending, never synthesized). Findings are one should-fix (S-1, a §11 matrix under-anchoring plus a §6↔§11 label inconsistency, with the missing test demonstrably present) and three minor clarity/precision nits — none block B.1→B.2. The should-fix is a trivial spec edit that can accompany the B.2 round rather than gate it.
+
+## 8. Notes
+
+- Route: GLM 5.2 Peer on the Neuralwatt/OpenCode attested (`attested-third-party`) route with `direct-run` capability; non-author family relative to the codex-authored spec, so no self-review caveat applies. No fallback fields set — attested-third-party is strict-P3 eligible, so per Template 03 the strict-default (omit `provider_limited_fallback`/`canonical_p3_evidence`) is used.
+- Evidence budget: direct-run used for git topology, the registry validator run, file:line verification at I0, and the 188-file diff count; `static-inspection` for spec-body/table/diagram analysis only. No `orchestrator-preflight` or `not-run` claims made.
+- Commit identities cited by short form only: `bf91b42` (base) and `b6f89d7` (frozen I0). No file was created or modified; verdict emitted to stdout only for wrapper promotion.

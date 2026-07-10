@@ -1,0 +1,1271 @@
+[0m
+> build · glm-5.2
+[0m
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead .<redacted:secret>[90m [offset=878][0m
+[0m
+[0m$ [0mgit log --oneline -5 b6f89d77e7fb684b8bd9a181a24c773d5777397a 2>/dev/null || echo "COMMIT_NOT_FOUND"
+b6f89d7 Implement audit rebaseline remediation
+bf91b42 fix(logs): add required `concepts` to the two logs that broke main
+6d7934f chore(ontos): archive session logs and regenerate context artifacts
+e259ee7 Merge pull request #160 from <redacted:secret>
+3ccc75a fix(ontos): treat docs/handoffs/** as intentional root artifacts
+[0m
+[0m$ [0mgit show --stat b6f89d77e7fb684b8bd9a181a24c773d5777397a 2>/dev/null | head -60 || echo "COMMIT_NOT_FOUND"
+commit b6f89d77e7fb684b8bd9a181a24c773d5777397a
+Author: Jonathan Oh <38262248+ohjonathan@users.noreply.github.com>
+Date:   Fri Jul 10 10:22:22 2026 -0700
+
+    Implement audit rebaseline remediation
+
+ .github/workflows/ci.yml                           |   95 +-
+ .github/workflows/publish.yml                      |  282 +++++-
+ .ontos-internal/logs/2026-07-02_init.md            |   21 -
+ .<redacted:secret>            |   21 -
+ .<redacted:secret>            |   21 -
+ .ontos.toml                                        |    2 +-
+ .ontos/hooks/pre-commit                            |   14 +-
+ .ontos/hooks/pre-push                              |   14 +-
+ .ontos/scripts/tests/test_context.py               |   14 +-
+ .ontos/scripts/tests/test_schema.py                |   21 +-
+ .pre-commit-config.yaml                            |   19 +-
+ AGENTS.md                                          |   29 +-
+ Ontos_Context_Map.md                               |   52 +-
+ ..._merge-pr-118-v4-5-closes-issues-115-116-117.md |    2 +-
+ .../<redacted:secret>     |   58 ++
+ docs/reference/Migration_v3_to_v4.md               |    2 +-
+ docs/reference/Ontos_Manual.md                     |   11 +-
+ .../retros/project-ontos-audit-doctor-rce-retro.md |   82 +-
+ <redacted:secret>        |    8 +-
+ .../<redacted:secret> |  262 +++++
+ .../.<redacted:secret>      |   61 ++
+ .../.prompts/B.1-gpt-alignment.prompt.md           |   55 +
+ .../.<redacted:secret>      |   55 +
+ .../.prompts/D.2-gpt-alignment.prompt.md           |   55 +
+ .../.prompts/D.5-gemini-verifier.prompt.md         |   43 +
+ .../.prompts/D.5-gpt-verifier.prompt.md            |   45 +
+ ...<redacted:secret> |   61 ++
+ ....<redacted:secret> |    0
+ ...<redacted:secret> |   19 +
+ .../B.1-gemini-dispatch-intent.yaml                |   32 +
+ .../B.1-gemini-dispatch-result.yaml                |   72 ++
+ .../B.1-gpt-dispatch-intent.yaml                   |   31 +
+ .../D.2-gemini-dispatch-intent.yaml                |   32 +
+ .../D.2-gpt-dispatch-intent.yaml                   |   31 +
+ .../D.5-gemini-dispatch-intent.yaml                |   32 +
+ .../D.5-gpt-dispatch-intent.yaml                   |   31 +
+ .../final-approval.md                              |   68 +-
+ .../lifecycle-receipt-inventory.yaml               |   35 +-
+ .../strict-p3-dispatch-readiness.txt               |   64 ++
+ docs/specs/project-ontos-audit-doctor-rce-spec.md  |   35 +-
+ docs/trackers/project-ontos-audit-doctor-rce.md    |   89 +-
+ ...project-ontos-audit-remediation-release-line.md |  304 +++---
+ <redacted:secret>      |  160 ++-
+ .../<redacted:secret>  | 1046 ++++++++++++++++++++
+ .../<redacted:secret> |   82 +-
+ ontos/_hooks/pre-commit                            |   12 +-
+ ontos/_hooks/pre-push                              |   12 +-
+ ontos/cli.py                                       |  376 ++++---
+ ontos/command_registry.py                          |  123 +++
+ ontos/commands/activate.py                         |    9 +
+ ontos/commands/doctor.py                           |  136 ++-
+ ontos/commands/init.py                             |    1 +
+ ontos/commands/link_check.py                       |    4 +-
+ ontos/commands/log.py                              |   88 +-
+[0m
+[0m$ [0mgit show --stat b6f89d77e7fb684b8bd9a181a24c773d5777397a 2>/dev/null | tail -80
+tests/commands/test_verify_portfolio.py            |   10 +-
+ tests/conftest.py                                  |   36 +-
+ tests/core/test_body_refs.py                       |   66 ++
+ tests/core/test_config_phase3.py                   |   52 +
+ tests/core/test_frontmatter_edit_pipeline.py       |   61 ++
+ tests/core/test_frontmatter_repair.py              |   22 +-
+ tests/core/test_git_safety.py                      |   41 +
+ tests/core/test_graph.py                           |  123 +++
+ tests/core/test_link_diagnostics.py                |  147 ++-
+ tests/core/test_schema.py                          |   34 +-
+ tests/golden/README.md                             |   12 +-
+ tests/golden/baselines/medium/context_map.md       |  292 +++---
+ tests/golden/baselines/medium/log_metadata.json    |    4 +-
+ tests/golden/baselines/medium/log_stdout.txt       |    2 +-
+ tests/golden/baselines/medium/map_metadata.json    |    4 +-
+ tests/golden/baselines/medium/map_stdout.txt       |   21 +-
+ tests/golden/baselines/medium/session_log.md       |   28 +-
+ tests/golden/baselines/small/context_map.md        |  111 ++-
+ tests/golden/baselines/small/log_metadata.json     |    4 +-
+ tests/golden/baselines/small/log_stdout.txt        |    2 +-
+ tests/golden/baselines/small/map_metadata.json     |    4 +-
+ tests/golden/baselines/small/map_stdout.txt        |   16 +-
+ tests/golden/baselines/small/session_log.md        |   25 +-
+ tests/golden/capture_golden_master.py              |   23 +-
+ tests/golden/compare_golden_master.py              |  104 +-
+ tests/golden/test_golden_master.py                 |    3 -
+ tests/io/test_git_empty_diff.py                    |   29 +
+ tests/io/test_toml_roundtrip.py                    |   38 +
+ tests/mcp/test_activation.py                       |   26 +-
+ tests/mcp/test_bundler.py                          |    2 +-
+ tests/mcp/test_cache.py                            |    2 +-
+ tests/mcp/test_context_bundle.py                   |    2 +-
+ tests/mcp/test_context_bundle_config.py            |    2 +-
+ tests/mcp/test_context_map.py                      |    2 +-
+ tests/mcp/test_error_paths.py                      |    2 +-
+ tests/mcp/test_export_graph.py                     |    2 +-
+ tests/mcp/test_get_document.py                     |    2 +-
+ tests/mcp/test_health.py                           |    2 +-
+ tests/mcp/test_list_documents.py                   |    2 +-
+ tests/mcp/test_parity.py                           |    2 +-
+ tests/mcp/test_portfolio.py                        |    2 +-
+ tests/mcp/test_portfolio_integration.py            |    2 +-
+ tests/mcp/test_query.py                            |    2 +-
+ tests/mcp/test_read_only_registration.py           |  119 ++-
+ tests/mcp/test_refresh.py                          |    2 +-
+ tests/mcp/test_rename_document.py                  |    2 +-
+ <redacted:secret>      |    2 +-
+ tests/mcp/test_schemas.py                          |    2 +-
+ tests/mcp/test_server_integration.py               |    2 +-
+ tests/mcp/test_server_portfolio_mode.py            |    2 +-
+ tests/mcp/test_stream_routing.py                   |    2 +-
+ tests/mcp/test_workspace_overview.py               |   44 +-
+ tests/mcp/test_write_tools.py                      |    2 +-
+ tests/{mcp/__init__.py => mcp_helpers.py}          |   85 +-
+ tests/test_ci_release_workflows.py                 |   88 ++
+ tests/test_cli.py                                  |   44 +-
+ tests/test_cli_contract_v4.py                      |  222 +++++
+ tests/test_config.py                               |  113 ---
+ tests/test_consolidate.py                          |   88 --
+ tests/test_cycle_detection.py                      |  168 ----
+ tests/test_describes.py                            |    5 -
+ <redacted:secret>         |   21 +
+ tests/test_dual_mode.py                            |    4 -
+ tests/test_end_session.py                          |  263 -----
+ tests/test_frontmatter_roundtrip_regression.py     |   90 ++
+ tests/test_immutable_history.py                    |    5 -
+ tests/test_lint.py                                 |  192 ----
+ tests/test_maintain.py                             |   46 -
+ tests/test_orphan_detection.py                     |  252 -----
+ tests/test_pre_commit_check.py                     |  319 ------
+ tests/test_pre_push_check.py                       |   61 --
+ tests/test_query.py                                |   91 --
+ tests/test_release_artifact.py                     |   91 ++
+ tests/test_session_context.py                      |  238 +++++
+ tests/test_test_isolation.py                       |   41 +
+ tests/test_v284_refactor.py                        |  149 ---
+ tests/test_validation.py                           |  436 --------
+ tests/test_yaml_edge_cases.py                      |  236 -----
+ tests/ui/test_json_output.py                       |   16 +-
+ 188 files changed, 9520 insertions(+), 4356 deletions(-)
+[0m
+[0m$ [0mgit branch --show-current && git rev-parse HEAD && git rev-parse --short HEAD
+codex/audit-rebaseline-remediation-lifecycle
+5c73c3d9378899f9cf3fab2a1608e4379c746c98
+5c73c3d
+[0m
+[0m$ [0mls -la <redacted:secret>/ 2>/dev/null || echo "DIR_NOT_FOUND"; ls -la <redacted:secret>/ 2>/dev/null || echo "RAW_NOT_FOUND"
+total 264
+drwxr-xr-x@ 13 jonathanoh  wheel    416 Jul 10 11:21 .
+drwxr-xr-x@ 10 jonathanoh  wheel    320 Jul 10 10:27 ..
+drwxr-xr-x@ 26 jonathanoh  wheel    832 Jul 10 11:22 .prompts
+drwxr-xr-x@ 32 jonathanoh  wheel   1024 Jul 10 11:22 .raw
+drwxr-xr-x@  3 jonathanoh  wheel     96 Jul 10 10:56 .route-attestation
+-rw-r--r--@  1 jonathanoh  wheel  13188 Jul 10 10:52 B.1-claude-adversarial.md
+-rw-r--r--@  1 jonathanoh  wheel  16852 Jul 10 10:52 B.1-claude-product.md
+-rw-r--r--@  1 jonathanoh  wheel   3812 Jul 10 10:35 B.1-dispatch-intent.yaml
+-rw-r--r--@  1 jonathanoh  wheel  51546 Jul 10 11:21 B.1-dispatch-result.yaml
+-rw-r--r--@  1 jonathanoh  wheel   1991 Jul 10 11:21 B.1-gemini-alignment.md
+-rw-r--r--@  1 jonathanoh  wheel  13544 Jul 10 10:56 B.1-glm-peer.md
+-rw-r--r--@  1 jonathanoh  wheel   3685 Jul 10 11:14 B.2-dispatch-intent.yaml
+-rw-r--r--@  1 jonathanoh  wheel  12298 Jul 10 11:21 lifecycle-receipt-inventory.yaml
+total 312
+drwxr-xr-x@ 32 jonathanoh  wheel   1024 Jul 10 11:22 .
+drwxr-xr-x@ 13 jonathanoh  wheel    416 Jul 10 11:21 ..
+-rw-r--r--@  1 jonathanoh  wheel   2201 Jul 10 10:52 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:45 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   2314 Jul 10 10:52 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:46 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   1190 Jul 10 10:46 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:46 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   8466 Jul 10 10:51 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:50 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   1506 Jul 10 10:53 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:53 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  20030 Jul 10 10:57 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:55 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   2052 Jul 10 11:00 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:59 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   1777 Jul 10 11:01 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 11:01 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   1552 Jul 10 11:19 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 11:19 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   1991 Jul 10 11:21 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 11:21 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  15572 Jul 10 11:14 <redacted:secret>.md.txt
+-rw-r--r--@  1 jonathanoh  wheel   1642 Jul 10 10:56 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel     75 Jul 10 10:56 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  16844 Jul 10 11:05 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  16848 Jul 10 11:05 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel     70 Jul 10 11:05 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   3010 Jul 10 11:14 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel     84 Jul 10 11:14 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel    226 Jul 10 11:23 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   9853 Jul 10 11:23 <redacted:secret>
+[0m
+[0m$ [0mgit show b6f89d7:ontos/core/schema.py 2>/dev/null | sed -n '300,350p'
+for field in schema["required"]:
+        if field not in frontmatter or frontmatter[field] is None:
+            errors.append(f"Missing required field: {field}")
+        elif isinstance(frontmatter[field], str) and not frontmatter[field].strip():
+            errors.append(f"Required field '{field}' is empty")
+
+    if "id" in frontmatter:
+        try:
+            validate_document_id(frontmatter["id"])
+        except ValueError as exc:
+            errors.append(str(exc))
+    
+    return len(errors) == 0, errors
+
+
+def serialize_frontmatter(fm: Dict[str, Any]) -> str:
+    """Serialize frontmatter as safe YAML with semantic round-trip checks.
+
+    Args:
+        fm: Frontmatter dictionary.
+
+    Returns:
+        YAML-formatted string without the surrounding --- markers.
+
+    Examples:
+        >>> serialize_frontmatter({"id": "test", "type": "atom"})
+        'id: test\\ntype: atom'
+        >>> serialize_frontmatter({"id": "test", "depends_on": ["foo", "bar"]})
+        'id: test\\ndepends_on: [foo, bar]'
+    """
+    from ontos.io.yaml import assert_frontmatter_roundtrip, dump_yaml
+
+    if not isinstance(fm, dict):
+        raise TypeError("Frontmatter must be a dictionary")
+    if "id" in fm:
+        validate_document_id(fm["id"])
+
+    blocks: List[str] = []
+    
+    # Define field order for consistent output
+    field_order = [
+        'id', 'type', 'status', 'ontos_schema', 'curation_level',
+        'depends_on', 'concepts', 'describes', 'describes_verified',
+        'event_type', 'impacts', 'implements', 'tests', 'deprecates'
+    ]
+    
+    # Process ordered fields first
+    processed = set()
+    for key in field_order:
+        if key in fm:
+            blocks.append(_dump_frontmatter_field(key, fm[key], dump_yaml))
+[0m
+[0m$ [0mgit show b6f89d7:ontos/core/schema.py 2>/dev/null | sed -n '80,100p'
+)
+
+
+def validate_document_id(value: Any) -> str:
+    """Return a valid document ID or raise a user-actionable ``ValueError``."""
+    if not isinstance(value, str):
+        raise ValueError(
+            f"Document id must be a string, got {type(value).__name__}: {value!r}"
+        )
+    normalized = value.strip()
+    if not normalized:
+        raise ValueError("Document id must not be empty")
+    if not DOCUMENT_ID_PATTERN.fullmatch(normalized):
+        raise ValueError(
+            "Document id must start and end with an alphanumeric character "
+            "and contain only letters, numbers, '_', '-', or '.'"
+        )
+    return normalized
+
+
+def parse_version(version_str: str) -> Tuple[int, int]:
+[0m
+[0m$ [0mgit show b6f89d7:ontos/core/context.py 2>/dev/null | sed -n '640,775p'
+# Windows handles exclude FILE_SHARE_DELETE and therefore pin every
+        # component. This recheck catches a pre-existing reparse point on
+        # generic platforms and makes the invariant explicit.
+        self._reject_parent_symlinks(anchor.path / ".ontos-anchor-probe")
+
+    def _reject_parent_symlinks(self, path: Path) -> None:
+        root = self.repo_root.expanduser().resolve()
+        current = root
+        for component in path.parent.relative_to(root).parts:
+            current /= component
+            info = os.lstat(current)
+            if stat.S_ISLNK(info.st_mode):
+                raise ValueError(f"operation path must not contain a symlink: {current}")
+            if not stat.S_ISDIR(info.st_mode):
+                raise ValueError(f"operation path parent must be a directory: {current}")
+
+    def _entry_stat(self, anchor: _DirectoryAnchor, name: str) -> Optional[os.stat_result]:
+        try:
+            if anchor.fd is not None:
+                return os.stat(name, dir_fd=anchor.fd, follow_symlinks=False)
+            return os.lstat(anchor.path / name)
+        except FileNotFoundError:
+            return None
+
+    def _entry_is_regular(self, anchor: _DirectoryAnchor, name: str) -> bool:
+        info = self._entry_stat(anchor, name)
+        if info is None:
+            return False
+        path = anchor.path / name
+        if stat.S_ISLNK(info.st_mode):
+            raise ValueError(f"destination must not be a symlink: {path}")
+        if not stat.S_ISREG(info.st_mode):
+            raise ValueError(f"operation path must name a regular file: {path}")
+        return True
+
+    def _create_unique_file(
+        self,
+        anchor: _DirectoryAnchor,
+        *,
+        prefix: str,
+        suffix: str,
+    ) -> tuple[int, str]:
+        if anchor.fd is None:
+            fd, path = tempfile.mkstemp(
+                dir=str(anchor.path),
+                prefix=prefix,
+                suffix=suffix,
+            )
+            return fd, Path(path).name
+
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
+        flags |= getattr(os, "O_CLOEXEC", 0)
+        while True:
+            name = f"{prefix}{secrets.token_hex(12)}{suffix}"
+            try:
+                fd = os.open(name, flags, 0o600, dir_fd=anchor.fd)
+            except FileExistsError:
+                continue
+            return fd, name
+
+    def _stage_text(
+        self,
+        anchor: _DirectoryAnchor,
+        final_name: str,
+        content: str,
+    ) -> str:
+        """Write and fsync UTF-8 content to an anchored exclusive temp file."""
+        self._verify_anchor_binding(anchor)
+        final_info = self._entry_stat(anchor, final_name)
+        if final_info is not None:
+            if stat.S_ISLNK(final_info.st_mode):
+                raise ValueError(
+                    f"destination must not be a symlink: {anchor.path / final_name}"
+                )
+            if not stat.S_ISREG(final_info.st_mode):
+                raise ValueError(
+                    f"destination must be a regular file: {anchor.path / final_name}"
+                )
+
+        fd, temp_name = self._create_unique_file(
+            anchor,
+            prefix=f".{final_name}.",
+            suffix=".tmp",
+        )
+        try:
+            if hasattr(os, "fchmod"):
+                mode = stat.S_IMODE(final_info.st_mode) if final_info else 0o644
+                os.fchmod(fd, mode)
+            with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
+                fd = -1
+                handle.write(content)
+                handle.flush()
+                os.fsync(handle.fileno())
+            return temp_name
+        except BaseException:
+            if fd >= 0:
+                os.close(fd)
+            self._unlink_entry(anchor, temp_name, missing_ok=True)
+            raise
+
+    def _reserve_backup(self, anchor: _DirectoryAnchor, final_name: str) -> str:
+        fd, backup_name = self._create_unique_file(
+            anchor,
+            prefix=f".{final_name}.",
+            suffix=".bak",
+        )
+        os.close(fd)
+        return backup_name
+
+    def _replace_entry(
+        self,
+        source_anchor: _DirectoryAnchor,
+        source_name: str,
+        destination_anchor: _DirectoryAnchor,
+        destination_name: str,
+    ) -> None:
+        if source_anchor.fd is not None and destination_anchor.fd is not None:
+            os.replace(
+                source_name,
+                destination_name,
+                src_dir_fd=source_anchor.fd,
+                dst_dir_fd=destination_anchor.fd,
+            )
+            return
+        self._verify_anchor_binding(source_anchor)
+        if destination_anchor is not source_anchor:
+            self._verify_anchor_binding(destination_anchor)
+        os.replace(
+            source_anchor.path / source_name,
+            destination_anchor.path / destination_name,
+        )
+
+    @staticmethod
+    def _unlink_entry(
+        anchor: _DirectoryAnchor,
+        name: str,
+[0m
+[0m$ [0mgit show b6f89d7:ontos/commands/log.py 2>/dev/null | sed -n '100,145p'
+impacts=options.impacts,
+    )
+    
+    # Get template body (with alias support for Bug 3 fix)
+    template = _get_template(options.event_type)
+    
+    # Fill in section placeholders
+    body = f"# {topic}\n\n{template}"
+    for section, placeholder in SECTION_TEMPLATES.items():
+        body = body.replace(f"## {section}\n\n", f"## {section}\n\n{placeholder}\n\n")
+    
+    # Combine content
+    content = f"---\n{frontmatter}\n---\n\n{body}"
+    
+    config = load_project_config(repo_root=project_root)
+    logs_dir = (project_root / config.paths.logs_dir).resolve()
+    
+    filename = f"{date_str}_{topic_slug}.md"
+    output_path = logs_dir / filename
+    
+    return content, output_path
+
+
+def suggest_session_impacts(
+    context_map_path: Path,
+    changed_files: List[str],
+    commit_messages: List[str]
+) -> List[str]:
+    """Suggest impacts for a session log.
+
+    Args:
+        context_map_path: Path to context map file
+        changed_files: List of changed file paths
+        commit_messages: List of commit messages
+
+    Returns:
+        List of suggested impact doc_ids
+    """
+    if not context_map_path.exists():
+        return []
+    
+    content = context_map_path.read_text(encoding="utf-8")
+    doc_index = load_document_index(content)
+    
+    return suggest_impacts(changed_files, doc_index, commit_messages)
+[0m
+[0m$ [0mgit show b6f89d7:ontos/commands/log.py 2>/dev/null | sed -n '275,345p'
+session_options = EndSessionOptions(
+        event_type=event_type,
+        topic=options.title or options.topic or None,
+        auto_mode=options.auto,
+        source=options.source or "cli",
+    )
+
+    # Create the log content
+    content, output_path = create_session_log(project_root, session_options, git_info)
+
+    try:
+        _write_log_exclusively(output_path, content)
+    except FileExistsError:
+        message = f"Session log already exists: {output_path}"
+        if options.json_output:
+            emit_command_error(
+                command="log",
+                exit_code=1,
+                code="E_LOG_EXISTS",
+                message=message,
+                data={"path": str(output_path)},
+            )
+        else:
+            output.error(message)
+        return 1
+    except OSError as exc:
+        message = f"Unable to create session log {output_path}: {exc}"
+        if options.json_output:
+            emit_command_error(
+                command="log",
+                exit_code=1,
+                code="E_COMMAND_FAILED",
+                message=message,
+            )
+        else:
+            output.error(message)
+        return 1
+
+    # Create marker for pre-push enforcement (best effort)
+    _create_archive_marker(project_root, output_path)
+
+    # Output result
+    if options.json_output:
+        emit_command_success(
+            command="log",
+            exit_code=0,
+            message="Session log created",
+            data={
+                "path": str(output_path),
+                "log_id": output_path.stem,
+            },
+        )
+    elif not options.quiet:
+        output.success(f"Session log created: {output_path}")
+
+    return 0
+
+
+def _write_log_exclusively(output_path: Path, content: str) -> None:
+    """Create a UTF-8 log atomically with collision refusal."""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("x", encoding="utf-8", newline="") as handle:
+        handle.write(content)
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def _create_archive_marker(project_root: Path, log_path: Path) -> None:
+    """Create marker file to signal that a session was archived."""
+    marker_path = project_root / ".ontos" / "session_archived"
+[0m
+[0m$ [0mgit show b6f89d7:<redacted:secret> 2>/dev/null | sed -n '1,60p'
+#!/usr/bin/env python3
+"""Validate the audit registry and its local rendered control-plane artifacts."""
+
+from __future__ import annotations
+
+import argparse
+from collections import Counter, defaultdict
+import json
+from pathlib import Path
+import re
+import subprocess
+import sys
+from typing import Any
+
+import yaml
+
+
+ROOT = Path(__file__).resolve().parents[1]
+REGISTRY_PATH = ROOT / "<redacted:secret>"
+AUDIT_PATH = ROOT / "<redacted:secret>"
+LEDGER_PATH = ROOT / "docs/trackers/project-ontos-audit-remediation-release-line.md"
+REVALIDATION_PATH = ROOT / "<redacted:secret>"
+DOCTOR_MANIFEST_PATH = ROOT / "<redacted:secret>"
+SERIALIZER_MANIFEST_PATH = ROOT / "<redacted:secret>"
+GITHUB_REPOSITORY = "ohjonathan/Project-Ontos"
+
+REQUIRED_FINDING_FIELDS = {
+    "id",
+    "baseline_commit",
+    "severity",
+    "root_program",
+    "issue",
+    "release",
+    "status",
+    "fix_commit",
+    "verification_evidence",
+    "allowed_paths",
+    "lifecycle_state",
+    "base_sha",
+}
+EXPECTED_R2_IDS = {
+    "R2-test-hermeticity-1",
+    "R2-context-tmp-symlink-1",
+    "R2-loader-id-type-1",
+    "R2-windows-fcntl-import-1",
+    "R2-lifecycle-type-enumeration-1",
+    "R2-testpypi-provenance-1",
+    "R2-activation-version-skew-1",
+    "R2-mcp-readonly-export-1",
+    "R2-control-plane-parity-1",
+}
+EXPECTED_IMPLEMENTED_UNCOMMITTED_ORIGINAL_IDS = {
+    "D1a-graph-link-1",
+    "D1a-graph-link-2",
+    "D1a-graph-link-3",
+    "D1a-graph-link-4",
+    "D1a-graph-link-5",
+    "D1a-graph-link-6",
+    "D1a-graph-link-7",
+    "D1a-graph-link-8",
+[0m
+[0m$ [0mgit show b6f89d7:<redacted:secret> 2>/dev/null | sed -n '200,290p'
+line,
+        )
+        for finding_id in finding_ids:
+            if finding_id in states:
+                raise ValueError(f"duplicate GitHub checklist row for {finding_id}")
+            states[finding_id] = match.group(1).lower() == "x"
+    return states
+
+
+def validate(require_external_parity: bool) -> list[str]:
+    errors: list[str] = []
+    registry = load_yaml(REGISTRY_PATH)
+    audit = audit_register()
+    findings = registry.get("findings")
+    programs = registry.get("programs")
+    leases = registry.get("shared_path_leases")
+    if not isinstance(findings, list) or not isinstance(programs, list) or not isinstance(leases, list):
+        return ["registry findings, programs, and shared_path_leases must be lists"]
+
+    ids = [row.get("id") for row in findings if isinstance(row, dict)]
+    duplicate_ids = sorted(key for key, count in Counter(ids).items() if count > 1)
+    if duplicate_ids:
+        errors.append(f"duplicate registry IDs: {duplicate_ids}")
+
+    for index, row in enumerate(findings):
+        if not isinstance(row, dict):
+            errors.append(f"finding row {index} is not a mapping")
+            continue
+        missing = sorted(REQUIRED_FINDING_FIELDS - row.keys())
+        if missing:
+            errors.append(f"{row.get('id', index)} missing fields: {missing}")
+        if not isinstance(row.get("verification_evidence"), list) or not row.get("verification_evidence"):
+            errors.append(f"{row.get('id', index)} has no verification evidence")
+        else:
+            for evidence_path in row["verification_evidence"]:
+                if not isinstance(evidence_path, str) or not (ROOT / evidence_path).exists():
+                    errors.append(
+                        f"{row.get('id', index)} evidence path is missing: {evidence_path!r}"
+                    )
+        if not isinstance(row.get("allowed_paths"), list) or not row.get("allowed_paths"):
+            errors.append(f"{row.get('id', index)} has no allowed paths")
+        if row.get("issue") not in range(146, 159):
+            errors.append(f"{row.get('id', index)} has invalid issue assignment {row.get('issue')!r}")
+
+    original = {row["id"]: row for row in findings if row.get("origin") == "fable_audit"}
+    r2 = {row["id"]: row for row in findings if row.get("origin") == "codex_revalidation"}
+    if set(original) != set(audit):
+        errors.append(
+            "original register mismatch: "
+            f"missing={sorted(set(audit) - set(original))}, extra={sorted(set(original) - set(audit))}"
+        )
+    for finding_id in sorted(set(original) & set(audit)):
+        if original[finding_id].get("severity") != audit[finding_id]:
+            errors.append(
+                f"severity mismatch for {finding_id}: registry={original[finding_id].get('severity')} "
+                f"report={audit[finding_id]}"
+            )
+    original_counts = Counter(row.get("severity") for row in original.values())
+    if original_counts != Counter({"P0": 1, "P1": 27, "P2": 63}):
+        errors.append(f"original severity totals are wrong: {dict(original_counts)}")
+    if set(r2) != EXPECTED_R2_IDS:
+        errors.append(
+            f"R2 register mismatch: missing={sorted(EXPECTED_R2_IDS - set(r2))}, "
+            f"extra={sorted(set(r2) - EXPECTED_R2_IDS)}"
+        )
+    if "D6a-test-gaps-3" in original:
+        errors.append("phantom roadmap ID D6a-test-gaps-3 must not enter the registry")
+
+    fixed_original = {row["id"] for row in original.values() if row.get("status") == "code_fixed"}
+    if fixed_original != {"D4b-trust-1", "D4b-trust-2"}:
+        errors.append(f"unexpected committed code-fixed original set: {sorted(fixed_original)}")
+    serializer_row = original.get("D2b-roundtrip-3", {})
+    if serializer_row.get("status") != "code_fixed_evidence_pending" or serializer_row.get("fix_commit") is not None:
+        errors.append("D2b-roundtrip-3 must be uncommitted code_fixed_evidence_pending")
+    implemented_original = {
+        row["id"]
+        for row in original.values()
+        if row.get("status") == "implemented_uncommitted_verification_pending"
+    }
+    if implemented_original != EXPECTED_IMPLEMENTED_UNCOMMITTED_ORIGINAL_IDS:
+        errors.append(
+            "implemented-uncommitted original set mismatch: "
+            f"missing={sorted(EXPECTED_IMPLEMENTED_UNCOMMITTED_ORIGINAL_IDS - implemented_original)}, "
+            f"extra={sorted(implemented_original - EXPECTED_IMPLEMENTED_UNCOMMITTED_ORIGINAL_IDS)}"
+        )
+    partial_original = {
+        row["id"]
+        for row in original.values()
+        if row.get("status") == "partial_implementation_uncommitted_verification_pending"
+    }
+    if partial_original != EXPECTED_PARTIAL_UNCOMMITTED_ORIGINAL_IDS:
+[0m
+[0m$ [0mgit show b6f89d7:ontos/core/locking.py 2>/dev/null | sed -n '1,85p'
+"""Cross-platform advisory file locking primitives.
+
+The package supports Windows for its base CLI, so importing Ontos must not
+unconditionally import the POSIX-only :mod:`fcntl` module.  Both the CLI write
+context and MCP write tools use this module to keep one lock contract.
+"""
+
+from __future__ import annotations
+
+import os
+from typing import IO
+
+try:  # pragma: no branch - exactly one backend is available per platform.
+    import fcntl as _fcntl
+except ImportError:  # pragma: no cover - exercised on Windows CI.
+    _fcntl = None
+
+try:  # pragma: no branch - imported only on Windows.
+    import msvcrt as _msvcrt
+except ImportError:  # pragma: no cover - normal on POSIX.
+    _msvcrt = None
+
+
+def set_non_inheritable(handle: IO[str]) -> None:
+    """Prevent a child process from inheriting a held workspace lock."""
+    os.set_inheritable(handle.fileno(), False)
+
+
+def try_acquire_exclusive(handle: IO[str]) -> bool:
+    """Attempt a non-blocking exclusive lock on ``handle``.
+
+    Returns ``False`` when another process owns the lock and raises for other
+    operating-system errors.
+    """
+    if _fcntl is not None:
+        try:
+            _fcntl.flock(handle.fileno(), _fcntl.LOCK_EX | _fcntl.LOCK_NB)
+        except BlockingIOError:
+            return False
+        return True
+
+    if _msvcrt is None:  # pragma: no cover - defensive unsupported platform.
+        raise RuntimeError("No supported file-locking backend is available")
+
+    # msvcrt locks a byte range from the current file position.  Ensure the
+    # lockfile has at least one byte without parsing or replacing legacy text.
+    handle.seek(0, os.SEEK_END)
+    if handle.tell() == 0:
+        handle.write("\0")
+        handle.flush()
+    handle.seek(0)
+    try:  # pragma: no cover - exercised on Windows CI.
+        _msvcrt.locking(handle.fileno(), _msvcrt.LK_NBLCK, 1)
+    except OSError as exc:
+        # Windows reports lock contention as EACCES/EDEADLK (and sometimes
+        # EAGAIN depending on the runtime).  Other failures remain actionable.
+        if getattr(exc, "errno", None) in {11, 13, 36}:
+            return False
+        raise
+    return True
+
+
+def release_exclusive(handle: IO[str]) -> None:
+    """Release an advisory lock previously acquired on ``handle``."""
+    if _fcntl is not None:
+        _fcntl.flock(handle.fileno(), _fcntl.LOCK_UN)
+        return
+
+    if _msvcrt is None:  # pragma: no cover - defensive unsupported platform.
+        raise RuntimeError("No supported file-locking backend is available")
+    handle.seek(0)
+    _msvcrt.locking(handle.fileno(), _msvcrt.LK_UNLCK, 1)  # pragma: no cover
+
+
+def backend_name() -> str:
+    """Return the active backend name for diagnostics and smoke tests."""
+    if _fcntl is not None:
+        return "fcntl"
+    if _msvcrt is not None:  # pragma: no cover - exercised on Windows CI.
+        return "msvcrt"
+    return "unavailable"  # pragma: no cover
+[0m
+[0m$ [0mgit show b6f89d7:ontos/core/config.py 2>/dev/null | sed -n '220,270p'
+raise ConfigError("workflow.log_retention_count must be >= 1")
+
+
+def version_satisfies_requirement(running_version: str, requirement: Optional[str]) -> bool:
+    """Return whether ``running_version`` satisfies an Ontos semver range.
+
+    Supported clauses match the public ``required_version`` contract:
+    comma-separated comparisons (for example ``>=4.7.0, <5.0.0``), tilde
+    ranges (``~4.7``), and ``x``/``*`` wildcards (``4.7.x``). An empty
+    requirement is intentionally compatible for projects that do not pin a
+    runtime.
+
+    Raises:
+        ConfigError: If either the running version or requirement is invalid.
+    """
+    required = str(requirement or "").strip()
+    if not required:
+        return True
+
+    running = _parse_version(running_version, label="running Ontos version")
+    clauses = [clause.strip() for clause in required.split(",")]
+    if not clauses or any(not clause for clause in clauses):
+        raise ConfigError(
+            "ontos.required_version must be a valid semver range "
+            "(for example '>=4.7.0, <5.0.0')"
+        )
+    return all(_version_clause_matches(running, clause) for clause in clauses)
+
+
+def required_version_incompatibility(
+    requirement: Optional[str],
+    running_version: str,
+) -> Optional[str]:
+    """Return an actionable incompatibility message, or ``None`` if valid."""
+    required = str(requirement or "").strip()
+    if not required:
+        return None
+    try:
+        compatible = version_satisfies_requirement(running_version, required)
+    except ConfigError as exc:
+        return f"Invalid [ontos].required_version {required!r}: {exc}"
+    if compatible:
+        return None
+    return (
+        f"Incompatible Ontos version: running {running_version}, but this project "
+        f"requires {required!r}. Use a compatible Ontos installation."
+    )
+
+
+def _parse_version(value: str, *, label: str) -> tuple[int, int, int]:
+    text = str(value).strip()
+[0m
+[0m$ [0mgit show b6f89d7:ontos/command_registry.py 2>/dev/null | sed -n '1,90p'
+"""Declarative metadata for the public Ontos command surface.
+
+Argument definitions remain close to their handlers in :mod:`ontos.cli`, but
+this registry is the single source of truth for top-level command discovery,
+visibility, aliases, and nested command-path resolution.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import Enum
+from typing import Iterator, Optional, Protocol
+
+
+class ResultKind(str, Enum):
+    """The kind of result a command normally produces."""
+
+    OPERATION = "operation"
+    DIAGNOSTIC = "diagnostic"
+
+
+@dataclass(frozen=True)
+class CommandSpec:
+    """Metadata needed to register and identify one top-level command."""
+
+    name: str
+    registrar: str
+    result_kind: ResultKind = ResultKind.OPERATION
+    hidden: bool = False
+    alias_for: Optional[str] = None
+    subcommand_dest: Optional[str] = None
+
+
+COMMAND_SPECS = (
+    CommandSpec("activate", "_register_activate", ResultKind.DIAGNOSTIC),
+    CommandSpec("init", "_register_init"),
+    CommandSpec("map", "_register_map", ResultKind.DIAGNOSTIC),
+    CommandSpec("log", "_register_log"),
+    CommandSpec("doctor", "_register_doctor", ResultKind.DIAGNOSTIC),
+    CommandSpec("maintain", "_register_maintain", ResultKind.DIAGNOSTIC),
+    CommandSpec("link-check", "_register_link_check", ResultKind.DIAGNOSTIC),
+    CommandSpec("rename", "_register_rename"),
+    CommandSpec("retrofit", "_register_retrofit"),
+    CommandSpec("env", "_register_env"),
+    CommandSpec("mcp", "_register_mcp", subcommand_dest="mcp_command"),
+    CommandSpec("serve", "_register_serve"),
+    CommandSpec("agents", "_register_agents"),
+    CommandSpec("export", "_register_export", subcommand_dest="export_command"),
+    CommandSpec("verify", "_register_verify", ResultKind.DIAGNOSTIC),
+    CommandSpec("query", "_register_query", ResultKind.DIAGNOSTIC),
+    CommandSpec("schema-migrate", "_register_schema_migrate", ResultKind.DIAGNOSTIC),
+    CommandSpec("consolidate", "_register_consolidate"),
+    CommandSpec("promote", "_register_promote"),
+    CommandSpec("scaffold", "_register_scaffold"),
+    CommandSpec("stub", "_register_stub"),
+    CommandSpec("migration-report", "_register_migration_report", ResultKind.DIAGNOSTIC),
+    CommandSpec("migrate", "_register_migrate_convenience"),
+    CommandSpec(
+        "agent-export",
+        "_register_agent_export",
+        hidden=True,
+        alias_for="agents",
+    ),
+    CommandSpec("hook", "_register_hook", hidden=True),
+    CommandSpec(
+        "tree",
+        "_register_tree_alias",
+        ResultKind.DIAGNOSTIC,
+        hidden=True,
+        alias_for="map",
+    ),
+    CommandSpec(
+        "validate",
+        "_register_validate_alias",
+        ResultKind.DIAGNOSTIC,
+        hidden=True,
+        alias_for="verify",
+    ),
+)
+
+
+_BY_NAME = {spec.name: spec for spec in COMMAND_SPECS}
+if len(_BY_NAME) != len(COMMAND_SPECS):  # pragma: no cover - import-time invariant
+    raise RuntimeError("Command registry contains duplicate top-level names")
+
+
+HIDDEN_COMMANDS = frozenset(spec.name for spec in COMMAND_SPECS if spec.hidden)
+
+
+def iter_command_specs(*, include_hidden: bool = False) -> Iterator[CommandSpec]:
+[0m
+[0m$ [0mgit show b6f89d7:<redacted:secret> 2>/dev/null | sed -n '1,40p'
+schema_version: 1
+registry_id: project-ontos-audit-remediation-registry
+source_audit: <redacted:secret>
+audit_baseline_commit: 589d919
+revalidation_commit: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+revalidation_report: <redacted:secret>
+generated_artifacts:
+  - docs/trackers/project-ontos-audit-remediation-release-line.md
+github_snapshot:
+  observed_at: "2026-07-10"
+  epic_issue: 158
+  epic_release_line_synced: true
+  r2_checklists_synced: true
+  original_checklist_policy: merged_and_verified_only
+  uncommitted_original_checklists_remain_unchecked: true
+  source_issues: [146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157]
+  issue_finding_counts:
+    146: 1
+    147: 2
+    148: 11
+    149: 20
+    150: 15
+    151: 5
+    152: 6
+    153: 9
+    154: 14
+    155: 1
+    156: 5
+    157: 2
+  registry_finding_counts:
+    146: 2
+    147: 2
+    148: 12
+    149: 21
+    150: 16
+    151: 6
+    152: 6
+    153: 12
+    154: 14
+    155: 1
+[0m
+[0m$ [0mgit show b6f89d7:<redacted:secret> 2>/dev/null | grep -c "id:" 
+113
+[0m
+[0m$ [0mgit show b6f89d7:<redacted:secret> 2>/dev/null | grep -E "status:" | sort | uniq -c | sort -rn
+48     status: implemented_uncommitted_verification_pending
+   7     status: partial_implementation_uncommitted_verification_pending
+   2     status: confirmed_open
+   2       status: resolved
+   1   status: unproven_rebaseline_integration
+   1     status: implemented_uncommitted_parity_verified
+   1     status: code_fixed_evidence_pending
+   1     status: code_fixed
+[0m
+[0m$ [0mgit show b6f89d7:.github/workflows/ci.yml 2>/dev/null | sed -n '130,175p'
+shell: bash
+        run: |
+          changes="$(git status --porcelain=v1 --untracked-files=all)"
+          if [ -n "$changes" ]; then
+            echo "Non-editable smoke test modified the checkout:"
+            printf '%s\n' "$changes"
+            exit 1
+          fi
+
+  windows-base-cli:
+    name: Windows base CLI (Python ${{ matrix.python-version }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.14"]
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install base package (non-editable)
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "$env:GITHUB_WORKSPACE"
+
+      - name: Smoke-test import, locking, and CLI
+        shell: pwsh
+        run: |
+          Set-Location $env:RUNNER_TEMP
+          python -c "import ontos; print(f'Version: {ontos.__version__}')"
+          python -c "from ontos.core.locking import backend_name; assert backend_name() == 'msvcrt', backend_name()"
+          python -c "from pathlib import Path; from ontos.mcp.locking import workspace_lock; root = Path.cwd() / 'lock-smoke'; root.mkdir(exist_ok=True); lock = workspace_lock(root); lock.__enter__(); lock.__exit__(None, None, None)"
+          python -m ontos --version
+          python -m ontos --help
+          python -m ontos map --help
+[0m
+[0m$ [0mgit show b6f89d7:.github/workflows/publish.yml 2>/dev/null | sed -n '70,105p'
+- name: Install build tools
+        run: python -m pip install --upgrade pip build
+
+      - name: Build release wheel
+        # The wheel is the sole promoted artifact; publishing an unverified
+        # sdist beside it would break the one-hash provenance chain.
+        run: python -m build --wheel
+
+      - name: Record wheel version and hash
+        shell: bash
+        run: |
+          wheels=(dist/*.whl)
+          if [ "${#wheels[@]}" -ne 1 ]; then
+            echo "Expected exactly one wheel, found ${#wheels[@]}"
+            exit 1
+          fi
+          python scripts/check_release_artifact.py \
+            "${wheels[0]}" \
+            --expected-version "${GITHUB_REF_NAME#v}" \
+            --write-manifest release-integrity.json
+
+      - name: Upload distribution artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: dist
+          path: dist/
+
+      - name: Upload release integrity manifest
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-integrity
+          path: release-integrity.json
+
+  verify-wheel:
+    name: Verify Downloaded Wheel
+[0m
+[0m$ [0mgit show b6f89d7:ontos/ui/json_output.py 2>/dev/null | sed -n '14,50p'
+COMMAND_ENVELOPE_SCHEMA_VERSION = "4.0"
+
+
+class ResultStatus(str, Enum):
+    """Domain outcome, independent of whether command execution succeeded."""
+
+    CLEAN = "clean"
+    FINDINGS = "findings"
+    WARNINGS = "warnings"
+    INCOMPLETE = "incomplete"
+    ERROR = "error"
+
+
+class ExitCode(IntEnum):
+    """Public numeric exit-code taxonomy introduced with schema v4."""
+
+    CLEAN = 0
+    FINDINGS = 1
+    USAGE = 2
+    WARNINGS = 3
+    INTERNAL = 5
+    INTERRUPTED = 130
+
+
+class ExitCategory(str, Enum):
+    """Machine-readable exit category for the v4 command contract."""
+
+    CLEAN = "clean"
+    FINDINGS = "findings"
+    WARNINGS = "warnings"
+    USAGE = "usage"
+    INTERNAL = "internal"
+    INTERRUPTED = "interrupted"
+    ERROR = "error"
+[0m
+[0m$ [0mgit show b6f89d7:<redacted:secret> 2>/dev/null | python3 -c "
+import sys, yaml
+data = yaml.safe_load(sys.stdin)
+findings = data.get('findings', [])
+print(f'Total findings: {len(findings)}')
+orig = [f for f in findings if f.get('origin') == 'fable_audit']
+r2 = [f for f in findings if f.get('origin') == 'codex_revalidation']
+print(f'Original (fable_audit): {len(orig)}')
+print(f'R2 (codex_revalidation): {len(r2)}')
+from collections import Counter
+oc = Counter(f.get('status') for f in orig)
+print('Original statuses:')
+for s,c in oc.most_common(): print(f'  {s}: {c}')
+print(f'Total original: {sum(oc.values())}')
+print()
+# count what the spec calls '41 confirmed_open': find all status values and their counts for originals
+openish = [f for f in orig if 'open' in str(f.get('status','')) ]
+print(f'Original findings with open in status: {len(openish)}')
+print(f'Original confirmed_open specifically: {oc.get(\"confirmed_open\", 0)}')
+"
+Total findings: 100
+Original (fable_audit): 91
+R2 (codex_revalidation): 9
+Original statuses:
+  confirmed_open: 41
+  implemented_uncommitted_verification_pending: 40
+  partial_implementation_uncommitted_verification_pending: 7
+  code_fixed: 2
+  code_fixed_evidence_pending: 1
+Total original: 91
+
+Original findings with open in status: 41
+Original confirmed_open specifically: 41
+[0m
+[0m→ [0mRead <redacted:secret>[90m [limit=40][0m
+[0m
+[0m$ [0mgit show b6f89d7:<redacted:secret> 2>/dev/null | python3 -c "
+import sys, yaml
+data = yaml.safe_load(sys.stdin)
+findings = data.get('findings', [])
+orig = [f for f in findings if f.get('origin') == 'fable_audit']
+# spec says 7 partial
+partial = [f for f in orig if 'partial' in str(f.get('status',''))]
+print(f'Partial originals: {len(partial)}')
+for f in partial:
+    print(f'  {f.get(\"id\")}: {f.get(\"status\")}')
+# confirmed_open  
+co = [f for f in orig if f.get('status') == 'confirmed_open']
+print(f'confirmed_open originals: {len(co)}')
+# all non-fixed, non-resolved
+fixed_statuses = {'code_fixed','code_fixed_evidence_pending','resolved'}
+unfixed = [f for f in orig if f.get('status') not in fixed_statuses and f.get('status') != 'resolved']
+print(f'Unfixed originals (excluding fixed/resolved): {len(unfixed)}')
+implemented = [f for f in orig if f.get('status') == 'implemented_uncommitted_verification_pending']
+print(f'implemented_uncommitted originals: {len(implemented)}')
+# 41 = implemented + partial + confirmed_open + others?
+print(f'impl+partial+confirmed = {len(implemented)+len(partial)+len(co)}')
+# Maybe 41 is implemented only?
+" 2>&1
+Partial originals: 7
+  D5a-repo-redundancy-3: partial_implementation_uncommitted_verification_pending
+  D6a-test-gaps-7: partial_implementation_uncommitted_verification_pending
+  D6a-test-gaps-9: partial_implementation_uncommitted_verification_pending
+  D6b-test-quality-6: partial_implementation_uncommitted_verification_pending
+  D2a-write-safety-6: partial_implementation_uncommitted_verification_pending
+  D7-cli-consistency-5: partial_implementation_uncommitted_verification_pending
+  D3b-structure-6: partial_implementation_uncommitted_verification_pending
+confirmed_open originals: 41
+Unfixed originals (excluding fixed/resolved): 88
+implemented_uncommitted originals: 40
+impl+partial+confirmed = 88
+[0m
+[0m→ [0mRead <redacted:secret>[90m [offset=41][0m
+[0m
+[0m$ [0mgit show b6f89d7:ontos/commands/log.py 2>/dev/null | sed -n '113,118p'
+config = load_project_config(repo_root=project_root)
+    logs_dir = (project_root / config.paths.logs_dir).resolve()
+    
+    filename = f"{date_str}_{topic_slug}.md"
+    output_path = logs_dir / filename
+[0m
+[0m$ [0mgit show b6f89d7:ontos/commands/log.py 2>/dev/null | sed -n '330,345p'
+return 0
+
+
+def _write_log_exclusively(output_path: Path, content: str) -> None:
+    """Create a UTF-8 log atomically with collision refusal."""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("x", encoding="utf-8", newline="") as handle:
+        handle.write(content)
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def _create_archive_marker(project_root: Path, log_path: Path) -> None:
+    """Create marker file to signal that a session was archived."""
+    marker_path = project_root / ".ontos" / "session_archived"
+[0m
+[0m$ [0mgit show b6f89d7:ontos/mcp/server.py 2>/dev/null | sed -n '189,206p'
+server.set_output_schema(name, schema)
+
+    _register_core_tools(
+        cache=cache,
+        workspace_name=workspace_name,
+        register_fn=register,
+    )
+
+    if not read_only:
+        _register_write_tools(
+            cache=cache,
+            workspace_name=workspace_name,
+            portfolio_index=portfolio_index,
+            read_only=read_only,
+            register_fn=register,
+        )
+
+    if portfolio_index is not None:
+[0m
+[0m$ [0mgit branch --show-current && git rev-parse HEAD && git ls-files <redacted:secret> && git ls-files <redacted:secret> && git ls-files <redacted:secret>
+codex/audit-rebaseline-remediation-lifecycle
+5c73c3d9378899f9cf3fab2a1608e4379c746c98
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+[0m
+[0m$ [0mgit show b6f89d7:tests/test_session_context.py 2>/dev/null | wc -l && git show b6f89d7:tests/test_cli_contract_v4.py 2>/dev/null | sed -n '78,100p'
+399
+def test_json_argparse_errors_use_the_v4_envelope(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(
+        "sys.argv",
+        ["ontos", "--json", "stub", "--definitely-invalid"],
+    )
+    assert main() == 2
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert captured.err == ""
+    assert payload["schema_version"] == "4.0"
+    assert payload["command"] == "stub"
+    assert payload["error"]["code"] == "E_USAGE"
+    assert payload["result"]["exit_category"] == "usage"
+
+
+def test_json_verify_missing_target_is_a_usage_envelope(monkeypatch, capsys) -> None:
+    monkeypatch.setattr("sys.argv", ["ontos", "--json", "verify"])
+    assert main() == 2
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert captured.err == ""
+    assert payload["command"] == "verify"
+    assert payload["error"]["code"] == "E_USER_INPUT"
+[0m
+[0m← [0mWrite <redacted:secret>
+Wrote file successfully.
+[0m
+[0m→ [0mRead <redacted:secret>[90m [limit=3][0m
+[0m
+[0m← [0mWrite <redacted:secret>
+Wrote file successfully.
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>[90m [limit=15][0m
+[0m
+[0m$ [0mgrep -n "## Verdict" "<redacted:secret>" && grep -A1 "^## Verdict$" "<redacted:secret>" | head -3
+234:## Verdict
+## Verdict
+[0m
+[0m$ [0mgrep -c "b6f89d77e7fb684b8bd9a181a24c773d5777397a\|bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95" "<redacted:secret>"
+0
+[0m
+[0m→ [0mRead <redacted:secret>[90m [offset=232, limit=10][0m

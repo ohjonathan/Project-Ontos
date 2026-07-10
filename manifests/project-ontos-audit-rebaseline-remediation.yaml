@@ -25,6 +25,7 @@ authorship:
 
 scope:
   allowed_paths:
+    - ".gitattributes"
     - ".github/workflows/ci.yml"
     - ".github/workflows/publish.yml"
     - ".ontos-internal/logs/2026-07-02_init.md"

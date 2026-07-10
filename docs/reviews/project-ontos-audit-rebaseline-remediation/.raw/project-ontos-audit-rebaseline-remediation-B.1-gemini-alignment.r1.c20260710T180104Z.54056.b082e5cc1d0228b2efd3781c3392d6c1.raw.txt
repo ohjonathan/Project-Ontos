@@ -1,0 +1,24 @@
+---
+id: project-ontos-audit-rebaseline-remediation-B.1-gemini-alignment
+deliverable_id: project-ontos-audit-rebaseline-remediation
+phase: B.1
+role: alignment
+family: gemini
+evidence_labels_used: [static-inspection]
+status: completed
+---
+
+# Alignment Review for Project Ontos Audit Rebaseline Remediation (Phase B.1)
+
+1. **Alignment and Base Mapping**: Static inspection verifies that the remediation plan is successfully bound from base commit `bf91b42` to the frozen I0 commit `b6f89d7`.
+2. **Cardinality Verification**: The state registry claims exactly 91 original findings and nine R2 findings, preserving 41 open and seven partial rows.
+3. **Implementation and Test-Anchor Specificity**: Validation conforms to schema-v4 CLI contracts, utilizing semantic YAML round trips, cross-platform locks, workspace-contained no-follow writes, and active doctor checks.
+4. **Public-Compatibility and Publishing**: Requirements are aligned with registry parity, one-wheel publishing provenance, and a non-mutating read-only MCP framework.
+5. **External Blockers**: Windows compatibility validation and TestPyPI execution are explicitly treated as external tasks pending future evidence.
+6. **Disclaimed Nonclaims**: Historical lease proof, per-issue certification, D.6 compliance, final release, and edits to the two preserved user documents are excluded from this assessment.
+
+## Verdict
+Concur
+
+## Notes
+The alignment dispatch for phase B.1 demonstrates full adherence to the constraints and specifications defined in the Phase A document. All metrics, including the 91 original plus 9 R2 findings, and the 41 open/7 partial rows, are accurately accounted for. Exclusion of Windows/TestPyPI environments as external dependencies is consistent with the static-inspection parameters.

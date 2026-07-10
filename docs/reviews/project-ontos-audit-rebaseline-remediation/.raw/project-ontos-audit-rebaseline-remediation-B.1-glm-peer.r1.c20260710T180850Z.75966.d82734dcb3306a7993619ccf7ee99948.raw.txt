@@ -1,0 +1,17 @@
+I'll start by reading the three template files completely, as instructed.
+Template 03 is complete. Template 02 was truncated at line 877; let me read the rest to obey it fully.
+I've read all three templates completely. Now let me verify the workspace state per Template 03's file-existence attestation, and locate the spec and the frozen implementation reference commit.
+I'm on the lifecycle worktree. The expected destination `B.1-glm-peer.md` already exists (untracked) — per instructions I'll write only to the `.review.md` sibling file. Let me read the spec and examine the frozen implementation reference commit `b6f89d7`.
+I've read the full spec. Now let me directly verify the spec's load-bearing claims against the frozen implementation at `b6f89d7` — registry cardinality, file count, and the cited defect anchors (X-M1/X-M2) plus the Windows/TestPyPI workflow lines.
+Registry cardinality confirmed (100 rows = 91 original + 9 R2-*; 41 `confirmed_open`; 7 partial) and 188 files changed. Now let me verify the cited defect anchors (X-M1/X-M2) and the Windows/TestPyPI workflow lines that the spec's honesty claims depend on.
+X-M1 and X-M2 defect anchors are accurate: line 244 `row["id"]` KeyErrors on missing id; line 115 `logs_dir.resolve()` follows symlinks; 336-340 `_write_log_exclusively` has no anchored no-follow pin; E_LOG_EXISTS at 283-300 matches. Now the Windows/TestPyPI workflow lines and the public-contract anchors that the honesty claims depend on.
+Windows jobs (real `windows-latest`, min/latest Python 3.9/3.14, import+locking msvcrt+CLI smoke) and the one-wheel/TestPyPI `--no-deps`/OIDC publisher-only graph all match the spec's cited lines. Now let me spot-check the remaining public-contract anchors and look for the doctor line-range inconsistency I noticed (§4.4 says `593-675` but §11 matrix says `593-685`).
+Most anchors confirmed accurate. Let me verify the two precise "exactly" claims: the §4.4 JSON envelope's exact 9 top-level keys + exit taxonomy, and the §4.1 validator's "collected missing fields" path that X-M2 references.
+All anchors verified accurate by direct-run:
+- JSON envelope (json_output.py:331-344) has exactly the 9 top-level keys claimed; exit taxonomy (32-37) is 0/1/2/3/5/130.
+- X-M2 defect real: validator collects `missing fields` at line 228-230 (REQUIRED_FINDING_FIELDS includes `id`) but line 244 `row["id"]` KeyErrors first — exactly as spec describes.
+- X-M1 defect real: log.py:115 `.resolve()` follows symlinks; 336-340 `_write_log_exclusively` has no anchored pin.
+
+One genuine inconsistency found: §4.4 cites doctor anchor as `:593-675` while §11 matrix cites `:593-685` (both under-reach the function end ~688). Now writing the verdict to the sibling file.
+Let me verify the artifact passes the F35 verdict-shape gate and contains no full hashes / forbidden commit identities before finishing.
+Created `docs/reviews/project-ontos-audit-rebaseline-remediation/project-ontos-audit-rebaseline-remediation-B.1-glm-peer.review.md`
