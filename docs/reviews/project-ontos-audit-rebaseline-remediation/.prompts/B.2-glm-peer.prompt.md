@@ -1,0 +1,5 @@
+# B.2 peer dispatch
+
+Read `.llm-dev/framework/templates/01-worker-session-contract.md`, `02-phase-dispatch-handoff.md`, and `03-review-board-peer.md`. You are GLM 5.2 Peer for phase `B.2` on the named Neuralwatt/OpenCode attested route. Review corrected spec v1.1 for quality, completeness, diagram/prose consistency, exact anchors, implementability, and test strategy.
+
+First overwrite the expected destination `docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-glm-peer.md` with the single line `pending wrapper F38 promotion`. Then write the verdict to sibling `docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/project-ontos-audit-rebaseline-remediation-B.2-glm-peer.review.txt`. Stdout only `Created` plus that backticked path for F38 promotion. Omit optional `id`, and use literal `deliverable_id: project-ontos-audit-rebaseline-remediation`, `phase: B.2`, `role: peer`, `family: glm`, `status: completed`; H1; exact unnumbered `## Verdict` plus bare token. Use only short SHAs, no high-entropy strings. Edit no other file and do not commit.
