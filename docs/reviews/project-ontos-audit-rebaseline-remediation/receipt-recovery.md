@@ -47,3 +47,22 @@ This is evidence repair, not a framework defect fix and not a release waiver.
 Any recertification reviewer finding is handled through the ordinary lifecycle
 loop. Strict-P3 must pass without `--allow-warn` before this deliverable can
 advance beyond D.5.
+
+## v1.4 final-inventory rollover
+
+The complete v1.3 B.2 recertification produced genuine wrapper evidence but
+returned `Request changes` from Claude adversarial and GLM peer. Spec v1.4
+closes those findings. The pinned v2.0.1 wrapper cannot append a second attested
+GLM receipt to the same inventory without generating a long
+`supersedes_run_ids[]` backlink that its own route-redaction verifier rejects.
+The framework exposes no supported receipt import, inheritance, migration, or
+rollover operation.
+
+Accordingly, `lifecycle-receipt-inventory-recertification.yaml` is now preserved
+unchanged as non-certifying attempt history. The manifest points to
+`lifecycle-receipt-inventory-final.yaml`, which the wrapper creates on the first
+successful append. Every B.1 and B.2 engineering and Product seat is genuinely
+redispatched at round 1 with fresh intent, result, prompt, raw-output, and
+verdict paths. No receipt row is copied, hand-created, edited, or reconstructed.
+D.2 and D.5 append to that final inventory only after both final design bundles
+verify complete.

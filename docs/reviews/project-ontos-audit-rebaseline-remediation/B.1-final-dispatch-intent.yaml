@@ -1,0 +1,81 @@
+manifest_version: "2.0.0"
+authoring_session_family: codex
+meta_orchestrator_family: codex
+deliverable_author_family: codex
+deliverable_author_families: [codex]
+artifact_root: docs/reviews/project-ontos-audit-rebaseline-remediation
+deliverable_id: project-ontos-audit-rebaseline-remediation
+strict_p3_claim: true
+review_board_classification:
+  mode: strict_receipt_recertification
+  strict_p3_capable_evidence: true
+  strict_p3_certified: false
+  merge_authority: recommendation_only
+  rationale: "Fresh wrapper dispatches repopulate a final inventory because v2.0.1 cannot safely supersede an attested GLM receipt in place."
+dispatches:
+  - dispatch_id: project-ontos-audit-rebaseline-remediation-B.1-final-claude-adversarial
+    family: claude
+    role: adversarial
+    review_mode: spec-review
+    expected_provider: claude
+    expected_cli: claude
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-final-claude-adversarial.md
+    prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/B.1-final-claude-adversarial.prompt.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    fallback_models: []
+    scope: "Blind adversarial review of spec v1.4 and frozen I0, including validator quarantine, writer/lock safety, compatibility, provenance, and nonclaims."
+    status: pending
+  - dispatch_id: project-ontos-audit-rebaseline-remediation-B.1-final-gemini-alignment
+    family: gemini
+    role: alignment
+    review_mode: spec-review
+    expected_provider: gemini
+    expected_cli: agy
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-final-gemini-alignment.md
+    prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/B.1-final-gemini-alignment.prompt.md
+    evidence_cap: static-inspection
+    dispatch_method: external-cli
+    fallback_models: []
+    scope: "Closed-packet alignment review of spec v1.4 against the revalidation and release-line authorities."
+    status: pending
+  - dispatch_id: project-ontos-audit-rebaseline-remediation-B.1-final-glm-peer
+    family: glm
+    role: peer
+    review_mode: spec-review
+    expected_provider: glm
+    expected_cli: opencode
+    expected_model: glm-5.2
+    expected_artifact: docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-final-glm-peer.md
+    prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/B.1-final-glm-peer.prompt.md
+    evidence_cap: static-inspection
+    dispatch_method: external-cli
+    serving_provider: neuralwatt
+    wire_protocol: openai-compatible
+    opencode_provider_id: neuralwatt
+    opencode_model_ref: neuralwatt/glm-5.2
+    opencode_base_url_env: NEURALWATT_BASE_URL
+    opencode_api_key_env: NEURALWATT_API_KEY
+    endpoint_origin_label: neuralwatt
+    evidence_trust_tier: attested-third-party
+    route_attestation_profile_id: neuralwatt-opencode-glm-5-2-v1
+    advisory_only: false
+    fallback_models: []
+    scope: "Peer review of spec v1.4 completeness, diagrams, anchors, implementability, and test strategy."
+    status: pending
+  - dispatch_id: project-ontos-audit-rebaseline-remediation-B.1-final-claude-product
+    family: claude
+    role: product
+    review_mode: spec-review
+    expected_provider: claude
+    expected_cli: claude
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-final-claude-product.md
+    prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/B.1-final-claude-product.prompt.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    fallback_models: []
+    scope: "Separate-session Product review of v1.4 public behavior, failure visibility, migration, and recovery."
+    status: pending

@@ -342,7 +342,7 @@ smoke_checks:
   - phase: "C"
     checks:
       - name: "Full frozen-snapshot test suite"
-        command: "python3 -m pytest tests/ -q"
+        command: "if [ -x .venv/bin/python ]; then .venv/bin/python -m pytest tests/ -q; else python3 -m pytest tests/ -q; fi"
         expect: "exit-0"
       - name: "Audit remediation registry validates locally"
         command: "python3 scripts/validate-audit-remediation-registry.py"
@@ -355,7 +355,7 @@ smoke_checks:
   - phase: "D.5"
     checks:
       - name: "Post-fix full suite"
-        command: "python3 -m pytest tests/ -q"
+        command: "if [ -x .venv/bin/python ]; then .venv/bin/python -m pytest tests/ -q; else python3 -m pytest tests/ -q; fi"
         expect: "exit-0"
 
 regression_guards: []
@@ -374,14 +374,14 @@ self_review_caveats:
     phases: ["D.3"]
     rationale: "Codex authored the frozen implementation snapshot and performs structural fast-path consolidation only after three non-author D.2 engineering reviews plus the Product review; D.5 remains fully external."
 
-lifecycle_receipt_inventory_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/lifecycle-receipt-inventory-recertification.yaml"
+lifecycle_receipt_inventory_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/lifecycle-receipt-inventory-final.yaml"
 required_dispatch_bundles:
   - phase: "B.1"
-    intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-recertification-dispatch-intent.yaml"
-    result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-recertification-dispatch-result.yaml"
+    intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-final-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-final-dispatch-result.yaml"
   - phase: "B.2"
-    intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-recertification-dispatch-intent.yaml"
-    result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-recertification-dispatch-result.yaml"
+    intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-final-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-final-dispatch-result.yaml"
   - phase: "D.2"
     intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-dispatch-intent.yaml"
     result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-dispatch-result.yaml"
@@ -394,7 +394,7 @@ gate_prerequisites:
     category: test
     description: "The complete Ontos test suite passes from the isolated lifecycle worktree."
     verification:
-      command: "python3 -m pytest tests/ -q"
+      command: "if [ -x .venv/bin/python ]; then .venv/bin/python -m pytest tests/ -q; else python3 -m pytest tests/ -q; fi"
       expect: "exit-0"
   - id: G-test-2
     category: test
@@ -428,8 +428,8 @@ gate_prerequisites:
     description: "The user-facing Product verdict exists for B.1, B.2, and D.2."
     verification:
       command: >-
-        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-recert-claude-product.md &&
-        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-recert-claude-product.md &&
+        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-final-claude-product.md &&
+        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-final-claude-product.md &&
         test -f docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-claude-product.md
       expect: "exit-0"
   - id: G-blocker-1
