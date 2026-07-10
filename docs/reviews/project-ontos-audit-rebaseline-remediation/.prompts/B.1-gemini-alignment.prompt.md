@@ -1,15 +1,7 @@
-# B.1 alignment dispatch
+# B.1 alignment dispatch — closed static packet
 
-Work in the current repository. Read `.llm-dev/framework/templates/01-worker-session-contract.md`, `02-phase-dispatch-handoff.md`, and `04-review-board-alignment.md` completely and obey them.
+Do not call tools, inspect the workspace, start background tasks, or narrate actions. This is a static-inspection seat and the evidence packet below is complete. Your first output byte must be `-`, beginning the exact YAML fence `---`; emit only the verdict artifact.
 
-You are the Gemini-family Alignment reviewer, executed through AGY, for `project-ontos-audit-rebaseline-remediation`, phase `B.1`. Evidence cap is `static-inspection`. Review the Phase A spec at `docs/specs/project-ontos-audit-rebaseline-remediation-spec.md` against:
+You are the Gemini-family Alignment reviewer, executed through AGY, for `project-ontos-audit-rebaseline-remediation`, phase `B.1`, evidence cap `static-inspection`. The Codex-authored Phase A spec binds base `bf91b42` to frozen I0 `b6f89d7`, declares 91 original plus nine R2 findings, preserves 41 open and seven partial rows, treats Windows and TestPyPI execution as external pending evidence, derives the context-map count from a clean tracked snapshot, and explicitly disclaims historical lease proof, per-issue certification, D.6, release, and edits to the two preserved user documents. It specifies semantic YAML round trips/string IDs, workspace-contained no-follow writes and log collision refusal, repository-version activation/doctor checks, cross-platform locks, exhaustive lifecycle types, non-mutating read-only MCP, schema-v4 CLI contracts, registry parity, and one-wheel publishing provenance. Approved authorities are the audit revalidation, registry, release ledger, lifecycle tracker, and original audit roadmap §5.
 
-- `docs/reviews/2026-07-10-codex-audit-revalidation.md`
-- `manifests/project-ontos-audit-remediation-registry.yaml`
-- `docs/trackers/project-ontos-audit-remediation-release-line.md`
-- `docs/trackers/project-ontos-audit-rebaseline-remediation.md`
-- original audit roadmap §5 and frozen I0 diff `bf91b42...b6f89d7`.
-
-Check all public-behavior declarations, every implementation/test anchor, exact finding/status counts, external evidence blockers, and the nonclaims about historical leases, per-issue certification, D.6, and release. Do not claim direct execution.
-
-Output only the complete verdict artifact to stdout so the wrapper can capture it as `docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-gemini-alignment.md`. It must start with YAML frontmatter, then one H1, and use `status: completed` or `halted`. F35 OVERRIDES Template 04's numbered sample: the verdict heading must be exactly the unnumbered line `## Verdict` (not `## 9. Verdict`), immediately followed by exactly one bare canonical verdict line (`Approve`, `Request changes`, `Reject`, or `Concur`). Do not omit this final section.
+Assess alignment, exact status/cardinality claims, implementation/test-anchor specificity, public-compatibility disclosure, external blockers, and nonclaims. Do not claim execution. Use Template 04's substance but this exact F35 shape: YAML frontmatter (`deliverable_id`, `phase`, `role`, `family`, `status`, `evidence_labels_used`), one H1, concise architecture/roadmap/constraint/backward-compatibility/deviation/issues sections, then the exact unnumbered heading `## Verdict` followed by one bare canonical line. No preamble, code fence, narration, duplicate artifact, or text after a short Notes section.
