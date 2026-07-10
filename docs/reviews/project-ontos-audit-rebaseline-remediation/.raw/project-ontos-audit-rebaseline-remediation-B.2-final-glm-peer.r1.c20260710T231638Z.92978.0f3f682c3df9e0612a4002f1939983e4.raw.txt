@@ -1,0 +1,21 @@
+I'll start by setting up a todo list for this complex multi-step review task, then read the required templates and explore the project structure.
+Let me read the three template files and explore the project structure in parallel.
+Now let me read the other two template files.
+Now let me read the third template, which is the key one for my Peer role.
+I've read all three templates. Now let me update my todos, write the pending wrapper file, and explore the repo structure to find the spec v1.5 and related documents.
+Let me write the pending wrapper file and explore the repo structure in parallel.
+Let me search more broadly for the spec document and the I0 commit.
+Found the spec and the I0 commit. Let me read the spec, inspect the I0 commit, and read the falsification findings (reproduction only).
+Excellent, the spec is comprehensive. Now let me inspect the frozen I0 commit and read the falsification findings. I'll verify the key I0 anchors the spec cites.
+Let me verify the key I0 anchors the spec cites, using bounded `git show` on specific files at the frozen commit.
+Good, the I0 code confirms the spec's anchors. Let me verify more anchors: the symlink defect, the config shadowing guard, the MCP lock gap, the writer, and the Migration guidance anchor.
+Let me verify the guidance anchor and the validator at I0, plus check the most recent B.2 final reviews for context.
+Important finding: the guidance anchor doesn't exist at I0 yet. Let me verify the validator's `main()` exit behavior and check the registry for the 91+9 finding structure the spec mentions.
+Let me check whether the validator's status counts are computed from the registry or hardcoded, since the spec relies on them as "machine authority."
+Let me check the GitHub parity (C-FZ-5) and ownership/path (C-FZ-7) code at I0 to confirm those reproductions.
+Let me check the I0 archive marker handling and whether its failure is visible, to confirm the spec's archive warning/exit-3 correction.
+Let me verify the R2-* finding prefix and check for any inconsistencies between the spec's claims and the registry at I0.
+Let me verify the C-FZ-2 recheck gap by examining the I0 writer's rename/replace path.
+Let me update my todos and perform the file-existence attestation required by Template 03.
+The attestation confirms branch `codex/audit-rebaseline-remediation-lifecycle`, HEAD `d12f851`, and the spec is tracked. Now I'll compose and write the completed review artifact to the `.raw` path.
+Created `docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/project-ontos-audit-rebaseline-remediation-B.2-final-glm-peer.review.txt`

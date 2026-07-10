@@ -1,9 +1,9 @@
 === verify-family-dispatch (require-complete) ===
-Intent:  /private/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation/docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-dispatch-intent.yaml (4 dispatches)
-Result:  /private/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation/docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-dispatch-result.yaml (4 completed, 0 pending)
-PASS project-ontos-audit-rebaseline-remediation-B.1-claude-adversarial: claude/adversarial — artifact B.1-claude-adversarial.md
-PASS project-ontos-audit-rebaseline-remediation-B.1-gemini-alignment: gemini/alignment — artifact B.1-gemini-alignment.md
-PASS project-ontos-audit-rebaseline-remediation-B.1-glm-peer: glm/peer — artifact B.1-glm-peer.md
-PASS project-ontos-audit-rebaseline-remediation-B.1-claude-product: claude/product — artifact B.1-claude-product.md
+Intent:  /private/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation/docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-final-dispatch-intent.yaml (4 dispatches)
+Result:  /private/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation/docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-final-dispatch-result.yaml (4 completed, 0 pending)
+PASS project-ontos-audit-rebaseline-remediation-B.1-final-claude-adversarial: claude/adversarial — artifact B.1-final-claude-adversarial.md
+PASS project-ontos-audit-rebaseline-remediation-B.1-final-gemini-alignment: gemini/alignment — artifact B.1-final-gemini-alignment.md
+PASS project-ontos-audit-rebaseline-remediation-B.1-final-glm-peer: glm/peer — artifact B.1-final-glm-peer.md
+PASS project-ontos-audit-rebaseline-remediation-B.1-final-claude-product: claude/product — artifact B.1-final-claude-product.md
 ---
 verify-family-dispatch: OK — 4 dispatches verified

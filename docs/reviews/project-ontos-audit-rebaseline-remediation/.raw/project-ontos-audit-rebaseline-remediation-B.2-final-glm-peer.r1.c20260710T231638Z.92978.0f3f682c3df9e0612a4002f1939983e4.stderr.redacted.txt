@@ -1,0 +1,1193 @@
+[0m
+> build · glm-5.2
+[0m
+[0m# [0mTodos
+[•] Read three template files (01, 02, 03) completely
+[ ] Overwrite B.2-final-glm-peer.md with pending wrapper line
+[ ] Find and review spec v1.5 document
+[ ] Inspect frozen I0 b6f89d7 with bounded git show/diff
+[ ] Read C-phase-falsification-findings.md (reproduction only)
+[ ] Concentrate on v1.5 corrections for review
+[ ] Write completed artifact to .raw path following Template 03
+[ ] Stdout Created plus backticked path
+[0m
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>[90m [offset=878][0m
+[0m→ [0mRead .<redacted:secret>
+[0m
+[0m# [0mTodos
+[✓] Read three template files (01, 02, 03) completely
+[•] Overwrite B.2-final-glm-peer.md with pending wrapper line
+[ ] Find and review spec v1.5 document
+[ ] Inspect frozen I0 b6f89d7 with bounded git show/diff
+[ ] Read C-phase-falsification-findings.md (reproduction only)
+[ ] Concentrate on v1.5 corrections for review
+[ ] Write completed artifact to .raw path following Template 03
+[ ] Stdout Created plus backticked path
+[0m
+[0m← [0mWrite <redacted:secret>
+Wrote file successfully.
+[0m
+[0m$ [0mcd /<redacted:secret> && git branch --show-current && git rev-parse --short HEAD
+codex/audit-rebaseline-remediation-lifecycle
+d12f851
+[0m
+[0m✱ [0mGlob "**/*spec*v1*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*falsification*"[90m 1 match[0m
+[0m→ [0mRead <redacted:secret>
+[0m✱ [0mGlob "**/*audit-rebaseline*spec*"[90m 1 match[0m
+[0m✱ [0mGlob "**/*remediation*spec*"[90m 1 match[0m
+[0m
+[0m$ [0mcd /<redacted:secret> && git log --oneline b6f89d7 -1 2>&1 || echo "COMMIT NOT FOUND"
+b6f89d7 Implement audit rebaseline remediation
+[0m
+[0m$ [0mcd /<redacted:secret> && git log --oneline -15
+d12f851 Prepare final B2 corrected-spec review
+206bbbc Complete final B1 and incorporate falsification findings
+43dd7dc Prepare final design receipt recertification
+af1e6ac Record failed B.2 recertification and revise design
+c104758 Recertify audit design and revise spec
+5e04094 Authorize Phase C registry regression
+3827a65 Approve audit remediation design
+e63a0a5 Incorporate B.2 design findings
+7145b39 Record B.2 audit design review
+19af0c9 Clarify B.2 verdict shapes
+5367842 Freeze B.2 review dispatch
+02afc68 Record B.1 audit design review
+eb045e9 Make B.1 GLM route-redaction safe
+5c73c3d Prepare B.1 provenance redispatch
+ce60f6e Incorporate B.1 design findings
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m
+[0m$ [0mcd /<redacted:secret> && git show --stat b6f89d7 --format="%H%n%an%n%s" | head -30
+b6f89d77e7fb684b8bd9a181a24c773d5777397a
+Jonathan Oh
+Implement audit rebaseline remediation
+
+ .github/workflows/ci.yml                           |   95 +-
+ .github/workflows/publish.yml                      |  282 +++++-
+ .ontos-internal/logs/2026-07-02_init.md            |   21 -
+ .<redacted:secret>            |   21 -
+ .<redacted:secret>            |   21 -
+ .ontos.toml                                        |    2 +-
+ .ontos/hooks/pre-commit                            |   14 +-
+ .ontos/hooks/pre-push                              |   14 +-
+ .ontos/scripts/tests/test_context.py               |   14 +-
+ .ontos/scripts/tests/test_schema.py                |   21 +-
+ .pre-commit-config.yaml                            |   19 +-
+ AGENTS.md                                          |   29 +-
+ Ontos_Context_Map.md                               |   52 +-
+ ..._merge-pr-118-v4-5-closes-issues-115-116-117.md |    2 +-
+ .../<redacted:secret>     |   58 ++
+ docs/reference/Migration_v3_to_v4.md               |    2 +-
+ docs/reference/Ontos_Manual.md                     |   11 +-
+ .../retros/project-ontos-audit-doctor-rce-retro.md |   82 +-
+ <redacted:secret>        |    8 +-
+ .../<redacted:secret> |  262 +++++
+ .../.<redacted:secret>      |   61 ++
+ .../.prompts/B.1-gpt-alignment.prompt.md           |   55 +
+ .../.<redacted:secret>      |   55 +
+ .../.prompts/D.2-gpt-alignment.prompt.md           |   55 +
+ .../.prompts/D.5-gemini-verifier.prompt.md         |   43 +
+ .../.prompts/D.5-gpt-verifier.prompt.md            |   45 +
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:ontos/commands/log.py 2>/dev/null | sed -n '280,345p' | head -80
+source=options.source or "cli",
+    )
+
+    # Create the log content
+    content, output_path = create_session_log(project_root, session_options, git_info)
+
+    try:
+        _write_log_exclusively(output_path, content)
+    except FileExistsError:
+        message = f"Session log already exists: {output_path}"
+        if options.json_output:
+            emit_command_error(
+                command="log",
+                exit_code=1,
+                code="E_LOG_EXISTS",
+                message=message,
+                data={"path": str(output_path)},
+            )
+        else:
+            output.error(message)
+        return 1
+    except OSError as exc:
+        message = f"Unable to create session log {output_path}: {exc}"
+        if options.json_output:
+            emit_command_error(
+                command="log",
+                exit_code=1,
+                code="E_COMMAND_FAILED",
+                message=message,
+            )
+        else:
+            output.error(message)
+        return 1
+
+    # Create marker for pre-push enforcement (best effort)
+    _create_archive_marker(project_root, output_path)
+
+    # Output result
+    if options.json_output:
+        emit_command_success(
+            command="log",
+            exit_code=0,
+            message="Session log created",
+            data={
+                "path": str(output_path),
+                "log_id": output_path.stem,
+            },
+        )
+    elif not options.quiet:
+        output.success(f"Session log created: {output_path}")
+
+    return 0
+
+
+def _write_log_exclusively(output_path: Path, content: str) -> None:
+    """Create a UTF-8 log atomically with collision refusal."""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("x", encoding="utf-8", newline="") as handle:
+        handle.write(content)
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def _create_archive_marker(project_root: Path, log_path: Path) -> None:
+    """Create marker file to signal that a session was archived."""
+    marker_path = project_root / ".ontos" / "session_archived"
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:ontos/commands/log.py 2>/dev/null | sed -n '110,120p'
+# Combine content
+    content = f"---\n{frontmatter}\n---\n\n{body}"
+    
+    config = load_project_config(repo_root=project_root)
+    logs_dir = (project_root / config.paths.logs_dir).resolve()
+    
+    filename = f"{date_str}_{topic_slug}.md"
+    output_path = logs_dir / filename
+    
+    return content, output_path
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:ontos/core/config.py 2>/dev/null | sed -n '236,348p'
+if not required:
+        return True
+
+    running = _parse_version(running_version, label="running Ontos version")
+    clauses = [clause.strip() for clause in required.split(",")]
+    if not clauses or any(not clause for clause in clauses):
+        raise ConfigError(
+            "ontos.required_version must be a valid semver range "
+            "(for example '>=4.7.0, <5.0.0')"
+        )
+    return all(_version_clause_matches(running, clause) for clause in clauses)
+
+
+def required_version_incompatibility(
+    requirement: Optional[str],
+    running_version: str,
+) -> Optional[str]:
+    """Return an actionable incompatibility message, or ``None`` if valid."""
+    required = str(requirement or "").strip()
+    if not required:
+        return None
+    try:
+        compatible = version_satisfies_requirement(running_version, required)
+    except ConfigError as exc:
+        return f"Invalid [ontos].required_version {required!r}: {exc}"
+    if compatible:
+        return None
+    return (
+        f"Incompatible Ontos version: running {running_version}, but this project "
+        f"requires {required!r}. Use a compatible Ontos installation."
+    )
+
+
+def _parse_version(value: str, *, label: str) -> tuple[int, int, int]:
+    text = str(value).strip()
+    match = _VERSION_PATTERN.fullmatch(text)
+    if match is None:
+        raise ConfigError(f"{label} {text!r} is not a valid semantic version")
+    return tuple(
+        int(match.group(name) or 0) for name in ("major", "minor", "patch")
+    )
+
+
+def _version_clause_matches(running: tuple[int, int, int], clause: str) -> bool:
+    if clause.startswith("~"):
+        raw_base = clause[1:].strip()
+        base, component_count = _parse_requirement_base(raw_base, clause)
+        if component_count == 1:
+            upper = (base[0] + 1, 0, 0)
+        else:
+            upper = (base[0], base[1] + 1, 0)
+        return base <= running < upper
+
+    comparator_match = _COMPARATOR_PATTERN.fullmatch(clause)
+    if comparator_match is None:
+        raise ConfigError(f"invalid version clause {clause!r}")
+    comparator = comparator_match.group(1) or "="
+    raw_version = comparator_match.group(2).strip()
+
+    if "x" in raw_version.lower() or "*" in raw_version:
+        if comparator not in {"=", "=="}:
+            raise ConfigError(
+                f"wildcard version clause {clause!r} cannot use {comparator!r}"
+            )
+        return _wildcard_clause_matches(running, raw_version, clause)
+
+    expected = _parse_version(raw_version, label=f"version clause {clause!r}")
+    comparisons = {
+        "=": running == expected,
+        "==": running == expected,
+        ">=": running >= expected,
+        "<=": running <= expected,
+        ">": running > expected,
+        "<": running < expected,
+    }
+    return comparisons[comparator]
+
+
+def _parse_requirement_base(
+    raw_version: str,
+    clause: str,
+) -> tuple[tuple[int, int, int], int]:
+    component_text = raw_version[1:] if raw_version.startswith("v") else raw_version
+    component_count = len(component_text.split("."))
+    if component_count > 3:
+        raise ConfigError(f"invalid version clause {clause!r}")
+    return _parse_version(raw_version, label=f"version clause {clause!r}"), component_count
+
+
+def _wildcard_clause_matches(
+    running: tuple[int, int, int],
+    raw_version: str,
+    clause: str,
+) -> bool:
+    text = raw_version[1:] if raw_version.startswith("v") else raw_version
+    components = text.split(".")
+    if not 1 <= len(components) <= 3:
+        raise ConfigError(f"invalid wildcard version clause {clause!r}")
+
+    wildcard_seen = False
+    expected_prefix = []
+    for component in components:
+        if component.lower() == "x" or component == "*":
+            wildcard_seen = True
+            continue
+        if wildcard_seen or not component.isdigit():
+            raise ConfigError(f"invalid wildcard version clause {clause!r}")
+        expected_prefix.append(int(component))
+    if not wildcard_seen:
+        raise ConfigError(f"invalid wildcard version clause {clause!r}")
+    return running[:len(expected_prefix)] == tuple(expected_prefix)
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:ontos/core/config.py 2>/dev/null | sed -n '355,368p'
+_validate_types(data)
+
+    # Path validation
+    if repo_root is not None and "paths" in data:
+        paths_section = data["paths"]
+        for key in ["docs_dir", "logs_dir", "context_map"]:
+            if key in paths_section:
+                if not _validate_path(paths_section[key], repo_root):
+                    raise ConfigError(
+                        f"paths.{key} must resolve within repository root"
+                    )
+
+    # Build config with defaults for missing fields
+    ontos = OntosSection(**_section_kwargs(OntosSection, "ontos", data.get("ontos")))
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:ontos/mcp/locking.py 2>/dev/null | sed -n '18,30p'
+@contextmanager
+def workspace_lock(workspace_root: Path, timeout: float = 5.0) -> Iterator[None]:
+    """Acquire an exclusive flock on ``<workspace>/.ontos.lock``."""
+    lock_path = workspace_root / ".ontos.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+
+    handle = lock_path.open("a+", encoding="utf-8")
+    set_non_inheritable(handle)
+    start = time.monotonic()
+    try:
+        while True:
+            try:
+                if not try_acquire_exclusive(handle):
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:ontos/core/context.py 2>/dev/null | sed -n '645,705p'
+def _reject_parent_symlinks(self, path: Path) -> None:
+        root = self.repo_root.expanduser().resolve()
+        current = root
+        for component in path.parent.relative_to(root).parts:
+            current /= component
+            info = os.lstat(current)
+            if stat.S_ISLNK(info.st_mode):
+                raise ValueError(f"operation path must not contain a symlink: {current}")
+            if not stat.S_ISDIR(info.st_mode):
+                raise ValueError(f"operation path parent must be a directory: {current}")
+
+    def _entry_stat(self, anchor: _DirectoryAnchor, name: str) -> Optional[os.stat_result]:
+        try:
+            if anchor.fd is not None:
+                return os.stat(name, dir_fd=anchor.fd, follow_symlinks=False)
+            return os.lstat(anchor.path / name)
+        except FileNotFoundError:
+            return None
+
+    def _entry_is_regular(self, anchor: _DirectoryAnchor, name: str) -> bool:
+        info = self._entry_stat(anchor, name)
+        if info is None:
+            return False
+        path = anchor.path / name
+        if stat.S_ISLNK(info.st_mode):
+            raise ValueError(f"destination must not be a symlink: {path}")
+        if not stat.S_ISREG(info.st_mode):
+            raise ValueError(f"operation path must name a regular file: {path}")
+        return True
+
+    def _create_unique_file(
+        self,
+        anchor: _DirectoryAnchor,
+        *,
+        prefix: str,
+        suffix: str,
+    ) -> tuple[int, str]:
+        if anchor.fd is None:
+            fd, path = tempfile.mkstemp(
+                dir=str(anchor.path),
+                prefix=prefix,
+                suffix=suffix,
+            )
+            return fd, Path(path).name
+
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
+        flags |= getattr(os, "O_CLOEXEC", 0)
+        while True:
+            name = f"{prefix}{secrets.token_hex(12)}{suffix}"
+            try:
+                fd = os.open(name, flags, 0o600, dir_fd=anchor.fd)
+            except FileExistsError:
+                continue
+            return fd, name
+
+    def _stage_text(
+        self,
+        anchor: _DirectoryAnchor,
+        final_name: str,
+        content: str,
+    ) -> str:
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:ontos/core/locking.py 2>/dev/null | sed -n '13,82p'
+try:  # pragma: no branch - exactly one backend is available per platform.
+    import fcntl as _fcntl
+except ImportError:  # pragma: no cover - exercised on Windows CI.
+    _fcntl = None
+
+try:  # pragma: no branch - imported only on Windows.
+    import msvcrt as _msvcrt
+except ImportError:  # pragma: no cover - normal on POSIX.
+    _msvcrt = None
+
+
+def set_non_inheritable(handle: IO[str]) -> None:
+    """Prevent a child process from inheriting a held workspace lock."""
+    os.set_inheritable(handle.fileno(), False)
+
+
+def try_acquire_exclusive(handle: IO[str]) -> bool:
+    """Attempt a non-blocking exclusive lock on ``handle``.
+
+    Returns ``False`` when another process owns the lock and raises for other
+    operating-system errors.
+    """
+    if _fcntl is not None:
+        try:
+            _fcntl.flock(handle.fileno(), _fcntl.LOCK_EX | _fcntl.LOCK_NB)
+        except BlockingIOError:
+            return False
+        return True
+
+    if _msvcrt is None:  # pragma: no cover - defensive unsupported platform.
+        raise RuntimeError("No supported file-locking backend is available")
+
+    # msvcrt locks a byte range from the current file position.  Ensure the
+    # lockfile has at least one byte without parsing or replacing legacy text.
+    handle.seek(0, os.SEEK_END)
+    if handle.tell() == 0:
+        handle.write("\0")
+        handle.flush()
+    handle.seek(0)
+    try:  # pragma: no cover - exercised on Windows CI.
+        _msvcrt.locking(handle.fileno(), _msvcrt.LK_NBLCK, 1)
+    except OSError as exc:
+        # Windows reports lock contention as EACCES/EDEADLK (and sometimes
+        # EAGAIN depending on the runtime).  Other failures remain actionable.
+        if getattr(exc, "errno", None) in {11, 13, 36}:
+            return False
+        raise
+    return True
+
+
+def release_exclusive(handle: IO[str]) -> None:
+    """Release an advisory lock previously acquired on ``handle``."""
+    if _fcntl is not None:
+        _fcntl.flock(handle.fileno(), _fcntl.LOCK_UN)
+        return
+
+    if _msvcrt is None:  # pragma: no cover - defensive unsupported platform.
+        raise RuntimeError("No supported file-locking backend is available")
+    handle.seek(0)
+    _msvcrt.locking(handle.fileno(), _msvcrt.LK_UNLCK, 1)  # pragma: no cover
+
+
+def backend_name() -> str:
+    """Return the active backend name for diagnostics and smoke tests."""
+    if _fcntl is not None:
+        return "fcntl"
+    if _msvcrt is not None:  # pragma: no cover - exercised on Windows CI.
+        return "msvcrt"
+    return "unavailable"  # pragma: no cover
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:docs/reference/Migration_v3_to_v4.md 2>/dev/null | grep -n "audit-remediation-compatibility-contracts\|required_version\|warnings.*exit\|exit.*3\|reserved.*code.*4" | head -20
+96:`ontos activate` is additive and safe for existing workflows. It refreshes the context map when possible, returns `usable`, `usable_with_warnings`, or `not_usable`, and exits non-zero only when no actionable context can be produced.
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | sed -n '1,30p'
+#!/usr/bin/env python3
+"""Validate the audit registry and its local rendered control-plane artifacts."""
+
+from __future__ import annotations
+
+import argparse
+from collections import Counter, defaultdict
+import json
+from pathlib import Path
+import re
+import subprocess
+import sys
+from typing import Any
+
+import yaml
+
+
+ROOT = Path(__file__).resolve().parents[1]
+REGISTRY_PATH = ROOT / "<redacted:secret>"
+AUDIT_PATH = ROOT / "<redacted:secret>"
+LEDGER_PATH = ROOT / "docs/trackers/project-ontos-audit-remediation-release-line.md"
+REVALIDATION_PATH = ROOT / "<redacted:secret>"
+DOCTOR_MANIFEST_PATH = ROOT / "<redacted:secret>"
+SERIALIZER_MANIFEST_PATH = ROOT / "<redacted:secret>"
+GITHUB_REPOSITORY = "ohjonathan/Project-Ontos"
+
+REQUIRED_FINDING_FIELDS = {
+    "id",
+    "baseline_commit",
+    "severity",
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | wc -l
+728
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | grep -n "def main\|sys.exit\|exit(1\|exit(2\|exit(0\|FAILED\|ERROR\|exception\|except \|KeyError" | head -30
+697:def main() -> int:
+707:    except Exception as exc:  # validation should fail closed with useful context
+708:        print(f"audit-registry: ERROR: {exc}", file=sys.stderr)
+711:        print("audit-registry: FAILED", file=sys.stderr)
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | grep -cE "^- id:" 2>/dev/null; git show b6f89d7:<redacted:secret> 2>/dev/null | grep -E "^- id: R2-" | wc -l
+0
+       0
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | sed -n '697,728p'
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--require-external-parity",
+        action="store_true",
+        help="query live GitHub issues and fail on state/milestone/label/checklist drift",
+    )
+    args = parser.parse_args()
+    try:
+        errors = validate(args.require_external_parity)
+    except Exception as exc:  # validation should fail closed with useful context
+        print(f"audit-registry: ERROR: {exc}", file=sys.stderr)
+        return 2
+    if errors:
+        print("audit-registry: FAILED", file=sys.stderr)
+        for error in errors:
+            print(f"- {error}", file=sys.stderr)
+        return 1
+    mode = "local+external" if args.require_external_parity else "local"
+    print("audit-registry: PASS")
+    print(f"mode: {mode}")
+    print("original findings: 91 (P0=1, P1=27, P2=63)")
+    print(
+        "original status: committed_fixed=2, code_fixed_evidence_pending=1, "
+        "implemented_uncommitted=40, partial_uncommitted=7, confirmed_open=41"
+    )
+    print("revalidation findings: 9")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | head -40
+schema_version: 1
+registry_id: project-ontos-audit-remediation-registry
+source_audit: <redacted:secret>
+audit_baseline_commit: 589d919
+revalidation_commit: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+revalidation_report: <redacted:secret>
+generated_artifacts:
+  - docs/trackers/project-ontos-audit-remediation-release-line.md
+github_snapshot:
+  observed_at: "2026-07-10"
+  epic_issue: 158
+  epic_release_line_synced: true
+  r2_checklists_synced: true
+  original_checklist_policy: merged_and_verified_only
+  uncommitted_original_checklists_remain_unchecked: true
+  source_issues: [146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157]
+  issue_finding_counts:
+    146: 1
+    147: 2
+    148: 11
+    149: 20
+    150: 15
+    151: 5
+    152: 6
+    153: 9
+    154: 14
+    155: 1
+    156: 5
+    157: 2
+  registry_finding_counts:
+    146: 2
+    147: 2
+    148: 12
+    149: 21
+    150: 16
+    151: 6
+    152: 6
+    153: 12
+    154: 14
+    155: 1
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | grep -n "Counter\|status_count\|confirmed_open\|partial_uncommitted\|committed_fixed\|91\|9.*revalid\|len(" | head -25
+7:from collections import Counter, defaultdict
+220:    duplicate_ids = sorted(key for key, count in Counter(ids).items() if count > 1)
+257:    original_counts = Counter(row.get("severity") for row in original.values())
+258:    if original_counts != Counter({"P0": 1, "P1": 27, "P2": 63}):
+296:    expected_status_counts = Counter(
+298:            "confirmed_open": 41,
+305:    status_counts = Counter(row.get("status") for row in original.values())
+306:    if status_counts != expected_status_counts:
+308:            f"original working-tree status totals are wrong: {dict(status_counts)}"
+338:    calculated_counts = Counter(row["issue"] for row in original.values())
+348:    calculated_registry_counts = Counter(row["issue"] for row in findings)
+360:    if sum(calculated_registry_counts.values()) != len(findings) or len(findings) != 100:
+363:            f"mapped={sum(calculated_registry_counts.values())}, rows={len(findings)}, expected=100"
+457:        if not path or len(issue_set) < 2:
+460:        if set(order) != issue_set or len(order) != len(issue_set):
+481:                    elif len(matching_leases) > 1:
+556:    if len(doctor_manifest.get("required_dispatch_bundles", [])) != 9:
+558:    if len(doctor_manifest.get("historical_receipt_gaps", [])) != 3:
+589:    if "verify-changed-path-scope.sh" not in scope_command or "bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95" not in scope_command:
+718:    print("original findings: 91 (P0=1, P1=27, P2=63)")
+720:        "original status: committed_fixed=2, code_fixed_evidence_pending=1, "
+721:        "implemented_uncommitted=40, partial_uncommitted=7, confirmed_open=41"
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | grep -n "def validate\|def _validate\|status_partition\|status.*partition\|active_lease\|overlap\|collision" | head -25
+136:def overlapping_path(left: str, right: str) -> str | None:
+146:def lease_covers(lease_path: str, overlap: str) -> bool:
+147:    return lease_path == overlap or (path_is_directory(lease_path) and overlap.startswith(lease_path))
+209:def validate(require_external_parity: bool) -> list[str]:
+468:                    overlap = overlapping_path(left_path, right_path)
+469:                    if overlap is None:
+475:                        if pair <= issues and lease_covers(path, overlap)
+479:                            f"unleased overlap {overlap}: #{left['issue']} and #{right['issue']}"
+483:                            f"multiply leased overlap {overlap}: #{left['issue']} and "
+495:                    (overlap := overlapping_path(left_path, right_path)) is not None
+496:                    and lease_covers(lease_path, overlap)
+502:            errors.append(f"lease {lease_path} does not correspond to an actual overlap")
+506:                f"lease {lease_path} lists programs without an actual overlap: "
+515:                    overlap = overlapping_path(left_path, right_path)
+516:                    if overlap is not None:
+518:                            f"simultaneously active leases overlap at {overlap}: "
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | sed -n '440,525p'
+(146, SERIALIZER_MANIFEST_PATH),
+        (147, DOCTOR_MANIFEST_PATH),
+    ):
+        manifest_scope = normalized_manifest_scope(load_yaml(manifest_path))
+        registry_scope = set(program_by_issue[issue].get("allowed_paths", []))
+        if registry_scope != manifest_scope:
+            errors.append(
+                f"program #{issue} scope/manifest mismatch: "
+                f"missing={sorted(manifest_scope - registry_scope)}, "
+                f"extra={sorted(registry_scope - manifest_scope)}"
+            )
+
+    lease_rows: list[tuple[str, set[int]]] = []
+    for lease in leases:
+        path = lease.get("path")
+        issue_set = set(lease.get("programs", []))
+        order = lease.get("order", [])
+        if not path or len(issue_set) < 2:
+            errors.append(f"invalid shared-path lease: {lease}")
+            continue
+        if set(order) != issue_set or len(order) != len(issue_set):
+            errors.append(f"lease order does not enumerate each program once for {path}")
+        lease_rows.append((path, issue_set))
+
+    for left_index, left in enumerate(programs):
+        for right in programs[left_index + 1 :]:
+            for left_path in left.get("allowed_paths", []):
+                for right_path in right.get("allowed_paths", []):
+                    overlap = overlapping_path(left_path, right_path)
+                    if overlap is None:
+                        continue
+                    pair = {left["issue"], right["issue"]}
+                    matching_leases = [
+                        path
+                        for path, issues in lease_rows
+                        if pair <= issues and lease_covers(path, overlap)
+                    ]
+                    if not matching_leases:
+                        errors.append(
+                            f"unleased overlap {overlap}: #{left['issue']} and #{right['issue']}"
+                        )
+                    elif len(matching_leases) > 1:
+                        errors.append(
+                            f"multiply leased overlap {overlap}: #{left['issue']} and "
+                            f"#{right['issue']} via {matching_leases}"
+                        )
+
+    for lease_path, issues in lease_rows:
+        participants: set[int] = set()
+        issue_list = sorted(issues)
+        for left_index, left_issue in enumerate(issue_list):
+            left = program_by_issue.get(left_issue, {})
+            for right_issue in issue_list[left_index + 1 :]:
+                right = program_by_issue.get(right_issue, {})
+                if any(
+                    (overlap := overlapping_path(left_path, right_path)) is not None
+                    and lease_covers(lease_path, overlap)
+                    for left_path in left.get("allowed_paths", [])
+                    for right_path in right.get("allowed_paths", [])
+                ):
+                    participants.update({left_issue, right_issue})
+        if not participants:
+            errors.append(f"lease {lease_path} does not correspond to an actual overlap")
+        nonparticipants = issues - participants
+        if nonparticipants:
+            errors.append(
+                f"lease {lease_path} lists programs without an actual overlap: "
+                f"{sorted(nonparticipants)}"
+            )
+
+    active_programs = [program for program in programs if program.get("lease_state") == "active"]
+    for left_index, left in enumerate(active_programs):
+        for right in active_programs[left_index + 1 :]:
+            for left_path in left.get("allowed_paths", []):
+                for right_path in right.get("allowed_paths", []):
+                    overlap = overlapping_path(left_path, right_path)
+                    if overlap is not None:
+                        errors.append(
+                            f"simultaneously active leases overlap at {overlap}: "
+                            f"#{left['issue']} and #{right['issue']}"
+                        )
+
+    ledger_text = LEDGER_PATH.read_text(encoding="utf-8")
+    audit_text = AUDIT_PATH.read_text(encoding="utf-8")
+    revalidation_text = REVALIDATION_PATH.read_text(encoding="utf-8")
+    if "2026-07-10-codex-audit-revalidation.md" not in audit_text:
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | sed -n '535,640p'
+marker = f"#{program['issue']}"
+        state = f"`{program['lifecycle_state']}`"
+        if not any(marker in line and state in line for line in ledger_text.splitlines()):
+            errors.append(f"O4 is missing #{program['issue']} lifecycle state {state}")
+    for path, issues in lease_rows:
+        expected_path = f"`{path}`"
+        matching_lines = [line for line in ledger_text.splitlines() if expected_path in line]
+        if not matching_lines:
+            errors.append(f"O5 is missing shared-path lease {path}")
+            continue
+        if not any(all(f"#{issue}" in line for issue in issues) for line in matching_lines):
+            errors.append(f"O5 lease {path} is missing one or more program issue IDs")
+    if not any("#149" in line and "P1-containing" in line for line in ledger_text.splitlines()):
+        errors.append("O4 must label #149 P1-containing")
+
+    doctor_manifest = load_yaml(DOCTOR_MANIFEST_PATH)
+    if doctor_manifest.get("fallback_evidence_mode") != "strict_p3":
+        errors.append("#147 manifest must require fresh strict-P3 evidence")
+    sequencing = doctor_manifest.get("implementation_sequencing", {})
+    if sequencing.get("implementation_ref") != "03c36e6ac999d2c411c13252baa2e8fcff60e6ed":
+        errors.append("#147 manifest is not pinned to the exact-argv implementation")
+    if len(doctor_manifest.get("required_dispatch_bundles", [])) != 9:
+        errors.append("#147 manifest must declare nine fresh B.1/D.2/D.5 dispatch bundles")
+    if len(doctor_manifest.get("historical_receipt_gaps", [])) != 3:
+        errors.append("#147 manifest must mark B.1/D.2/D.5 historical prose replay-required")
+    inventory = load_yaml(
+        ROOT / "<redacted:secret>"
+    )
+    if inventory.get("receipts") != []:
+        errors.append("#147 receipt inventory must stay empty until fresh wrapper dispatch")
+    for relative in (
+        "docs/specs/project-ontos-audit-doctor-rce-spec.md",
+        "<redacted:secret>",
+        "docs/retros/project-ontos-audit-doctor-rce-retro.md",
+        "docs/trackers/project-ontos-audit-doctor-rce.md",
+    ):
+        text = (ROOT / relative).read_text(encoding="utf-8")
+        if "code_fixed_evidence_pending" not in text:
+            errors.append(f"#147 lifecycle artifact lacks reopened status: {relative}")
+    doctor_spec = (
+        ROOT / "docs/specs/project-ontos-audit-doctor-rce-spec.md"
+    ).read_text(encoding="utf-8")
+    if "is_ontos_managed_serve_argv" not in doctor_spec or "five-case executable contract" not in doctor_spec:
+        errors.append("#147 spec does not describe the exact-argv five-test contract")
+
+    serializer_manifest = load_yaml(SERIALIZER_MANIFEST_PATH)
+    if serializer_manifest.get("fallback_evidence_mode") != "provider_limited_fallback":
+        errors.append("#146 manifest must declare its authorized provider-limited mode")
+    serializer_scope = serializer_manifest.get("scope", {})
+    if not serializer_scope.get("allowed_path_patterns"):
+        errors.append("#146 manifest must activate the framework changed-path scope verifier")
+    serializer_gates = {gate.get("id"): gate for gate in serializer_manifest.get("gate_prerequisites", [])}
+    scope_command = serializer_gates.get("G-scope-1", {}).get("verification", {}).get("command", "")
+    branch_command = serializer_gates.get("G-branch-1", {}).get("verification", {}).get("command", "")
+    if "verify-changed-path-scope.sh" not in scope_command or "bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95" not in scope_command:
+        errors.append("#146 scope gate must cover the registry base SHA")
+    if "git branch --show-current" in branch_command or "merge-base --is-ancestor" not in branch_command:
+        errors.append("#146 branch gate must use base ancestry, not a literal branch name")
+
+    if require_external_parity:
+        github_snapshot = registry.get("github_snapshot", {})
+        if github_snapshot.get("epic_release_line_synced") is not True:
+            errors.append("external parity drift: epic #158 release line is not synchronized")
+        if github_snapshot.get("r2_checklists_synced") is not True:
+            errors.append("external parity drift: R2 checklist rows are not synchronized")
+        if github_snapshot.get("original_checklist_policy") != "merged_and_verified_only":
+            errors.append("external parity drift: original checklist completion policy is not recorded")
+        if github_snapshot.get("uncommitted_original_checklists_remain_unchecked") is not True:
+            errors.append(
+                "external parity drift: uncommitted original rows must remain unchecked until merged and verified"
+            )
+        drift = github_snapshot.get("external_drift", [])
+        unresolved = [item for item in drift if item.get("status") != "resolved"]
+        for item in unresolved:
+            errors.append(
+                f"external parity drift: issue #{item.get('issue')} {item.get('field')} "
+                f"observed={item.get('observed')} expected={item.get('expected')}"
+            )
+        for item in drift:
+            if item.get("status") == "resolved" and item.get("observed") != item.get("expected"):
+                errors.append(
+                    f"external parity drift marked resolved with unequal values: "
+                    f"issue #{item.get('issue')} {item.get('field')}"
+                )
+
+        rows_by_issue: dict[int, list[dict[str, Any]]] = defaultdict(list)
+        for row in findings:
+            rows_by_issue[row["issue"]].append(row)
+        milestone_markers = {
+            1: "Audit Release N",
+            2: "Audit Release N+1",
+            3: "Audit Release N+2",
+        }
+        for issue in range(146, 159):
+            live = live_github_issue(issue)
+            program = program_by_issue.get(issue)
+            expected_rows = rows_by_issue.get(issue, [])
+            expected_ids = {row["id"] for row in expected_rows}
+            body = live.get("body") or ""
+
+            if issue == 158 and not expected_ids <= set(body.split()):
+                # Epic punctuation/backticks make token equality inconvenient;
+                # require every epic-owned ID literally in the body.
+                missing = sorted(item for item in expected_ids if item not in body)
+                if missing:
+                    errors.append(f"live GitHub epic #158 is missing rows: {missing}")
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | sed -n '640,697p'
+errors.append(f"live GitHub epic #158 is missing rows: {missing}")
+
+            checkbox_states = github_checkbox_states(body)
+            if issue <= 157 and set(checkbox_states) != expected_ids:
+                errors.append(
+                    f"live GitHub issue #{issue} finding checklist mismatch: "
+                    f"missing={sorted(expected_ids - set(checkbox_states))}, "
+                    f"extra={sorted(set(checkbox_states) - expected_ids)}"
+                )
+            missing_checkboxes = expected_ids - set(checkbox_states)
+            if missing_checkboxes:
+                errors.append(
+                    f"live GitHub issue #{issue} is missing checklist rows: "
+                    f"{sorted(missing_checkboxes)}"
+                )
+            for row in expected_rows:
+                if row["id"] not in checkbox_states:
+                    continue
+                expected_checked = row.get("status") == "code_fixed"
+                if checkbox_states[row["id"]] != expected_checked:
+                    errors.append(
+                        f"live GitHub checklist status mismatch for {row['id']}: "
+                        f"checked={checkbox_states[row['id']]} expected={expected_checked}"
+                    )
+
+            expected_state = (program or {}).get("github_state", "open").upper()
+            if live.get("state") != expected_state:
+                errors.append(
+                    f"live GitHub issue #{issue} state mismatch: "
+                    f"{live.get('state')!r} != {expected_state!r}"
+                )
+            expected_milestone = (program or {}).get("github_milestone", 1)
+            milestone_title = (live.get("milestone") or {}).get("title", "")
+            marker = milestone_markers[expected_milestone]
+            if not milestone_title.startswith(marker):
+                errors.append(
+                    f"live GitHub issue #{issue} milestone mismatch: "
+                    f"{milestone_title!r} does not start with {marker!r}"
+                )
+            if program is not None:
+                label_names = {
+                    item.get("name", "") for item in live.get("labels", [])
+                }
+                expected_label_prefix = program["max_severity"]
+                if not any(name.startswith(expected_label_prefix) for name in label_names):
+                    errors.append(
+                        f"live GitHub issue #{issue} lacks {expected_label_prefix} severity label"
+                    )
+        live_epic = live_github_issue(158)
+        if "v4.7.1" not in (live_epic.get("body") or "") or "v4.9.0" not in (
+            live_epic.get("body") or ""
+        ):
+            errors.append("live GitHub epic #158 lacks the revised three-release line")
+
+    return errors
+
+
+def main() -> int:
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | grep -n "def live_github_issue\|number\|title\|root_program\|root.*program\|absolute\|os.path.isabs\|evidence.*path\|evidence.*absolute\|canonical" | head -30
+31:    "root_program",
+163:def live_github_issue(issue: int) -> dict[str, Any]:
+173:            "number,state,title,labels,milestone,body",
+234:            for evidence_path in row["verification_evidence"]:
+235:                if not isinstance(evidence_path, str) or not (ROOT / evidence_path).exists():
+237:                        f"{row.get('id', index)} evidence path is missing: {evidence_path!r}"
+672:            milestone_title = (live.get("milestone") or {}).get("title", "")
+674:            if not milestone_title.startswith(marker):
+677:                    f"{milestone_title!r} does not start with {marker!r}"
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | sed -n '225,245p'
+if not isinstance(row, dict):
+            errors.append(f"finding row {index} is not a mapping")
+            continue
+        missing = sorted(REQUIRED_FINDING_FIELDS - row.keys())
+        if missing:
+            errors.append(f"{row.get('id', index)} missing fields: {missing}")
+        if not isinstance(row.get("verification_evidence"), list) or not row.get("verification_evidence"):
+            errors.append(f"{row.get('id', index)} has no verification evidence")
+        else:
+            for evidence_path in row["verification_evidence"]:
+                if not isinstance(evidence_path, str) or not (ROOT / evidence_path).exists():
+                    errors.append(
+                        f"{row.get('id', index)} evidence path is missing: {evidence_path!r}"
+                    )
+        if not isinstance(row.get("allowed_paths"), list) or not row.get("allowed_paths"):
+            errors.append(f"{row.get('id', index)} has no allowed paths")
+        if row.get("issue") not in range(146, 159):
+            errors.append(f"{row.get('id', index)} has invalid issue assignment {row.get('issue')!r}")
+
+    original = {row["id"]: row for row in findings if row.get("origin") == "fable_audit"}
+    r2 = {row["id"]: row for row in findings if row.get("origin") == "codex_revalidation"}
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | grep -n "root_program\|program_root\|owning_program\|root.*equal\|os.path\|isabs\|escaping\|..*relative" | head -20
+31:    "root_program",
+565:    for relative in (
+571:        text = (ROOT / relative).read_text(encoding="utf-8")
+573:            errors.append(f"#147 lifecycle artifact lacks reopened status: {relative}")
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:ontos/commands/log.py 2>/dev/null | sed -n '345,395p'
+marker_path = project_root / ".ontos" / "session_archived"
+    try:
+        marker_path.parent.mkdir(parents=True, exist_ok=True)
+        marker_path.write_text(str(log_path), encoding="utf-8")
+    except OSError:
+        # Non-fatal: marker creation failure shouldn't break logging
+        pass
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | sed -n '163,180p'
+def live_github_issue(issue: int) -> dict[str, Any]:
+    result = subprocess.run(
+        [
+            "gh",
+            "issue",
+            "view",
+            str(issue),
+            "--repo",
+            GITHUB_REPOSITORY,
+            "--json",
+            "number,state,title,labels,milestone,body",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | grep -E "^- id:|^  origin:" | head -20
+(no output)
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | grep -cE "^- id:" ; git show b6f89d7:<redacted:secret> 2>/dev/null | grep -cE "origin: codex_revalidation"
+0
+1
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | grep -nE "^[[:space:]]*- id:|^[[:space:]]+origin:" | head -30
+71:    origin: fable_audit
+78:    origin: fable_audit
+86:    origin: codex_revalidation
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | grep -n "R2-\|findings:\|^  - " | head -30
+8:  - docs/trackers/project-ontos-audit-remediation-release-line.md
+94:  - &p146
+124:  - &p147
+150:  - &p148
+181:  - &p149
+221:  - &p150
+242:  - &p151
+278:  - &p152
+303:  - &p153
+328:  - &p154
+359:  - &p155
+375:  - &p156
+397:  - &p157
+415:  - {path: "docs/logs/", programs: [146, 147], order: [146, 147]}
+416:  - {path: ".github/workflows/", programs: [148, 156], order: [148, 156]}
+417:  - {path: "ontos/core/schema.py", programs: [146, 151], order: [146, 151]}
+418:  - {path: "ontos/io/yaml.py", programs: [146, 151], order: [146, 151]}
+419:  - {path: "ontos/commands/promote.py", programs: [146, 151, 152], order: [146, 151, 152]}
+420:  - {path: "ontos/commands/migrate.py", programs: [146, 152], order: [146, 152]}
+421:  - {path: "ontos/mcp/writes.py", programs: [146, 152, 153, 154], order: [146, 152, 153, 154]}
+422:  - {path: "ontos/commands/log.py", programs: [148, 151], order: [148, 151]}
+423:  - {path: "ontos/commands/activate.py", programs: [148, 149], order: [148, 149]}
+424:  - {path: "ontos/commands/doctor.py", programs: [147, 149], order: [147, 149]}
+425:  - {path: "ontos/commands/link_check.py", programs: [148, 154], order: [148, 154]}
+426:  - {path: "ontos/commands/map.py", programs: [148, 149, 154], order: [148, 149, 154]}
+427:  - {path: "ontos/core/config.py", programs: [148, 149], order: [148, 149]}
+428:  - {path: "ontos/core/context.py", programs: [148, 153], order: [148, 153]}
+429:  - {path: "ontos/core/frontmatter_edit.py", programs: [148, 151, 152], order: [148, 151, 152]}
+430:  - {path: "ontos/core/git.py", programs: [148, 150], order: [148, 150]}
+431:  - {path: "ontos/mcp/portfolio_config.py", programs: [148, 149], order: [148, 149]}
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | sed -n '55,95p'
+status: resolved
+      reason: "Issue retitled and relabeled P1-containing and moved to Audit Release N+1 on 2026-07-10."
+
+shared_tree_integration:
+  status: unproven_rebaseline_integration
+  release_blocking: true
+  affected_issues: [146, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157]
+  reason: >-
+    Implementations were assembled in one dirty working tree without
+    per-deliverable base-SHA scope receipts. Structural lease parity is valid,
+    but historical simultaneous-lease compliance cannot be reconstructed or
+    certified. Split/review each deliverable from its recorded base before
+    release.
+
+row_templates:
+  original_open: &original_open
+    origin: fable_audit
+    baseline_commit: 589d919
+    status: confirmed_open
+    fix_commit: null
+    verification_evidence:
+      - <redacted:secret>
+  original_fixed: &original_fixed
+    origin: fable_audit
+    baseline_commit: 589d919
+    status: code_fixed
+    fix_commit: 03c36e6ac999d2c411c13252baa2e8fcff60e6ed
+    verification_evidence:
+      - tests/test_doctor_mcp_probe_regression.py
+      - SECURITY.md
+  r2_open: &r2_open
+    origin: codex_revalidation
+    baseline_commit: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+    status: confirmed_open
+    fix_commit: null
+    verification_evidence:
+      - <redacted:secret>
+
+programs:
+  - &p146
+    id: project-ontos-audit-serializer-corruption
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | grep -n "R2\|revalid\|origin" | head -15
+22:REVALIDATION_PATH = ROOT / "<redacted:secret>"
+41:EXPECTED_R2_IDS = {
+42:    "R2-test-hermeticity-1",
+43:    "R2-context-tmp-symlink-1",
+44:    "R2-loader-id-type-1",
+45:    "R2-windows-fcntl-import-1",
+46:    "R2-lifecycle-type-enumeration-1",
+47:    "R2-testpypi-provenance-1",
+48:    "R2-activation-version-skew-1",
+49:    "R2-mcp-readonly-export-1",
+50:    "R2-control-plane-parity-1",
+199:            r"(?<![A-Za-z0-9-])(?:D[0-9][A-Za-z0-9-]*|R2-[A-Za-z0-9-]+)",
+244:    original = {row["id"]: row for row in findings if row.get("origin") == "fable_audit"}
+245:    r2 = {row["id"]: row for row in findings if row.get("origin") == "codex_revalidation"}
+246:    if set(original) != set(audit):
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | grep -n "shared_tree\|integration\|affected_issues\|release_blocking" | head -10
+421:    integration = registry.get("shared_tree_integration", {})
+422:    expected_integration_issues = {
+425:        if program.get("lease_state") == "implementation_uncommitted_integration_pending"
+427:    observed_integration_issues = set(integration.get("affected_issues", []))
+428:    if integration.get("status") != "unproven_rebaseline_integration":
+429:        errors.append("shared-tree integration must remain explicitly unproven")
+430:    if integration.get("release_blocking") is not True:
+431:        errors.append("unproven shared-tree integration must remain release-blocking")
+432:    if observed_integration_issues != expected_integration_issues:
+434:            "shared-tree integration issue set mismatch: "
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:<redacted:secret> 2>/dev/null | sed -n '209,220p'
+def validate(require_external_parity: bool) -> list[str]:
+    errors: list[str] = []
+    registry = load_yaml(REGISTRY_PATH)
+    audit = audit_register()
+    findings = registry.get("findings")
+    programs = registry.get("programs")
+    leases = registry.get("shared_path_leases")
+    if not isinstance(findings, list) or not isinstance(programs, list) or not isinstance(leases, list):
+        return ["registry findings, programs, and shared_path_leases must be lists"]
+
+    ids = [row.get("id") for row in findings if isinstance(row, dict)]
+    duplicate_ids = sorted(key for key, count in Counter(ids).items() if count > 1)
+[0m
+[0m$ [0mcd /<redacted:secret> && git show b6f89d7:ontos/core/context.py 2>/dev/null | sed -n '705,770p'
+) -> str:
+        """Write and fsync UTF-8 content to an anchored exclusive temp file."""
+        self._verify_anchor_binding(anchor)
+        final_info = self._entry_stat(anchor, final_name)
+        if final_info is not None:
+            if stat.S_ISLNK(final_info.st_mode):
+                raise ValueError(
+                    f"destination must not be a symlink: {anchor.path / final_name}"
+                )
+            if not stat.S_ISREG(final_info.st_mode):
+                raise ValueError(
+                    f"destination must be a regular file: {anchor.path / final_name}"
+                )
+
+        fd, temp_name = self._create_unique_file(
+            anchor,
+            prefix=f".{final_name}.",
+            suffix=".tmp",
+        )
+        try:
+            if hasattr(os, "fchmod"):
+                mode = stat.S_IMODE(final_info.st_mode) if final_info else 0o644
+                os.fchmod(fd, mode)
+            with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
+                fd = -1
+                handle.write(content)
+                handle.flush()
+                os.fsync(handle.fileno())
+            return temp_name
+        except BaseException:
+            if fd >= 0:
+                os.close(fd)
+            self._unlink_entry(anchor, temp_name, missing_ok=True)
+            raise
+
+    def _reserve_backup(self, anchor: _DirectoryAnchor, final_name: str) -> str:
+        fd, backup_name = self._create_unique_file(
+            anchor,
+            prefix=f".{final_name}.",
+            suffix=".bak",
+        )
+        os.close(fd)
+        return backup_name
+
+    def _replace_entry(
+        self,
+        source_anchor: _DirectoryAnchor,
+        source_name: str,
+        destination_anchor: _DirectoryAnchor,
+        destination_name: str,
+    ) -> None:
+        if source_anchor.fd is not None and destination_anchor.fd is not None:
+            os.replace(
+                source_name,
+                destination_name,
+                src_dir_fd=source_anchor.fd,
+                dst_dir_fd=destination_anchor.fd,
+            )
+            return
+        self._verify_anchor_binding(source_anchor)
+        if destination_anchor is not source_anchor:
+            self._verify_anchor_binding(destination_anchor)
+        os.replace(
+            source_anchor.path / source_name,
+            destination_anchor.path / destination_name,
+        )
+[0m
+[0m# [0mTodos
+[✓] Read three template files (01, 02, 03) completely
+[✓] Overwrite B.2-final-glm-peer.md with pending wrapper line
+[✓] Find and review spec v1.5 document
+[✓] Inspect frozen I0 b6f89d7 with bounded git show/diff
+[✓] Read C-phase-falsification-findings.md (reproduction only)
+[✓] Concentrate on v1.5 corrections for review
+[•] Write completed artifact to .raw path following Template 03
+[ ] Stdout Created plus backticked path
+[0m
+[0m$ [0mcd /<redacted:secret> && git branch --show-current && git rev-parse --short HEAD && git ls-files <redacted:secret>
+codex/audit-rebaseline-remediation-lifecycle
+d12f851
+<redacted:secret>
+[0m
+[0m$ [0mcd /<redacted:secret> && ls -la <redacted:secret>/ | head -5
+total 1768
+drwxr-xr-x@ 109 jonathanoh  wheel   3488 Jul 10 16:16 .
+drwxr-xr-x@  49 jonathanoh  wheel   1568 Jul 10 16:23 ..
+-rw-r--r--@   1 jonathanoh  wheel    150 Jul 10 12:12 B.3-gemini-dispatch-attestation.txt
+-rw-r--r--@   1 jonathanoh  wheel   2201 Jul 10 10:52 <redacted:secret>
+[0m
+[0m← [0mWrite <redacted:secret>
+Wrote file successfully.
+[0m
+[0m# [0mTodos
+[✓] Read three template files (01, 02, 03) completely
+[✓] Overwrite B.2-final-glm-peer.md with pending wrapper line
+[✓] Find and review spec v1.5 document
+[✓] Inspect frozen I0 b6f89d7 with bounded git show/diff
+[✓] Read C-phase-falsification-findings.md (reproduction only)
+[✓] Concentrate on v1.5 corrections for review
+[✓] Write completed artifact to .raw path following Template 03
+[•] Stdout Created plus backticked path
+[0m
+[0m$ [0mcd /<redacted:secret> && git ls-files --others --exclude-standard <redacted:secret> <redacted:secret>
+<redacted:secret>
+<redacted:secret>
+[0m
+[0m# [0mTodos
+[✓] Read three template files (01, 02, 03) completely
+[✓] Overwrite B.2-final-glm-peer.md with pending wrapper line
+[✓] Find and review spec v1.5 document
+[✓] Inspect frozen I0 b6f89d7 with bounded git show/diff
+[✓] Read C-phase-falsification-findings.md (reproduction only)
+[✓] Concentrate on v1.5 corrections for review
+[✓] Write completed artifact to .raw path following Template 03
+[✓] Stdout Created plus backticked path
+[0m

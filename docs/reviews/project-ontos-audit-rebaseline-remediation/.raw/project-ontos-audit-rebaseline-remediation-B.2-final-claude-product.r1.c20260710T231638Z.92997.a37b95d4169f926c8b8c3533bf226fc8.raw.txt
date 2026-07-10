@@ -1,0 +1,14 @@
+Done. Wrote `docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-final-claude-product.md` — a fresh Product-lens review of committed spec v1.5 against the operator/adopter, per Template 19.
+
+**Verdict: Approve.**
+
+Key results from the walk:
+
+- **Log created + failed marker (both modes):** Well-specified for JSON (path in `data`, warning in `warnings[]`, exit `3`, `result.status: warnings`). Raised **PRD-1 (should-fix)**: §4.3 pins the created-log path only into JSON `data`, not explicitly into the human warning line — a human operator whose marker write fails could lose the log's location. I0 swallows this failure entirely (`except OSError: pass`), so v1.5 is a real improvement; the gap is only human-mode path parity.
+- **Exit 3 is not failure:** Confirmed. `ResultStatus` is a *domain* outcome independent of execution success (`b6f89d7:ontos/ui/json_output.py:19-27`), so exit `3` reads as "done, with a caveat." Code `4` reserved, absent from the enum.
+- **Migration anchor discoverable:** Spec pins `#audit-remediation-compatibility-contracts` in both the error copy (§4.4) and the doc requirement (§7). Committed doc has no such heading yet (expected Phase C gate — 0 matches at HEAD). Raised **PRD-2 (minor)**: slug is pinned but the generating heading text is not, a drift risk.
+- **Invalid-ID / collision copy:** Spec correctly replaces I0's regex-dump `--id` error with the canonical plain-language validator message, and adds an actionable collision recovery hint — logged as positives.
+- **Late malformed version clause:** Confirmed the I0 `all(...)` short-circuit hides a later malformed clause; spec requires eager parsing + clause identification + single literal echo. Addressed.
+- **Windows/TestPyPI/child/D.6/release:** All verified to remain explicitly pending across §2/§3/§11 and the §10.2 `D6_Pending` stop boundary.
+
+No Blocking findings (spec review, `static-inspection` only — P5). I did not commit (Product is a review-phase role; orchestrator stages), and edited no other file.
