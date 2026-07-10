@@ -235,6 +235,18 @@ def _has_explicit_id(doc: DocumentData) -> bool:
     return isinstance(doc.frontmatter, dict) and "id" in doc.frontmatter
 
 
+def _content_has_explicit_id(
+    content: str,
+    frontmatter_parser: Callable[[str], Tuple[Dict[str, Any], str]],
+) -> bool:
+    """Check the template/README opt-in before validating a fallback ID."""
+    try:
+        frontmatter, _ = frontmatter_parser(content)
+    except (TypeError, ValueError):
+        return False
+    return isinstance(frontmatter, dict) and "id" in frontmatter
+
+
 def load_documents(
     paths: List[Path],
     frontmatter_parser: Callable[[str], Tuple[Dict[str, Any], str]],
@@ -278,7 +290,17 @@ def load_documents(
                 # This is more lenient than the legacy parser (core/frontmatter.py) which required
                 # content.startswith('---') with no leading whitespace. The leniency handles BOM
                 # artifacts and minor formatting issues in imported/external files.
-                content = raw_bytes.decode('utf-8', errors='replace').lstrip()
+                content = raw_bytes.decode('utf-8', errors='strict').lstrip()
+
+                # README and template files without an explicit id are not
+                # documents.  Apply that established exclusion before the
+                # canonical ID validator sees fallback stems such as
+                # ``_template`` and correctly rejects their leading underscore.
+                if (
+                    _is_validation_excluded_by_name(path)
+                    and not _content_has_explicit_id(content, frontmatter_parser)
+                ):
+                    continue
 
                 doc, doc_issues = load_document_from_content(path, content, frontmatter_parser)
 
@@ -358,7 +380,7 @@ def load_document(
     # This is more lenient than the legacy parser (core/frontmatter.py) which required
     # content.startswith('---') with no leading whitespace. The leniency handles BOM
     # artifacts and minor formatting issues in imported/external files.
-    content = raw_bytes.decode('utf-8', errors='replace').lstrip()
+    content = raw_bytes.decode('utf-8', errors='strict').lstrip()
     doc, _ = load_document_from_content(path, content, frontmatter_parser)
     return doc
 
@@ -386,6 +408,7 @@ def load_document_from_content(
     normalize_aliases
 )
     from ontos.core.staleness import normalize_describes
+    from ontos.core.schema import validate_document_id
     from ontos.core.cache import DocumentCache # This import is not used in this function, but kept as per instruction.
     
     fm, body = frontmatter_parser(content)
@@ -427,7 +450,7 @@ def load_document_from_content(
         return inner
 
     # Core fields (B1 Canonical Mapping)
-    doc_id = fm.get('id', path.stem)
+    doc_id = validate_document_id(fm.get('id', path.stem))
     doc_type = normalize_type(fm.get('type'), on_error=report_enum_error("type"))
     doc_status = normalize_status(fm.get('status'), on_error=report_enum_error("status"))
     depends_on = normalize_depends_on(

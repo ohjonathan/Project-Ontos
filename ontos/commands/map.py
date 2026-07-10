@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
+import sys
 from typing import Dict, List, Optional, Any, Tuple
 
 from ontos import __version__ as ONTOS_VERSION
@@ -832,7 +833,7 @@ def map_command(options: MapOptions) -> int:
         options: CLI-level map options
 
     Returns:
-        Exit code (0 for success, 1 for errors, 2 for warnings in strict mode)
+        Exit code (0 clean, 1 findings, 3 warnings in strict mode)
     """
     from ontos.io.files import find_project_root, load_documents, DocumentLoadResult
     from ontos.io.config import load_project_config
@@ -852,7 +853,7 @@ def map_command(options: MapOptions) -> int:
                 message=str(e),
             )
         elif not options.quiet:
-            print(f"Error: {e}")
+            print(f"Error: {e}", file=sys.stderr)
         return 1
 
     # Load config
@@ -867,7 +868,7 @@ def map_command(options: MapOptions) -> int:
                 message=f"Config error: {e}",
             )
         elif not options.quiet:
-            print(f"Config error: {e}")
+            print(f"Config error: {e}", file=sys.stderr)
         return 1
 
     # Determine paths
@@ -994,7 +995,7 @@ def map_command(options: MapOptions) -> int:
     if result.errors:
         exit_code = 1
     elif options.strict and result.warnings:
-        exit_code = 2
+        exit_code = 3
 
     # Output result
     if options.json_output:

@@ -6,7 +6,7 @@ summary: "Fix #146 / D2b-roundtrip-3 so Ontos frontmatter write paths preserve v
 lifecycle_mode: framework lifecycle
 deliverable_type: standard
 user_facing: false
-fallback_evidence_mode: strict_p3
+fallback_evidence_mode: provider_limited_fallback
 require_lifecycle_dispatch_bundles: true
 strict_p3_required_phases: ["B.1", "D.2", "D.5"]
 
@@ -22,12 +22,20 @@ scope:
     - "docs/retros/project-ontos-audit-serializer-corruption-retro.md"
     - "docs/logs/"
     - "ontos/core/schema.py"
+    - "ontos/io/files.py"
     - "ontos/io/yaml.py"
     - "ontos/commands/promote.py"
     - "ontos/commands/migrate.py"
+    - "ontos/commands/retrofit.py"
     - "ontos/mcp/writes.py"
+    - "tests/core/test_schema.py"
+    - "tests/test_document_loading_contract_a1.py"
     - "tests/test_frontmatter_roundtrip_regression.py"
-  allowed_path_patterns: []
+    - "tests/commands/test_retrofit.py"
+  # A non-empty glob list activates the framework's base-SHA changed-path
+  # verifier; allowed_paths alone are declarative in that verifier.
+  allowed_path_patterns:
+    - "docs/reviews/project-ontos-audit-serializer-corruption/**"
   composition_targets: []
   forbidden_paths:
     - "ontos/core/body_refs.py"
@@ -44,12 +52,19 @@ scope:
   forbidden_symbols:
     - "git reset --hard"
     - "git checkout -- ."
+  forbidden_symbol_exemptions:
+    - path: "manifests/project-ontos-audit-serializer-corruption.yaml"
+      reason: "The manifest must declare the forbidden regexes that the gate enforces."
+      symbols: ["git reset --hard", "git checkout -- ."]
+    - path: "ontos/mcp/writes.py"
+      reason: "A historical safety docstring explains why the scoped rollback avoids the forbidden whole-workspace command."
+      symbols: ["git checkout -- ."]
   cardinality_assertions:
-    - name: "four serializer regression fixtures are declared"
-      command: "grep -cE 'Q3 plan|design_v1,final|4.10|#42 follow-up' tests/test_frontmatter_roundtrip_regression.py"
-      expect: "gte:4"
+    - name: "adversarial serializer regression fixture classes are declared"
+      command: "grep -cE 'embedded.*quote|alpha, beta|true|# leading hash|2026-07-10|first line|Unicode' tests/test_frontmatter_roundtrip_regression.py"
+      expect: "gte:7"
     - name: "roundtrip assertion helper exists"
-      command: "python -c \"from ontos.io.yaml import assert_frontmatter_roundtrip; print(callable(assert_frontmatter_roundtrip))\""
+      command: ".venv/bin/python -c \"from ontos.io.yaml import assert_frontmatter_roundtrip; print(callable(assert_frontmatter_roundtrip))\""
       expect: "literal:True"
 
 artifacts:
@@ -165,6 +180,41 @@ consolidation_mode: author-direct-with-external-lens
 anchor_parity_strict: false
 
 lifecycle_receipt_inventory_path: "docs/reviews/project-ontos-audit-serializer-corruption/lifecycle-receipt-inventory.yaml"
+harness_blocked_families:
+  - family: gpt
+    provider: openai
+    affected_phases: ["B.1"]
+    affected_role: "alignment"
+    blockage_category: model_unavailable
+    blockage_evidence_path: "docs/reviews/project-ontos-audit-serializer-corruption/B.1-gpt-dispatch-result.yaml"
+    blockage_evidence_sha256: "ffde893769b1c111e5765b0f18378619f0645fe95740d4203c1517113c8d4ba2"
+    first_observed: "2026-07-03T09:22:13Z"
+    retry_policy: "A strict B.1 gpt dispatch was attempted through the wrapper and failed because the account rejected the requested model; retry through the wrapper when a supported GPT-family route is available."
+    fallback_route: "Maintainer-authorized provider-limited continuation; no substitute receipt exists and strict P3 remains uncertified."
+    re_adjudication_owner: "Project Ontos Maintainers"
+    re_adjudication_ref: "readjudicate-146-gpt-b1"
+provider_limited_review_exception:
+  scope: "The wrapper-attempted GPT alignment seat in B.1 for #146. This exception does not cover the pending Gemini seat or any undispatched D.2/D.5 seat, does not complete B.1, and does not certify strict P3."
+  strict_p3_roles_unsatisfied:
+    - "gpt alignment"
+  fallback_roles_used:
+    - "maintainer-authorized warning-only evidence gap; no substitute receipt has been recorded"
+  evidence_type: framework_fallback_evidence
+  strict_p3_certified: false
+  authorization_ref: "docs/trackers/project-ontos-audit-serializer-corruption.md#fallback-authorization-2026-07-03"
+  caveat_text: "Strict P3 is not certified; provider-limited continuation is authorized but the deliverable remains incomplete."
+re_adjudication_queue:
+  - id: "readjudicate-146-gpt-b1"
+    artifact_under_judgment: "docs/specs/project-ontos-audit-serializer-corruption-spec.md"
+    blocked_family_ref: "gpt"
+    reason: "The B.1 GPT alignment seat has no completed provider evidence because the wrapper-dispatched model was unavailable."
+    rerun_trigger: "A supported GPT-family model is available through the configured Codex CLI route."
+    owner: "Project Ontos Maintainers"
+    priority: blocking
+    expected_rerun_command: "bash .llm-dev/framework/scripts/dispatch-family-review.sh --family gpt --model <supported-gpt-model> ..."
+    status: pending
+    dispatch_intent_path: "docs/reviews/project-ontos-audit-serializer-corruption/B.1-gpt-dispatch-intent.yaml"
+    dispatch_result_path: "docs/reviews/project-ontos-audit-serializer-corruption/B.1-gpt-dispatch-result.yaml"
 required_dispatch_bundles:
   - phase: "B.1"
     intent_path: "docs/reviews/project-ontos-audit-serializer-corruption/B.1-claude-sonnet-dispatch-intent.yaml"
@@ -209,22 +259,22 @@ gate_prerequisites:
       expect: "exit-0"
   - id: G-scope-1
     category: scope
-    description: "Code changes under ontos/ and tests/ are confined to the #146 lease."
+    description: "All committed, staged, unstaged, and untracked changes since the #146 resumption base are confined to the manifest lease."
     verification:
-      command: "git diff --name-only -- ontos tests | grep -vE '^(ontos/core/schema.py|ontos/io/yaml.py|ontos/commands/promote.py|ontos/commands/migrate.py|ontos/mcp/writes.py|tests/test_frontmatter_roundtrip_regression.py)$'"
-      expect: "exit-nonzero"
+      command: "bash .llm-dev/framework/scripts/verify-changed-path-scope.sh --manifest manifests/project-ontos-audit-serializer-corruption.yaml --base bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95"
+      expect: "exit-0"
   - id: G-scope-2
     category: scope
     description: "The explicitly forbidden log.py and body_refs.py surfaces are unchanged."
     verification:
-      command: "git diff --name-only -- ontos/commands/log.py ontos/core/body_refs.py"
+      command: "git diff --name-only bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95 -- ontos/commands/log.py ontos/core/body_refs.py"
       expect: "empty"
   - id: G-cardinality-1
     category: cardinality
-    description: "All four audit fixtures are present in the regression test."
+    description: "The expanded adversarial fixture classes are present in the regression test."
     verification:
-      command: "grep -cE 'Q3 plan|design_v1,final|4.10|#42 follow-up' tests/test_frontmatter_roundtrip_regression.py"
-      expect: "gte:4"
+      command: "grep -cE 'embedded.*quote|alpha, beta|true|# leading hash|2026-07-10|first line|Unicode' tests/test_frontmatter_roundtrip_regression.py"
+      expect: "gte:7"
   - id: G-cardinality-2
     category: cardinality
     description: "The serializer implementation has no remaining _serialize_field function."
@@ -257,10 +307,10 @@ gate_prerequisites:
       expect: "exit-nonzero"
   - id: G-branch-1
     category: branch
-    description: "Session remains on the maintainer review branch/worktree and does not perform release actions."
+    description: "The recorded #146 resumption base is an ancestor of the current review head; no branch-name convention is a release gate."
     verification:
-      command: "git branch --show-current"
-      expect: "literal:main"
+      command: "git merge-base --is-ancestor bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95 HEAD"
+      expect: "exit-0"
 
 tracker:
   path: "docs/trackers/project-ontos-audit-serializer-corruption.md"

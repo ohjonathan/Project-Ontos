@@ -25,6 +25,7 @@ def test_scaffold_help_parity(golden_help):
         text=True,
         env=os.environ.copy()
     )
+    assert result.stdout == golden_help
     # Compare key elements (flags, descriptions)
     # The wording might be slightly different in the new implementation (help vs title)
     # but the functional coverage should be the same.

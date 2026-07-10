@@ -6,7 +6,6 @@ These tests verify that Ontos works correctly in both:
 """
 
 import os
-import sys
 import pytest
 
 
@@ -41,9 +40,6 @@ class TestDualModePathHelpers:
     
     def test_decision_history_path_respects_mode(self, mode_aware_project, project_mode):
         """Verify decision_history.md path is correct for mode."""
-        # Add scripts to path
-        sys.path.insert(0, str(mode_aware_project / '.ontos' / 'scripts'))
-        
         # Can't fully test path helpers without config, but verify structure exists
         if project_mode == "user":
             assert (mode_aware_project / 'docs' / 'strategy' / 'decision_history.md').exists()

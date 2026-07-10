@@ -9,11 +9,12 @@ Per v2.9 implementation plan:
 - Legacy documents without ontos_schema are inferred from field presence
 - Documents with future schema versions fail gracefully
 
-STDLIB ONLY: This module uses only Python standard library (3.9+).
+PyYAML is a required runtime dependency and is used for safe serialization.
 """
 
 from dataclasses import dataclass
 from enum import Enum
+import re
 from typing import Dict, List, Optional, Tuple, Any
 
 
@@ -73,6 +74,27 @@ SCHEMA_TOOL_REQUIREMENTS: Dict[str, str] = {
 # Schema version bounds for documentation and validation
 MIN_READABLE_SCHEMA = "1.0"   # Oldest schema this tool can read
 MAX_READABLE_SCHEMA = "2.2"   # Newest schema this tool fully supports
+
+DOCUMENT_ID_PATTERN = re.compile(
+    r"^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$"
+)
+
+
+def validate_document_id(value: Any) -> str:
+    """Return a valid document ID or raise a user-actionable ``ValueError``."""
+    if not isinstance(value, str):
+        raise ValueError(
+            f"Document id must be a string, got {type(value).__name__}: {value!r}"
+        )
+    normalized = value.strip()
+    if not normalized:
+        raise ValueError("Document id must not be empty")
+    if not DOCUMENT_ID_PATTERN.fullmatch(normalized):
+        raise ValueError(
+            "Document id must start and end with an alphanumeric character "
+            "and contain only letters, numbers, '_', '-', or '.'"
+        )
+    return normalized
 
 
 def parse_version(version_str: str) -> Tuple[int, int]:
@@ -201,47 +223,39 @@ def check_compatibility(
             message=f"Invalid document schema version: {e}"
         )
     
-    # Parse tool version (may have patch, e.g., "2.9.0")
-    tool_parts = tool_version.split('.')
-    try:
-        tool_major = int(tool_parts[0])
-        tool_minor = int(tool_parts[1]) if len(tool_parts) > 1 else 0
-    except (ValueError, IndexError):
+    minimum = parse_version(MIN_READABLE_SCHEMA)
+    maximum = parse_version(MAX_READABLE_SCHEMA)
+    document = (doc_major, doc_minor)
+
+    if document < minimum:
         return SchemaCheckResult(
             compatibility=SchemaCompatibility.INCOMPATIBLE,
             document_version=doc_version,
             tool_version=tool_version,
-            message=f"Invalid tool version: {tool_version}"
+            message=(
+                f"Document uses schema {doc_version}, older than the minimum "
+                f"readable schema {MIN_READABLE_SCHEMA}."
+            ),
         )
-    
-    # Check for future major version (incompatible)
-    if doc_major > tool_major:
-        return SchemaCheckResult(
-            compatibility=SchemaCompatibility.INCOMPATIBLE,
-            document_version=doc_version,
-            tool_version=tool_version,
-            message=f"Document uses schema {doc_version}, but tool only supports up to {tool_major}.x"
-        )
-    
-    # Check for future minor version within same major (read-only)
-    if doc_major == tool_major and doc_minor > tool_minor:
+
+    if document > maximum:
         return SchemaCheckResult(
             compatibility=SchemaCompatibility.READ_ONLY,
             document_version=doc_version,
             tool_version=tool_version,
-            message=f"Document uses schema {doc_version}. Tool {tool_version} can read but may not preserve all fields."
+            message=(
+                f"Document uses schema {doc_version}; this build can only "
+                f"write through schema {MAX_READABLE_SCHEMA}."
+            ),
         )
-    
-    # Check for known schema versions
+
     if doc_version not in SCHEMA_DEFINITIONS:
-        # Unknown but compatible major version - treat as read-only
-        if doc_major <= tool_major:
-            return SchemaCheckResult(
-                compatibility=SchemaCompatibility.READ_ONLY,
-                document_version=doc_version,
-                tool_version=tool_version,
-                message=f"Unknown schema version {doc_version}. Reading with best effort."
-            )
+        return SchemaCheckResult(
+            compatibility=SchemaCompatibility.READ_ONLY,
+            document_version=doc_version,
+            tool_version=tool_version,
+            message=f"Unknown schema version {doc_version}. Reading with best effort.",
+        )
     
     # Fully compatible
     return SchemaCheckResult(
@@ -277,7 +291,7 @@ def validate_frontmatter(
         schema_version = detect_schema_version(frontmatter)
     
     if schema_version not in SCHEMA_DEFINITIONS:
-        return True, []  # Unknown schema, can't validate
+        return False, [f"Unknown schema version: {schema_version}"]
     
     schema = SCHEMA_DEFINITIONS[schema_version]
     errors = []
@@ -288,14 +302,18 @@ def validate_frontmatter(
             errors.append(f"Missing required field: {field}")
         elif isinstance(frontmatter[field], str) and not frontmatter[field].strip():
             errors.append(f"Required field '{field}' is empty")
+
+    if "id" in frontmatter:
+        try:
+            validate_document_id(frontmatter["id"])
+        except ValueError as exc:
+            errors.append(str(exc))
     
     return len(errors) == 0, errors
 
 
 def serialize_frontmatter(fm: Dict[str, Any]) -> str:
-    """Serialize frontmatter dict to YAML-like string using STDLIB ONLY.
-
-    This function handles common YAML types without requiring PyYAML.
+    """Serialize frontmatter as safe YAML with semantic round-trip checks.
 
     Args:
         fm: Frontmatter dictionary.
@@ -309,7 +327,14 @@ def serialize_frontmatter(fm: Dict[str, Any]) -> str:
         >>> serialize_frontmatter({"id": "test", "depends_on": ["foo", "bar"]})
         'id: test\\ndepends_on: [foo, bar]'
     """
-    lines = []
+    from ontos.io.yaml import assert_frontmatter_roundtrip, dump_yaml
+
+    if not isinstance(fm, dict):
+        raise TypeError("Frontmatter must be a dictionary")
+    if "id" in fm:
+        validate_document_id(fm["id"])
+
+    blocks: List[str] = []
     
     # Define field order for consistent output
     field_order = [
@@ -322,69 +347,24 @@ def serialize_frontmatter(fm: Dict[str, Any]) -> str:
     processed = set()
     for key in field_order:
         if key in fm:
-            lines.append(_serialize_field(key, fm[key]))
+            blocks.append(_dump_frontmatter_field(key, fm[key], dump_yaml))
             processed.add(key)
     
     # Process remaining fields in original order
     for key, value in fm.items():
         if key not in processed:
-            lines.append(_serialize_field(key, value))
-    
-    return '\n'.join(lines)
+            blocks.append(_dump_frontmatter_field(key, value, dump_yaml))
+
+    serialized = "\n".join(blocks)
+    assert_frontmatter_roundtrip(fm, serialized)
+    return serialized
 
 
-def _serialize_field(key: str, value: Any) -> str:
-    """Serialize a single frontmatter field.
-
-    Args:
-        key: Field name.
-        value: Field value.
-
-    Returns:
-        Formatted line like "key: value".
-    """
-    if value is None:
-        return f"{key}: null"
-    
-    if isinstance(value, bool):
-        return f"{key}: {str(value).lower()}"
-    
-    if isinstance(value, (int, float)):
-        return f"{key}: {value}"
-    
-    if isinstance(value, list):
-        if not value:
-            return f"{key}: []"
-        # Simple list format for short lists
-        if all(isinstance(v, str) and ' ' not in v and ':' not in v for v in value):
-            items = ', '.join(str(v) for v in value)
-            return f"{key}: [{items}]"
-        # Multi-line format for complex lists
-        lines = [f"{key}:"]
-        for item in value:
-            lines.append(f"  - {item}")
-        return '\n'.join(lines)
-    
-    if isinstance(value, str):
-        # Check if value needs quoting
-        if ':' in value or value.startswith('{') or value.startswith('['):
-            return f'{key}: "{value}"'
-        # Multi-line strings
-        if '\n' in value:
-            lines = [f"{key}: |"]
-            for line in value.split('\n'):
-                lines.append(f"  {line}")
-            return '\n'.join(lines)
-        return f"{key}: {value}"
-    
-    # Nested dict handling (defensive - rare in Ontos frontmatter)
-    if isinstance(value, dict):
-        # Serialize nested dict as inline JSON-like format
-        import json
-        return f"{key}: {json.dumps(value)}"
-    
-    # Fallback: convert to string
-    return f"{key}: {value}"
+def _dump_frontmatter_field(key: str, value: Any, dumper) -> str:
+    if not isinstance(key, str) or not key:
+        raise ValueError(f"Frontmatter keys must be non-empty strings: {key!r}")
+    flow_style = None if isinstance(value, list) else False
+    return dumper({key: value}, default_flow_style=flow_style).rstrip("\n")
 
 
 def add_schema_to_frontmatter(

@@ -7,16 +7,11 @@ Tests the decision_history.md generation:
 - generate_decision_history()
 """
 
-import os
-import sys
 import pytest
 from datetime import date
 from unittest.mock import patch, MagicMock
 import tempfile
 import shutil
-
-# Add scripts directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '.ontos', 'scripts'))
 
 from ontos.core.history import (
     get_log_date,

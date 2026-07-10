@@ -6,7 +6,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+import ontos
 from ontos.commands.map import GenerateMapOptions, generate_context_map
+from ontos.core.config import required_version_incompatibility
 from ontos.core.frontmatter_repair import enum_issue_summary
 from ontos.core.types import DocumentData
 from ontos.core.warning_groups import (
@@ -84,6 +86,13 @@ def run_activation(
         config = load_project_config(repo_root=project_root)
     except Exception as exc:
         return 1, _not_usable(f"Config error: {exc}", project_root=project_root)
+
+    version_issue = required_version_incompatibility(
+        config.ontos.required_version,
+        ontos.__version__,
+    )
+    if version_issue:
+        return 1, _not_usable(version_issue, project_root=project_root)
 
     effective_scope = resolve_scan_scope(scope, config.scanning.default_scope)
     output_path = project_root / config.paths.context_map

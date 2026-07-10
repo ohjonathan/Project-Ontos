@@ -84,9 +84,9 @@ class TestCheckCompatibility:
         result = check_compatibility("2.9", "2.1")
         assert result.compatibility == SchemaCompatibility.READ_ONLY
 
-    def test_incompatible_future_major(self):
+    def test_future_known_schema_is_read_only_when_newer_than_writer(self):
         result = check_compatibility("3.0", "2.9.0")
-        assert result.compatibility == SchemaCompatibility.INCOMPATIBLE
+        assert result.compatibility == SchemaCompatibility.READ_ONLY
 
     def test_invalid_doc_version(self):
         result = check_compatibility("bad", "2.9.0")
@@ -112,9 +112,10 @@ class TestValidateFrontmatter:
         valid, errors = validate_frontmatter({"id": "", "type": "atom"}, "2.0")
         assert valid is False
 
-    def test_unknown_schema_passes(self):
+    def test_unknown_schema_fails_validation(self):
         valid, errors = validate_frontmatter({"id": "test"}, "99.0")
-        assert valid is True
+        assert valid is False
+        assert errors == ["Unknown schema version: 99.0"]
 
 
 # ---------------------------------------------------------------------------
@@ -158,3 +159,28 @@ class TestSerializeFrontmatter:
         fm = {"id": "test", "extra": None}
         result = serialize_frontmatter(fm)
         assert "extra: null" in result
+
+    @pytest.mark.parametrize(
+        "frontmatter",
+        [
+            {"id": "test", "title": 'Q3 plan: "final" version'},
+            {"id": "test", "depends_on": ["design_v1,final"]},
+            {"id": "test", "version": "4.10", "build": "007", "flag": "no"},
+            {"id": "test", "note": "#42 follow-up"},
+            {"id": "2026-07-10", "title": "Date-like ID remains text"},
+            {"id": "test", "note": "phase --- two"},
+            {"id": "test", "note": "line one\nline two"},
+            {"id": "test", "title": "Unicode café 日本語"},
+        ],
+    )
+    def test_adversarial_values_roundtrip_exactly(self, frontmatter):
+        from ontos.io.yaml import parse_frontmatter_content
+
+        serialized = serialize_frontmatter(frontmatter)
+        parsed, _ = parse_frontmatter_content(f"---\n{serialized}\n---\n")
+        assert parsed == frontmatter
+
+    @pytest.mark.parametrize("bad_id", [None, 123, "", "has spaces", "-bad"])
+    def test_invalid_document_ids_fail_closed(self, bad_id):
+        with pytest.raises(ValueError, match="Document id"):
+            serialize_frontmatter({"id": bad_id, "type": "atom"})

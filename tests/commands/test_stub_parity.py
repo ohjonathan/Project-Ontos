@@ -7,6 +7,10 @@ from pathlib import Path
 
 import pytest
 
+from ontos.commands.stub import _VALID_DOC_TYPES, _validate_stub_params
+from ontos.core.errors import OntosUserError
+from ontos.core.ontology import get_valid_types
+
 
 def test_stub_help_parity():
     """Native --help matches legacy."""
@@ -24,7 +28,13 @@ def test_stub_help_parity():
 
 def test_stub_file_creation_parity(tmp_path):
     """Stub command creates file with correct frontmatter."""
+    (tmp_path / ".ontos.toml").write_text(
+        "[ontos]\nversion = '4.7'\n",
+        encoding="utf-8",
+    )
     output_file = tmp_path / "test_stub.md"
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(Path(__file__).resolve().parents[2])
     
     # Run native command
     result = subprocess.run(
@@ -35,7 +45,8 @@ def test_stub_file_creation_parity(tmp_path):
          "--output", str(output_file)],
         capture_output=True,
         text=True,
-        env=os.environ.copy()
+        env=env,
+        cwd=tmp_path,
     )
 
     assert result.returncode == 0
@@ -48,3 +59,21 @@ def test_stub_file_creation_parity(tmp_path):
     assert "curation_level: 1" in content
     assert "goal: Test Goal" in content
     assert "# Test Stub" in content
+
+
+def test_stub_types_derive_from_canonical_ontology():
+    assert _VALID_DOC_TYPES == frozenset(get_valid_types())
+
+
+@pytest.mark.parametrize("doc_type", sorted(get_valid_types()))
+def test_stub_accepts_every_canonical_document_type(doc_type):
+    _validate_stub_params(
+        {"id": f"{doc_type}_stub", "type": doc_type, "depends_on": None}
+    )
+
+
+def test_stub_rejects_noncanonical_unknown_type():
+    with pytest.raises(OntosUserError, match="Invalid --type"):
+        _validate_stub_params(
+            {"id": "unknown_stub", "type": "unknown", "depends_on": None}
+        )

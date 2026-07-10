@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""
-Golden Master Capture Script
-
-Captures v2.9.x behavior for regression testing during v3.0 refactoring.
-Run this ONCE on v2.9.x to establish baselines, then compare against v3.0.
+"""Golden-master capture for the current package behavior.
 
 Usage:
     python capture_golden_master.py [--fixture small|medium|large|all]
@@ -61,6 +57,10 @@ def normalize_output(text: str, fixture_path: Path) -> str:
     # Normalize absolute paths to fixture root
     fixture_str = str(fixture_path.resolve())
     text = text.replace(fixture_str, '<FIXTURE_ROOT>')
+    text = text.replace(fixture_path.name, '<FIXTURE_NAME>')
+
+    # Date-prefixed generated log filenames vary by execution day.
+    text = re.sub(r'\d{4}-\d{2}-\d{2}_(?=[A-Za-z0-9])', '<DATE>_', text)
 
     # Normalize any remaining absolute paths containing .ontos-internal
     text = re.sub(
@@ -138,8 +138,8 @@ def normalize_session_log(content: str, fixture_path: Path) -> str:
 
     # Normalize date field in frontmatter
     content = re.sub(
-        r'^date: \d{4}-\d{2}-\d{2}',
-        'date: <DATE>',
+        r'^(date|created): [\'\"]?\d{4}-\d{2}-\d{2}[\'\"]?',
+        r'\1: <DATE>',
         content,
         flags=re.MULTILINE
     )
@@ -357,6 +357,15 @@ def capture_fixture(fixture_name: str) -> None:
         if map_data.get("exit_code", 0) < 0:
             print(f"  ERROR: Map command failed (exit code {map_data['exit_code']}). Skipping baseline write.")
             return
+
+        # Reset so map generation cannot influence the log baseline.
+        shutil.rmtree(fixture_path)
+        fixture_path = setup_fixture(fixture_name)
+        shutil.copytree(
+            PROJECT_ROOT / ".ontos",
+            fixture_path / ".ontos",
+            dirs_exist_ok=True,
+        )
 
         # Capture log command
         print("  Capturing 'ontos log'...")

@@ -1,0 +1,72 @@
+results:
+- dispatch_id: project-ontos-audit-doctor-rce-B.1-gemini-adversarial
+  capture_id: project-ontos-audit-doctor-rce-B.1-gemini-adversarial.r1.c20260710T141400Z.84663.3f5a1693dca6cb90f2d5532289375508
+  round: 1
+  family: gemini
+  actual_executed_family: gemini
+  role: adversarial
+  execution_provider: gemini
+  execution_cli: gemini
+  resolved_executable: /opt/homebrew/bin/gemini
+  resolved_executable_realpath: /opt/homebrew/Cellar/gemini-cli/0.44.0/libexec/lib/node_modules/@google/gemini-cli/bundle/gemini.js
+  cli_version: 0.44.0
+  provider_probe_hash: sha256:99baa89c145382ab7fe63b66e7aa650d76f8293fde6ce8c3d6c486a7dc45ceca
+  model_id: auto
+  resolved_model: cli-default-unknown
+  model_probe_command: (post-dispatch) grep -iE 'model:' <raw_stderr> | head -1
+  model_candidate_list:
+  - cli-config-default
+  model_selection_rule: cli-config-default+post-dispatch-best-effort
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - gemini
+  - -p
+  - <prompt-body-redacted>
+  prompt_path: docs/reviews/project-ontos-audit-doctor-rce/.prompts/project-ontos-audit-doctor-rce-B.1-gemini-adversarial.r1.c20260710T141400Z.84663.3f5a1693dca6cb90f2d5532289375508.md
+  prompt_sha256: sha256:56c34abf25e74886b906e2e10d4e35fc441dfd3df4a5b0e3f68f7b70733c7b43
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 1
+  started_at: '2026-07-10T14:14:01Z'
+  ended_at: '2026-07-10T14:14:05Z'
+  raw_output_path: docs/reviews/project-ontos-audit-doctor-rce/.raw/project-ontos-audit-doctor-rce-B.1-gemini-adversarial.r1.c20260710T141400Z.84663.3f5a1693dca6cb90f2d5532289375508.raw.txt
+  raw_output_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  stderr_path: docs/reviews/project-ontos-audit-doctor-rce/.raw/project-ontos-audit-doctor-rce-B.1-gemini-adversarial.r1.c20260710T141400Z.84663.3f5a1693dca6cb90f2d5532289375508.stderr.txt
+  stderr_hash: sha256:0ff9b8b82d0c1bb8a1b8a6b13db60aa95b91a988d9a184178e4a0f391affebdf
+  evidence_cap: static-inspection
+  evidence_labels_used: []
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-audit-doctor-rce/B.1-gemini-adversarial.md
+  artifact_sha256: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  status: failed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: null
+  model_used: cli-default-unknown
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: ''
+    exit_code: 1
+    started_at: '2026-07-10T14:14:01Z'
+    ended_at: '2026-07-10T14:14:04Z'
+    detected_429: false
+    stderr_tail_200: "opt/homebrew/Cellar/gemini-cli/0.44.0/libexec/lib/node_modules/@google/gemini-cli/bundle/chunk-BE42OOYM.js:307452:5)\n\
+      \    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+    stdout_substantive: false
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: raw_stdout
+  artifact_write_conflict: true
+  artifact_prewrite_sha256: sha256:254787eab13a9c09028eac2fcf10b803e2e3e3a44ed0649088eae51afef51a87
+  sequential_dispatch_caveat:
+    reason: Only Gemini is currently dispatchable; GPT auto is wrapper-blocked and
+      GLM is unavailable, so this evidence cannot certify strict P3.
+    timestamp: '2026-07-10T14:13:59Z'
+  intent_model_restrictions:
+    family: gemini
+    execution_cli: gemini
+    denied_models: []
+    allowed_models: []
+    active: false

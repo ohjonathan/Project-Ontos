@@ -1,15 +1,43 @@
 """Pytest configuration and shared fixtures."""
 
 import os
-import sys
+from pathlib import Path
 import shutil
 import subprocess
+import sys
 import warnings
+
 import pytest
 
-# Add bundled scripts directory to path for legacy imports
-# (Tests import directly from script names like ontos_generate_context_map)
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), '.ontos', 'scripts'))
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _repository_status() -> str:
+    result = subprocess.run(
+        ["git", "status", "--porcelain=v1", "--untracked-files=all"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.stdout if result.returncode == 0 else "<git-status-unavailable>"
+
+
+_SESSION_STARTED_CLEAN = _repository_status() == ""
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Turn a clean-clone test run dirtying the checkout into a test failure."""
+    if not _SESSION_STARTED_CLEAN:
+        return
+    status = _repository_status()
+    if status:
+        reporter = session.config.pluginmanager.get_plugin("terminalreporter")
+        if reporter is not None:
+            reporter.write_sep("=", "tests modified the repository checkout", red=True)
+            reporter.write(status)
+        session.exitstatus = pytest.ExitCode.TESTS_FAILED
 
 
 # v2.9.2: Configure warning filters for deprecation warnings

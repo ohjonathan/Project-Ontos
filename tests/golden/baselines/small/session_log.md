@@ -1,22 +1,21 @@
 ---
-id: log_<DATE>_initial_setup
+id: log_<DATE>_test-change-for-log-capture
 type: log
 status: active
-event_type: feature
-concepts: [setup, architecture]
-impacts: [project_plan]
+event_type: chore
+source: Golden Master Capture
+branch: master
+created: <DATE>
 ---
 
-# Initial Setup
+# Test change for log capture
 
-## Goal
-Set up the project structure.
+## Summary
+
+<!-- Brief description of what was done -->
 
 ## Changes Made
-- Created initial documentation structure
-- Defined core mission
 
-## Raw Session History
-```text
-abc1234 - Initial commit
-```
+<!-- List of changes -->
+
+## Testing

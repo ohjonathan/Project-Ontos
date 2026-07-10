@@ -51,6 +51,7 @@ from ontos.core.context import SessionContext
 from ontos.core.curation import create_scaffold
 from ontos.core.errors import OntosInternalError, OntosUserError
 from ontos.core.git import rollback_path
+from ontos.core.frontmatter_edit import patch_frontmatter_fields
 from ontos.core.schema import serialize_frontmatter
 from ontos.io.yaml import parse_frontmatter_content
 from ontos.mcp._validation import resolve_workspace_slug, validate_workspace_id
@@ -609,7 +610,7 @@ def _promote_document_impl(
         )
 
     target = Path(doc.filepath)
-    original = target.read_text(encoding="utf-8")
+    original = target.read_bytes().decode("utf-8")
     frontmatter, body = parse_frontmatter_content(original)
     if not frontmatter:
         raise OntosUserError(
@@ -623,10 +624,10 @@ def _promote_document_impl(
     except (TypeError, ValueError):
         old_level = 0
 
-    frontmatter["curation_level"] = int(new_level)
-    document = f"---\n{serialize_frontmatter(frontmatter)}\n---\n\n{body}"
-    if not document.endswith("\n"):
-        document += "\n"
+    document = patch_frontmatter_fields(
+        original,
+        {"curation_level": int(new_level)},
+    )
 
     ctx = SessionContext(
         repo_root=plan.workspace_root,

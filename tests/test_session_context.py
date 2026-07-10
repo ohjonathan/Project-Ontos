@@ -9,7 +9,9 @@ Tests the v2.8 refactoring deliverables:
 import fcntl
 import inspect
 from multiprocessing import Event, Process
+import os
 from pathlib import Path
+import stat
 import pytest
 
 import ontos.core.context as context_module
@@ -65,6 +67,242 @@ class TestSessionContext:
         ctx.buffer_write(test_file, 'content')
         ctx.commit()
         assert len(ctx.pending_writes) == 0
+
+    def test_commit_keeps_move_and_delete_behavior(self, tmp_path):
+        source = tmp_path / "source.md"
+        destination = tmp_path / "nested" / "destination.md"
+        deleted = tmp_path / "deleted.md"
+        source.write_text("move me", encoding="utf-8")
+        deleted.write_text("delete me", encoding="utf-8")
+
+        ctx = SessionContext(repo_root=tmp_path, config={})
+        ctx.buffer_move(source, destination)
+        ctx.buffer_delete(deleted)
+
+        assert ctx.commit() == [destination.resolve(), deleted.resolve()]
+        assert destination.read_text(encoding="utf-8") == "move me"
+        assert not source.exists()
+        assert not deleted.exists()
+
+    def test_commit_does_not_follow_predictable_temp_symlink(self, tmp_path):
+        """A pre-created ``<target>.tmp`` symlink must remain untouched."""
+        outside = tmp_path.parent / f"{tmp_path.name}-outside.md"
+        outside.write_text("outside", encoding="utf-8")
+        target = tmp_path / "doc.md"
+        predictable = tmp_path / "doc.md.tmp"
+        try:
+            predictable.symlink_to(outside)
+        except OSError as exc:  # pragma: no cover - platform capability.
+            pytest.skip(f"symlinks unavailable: {exc}")
+
+        ctx = SessionContext(repo_root=tmp_path, config={})
+        ctx.buffer_write(target, "replacement")
+        assert ctx.commit() == [target]
+
+        assert target.read_text(encoding="utf-8") == "replacement"
+        assert outside.read_text(encoding="utf-8") == "outside"
+        assert predictable.is_symlink()
+
+    def test_commit_preserves_preexisting_predictable_temp_file(self, tmp_path):
+        target = tmp_path / "doc.md"
+        predictable = tmp_path / "doc.md.tmp"
+        predictable.write_text("sentinel", encoding="utf-8")
+
+        ctx = SessionContext(repo_root=tmp_path, config={})
+        ctx.buffer_write(target, "replacement")
+        ctx.commit()
+
+        assert predictable.read_text(encoding="utf-8") == "sentinel"
+        assert target.read_text(encoding="utf-8") == "replacement"
+
+    def test_commit_rejects_symlink_destination(self, tmp_path):
+        outside = tmp_path.parent / f"{tmp_path.name}-outside-destination.md"
+        outside.write_text("outside", encoding="utf-8")
+        target = tmp_path / "doc.md"
+        try:
+            target.symlink_to(outside)
+        except OSError as exc:  # pragma: no cover - platform capability.
+            pytest.skip(f"symlinks unavailable: {exc}")
+
+        ctx = SessionContext(repo_root=tmp_path, config={})
+        ctx.buffer_write(target, "replacement")
+        with pytest.raises(ValueError, match="must not be a symlink"):
+            ctx.commit()
+
+        assert outside.read_text(encoding="utf-8") == "outside"
+        assert target.is_symlink()
+
+    def test_commit_rejects_outside_workspace_destination(self, tmp_path):
+        outside = tmp_path.parent / f"{tmp_path.name}-escape.md"
+        ctx = SessionContext(repo_root=tmp_path, config={})
+        ctx.buffer_write(outside, "replacement")
+
+        with pytest.raises(ValueError, match="outside the workspace"):
+            ctx.commit()
+        assert not outside.exists()
+
+    def test_commit_rejects_duplicate_buffered_paths_before_writing(self, tmp_path):
+        target = tmp_path / "doc.md"
+        ctx = SessionContext(repo_root=tmp_path, config={})
+        ctx.buffer_write(target, "first")
+        ctx.buffer_write(target, "second")
+
+        with pytest.raises(ValueError, match="Multiple buffered operations"):
+            ctx.commit()
+        assert not target.exists()
+
+    def test_commit_rejects_move_to_same_path(self, tmp_path):
+        target = tmp_path / "doc.md"
+        target.write_text("unchanged", encoding="utf-8")
+        ctx = SessionContext(repo_root=tmp_path, config={})
+        ctx.buffer_move(target, target)
+
+        with pytest.raises(ValueError, match="identical"):
+            ctx.commit()
+        assert target.read_text(encoding="utf-8") == "unchanged"
+
+    def test_commit_rolls_back_earlier_writes_when_later_replace_fails(
+        self, tmp_path, monkeypatch
+    ):
+        first = tmp_path / "first.md"
+        second = tmp_path / "second.md"
+        first.write_text("old first", encoding="utf-8")
+        second.write_text("old second", encoding="utf-8")
+
+        real_replace = os.replace
+        failed = False
+
+        def fail_second_temp_once(src, dst, **kwargs):  # noqa: ANN001
+            nonlocal failed
+            source = Path(src)
+            destination = Path(dst)
+            if (
+                not failed
+                and destination.name == second.name
+                and source.suffix == ".tmp"
+            ):
+                failed = True
+                raise OSError("induced second replace failure")
+            return real_replace(src, dst, **kwargs)
+
+        monkeypatch.setattr(context_module.os, "replace", fail_second_temp_once)
+        ctx = SessionContext(repo_root=tmp_path, config={})
+        ctx.buffer_write(first, "new first")
+        ctx.buffer_write(second, "new second")
+
+        with pytest.raises(OSError, match="induced second replace failure"):
+            ctx.commit()
+
+        assert first.read_text(encoding="utf-8") == "old first"
+        assert second.read_text(encoding="utf-8") == "old second"
+        assert not list(tmp_path.glob(".*.tmp"))
+        assert not list(tmp_path.glob(".*.bak"))
+
+    @pytest.mark.skipif(os.name != "posix", reason="POSIX dir-fd race regression")
+    def test_commit_parent_swap_after_validation_cannot_escape_workspace(
+        self, tmp_path, monkeypatch
+    ):
+        """A parent exchanged after validation cannot redirect a staged write."""
+        safe_parent = tmp_path / "safe"
+        (safe_parent / "nested").mkdir(parents=True)
+        displaced_parent = tmp_path / "safe-original"
+
+        outside = tmp_path.parent / f"{tmp_path.name}-outside-parent"
+        (outside / "nested").mkdir(parents=True)
+        outside_target = outside / "nested" / "doc.md"
+        outside_target.write_text("external sentinel", encoding="utf-8")
+
+        target = safe_parent / "nested" / "doc.md"
+        ctx = SessionContext(repo_root=tmp_path, config={})
+        ctx.buffer_write(target, "replacement")
+
+        real_create = ctx._create_unique_file
+        exchanged = False
+
+        def exchange_parent_then_create(anchor, *, prefix, suffix):  # noqa: ANN001
+            nonlocal exchanged
+            if not exchanged:
+                exchanged = True
+                safe_parent.rename(displaced_parent)
+                try:
+                    safe_parent.symlink_to(outside, target_is_directory=True)
+                except OSError as exc:  # pragma: no cover - platform capability.
+                    pytest.skip(f"symlinks unavailable: {exc}")
+            return real_create(anchor, prefix=prefix, suffix=suffix)
+
+        monkeypatch.setattr(ctx, "_create_unique_file", exchange_parent_then_create)
+
+        with pytest.raises((RuntimeError, ValueError, OSError)):
+            ctx.commit()
+
+        assert outside_target.read_text(encoding="utf-8") == "external sentinel"
+        assert not list(outside.rglob(".*.tmp"))
+        assert not list(outside.rglob(".*.bak"))
+        assert not list(displaced_parent.rglob(".*.tmp"))
+        assert not list(displaced_parent.rglob(".*.bak"))
+
+    def test_failed_restore_preserves_only_recovery_backup(
+        self, tmp_path, monkeypatch
+    ):
+        """A restore error must retain and report the backup containing user data."""
+        first = tmp_path / "first.md"
+        second = tmp_path / "second.md"
+        first.write_text("old first", encoding="utf-8")
+        second.write_text("old second", encoding="utf-8")
+        outside = tmp_path.parent / f"{tmp_path.name}-rollback-sentinel.md"
+        outside.write_text("external sentinel", encoding="utf-8")
+
+        real_replace = os.replace
+        primary_failed = False
+        restore_failed = False
+
+        def fail_commit_and_restore(src, dst, **kwargs):  # noqa: ANN001
+            nonlocal primary_failed, restore_failed
+            source = Path(src)
+            destination = Path(dst)
+            if (
+                not primary_failed
+                and source.suffix == ".tmp"
+                and destination.name == second.name
+            ):
+                primary_failed = True
+                raise OSError("induced commit failure")
+            if (
+                primary_failed
+                and not restore_failed
+                and source.suffix == ".bak"
+                and destination.name == first.name
+            ):
+                restore_failed = True
+                raise OSError("induced restore failure")
+            return real_replace(src, dst, **kwargs)
+
+        monkeypatch.setattr(context_module.os, "replace", fail_commit_and_restore)
+        ctx = SessionContext(repo_root=tmp_path, config={})
+        ctx.buffer_write(first, "new first")
+        ctx.buffer_write(second, "new second")
+
+        with pytest.raises(OSError, match="induced commit failure"):
+            ctx.commit()
+
+        recovery_backups = list(tmp_path.glob(".first.md.*.bak"))
+        assert len(recovery_backups) == 1
+        assert recovery_backups[0].read_text(encoding="utf-8") == "old first"
+        assert "recovery backup preserved at" in ctx.errors[-1]
+        assert "induced restore failure" in ctx.errors[-1]
+        assert second.read_text(encoding="utf-8") == "old second"
+        assert outside.read_text(encoding="utf-8") == "external sentinel"
+        assert not list(tmp_path.glob(".*.tmp"))
+
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX mode bits")
+    def test_commit_preserves_existing_file_mode(self, tmp_path):
+        target = tmp_path / "doc.md"
+        target.write_text("old", encoding="utf-8")
+        target.chmod(0o640)
+        ctx = SessionContext(repo_root=tmp_path, config={})
+        ctx.buffer_write(target, "new")
+        ctx.commit()
+        assert stat.S_IMODE(target.stat().st_mode) == 0o640
 
     def test_rollback_clears_buffer(self):
         """Rollback should clear pending writes without executing."""

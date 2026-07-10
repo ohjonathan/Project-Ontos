@@ -1,13 +1,9 @@
 #!/bin/bash
-# Ontos pre-commit hook v3.0
-# Auto-consolidates old logs in automated mode
+# Ontos pre-commit hook v4.8
+# Delegate to the package CLI.
 
-# Bypass if Ontos not installed
-python3 -c "import importlib.util, sys; sys.exit(0 if importlib.util.find_spec('ontos._scripts.ontos_pre_commit_check') else 1)"
-if [ $? -ne 0 ]; then
+if ! python3 -c "import ontos" >/dev/null 2>&1; then
     exit 0
 fi
 
-# Hand off to bundled module
-python3 -m ontos._scripts.ontos_pre_commit_check
-exit $?
+exec python3 -m ontos hook pre-commit "$@"

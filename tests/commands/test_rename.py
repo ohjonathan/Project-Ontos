@@ -200,6 +200,27 @@ def test_rename_dry_run_json_includes_line_context_and_skipped_zones(tmp_path: P
     assert skipped[0]["skip_reason"] is not None
 
 
+def test_rename_apply_updates_aliased_and_heading_wikilinks(tmp_path: Path):
+    _init_repo(tmp_path)
+    _write_doc(tmp_path / "docs" / "target.md", "old_id")
+    source = tmp_path / "docs" / "source.md"
+    _write_doc(
+        source,
+        "source_doc",
+        body="[[old_id|Readable alias]] [[old_id#Section One]] [[old_id]]",
+    )
+    _init_git_repo(tmp_path)
+
+    result = _run_ontos(tmp_path, "rename", "old_id", "new_id", "--apply")
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    updated = source.read_text(encoding="utf-8")
+    assert "[[new_id|Readable alias]]" in updated
+    assert "[[new_id#Section One]]" in updated
+    assert "[[new_id]]" in updated
+    assert "[[old_id" not in updated
+
+
 def test_rename_frontmatter_comments_and_order_preserved_on_apply(tmp_path: Path):
     _init_repo(tmp_path)
     content = (

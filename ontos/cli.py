@@ -7,18 +7,22 @@ Full argparse implementation per Spec v1.1 Section 4.1.
 
 import argparse
 import contextlib
+import io
 import json
 import sys
 from pathlib import Path
 from typing import List, Optional, Sequence
 
 import ontos
+from ontos.command_registry import (
+    HIDDEN_COMMANDS,
+    command_path,
+    get_command_spec,
+    iter_command_specs,
+)
 from ontos.core.errors import OntosInternalError, OntosUserError
-from ontos.ui.json_output import emit_command_error, emit_command_success
 from ontos.commands.map import CompactMode
-
-
-HIDDEN_COMMANDS = ("agent-export", "hook", "tree", "validate")
+from ontos.ui.json_output import ExitCode, emit_command_error, emit_command_success
 
 
 def _first_command(argv: Sequence[str]) -> Optional[str]:
@@ -31,6 +35,30 @@ def _first_command(argv: Sequence[str]) -> Optional[str]:
     return None
 
 
+def _preparse_json(argv: Sequence[str]) -> bool:
+    """Detect the global JSON flag while honoring the ``--`` data boundary."""
+    pre_parser = argparse.ArgumentParser(
+        add_help=False,
+        allow_abbrev=False,
+        exit_on_error=False,
+    )
+    pre_parser.add_argument("--json", action="store_true")
+    parsed, _ = pre_parser.parse_known_args(list(argv))
+    return bool(parsed.json)
+
+
+def _argparse_error_message(stderr: str) -> str:
+    """Extract argparse's actionable final error without leaking usage prose."""
+    lines = [line.strip() for line in stderr.splitlines() if line.strip()]
+    if not lines:
+        return "Invalid command arguments"
+    message = lines[-1]
+    marker = "error:"
+    if marker in message.lower():
+        message = message[message.lower().index(marker) + len(marker) :].strip()
+    return message
+
+
 def _emit_handler_result_json(
     *,
     command: str,
@@ -38,14 +66,29 @@ def _emit_handler_result_json(
     message: str,
     data: Optional[object] = None,
     error_code: str = "E_COMMAND_FAILED",
+    execution_succeeded: Optional[bool] = None,
+    result_status: Optional[str] = None,
+    result_kind: Optional[str] = None,
+    exit_category: Optional[str] = None,
 ) -> None:
-    """Emit JSON result envelope for CLI handlers."""
-    if exit_code == 0:
+    """Emit a structured v4 result for tuple-returning CLI handlers."""
+    payload = data if data is not None else {"summary": message}
+    if result_kind is None:
+        top_level = command.split(" ", 1)[0]
+        spec = get_command_spec(top_level)
+        result_kind = spec.result_kind.value if spec is not None else None
+    if execution_succeeded is None:
+        execution_succeeded = exit_code == ExitCode.CLEAN
+
+    if execution_succeeded:
         emit_command_success(
             command=command,
             exit_code=exit_code,
             message=message,
-            data=data if data is not None else {},
+            data=payload,
+            result_status=result_status,
+            result_kind=result_kind,
+            exit_category=exit_category,
         )
         return
 
@@ -54,8 +97,24 @@ def _emit_handler_result_json(
         exit_code=exit_code,
         code=error_code,
         message=message,
-        data=data if data is not None else {},
+        data=payload,
+        execution_succeeded=False,
+        result_status=result_status,
+        result_kind=result_kind,
+        exit_category=exit_category,
     )
+
+
+class _OntosArgumentParser(argparse.ArgumentParser):
+    """Normalize suppressed global defaults after the full parse completes."""
+
+    def parse_args(self, args=None, namespace=None):
+        parsed = super().parse_args(args=args, namespace=namespace)
+        if not hasattr(parsed, "json"):
+            parsed.json = False
+        if not hasattr(parsed, "quiet"):
+            parsed.quiet = False
+        return parsed
 
 
 def create_parser(include_hidden: bool = True) -> argparse.ArgumentParser:
@@ -65,16 +124,18 @@ def create_parser(include_hidden: bool = True) -> argparse.ArgumentParser:
     global_parser.add_argument(
         "--quiet", "-q",
         action="store_true",
+        default=argparse.SUPPRESS,
         help="Suppress non-essential output"
     )
     global_parser.add_argument(
         "--json",
         action="store_true",
+        default=argparse.SUPPRESS,
         help="Output in JSON format"
     )
 
     # Main parser
-    parser = argparse.ArgumentParser(
+    parser = _OntosArgumentParser(
         prog="ontos",
         description="Local-first documentation management for AI-assisted development",
         parents=[global_parser],
@@ -90,37 +151,27 @@ def create_parser(include_hidden: bool = True) -> argparse.ArgumentParser:
     # Subcommands (all inherit from global_parser)
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
-    # Register commands with shared parent
-    _register_activate(subparsers, global_parser)
-    _register_init(subparsers, global_parser)
-    _register_map(subparsers, global_parser)
-    _register_log(subparsers, global_parser)
-    _register_doctor(subparsers, global_parser)
-    _register_maintain(subparsers, global_parser)
-    _register_link_check(subparsers, global_parser)
-    _register_rename(subparsers, global_parser)
-    _register_retrofit(subparsers, global_parser)
-    _register_env(subparsers, global_parser)
-    _register_mcp(subparsers, global_parser)
-    _register_serve(subparsers, global_parser)
-    _register_agents(subparsers, global_parser)
-    _register_export(subparsers, global_parser)
-    _register_verify(subparsers, global_parser)
-    _register_query(subparsers, global_parser)
-    _register_schema_migrate(subparsers, global_parser)
-    _register_consolidate(subparsers, global_parser)
-    _register_promote(subparsers, global_parser)
-    _register_scaffold(subparsers, global_parser)
-    _register_stub(subparsers, global_parser)
-    _register_migration_report(subparsers, global_parser)
-    _register_migrate_convenience(subparsers, global_parser)
-
-    if include_hidden:
-        _register_agent_export(subparsers, global_parser)  # Deprecated alias
-        _register_hook(subparsers, global_parser)
-        # Legacy Aliases (v3.2)
-        _register_tree_alias(subparsers, global_parser)
-        _register_validate_alias(subparsers, global_parser)
+    # The registry owns command discovery and ordering.  Registrar functions
+    # still own command-specific argparse details, but a mismatch now fails at
+    # parser construction instead of silently creating drift.
+    for spec in iter_command_specs(include_hidden=include_hidden):
+        registrar = globals().get(spec.registrar)
+        if not callable(registrar):
+            raise RuntimeError(
+                f"Command {spec.name!r} references missing registrar {spec.registrar!r}"
+            )
+        before = set(subparsers.choices)
+        registrar(subparsers, global_parser)
+        added = set(subparsers.choices) - before
+        if added != {spec.name}:
+            raise RuntimeError(
+                f"Registrar {spec.registrar!r} declared {sorted(added)!r}; "
+                f"expected only {spec.name!r}"
+            )
+        subparsers.choices[spec.name].set_defaults(
+            _command_name=spec.name,
+            _result_kind=spec.result_kind.value,
+        )
 
     return parser
 
@@ -128,6 +179,15 @@ def create_parser(include_hidden: bool = True) -> argparse.ArgumentParser:
 # ============================================================================
 # Command registration
 # ============================================================================
+
+
+class _StoreWithDeprecatedShortFlag(argparse.Action):
+    """Store a value and remember use of the legacy ``-f`` spelling."""
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, values)
+        if option_string == "-f":
+            setattr(namespace, f"_deprecated_{self.dest}", True)
 
 
 def _add_scope_argument(parser) -> None:
@@ -191,9 +251,8 @@ def _register_init(subparsers, parent):
     p.set_defaults(func=_cmd_init)
 
 
-def _register_map(subparsers, parent):
-    """Register map command."""
-    p = subparsers.add_parser("map", help="Generate context map", parents=[parent])
+def _configure_map_arguments(p) -> None:
+    """Add the canonical map arguments to map and its legacy alias."""
     p.add_argument("--strict", action="store_true",
                    help="Treat warnings as errors")
     p.add_argument("--output", "-o", type=Path,
@@ -204,6 +263,7 @@ def _register_map(subparsers, parent):
                    choices=["basic", "rich", "tiered"],
                    help="Compact output: 'basic' (default), 'rich' (with summaries), or 'tiered' (prose + ranked compact)")
     p.add_argument("--filter", "-F", "-f", metavar="EXPR",
+                   action=_StoreWithDeprecatedShortFlag,
                    help="Filter documents by expression (e.g., 'type:strategy'). Use -F; -f is deprecated.")
     p.add_argument("--no-cache", action="store_true",
                    help="Bypass document cache (for debugging)")
@@ -212,6 +272,12 @@ def _register_map(subparsers, parent):
     p.add_argument("--verbose", "-v", action="store_true",
                    help="Show full load diagnostics instead of grouped examples")
     _add_scope_argument(p)
+
+
+def _register_map(subparsers, parent):
+    """Register map command."""
+    p = subparsers.add_parser("map", help="Generate context map", parents=[parent])
+    _configure_map_arguments(p)
     p.set_defaults(func=_cmd_map)
 
 
@@ -400,6 +466,7 @@ def _register_env(subparsers, parent):
         "--format", "-f",
         choices=["text", "json"],
         default="text",
+        action=_StoreWithDeprecatedShortFlag,
         help="Output format (default: text). Short flag -f is deprecated."
     )
     p.set_defaults(func=_cmd_env)
@@ -632,13 +699,8 @@ def _register_hook(subparsers, parent):
     p.set_defaults(func=_cmd_hook)
 
 
-def _register_verify(subparsers, parent):
-    """Register verify command."""
-    p = subparsers.add_parser(
-        "verify",
-        help="Verify document describes dates",
-        parents=[parent]
-    )
+def _configure_verify_arguments(p) -> None:
+    """Add the canonical verify arguments to verify and its legacy alias."""
     p.add_argument(
         "path",
         nargs="?",
@@ -659,7 +721,21 @@ def _register_verify(subparsers, parent):
         action="store_true",
         help="Compare portfolio DB against projects.json and report discrepancies",
     )
+    p.add_argument(
+        "--workspace-id",
+        help="Limit --portfolio comparison to one workspace slug",
+    )
     _add_scope_argument(p)
+
+
+def _register_verify(subparsers, parent):
+    """Register verify command."""
+    p = subparsers.add_parser(
+        "verify",
+        help="Verify document describes dates",
+        parents=[parent]
+    )
+    _configure_verify_arguments(p)
     p.set_defaults(func=_cmd_verify)
 
 
@@ -842,25 +918,14 @@ def _register_migrate_convenience(subparsers, parent):
 def _register_tree_alias(subparsers, parent):
     """Register tree command (deprecated alias for map)."""
     p = subparsers.add_parser("tree", help=argparse.SUPPRESS, parents=[parent])
-    # Include map arguments to maintain compatibility
-    p.add_argument("--strict", action="store_true", help="Treat warnings as errors")
-    p.add_argument("--output", "-o", type=Path, help="Output path")
-    p.add_argument("--obsidian", action="store_true", help="Enable Obsidian output")
-    p.add_argument("--compact", nargs="?", const="basic", default="off",
-                   choices=["basic", "rich", "tiered"], help="Compact output")
-    p.add_argument("--filter", "-f", metavar="EXPR", help="Filter documents")
-    p.add_argument("--no-cache", action="store_true", help="Bypass cache")
-    _add_scope_argument(p)
+    _configure_map_arguments(p)
     p.set_defaults(func=_cmd_tree)
 
 
 def _register_validate_alias(subparsers, parent):
     """Register validate command (deprecated alias for verify)."""
     p = subparsers.add_parser("validate", help=argparse.SUPPRESS, parents=[parent])
-    p.add_argument("path", nargs="?", type=Path, help="Specific file to verify")
-    p.add_argument("--all", "-a", action="store_true", help="Verify all stale documents")
-    p.add_argument("--date", "-d", help="Verification date")
-    _add_scope_argument(p)
+    _configure_verify_arguments(p)
     p.set_defaults(func=_cmd_validate)
 
 
@@ -902,7 +967,7 @@ def _cmd_map(args) -> int:
         output=args.output,
         strict=args.strict,
         json_output=args.json,
-        quiet=args.quiet,
+        quiet=args.quiet or args.json,
         obsidian=args.obsidian,
         compact=CompactMode(args.compact) if args.compact != "off" else CompactMode.OFF,
         filter_expr=getattr(args, 'filter', None),
@@ -911,8 +976,9 @@ def _cmd_map(args) -> int:
         scope=getattr(args, "scope", None),
         verbose=getattr(args, "verbose", False),
     )
-    if "-f" in sys.argv and "--filter" not in sys.argv and "-F" not in sys.argv:
-        print("Warning: map -f is deprecated; use -F.", file=sys.stderr)
+    if getattr(args, "_deprecated_filter", False):
+        invoked = getattr(args, "command", "map")
+        print(f"Warning: {invoked} -f is deprecated; use -F.", file=sys.stderr)
 
     return map_command(options)
 
@@ -927,12 +993,14 @@ def _reject_invalid_limit(command: str, args, limit) -> bool:
 
         emit_command_error(
             command=command,
-            exit_code=1,
+            exit_code=ExitCode.USAGE,
             code="E_USER_INPUT",
             message=message,
+            result_kind="diagnostic",
+            exit_category="usage",
         )
     else:
-        print(f"Error: {message}")
+        print(f"Error: {message}", file=sys.stderr)
     return True
 
 
@@ -942,7 +1010,7 @@ def _cmd_activate(args) -> int:
 
     limit = getattr(args, "limit", None)
     if _reject_invalid_limit("activate", args, limit):
-        return 1
+        return int(ExitCode.USAGE)
     return activate_command(
         ActivateOptions(
             json_output=args.json,
@@ -1011,6 +1079,8 @@ def _cmd_doctor(args) -> int:
             exit_code=exit_code,
             message="Health check complete" if exit_code == 0 else "Health check failed",
             data=payload,
+            execution_succeeded=True,
+            result_status=result.status,
         )
     elif not args.quiet:
         output.plain(format_doctor_output(result, verbose=args.verbose))
@@ -1042,7 +1112,7 @@ def _cmd_link_check(args) -> int:
 
     limit = getattr(args, "limit", None)
     if _reject_invalid_limit("link-check", args, limit):
-        return 1
+        return int(ExitCode.USAGE)
     options = LinkCheckOptions(
         scope=getattr(args, "scope", None),
         json_output=args.json,
@@ -1093,10 +1163,10 @@ def _cmd_env(args) -> int:
         path=Path.cwd(),
         write=getattr(args, "write", False),
         force=getattr(args, "force", False),  # v1.1: --force flag
-        format=getattr(args, "format", "text"),
+        format="json" if args.json else getattr(args, "format", "text"),
         quiet=args.quiet or args.json,
     )
-    if "-f" in sys.argv and "--format" not in sys.argv:
+    if getattr(args, "_deprecated_format", False):
         print("Warning: env -f is deprecated; use --format.", file=sys.stderr)
 
     exit_code, output = _run_env_command(options)
@@ -1129,13 +1199,14 @@ def _cmd_mcp_root(args) -> int:
     if args.json:
         _emit_handler_result_json(
             command="mcp",
-            exit_code=2,
+            exit_code=ExitCode.USAGE,
             message="No mcp subcommand specified",
             error_code="E_NO_COMMAND",
+            exit_category="usage",
         )
     elif parser is not None and not args.quiet:
         parser.print_help()
-    return 2
+    return int(ExitCode.USAGE)
 
 
 def _cmd_mcp_install(args) -> int:
@@ -1153,7 +1224,7 @@ def _cmd_mcp_install(args) -> int:
 
     if args.json:
         _emit_handler_result_json(
-            command="mcp-install",
+            command="mcp install",
             exit_code=exit_code,
             message=message,
             data=data,
@@ -1180,7 +1251,7 @@ def _cmd_mcp_uninstall(args) -> int:
 
     if args.json:
         _emit_handler_result_json(
-            command="mcp-uninstall",
+            command="mcp uninstall",
             exit_code=exit_code,
             message=message,
             data=data,
@@ -1209,7 +1280,7 @@ def _cmd_mcp_print_config(args) -> int:
 
     if args.json:
         _emit_handler_result_json(
-            command="mcp-print-config",
+            command="mcp print-config",
             exit_code=exit_code,
             message=message,
             data=data,
@@ -1352,7 +1423,7 @@ def _cmd_export_data(args) -> int:
         elif args.output:
             data = {"output_path": str(args.output)}
         _emit_handler_result_json(
-            command="export-data",
+            command="export data",
             exit_code=exit_code,
             message=message if args.output else "Exported to stdout",
             data=data,
@@ -1383,7 +1454,7 @@ def _cmd_export_claude(args) -> int:
 
     if args.json:
         _emit_handler_result_json(
-            command="export-claude",
+            command="export claude",
             exit_code=exit_code,
             message=message,
             data={"output_path": str(args.output) if args.output else None},
@@ -1412,7 +1483,10 @@ def _cmd_export_deprecated(args) -> int:
                     error_code="E_USER_INPUT",
                 )
             elif not args.quiet:
-                print("Error: No repository found. Run from within a git repository or Ontos project.")
+                print(
+                    "Error: No repository found. Run from within a git repository or Ontos project.",
+                    file=sys.stderr,
+                )
             return 2
 
         exit_code, results = generate_all_instruction_exports(
@@ -1502,10 +1576,17 @@ def _cmd_schema_migrate(args) -> int:
     )
     exit_code, message = _run_migrate_command(options)
     if args.json:
+        check_completed = (
+            args.check
+            and message != "Document load failed"
+            and not message.startswith("Select exactly one mode")
+        )
         _emit_handler_result_json(
             command="schema-migrate",
             exit_code=exit_code,
             message=message,
+            execution_succeeded=(exit_code == 0 or check_completed),
+            result_status=("findings" if exit_code and check_completed else None),
         )
     return exit_code
 
@@ -1594,7 +1675,7 @@ def _cmd_consolidate(args) -> int:
         days=args.days,
         dry_run=args.dry_run,
         quiet=args.quiet or args.json,
-        all=args.all,
+        all=args.all or args.json,
         json_output=args.json,
     )
     exit_code, message = _run_consolidate_command(options)
@@ -1645,7 +1726,7 @@ def _cmd_promote(args) -> int:
         all_ready=args.all_ready,
         quiet=args.quiet or args.json,
         json_output=args.json,
-        yes=getattr(args, "yes", False),
+        yes=getattr(args, "yes", False) or args.json,
         scope=getattr(args, "scope", None),
     )
     exit_code, message = _run_promote_command(options)
@@ -1674,7 +1755,21 @@ def _cmd_query(args) -> int:
         json_output=args.json,
         scope=getattr(args, "scope", None),
     )
-    exit_code, message = _run_query_command(options)
+    try:
+        exit_code, message = _run_query_command(options)
+    except (FileNotFoundError, OSError, TypeError, ValueError) as exc:
+        message = str(exc)
+        if args.json:
+            _emit_handler_result_json(
+                command="query",
+                exit_code=ExitCode.FINDINGS,
+                message=message,
+                error_code="E_COMMAND_FAILED",
+                execution_succeeded=False,
+            )
+        elif not args.quiet:
+            print(f"Error: {message}", file=sys.stderr)
+        return int(ExitCode.FINDINGS)
     if args.json:
         _emit_handler_result_json(
             command="query",
@@ -1687,6 +1782,18 @@ def _cmd_query(args) -> int:
 
 def _cmd_verify(args) -> int:
     """Handle verify command."""
+    if getattr(args, "workspace_id", None) and not getattr(args, "portfolio", False):
+        raise OntosUserError(
+            "--workspace-id requires --portfolio",
+            code="E_USER_INPUT",
+        )
+
+    if not getattr(args, "portfolio", False) and not args.path and not args.all:
+        raise OntosUserError(
+            "Specify a file path or use --all",
+            code="E_USER_INPUT",
+        )
+
     if getattr(args, "portfolio", False):
         from ontos.commands.verify import verify_portfolio
         from ontos.mcp.portfolio_config import ensure_portfolio_config, load_portfolio_config
@@ -1710,12 +1817,36 @@ def _cmd_verify(args) -> int:
         registry_path = Path(config.registry_path).expanduser() if config.registry_path else (
             Path.home() / "Dev" / ".dev-hub" / "registry" / "projects.json"
         )
-        return verify_portfolio(
-            portfolio_db_path=Path.home() / ".config" / "ontos" / "portfolio.db",
-            registry_path=registry_path,
-            json_output=args.json,
-            workspace_id=getattr(args, "workspace_id", None),
+        verify_kwargs = {
+            "portfolio_db_path": Path.home() / ".config" / "ontos" / "portfolio.db",
+            "registry_path": registry_path,
+            "workspace_id": getattr(args, "workspace_id", None),
+        }
+        if not args.json:
+            return verify_portfolio(json_output=False, **verify_kwargs)
+
+        captured = io.StringIO()
+        with contextlib.redirect_stdout(captured):
+            exit_code = verify_portfolio(json_output=True, **verify_kwargs)
+        raw_payload = captured.getvalue().strip()
+        try:
+            payload = json.loads(raw_payload) if raw_payload else {}
+        except json.JSONDecodeError:
+            payload = {"output": raw_payload}
+        completed = exit_code in {ExitCode.CLEAN, ExitCode.FINDINGS}
+        _emit_handler_result_json(
+            command="verify",
+            exit_code=exit_code,
+            message=str(payload.get("summary", "Portfolio verification complete"))
+            if isinstance(payload, dict)
+            else "Portfolio verification complete",
+            data=payload,
+            execution_succeeded=completed,
+            result_status=("clean" if exit_code == 0 else "findings")
+            if completed
+            else None,
         )
+        return exit_code
 
     from ontos.commands.verify import VerifyOptions, _run_verify_command
 
@@ -1792,19 +1923,28 @@ def _cmd_hook(args) -> int:
 
 def main() -> int:
     """Main entry point for CLI."""
-    requested_command = _first_command(sys.argv[1:])
+    argv = sys.argv[1:]
+    requested_command = _first_command(argv)
+    json_requested = _preparse_json(argv)
     include_hidden = requested_command in HIDDEN_COMMANDS
     parser = create_parser(include_hidden=include_hidden)
-    args = parser.parse_args()
-
-    # Workaround for argparse parent inheritance issue:
-    # When --json is before the command, it's consumed by parent parser
-    # but not propagated to subparser namespace. Check sys.argv as fallback.
-    if '--json' in sys.argv and not args.json:
-        args.json = True
-    if '-q' in sys.argv or '--quiet' in sys.argv:
-        if not getattr(args, 'quiet', False):
-            args.quiet = True
+    parse_stderr = io.StringIO()
+    try:
+        with contextlib.redirect_stderr(parse_stderr) if json_requested else contextlib.nullcontext():
+            args = parser.parse_args()
+    except SystemExit as exc:
+        if not json_requested or int(exc.code or 0) != int(ExitCode.USAGE):
+            raise
+        detail = parse_stderr.getvalue()
+        emit_command_error(
+            command=requested_command or "ontos",
+            exit_code=ExitCode.USAGE,
+            code="E_USAGE",
+            message=_argparse_error_message(detail),
+            details=detail.strip() or None,
+            exit_category="usage",
+        )
+        return int(ExitCode.USAGE)
 
     # Handle --version
     if args.version:
@@ -1824,13 +1964,14 @@ def main() -> int:
         if args.json:
             emit_command_error(
                 command="ontos",
-                exit_code=2,
+                exit_code=ExitCode.USAGE,
                 code="E_NO_COMMAND",
                 message="No command specified",
+                exit_category="usage",
             )
         else:
             parser.print_help()
-        return 2
+        return int(ExitCode.USAGE)
 
     # Route to command handler
     try:
@@ -1838,42 +1979,53 @@ def main() -> int:
     except OntosUserError as e:
         if args.json:
             emit_command_error(
-                command=getattr(args, "command", "ontos"),
-                exit_code=2,
+                command=command_path(args),
+                exit_code=ExitCode.USAGE,
                 code=e.code,
                 message=str(e),
                 details=e.details,
+                exit_category="usage",
             )
         else:
             print(f"Error: {e}", file=sys.stderr)
-        return 2
+        return int(ExitCode.USAGE)
     except OntosInternalError as e:
         if args.json:
             emit_command_error(
-                command=getattr(args, "command", "ontos"),
-                exit_code=5,
+                command=command_path(args),
+                exit_code=ExitCode.INTERNAL,
                 code=e.code,
                 message=str(e),
                 details=e.details,
+                exit_category="internal",
             )
         else:
             print(f"Error: {e}", file=sys.stderr)
-        return 5
+        return int(ExitCode.INTERNAL)
     except KeyboardInterrupt:
-        if not args.quiet:
+        if args.json:
+            emit_command_error(
+                command=command_path(args),
+                exit_code=ExitCode.INTERRUPTED,
+                code="E_INTERRUPTED",
+                message="Interrupted",
+                exit_category="interrupted",
+            )
+        elif not args.quiet:
             print("\nInterrupted", file=sys.stderr)
-        return 130
+        return int(ExitCode.INTERRUPTED)
     except Exception as e:
         if args.json:
             emit_command_error(
-                command=getattr(args, "command", "ontos"),
-                exit_code=5,
+                command=command_path(args),
+                exit_code=ExitCode.INTERNAL,
                 code="E_INTERNAL",
                 message=f"Internal error: {e}",
+                exit_category="internal",
             )
         else:
             print(f"Error: {e}", file=sys.stderr)
-        return 5
+        return int(ExitCode.INTERNAL)
 
 
 if __name__ == "__main__":

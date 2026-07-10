@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-import fcntl
-import os
 from pathlib import Path
 import time
 from typing import Iterator
 
 from ontos.core.errors import OntosUserError
+from ontos.core.locking import (
+    release_exclusive,
+    set_non_inheritable,
+    try_acquire_exclusive,
+)
 
 
 @contextmanager
@@ -19,12 +22,13 @@ def workspace_lock(workspace_root: Path, timeout: float = 5.0) -> Iterator[None]
     lock_path.parent.mkdir(parents=True, exist_ok=True)
 
     handle = lock_path.open("a+", encoding="utf-8")
-    os.set_inheritable(handle.fileno(), False)
+    set_non_inheritable(handle)
     start = time.monotonic()
     try:
         while True:
             try:
-                fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                if not try_acquire_exclusive(handle):
+                    raise BlockingIOError
                 break
             except BlockingIOError:
                 if time.monotonic() - start >= timeout:
@@ -36,7 +40,7 @@ def workspace_lock(workspace_root: Path, timeout: float = 5.0) -> Iterator[None]
         yield
     finally:
         try:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+            release_exclusive(handle)
         except OSError:
             pass
         handle.close()

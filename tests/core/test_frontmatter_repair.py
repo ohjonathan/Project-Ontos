@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from textwrap import dedent
 
-from ontos.core.frontmatter_repair import build_enum_repair_plan
+from ontos.core.frontmatter_repair import apply_enum_repair_plan, build_enum_repair_plan
 from ontos.io.files import load_documents
 from ontos.io.yaml import parse_frontmatter_content
 
@@ -184,3 +184,23 @@ def test_extended_canonical_aliases_map_to_new_first_class_types(tmp_path):
     assert edits["type"].new_value == "retro"
     assert edits["status"].repairable is True
     assert edits["status"].new_value == "complete"
+
+
+def test_enum_repair_preserves_case_inline_comments_and_crlf(tmp_path):
+    path = tmp_path / "docs" / "case.md"
+    path.parent.mkdir()
+    path.write_bytes(
+        b"---\r\nid: case_doc\r\ntype: Proposal # rationale\r\n"
+        b"status: DONE # workflow\r\n---\r\nBody\r\n"
+    )
+
+    plan = build_enum_repair_plan([path])
+    assert len(plan.repairable_edits) == 2
+    apply_enum_repair_plan(plan, repo_root=tmp_path)
+
+    updated = path.read_bytes().decode("utf-8")
+    assert "type: strategy # rationale\r\n" in updated
+    assert "status: complete # workflow\r\n" in updated
+    assert "original_type: Proposal\r\n" in updated
+    assert "original_status: DONE\r\n" in updated
+    assert "\n" not in updated.replace("\r\n", "")

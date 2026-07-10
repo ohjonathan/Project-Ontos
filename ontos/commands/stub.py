@@ -9,11 +9,12 @@ from ontos.core.curation import create_stub, generate_id_from_path
 from ontos.core.schema import serialize_frontmatter
 from ontos.core.context import SessionContext
 from ontos.core.errors import OntosUserError
+from ontos.core.ontology import get_valid_types
 from ontos.io.files import find_project_root
 from ontos.ui.output import OutputHandler
 
 _ID_PATTERN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$")
-_VALID_DOC_TYPES = {"kernel", "strategy", "product", "atom", "log"}
+_VALID_DOC_TYPES = frozenset(get_valid_types())
 
 
 @dataclass
@@ -30,10 +31,6 @@ class StubOptions:
 
 def interactive_stub(output: OutputHandler) -> dict:
     """Interactively create a stub."""
-    # Note: For types, we'd ideally load them from ontology.py
-    # For now, we'll use a standard list matching legacy.
-    VALID_TYPES = ["kernel", "strategy", "product", "atom", "log"]
-    
     print()
     output.info("Create Level 1 Stub Document")
     print("-" * 40)
@@ -43,10 +40,10 @@ def interactive_stub(output: OutputHandler) -> dict:
         output.error("Document ID is required")
         return {}
     
-    valid_types_str = ', '.join(sorted(VALID_TYPES))
+    valid_types_str = ', '.join(sorted(_VALID_DOC_TYPES))
     print(f"\nValid types: {valid_types_str}")
     doc_type = input("Document type: ").strip().lower()
-    if doc_type not in VALID_TYPES:
+    if doc_type not in _VALID_DOC_TYPES:
         output.error(f"Invalid type '{doc_type}'. Must be one of: {valid_types_str}")
         return {}
     

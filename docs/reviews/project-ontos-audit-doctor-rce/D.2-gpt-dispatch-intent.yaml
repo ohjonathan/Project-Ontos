@@ -1,0 +1,31 @@
+manifest_version: "2.0.1"
+authoring_session_family: codex
+meta_orchestrator_family: codex
+deliverable_author_family: claude
+deliverable_author_families: [codex, claude]
+deliverable_id: project-ontos-audit-doctor-rce
+artifact_root: docs/reviews/project-ontos-audit-doctor-rce
+strict_p3_claim: false
+review_board_classification:
+  mode: doctor_rce_d2_exact_commit_review
+  strict_p3_capable_evidence: false
+  strict_p3_certified: false
+  merge_authority: recommendation_only
+  rationale: "Required third independent family for 03c36e6, but framework v2.0.1 hard-refuses GPT-family `expected_model: auto`; this truthful pending intent is not currently dispatchable and cannot certify strict P3."
+dispatches:
+  - dispatch_id: project-ontos-audit-doctor-rce-D.2-gpt-alignment
+    family: gpt
+    role: alignment
+    review_mode: full-3-lens
+    expected_provider: gpt
+    expected_cli: codex
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-audit-doctor-rce/D.2-gpt-alignment.md
+    prompt_path: docs/reviews/project-ontos-audit-doctor-rce/.prompts/D.2-gpt-alignment.prompt.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    fallback_models: []
+    template_id: 04-review-board-alignment
+    template_version: 1.0.0
+    status: pending
+    scope: "Review only the seven-file implementation delta introduced by 03c36e6 for parity with the revised spec, audit findings D4b-trust-1/2, scope lease, and five-test contract."

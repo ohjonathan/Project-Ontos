@@ -96,22 +96,54 @@ class TestUnifiedCLI:
 class TestCLIArgumentPassthrough:
     """Test that arguments are passed through to subcommands correctly."""
 
-    def run_cli(self, *args):
+    def run_cli(self, *args, cwd=PROJECT_ROOT):
         """Helper to run ontos CLI with given arguments."""
         result = subprocess.run(
             [sys.executable, '-m', 'ontos'] + list(args),
-            cwd=Path(__file__).parent.parent,
+            cwd=cwd,
             capture_output=True,
             text=True,
             timeout=30
         )
         return result
 
-    def test_map_quiet_flag_passthrough(self):
-        """--quiet flag should pass through to map command."""
-        result = self.run_cli('map', '--quiet')
-        # Should not error on the flag (may fail for other reasons like no git repo)
+    def test_map_quiet_flag_passthrough(self, tmp_path):
+        """--quiet should work without generating the repository context map."""
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+        (tmp_path / ".ontos.toml").write_text(
+            "[project]\n"
+            "name = 'CLI isolation'\n"
+            "[paths]\n"
+            "docs_dir = 'docs'\n"
+            "logs_dir = 'docs/logs'\n"
+            "context_map = 'Ontos_Context_Map.md'\n",
+            encoding="utf-8",
+        )
+        (docs_dir / "isolated.md").write_text(
+            "---\n"
+            "id: cli_isolated_map\n"
+            "type: atom\n"
+            "status: active\n"
+            "depends_on: []\n"
+            "---\n"
+            "# Isolated map fixture\n",
+            encoding="utf-8",
+        )
+        output_path = tmp_path / "generated-map.md"
+
+        result = self.run_cli(
+            'map',
+            '--quiet',
+            '--output',
+            str(output_path),
+            cwd=tmp_path,
+        )
+
+        assert result.returncode == 0, result.stderr
         assert 'unrecognized arguments: --quiet' not in result.stderr.lower()
+        assert output_path.exists()
+        assert not (tmp_path / "Ontos_Context_Map.md").exists()
 
     def test_global_quiet_flag(self):
         """Global --quiet flag should work."""

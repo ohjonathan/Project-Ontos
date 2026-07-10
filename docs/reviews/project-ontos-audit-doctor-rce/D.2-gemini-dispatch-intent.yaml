@@ -1,0 +1,32 @@
+manifest_version: "2.0.1"
+authoring_session_family: codex
+meta_orchestrator_family: codex
+deliverable_author_family: claude
+deliverable_author_families: [codex, claude]
+deliverable_id: project-ontos-audit-doctor-rce
+artifact_root: docs/reviews/project-ontos-audit-doctor-rce
+strict_p3_claim: false
+review_board_classification:
+  mode: doctor_rce_d2_exact_commit_review
+  strict_p3_capable_evidence: true
+  strict_p3_certified: false
+  merge_authority: recommendation_only
+  rationale: "Fresh static implementation-review candidate for 03c36e6; Claude is excluded as substantive co-author. Codex and Gemini supply only two countable families and the GPT-auto seat is dispatch-policy-blocked, so strict P3 remains uncertified."
+dispatches:
+  - dispatch_id: project-ontos-audit-doctor-rce-D.2-gemini-adversarial
+    family: gemini
+    role: adversarial
+    review_mode: full-3-lens
+    expected_provider: gemini
+    expected_cli: gemini
+    legacy_execution_cli_override_reason: "The installed, entitled direct Gemini CLI is the explicitly selected legacy substrate for this #147 replay; AGY is not installed, and this intent records the required post-v1.10 override provenance."
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-audit-doctor-rce/D.2-gemini-adversarial.md
+    prompt_path: docs/reviews/project-ontos-audit-doctor-rce/.prompts/D.2-gemini-adversarial.prompt.md
+    evidence_cap: static-inspection
+    dispatch_method: external-cli
+    fallback_models: []
+    template_id: 05-review-board-adversarial
+    template_version: 1.1.0
+    status: pending
+    scope: "Adversarially inspect only the seven-file implementation delta introduced by 03c36e6 for exact-argv bypasses and documentation drift; do not claim code execution or test evidence."

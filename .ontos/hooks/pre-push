@@ -1,15 +1,9 @@
 #!/bin/bash
-# Ontos pre-push hook v2.3
-# All logic delegated to Python for testability
+# Ontos pre-push hook v4.8
+# Delegate to the installed package CLI; the frozen script fork is archival.
 
-SCRIPTS_DIR=".ontos/scripts"
-HOOK_SCRIPT="$SCRIPTS_DIR/ontos_pre_push_check.py"
-
-# Bypass if Ontos not installed
-if [ ! -f "$HOOK_SCRIPT" ]; then
+if ! python3 -c "import ontos" >/dev/null 2>&1; then
     exit 0
 fi
 
-# Hand off to Python immediately
-python3 "$HOOK_SCRIPT"
-exit $?
+exec python3 -m ontos hook pre-push "$@"

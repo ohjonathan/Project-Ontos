@@ -10,6 +10,8 @@ from ontos.core.config import (
     default_config,
     config_to_dict,
     dict_to_config,
+    required_version_incompatibility,
+    version_satisfies_requirement,
     _validate_types,
     _validate_path,
 )
@@ -101,6 +103,14 @@ class TestValidateTypes:
         # Should not raise
         _validate_types({"workflow": {"log_retention_count": 50}})
         _validate_types({"hooks": {"pre_push": True, "pre_commit": False}})
+
+    def test_validate_types_rejects_non_string_required_version(self):
+        with pytest.raises(ConfigError, match="ontos.required_version must be str"):
+            _validate_types({"ontos": {"required_version": 47}})
+
+    def test_validate_types_rejects_invalid_required_version_range(self):
+        with pytest.raises(ConfigError, match="semantic version"):
+            _validate_types({"ontos": {"required_version": "=>4.7"}})
 
 
 class TestValidatePath:
@@ -207,3 +217,45 @@ def test_allowed_external_dependency_paths_round_trips():
     assert config.validation.allowed_external_dependency_paths == [
         "apps/**", "manifests/**",
     ]
+
+
+@pytest.mark.parametrize(
+    ("requirement", "compatible"),
+    [
+        ("", True),
+        (">=4.7.0, <5.0.0", True),
+        ("~4.7", True),
+        ("4.7.x", True),
+        ("=4.7", True),
+        (">4.7.0", False),
+        ("<4.7.0", False),
+        ("4.6.*", False),
+    ],
+)
+def test_version_satisfies_required_version_ranges(requirement, compatible):
+    assert version_satisfies_requirement("4.7.0", requirement) is compatible
+
+
+def test_required_version_incompatibility_is_actionable():
+    message = required_version_incompatibility(">=99.0.0", "4.7.0")
+
+    assert message is not None
+    assert "running 4.7.0" in message
+    assert ">=99.0.0" in message
+
+
+@pytest.mark.parametrize(
+    "data, message",
+    [
+        ({"paths": {"docs_dir": ["docs"]}}, r"paths\.docs_dir must be str"),
+        ({"scanning": {"skip_patterns": "archive/*"}}, r"scanning\.skip_patterns must be list"),
+        ({"scanning": {"scan_paths": ["docs", 7]}}, r"scanning\.scan_paths\[1\] must be str"),
+        ({"scanning": {"default_scope": "everything"}}, r"default_scope"),
+        ({"validation": {"max_dependency_depth": True}}, r"max_dependency_depth must be int"),
+        ({"workflow": {"log_retention_count": 0}}, r"log_retention_count must be >= 1"),
+        ({"paths": "docs"}, r"section 'paths' must be a table"),
+    ],
+)
+def test_config_validation_rejects_opaque_crash_inputs(data, message):
+    with pytest.raises(ConfigError, match=message):
+        dict_to_config(data)

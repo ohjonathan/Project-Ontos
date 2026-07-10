@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple
-from ontos.core.schema import serialize_frontmatter
+from ontos.core.frontmatter_edit import patch_frontmatter_fields
 from ontos.core.types import DocumentData, DocumentType
 from ontos.core.curation import (
     CurationLevel,
@@ -123,23 +123,19 @@ def apply_promotion(
 ) -> bool:
     """Apply promotion to a document."""
     try:
-        content = filepath.read_text(encoding='utf-8')
-        # Splitting logic to get body
-        parts = content.split('---', 2)
-        if len(parts) < 3:
-            output.error(f"Invalid format in {filepath}")
-            return False
-            
-        body = parts[2]
-        
+        content = filepath.read_bytes().decode("utf-8")
         new_fm, summary_seed = promote_to_full(
             frontmatter,
             depends_on=depends_on,
             concepts=concepts
         )
         
-        fm_yaml = serialize_frontmatter(new_fm)
-        new_content = f"---\n{fm_yaml}\n---{body}"
+        updates = {
+            key: value
+            for key, value in new_fm.items()
+            if key not in frontmatter or frontmatter[key] != value
+        }
+        new_content = patch_frontmatter_fields(content, updates)
         
         ctx.buffer_write(filepath, new_content)
         output.success(f"Promoted: {frontmatter.get('id')} → Level 2")

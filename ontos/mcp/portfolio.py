@@ -50,14 +50,31 @@ class PortfolioIndex:
         PRAGMA busy_timeout = 5000;
     """
 
-    def __init__(self, db_path: Path) -> None:
+    def __init__(self, db_path: Path, *, read_only: bool = False) -> None:
         self.db_path = db_path.expanduser().resolve(strict=False)
+        self.read_only = read_only
         self._write_lock = threading.Lock()
         self._opened = False
 
     def open(self) -> None:
         """Prepare the backing DB and ensure schema compatibility."""
         with self._write_lock:
+            if self._opened:
+                return
+            if self.read_only:
+                if not self.db_path.is_file():
+                    raise FileNotFoundError(
+                        f"Read-only portfolio index not found: {self.db_path}"
+                    )
+                with self._connect() as conn:
+                    version = int(conn.execute("PRAGMA user_version;").fetchone()[0])
+                    if version != self.SCHEMA_VERSION:
+                        raise sqlite3.DatabaseError(
+                            "Read-only portfolio schema mismatch: "
+                            f"expected {self.SCHEMA_VERSION}, got {version}"
+                        )
+                self._opened = True
+                return
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
             try:
                 with self._connect() as conn:
@@ -81,6 +98,7 @@ class PortfolioIndex:
         registry_path: Path | None = None,
     ) -> None:
         """Rebuild all discovered workspaces from scratch."""
+        self._require_writable()
         self.open()
         projects = discover_projects(
             scan_roots=scan_roots,
@@ -103,13 +121,18 @@ class PortfolioIndex:
 
         with self._connect() as conn:
             conn.execute("INSERT INTO fts_content(fts_content) VALUES('optimize');")
+            conn.commit()
             try:
-                conn.execute("PRAGMA wal_checkpoint(PASSIVE);")
+                # Publish a self-contained main-db snapshot for strict
+                # read-only consumers opened with URI immutable=1. Leaving
+                # committed rows only in WAL would make that snapshot stale.
+                conn.execute("PRAGMA wal_checkpoint(TRUNCATE);")
             except sqlite3.OperationalError:
                 pass
 
     def rebuild_workspace(self, slug: str, workspace_root: Path) -> None:
         """Rebuild one workspace in a serialized write transaction."""
+        self._require_writable()
         self.open()
         self._rebuild_workspace(slug, workspace_root, project=None)
 
@@ -446,6 +469,16 @@ class PortfolioIndex:
                 conn.execute("PRAGMA wal_checkpoint(PASSIVE);")
 
     def _connect(self) -> sqlite3.Connection:
+        if self.read_only:
+            conn = sqlite3.connect(
+                f"{self.db_path.as_uri()}?mode=ro&immutable=1",
+                uri=True,
+                timeout=self.CONNECT_TIMEOUT_SECONDS,
+            )
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA query_only = ON;")
+            conn.execute("PRAGMA busy_timeout = 5000;")
+            return conn
         conn = sqlite3.connect(
             str(self.db_path),
             timeout=self.CONNECT_TIMEOUT_SECONDS,
@@ -454,6 +487,10 @@ class PortfolioIndex:
         self._apply_pragmas(conn)
         conn.execute("PRAGMA wal_autocheckpoint = 0;")
         return conn
+
+    def _require_writable(self) -> None:
+        if self.read_only:
+            raise PermissionError("Portfolio index was opened read-only")
 
     def _initialize_db(self, conn: sqlite3.Connection) -> None:
         version = int(conn.execute("PRAGMA user_version;").fetchone()[0])

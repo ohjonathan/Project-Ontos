@@ -101,9 +101,13 @@ def test_verify_portfolio_cli_reports_mismatches_in_json_mode(tmp_path):
     payload = json.loads(result.stdout)
 
     assert result.returncode == 1
-    assert payload["clean"] is False
-    assert payload["summary"] == "1 discrepancies found."
-    assert payload["field_mismatches"] == [
+    assert payload["schema_version"] == "4.0"
+    assert payload["command"] == "verify"
+    assert payload["status"] == "success"
+    assert payload["result"]["status"] == "findings"
+    assert payload["data"]["clean"] is False
+    assert payload["data"]["summary"] == "1 discrepancies found."
+    assert payload["data"]["field_mismatches"] == [
         {
             "slug": "alpha",
             "field": "status",

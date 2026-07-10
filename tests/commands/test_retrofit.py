@@ -331,13 +331,32 @@ def test_retrofit_apply_quotes_date_like_tag_values(tmp_path: Path):
     assert result.returncode == 0, result.stdout + result.stderr
 
     updated = path.read_text(encoding="utf-8")
-    assert '  - "2026-01-01"' in updated
+    assert "2026-01-01" in updated
 
     from ontos.io.yaml import parse_frontmatter_content
 
     parsed, _ = parse_frontmatter_content(updated)
     assert parsed["tags"] == ["2026-01-01"]
     assert isinstance(parsed["tags"][0], str)
+
+
+def test_retrofit_apply_round_trips_multiline_alias(tmp_path: Path):
+    _init_repo(tmp_path)
+    path = tmp_path / "docs" / "multiline.md"
+    _write_doc(
+        path,
+        "multiline_doc",
+        extra_lines=["aliases:", "  - |", "    first line", "    second line"],
+    )
+    _init_git_repo(tmp_path)
+
+    result = _run_ontos(tmp_path, "retrofit", "--obsidian", "--apply")
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    from ontos.io.yaml import parse_frontmatter_content
+
+    parsed, _ = parse_frontmatter_content(path.read_text(encoding="utf-8"))
+    assert "first line\nsecond line" in parsed["aliases"]
 
 
 # ---------------------------------------------------------------------------

@@ -1,8 +1,6 @@
 # .github/workflows/publish.yml
-# PyPI Publishing Workflow per Spec v1.1 Section 4
-#
-# Triggers on v* tags. Publishes to TestPyPI first, verifies install,
-# then publishes to PyPI via trusted publisher (OIDC).
+# Build once, verify the downloaded wheel, publish that artifact to TestPyPI,
+# prove TestPyPI serves the same bytes, then promote the original artifact.
 
 name: Publish to PyPI
 
@@ -13,7 +11,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write # Required for trusted publishing
 
 jobs:
   test:
@@ -30,20 +27,34 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,mcp]"
+          python -m pip install -e ".[dev,mcp]"
 
       - name: Run tests
         run: python -m pytest tests/ -v
 
-      - name: Validate version tag (m6)
+      - name: Validate version tag
+        shell: bash
         run: |
-          TAG_VERSION=${GITHUB_REF#refs/tags/v}
-          PKG_VERSION=$(python -c "import ontos; print(ontos.__version__)")
-          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
-            echo "ERROR: Tag version ($TAG_VERSION) does not match package version ($PKG_VERSION)"
+          tag_version="${GITHUB_REF_NAME#v}"
+          package_version="$(python -c 'import ontos; print(ontos.__version__)')"
+          if [ "$tag_version" != "$package_version" ]; then
+            echo "ERROR: tag version ($tag_version) does not match package version ($package_version)"
             exit 1
           fi
-          echo "Version validated: $TAG_VERSION"
+          echo "Version validated: $tag_version"
+
+      - name: Verify tests left the checkout unchanged
+        if: always()
+        shell: bash
+        run: |
+          changes="$(git status --porcelain=v1 --untracked-files=all)"
+          if [ -n "$changes" ]; then
+            echo "Tests modified tracked files or created non-ignored files:"
+            printf '%s\n' "$changes"
+            git diff --check
+            git diff --stat
+            exit 1
+          fi
 
   build:
     name: Build Distribution
@@ -60,8 +71,23 @@ jobs:
       - name: Install build tools
         run: python -m pip install --upgrade pip build
 
-      - name: Build sdist and wheel
-        run: python -m build
+      - name: Build release wheel
+        # The wheel is the sole promoted artifact; publishing an unverified
+        # sdist beside it would break the one-hash provenance chain.
+        run: python -m build --wheel
+
+      - name: Record wheel version and hash
+        shell: bash
+        run: |
+          wheels=(dist/*.whl)
+          if [ "${#wheels[@]}" -ne 1 ]; then
+            echo "Expected exactly one wheel, found ${#wheels[@]}"
+            exit 1
+          fi
+          python scripts/check_release_artifact.py \
+            "${wheels[0]}" \
+            --expected-version "${GITHUB_REF_NAME#v}" \
+            --write-manifest release-integrity.json
 
       - name: Upload distribution artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -69,59 +95,263 @@ jobs:
           name: dist
           path: dist/
 
-  publish-testpypi:
-    name: Publish to TestPyPI
+      - name: Upload release integrity manifest
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-integrity
+          path: release-integrity.json
+
+  verify-wheel:
+    name: Verify Downloaded Wheel
     needs: build
     runs-on: ubuntu-latest
-    environment: testpypi
     steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: "3.11"
+
       - name: Download distribution artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dist
           path: dist/
 
-      - name: Publish to TestPyPI
-        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
+      - name: Download release integrity manifest
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          repository-url: https://test.pypi.org/legacy/
-          skip-existing: true  # Allow re-runs if TestPyPI already has this version
+          name: release-integrity
+          path: .
 
-  verify-testpypi:
-    name: Verify TestPyPI Install
-    needs: publish-testpypi
+      - name: Verify and install the downloaded wheel
+        shell: bash
+        env:
+          PIP_CONFIG_FILE: /dev/null
+          PIP_EXTRA_INDEX_URL: ""
+        run: |
+          wheels=(dist/*.whl)
+          if [ "${#wheels[@]}" -ne 1 ]; then
+            echo "Expected exactly one wheel, found ${#wheels[@]}"
+            exit 1
+          fi
+          python scripts/check_release_artifact.py \
+            "${wheels[0]}" \
+            --expected-version "${GITHUB_REF_NAME#v}" \
+            --verify-manifest release-integrity.json
+          python -m pip install --upgrade pip
+          python -m pip install \
+            --index-url https://pypi.org/simple/ \
+            --only-binary=:all: \
+            "${wheels[0]}"
+
+      - name: Smoke-test the installed wheel outside the checkout
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP"
+          expected_version="${GITHUB_REF_NAME#v}"
+          EXPECTED_VERSION="$expected_version" python -c "import importlib.metadata as metadata, os, ontos; expected = os.environ['EXPECTED_VERSION']; assert metadata.version('ontos') == expected; assert ontos.__version__ == expected; print(ontos.__file__)"
+          python -m ontos --version
+          python -m ontos --help
+          python -m ontos map --help
+          python -m pip check
+
+  publish-testpypi:
+    name: Publish to TestPyPI
+    needs: verify-wheel
     runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      contents: read
+      id-token: write
     steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: "3.11"
 
-      - name: Wait for TestPyPI propagation
-        run: sleep 30
+      - name: Download distribution artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: dist
+          path: dist/
 
-      - name: Install from TestPyPI
-        run: |
-          # Install dependencies from PyPI, package from TestPyPI
-          pip install pyyaml toml  # Core dependencies
-          pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ ontos
+      - name: Download release integrity manifest
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-integrity
+          path: .
 
-      - name: Verify installation
+      - name: Reverify artifact before publishing
+        shell: bash
         run: |
-          ontos --version
-          python -c "import ontos; print(f'Ontos version: {ontos.__version__}')"
+          wheels=(dist/*.whl)
+          if [ "${#wheels[@]}" -ne 1 ]; then
+            echo "Expected exactly one wheel, found ${#wheels[@]}"
+            exit 1
+          fi
+          python scripts/check_release_artifact.py \
+            "${wheels[0]}" \
+            --expected-version "${GITHUB_REF_NAME#v}" \
+            --verify-manifest release-integrity.json
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: dist/
+
+  verify-testpypi:
+    name: Verify TestPyPI Artifact
+    needs: publish-testpypi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: "3.11"
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: dist
+          path: dist/
+
+      - name: Download release integrity manifest
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-integrity
+          path: .
+
+      - name: Install runtime dependencies from PyPI only
+        shell: bash
+        env:
+          PIP_CONFIG_FILE: /dev/null
+          PIP_EXTRA_INDEX_URL: ""
+        run: |
+          wheels=(dist/*.whl)
+          if [ "${#wheels[@]}" -ne 1 ]; then
+            echo "Expected exactly one wheel, found ${#wheels[@]}"
+            exit 1
+          fi
+          python -m pip install --upgrade pip
+          python -m pip install \
+            --index-url https://pypi.org/simple/ \
+            --only-binary=:all: \
+            "${wheels[0]}"
+          python -m pip uninstall --yes ontos
+
+      - name: Download and compare the exact TestPyPI wheel
+        shell: bash
+        env:
+          PIP_CONFIG_FILE: /dev/null
+          PIP_EXTRA_INDEX_URL: ""
+        run: |
+          expected_version="${GITHUB_REF_NAME#v}"
+          mkdir -p testpypi-download
+          downloaded=false
+          for attempt in {1..12}; do
+            rm -f testpypi-download/*
+            if python -m pip download \
+              --no-cache-dir \
+              --index-url https://test.pypi.org/simple/ \
+              --no-deps \
+              --only-binary=:all: \
+              --dest testpypi-download \
+              "ontos==${expected_version}"; then
+              downloaded=true
+              break
+            fi
+            if [ "$attempt" -lt 12 ]; then
+              echo "TestPyPI artifact not available yet (attempt $attempt/12); retrying"
+              sleep 10
+            fi
+          done
+          if [ "$downloaded" != true ]; then
+            echo "Exact TestPyPI artifact was not available after 12 attempts"
+            exit 1
+          fi
+          wheels=(testpypi-download/*.whl)
+          if [ "${#wheels[@]}" -ne 1 ]; then
+            echo "Expected exactly one TestPyPI wheel, found ${#wheels[@]}"
+            exit 1
+          fi
+          python scripts/check_release_artifact.py \
+            "${wheels[0]}" \
+            --expected-version "$expected_version" \
+            --verify-manifest release-integrity.json
+
+      - name: Install the exact TestPyPI version without dependencies
+        shell: bash
+        env:
+          PIP_CONFIG_FILE: /dev/null
+          PIP_EXTRA_INDEX_URL: ""
+        run: |
+          expected_version="${GITHUB_REF_NAME#v}"
+          python -m pip install \
+            --no-cache-dir \
+            --index-url https://test.pypi.org/simple/ \
+            --no-deps \
+            --only-binary=:all: \
+            "ontos==${expected_version}"
+
+      - name: Verify TestPyPI installation outside the checkout
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP"
+          expected_version="${GITHUB_REF_NAME#v}"
+          EXPECTED_VERSION="$expected_version" python -c "import importlib.metadata as metadata, os, ontos; expected = os.environ['EXPECTED_VERSION']; assert metadata.version('ontos') == expected; assert ontos.__version__ == expected; print(ontos.__file__)"
+          python -m ontos --version
+          python -m ontos --help
+          python -m pip check
 
   publish-pypi:
     name: Publish to PyPI
     needs: verify-testpypi
     runs-on: ubuntu-latest
     environment: pypi
+    permissions:
+      contents: read
+      id-token: write
     steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: "3.11"
+
       - name: Download distribution artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dist
           path: dist/
 
+      - name: Download release integrity manifest
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-integrity
+          path: .
+
+      - name: Reverify artifact before promotion
+        shell: bash
+        run: |
+          wheels=(dist/*.whl)
+          if [ "${#wheels[@]}" -ne 1 ]; then
+            echo "Expected exactly one wheel, found ${#wheels[@]}"
+            exit 1
+          fi
+          python scripts/check_release_artifact.py \
+            "${wheels[0]}" \
+            --expected-version "${GITHUB_REF_NAME#v}" \
+            --verify-manifest release-integrity.json
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
+        with:
+          packages-dir: dist/

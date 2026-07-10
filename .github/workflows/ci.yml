@@ -6,9 +6,14 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      COVERAGE_FILE: ${{ runner.temp }}/.coverage
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
@@ -42,7 +47,6 @@ jobs:
           else
             pytest tests/ -v --tb=short
           fi
-          pytest .ontos/scripts/tests/ -v --tb=short
 
       # TODO: Recapture baselines for v3.0 CLI changes
       # - name: Run Golden Master tests
@@ -52,9 +56,9 @@ jobs:
       - name: Check coverage
         run: |
           if [ "${{ matrix.python-version }}" = "3.9" ]; then
-            pytest tests/ --ignore=tests/mcp --cov=ontos --cov-report=xml
+            pytest tests/ --ignore=tests/mcp --cov=ontos --cov-report=xml:${RUNNER_TEMP}/coverage.xml
           else
-            pytest tests/ --cov=ontos --cov-report=xml
+            pytest tests/ --cov=ontos --cov-report=xml:${RUNNER_TEMP}/coverage.xml
           fi
         continue-on-error: true
 
@@ -62,8 +66,21 @@ jobs:
         uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6
         if: matrix.python-version == '3.11'
         with:
-          files: coverage.xml
+          files: ${{ runner.temp }}/coverage.xml
         continue-on-error: true
+
+      - name: Verify tests left the checkout unchanged
+        if: always()
+        shell: bash
+        run: |
+          changes="$(git status --porcelain=v1 --untracked-files=all)"
+          if [ -n "$changes" ]; then
+            echo "Tests modified tracked files or created non-ignored files:"
+            printf '%s\n' "$changes"
+            git diff --check
+            git diff --stat
+            exit 1
+          fi
 
   # v3.0: Test non-editable install to catch path resolution bugs
   test-non-editable:
@@ -82,10 +99,72 @@ jobs:
           pip install .
 
       - name: Verify non-editable install
+        shell: bash
         run: |
+          smoke_root="${RUNNER_TEMP}/ontos-non-editable-smoke"
+          mkdir -p "${smoke_root}/docs"
+          cat > "${smoke_root}/.ontos.toml" <<'EOF'
+          [project]
+          name = "non-editable-smoke"
+          [paths]
+          docs_dir = "docs"
+          logs_dir = "docs/logs"
+          context_map = "Ontos_Context_Map.md"
+          EOF
+          cat > "${smoke_root}/docs/smoke.md" <<'EOF'
+          ---
+          id: non_editable_smoke
+          type: atom
+          status: active
+          depends_on: []
+          ---
+          # Non-editable install smoke test
+          EOF
+          cd "$smoke_root"
           python -m ontos --version
           python -c "import ontos; print(f'Version: {ontos.__version__}')"
-          # Note: `ontos map` may exit 1 due to pre-existing broken dependencies
-          # in the repository (e.g., deleted documents still referenced).
-          # The test validates that the CLI runs - validation errors are expected.
-          python -m ontos map || echo "ontos map exited with errors (pre-existing data quality issues)"
+          python -m ontos map --quiet --output "${smoke_root}/generated-map.md"
+          test -s "${smoke_root}/generated-map.md"
+
+      - name: Verify smoke test left the checkout unchanged
+        shell: bash
+        run: |
+          changes="$(git status --porcelain=v1 --untracked-files=all)"
+          if [ -n "$changes" ]; then
+            echo "Non-editable smoke test modified the checkout:"
+            printf '%s\n' "$changes"
+            exit 1
+          fi
+
+  windows-base-cli:
+    name: Windows base CLI (Python ${{ matrix.python-version }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.14"]
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install base package (non-editable)
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "$env:GITHUB_WORKSPACE"
+
+      - name: Smoke-test import, locking, and CLI
+        shell: pwsh
+        run: |
+          Set-Location $env:RUNNER_TEMP
+          python -c "import ontos; print(f'Version: {ontos.__version__}')"
+          python -c "from ontos.core.locking import backend_name; assert backend_name() == 'msvcrt', backend_name()"
+          python -c "from pathlib import Path; from ontos.mcp.locking import workspace_lock; root = Path.cwd() / 'lock-smoke'; root.mkdir(exist_ok=True); lock = workspace_lock(root); lock.__enter__(); lock.__exit__(None, None, None)"
+          python -m ontos --version
+          python -m ontos --help
+          python -m ontos map --help

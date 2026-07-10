@@ -2,7 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
-from tests.mcp import build_cache, create_workspace, write_file
+from tests.mcp_helpers import build_cache, create_workspace, write_file
 
 
 def test_cache_rebuilds_on_document_and_describes_changes(tmp_path):

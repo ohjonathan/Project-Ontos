@@ -58,6 +58,27 @@ Body content"""
     assert doc.describes == ["valid_atom"]
 
 
+@pytest.mark.parametrize("raw_id", ["123", "2026-07-10", "null"])
+def test_loader_rejects_yaml_coerced_non_string_ids(tmp_path, raw_id):
+    content = f"---\nid: {raw_id}\ntype: atom\n---\nBody"
+    path = tmp_path / "bad-id.md"
+
+    with pytest.raises(ValueError, match="Document id must be a string"):
+        load_document_from_content(path, content, parse_frontmatter_content)
+
+
+def test_batch_loader_reports_non_string_id_as_parse_error(tmp_path):
+    path = tmp_path / "bad-id.md"
+    path.write_text("---\nid: 2026-07-10\ntype: atom\n---\nBody", encoding="utf-8")
+
+    result = load_documents([path], parse_frontmatter_content)
+
+    assert result.documents == {}
+    assert len(result.issues) == 1
+    assert result.issues[0].code == "parse_error"
+    assert "Document id must be a string" in result.issues[0].message
+
+
 from ontos.io.files import load_documents
 
 def test_loader_duplicate_contract_deterministic_first_wins(tmp_path):

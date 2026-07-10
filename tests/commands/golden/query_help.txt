@@ -1,23 +1,18 @@
-usage: ontos_query.py [-h] [--version]
-                      (--depends-on ID | --depended-by ID | --concept TAG | --stale DAYS | --health | --list-ids)
-                      [--dir DIR]
+usage: ontos query [-h] [--quiet] [--json] (--depends-on ID |
+                   --depended-by ID | --concept TAG | --stale DAYS |
+                   --health | --list-ids) [--dir DIR] [--scope {docs,library}]
 
-Query the Ontos knowledge graph.
-
-optional arguments:
-  -h, --help        show this help message and exit
-  --version, -V     show program's version number and exit
-  --depends-on ID   What does this document depend on?
-  --depended-by ID  What documents depend on this one?
-  --concept TAG     Find all documents with this concept
-  --stale DAYS      Find documents not updated in N days
-  --health          Show graph health metrics
-  --list-ids        List all document IDs
-  --dir DIR         Documentation directory (default:
-                    /Users/jonathanoh/Dev/Ontos-dev/.ontos-internal)
-
-Examples: ontos_query.py --depends-on auth_flow # What does auth_flow depend
-on? ontos_query.py --depended-by mission # What depends on mission?
-ontos_query.py --concept auth # All docs tagged with 'auth' ontos_query.py
---stale 90 # Docs not updated in 90 days ontos_query.py --health # Graph
-health metrics ontos_query.py --list-ids # List all document IDs
+options:
+  -h, --help            show this help message and exit
+  --quiet, -q           Suppress non-essential output
+  --json                Output in JSON format
+  --depends-on ID       What does this document depend on?
+  --depended-by ID      What documents depend on this one?
+  --concept TAG         Find all documents with this concept
+  --stale DAYS          Find documents not updated in N days
+  --health              Show graph health metrics
+  --list-ids            List all document IDs
+  --dir DIR             Documentation directory to scan
+  --scope {docs,library}
+                        Scan scope: docs (default) or library (includes
+                        .ontos-internal)

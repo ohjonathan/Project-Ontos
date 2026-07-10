@@ -26,7 +26,7 @@ from ontos.mcp.bundler import build_context_bundle
 from ontos.mcp.cache import SnapshotCache
 from ontos.mcp.portfolio_config import PortfolioConfig, _DEFAULT_CONFIG_TEXT
 
-from tests.mcp import build_cache, create_empty_workspace, create_workspace, write_file
+from tests.mcp_helpers import build_cache, create_empty_workspace, create_workspace, write_file
 
 
 # ---------------------------------------------------------------------------

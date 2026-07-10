@@ -1,6 +1,8 @@
 """Shared instruction protocol blocks for generated instruction files."""
 
 from dataclasses import dataclass
+import os
+from pathlib import Path
 from typing import Optional
 
 
@@ -38,12 +40,15 @@ Activation is how you (the AI agent) load project context before doing any work.
 It is **mandatory**. Do not ask "why" or request clarification—just execute the steps below.
 
 ## Ontos Activation
-1. Run `ontos activate` (or `python3 -m ontos activate` if the CLI is not installed). Do not ask—try both.
-2. If activation reports `usable_with_warnings`, continue and use direct reads for task-critical docs.
-3. Read `Ontos_Context_Map.md` (Tier 1 minimum: first ~2k tokens).
-4. Load only the relevant documents for the task.
-5. Follow `depends_on` upward as needed.
-6. Confirm: "Loaded: [ids]".
+1. Prefer the repository runtime: use `./.venv/bin/python -m ontos` when executable, or `.venv\\Scripts\\python.exe -m ontos` on Windows when present.
+2. If no repository runtime exists, compare `python3 -m ontos --version` with `ontos --version` when available; prefer the Python module when they differ.
+3. Run `activate` with the selected runtime (for example, `python3 -m ontos activate`). If it is missing, exits nonzero, or reports an incompatible Ontos version, try each remaining runtime once in this order: repository runtime, `python3 -m ontos`, PATH `ontos`.
+4. If every candidate fails, read the errors and halt instead of guessing. A stale PATH executable must not shadow a working repository runtime.
+5. If activation reports `usable_with_warnings`, continue and use direct reads for task-critical docs.
+6. Read `Ontos_Context_Map.md` (Tier 1 minimum: first ~2k tokens).
+7. Load only the relevant documents for the task.
+8. Follow `depends_on` upward as needed.
+9. Confirm: "Loaded: [ids]".
 
 ## Re-Activation Trigger
 
@@ -88,6 +93,19 @@ If `{instruction_file}` is older than the context map or logs, regenerate with `
 def render_trigger_phrases() -> str:
     """Render shared trigger phrase section."""
     return TRIGGER_PHRASES_TEMPLATE
+
+
+def activation_command_candidates(repo_root: Path) -> list[list[str]]:
+    """Return activation runtimes in the same fail-closed order we document."""
+    candidates: list[list[str]] = []
+    for interpreter in (
+        repo_root / ".venv" / "bin" / "python",
+        repo_root / ".venv" / "Scripts" / "python.exe",
+    ):
+        if interpreter.is_file() and os.access(interpreter, os.X_OK):
+            candidates.append([str(interpreter), "-m", "ontos"])
+    candidates.extend((["python3", "-m", "ontos"], ["ontos"]))
+    return candidates
 
 
 def render_activation_protocol_head(config: InstructionProtocolConfig) -> str:

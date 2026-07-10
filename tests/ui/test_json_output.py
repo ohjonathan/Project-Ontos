@@ -190,7 +190,7 @@ class TestCommandEnvelopeHelpers:
         captured = capsys.readouterr()
         result = json.loads(captured.out)
 
-        assert result["schema_version"] == "3.4"
+        assert result["schema_version"] == "4.0"
         assert result["command"] == "query"
         assert result["status"] == "success"
         assert result["exit_code"] == 0
@@ -198,6 +198,16 @@ class TestCommandEnvelopeHelpers:
         assert result["data"] == {"count": 1}
         assert result["warnings"] == ["sample warning"]
         assert result["error"] is None
+        assert result["result"] == {
+            "status": "clean",
+            "kind": "operation",
+            "exit_category": "clean",
+            "diagnostics": {
+                "basis": None,
+                "complete": False,
+                "counts": {},
+            },
+        }
 
     def test_emit_command_error_schema(self, capsys):
         """emit_command_error should emit required schema keys and error object."""
@@ -212,7 +222,7 @@ class TestCommandEnvelopeHelpers:
         captured = capsys.readouterr()
         result = json.loads(captured.out)
 
-        assert result["schema_version"] == "3.4"
+        assert result["schema_version"] == "4.0"
         assert result["command"] == "maintain"
         assert result["status"] == "error"
         assert result["exit_code"] == 2
@@ -220,3 +230,5 @@ class TestCommandEnvelopeHelpers:
         assert result["data"] == {"known": ["bar"]}
         assert result["warnings"] == []
         assert result["error"] == {"code": "E_USER_INPUT", "details": "Valid tasks: bar"}
+        assert result["result"]["status"] == "error"
+        assert result["result"]["exit_category"] == "usage"

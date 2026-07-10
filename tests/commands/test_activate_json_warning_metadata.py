@@ -761,7 +761,7 @@ def test_activate_json_rejects_invalid_limit_with_envelope(tmp_path: Path) -> No
 
     for bad in ("0", "-1"):
         result = _run(root, "--json", "activate", "--limit", bad)
-        assert result.returncode == 1
+        assert result.returncode == 2
         envelope = json.loads(result.stdout)  # stdout must stay valid JSON
         assert envelope["command"] == "activate"
         assert envelope["status"] == "error"
@@ -769,8 +769,8 @@ def test_activate_json_rejects_invalid_limit_with_envelope(tmp_path: Path) -> No
         assert "--limit" in envelope["message"]
 
     human = _run(root, "activate", "--limit", "0")
-    assert human.returncode == 1
-    assert "--limit must be >= 1" in human.stdout
+    assert human.returncode == 2
+    assert "--limit must be >= 1" in human.stderr
 
 
 def test_activate_warning_rule_filters_info_total(tmp_path: Path) -> None:

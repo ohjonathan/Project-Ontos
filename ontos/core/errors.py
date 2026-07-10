@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 
-@dataclass(frozen=True)
+@dataclass
 class OntosUserError(Exception):
     """User-facing error caused by invalid input or usage."""
 
@@ -18,7 +18,7 @@ class OntosUserError(Exception):
         return self.message
 
 
-@dataclass(frozen=True)
+@dataclass
 class OntosInternalError(Exception):
     """Internal command/runtime error with optional machine-readable code."""
 

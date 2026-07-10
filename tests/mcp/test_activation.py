@@ -7,7 +7,7 @@ import asyncio
 from ontos.core.types import ValidationError, ValidationErrorType
 from ontos.mcp.tools import _snapshot_issue, _validation_issues
 
-from tests.mcp import build_server, create_workspace
+from tests.mcp_helpers import build_server, create_workspace
 
 
 def _call(server, name: str, args: dict):
@@ -28,6 +28,28 @@ def test_activate_sets_session_state_and_returns_loaded_ids(tmp_path):
     assert activation.structuredContent["loaded_ids"]
     assert "_ontos_warning" not in activation.structuredContent
     assert "_ontos_warning" not in overview.structuredContent
+
+
+def test_activate_reports_required_version_incompatibility(tmp_path):
+    root = create_workspace(tmp_path)
+    config_path = root / ".ontos.toml"
+    config_path.write_text(
+        config_path.read_text(encoding="utf-8").replace(
+            'version = "4.0"',
+            'version = "4.0"\nrequired_version = ">=99.0.0"',
+        ),
+        encoding="utf-8",
+    )
+    server = build_server(root)
+
+    activation = _call(server, "activate", {})
+    overview = _call(server, "workspace_overview", {})
+
+    assert activation.isError is False
+    assert activation.structuredContent["status"] == "not_usable"
+    assert "Incompatible Ontos version" in activation.structuredContent["reason"]
+    assert activation.structuredContent["loaded_ids"] == []
+    assert "_ontos_warning" in overview.structuredContent
 
 
 def test_read_tool_warns_when_activation_was_skipped(tmp_path):
@@ -265,7 +287,7 @@ def test_mcp_groups_match_cli_grouping_for_same_records(tmp_path):
     utility produces for the same normalized record list (#132 parity)."""
     from ontos.core.warning_groups import group_warning_records, groups_to_payload
     from ontos.mcp.tools import _normalize_warnings
-    from tests.mcp import build_cache
+    from tests.mcp_helpers import build_cache
 
     cache = build_cache(create_workspace(tmp_path))
     from ontos.mcp import tools

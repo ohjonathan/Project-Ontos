@@ -6,7 +6,7 @@ from ontos.core.errors import OntosUserError
 from ontos.mcp import tools
 from ontos.mcp.schemas import validate_success_payload
 
-from tests.mcp import build_cache, create_workspace, write_file
+from tests.mcp_helpers import build_cache, create_workspace, write_file
 
 
 class FakePortfolioIndex:

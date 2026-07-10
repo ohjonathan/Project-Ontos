@@ -10,6 +10,12 @@ status: complete
 
 *Post-review corrections (2026-07-02): three independent reviewers — Gemini, GLM-5.2 (via opencode), and ChatGPT — reproduced the findings against HEAD `589d919`. All three confirmed the P0 and the `ontos doctor` RCE end-to-end; none refuted any confirmed finding. Their factual corrections are applied throughout and flagged inline as `[corrected post-review]`: the omitted sixth `split('---',2)` consumer (`verify.py:96`), the coverage-basis clarification, the `.ontos-internal/` on-disk size, and the 91-vs-88 attribution reconciliation.*
 
+> **Current-status addendum (2026-07-10):** this report remains the immutable
+> historical baseline for `589d919`. Use
+> [`2026-07-10-codex-audit-revalidation.md`](2026-07-10-codex-audit-revalidation.md)
+> and `manifests/project-ontos-audit-remediation-registry.yaml` for live status,
+> assignments, new `R2-*` findings, and release gates.
+
 ---
 
 ## 1. Executive summary

@@ -673,13 +673,14 @@ ontos link-check --summary            # counters only, skips suggestions
 ontos link-check --limit 20           # cap each findings list (JSON and human)
 ontos link-check --no-suggestions     # skip fix-suggestion generation
 ontos link-check --frontmatter-only   # skip body reference scanning
-ontos link-check --no-orphans         # skip orphan detection (removes exit 2)
+ontos link-check --no-orphans         # skip orphan detection (removes exit 3)
 ```
 
 Since v4.7 the JSON output uses the standard command envelope: top-level
 `status` is transport status, result quality lives in `data.result_status`
-(`clean` | `warnings` | `failing`), and per-phase timings appear under
-`data.timings_ms`. Shell exit codes are unchanged.
+(`clean` | `warnings` | `incomplete` | `failing`), and per-phase timings
+appear under `data.timings_ms`. Since schema 4.0, usage and diagnostic outcomes
+use distinct exit codes.
 
 `depends_on` entries that resolve to real files outside the doc scope are
 reported under `data.file_dependencies` instead of broken references. Mark
@@ -699,7 +700,7 @@ behavior.
 |------|---------|
 | `0`  | No issues found |
 | `1`  | Broken references, duplicates, or unallowlisted file dependencies detected |
-| `2`  | Orphan-only findings (no broken references or duplicates) |
+| `3`  | Orphan-only warnings (no broken references or duplicates) |
 
 ### 10.3 Rename (v3.3)
 
@@ -939,7 +940,7 @@ Example output:
 ### Common flags
 - `--quiet` / `-q` — Suppress output (global)
 - `--version` / `-V` — Show version (global)
-- `--strict` — Exit 1 on any issue (`map`)
+- `--strict` — Exit 3 when `map` has warnings but no errors
 - `--dry-run` — Preview without changes (`maintain`, `consolidate`, `schema-migrate`)
 
 ---

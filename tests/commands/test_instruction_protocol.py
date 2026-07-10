@@ -1,5 +1,10 @@
 """Unit tests for shared instruction protocol rendering/helpers."""
 
+import os
+from pathlib import Path
+import subprocess
+import sys
+
 from ontos.commands.instruction_protocol import (
     DEFAULT_USER_CUSTOM_PLACEHOLDER,
     InstructionProtocolConfig,
@@ -8,6 +13,7 @@ from ontos.commands.instruction_protocol import (
     render_activation_protocol_tail,
     render_trigger_phrases,
 )
+from ontos.core.instruction_protocol import activation_command_candidates
 
 
 def test_render_trigger_phrases_contains_expected_commands():
@@ -28,8 +34,47 @@ def test_render_activation_protocol_head_includes_optional_map_sync_row():
     )
     content = render_activation_protocol_head(config)
     assert "## What is Activation?" in content
+    assert "A stale PATH executable must not shadow" in content
+    assert "reports an incompatible Ontos version" in content
+    assert content.index("./.venv/bin/python") < content.index("python3 -m ontos")
+    assert "python3 -m ontos activate" in content
+    assert "If every candidate fails" in content
     assert "| `ontos map --sync-agents` | Regenerate map + sync AGENTS.md |" in content
     assert "| `ontos agents` | Generate instruction files |" in content
+
+
+def test_activation_candidates_prefer_working_repo_venv_over_stale_path(
+    tmp_path: Path,
+) -> None:
+    repo_python = tmp_path / ".venv" / "bin" / "python"
+    repo_python.parent.mkdir(parents=True)
+    repo_python.write_text(
+        f"#!{os.environ.get('SHELL', '/bin/sh')}\nexec {sys.executable!r} \"$@\"\n",
+        encoding="utf-8",
+    )
+    repo_python.chmod(0o755)
+
+    stale_bin = tmp_path / "stale-bin"
+    stale_bin.mkdir()
+    (stale_bin / "ontos").write_text("#!/bin/sh\necho 'ontos 4.6.0'\n", encoding="utf-8")
+    (stale_bin / "python3").write_text("#!/bin/sh\nexit 23\n", encoding="utf-8")
+    for executable in stale_bin.iterdir():
+        executable.chmod(0o755)
+
+    candidates = activation_command_candidates(tmp_path)
+    assert candidates[0] == [str(repo_python), "-m", "ontos"]
+    env = dict(os.environ)
+    env["PATH"] = str(stale_bin)
+    env["PYTHONPATH"] = str(Path(__file__).resolve().parents[2])
+    result = subprocess.run(
+        [*candidates[0], "--version"],
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0
+    assert "4.7.0" in result.stdout
 
 
 def test_render_activation_protocol_head_omits_map_sync_row_when_unset():

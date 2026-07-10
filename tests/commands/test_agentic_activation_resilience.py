@@ -72,6 +72,27 @@ def test_activate_json_generates_usable_context_map_with_valid_status(tmp_path: 
     assert "status: complete" in context_map.read_text(encoding="utf-8").split("---", 2)[1]
 
 
+def test_activate_json_fails_explicitly_on_required_version_mismatch(tmp_path: Path) -> None:
+    root = _workspace(tmp_path)
+    config_path = root / ".ontos.toml"
+    config_path.write_text(
+        config_path.read_text(encoding="utf-8").replace(
+            'version = "4.4"',
+            'version = "4.4"\nrequired_version = ">=99.0.0"',
+        ),
+        encoding="utf-8",
+    )
+
+    result = _run(root, "--json", "activate")
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 1
+    assert payload["status"] == "error"
+    assert payload["data"]["status"] == "not_usable"
+    assert "Incompatible Ontos version" in payload["data"]["reason"]
+    assert not (root / "Ontos_Context_Map.md").exists()
+
+
 def test_doctor_frontmatter_reports_precise_enum_diagnostics(tmp_path: Path) -> None:
     # (#117) `review` and `completed` are now canonical; use `proposal` and
     # `done` to exercise the invalid-enum path (proposal → strategy,

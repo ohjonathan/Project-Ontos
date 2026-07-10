@@ -208,7 +208,7 @@ def test_mcp_install_json_envelope_reports_created_config(tmp_path: Path) -> Non
 
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
-    assert payload["command"] == "mcp-install"
+    assert payload["command"] == "mcp install"
     assert payload["data"]["client"] == "antigravity"
     assert payload["data"]["mode"] == "read-only"
 

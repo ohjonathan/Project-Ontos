@@ -181,9 +181,21 @@ def test_invalid_workspace_path(temp_workspace):
     assert "not a directory" in output
 
 
-def test_cli_aliases_parity_and_warning(capsys):
+def test_cli_aliases_parity_and_warning(capsys, monkeypatch):
     """Test X-R2: tree and validate aliases work and warn."""
+    import pytest
+
     from ontos.cli import create_parser
+    from ontos.core.errors import OntosUserError
+
+    def _missing_verify_target(_args):
+        raise OntosUserError("Specify a file path")
+
+    # This is a parser/dispatch parity test. Keep the canonical handlers
+    # isolated so the deprecated `tree` alias cannot rewrite the real
+    # checkout's context map as a side effect of exercising the warning.
+    monkeypatch.setattr("ontos.cli._cmd_map", lambda _args: 0)
+    monkeypatch.setattr("ontos.cli._cmd_verify", _missing_verify_target)
     parser = create_parser()
 
     # Test 'tree' alias
@@ -197,6 +209,7 @@ def test_cli_aliases_parity_and_warning(capsys):
     # Test 'validate' alias
     args = parser.parse_args(["validate"])
     assert args.command == "validate"
-    args.func(args)
+    with pytest.raises(OntosUserError, match="Specify a file path"):
+        args.func(args)
     captured = capsys.readouterr()
     assert "Warning: 'ontos validate' is deprecated" in captured.err

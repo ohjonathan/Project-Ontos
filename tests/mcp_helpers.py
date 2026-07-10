@@ -1,11 +1,8 @@
-"""Shared helpers for MCP tests."""
+"""Shared MCP test helpers kept outside ``tests/mcp`` to avoid name shadowing."""
 
 from __future__ import annotations
 
 import asyncio
-import importlib
-import importlib.machinery
-import importlib.util
 import json
 import os
 import subprocess
@@ -16,88 +13,10 @@ from textwrap import dedent
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-PACKAGE_ROOT = REPO_ROOT / "ontos"
-REPO_ROOT_REALPATH = os.path.realpath(str(REPO_ROOT))
-PACKAGE_ROOT_REALPATH = os.path.realpath(str(PACKAGE_ROOT))
-if str(REPO_ROOT) in sys.path:
-    sys.path.remove(str(REPO_ROOT))
-sys.path.insert(0, str(REPO_ROOT))
-
-
-def _normalize_realpath(value: object) -> str:
-    if value is None:
-        return ""
-    try:
-        text = os.fspath(value)
-    except TypeError:
-        return ""
-    if not text:
-        return ""
-    return os.path.realpath(text)
-
-
-def _is_under_path(path: str, root: str) -> bool:
-    return bool(path) and (path == root or path.startswith(root + os.sep))
-
-
-def _is_external_package_entry(entry: object) -> bool:
-    real_entry = _normalize_realpath(entry)
-    if not real_entry:
-        return False
-    path_parts = real_entry.split(os.sep)
-    if "site-packages" in path_parts or "dist-packages" in path_parts:
-        return True
-    return not _is_under_path(real_entry, REPO_ROOT_REALPATH)
-
-
-def _ensure_repo_ontos_package() -> None:
-    module = sys.modules.get("ontos")
-    module_file = _normalize_realpath(getattr(module, "__file__", None)) if module else ""
-    if _is_under_path(module_file, PACKAGE_ROOT_REALPATH):
-        return
-
-    for name in list(sys.modules):
-        if name == "ontos" or name.startswith("ontos."):
-            del sys.modules[name]
-
-
-_ensure_repo_ontos_package()
 
 from ontos.io.config import load_project_config
 from ontos.io.snapshot import create_snapshot
 from ontos.mcp.cache import SnapshotCache
-
-
-def _ensure_real_mcp_package() -> None:
-    module = sys.modules.get("mcp")
-    module_file = _normalize_realpath(getattr(module, "__file__", None)) if module is not None else ""
-    if module is not None and not _is_under_path(module_file, REPO_ROOT_REALPATH):
-        try:
-            importlib.import_module("mcp.server.fastmcp")
-            return
-        except Exception:
-            pass
-
-    for name in list(sys.modules):
-        if name == "mcp" or name.startswith("mcp."):
-            del sys.modules[name]
-
-    for entry in sys.path:
-        if not _is_external_package_entry(entry):
-            continue
-        spec = importlib.machinery.PathFinder.find_spec("mcp", [entry])
-        if spec is None or spec.loader is None:
-            continue
-        module = importlib.util.module_from_spec(spec)
-        sys.modules["mcp"] = module
-        spec.loader.exec_module(module)
-        importlib.import_module("mcp.server.fastmcp")
-        return
-
-    raise ImportError("Unable to load the external 'mcp' package from site-packages")
-
-
-_ensure_real_mcp_package()
 
 
 def write_file(path: Path, content: str) -> None:
@@ -299,7 +218,7 @@ def run_base_cli(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     env = dict(os.environ)
     env["PYTHONPATH"] = str(REPO_ROOT)
     return subprocess.run(
-        ["python3", "-m", "ontos", *args],
+        [sys.executable, "-m", "ontos", *args],
         cwd=root,
         text=True,
         capture_output=True,

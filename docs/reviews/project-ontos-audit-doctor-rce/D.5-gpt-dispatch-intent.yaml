@@ -1,0 +1,31 @@
+manifest_version: "2.0.1"
+authoring_session_family: codex
+meta_orchestrator_family: codex
+deliverable_author_family: claude
+deliverable_author_families: [codex, claude]
+deliverable_id: project-ontos-audit-doctor-rce
+artifact_root: docs/reviews/project-ontos-audit-doctor-rce
+strict_p3_claim: false
+review_board_classification:
+  mode: doctor_rce_d5_exact_commit_verification
+  strict_p3_capable_evidence: false
+  strict_p3_certified: false
+  merge_authority: recommendation_only
+  rationale: "Required third independent family for 03c36e6, but framework v2.0.1 hard-refuses GPT-family `expected_model: auto`; this truthful pending intent is not currently dispatchable and cannot certify strict P3."
+dispatches:
+  - dispatch_id: project-ontos-audit-doctor-rce-D.5-gpt-verifier
+    family: gpt
+    role: verifier
+    review_mode: verification
+    expected_provider: gpt
+    expected_cli: codex
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-audit-doctor-rce/D.5-gpt-verifier.md
+    prompt_path: docs/reviews/project-ontos-audit-doctor-rce/.prompts/D.5-gpt-verifier.prompt.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    fallback_models: []
+    template_id: 15-verifier
+    template_version: 1.0.0
+    status: pending
+    scope: "Verify the exact 03c36e6 implementation from an isolated snapshot: five doctor-RCE regressions, related Cursor/doctor suites, exact-argv/security contract, and refreshed canonical-evidence prerequisites."

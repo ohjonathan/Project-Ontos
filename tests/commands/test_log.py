@@ -16,6 +16,7 @@ from ontos.commands.log import (
     create_session_log,
     log_command,
 )
+from ontos.io.yaml import parse_frontmatter_content
 
 
 def _init_git_project(tmp_path: Path) -> None:
@@ -69,6 +70,34 @@ class TestCreateSessionLog:
         git_info = {"branch": "main", "commits": [], "changed_files": []}
         content, _ = create_session_log(tmp_path, options, git_info)
         assert "event_type: feature" in content
+
+    def test_uses_configured_logs_directory(self, tmp_path):
+        _init_git_project(tmp_path)
+        (tmp_path / ".ontos.toml").write_text(
+            "[ontos]\nversion = '3.0'\n[paths]\nlogs_dir = 'var/audit-logs'\n",
+            encoding="utf-8",
+        )
+        options = EndSessionOptions(topic="configured")
+        _, path = create_session_log(tmp_path, options, {"branch": "main"})
+        assert path.parent == (tmp_path / "var" / "audit-logs")
+
+    def test_frontmatter_round_trips_adversarial_values(self, tmp_path):
+        _init_git_project(tmp_path)
+        options = EndSessionOptions(
+            event_type="fix: quoted # value",
+            topic="safe yaml",
+            source="agent, local",
+            branch='feature/"quoted"',
+            concepts=["alpha, beta", "#hash", "2026-07-10"],
+            impacts=["depends: value"],
+        )
+        content, _ = create_session_log(tmp_path, options, {"branch": "ignored"})
+        frontmatter, _ = parse_frontmatter_content(content)
+        assert frontmatter["event_type"] == options.event_type
+        assert frontmatter["source"] == options.source
+        assert frontmatter["branch"] == options.branch
+        assert frontmatter["concepts"] == options.concepts
+        assert frontmatter["impacts"] == options.impacts
 
 
 # ---------------------------------------------------------------------------
@@ -129,3 +158,19 @@ class TestLogCommandCLI:
         options = LogOptions(auto=True, quiet=True)
         result = log_command(options)
         assert result == 1
+
+    def test_collision_is_refused_without_overwrite(self, tmp_path, monkeypatch):
+        _init_git_project(tmp_path)
+        subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "--allow-empty", "-m", "init"],
+            cwd=tmp_path,
+            capture_output=True,
+        )
+        monkeypatch.chdir(tmp_path)
+        options = LogOptions(auto=True, quiet=True, title="same session")
+        assert log_command(options) == 0
+        path = next((tmp_path / "docs" / "logs").glob("*_same-session.md"))
+        original = path.read_bytes()
+        assert log_command(options) == 1
+        assert path.read_bytes() == original

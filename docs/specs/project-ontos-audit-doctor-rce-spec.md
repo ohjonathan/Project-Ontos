@@ -16,6 +16,11 @@ depends_on:
 
 # Spec — project-ontos-audit-doctor-rce
 
+Lifecycle state: `code_fixed_evidence_pending`. Implementation baseline
+`c8672e90f2382f4147ef61b4fba918969483e73e`; fixed implementation
+`03c36e6ac999d2c411c13252baa2e8fcff60e6ed`. This revision supersedes the
+prefix-only launcher contract that the original Phase A review approved.
+
 ## 1. Goal
 
 Close GitHub issue #147 / audit finding `D4b-trust-1`: running `ontos doctor` in a cloned untrusted repository must not execute a command read from repo-committed `.cursor/mcp.json`.
@@ -49,33 +54,39 @@ The existing shape checks all pass and the payload executes during a read-only d
 ## 3. Runtime Contract
 
 - `ontos doctor` must continue reading project and user Cursor MCP config and reporting malformed or stale config as warnings.
-- For project-scope Cursor config, `ontos doctor` must not run a direct initialize probe unless the command line matches Ontos's own managed launcher from `resolve_ontos_launcher()`.
-- A managed launcher match requires the resolved executable to equal the resolved `resolve_ontos_launcher()` executable and the configured args to start with the launcher prefix args.
+- For project-scope Cursor config, `ontos doctor` must not run a direct initialize probe unless the command line exactly matches the managed argv Ontos generates from `resolve_ontos_launcher()`.
+- A managed match requires the resolved executable and launcher prefix plus the complete suffix `serve --workspace <current-project-root>`, with only an optional final `--read-only`. Extra, duplicated, reordered, or separator-hidden tokens are rejected.
 - Unmanaged project-scope commands remain warning-level diagnostics, not hard failures, so `ontos doctor` can still complete in an untrusted clone.
-- User-scope Cursor config keeps the previous behavior because it is not repo-committed project input.
-- The lower-level Cursor inspection helper may still support explicit unmanaged probing for direct callers/tests, but `ontos doctor` must pass the safe option for project scope.
+- User-scope managed config is pinned to the workspace it declares; unmanaged probing is disabled by default on both direct and doctor call paths.
+- The lower-level helper may expose an explicit opt-in for a trusted caller, but omission of the flag must be safe.
 
 ## 4. Implementation
 
-- Add a shared helper in `ontos/core/mcp_shared.py` that identifies Ontos-managed launcher command lines by comparing resolved executables and launcher prefix args.
+- Add `is_ontos_managed_serve_argv` in `ontos/core/mcp_shared.py`; compare the full normalized argv against the one Ontos would generate for the expected workspace.
 - Extend `inspect_cursor_ontos_config` in `ontos/core/cursor_mcp.py` with an explicit `allow_unmanaged_probe` flag. When false and the config is unmanaged, return `code="unmanaged_probe_skipped"`, `ok=False`, with no `probe` object and no subprocess call.
-- Update `ontos/commands/doctor.py` so `_run_doctor_command` calls `check_cursor_mcp(..., allow_project_unmanaged_probe=False)`. Direct `check_cursor_mcp` calls default to legacy opt-in behavior for compatibility.
+- Update `ontos/commands/doctor.py` so `_run_doctor_command` calls `check_cursor_mcp(..., allow_project_unmanaged_probe=False)`. Both `allow_unmanaged_probe` and `allow_project_unmanaged_probe` default to false.
 - Update `SECURITY.md` to state that `--read-only` omits write tools and that writable server mode exposes `scaffold_document`, `log_session`, `session_end`, `promote_document`, and `rename_document`.
 
 ## 5. Tests
 
-Add `tests/test_doctor_mcp_probe_regression.py` with:
+`tests/test_doctor_mcp_probe_regression.py` is the five-case executable contract:
 
-- End-to-end hostile repo case: create a temp Ontos workspace with repo-local `.cursor/mcp.json` using `command="python3"` and `args=["-c", payload_that_writes_marker, "serve", "--workspace", abs_path]`; run `python -m ontos --json doctor`; assert the marker file does not exist and Cursor MCP reports a warning containing `probe skipped`.
-- Positive managed case: monkeypatch `resolve_ontos_launcher()` to a fake Ontos launcher script that returns a valid MCP initialize response; inspect project config with `allow_unmanaged_probe=False`; assert the probe runs and returns `ok`.
+1. End-to-end hostile repo case: a repo-local Python payload does not execute and doctor reports `probe skipped`.
+2. Positive managed case: the exact managed launcher argv still runs a valid initialize probe.
+3. Trusted-launcher smuggling case: `scaffold --apply -- serve ...` is rejected without executing the launcher.
+4. Duplicate workspace case: a second `--workspace` is rejected without executing the launcher.
+5. Safe-default case: a direct caller that omits the opt-out flag remains protected.
 
 Required verification:
 
 ```bash
-.venv/bin/python -m pytest tests/test_doctor_mcp_probe_regression.py -q
+.venv/bin/python -m pytest tests/test_doctor_mcp_probe_regression.py -q  # 5 passed
 .venv/bin/python -m pytest tests/ -q
 git diff --check
 bash .llm-dev/framework/scripts/verify-all.sh
+bash .llm-dev/framework/scripts/verify-changed-path-scope.sh \
+  --manifest manifests/project-ontos-audit-doctor-rce.yaml \
+  --base c8672e90f2382f4147ef61b4fba918969483e73e
 ```
 
 Strict-P3 closure additionally requires:
@@ -88,4 +99,6 @@ bash .llm-dev/framework/scripts/verify-lifecycle.sh manifests/project-ontos-audi
 
 - No changes under `ontos/mcp/`.
 - No changes to serializer/parser files leased to #146, especially `ontos/core/schema.py` and `ontos/io/yaml.py`.
-- No release actions: commit, tag, push, PR creation, merge, GitHub release, and issue closure remain maintainer-deferred.
+- No product-code changes during the evidence refresh unless a fresh wrapper-dispatched review identifies a blocker requiring a new implementation round.
+- No receipt reconstruction. Existing prose artifacts without wrapper capture IDs and hashes remain historical, non-certifying context.
+- GitHub issue #147 is reopened with the evidence-pending contract; release certification remains pending on a separate axis.

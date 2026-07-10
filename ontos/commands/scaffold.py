@@ -32,6 +32,7 @@ class ScaffoldOptions:
     quiet: bool = False
     json_output: bool = False
     scope: Optional[str] = None
+    repo_root: Optional[Path] = None
     runtime_failures: List[str] = field(default_factory=list)
 
 
@@ -171,43 +172,15 @@ def _run_scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
     options.runtime_failures = []
 
     # 1. Find untagged files
-    root = find_project_root()
-    config = load_project_config(repo_root=root)
-    effective_scope = resolve_scan_scope(options.scope, config.scanning.default_scope)
-    
-    ignore_patterns = load_ontosignore(root)
-    # Explicitly exclude archives and tmp to avoid duplicate ID noise
-    ignore_patterns.extend(["**/archive/**", "**/tmp/**", "archive/*", ".ontos-internal/archive/*", ".ontos-internal/tmp/*"])
-    
-    all_files = collect_scoped_documents(
-        root,
-        config,
-        effective_scope,
-        base_skip_patterns=ignore_patterns,
-    ) or []
-    load_result = load_documents(all_files, parse_frontmatter_content)
-    
-    if load_result.has_fatal_errors:
-        fatal = False
-        for issue in load_result.issues:
-            if issue.code in {"parse_error", "io_error"}:
-                output.error(issue.message)
-                fatal = True
-            elif issue.code == "duplicate_id":
-                # Duplicates are reported but not always fatal for scaffolding
-                output.warning(issue.message)
-        
-        # Duplicate IDs are intentionally tolerated in scaffold context.
-        # Scaffold creates new files and only needs the existing ID set for
-        # collision avoidance — first-wins resolution is sufficient.
-        if fatal:
-            return 1, "Document load failed"
-    
-    # Check specifically for duplicates of paths we are trying to scaffold?
-    # Actually, scan_documents already picked them up.
+    root = (
+        options.repo_root.expanduser().resolve()
+        if options.repo_root is not None
+        else find_project_root()
+    )
 
     untagged, discovery_failures = _find_untagged_files_with_failures(
         options.paths,
+        root=root,
         scope=options.scope,
     )
     options.runtime_failures.extend(discovery_failures)
@@ -226,7 +199,6 @@ def _run_scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
         output.info(f"Found {len(untagged)} file(s) needing scaffolding")
 
     # 2. Process each file
-    root = find_project_root()
     ctx = SessionContext.from_repo(root)
     success_count = 0
     failures: List[str] = []

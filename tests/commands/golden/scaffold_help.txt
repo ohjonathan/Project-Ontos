@@ -1,12 +1,18 @@
-usage: ontos_scaffold.py [-h] [--apply] [--dry-run] [--quiet] [files ...]
+usage: ontos scaffold [-h] [--quiet] [--json] [--apply | --dry-run]
+                      [--scope {docs,library}]
+                      [paths ...]
 
-Generate Level 0 scaffold frontmatter for untagged files.
+Add frontmatter to markdown files. Dry-run by default. Use --apply to write.
 
 positional arguments:
-  files        Specific files to scaffold (default: scan all)
+  paths                 File(s) or directory to scaffold (default: scan all)
 
-optional arguments:
-  -h, --help   show this help message and exit
-  --apply      Apply scaffolding (required to modify files)
-  --dry-run    Preview changes without applying (default)
-  --quiet, -q  Minimal output
+options:
+  -h, --help            show this help message and exit
+  --quiet, -q           Suppress non-essential output
+  --json                Output in JSON format
+  --apply               Apply scaffolding (default: dry-run)
+  --dry-run             Preview changes without modifying files (default)
+  --scope {docs,library}
+                        Scan scope: docs (default) or library (includes
+                        .ontos-internal)

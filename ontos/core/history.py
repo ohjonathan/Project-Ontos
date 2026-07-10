@@ -10,6 +10,7 @@ from datetime import date, datetime
 from typing import Optional, List, Tuple
 
 from ontos.core.frontmatter import parse_frontmatter, normalize_depends_on
+from ontos.io.yaml import split_frontmatter_text
 
 
 class ParsedLog:
@@ -107,10 +108,10 @@ def parse_log_for_history(log_path: str) -> Optional[ParsedLog]:
         try:
             with open(log_path, 'r', encoding='utf-8') as f:
                 content = f.read()
-            # Extract content after frontmatter
-            parts = content.split('---', 2)
-            if len(parts) >= 3:
-                body = parts[2].strip()
+            split = split_frontmatter_text(content)
+            if split is not None:
+                _, body, _ = split
+                body = body.strip()
                 # Find first paragraph that's not a header
                 for line in body.split('\n'):
                     line = line.strip()

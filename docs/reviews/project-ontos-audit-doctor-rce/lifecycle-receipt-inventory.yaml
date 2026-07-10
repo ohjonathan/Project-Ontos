@@ -1,33 +1,8 @@
 schema_version: 1
 deliverable_id: project-ontos-audit-doctor-rce
-fallback_evidence_mode: provider_limited_fallback
-strict_p3_certified: false
-authorization_ref: docs/trackers/project-ontos-audit-doctor-rce.md#fallback-authorization
-# No strict-P3 receipts exist for this deliverable. The GPT family was blocked
-# (see blocked_family_evidence) and the claude/gemini review artifacts were
-# authored in-session under provider-limited fallback labeling rather than
-# dispatched through scripts/dispatch-family-review.sh, so no wrapper receipt
-# (capture_id / resolved_model / artifact_sha256) was ever produced. Receipts are
-# deliberately left empty rather than reconstructed: `verify-lifecycle --mode
-# provider-limited-fallback` therefore does NOT certify this deliverable, and the
-# completion claim is label-only. Do not populate this list without real wrapper
-# output.
+# Reopened 2026-07-10 as code_fixed_evidence_pending. The historical Markdown
+# reviews were authored in-session under provider-limited labels and have no
+# wrapper capture_id / resolved_model / artifact_sha256 records. They remain in
+# git history as narrative context but are not inventory entries. Populate this
+# list only through fresh wrapper dispatch; never reconstruct receipts.
 receipts: []
-blocked_family_evidence:
-  - family: gpt
-    provider: openai
-    phases: [B.1, D.2, D.5]
-    evidence_path: docs/reviews/project-ontos-audit-doctor-rce/gpt-model-access-blockage.md
-    evidence_sha256: 1d48eacf1dd290c4a020fe18c151f6f3737fac1152000beb2d974f07819bb14e
-fallback_artifacts:
-  - docs/reviews/project-ontos-audit-doctor-rce/B.1-claude-sonnet-peer.md
-  - docs/reviews/project-ontos-audit-doctor-rce/B.1-gemini-adversarial.md
-  - docs/reviews/project-ontos-audit-doctor-rce/B.1-gpt-alignment.md
-  - docs/reviews/project-ontos-audit-doctor-rce/B.3-verdict.md
-  - docs/reviews/project-ontos-audit-doctor-rce/D.2-claude-sonnet-peer.md
-  - docs/reviews/project-ontos-audit-doctor-rce/D.2-gemini-adversarial.md
-  - docs/reviews/project-ontos-audit-doctor-rce/D.2-gpt-alignment.md
-  - docs/reviews/project-ontos-audit-doctor-rce/D.3-verdict.md
-  - docs/reviews/project-ontos-audit-doctor-rce/D.5-claude-verifier.md
-  - docs/reviews/project-ontos-audit-doctor-rce/D.5-gemini-verifier.md
-  - docs/reviews/project-ontos-audit-doctor-rce/D.5-gpt-verifier.md

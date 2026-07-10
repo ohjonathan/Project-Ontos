@@ -1,0 +1,1046 @@
+schema_version: 1
+registry_id: project-ontos-audit-remediation-registry
+source_audit: docs/reviews/2026-07-02-fable-repo-audit.md
+audit_baseline_commit: 589d919
+revalidation_commit: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+revalidation_report: docs/reviews/2026-07-10-codex-audit-revalidation.md
+generated_artifacts:
+  - docs/trackers/project-ontos-audit-remediation-release-line.md
+github_snapshot:
+  observed_at: "2026-07-10"
+  epic_issue: 158
+  epic_release_line_synced: true
+  r2_checklists_synced: true
+  original_checklist_policy: merged_and_verified_only
+  uncommitted_original_checklists_remain_unchecked: true
+  source_issues: [146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157]
+  issue_finding_counts:
+    146: 1
+    147: 2
+    148: 11
+    149: 20
+    150: 15
+    151: 5
+    152: 6
+    153: 9
+    154: 14
+    155: 1
+    156: 5
+    157: 2
+  registry_finding_counts:
+    146: 2
+    147: 2
+    148: 12
+    149: 21
+    150: 16
+    151: 6
+    152: 6
+    153: 12
+    154: 14
+    155: 1
+    156: 5
+    157: 2
+    158: 1
+  external_drift:
+    - issue: 147
+      field: state
+      observed: open
+      expected: open
+      status: resolved
+      reason: "Issue reopened with the code_fixed_evidence_pending evidence contract on 2026-07-10."
+    - issue: 149
+      field: severity
+      observed: P1
+      expected: P1
+      status: resolved
+      reason: "Issue retitled and relabeled P1-containing and moved to Audit Release N+1 on 2026-07-10."
+
+shared_tree_integration:
+  status: unproven_rebaseline_integration
+  release_blocking: true
+  affected_issues: [146, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157]
+  reason: >-
+    Implementations were assembled in one dirty working tree without
+    per-deliverable base-SHA scope receipts. Structural lease parity is valid,
+    but historical simultaneous-lease compliance cannot be reconstructed or
+    certified. Split/review each deliverable from its recorded base before
+    release.
+
+row_templates:
+  original_open: &original_open
+    origin: fable_audit
+    baseline_commit: 589d919
+    status: confirmed_open
+    fix_commit: null
+    verification_evidence:
+      - docs/reviews/2026-07-02-fable-repo-audit.md
+  original_fixed: &original_fixed
+    origin: fable_audit
+    baseline_commit: 589d919
+    status: code_fixed
+    fix_commit: 03c36e6ac999d2c411c13252baa2e8fcff60e6ed
+    verification_evidence:
+      - tests/test_doctor_mcp_probe_regression.py
+      - SECURITY.md
+  r2_open: &r2_open
+    origin: codex_revalidation
+    baseline_commit: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+    status: confirmed_open
+    fix_commit: null
+    verification_evidence:
+      - docs/reviews/2026-07-10-codex-audit-revalidation.md
+
+programs:
+  - &p146
+    id: project-ontos-audit-serializer-corruption
+    root_program: project-ontos-audit-serializer-corruption
+    issue: 146
+    github_state: open
+    github_milestone: 1
+    max_severity: P0
+    default_release: v4.7.1
+    base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+    implementation_ref: working_tree_uncommitted_2026-07-10
+    lifecycle_state: code_fixed_evidence_pending
+    lease_state: active
+    allowed_paths:
+      - manifests/project-ontos-audit-serializer-corruption.yaml
+      - docs/trackers/project-ontos-audit-serializer-corruption.md
+      - docs/specs/project-ontos-audit-serializer-corruption-spec.md
+      - docs/reviews/project-ontos-audit-serializer-corruption/
+      - docs/retros/project-ontos-audit-serializer-corruption-retro.md
+      - docs/logs/
+      - ontos/core/schema.py
+      - ontos/io/files.py
+      - ontos/io/yaml.py
+      - ontos/commands/promote.py
+      - ontos/commands/migrate.py
+      - ontos/commands/retrofit.py
+      - ontos/mcp/writes.py
+      - tests/commands/test_retrofit.py
+      - tests/core/test_schema.py
+      - tests/test_document_loading_contract_a1.py
+      - tests/test_frontmatter_roundtrip_regression.py
+  - &p147
+    id: project-ontos-audit-doctor-rce
+    root_program: project-ontos-audit-doctor-rce
+    issue: 147
+    github_state: open
+    github_milestone: 1
+    max_severity: P1
+    default_release: v4.7.1
+    base_sha: c8672e90f2382f4147ef61b4fba918969483e73e
+    implementation_ref: 03c36e6ac999d2c411c13252baa2e8fcff60e6ed
+    lifecycle_state: code_fixed_evidence_pending
+    lease_state: evidence_only
+    allowed_paths:
+      - SECURITY.md
+      - docs/logs/2026-07-03_merge-pull-request-145-from-ohjonathan-docs-fable.md
+      - docs/retros/project-ontos-audit-doctor-rce-retro.md
+      - docs/specs/project-ontos-audit-doctor-rce-spec.md
+      - docs/trackers/project-ontos-audit-doctor-rce.md
+      - docs/reviews/project-ontos-audit-doctor-rce/
+      - manifests/project-ontos-audit-doctor-rce.yaml
+      - ontos/commands/doctor.py
+      - ontos/core/cursor_mcp.py
+      - ontos/core/mcp_shared.py
+      - tests/core/test_cursor_mcp.py
+      - tests/commands/test_doctor_phase4.py
+      - tests/test_doctor_mcp_probe_regression.py
+  - &p148
+    id: project-ontos-audit-relN-quick-wins
+    root_program: project-ontos-audit-relN-quick-wins
+    issue: 148
+    github_state: open
+    github_milestone: 2
+    max_severity: P1
+    default_release: v4.8.0
+    base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+    implementation_ref: working_tree_uncommitted_2026-07-10
+    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    lease_state: implementation_uncommitted_integration_pending
+    allowed_paths:
+      - .github/workflows/publish.yml
+      - ontos/commands/activate.py
+      - ontos/commands/link_check.py
+      - ontos/commands/log.py
+      - ontos/commands/maintain.py
+      - ontos/commands/map.py
+      - ontos/core/config.py
+      - ontos/core/context.py
+      - ontos/core/frontmatter_edit.py
+      - ontos/core/git.py
+      - ontos/io/snapshot.py
+      - ontos/mcp/portfolio_config.py
+      - tests/commands/test_log.py
+      - tests/core/test_config_phase3.py
+      - tests/core/test_git_safety.py
+      - tests/test_ci_release_workflows.py
+      - tests/test_release_artifact.py
+      - tests/test_session_context.py
+  - &p149
+    id: project-ontos-audit-relN-sweep
+    root_program: project-ontos-audit-relN-sweep
+    issue: 149
+    github_state: open
+    github_milestone: 2
+    max_severity: P1
+    github_severity_observed: P1
+    default_release: v4.8.0
+    base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+    implementation_ref: working_tree_uncommitted_2026-07-10
+    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    lease_state: implementation_uncommitted_integration_pending
+    allowed_paths:
+      - .ontos.toml
+      - .gitignore
+      - CLAUDE.md
+      - README.md
+      - docs/reference/Ontos_Agent_Instructions.md
+      - docs/reference/Ontos_Manual.md
+      - ontos/_hooks/
+      - ontos/_templates/
+      - ontos/cli.py
+      - ontos/commands/activate.py
+      - ontos/commands/consolidate.py
+      - ontos/commands/doctor.py
+      - ontos/commands/export_claude.py
+      - ontos/commands/init.py
+      - ontos/commands/map.py
+      - ontos/core/config.py
+      - ontos/core/instruction_protocol.py
+      - ontos/core/paths.py
+      - ontos/io/obsidian.py
+      - ontos/mcp/portfolio_config.py
+      - ontos/mcp/tools.py
+      - tests/commands/test_agentic_activation_resilience.py
+      - tests/commands/test_doctor_phase4.py
+      - tests/commands/test_instruction_protocol.py
+      - tests/core/test_config_phase3.py
+      - tests/test_ci_release_workflows.py
+  - &p150
+    id: project-ontos-audit-characterization-tests
+    root_program: project-ontos-audit-characterization-tests
+    issue: 150
+    github_state: open
+    github_milestone: 2
+    max_severity: P2
+    default_release: v4.8.0
+    base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+    implementation_ref: working_tree_uncommitted_2026-07-10
+    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    lease_state: implementation_uncommitted_integration_pending
+    allowed_paths:
+      - pyproject.toml
+      - tests/
+      - ontos/commands/hook.py
+      - ontos/commands/query.py
+      - ontos/core/git.py
+      - ontos/core/paths.py
+      - ontos/io/git.py
+      - ontos/io/toml.py
+  - &p151
+    id: project-ontos-audit-parser-consolidation
+    root_program: project-ontos-audit-parser-consolidation
+    issue: 151
+    github_state: open
+    github_milestone: 2
+    max_severity: P1
+    default_release: v4.8.0
+    base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+    implementation_ref: working_tree_uncommitted_2026-07-10
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    lease_state: implementation_uncommitted_integration_pending
+    allowed_paths:
+      - ontos/commands/log.py
+      - ontos/commands/promote.py
+      - ontos/commands/verify.py
+      - ontos/core/body_refs.py
+      - ontos/core/frontmatter.py
+      - ontos/core/frontmatter_edit.py
+      - ontos/core/history.py
+      - ontos/core/link_diagnostics.py
+      - ontos/core/ontology.py
+      - ontos/core/schema.py
+      - ontos/core/types.py
+      - ontos/io/yaml.py
+      - ontos/commands/stub.py
+      - ontos/mcp/tools.py
+      - tests/commands/test_log.py
+      - tests/commands/test_stub_parity.py
+      - tests/core/test_body_refs.py
+      - tests/core/test_frontmatter_edit_pipeline.py
+      - tests/core/test_frontmatter_repair.py
+      - tests/core/test_link_diagnostics.py
+      - tests/mcp/test_workspace_overview.py
+      - tests/test_frontmatter_roundtrip_regression.py
+      - tests/test_immutable_history.py
+  - &p152
+    id: project-ontos-audit-writepath-bodyref
+    root_program: project-ontos-audit-writepath-bodyref
+    issue: 152
+    github_state: open
+    github_milestone: 2
+    max_severity: P1
+    default_release: v4.8.0
+    base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+    implementation_ref: working_tree_uncommitted_2026-07-10
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    lease_state: implementation_uncommitted_integration_pending
+    allowed_paths:
+      - ontos/commands/migrate.py
+      - ontos/commands/promote.py
+      - ontos/core/body_refs.py
+      - ontos/core/frontmatter_edit.py
+      - ontos/core/frontmatter_repair.py
+      - ontos/core/link_diagnostics.py
+      - ontos/mcp/writes.py
+      - tests/commands/test_rename.py
+      - tests/core/test_body_refs.py
+      - tests/core/test_frontmatter_edit_pipeline.py
+      - tests/core/test_frontmatter_repair.py
+      - tests/core/test_link_diagnostics.py
+  - &p153
+    id: project-ontos-audit-mcp-dispatch-rename
+    root_program: project-ontos-audit-mcp-dispatch-rename
+    issue: 153
+    github_state: open
+    github_milestone: 2
+    max_severity: P1
+    default_release: v4.8.0
+    base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+    implementation_ref: working_tree_uncommitted_2026-07-10
+    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    lease_state: implementation_uncommitted_integration_pending
+    allowed_paths:
+      - ontos/commands/rename.py
+      - ontos/core/context.py
+      - ontos/core/locking.py
+      - ontos/mcp/portfolio.py
+      - ontos/mcp/rename_tool.py
+      - ontos/mcp/server.py
+      - ontos/mcp/tools.py
+      - ontos/mcp/writes.py
+      - tests/mcp/test_export_graph.py
+      - tests/mcp/test_read_only_registration.py
+      - tests/test_context_contention.py
+      - tests/test_session_context.py
+  - &p154
+    id: project-ontos-audit-exitcode-envelope
+    root_program: project-ontos-audit-exitcode-envelope
+    issue: 154
+    github_state: open
+    github_milestone: 3
+    max_severity: P1
+    default_release: v4.9.0
+    base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+    implementation_ref: working_tree_uncommitted_2026-07-10
+    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    lease_state: implementation_uncommitted_integration_pending
+    allowed_paths:
+      - ontos/__init__.py
+      - ontos/cli.py
+      - ontos/commands/consolidate.py
+      - ontos/commands/link_check.py
+      - ontos/commands/map.py
+      - ontos/commands/query.py
+      - ontos/commands/verify.py
+      - ontos/core/graph.py
+      - ontos/core/link_diagnostics.py
+      - ontos/mcp/server.py
+      - ontos/mcp/tools.py
+      - ontos/mcp/writes.py
+      - ontos/ui/json_output.py
+      - docs/reference/Migration_v3_to_v4.md
+      - tests/commands/test_verify_portfolio.py
+      - tests/core/test_graph.py
+      - tests/test_cli_contract_v4.py
+      - tests/ui/test_json_output.py
+  - &p155
+    id: project-ontos-audit-cli-command-table
+    root_program: project-ontos-audit-cli-command-table
+    issue: 155
+    github_state: open
+    github_milestone: 3
+    max_severity: P2
+    default_release: v4.9.0
+    base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+    implementation_ref: working_tree_uncommitted_2026-07-10
+    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    lease_state: implementation_uncommitted_integration_pending
+    allowed_paths:
+      - ontos/command_registry.py
+      - ontos/cli.py
+      - tests/test_cli_contract_v4.py
+  - &p156
+    id: project-ontos-audit-precommit-rewire-slim
+    root_program: project-ontos-audit-precommit-rewire-slim
+    issue: 156
+    github_state: open
+    github_milestone: 2
+    max_severity: P1
+    default_release: v4.8.0
+    base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+    implementation_ref: working_tree_uncommitted_2026-07-10
+    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    lease_state: implementation_uncommitted_integration_pending
+    allowed_paths:
+      - .github/workflows/
+      - .ontos/hooks/
+      - .pre-commit-config.yaml
+      - .ontos/scripts/
+      - .ontos-internal/archive/
+      - .project-internal/
+      - tests/conftest.py
+      - tests/test_ci_release_workflows.py
+      - tests/test_test_isolation.py
+  - &p157
+    id: project-ontos-audit-graph-traversal
+    root_program: project-ontos-audit-graph-traversal
+    issue: 157
+    github_state: open
+    github_milestone: 3
+    max_severity: P2
+    default_release: v4.9.0
+    base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+    implementation_ref: working_tree_uncommitted_2026-07-10
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    lease_state: implementation_uncommitted_integration_pending
+    allowed_paths:
+      - ontos/core/graph.py
+      - tests/core/test_graph.py
+      - tests/core/test_link_diagnostics.py
+
+shared_path_leases:
+  - {path: "docs/logs/", programs: [146, 147], order: [146, 147]}
+  - {path: ".github/workflows/", programs: [148, 156], order: [148, 156]}
+  - {path: "ontos/core/schema.py", programs: [146, 151], order: [146, 151]}
+  - {path: "ontos/io/yaml.py", programs: [146, 151], order: [146, 151]}
+  - {path: "ontos/commands/promote.py", programs: [146, 151, 152], order: [146, 151, 152]}
+  - {path: "ontos/commands/migrate.py", programs: [146, 152], order: [146, 152]}
+  - {path: "ontos/mcp/writes.py", programs: [146, 152, 153, 154], order: [146, 152, 153, 154]}
+  - {path: "ontos/commands/log.py", programs: [148, 151], order: [148, 151]}
+  - {path: "ontos/commands/activate.py", programs: [148, 149], order: [148, 149]}
+  - {path: "ontos/commands/doctor.py", programs: [147, 149], order: [147, 149]}
+  - {path: "ontos/commands/link_check.py", programs: [148, 154], order: [148, 154]}
+  - {path: "ontos/commands/map.py", programs: [148, 149, 154], order: [148, 149, 154]}
+  - {path: "ontos/core/config.py", programs: [148, 149], order: [148, 149]}
+  - {path: "ontos/core/context.py", programs: [148, 153], order: [148, 153]}
+  - {path: "ontos/core/frontmatter_edit.py", programs: [148, 151, 152], order: [148, 151, 152]}
+  - {path: "ontos/core/git.py", programs: [148, 150], order: [148, 150]}
+  - {path: "ontos/mcp/portfolio_config.py", programs: [148, 149], order: [148, 149]}
+  - {path: "ontos/cli.py", programs: [149, 154, 155], order: [149, 154, 155]}
+  - {path: "ontos/commands/consolidate.py", programs: [149, 154], order: [149, 154]}
+  - {path: "ontos/core/paths.py", programs: [149, 150], order: [149, 150]}
+  - {path: "ontos/mcp/tools.py", programs: [149, 151, 153, 154], order: [149, 151, 153, 154]}
+  - {path: "ontos/commands/query.py", programs: [150, 154], order: [150, 154]}
+  - {path: "ontos/commands/verify.py", programs: [151, 154], order: [151, 154]}
+  - {path: "ontos/core/body_refs.py", programs: [151, 152], order: [151, 152]}
+  - {path: "ontos/core/link_diagnostics.py", programs: [151, 152, 154], order: [151, 152, 154]}
+  - {path: "ontos/mcp/server.py", programs: [153, 154], order: [153, 154]}
+  - {path: "ontos/core/graph.py", programs: [154, 157], order: [154, 157]}
+  - path: tests/
+    programs: [146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157]
+    order: [146, 147, 150, 148, 149, 151, 152, 153, 154, 155, 156, 157]
+    policy: "#150 owns shared characterization infrastructure; every other program uses a uniquely named regression file and may not edit another program's test."
+
+findings:
+  - <<: [*original_open, *p146]
+    id: D2b-roundtrip-3
+    severity: P0
+    release: v4.7.1
+    status: code_fixed_evidence_pending
+    lifecycle_state: code_fixed_evidence_pending
+    verification_evidence:
+      - tests/core/test_schema.py
+      - tests/test_frontmatter_roundtrip_regression.py
+  - {<<: [*original_fixed, *p147], id: D4b-trust-1, severity: P1, release: v4.7.1}
+  - {<<: [*original_fixed, *p147], id: D4b-trust-2, severity: P2, release: v4.7.1}
+  - {<<: [*original_open, *p148], id: D1b-counts-1, severity: P1, release: v4.8.0}
+  - {<<: [*original_open, *p148], id: D1b-counts-2, severity: P1, release: v4.8.0}
+  - {<<: [*original_open, *p148], id: D1b-counts-3, severity: P1, release: v4.8.0}
+  - {<<: [*original_open, *p148], id: D1b-counts-4, severity: P1, release: v4.8.0}
+  - <<: [*original_open, *p148]
+    id: D2a-write-safety-2
+    severity: P1
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/core/test_git_safety.py
+  - <<: [*original_open, *p148]
+    id: D2b-roundtrip-1
+    severity: P1
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - ontos/core/frontmatter_edit.py
+  - <<: [*original_open, *p148]
+    id: D3b-structure-2
+    severity: P1
+    release: v4.7.1
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/commands/test_log.py
+  - <<: [*original_open, *p148]
+    id: D4a-config-2
+    severity: P1
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/core/test_config_phase3.py
+  - {<<: [*original_open, *p148], id: D7-cli-consistency-1, severity: P1, release: v4.8.0}
+  - <<: [*original_open, *p148]
+    id: D2a-write-safety-7
+    severity: P2
+    release: v4.7.1
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - ontos/core/context.py
+      - tests/test_session_context.py
+  - {<<: [*original_open, *p148], id: D4a-config-1, severity: P2, release: v4.8.0}
+  - {<<: [*original_open, *p149], id: D8-docs-clarity-1, severity: P1, release: v4.8.0}
+  - {<<: [*original_open, *p149], id: D8-docs-clarity-2, severity: P1, release: v4.8.0}
+  - {<<: [*original_open, *p149], id: D8-docs-clarity-4, severity: P1, release: v4.8.0}
+  - {<<: [*original_open, *p149], id: D8-docs-clarity-5, severity: P1, release: v4.8.0}
+  - {<<: [*original_open, *p149], id: D3b-structure-7, severity: P2, release: v4.8.0}
+  - {<<: [*original_open, *p149], id: D4a-config-3, severity: P2, release: v4.8.0}
+  - {<<: [*original_open, *p149], id: D4a-config-5, severity: P2, release: v4.8.0}
+  - <<: [*original_open, *p149]
+    id: D5a-repo-redundancy-3
+    severity: P2
+    release: v4.8.0
+    status: partial_implementation_uncommitted_verification_pending
+    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - ontos/_hooks/pre-commit
+      - ontos/_hooks/pre-push
+      - tests/test_ci_release_workflows.py
+  - {<<: [*original_open, *p149], id: D5a-repo-redundancy-6, severity: P2, release: v4.8.0}
+  - {<<: [*original_open, *p149], id: D5b-dead-code-10, severity: P2, release: v4.8.0}
+  - {<<: [*original_open, *p149], id: D5b-dead-code-2, severity: P2, release: v4.8.0}
+  - {<<: [*original_open, *p149], id: D5b-dead-code-3, severity: P2, release: v4.8.0}
+  - {<<: [*original_open, *p149], id: D5b-dead-code-6, severity: P2, release: v4.8.0}
+  - <<: [*original_open, *p149]
+    id: D5b-dead-code-7
+    severity: P2
+    release: v4.7.1
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/commands/test_agentic_activation_resilience.py
+      - tests/commands/test_doctor_phase4.py
+      - tests/commands/test_instruction_protocol.py
+    allowed_paths:
+      - .ontos.toml
+      - ontos/commands/activate.py
+      - ontos/commands/doctor.py
+      - ontos/core/config.py
+      - ontos/core/instruction_protocol.py
+  - {<<: [*original_open, *p149], id: D5b-dead-code-8, severity: P2, release: v4.8.0}
+  - {<<: [*original_open, *p149], id: D5b-dead-code-9, severity: P2, release: v4.8.0}
+  - {<<: [*original_open, *p149], id: D7-cli-consistency-9, severity: P2, release: v4.8.0}
+  - {<<: [*original_open, *p149], id: D8-docs-clarity-3, severity: P2, release: v4.8.0}
+  - {<<: [*original_open, *p149], id: D8-docs-clarity-6, severity: P2, release: v4.8.0}
+  - {<<: [*original_open, *p149], id: D8-docs-clarity-8, severity: P2, release: v4.8.0}
+  - <<: [*original_open, *p150]
+    id: D6a-test-gaps-10
+    severity: P2
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - pyproject.toml
+      - tests/test_ci_release_workflows.py
+  - <<: [*original_open, *p150]
+    id: D6a-test-gaps-2
+    severity: P2
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/io/test_git_empty_diff.py
+  - <<: [*original_open, *p150]
+    id: D6a-test-gaps-4
+    severity: P2
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/commands/test_hook_phase4.py
+  - {<<: [*original_open, *p150], id: D6a-test-gaps-5, severity: P2, release: v4.8.0}
+  - <<: [*original_open, *p150]
+    id: D6a-test-gaps-6
+    severity: P2
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/golden/test_golden_master.py
+      - tests/golden/compare_golden_master.py
+  - <<: [*original_open, *p150]
+    id: D6a-test-gaps-7
+    severity: P2
+    release: v4.8.0
+    status: partial_implementation_uncommitted_verification_pending
+    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/commands/test_query_parity.py
+  - <<: [*original_open, *p150]
+    id: D6a-test-gaps-8
+    severity: P2
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/io/test_toml_roundtrip.py
+  - <<: [*original_open, *p150]
+    id: D6a-test-gaps-9
+    severity: P2
+    release: v4.8.0
+    status: partial_implementation_uncommitted_verification_pending
+    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/core/test_git_safety.py
+  - <<: [*original_open, *p150]
+    id: D6b-test-quality-1
+    severity: P2
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/commands/test_consolidate_parity.py
+  - {<<: [*original_open, *p150], id: D6b-test-quality-2, severity: P2, release: v4.8.0}
+  - {<<: [*original_open, *p150], id: D6b-test-quality-4, severity: P2, release: v4.8.0}
+  - <<: [*original_open, *p150]
+    id: D6b-test-quality-5
+    severity: P2
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/commands/test_query_parity.py
+      - tests/commands/test_scaffold_parity.py
+      - tests/commands/test_verify_parity.py
+  - <<: [*original_open, *p150]
+    id: D6b-test-quality-6
+    severity: P2
+    release: v4.8.0
+    status: partial_implementation_uncommitted_verification_pending
+    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/test_cli_cwd_fix.py
+      - tests/test_describes.py
+  - {<<: [*original_open, *p150], id: D6b-test-quality-7, severity: P2, release: v4.8.0}
+  - <<: [*original_open, *p150]
+    id: D6b-test-quality-9
+    severity: P2
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/mcp_helpers.py
+      - tests/test_test_isolation.py
+  - <<: [*original_open, *p151]
+    id: D3a-parsers-3
+    severity: P1
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/core/test_frontmatter_edit_pipeline.py
+      - tests/test_frontmatter_roundtrip_regression.py
+  - <<: [*original_open, *p151]
+    id: D3b-structure-1
+    severity: P1
+    release: v4.7.1
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/commands/test_log.py
+  - <<: [*original_open, *p151]
+    id: D1a-graph-link-2
+    severity: P2
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/core/test_body_refs.py
+  - <<: [*original_open, *p151]
+    id: D1a-graph-link-3
+    severity: P2
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/core/test_link_diagnostics.py
+  - <<: [*original_open, *p151]
+    id: D3a-parsers-2
+    severity: P2
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - ontos/core/history.py
+      - tests/test_immutable_history.py
+  - <<: [*original_open, *p152]
+    id: D1a-graph-link-1
+    severity: P1
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/commands/test_rename.py
+      - tests/core/test_body_refs.py
+  - <<: [*original_open, *p152]
+    id: D1a-graph-link-6
+    severity: P1
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/core/test_link_diagnostics.py
+  - <<: [*original_open, *p152]
+    id: D2b-roundtrip-4
+    severity: P1
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - ontos/core/frontmatter_edit.py
+      - ontos/commands/migrate.py
+      - ontos/commands/promote.py
+      - ontos/mcp/writes.py
+      - tests/core/test_frontmatter_edit_pipeline.py
+  - <<: [*original_open, *p152]
+    id: D1a-graph-link-7
+    severity: P2
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/core/test_link_diagnostics.py
+  - <<: [*original_open, *p152]
+    id: D1a-graph-link-8
+    severity: P2
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/core/test_graph.py
+      - tests/core/test_link_diagnostics.py
+  - <<: [*original_open, *p152]
+    id: D2b-roundtrip-5
+    severity: P2
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - ontos/core/frontmatter_edit.py
+      - ontos/core/frontmatter_repair.py
+      - tests/core/test_frontmatter_repair.py
+  - {<<: [*original_open, *p153], id: D2a-write-safety-3, severity: P1, release: v4.8.0}
+  - {<<: [*original_open, *p153], id: D2a-write-safety-5, severity: P1, release: v4.8.0}
+  - <<: [*original_open, *p153]
+    id: D2a-write-safety-6
+    severity: P2
+    release: v4.8.0
+    status: partial_implementation_uncommitted_verification_pending
+    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - ontos/core/context.py
+      - tests/test_session_context.py
+  - {<<: [*original_open, *p153], id: D2a-write-safety-8, severity: P2, release: v4.8.0}
+  - <<: [*original_open, *p153]
+    id: D2a-write-safety-9
+    severity: P2
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/test_session_context.py
+  - {<<: [*original_open, *p153], id: D3b-structure-3, severity: P2, release: v4.8.0}
+  - {<<: [*original_open, *p153], id: D3b-structure-4, severity: P2, release: v4.8.0}
+  - {<<: [*original_open, *p153], id: D3b-structure-5, severity: P2, release: v4.8.0}
+  - {<<: [*original_open, *p153], id: D3b-structure-8, severity: P2, release: v4.8.0}
+  - <<: [*original_open, *p154]
+    id: D1c-envelope-4
+    severity: P1
+    release: v4.9.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/test_cli_contract_v4.py
+  - <<: [*original_open, *p154]
+    id: D7-cli-consistency-2
+    severity: P1
+    release: v4.9.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/test_cli_contract_v4.py
+  - <<: [*original_open, *p154]
+    id: D7-cli-consistency-3
+    severity: P1
+    release: v4.9.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/test_cli_contract_v4.py
+  - <<: [*original_open, *p154]
+    id: D7-cli-consistency-4
+    severity: P1
+    release: v4.9.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/test_cli_contract_v4.py
+      - tests/ui/test_json_output.py
+  - <<: [*original_open, *p154]
+    id: D1a-graph-link-9
+    severity: P2
+    release: v4.9.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - ontos/core/graph.py
+      - tests/core/test_graph.py
+  - {<<: [*original_open, *p154], id: D1b-counts-5, severity: P2, release: v4.9.0}
+  - {<<: [*original_open, *p154], id: D1b-counts-6, severity: P2, release: v4.9.0}
+  - <<: [*original_open, *p154]
+    id: D1c-envelope-5
+    severity: P2
+    release: v4.9.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/test_cli_contract_v4.py
+  - {<<: [*original_open, *p154], id: D1c-envelope-7, severity: P2, release: v4.9.0}
+  - <<: [*original_open, *p154]
+    id: D7-cli-consistency-10
+    severity: P2
+    release: v4.9.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/test_cli_contract_v4.py
+  - <<: [*original_open, *p154]
+    id: D7-cli-consistency-5
+    severity: P2
+    release: v4.9.0
+    status: partial_implementation_uncommitted_verification_pending
+    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/test_cli_contract_v4.py
+      - tests/ui/test_json_output.py
+  - <<: [*original_open, *p154]
+    id: D7-cli-consistency-6
+    severity: P2
+    release: v4.9.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/commands/test_verify_portfolio.py
+  - <<: [*original_open, *p154]
+    id: D7-cli-consistency-7
+    severity: P2
+    release: v4.9.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/test_cli_contract_v4.py
+  - <<: [*original_open, *p154]
+    id: D7-cli-consistency-8
+    severity: P2
+    release: v4.9.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/test_cli_contract_v4.py
+  - <<: [*original_open, *p155]
+    id: D3b-structure-6
+    severity: P2
+    release: v4.9.0
+    status: partial_implementation_uncommitted_verification_pending
+    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - ontos/command_registry.py
+      - tests/test_cli_contract_v4.py
+  - <<: [*original_open, *p156]
+    id: D5a-repo-redundancy-1
+    severity: P1
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/test_ci_release_workflows.py
+      - tests/test_test_isolation.py
+  - <<: [*original_open, *p156]
+    id: D5a-repo-redundancy-2
+    severity: P1
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/test_ci_release_workflows.py
+      - tests/test_test_isolation.py
+  - {<<: [*original_open, *p156], id: D5a-repo-redundancy-4, severity: P2, release: v4.9.0}
+  - {<<: [*original_open, *p156], id: D5a-repo-redundancy-7, severity: P2, release: v4.9.0}
+  - {<<: [*original_open, *p156], id: D8-docs-clarity-7, severity: P2, release: v4.9.0}
+  - <<: [*original_open, *p157]
+    id: D1a-graph-link-4
+    severity: P2
+    release: v4.9.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/core/test_graph.py
+  - <<: [*original_open, *p157]
+    id: D1a-graph-link-5
+    severity: P2
+    release: v4.9.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/core/test_graph.py
+      - tests/core/test_link_diagnostics.py
+
+  - <<: [*r2_open, *p150]
+    id: R2-test-hermeticity-1
+    severity: P1
+    release: v4.7.1
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/test_test_isolation.py
+      - tests/conftest.py
+    allowed_paths:
+      - tests/
+      - pyproject.toml
+    summary: "Tests write and can overwrite live repository logs and the tracked context map."
+  - <<: [*r2_open, *p153]
+    id: R2-context-tmp-symlink-1
+    severity: P1
+    release: v4.7.1
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/test_session_context.py
+    allowed_paths:
+      - ontos/core/context.py
+      - ontos/core/locking.py
+      - tests/test_session_context.py
+    summary: "The central writer follows predictable <target>.tmp symlinks outside the workspace."
+  - <<: [*r2_open, *p146]
+    id: R2-loader-id-type-1
+    severity: P1
+    release: v4.7.1
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/test_document_loading_contract_a1.py
+    allowed_paths:
+      - ontos/core/schema.py
+      - ontos/io/files.py
+      - ontos/io/yaml.py
+      - tests/test_frontmatter_roundtrip_regression.py
+    summary: "Numeric, date, and null IDs crash or poison the canonical loader and widen serializer exposure."
+  - <<: [*r2_open, *p153]
+    id: R2-windows-fcntl-import-1
+    severity: P1
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - ontos/core/locking.py
+      - tests/test_ci_release_workflows.py
+    allowed_paths:
+      - ontos/core/context.py
+      - ontos/core/locking.py
+      - tests/test_session_context.py
+      - tests/test_context_contention.py
+    summary: "The advertised base package cannot import on Windows because fcntl is unconditional."
+  - <<: [*r2_open, *p151]
+    id: R2-lifecycle-type-enumeration-1
+    severity: P1
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/commands/test_stub_parity.py
+      - tests/mcp/test_workspace_overview.py
+    allowed_paths:
+      - ontos/commands/stub.py
+      - ontos/core/ontology.py
+      - ontos/core/types.py
+      - ontos/mcp/tools.py
+      - tests/mcp/test_workspace_overview.py
+    summary: "Valid lifecycle types are missing from stub creation and MCP graph_stats.by_type."
+  - <<: [*r2_open, *p148]
+    id: R2-testpypi-provenance-1
+    severity: P1
+    release: v4.7.1
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/test_release_artifact.py
+      - tests/test_ci_release_workflows.py
+    allowed_paths:
+      - .github/workflows/publish.yml
+    summary: "TestPyPI verification is not tied to the exact wheel and version promoted."
+  - <<: [*r2_open, *p149]
+    id: R2-activation-version-skew-1
+    severity: P1
+    release: v4.7.1
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/commands/test_agentic_activation_resilience.py
+      - tests/commands/test_doctor_phase4.py
+      - tests/commands/test_instruction_protocol.py
+    allowed_paths:
+      - ontos/commands/activate.py
+      - ontos/commands/doctor.py
+      - ontos/core/config.py
+      - ontos/core/instruction_protocol.py
+      - tests/commands/test_agentic_activation_resilience.py
+      - tests/commands/test_instruction_protocol.py
+      - tests/core/test_config_phase3.py
+    summary: "A stale global ontos shadows the repo runtime and doctor incorrectly reports it healthy."
+  - <<: [*r2_open, *p153]
+    id: R2-mcp-readonly-export-1
+    severity: P2
+    release: v4.8.0
+    status: implemented_uncommitted_verification_pending
+    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    verification_evidence:
+      - tests/mcp/test_read_only_registration.py
+    allowed_paths:
+      - ontos/mcp/portfolio.py
+      - ontos/mcp/server.py
+      - ontos/mcp/tools.py
+      - tests/mcp/test_export_graph.py
+      - tests/mcp/test_read_only_registration.py
+    summary: "Read-only MCP mode still permits filesystem writes through export_graph."
+  - <<: *r2_open
+    id: R2-control-plane-parity-1
+    severity: P1
+    root_program: project-ontos-audit-remediation-2026-07
+    issue: 158
+    release: v4.7.1
+    base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+    status: implemented_uncommitted_parity_verified
+    lifecycle_state: parity_verified_commit_pending
+    lease_state: active
+    allowed_paths:
+      - manifests/project-ontos-audit-remediation-registry.yaml
+      - docs/reviews/2026-07-10-codex-audit-revalidation.md
+      - docs/trackers/project-ontos-audit-remediation-release-line.md
+      - docs/handoffs/project-ontos-audit-remediation-2026-07-*.md
+    verification_evidence:
+      - scripts/validate-audit-remediation-registry.py
+    summary: "Roadmap, leases, scope checks, GitHub state, and lifecycle evidence can disagree without a blocking parity gate."

@@ -4,7 +4,7 @@ import asyncio
 
 from mcp.types import CallToolResult
 
-from tests.mcp import build_server, create_workspace, list_tools
+from tests.mcp_helpers import build_server, create_workspace, list_tools
 
 
 CORE_TOOLS = {

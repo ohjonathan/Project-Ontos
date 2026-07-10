@@ -19,6 +19,8 @@ import os
 import re
 from typing import Optional, List, Dict, Any, Callable
 
+from ontos.io.yaml import parse_yaml, split_frontmatter_text
+
 
 def parse_frontmatter(
     filepath: str,
@@ -44,112 +46,26 @@ def parse_frontmatter(
         Dictionary of frontmatter fields, or None if no valid frontmatter.
     """
     try:
-        with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
+        with open(filepath, 'r', encoding='utf-8') as f:
             content = f.read()
-    except (IOError, OSError):
-        return None
-
-    if not content.startswith('---'):
+    except (IOError, OSError, UnicodeDecodeError):
         return None
 
     try:
-        parts = content.split('---', 2)
-        if len(parts) < 3:
+        split = split_frontmatter_text(content)
+        if split is None:
             return None
 
-        yaml_content = parts[1].strip()
+        yaml_content, _, _ = split
         if not yaml_content:
             return {}
 
-        # Use provided parser if available
-        if yaml_parser is not None:
-            try:
-                result = yaml_parser(yaml_content)
-                return result if isinstance(result, dict) else None
-            except Exception:
-                return None
-
-        # Fallback: basic key-value parsing for simple frontmatter
-        # This handles common cases without PyYAML dependency
-        return _fallback_yaml_parse(yaml_content)
+        parser = yaml_parser or parse_yaml
+        result = parser(yaml_content)
+        return result if isinstance(result, dict) else None
 
     except Exception:
         return None
-
-
-def _fallback_yaml_parse(content: str) -> Optional[Dict[str, Any]]:
-    """Fallback YAML parser for simple key-value frontmatter.
-    
-    Handles basic cases like:
-        id: some_id
-        type: atom
-        status: active
-        depends_on: [dep1, dep2]
-    
-    For complex YAML, use the yaml_parser callback with PyYAML.
-    
-    Args:
-        content: YAML content string.
-        
-    Returns:
-        Dictionary of parsed values, or None if parsing fails.
-    """
-    result = {}
-    
-    for line in content.split('\n'):
-        line = line.strip()
-        if not line or line.startswith('#'):
-            continue
-            
-        if ':' not in line:
-            continue
-            
-        key, _, value = line.partition(':')
-        key = key.strip()
-        value = value.strip()
-        
-        if not key:
-            continue
-        
-        # Handle empty values
-        if not value or value in ('null', '~', 'None'):
-            result[key] = None
-            continue
-        
-        # Handle inline lists: [item1, item2]
-        if value.startswith('[') and value.endswith(']'):
-            items = value[1:-1].split(',')
-            result[key] = [item.strip().strip('"\'') for item in items if item.strip()]
-            continue
-        
-        # Handle quoted strings
-        if (value.startswith('"') and value.endswith('"')) or \
-           (value.startswith("'") and value.endswith("'")):
-            result[key] = value[1:-1]
-            continue
-        
-        # Handle booleans
-        if value.lower() in ('true', 'yes'):
-            result[key] = True
-            continue
-        if value.lower() in ('false', 'no'):
-            result[key] = False
-            continue
-        
-        # Handle numbers
-        try:
-            if '.' in value:
-                result[key] = float(value)
-            else:
-                result[key] = int(value)
-            continue
-        except ValueError:
-            pass
-        
-        # Default: string value
-        result[key] = value
-    
-    return result if result else None
 
 
 def normalize_reference_list(value: Any, field_name: str, on_warning: Optional[Callable[[str], None]] = None) -> List[str]:
@@ -223,17 +139,19 @@ def normalize_type(value, on_error: Optional[Callable[[str, Any, List[str]], Non
         return value
 
     type_str = 'unknown'
+    raw_value = value
     if isinstance(value, str):
         type_str = value.strip().lower()
     elif isinstance(value, list) and value:
-        type_str = str(value[0]).strip().lower()
+        raw_value = value[0]
+        type_str = str(raw_value).strip().lower()
 
     try:
         return DocumentType(type_str)
     except (ValueError, TypeError):
         if on_error:
             options = [t.value for t in DocumentType]
-            on_error(f"Invalid doc type '{type_str}'", type_str, options)
+            on_error(f"Invalid doc type '{type_str}'", raw_value, options)
         return DocumentType.UNKNOWN
 
 
@@ -249,17 +167,19 @@ def normalize_status(value, on_error: Optional[Callable[[str, Any, List[str]], N
         return value
 
     status_str = 'unknown'
+    raw_value = value
     if isinstance(value, str):
         status_str = value.strip().lower()
     elif isinstance(value, list) and value:
-        status_str = str(value[0]).strip().lower()
+        raw_value = value[0]
+        status_str = str(raw_value).strip().lower()
 
     try:
         return DocumentStatus(status_str)
     except (ValueError, TypeError):
         if on_error:
             options = [s.value for s in DocumentStatus]
-            on_error(f"Invalid doc status '{status_str}'", status_str, options)
+            on_error(f"Invalid doc status '{status_str}'", raw_value, options)
         return DocumentStatus.UNKNOWN
 
 

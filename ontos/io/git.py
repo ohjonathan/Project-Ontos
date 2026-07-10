@@ -61,7 +61,8 @@ def get_commits_since_push(fallback_count: int = 5) -> List[str]:
             timeout=10
         )
         if result.returncode == 0:
-            return result.stdout.strip().split('\n')
+            output = result.stdout.strip()
+            return output.split('\n') if output else []
     except (subprocess.TimeoutExpired, FileNotFoundError):
         pass
     return []
@@ -91,7 +92,8 @@ def get_changed_files_since_push() -> List[str]:
             timeout=10
         )
         if result.returncode == 0:
-            return result.stdout.strip().split('\n')
+            output = result.stdout.strip()
+            return output.split('\n') if output else []
     except (subprocess.TimeoutExpired, FileNotFoundError):
         pass
     return []

@@ -3,145 +3,195 @@ id: project_ontos_audit_remediation_release_line_tracker
 type: tracker
 status: active
 meta_cycle_id: project-ontos-audit-remediation-2026-07
-owner: meta-orchestrator (claude; meta-cycle project-ontos-audit-remediation-2026-07)
-depends_on: []
+owner: meta-orchestrator (codex rebaseline, 2026-07-10)
+depends_on:
+  - project-ontos-codex-audit-revalidation-2026-07
 ---
 
 # Release-line tracker — project-ontos-audit-remediation-2026-07
 
-Cross-deliverable custody artifact for the audit-remediation meta-cycle, authored under
-authority M-A3 (coordinate custody across deliverables) by the meta-orchestrator session
-opened from the kickoff at
-`docs/handoffs/2026-07-03-audit-remediation-meta-orchestrator-kickoff.md`. This file hosts
-two of the meta-cycle's expected outputs (spec §3.7): **O5** (cross-deliverable scope-lock
-manifest) and **O4** (cross-deliverable verification ledger). It spans all 12 remediation
-deliverables (#146–#157) and is therefore meta-cycle-owned; per-deliverable trackers
-(`docs/trackers/project-ontos-audit-<slug>.md`) remain owned by their own Codex
-Orchestrators (forbidden path F-2 / non-trigger N6).
-
-## O5 — Cross-deliverable scope-lock manifest
-
-**What this allowlist is — and is not.** The table below grants write **leases to
-per-deliverable Codex Orchestrator sessions**, one deliverable at a time per shared path.
-It grants **nothing** to the meta-cycle itself: the meta-cycle's own write allowlist
-remains kickoff §4 verbatim (meta-cycle handoffs, this tracker file, meta-cycle proposals,
-and the meta-cycle's own review-board entries) and includes **none** of the product-code
-paths below. Listing a product path here is a lease assignment, not a self-grant —
-treating it otherwise is an F-1 violation and halts under S2 + S7.
-
-**Forbidden-paths preflight (spec §3.5.1 F-1..F-4), performed 2026-07-03 before any
-meta-cycle write:** the meta-cycle's own allowlist (kickoff §4) contains no product-code
-path (F-1 ✅), no per-deliverable tracker path (F-2 ✅), no other deliverable's
-review-board path (F-3 ✅), and no other deliverable's D.6 gate path (F-4 ✅). **PASS.**
-
-### File-ownership allowlist (write leases per shared path)
-
-| Shared path | Deliverables touching it | Lease order / policy |
-|---|---|---|
-| `ontos/core/schema.py` | #146 | Exclusive to #146 until v4.7.1 ships. |
-| `ontos/core/frontmatter.py`, `ontos/core/frontmatter_edit.py`, `ontos/core/frontmatter_repair.py` | #146, #151, #152 | #146 first (v4.7.1, minimal call-site changes only); then #151, then #152 (both v4.8.0, dispatched only after #150 lands). |
-| `ontos/io/yaml.py` | #146, #151 | #146 first (adopts the unused `dump_yaml`); #151 consumes — does not rewrite — #146's serializer. |
-| `ontos/core/body_refs.py` | #151, #152, #157 | #151 → #152 (v4.8.0) → #157 (v4.9.0). |
-| `ontos/cli.py` | #154, #155 | Serialized inside v4.9.0; #154 (exit-code/envelope) before #155 (command table). |
-| `ontos/mcp/` (package proper) | #146, #153, #154 | #146 leases only `ontos/mcp/writes.py` (re-parse assertion at the `promote_document` write path, v4.7.1) and releases it before #153 then #154 (v4.8.0/v4.9.0). Note: #147 does **not** lease `ontos/mcp/`; its lease is `ontos/core/mcp_shared.py`, `ontos/core/cursor_mcp.py`, `ontos/commands/doctor.py`, `SECURITY.md` (v4.7.1). |
-| `ontos/commands/promote.py`, `ontos/commands/migrate.py` | #146, #152 | #146 first (re-parse assertion at call sites); #152 later routes both through `frontmatter_edit` (v4.8.0). |
-| `.pre-commit-config.yaml`, `.ontos/scripts/` | #156 | Exclusive to #156 (v4.9.0). |
-| `tests/` | #150 + all deliverables | #150 owns the characterization-test net (v4.8.0, before #151/#152/#153). Every other deliverable adds **only its own named regression file** (named in its dispatch prompt); no edits to another deliverable's tests. |
-
-### Serialization rule
-
-One deliverable holds the lease on a shared path at a time. Lease order derives from the
-dependency edges below (kickoff §3). A Codex Orchestrator that finds its Phase-C path
-leased to another in-flight deliverable **halts Phase C and routes back to the
-meta-cycle** (deliverable-level S2); it does not negotiate directly with the sibling
-session.
+Cross-deliverable custody artifact for issues #146–#157 and epic #158. The sole
+machine-readable authority is
+`manifests/project-ontos-audit-remediation-registry.yaml`; O4 and O5 below are
+human renderings checked by `scripts/validate-audit-remediation-registry.py`.
+Finding state, release placement, or lease ownership must be changed in the
+registry first and then reflected here.
 
 ## O4 — Cross-deliverable verification ledger
 
-Lifecycle states: `not started → Phase 0 → A → B.1/B.3 → C → D.1–D.6 → E → closed`.
-Evidence modes: `strict-P3` | `provider-limited` | `—`. Terminal status strings (exact,
-per Template 24 §10.5 fields 4/5): `strict_p3_review_complete` or
-`provider_limited_fallback_complete; strict P3 not certified; maintainer release actions
-deferred`.
+`status` and `lifecycle_state` are separate axes. In particular, a GitHub issue
+may be closed and its code may be fixed while lifecycle evidence remains pending.
+Only `strict_p3_review_complete` is certified. An explicit emergency waiver is a
+non-certified terminal state and must never be relabeled as strict P3.
 
-| deliverable_id | Issue | Release | Lifecycle status | Evidence mode | Final status string | Updated |
-|---|---|---|---|---|---|---|
-| project-ontos-audit-serializer-corruption | #146 | v4.7.1 | **B.1 — STALLED** (Phase 0 ✅, A ✅; B.1 partial: claude-sonnet peer complete, gpt halted, gemini no result). Phase C not started — **the P0 is still unfixed**. | provider-limited (authorized 2026-07-03) | — (no terminal status; deliverable incomplete) | 2026-07-09 |
-| project-ontos-audit-doctor-rce | #147 | v4.7.1 | **E — session-declared complete, NOT mechanically verifiable** (Phase 0→E; D.6 with caveat). Hardened again 2026-07-09 after external review found the launcher gate bypassable. | provider-limited, **label-only** (no wrapper receipts) | session emitted `provider_limited_fallback_complete; strict P3 not certified; maintainer release actions deferred`, but `verify-lifecycle --mode provider-limited-fallback` does **not** certify it | 2026-07-09 |
-| project-ontos-audit-relN-quick-wins | #148 | v4.7.1 | not started | — | — | 2026-07-03 |
-| project-ontos-audit-relN-sweep | #149 | v4.7.1 | not started | — | — | 2026-07-03 |
-| project-ontos-audit-characterization-tests | #150 | v4.8.0 | not started | — | — | 2026-07-03 |
-| project-ontos-audit-parser-consolidation | #151 | v4.8.0 | not started (blocked on #150) | — | — | 2026-07-03 |
-| project-ontos-audit-writepath-bodyref | #152 | v4.8.0 | not started (blocked on #150) | — | — | 2026-07-03 |
-| project-ontos-audit-mcp-dispatch-rename | #153 | v4.8.0 | not started (blocked on #150) | — | — | 2026-07-03 |
-| project-ontos-audit-exitcode-envelope | #154 | v4.9.0 | not started | — | — | 2026-07-03 |
-| project-ontos-audit-cli-command-table | #155 | v4.9.0 | not started | — | — | 2026-07-03 |
-| project-ontos-audit-precommit-rewire-slim | #156 | v4.9.0 | not started | — | — | 2026-07-03 |
-| project-ontos-audit-graph-traversal | #157 | v4.9.0 | not started | — | — | 2026-07-03 |
+| Deliverable | Issue | Release | Severity | Lifecycle state | GitHub | Base / implementation | Current truth |
+|---|---:|---|---:|---|---|---|---|
+| serializer corruption | #146 | v4.7.1 | P0 | `code_fixed_evidence_pending` | open; M1 | base `bf91b42`; uncommitted working tree | Safe serializer, ID validation, and writer regressions are implemented and focused tests pass; no fix commit or terminal lifecycle evidence exists. |
+| doctor RCE | #147 | v4.7.1 | P1·sec | `code_fixed_evidence_pending` | open; M1 | base `c8672e9`; fix `03c36e6` | Exact-argv fix and five regressions are present; zero strict-P3 receipts; issue reopened with the evidence-pending contract. |
+| quick wins | #148 | v4.8.0 (selected hotfix items v4.7.1) | P1 | `partial_implementation_uncommitted_lifecycle_pending` | open; M2 | base `bf91b42`; uncommitted tree | Five originals are implemented; six remain open. Secure writer/log/config and TestPyPI work are present but uncertified. |
+| docs/dead-code sweep | #149 | v4.8.0 (activation item v4.7.1) | **P1-containing** | `partial_implementation_uncommitted_lifecycle_pending` | open; M2 | base `bf91b42`; uncommitted tree | Required-version activation is implemented; packaged-hook repair is partial; the broad sweep remains open. |
+| characterization tests | #150 | v4.8.0 (hermeticity prerequisite v4.7.1) | P2 + R2 P1 | `partial_implementation_uncommitted_lifecycle_pending` | open; M2 | base `bf91b42`; uncommitted tree | Eight originals are implemented and three are partial; hermeticity is implemented but still needs the clean-clone gate. |
+| parser consolidation | #151 | v4.8.0 (safe log serialization v4.7.1) | P1 | `implementation_uncommitted_lifecycle_pending` | open; M2 | base `bf91b42`; uncommitted tree | All five original rows plus lifecycle-type enumeration are implemented; no fix commit or lifecycle certification exists. |
+| write-path/body refs | #152 | v4.8.0 | P1 | `implementation_uncommitted_lifecycle_pending` | open; M2 | base `bf91b42`; uncommitted tree | All six graph/link and formatting-preservation rows are implemented; no fix commit or lifecycle certification exists. |
+| MCP dispatch/rename | #153 | v4.8.0 (secure writer v4.7.1) | P1 | `partial_implementation_uncommitted_lifecycle_pending` | open; M2 | base `bf91b42`; uncommitted tree | Duplicate writes and all three owned R2 rows are implemented; durable crash recovery and broader rename work remain. |
+| exit-code/envelope | #154 | v4.9.0 | P1 | `partial_implementation_uncommitted_lifecycle_pending` | open; M3 | base `bf91b42`; uncommitted tree | Ten originals are implemented, one is partial, and three remain open; this is not a completed schema-version release. |
+| CLI command table | #155 | v4.9.0 | P2 | `partial_implementation_uncommitted_lifecycle_pending` | open; M3 | base `bf91b42`; uncommitted tree | Declarative discovery/order substrate exists; registrar and handler boilerplate remain. |
+| pre-commit rewire / slim | #156 | v4.8.0 rewire; v4.9.0 archive | P1 | `partial_implementation_uncommitted_lifecycle_pending` | open; M2 | base `bf91b42`; uncommitted tree | The two runtime/CI shadowing rows are implemented; archive extraction and churn work remain. |
+| graph traversal | #157 | v4.9.0 | P2 | `implementation_uncommitted_lifecycle_pending` | open; M3 | base `bf91b42`; uncommitted tree | Both iterative-depth and case-insensitive path rows are implemented with focused regressions; no fix commit exists. |
 
-**Update discipline.** Only the meta-cycle session updates this ledger (as deliverables
-report Phase transitions and terminal statuses). Per-deliverable trackers stay
-per-deliverable-owned (F-2). A ledger row's "Final status string" is filled only with one
-of the two exact terminal strings above, copied verbatim from the deliverable's final
-response.
+### Active blockers
 
-### Active blockers (as of 2026-07-09)
+- #146's code fix is present only in the uncommitted working tree. Provider-
+  limited authorization permits honest continuation; focused tests do not
+  create a fix commit, complete the missing review seats, or certify release.
+- #147 is code-fixed but not release-certified. The old B.1/D.2/D.5 prose was
+  not wrapper-dispatched, the receipt inventory is empty, and no receipt may be
+  reconstructed. Run a fresh review chain over `c8672e9..03c36e6`.
+- Tests were not hermetic at the revalidation baseline. Isolation and clean-
+  tree gates are now implemented, but a green suite is not a release signal
+  until a clean-clone full run proves both tracked and untracked state remain
+  clean.
+- Seven original rows remain only partially implemented. In particular,
+  exception rollback is not durable crash recovery and the command registry is
+  substrate rather than a completed boilerplate removal.
+- `shared_tree_integration.status` is `unproven_rebaseline_integration` and
+  release-blocking. The structural collision graph is valid, but this shared
+  dirty tree cannot retroactively prove that #146/#148–#157 held leases in the
+  required order; each deliverable still needs a base-SHA scope receipt from an
+  isolated review diff.
 
-- **#146 (P0) is stalled and is the critical path for v4.7.1.** Its B.1 review board never
-  closed: the strict GPT-family dispatch halted (the Codex substrate rejects `gpt-5`,
-  `gpt-4o`, `gpt-4.1`, `gpt-4-turbo`, `gpt-5-codex` for this ChatGPT account), and the
-  Gemini dispatch has a `B.1-gemini-dispatch-intent.yaml` with **no result and no review
-  artifact** — it was never executed or never returned. The maintainer granted
-  `provider-limited-review-exception` on 2026-07-03
-  (`tracker:project-ontos-audit-serializer-corruption#fallback-authorization-2026-07-03`),
-  so the deliverable is *authorized to continue* under fallback labeling; it simply never
-  resumed. Remaining work: close B.1, author B.3 verdict, Phase C (replace
-  `_serialize_field` with `yaml.safe_dump` + re-parse assertion; add the round-trip
-  regression test), D.2/D.3/D.5/D.6, Phase E retro. `ontos/core/schema.py` is still
-  unmodified — **the audit's lone P0 data-corruption defect remains live in the tree.**
-- **#147's original fix was incomplete (found by external review of PR #160, 2026-07-09).**
-  The managed-launcher gate validated only the executable and an *empty* launcher prefix,
-  so `is_ontos_managed_launcher()` returned true for any argv whose executable resolved to
-  Ontos. A repo-committed `.cursor/mcp.json` could therefore name Ontos's own trusted
-  launcher and smuggle a different subcommand (e.g. `scaffold --apply` behind a `--`
-  separator, or a duplicated `--workspace`) past the `serve`/`--workspace` preflight. Fixed
-  by `is_ontos_managed_serve_argv()`, which requires exact equality with the argv Ontos
-  itself generates, plus safe-by-default `allow_*_unmanaged_probe=False`. Three regression
-  tests added.
-- **The doctor test failure was NOT pre-existing — this line's docs caused it.** Earlier
-  notes here and in #147's tracker claimed `test_returns_exit_code_0_when_checks_pass` was
-  a pre-existing environment-sensitive failure. That was wrong: base `c8672e9` is green and
-  head was red. The committed spec carried `status: draft-for-review`, an invalid Ontos
-  status, which degraded `check_activation_health` from success to warning. Fixed
-  (`status: draft`, `type: atom`, and `docs/handoffs/**` added to `allowed_orphan_paths`).
-- **#147 has NO strict-P3 receipts, and its fallback is label-only.** Its 11 review
-  artifacts all carry `provider_limited_fallback: true` but none were dispatched through
-  `dispatch-family-review.sh`; the inventory has no `receipts[]` and no
-  capture_id/resolved_model/artifact_sha256 anywhere. `verify-lifecycle --mode
-  provider-limited-fallback` therefore does not certify it. Receipts were deliberately left
-  empty rather than reconstructed. By contrast **#146's B.1 claude-sonnet review *was*
-  genuinely wrapper-dispatched** (`capture_id`, `resolved_model: sonnet`,
-  `status: completed`) — the stalled deliverable holds better evidence than the
-  "complete" one.
-- **Neither #146 nor #147 achieved strict P3.** Both ran under the provider-limited
-  fallback owing to the same GPT-family model-access blockage. Strict P3 is not certified
-  for the v4.7.1 line.
+External parity was synchronized on 2026-07-10: #147 is open with the evidence-
+pending contract; #148/#149 are on milestone 2; #149 is P1-containing; R2 rows
+are present on their owner issues; #156 is on milestone 2 with its v4.8/v4.9
+split recorded; and epic #158 reflects the revised release line. Original
+finding checkboxes remain unchecked by policy until work is merged and
+verified; the registry's uncommitted statuses therefore do not claim external
+completion.
 
-## Dependency edges enforced at dispatch (kickoff §3)
+## O5 — Cross-deliverable scope-lock manifest
 
-- #146 and #147 are independent and dispatchable immediately (v4.7.1).
-- #150 (characterization test net) MUST complete before #151/#152/#153 are dispatched —
-  the tests bracket the refactors (audit §5 "tests before refactors").
-- #154 (exit-code/envelope) and #156 (repo slimming) come last; #156's pre-commit/CI
-  rewire is a prerequisite for retiring the legacy fork and unblocks the "pre-commit
-  fails on main" condition.
+### Base-SHA and changed-path policy
+
+Every program has an immutable review `base_sha` in the registry. Before Phase C,
+run the framework scope verifier from a dedicated worktree:
+
+```bash
+bash .llm-dev/framework/scripts/verify-changed-path-scope.sh \
+  --manifest <deliverable-manifest> \
+  --base <registry-base_sha>
+```
+
+That gate unions committed changes since the base, staged changes, unstaged
+changes, and untracked files. Bare `git diff` or branch-name equality is not an
+acceptable scope proof. If the deliverable rebases after review, update the
+registry base, re-run the relevant review over the new diff, and record the
+rebase checkpoint; never silently move the base underneath existing evidence.
+The registry validator additionally requires every finding path to be contained
+by its owning program and requires the #146/#147 program scopes to equal their
+normalized deliverable-manifest scopes.
+
+### Shared-path leases
+
+One program owns a shared path at a time. The issue order below is normative;
+later work may not dispatch until earlier work releases the path. The table is
+derived from intended implementation paths as well as the audit's primary file,
+so it deliberately includes collisions the old O5 omitted.
+
+| Shared path | Programs | Lease order / policy |
+|---|---|---|
+| `docs/logs/` | #146, #147 | #146 lifecycle/log scope → #147 historical merge-log evidence. |
+| `.github/workflows/` | #148, #156 | #148 publication hardening → #156 CI/runtime rewire. |
+| `ontos/core/schema.py` | #146, #151 | #146 → #151. |
+| `ontos/io/yaml.py` | #146, #151 | #146 → #151. |
+| `ontos/commands/promote.py` | #146, #151, #152 | #146 → #151 → #152. |
+| `ontos/commands/migrate.py` | #146, #152 | #146 → #152. |
+| `ontos/mcp/writes.py` | #146, #152, #153, #154 | #146 → #152 → #153 → #154. |
+| `ontos/commands/log.py` | #148, #151 | #148's configured-path hotfix → #151 parser/log consolidation. |
+| `ontos/commands/activate.py` | #148, #149 | #148 activation/count work → #149 required-version activation. |
+| `ontos/commands/doctor.py` | #147, #149 | #147 exact-argv implementation/evidence freeze → #149 PATH-version diagnostics. |
+| `ontos/commands/link_check.py` | #148, #154 | #148 count basis → #154 contract work. |
+| `ontos/commands/map.py` | #148, #149, #154 | #148 → #149 → #154. |
+| `ontos/core/config.py` | #148, #149 | #148 type validation → #149 activation/dead-key follow-up. |
+| `ontos/core/context.py` | #148, #153 | Secure writer/encoding work completes before #153 transactional consolidation. |
+| `ontos/core/frontmatter_edit.py` | #148, #151, #152 | #148 strict decoding → #151 parser consolidation → #152 write-path unification. |
+| `ontos/core/git.py` | #148, #150 | #148 trackedness fix → #150 characterization. |
+| `ontos/mcp/portfolio_config.py` | #148, #149 | #148 neutral defaults → #149 cleanup. |
+| `ontos/cli.py` | #149, #154, #155 | #149 cleanup → #154 contract → #155 declarative registry. |
+| `ontos/commands/consolidate.py` | #149, #154 | #149 semantics/docs cleanup → #154 envelope contract. |
+| `ontos/core/paths.py` | #149, #150 | #150 characterizes user-mode paths before #149 removes compatibility debt. |
+| `ontos/mcp/tools.py` | #149, #151, #153, #154 | #149 cleanup → #151 exhaustive type enumeration → #153 read-only enforcement → #154 response contract. |
+| `ontos/commands/query.py` | #150, #154 | #150 characterization → #154 envelope contract. |
+| `ontos/commands/verify.py` | #151, #154 | #151 canonical loader → #154 structured response. |
+| `ontos/core/body_refs.py` | #151, #152 | #151 fence/line semantics → #152 reference rewrite behavior. |
+| `ontos/core/link_diagnostics.py` | #151, #152, #154 | #151 → #152 → #154. |
+| `ontos/mcp/server.py` | #153, #154 | #153 dispatch consolidation → #154 contract. |
+| `ontos/core/graph.py` | #154, #157 | #154 diagnostics contract → #157 traversal rewrite. |
+| `tests/` | #146, #147, #148, #149, #150, #151, #152, #153, #154, #155, #156, #157 | #146 → #147 → #150 → #148 → #149 → #151 → #152 → #153 → #154 → #155 → #156 → #157 for shared infrastructure. #150 owns characterization helpers; all others use unique regression files and may not edit a sibling's test. |
+
+Only #146 currently holds an active product-code lease while its uncommitted
+implementation is verified. #147 is evidence-only; its implementation diff is
+frozen at `03c36e6`. Other programs contain rebaseline-time uncommitted
+implementations and are marked integration-pending, not retroactively certified
+as having held collision-free leases. They must be split/reviewed from their
+recorded base SHA before release; future simultaneous ownership remains
+forbidden by the order above.
+
+## Revised release sequence
+
+### v4.7.1 — trustworthy hotfix
+
+- Hermetic tests and a clean-tree postcondition.
+- #146 serializer P0, string-ID validation, central writer hardening, safe CLI
+  logging, and the exact-argv #147 evidence refresh.
+- Required-version activation and exact TestPyPI/wheel provenance.
+- No broad #148/#149 sweep and no tag until product, scope, lifecycle, and clean
+  workspace gates all pass.
+
+### v4.8.0 — consolidation
+
+- #150 first, then #151–#153.
+- Broad #148/#149 work, cross-platform locking/Windows CI, exhaustive lifecycle
+  types, non-mutating read-only MCP, and the hook/CI rewire half of #156.
+
+### v4.9.0 — contracts and structural debt
+
+- #154, then #155; #157 remains isolated.
+- Archive extraction and remaining repository slimming from #156 after the new
+  runtime path has proven stable.
+
+## Parity and update discipline
+
+Run local parity after every registry or ledger edit:
+
+```bash
+python3 scripts/validate-audit-remediation-registry.py
+```
+
+Before release, also require external parity:
+
+```bash
+python3 scripts/validate-audit-remediation-registry.py --require-external-parity
+```
+
+The external mode queries live issues #146–#158 through authenticated `gh` and
+fails when state, milestone, severity label, finding checklist mapping, or
+checkbox completion disagrees with the canonical registry. It also validates
+the stored count snapshot; registry booleans alone are not external evidence.
+Only the meta-cycle updates O4/O5; per-deliverable lifecycle sessions update
+their own tracker and report state back without directly editing this file.
 
 ## Change log
 
-- 2026-07-03 — initialized (O5 + O4) by the meta-orchestrator kickoff session
-  (meta-cycle `project-ontos-audit-remediation-2026-07`).
-- 2026-07-09 — O4 ledger reconciled against actual deliverable state after the 2026-07-03
-  Codex dispatches ran. #147 advanced `not started → E complete` (provider-limited, D.6
-  with caveat); #146 advanced `not started → B.1 STALLED` (provider-limited authorized,
-  Phase C never started, P0 still unfixed). Active-blockers section added. Rows #148–#157
-  remain `not started` and are unchanged.
+- 2026-07-03 — initialized O4/O5 for the meta-cycle.
+- 2026-07-09 — reconciled the merged #147 code and disclosed missing receipts.
+- 2026-07-10 — re-baselined against `bf91b42`; made the registry canonical;
+  rebuilt the collision graph; reopened #147 as `code_fixed_evidence_pending`;
+  corrected #149 to P1-containing; replaced bare-diff/branch gates with base-SHA
+  changed-path policy; adopted the v4.7.1/v4.8.0/v4.9.0 sequence above; and
+  recorded #146 plus all R2 implementations as uncommitted/uncertified rather
+  than assigning synthetic fix commits. GitHub parity then synchronized #147,
+  #148, #149, the R2 owner checklists, and epic #158.
+- 2026-07-10 — reconciled the expanded working tree: 40 original rows are now
+  implemented-uncommitted, seven are partial-uncommitted, and 41 remain open;
+  added the previously omitted activation/doctor collisions and kept all
+  uncommitted rows free of synthetic fix commits or certification claims.

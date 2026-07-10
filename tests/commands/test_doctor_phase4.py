@@ -17,6 +17,7 @@ from ontos.commands.doctor import (
     check_activation_health,
     check_antigravity_mcp,
     check_cursor_mcp,
+    check_cli_availability,
     check_docs_directory,
     check_configuration,
     check_git_hooks,
@@ -172,6 +173,66 @@ class TestCheckConfiguration:
         assert result.status == "failed"
         assert "not found" in result.message.lower()
 
+    def test_fails_when_running_version_does_not_meet_requirement(self, tmp_path):
+        (tmp_path / ".ontos.toml").write_text(
+            "[ontos]\nversion = '4.7'\nrequired_version = '>=99.0.0'\n",
+            encoding="utf-8",
+        )
+
+        result = check_configuration(repo_root=tmp_path)
+
+        assert result.status == "failed"
+        assert "incompatible" in result.message.lower()
+        assert "running" in result.details.lower()
+
+
+def test_check_cli_availability_executes_path_binary_and_warns_on_skew():
+    path_binary = "/tmp/bin/ontos"
+    completed = subprocess.CompletedProcess(
+        [path_binary, "--version"],
+        0,
+        stdout="ontos 4.6.0\n",
+        stderr="",
+    )
+
+    with patch("ontos.commands.doctor.shutil.which", return_value=path_binary), patch(
+        "ontos.commands.doctor.subprocess.run", return_value=completed
+    ) as run:
+        result = check_cli_availability()
+
+    run.assert_called_once_with(
+        [path_binary, "--version"],
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    assert result.status == "warning"
+    assert "4.6.0" in result.message
+    assert "running package" in result.message
+
+
+def test_check_cli_availability_fails_when_path_version_violates_requirement(tmp_path):
+    (tmp_path / ".ontos.toml").write_text(
+        "[ontos]\nversion = '4.7'\nrequired_version = '>=99.0.0'\n",
+        encoding="utf-8",
+    )
+    path_binary = "/tmp/bin/ontos"
+    completed = subprocess.CompletedProcess(
+        [path_binary, "--version"],
+        0,
+        stdout="ontos 4.7.0\n",
+        stderr="",
+    )
+
+    with patch("ontos.commands.doctor.shutil.which", return_value=path_binary), patch(
+        "ontos.commands.doctor.subprocess.run", return_value=completed
+    ):
+        result = check_cli_availability(repo_root=tmp_path)
+
+    assert result.status == "failed"
+    assert "incompatible" in result.message
+    assert ">=99.0.0" in result.details
+
 
 class TestDoctorCommand:
     """Tests for doctor_command."""
@@ -184,13 +245,16 @@ class TestDoctorCommand:
              patch("ontos.commands.doctor.check_docs_directory") as mock_docs, \
              patch("ontos.commands.doctor.check_context_map") as mock_map, \
              patch("ontos.commands.doctor.check_validation") as mock_valid, \
+             patch("ontos.commands.doctor.check_activation_health") as mock_activation, \
              patch("ontos.commands.doctor.check_cli_availability") as mock_cli, \
              patch("ontos.commands.doctor.check_agents_staleness") as mock_agents, \
              patch("ontos.commands.doctor.check_environment_manifests") as mock_env, \
-             patch("ontos.commands.doctor.check_antigravity_mcp") as mock_antigravity:
+             patch("ontos.commands.doctor.check_antigravity_mcp") as mock_antigravity, \
+             patch("ontos.commands.doctor.check_cursor_mcp") as mock_cursor:
 
             for mock in [mock_config, mock_hooks, mock_python, mock_docs,
-                        mock_map, mock_valid, mock_cli, mock_agents, mock_env, mock_antigravity]:
+                        mock_map, mock_valid, mock_activation, mock_cli, mock_agents,
+                        mock_env, mock_antigravity, mock_cursor]:
                 mock.return_value = CheckResult(
                     name="test", status="success", message="OK"
                 )
@@ -200,9 +264,9 @@ class TestDoctorCommand:
             exit_code, result = _run_doctor_command(options)
 
             assert exit_code == 0
-            # 12 checks total: 10 mocked + check_activation_health (clean
-            # snapshot under the path-based orphan allowlist) +
-            # check_cursor_mcp (no project/user config present).
+            # Keep this command-aggregation unit test hermetic: all 12 checks
+            # are mocked, including activation and editor-config probes whose
+            # results legitimately depend on checkout-local runtime state.
             assert result.passed == 12
             assert result.failed == 0
 

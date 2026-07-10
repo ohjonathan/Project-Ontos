@@ -14,7 +14,7 @@ from pathlib import Path
 
 import ontos
 
-from tests.mcp import create_empty_workspace
+from tests.mcp_helpers import create_empty_workspace
 
 
 INITIALIZE_REQUEST = {

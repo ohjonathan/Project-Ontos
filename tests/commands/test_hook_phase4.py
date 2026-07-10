@@ -83,6 +83,30 @@ class TestRunPrePushHook:
 
             assert result == 0
 
+    def test_strict_mode_blocks_when_context_map_is_missing(self, tmp_path, monkeypatch):
+        mock_config = MagicMock()
+        mock_config.hooks.pre_push = True
+        mock_config.hooks.strict = True
+        mock_config.paths.context_map = "Ontos_Context_Map.md"
+        monkeypatch.chdir(tmp_path)
+
+        with patch("ontos.io.config.load_project_config", return_value=mock_config):
+            assert run_pre_push_hook([]) == 1
+
+    def test_strict_mode_blocks_invalid_context_map(self, tmp_path, monkeypatch):
+        mock_config = MagicMock()
+        mock_config.hooks.pre_push = True
+        mock_config.hooks.strict = True
+        mock_config.paths.context_map = "Ontos_Context_Map.md"
+        (tmp_path / "Ontos_Context_Map.md").write_text(
+            "# missing frontmatter\n",
+            encoding="utf-8",
+        )
+        monkeypatch.chdir(tmp_path)
+
+        with patch("ontos.io.config.load_project_config", return_value=mock_config):
+            assert run_pre_push_hook([]) == 1
+
 
 class TestRunPreCommitHook:
     """Tests for run_pre_commit_hook."""

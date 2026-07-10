@@ -1,0 +1,64 @@
+Project Ontos #147 strict-P3 dispatch readiness
+Recorded: 2026-07-10
+Implementation object: 03c36e6ac999d2c411c13252baa2e8fcff60e6ed
+
+AUTHOR EXCLUSIONS
+
+1. The revised Phase A spec identifies `family: codex` and the manifest assigns
+   Codex the `spec-author` role.
+2. The implementation commit contains the substantive trailer
+   `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
+3. Therefore neither Codex/OpenAI nor Claude/Anthropic is counted as an
+   independent certifying reviewer for B.1, D.2, or D.5. Framework v2.0.1 has
+   no phase-scoped author-exclusion representation, so the manifest records the
+   global union `[codex, claude]` and reserves the strict roster for GLM,
+   Gemini, and GPT.
+
+PREPARED, BLOCKED, AND UNPREPARED SEATS
+
+- Gemini: direct Gemini CLI intent and prompt are prepared for B.1, D.2, D.5.
+  Each intent carries the mandatory legacy_execution_cli_override_reason and a
+  static-inspection evidence cap. A wrapper-dispatched B.1 attempt by the root
+  operator at 2026-07-10T14:14:01Z reached Gemini CLI 0.44.0 and failed before
+  review with `IneligibleTierError` / `UNSUPPORTED_CLIENT`: direct Gemini CLI is
+  no longer supported for the active individual tier. No verdict or receipt was
+  produced. The failed result and raw stderr are preserved beside the bundle.
+- GPT: Codex-substrate intent and prompt are prepared for B.1, D.2, D.5 with
+  expected_model=auto as requested. These intents are structurally valid but
+  cannot execute under the current wrapper policy described below.
+- GLM: the manifest reserves the third non-author family seat so manifest/P3
+  roster conformance remains honest, but no GLM dispatch bundle was authorized
+  or prepared in this task. It has no receipt and is not counted.
+- This bundle-preparation subtask invoked no provider command. The concurrent
+  root-operator Gemini attempt described above is the sole provider invocation
+  recorded in these fresh bundles. Receipt inventory remains unchanged.
+
+GPT AUTO POLICY BLOCKER
+
+The checked-in framework wrapper
+`.llm-dev/framework/scripts/dispatch-family-review.sh` hard-refuses a GPT-family
+dispatch when `--model auto` is selected. In the v2.0.1 checkout, lines
+1065-1084 require a literal `gpt-*` model and exit 64 for `auto`. By contrast,
+`verify-family-dispatch.sh --allow-pending` accepts expected_model=auto as a
+structurally valid delegated-model intent. The prepared GPT bundles therefore
+pass pending-shape validation but are known non-dispatchable.
+
+GEMINI DIRECT POLICY BLOCKER
+
+The B.1 wrapper result is
+`docs/reviews/project-ontos-audit-doctor-rce/B.1-gemini-dispatch-result.yaml`.
+It records `status: failed`, exit code 1, Gemini CLI 0.44.0, and no substantive
+stdout. The bound stderr at
+`docs/reviews/project-ontos-audit-doctor-rce/.raw/project-ontos-audit-doctor-rce-B.1-gemini-adversarial.r1.c20260710T141400Z.84663.3f5a1693dca6cb90f2d5532289375508.stderr.txt`
+records the provider-policy rejection. The wrapper also detected a pre-existing
+historical artifact and recorded `artifact_write_conflict: true`; that historical
+Markdown has been restored byte-for-byte and remains non-certifying context.
+
+LIFECYCLE STATE
+
+Strict P3 is not certified. Gemini direct is provider-policy-blocked, GPT auto is
+wrapper-policy-blocked, and GLM is an unprepared roster seat. No fresh family has
+a completed receipt. The correct state is `code_fixed_evidence_pending` /
+`review_pending`. Closing or releasing requires three real, wrapper-captured,
+countable non-author families, or a separately authorized emergency waiver that
+must explicitly remain non-certified.

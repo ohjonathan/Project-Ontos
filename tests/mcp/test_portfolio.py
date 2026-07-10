@@ -9,7 +9,7 @@ import pytest
 
 from ontos.core.errors import OntosUserError
 from ontos.mcp.portfolio import PortfolioIndex, _MAX_FTS_QUERY_LENGTH, _sanitize_fts_query
-from tests.mcp import create_workspace, write_file
+from tests.mcp_helpers import create_workspace, write_file
 
 
 def test_open_creates_schema_and_sets_user_version(tmp_path):

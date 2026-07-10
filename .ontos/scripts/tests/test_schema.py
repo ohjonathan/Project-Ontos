@@ -4,7 +4,7 @@ These tests cover:
 - Version parsing and validation
 - Schema detection from frontmatter
 - Compatibility checking
-- Frontmatter serialization (stdlib only)
+- Safe, semantically lossless frontmatter serialization
 """
 
 import pytest
@@ -25,6 +25,7 @@ from ontos.core.schema import (
     CURRENT_SCHEMA_VERSION,
     SCHEMA_DEFINITIONS,
 )
+from ontos.io.yaml import parse_yaml
 
 
 class TestParseVersion:
@@ -143,10 +144,10 @@ class TestCheckCompatibility:
         result = check_compatibility("2.5", "2.2.0")
         assert result.compatibility == SchemaCompatibility.READ_ONLY
 
-    def test_incompatible_future_major(self):
-        """Future major version is incompatible."""
+    def test_future_major_is_read_only(self):
+        """Readable future schemas are accepted but cannot be rewritten."""
         result = check_compatibility("3.0", "2.9.0")
-        assert result.compatibility == SchemaCompatibility.INCOMPATIBLE
+        assert result.compatibility == SchemaCompatibility.READ_ONLY
 
     def test_incompatible_invalid_document_version(self):
         """Invalid document version is incompatible."""
@@ -191,12 +192,12 @@ class TestValidateFrontmatter:
         valid, _ = validate_frontmatter(fm)  # Should detect v2.1
         assert valid is True
 
-    def test_unknown_schema_passes(self):
-        """Unknown schema version passes (can't validate)."""
+    def test_unknown_schema_fails_closed(self):
+        """Unknown schema versions cannot pass strict validation."""
         fm = {"id": "test"}
         valid, errors = validate_frontmatter(fm, "9.9")
-        assert valid is True
-        assert errors == []
+        assert valid is False
+        assert errors == ["Unknown schema version: 9.9"]
 
 
 class TestSerializeFrontmatter:
@@ -252,10 +253,10 @@ class TestSerializeFrontmatter:
         assert id_pos < type_pos < deps_pos
 
     def test_value_with_colon(self):
-        """Values with colons are quoted."""
+        """Values with colons round-trip regardless of YAML quote style."""
         fm = {"id": "test", "description": "Note: important"}
         result = serialize_frontmatter(fm)
-        assert 'description: "Note: important"' in result
+        assert parse_yaml(result) == fm
 
 
 class TestAddSchemaToFrontmatter:
