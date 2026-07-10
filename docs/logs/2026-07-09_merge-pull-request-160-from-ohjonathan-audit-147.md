@@ -2,10 +2,11 @@
 id: log_20260709_merge-pull-request-160-from-ohjonathan-audit-147
 type: log
 status: active
-event_type: pr-160-doctor-rce-hardening-and-meta-cycle
+event_type: fix
 source: cli
 branch: main
 created: 2026-07-09
+concepts: [security, code-review, ci, audit-remediation]
 ---
 
 # Merge pull request #160 from ohjonathan/audit/147-

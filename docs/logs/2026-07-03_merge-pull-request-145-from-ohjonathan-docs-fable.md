@@ -2,10 +2,11 @@
 id: log_20260703_merge-pull-request-145-from-ohjonathan-docs-fable
 type: log
 status: active
-event_type: project-ontos-audit-doctor-rce
+event_type: chore
 source: cli
 branch: main
 created: 2026-07-03
+concepts: [meta-orchestration, audit-remediation, lifecycle]
 ---
 
 # project-ontos-audit-doctor-rce
