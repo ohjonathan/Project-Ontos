@@ -8,6 +8,7 @@
 #
 # Commands:
 #   doctor                                 — environment + config health check
+#                                            accepts --intent for Gemini cutoff advisories
 #   new <deliverable-id>                   — scaffold manifest + tracker
 #   verify <manifest-path>                 — run framework verify-adopter.sh
 #                                            (manifest conformance only;
@@ -23,6 +24,10 @@
 #                                            the manifest's
 #                                            re_adjudication_queue[]
 #                                            (issue #10)
+#   record-fallback-receipt --manifest ...  — append a hash-bound
+#                                            provider-limited fallback
+#                                            receipt for a declared
+#                                            blocked family/provider
 #   rebind-artifact --result ...           — validate and rebind a dispatch
 #                                            result row to a moved artifact
 #   repair-redispatch --manifest ...       — mark redispatch supersession
@@ -34,9 +39,18 @@
 #   review-chain report <manifest>         — non-gating review-chain depth
 #                                            report
 #   verify-live-docs [--policy <path>]     — stale live-doc phrase sweep
+#   verify-authoring-constraints ...       — v1.10.3 scoped authoring
+#                                            scanner
+#   verify-post-d6-scope ...               — v1.10.3 post-D.6 drift gate
+#   verify-handoff-base ...                — v1.10.3 stale-base preflight
 #   strict-p3-commands <manifest-path>      — v1.9.0+ emit canonical final
 #                                            verification commands for a
 #                                            strict-P3 lifecycle
+#   goal-card <kind> ...                    — emit a bounded, non-evidence
+#                                            goal-mode launch card for a
+#                                            human orchestrator
+#   capability assess ...                  — run advisory model capability
+#                                            assessment for route tuples
 #   generate-overlays --target ... --out ... — emit non-evidence runtime
 #                                            overlay packages for skills,
 #                                            plugins, and extensions
@@ -57,7 +71,7 @@ CUSTOM_END_MARKER="<!-- /USER CUSTOM -->"
 usage() {
   cat <<'USAGE'
 usage:
-  scripts/llm-dev doctor
+  scripts/llm-dev doctor [--manifest <path>] [--intent <path>]
   scripts/llm-dev new <deliverable-id>
   scripts/llm-dev verify <manifest-path>
   scripts/llm-dev verify-lifecycle [--mode strict-p3|provider-limited-fallback]
@@ -66,6 +80,14 @@ usage:
   scripts/llm-dev verify-staging [--manifest <path>] [--expect <p>] ...
                                   [--forbid <p>] ... [--summary-untracked]
   scripts/llm-dev re-adjudication <list|verify> <manifest-path>
+  scripts/llm-dev record-fallback-receipt --manifest <path>
+                                  --inventory <path>
+                                  --phase <phase> --role <role>
+                                  --family <blocked-family>
+                                  [--round <n>]
+                                  --from-failed-dispatch <result.yaml>
+                                  --dispatch-id <id>
+                                  [--re-adjudication-ref <id>]
   scripts/llm-dev rebind-artifact --result <path> --dispatch-id <id>
                                   --artifact <path> --reason <text>
   scripts/llm-dev repair-redispatch --manifest <path> --old-run-id <id>
@@ -75,7 +97,23 @@ usage:
   scripts/llm-dev post-merge --pr <number> --branch <branch> [--verify-all]
   scripts/llm-dev review-chain report <manifest-path>
   scripts/llm-dev verify-live-docs [--policy <path>]
+  scripts/llm-dev verify-authoring-constraints <proximity|ac-impl-detail|token-scope> ...
+  scripts/llm-dev verify-post-d6-scope --base <git-ref> <path>...
+  scripts/llm-dev verify-handoff-base --handoff <path> [--repo <path>]
   scripts/llm-dev strict-p3-commands <manifest-path>
+  scripts/llm-dev goal-card <orchestrator|worker|continuation|verify> [...]
+  scripts/llm-dev review-seats [--check] [--phase <id>] <manifest-path>
+  scripts/llm-dev gate-preflight <manifest-path> [--category <name>] [--all]
+  scripts/llm-dev lint-artifact [--family <fam>] [--require-h1] [--json]
+                                [--print-contract] [<artifact-path>|-]
+  scripts/llm-dev append-supplemental-review --inventory <path> --manifest <path>
+                                  --result <dispatch-result.yaml>
+                                  --capture-id <id>
+                                  --provider-overlap-basis <family>
+                                  --rationale <text>
+                                  [--manifest-ref <id>] [--round <n>]
+  scripts/llm-dev capability assess [--mode inventory|live|fixture]
+                                    [--include-primary] [...]
   scripts/llm-dev generate-overlays --target codex|claude|gemini|agy|all
                                     --out <dir> [--force]
                                     [--agy-import-manifest <path>]
@@ -97,6 +135,12 @@ Note:
                         final approval.
   `re-adjudication`   — (v1.8.0+) inspect or validate the manifest's
                         re_adjudication_queue[] (issue #10).
+  `record-fallback-receipt` — append a provider-limited-fallback
+                        receipt for a manifest-declared blocked
+                        family/provider. Verifies a pre-existing
+                        failed dispatch row, recomputes blockage
+                        evidence hashes, and writes a fallback dispatch
+                        bundle; never emits strict-P3 candidate receipts.
   `rebind-artifact`   — validate a moved review artifact and update the
                         matching dispatch-result row with its new path/hash.
   `repair-redispatch` — mark an older receipt superseded by a later round
@@ -111,9 +155,47 @@ Note:
                         historical allowlists; extend with --policy,
                         docs/live-docs-policy.yaml, or
                         .llm-dev/live-docs-policy.yaml.
+  `verify-authoring-constraints` — scoped token/proximity/AC drift
+                        scanner for v1.10.3 gate authors.
+  `verify-post-d6-scope` — rejects post-D.6 normative-looking edits
+                        without re-review or non-normative disposition.
+  `verify-handoff-base` — fetches remote main and rejects stale handoff
+                        base SHAs before implementation begins.
   `strict-p3-commands` — (v1.9.0+) print canonical verifier command
                         blocks derived from the manifest, so handoffs
                         do not drift on argument shape (issue #11).
+  `goal-card`         — emit a bounded, non-evidence goal-mode launch
+                        aid for a human orchestrator. Goal cards do not
+                        create evidence, certify review, or alter
+                        lifecycle, D.6, merge, or release authority.
+  `review-seats`      — (v1.11.0+) per-phase review-seat table derived
+                        from the manifest (issue #64 item 6). Surfaces
+                        early that user_facing: true adds a Product
+                        reviewer to BOTH design rounds (B.1 AND B.2)
+                        plus D.2. --check exits 1 on seat gaps.
+  `gate-preflight`    — (v1.11.0+) run the manifest's gate environment
+                        preflight + forbidden-symbol greps + scope-
+                        category gate commands BEFORE D.6 (issue #64
+                        item 4: unit tests do not execute manifest
+                        gate greps). --all runs every gate category.
+  `lint-artifact`     — (v1.11.0+) F35 verdict-shape lint for a
+                        captured artifact or candidate stdout BEFORE
+                        re-dispatch or receipt append (issue #64
+                        item 2). `--family gemini` applies the
+                        wrapper's H1 + fence-strip parity;
+                        --print-contract prints the canonical
+                        expected-shape contract for prompt authors.
+  `append-supplemental-review` — (v1.11.0+) record a same-provider
+                        supplemental review pass in the receipt
+                        inventory's supplemental_reviews[] array
+                        (schema_version 4) — visibly separate from
+                        strict-P3 receipts, never counted (issue #64
+                        item 7).
+  `capability assess` — run the RPUX-2 advisory role-capability
+                        harness. Default mode inventories Neuralwatt/
+                        OpenCode catalogs only; --mode live performs
+                        paid model probes and writes raw transcripts
+                        under .llm-dev/capability-runs/.
   `generate-overlays` — emit generated, non-evidence skills/plugins/
                         extensions. Rendered prompts and lifecycle
                         receipts remain the only strict-P3 evidence path.
@@ -173,10 +255,31 @@ trim_value() {
     -e "s/'$//"
 }
 
+# v1.11.1 (A4): script-level temp-file registry + EXIT trap so aborted
+# runs (die, signal) do not leak mktemp files. Register every mktemp
+# result with _track_tmp; rm -f on an already-moved file is harmless.
+_llm_dev_tmpfiles=()
+_track_tmp() {
+  _llm_dev_tmpfiles+=("$1")
+}
+_llm_dev_cleanup() {
+  if [[ "${#_llm_dev_tmpfiles[@]}" -gt 0 ]]; then
+    rm -f "${_llm_dev_tmpfiles[@]}"
+  fi
+  return 0
+}
+trap _llm_dev_cleanup EXIT
+
 config_get() {
   local key="$1"
   [[ -r "$config_path" ]] || return 1
-  sed -n -E "s/^[[:space:]]*${key}:[[:space:]]*//p" "$config_path" \
+  # v1.11.1 (A5): escape the key before interpolating into the sed ERE.
+  # All current callers pass literal keys; this hardens against a
+  # future caller passing regex metacharacters (which previously made
+  # the pattern silently match nothing or the wrong line).
+  local key_escaped
+  key_escaped="$(printf '%s' "$key" | sed -e 's@[][\\.*^$()+?{}|/]@\\&@g')"
+  sed -n -E "s/^[[:space:]]*${key_escaped}:[[:space:]]*//p" "$config_path" \
     | head -n 1 \
     | trim_value
 }
@@ -218,6 +321,7 @@ set_config_value() {
   local key="$1" value="$2" tmp
   [[ -r "$config_path" ]] || die "config not readable at $config_path"
   tmp="$(mktemp)"
+  _track_tmp "$tmp"
   awk -v key="$key" -v value="$value" '
     BEGIN { done = 0 }
     $0 ~ "^[[:space:]]*" key ":" {
@@ -297,6 +401,32 @@ refresh_adopter_wrapper() {
 cmd_doctor() {
   local failed=0
   local fw fw_rel ref repo_url
+  local seats_manifest=""
+  local cutoff_intent=""
+
+  # (v1.11.0+, issue #64 item 6) optional --manifest appends the
+  # review-seat table after the existing checks. No-arg doctor output
+  # stays byte-identical. v1.12.1+ optional --intent surfaces the
+  # post-cutoff legacy Gemini advisory from cli-probe without dumping
+  # the full probe report.
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --manifest)
+        shift
+        seats_manifest="${1:-}"
+        [[ -n "$seats_manifest" ]] || die "doctor: missing path after --manifest"
+        ;;
+      --intent)
+        shift
+        cutoff_intent="${1:-}"
+        [[ -n "$cutoff_intent" ]] || die "doctor: missing path after --intent"
+        ;;
+      *)
+        die "doctor: unknown argument: $1"
+        ;;
+    esac
+    shift || true
+  done
 
   [[ -r "$config_path" ]] || die "config not found at $config_path (run install-adopter.sh first)"
   fw="$(framework_path)"
@@ -367,6 +497,33 @@ cmd_doctor() {
     fi
   done
 
+  if [[ -n "$seats_manifest" ]]; then
+    echo
+    bash "$fw/scripts/review-seats.sh" "$(abs_path "$seats_manifest")" || failed=1
+  fi
+
+  if [[ -n "$cutoff_intent" ]]; then
+    local intent_abs probe_out probe_status warning_lines
+    intent_abs="$(abs_path "$cutoff_intent")"
+    [[ -r "$intent_abs" ]] || die "doctor: --intent path is not readable: $cutoff_intent"
+    probe_out="$(mktemp)"
+    _track_tmp "$probe_out"
+
+    echo
+    echo "Gemini CLI cutoff advisory:"
+    probe_status=0
+    bash "$fw/scripts/cli-probe.sh" --intent "$intent_abs" >"$probe_out" 2>&1 || probe_status=$?
+    warning_lines="$(grep -F "post-cutoff-legacy-gemini-warning" "$probe_out" || true)"
+    if [[ -n "$warning_lines" ]]; then
+      printf '%s\n' "$warning_lines"
+    elif [[ "$probe_status" -eq 64 ]]; then
+      sed -n '/intent-load-failed/p;/invalid LLM_DEV_PROBE_DATE/p;/--intent path/p' "$probe_out" >&2
+      failed=1
+    else
+      echo "  PASS no post-cutoff legacy Gemini warning"
+    fi
+  fi
+
   if [[ "$failed" -eq 0 ]]; then
     echo "llm-dev doctor: PASS"
   else
@@ -388,6 +545,21 @@ cmd_new() {
     cd "$repo_root"
     MANIFEST_DIR="$(abs_path "$mdir")" bash "$fw/examples/day-one.sh" "$deliverable_id"
   )
+
+  # (v1.11.0+, issue #64 item 6) surface the required review seats at
+  # deliverable open — the company-os pr3b1 retro hit the
+  # "user_facing forces two design rounds" requirement only at
+  # verify-p3 time, far too late.
+  local scaffolded
+  scaffolded="$(abs_path "$mdir")/$deliverable_id.yaml"
+  if [[ -r "$scaffolded" ]]; then
+    echo
+    bash "$fw/scripts/review-seats.sh" "$scaffolded" || true
+    echo
+    echo "llm-dev new: if this deliverable is user-facing, set 'user_facing: true' —"
+    echo "  that adds a Product reviewer seat to B.1, B.2 AND D.2 (two full design"
+    echo "  rounds). Re-run: scripts/llm-dev review-seats $scaffolded"
+  fi
 }
 
 # ---------------------------------------------------------------------------
@@ -568,6 +740,577 @@ PY
       die "re-adjudication: unknown subcommand '$sub' (use list or verify)"
       ;;
   esac
+}
+
+cmd_fw_script() {
+  local script_name="$1"
+  shift
+  local fw
+  fw="$(framework_path_or_self)"
+  case "$script_name" in
+    verify-authoring-constraints.py|emit-goal-card.py)
+      python3 "$fw/scripts/$script_name" "$@"
+      ;;
+    *)
+      bash "$fw/scripts/$script_name" "$@"
+      ;;
+  esac
+}
+
+# ---------------------------------------------------------------------------
+# capability assess — RPUX-2 advisory model capability harness
+# ---------------------------------------------------------------------------
+cmd_capability() {
+  local sub="${1:-}" fw
+  if [[ -z "$sub" || "$sub" == "-h" || "$sub" == "--help" ]]; then
+    cat <<'USAGE'
+usage: scripts/llm-dev capability assess [--mode inventory|live|fixture] [...]
+
+Run the advisory RPUX-2 model capability harness. Default mode inventories
+Neuralwatt/OpenCode catalogs and writes a redacted summary; --mode live runs
+paid role probes. Scores are recommendations only and never lifecycle evidence.
+USAGE
+    return 0
+  fi
+  shift || true
+  case "$sub" in
+    assess)
+      fw="$(framework_path_or_self)"
+      python3 "$fw/scripts/model-capability-assess.py" \
+        --repo-root "$repo_root" \
+        --framework-root "$fw" \
+        "$@"
+      ;;
+    *)
+      die "capability: unknown subcommand '$sub' (use assess)"
+      ;;
+  esac
+}
+
+# ---------------------------------------------------------------------------
+# record-fallback-receipt --manifest <path> --inventory <path>
+#                         --phase <phase> --role <role>
+#                         --family <blocked-family>
+#                         [--round <n>]
+#                         --from-failed-dispatch <result.yaml>
+#                         --dispatch-id <id>
+#                         [--re-adjudication-ref <id>]
+# ---------------------------------------------------------------------------
+cmd_record_fallback_receipt() {
+  local manifest="" inventory="" phase="" role="" family="" round="1"
+  local from_failed_dispatch="" dispatch_id="" re_adjudication_ref=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --manifest) shift; manifest="${1:-}" ;;
+      --inventory) shift; inventory="${1:-}" ;;
+      --phase) shift; phase="${1:-}" ;;
+      --role|--lens) shift; role="${1:-}" ;;
+      --family) shift; family="${1:-}" ;;
+      --round) shift; round="${1:-}" ;;
+      --from-failed-dispatch) shift; from_failed_dispatch="${1:-}" ;;
+      --dispatch-id) shift; dispatch_id="${1:-}" ;;
+      --re-adjudication-ref) shift; re_adjudication_ref="${1:-}" ;;
+      --strict|--strict-p3|--strict-p3-candidate|--strict_p3_candidate)
+        die "record-fallback-receipt is fallback-only and never emits strict_p3_candidate=true"
+        ;;
+      -h|--help)
+        cat <<'USAGE'
+usage: scripts/llm-dev record-fallback-receipt --manifest <path>
+                                  --inventory <path>
+                                  --phase <phase> --role <role>
+                                  --family <blocked-family>
+                                  [--round <n>]
+                                  --from-failed-dispatch <result.yaml>
+                                  --dispatch-id <id>
+                                  [--re-adjudication-ref <id>]
+
+Appends one provider_limited_fallback receipt for a manifest-declared
+blocked family/provider. The command verifies a pre-existing failed
+dispatch row against the manifest blockage evidence, recomputes the
+evidence sha256, writes a generator-owned fallback dispatch bundle, and
+never emits strict-P3 candidate receipts.
+USAGE
+        exit 0
+        ;;
+      *) die "record-fallback-receipt: unknown argument: $1" ;;
+    esac
+    shift || true
+  done
+  [[ -n "$manifest" && -n "$inventory" && -n "$phase" && -n "$role" && -n "$family" ]] \
+    || die "record-fallback-receipt requires --manifest, --inventory, --phase, --role, and --family"
+  if [[ -z "$from_failed_dispatch" || -z "$dispatch_id" ]]; then
+    die "record-fallback-receipt requires --from-failed-dispatch and --dispatch-id so fallback receipts cannot self-create failed attempts"
+  fi
+  python3 - \
+    "$repo_root" \
+    "$(abs_path "$manifest")" \
+    "$(abs_path "$inventory")" \
+    "$phase" "$role" "$family" "$round" \
+    "${from_failed_dispatch:+$(abs_path "$from_failed_dispatch")}" \
+    "$dispatch_id" "$re_adjudication_ref" <<'PY'
+import atexit
+import datetime as dt
+import hashlib
+import os
+import re
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+import yaml
+
+repo = Path(sys.argv[1]).resolve()
+manifest_path = Path(sys.argv[2]).resolve()
+inventory_path = Path(sys.argv[3]).resolve()
+phase = sys.argv[4].strip()
+role = sys.argv[5].strip()
+family = sys.argv[6].strip()
+round_text = sys.argv[7].strip() or "1"
+from_failed_path = Path(sys.argv[8]).resolve() if sys.argv[8].strip() else None
+dispatch_id_arg = sys.argv[9].strip()
+re_adj_arg = sys.argv[10].strip()
+
+ID_RE = re.compile(r"^[A-Za-z0-9._-]+$")
+SHA_RE = re.compile(r"^(?:sha256:)?([0-9a-f]{64})$")
+PROVIDER_EQUIVALENCE = {
+    "codex": "openai",
+    "gpt": "openai",
+    "claude": "anthropic",
+    "gemini": "google",
+}
+
+
+def fail(message):
+    raise SystemExit(f"record-fallback-receipt: {message}")
+
+
+def load_yaml(path):
+    try:
+        return yaml.safe_load(path.read_text()) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        fail(f"cannot read YAML {path}: {exc}")
+
+
+def sha256_file(path):
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def normalize_sha(value):
+    if not isinstance(value, str):
+        return ""
+    value = value.strip()
+    m = SHA_RE.match(value)
+    return m.group(1) if m else ""
+
+
+def atomic_write_text(path, text):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile("w", delete=False, dir=str(path.parent)) as tmp:
+        tmp.write(text)
+        tmp_path = Path(tmp.name)
+    tmp_path.replace(path)
+
+
+def atomic_write_yaml(path, doc):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile("w", delete=False, dir=str(path.parent)) as tmp:
+        yaml.safe_dump(doc, tmp, sort_keys=False)
+        tmp_path = Path(tmp.name)
+    tmp_path.replace(path)
+
+
+def acquire_lock(path):
+    lock_path = Path(str(path) + ".lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    for _ in range(50):
+        try:
+            fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            with os.fdopen(fd, "w") as fh:
+                fh.write(str(os.getpid()))
+            atexit.register(lambda: lock_path.exists() and lock_path.unlink())
+            return
+        except FileExistsError:
+            try:
+                owner = lock_path.read_text().strip()
+                if owner:
+                    try:
+                        os.kill(int(owner), 0)
+                    except ProcessLookupError:
+                        lock_path.unlink()
+                        continue
+                    except (PermissionError, ValueError):
+                        pass
+            except OSError:
+                pass
+            time.sleep(0.1)
+    fail(f"could not acquire receipt-inventory lock on {lock_path}")
+
+
+def rel_to_repo(path):
+    try:
+        return path.resolve().relative_to(repo).as_posix()
+    except ValueError:
+        fail(f"path must live under repo root: {path}")
+
+
+def resolve_declared_path(raw):
+    if not isinstance(raw, str) or not raw.strip():
+        fail("blockage_evidence_path is missing")
+    p = Path(raw.strip())
+    if p.is_absolute():
+        return p.resolve()
+    for base in (manifest_path.parent, repo):
+        candidate = (base / p).resolve()
+        if candidate.exists():
+            return candidate
+    return (manifest_path.parent / p).resolve()
+
+
+def provider_of(fam):
+    return fam.split("-", 1)[0]
+
+
+def equivalence_class(stem):
+    return PROVIDER_EQUIVALENCE.get(stem, stem)
+
+
+def phase_covers(entry):
+    phases = entry.get("affected_phases") or []
+    return isinstance(phases, list) and phase in [str(p).strip() for p in phases]
+
+
+def role_covers(entry):
+    affected_role = (entry.get("affected_role") or "").strip()
+    return not affected_role or affected_role == role
+
+
+def find_blockage(manifest):
+    for entry in manifest.get("harness_blocked_families") or []:
+        if not isinstance(entry, dict):
+            continue
+        if (entry.get("family") or "").strip() == family and phase_covers(entry) and role_covers(entry):
+            return "family", entry
+    stem = provider_of(family)
+    family_provider_class = equivalence_class(stem)
+    for entry in manifest.get("harness_blocked_providers") or []:
+        if not isinstance(entry, dict) or not phase_covers(entry):
+            continue
+        affected = [str(x).strip() for x in (entry.get("affected_families") or []) if isinstance(x, str)]
+        provider = (entry.get("provider") or "").strip()
+        provider_class = equivalence_class(provider)
+        if affected:
+            if family in affected or stem in affected:
+                return "provider", entry
+            continue
+        if provider in {family, stem, family_provider_class} or provider_class == family_provider_class:
+            return "provider", entry
+    fail(f"no harness_blocked_families[]/harness_blocked_providers[] entry covers family={family!r} phase={phase!r} role={role!r}")
+
+
+def find_failed_row(path, wanted_dispatch_id):
+    doc = load_yaml(path)
+    rows = doc.get("results") or []
+    if not isinstance(rows, list):
+        fail(f"{path} has no results[] list")
+    matches = [
+        row for row in rows
+        if isinstance(row, dict)
+        and (row.get("dispatch_id") or "").strip() == wanted_dispatch_id
+    ]
+    if len(matches) != 1:
+        fail(f"expected exactly one dispatch_id={wanted_dispatch_id!r} in {path}, found {len(matches)}")
+    row = dict(matches[0])
+    if (row.get("family") or "").strip() != family:
+        fail(f"failed dispatch family {row.get('family')!r} does not match requested family={family!r}")
+    if (row.get("role") or "").strip() != role:
+        fail(f"failed dispatch role {row.get('role')!r} does not match requested role={role!r}")
+    row_phase = (row.get("phase") or phase).strip()
+    if row_phase != phase:
+        fail(f"failed dispatch phase {row_phase!r} does not match requested phase={phase!r}")
+    status = (row.get("status") or "").strip()
+    if status != "failed":
+        fail(f"failed dispatch row status={status!r} must be 'failed'")
+    try:
+        row_exit = int(row.get("exit_code"))
+    except (TypeError, ValueError):
+        fail(f"failed dispatch row exit_code={row.get('exit_code')!r} is not an integer")
+    if row_exit == 0:
+        fail("failed dispatch row exit_code=0 is not a failed external attempt")
+    method = (row.get("dispatch_method") or "").strip()
+    if method != "external-cli":
+        fail(f"failed dispatch row dispatch_method={method!r} must be 'external-cli'")
+    return row
+
+
+try:
+    receipt_round = int(round_text)
+except ValueError:
+    fail(f"--round must be an integer, got {round_text!r}")
+if receipt_round < 1:
+    fail("--round must be >= 1")
+for label, value in (("phase", phase), ("role", role), ("family", family)):
+    if not value:
+        fail(f"{label} is required")
+if not ID_RE.match(family):
+    fail(f"family {family!r} contains unsafe characters")
+for label, value in (("phase", phase), ("role", role)):
+    if not ID_RE.match(value):
+        fail(f"{label} {value!r} contains unsafe characters")
+
+manifest = load_yaml(manifest_path)
+mode = (manifest.get("fallback_evidence_mode") or "strict_p3").strip()
+if mode != "provider_limited_fallback":
+    fail(
+        "manifest fallback_evidence_mode must be provider_limited_fallback; "
+        f"got {mode!r}"
+    )
+deliverable_id = (manifest.get("id") or manifest.get("slug") or "").strip()
+if not deliverable_id:
+    fail("manifest id/slug is required")
+
+blockage_kind, blockage = find_blockage(manifest)
+evidence_rel = (blockage.get("blockage_evidence_path") or "").strip()
+evidence_path = resolve_declared_path(evidence_rel)
+if not evidence_path.is_file():
+    fail(f"blockage evidence file not found: {evidence_rel}")
+actual_evidence_sha = sha256_file(evidence_path)
+declared_evidence_sha = normalize_sha(blockage.get("blockage_evidence_sha256"))
+if declared_evidence_sha != actual_evidence_sha:
+    fail(
+        "blockage evidence sha mismatch: "
+        f"declared={declared_evidence_sha or '<missing>'} actual={actual_evidence_sha}"
+    )
+
+blockage_provider = (blockage.get("provider") or provider_of(family)).strip()
+provider = provider_of(family)
+blocked_ref = (
+    (blockage.get("family") or "").strip()
+    if blockage_kind == "family"
+    else (blockage.get("provider") or provider_of(family)).strip()
+)
+re_adj_ref = re_adj_arg or (blockage.get("re_adjudication_ref") or "").strip()
+
+now = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+safe_phase = phase.replace(".", "-")
+run_id = f"{deliverable_id}-{phase}-{family}-{role}-fallback-r{receipt_round}"
+dispatch_id = dispatch_id_arg or f"{deliverable_id}-{safe_phase}-{family}-{role}-fallback"
+if not ID_RE.match(dispatch_id):
+    fail(f"dispatch_id {dispatch_id!r} contains unsafe characters")
+capture_id = f"{dispatch_id}.generated-r{receipt_round}"
+bundle_dir = inventory_path.parent / "fallback-receipts" / run_id
+intent_path = bundle_dir / "dispatch-intent.yaml"
+result_path = bundle_dir / "dispatch-result.yaml"
+artifact_path = bundle_dir / "fallback-artifact.md"
+
+failed_row = find_failed_row(from_failed_path, dispatch_id_arg)
+failed_artifact_rel = (failed_row.get("artifact_path") or "").strip()
+if not failed_artifact_rel:
+    fail("failed dispatch row artifact_path is required")
+failed_artifact_path = resolve_declared_path(failed_artifact_rel)
+if not failed_artifact_path.is_file():
+    fail(f"failed dispatch row artifact_path not found: {failed_artifact_rel}")
+if failed_artifact_path.resolve() != evidence_path.resolve():
+    fail(
+        "failed dispatch row artifact_path must match manifest blockage_evidence_path: "
+        f"row={failed_artifact_rel!r} manifest={evidence_rel!r}"
+    )
+failed_artifact_sha = normalize_sha(failed_row.get("artifact_sha256"))
+if not failed_artifact_sha:
+    fail("failed dispatch row artifact_sha256 must be a lowercase 64-char sha256")
+if failed_artifact_sha != actual_evidence_sha:
+    fail(
+        "failed dispatch row artifact_sha256 must match manifest blockage_evidence_sha256: "
+        f"row={failed_artifact_sha} manifest={actual_evidence_sha}"
+    )
+
+started_at = failed_row.get("started_at") or now
+ended_at = now
+prompt_sha = normalize_sha(failed_row.get("prompt_sha256"))
+if not prompt_sha:
+    fail("failed dispatch row prompt_sha256 must be a lowercase 64-char sha256")
+raw_rel = (failed_row.get("raw_output_path") or failed_row.get("transcript_or_log_path") or evidence_rel).strip()
+stderr_rel = (failed_row.get("stderr_path") or evidence_rel).strip()
+stderr_sha = normalize_sha(failed_row.get("stderr_hash") or failed_row.get("stderr_sha256")) or actual_evidence_sha
+
+artifact_text = f"""---
+id: {run_id}
+deliverable_id: {deliverable_id}
+phase: {phase}
+role: {role}
+family: {family}
+status: completed
+provider_limited_fallback: true
+canonical_p3_evidence: false
+evidence_labels_used: [orchestrator-preflight]
+---
+
+# Provider-Limited Fallback Receipt Artifact
+
+## Summary
+
+Generated fallback artifact for blocked family `{family}` in phase `{phase}` role `{role}`.
+
+## Blockage Evidence
+
+- blocked_family_ref: `{blocked_ref}`
+- blocked_evidence_path: `{evidence_rel}`
+- blocked_evidence_sha256: `{actual_evidence_sha}`
+- manifest_provider: `{blockage_provider}`
+
+## Verdict
+
+approve
+"""
+artifact_rel = rel_to_repo(artifact_path)
+artifact_sha = hashlib.sha256(artifact_text.encode()).hexdigest()
+
+intent_doc = {
+    "intents": [
+        {
+            "dispatch_id": dispatch_id,
+            "family": family,
+            "role": role,
+            "phase": phase,
+            "deliverable_id": deliverable_id,
+            "dispatch_method": "external-cli",
+            "expected_provider": provider,
+            "expected_cli": family,
+            "expected_model": "auto",
+            "expected_artifact": artifact_rel,
+        }
+    ]
+}
+attempt_row = {
+    "dispatch_id": dispatch_id,
+    "capture_id": failed_row.get("capture_id") or f"{capture_id}.attempt",
+    "family": family,
+    "role": role,
+    "phase": phase,
+    "deliverable_id": deliverable_id,
+    "status": failed_row.get("status") or "failed",
+    "exit_code": int(failed_row.get("exit_code")),
+    "prompt_sha256": prompt_sha,
+    "artifact_path": failed_artifact_rel,
+    "artifact_sha256": failed_artifact_sha,
+    "raw_output_path": raw_rel,
+    "stderr_path": stderr_rel,
+    "stderr_hash": stderr_sha,
+    "started_at": started_at,
+    "ended_at": failed_row.get("ended_at") or now,
+    "evidence_cap": failed_row.get("evidence_cap") or "orchestrator-preflight",
+    "execution_provider": failed_row.get("execution_provider") or provider,
+    "execution_cli": failed_row.get("execution_cli") or family,
+    "dispatch_method": "external-cli",
+    "fallback_reason": failed_row.get("fallback_reason") or f"{family} blocked: {evidence_rel}",
+}
+fallback_row = {
+    "dispatch_id": dispatch_id,
+    "capture_id": capture_id,
+    "family": family,
+    "role": role,
+    "phase": phase,
+    "deliverable_id": deliverable_id,
+    "status": "provider-limited-fallback-complete",
+    "exit_code": 0,
+    "prompt_sha256": prompt_sha,
+    "artifact_path": artifact_rel,
+    "artifact_sha256": artifact_sha,
+    "raw_output_path": raw_rel,
+    "stderr_path": stderr_rel,
+    "stderr_hash": stderr_sha,
+    "started_at": started_at,
+    "ended_at": now,
+    "evidence_cap": "orchestrator-preflight",
+    "execution_provider": provider,
+    "execution_cli": family,
+    "dispatch_method": "provider-limited-fallback",
+    "fallback_reason": f"{family} declared blocked in {rel_to_repo(manifest_path)}: {evidence_rel}",
+}
+result_doc = {"results": [attempt_row, fallback_row]}
+
+receipt = {
+    "run_id": run_id,
+    "dispatch_id": dispatch_id,
+    "capture_id": capture_id,
+    "deliverable_id": deliverable_id,
+    "phase": phase,
+    "round": receipt_round,
+    "role": role,
+    "family": family,
+    "actual_executed_family": family,
+    "provider": provider,
+    "template_id": "record-fallback-receipt",
+    "template_version": "1.0.0",
+    "prompt_sha256": prompt_sha,
+    "input_artifact_sha256": actual_evidence_sha,
+    "output_artifact_path": artifact_rel,
+    "output_artifact_sha256": artifact_sha,
+    "transcript_or_log_path": raw_rel,
+    "stderr_path": stderr_rel,
+    "stderr_sha256": stderr_sha,
+    "started_at": started_at,
+    "ended_at": now,
+    "exit_code": 0,
+    "strict_p3_candidate": False,
+    "provider_limited_fallback": True,
+    "dispatch_intent_path": rel_to_repo(intent_path),
+    "dispatch_result_path": rel_to_repo(result_path),
+    "fallback_disclosure": {
+        "blocked_family_ref": blocked_ref,
+        "blocked_evidence_path": evidence_rel,
+        "blocked_evidence_sha256": actual_evidence_sha,
+        "fallback_route": "provider-limited fallback receipt generator",
+    },
+}
+if re_adj_ref:
+    receipt["fallback_disclosure"]["re_adjudication_ref"] = re_adj_ref
+
+acquire_lock(inventory_path)
+if inventory_path.is_file():
+    inventory = load_yaml(inventory_path)
+else:
+    inventory = {"schema_version": 2, "deliverable_id": deliverable_id, "receipts": []}
+schema_version = inventory.get("schema_version")
+if schema_version is None:
+    inventory["schema_version"] = 2
+elif not isinstance(schema_version, int) or schema_version < 2:
+    fail(f"inventory schema_version={schema_version!r} cannot store fallback_disclosure; use schema_version >= 2")
+if (inventory.get("deliverable_id") or "").strip() != deliverable_id:
+    fail(
+        f"inventory.deliverable_id={inventory.get('deliverable_id')!r} "
+        f"does not match manifest id={deliverable_id!r}"
+    )
+receipts = inventory.get("receipts") or []
+if not isinstance(receipts, list):
+    fail("inventory receipts must be a list")
+for existing in receipts:
+    if not isinstance(existing, dict):
+        continue
+    if (
+        (existing.get("phase") or "").strip(),
+        (existing.get("role") or "").strip(),
+        (existing.get("family") or "").strip(),
+        int(existing.get("round") or 1),
+    ) == (phase, role, family, receipt_round):
+        fail(f"receipt already exists for ({phase}, {role}, {family}, round={receipt_round})")
+
+atomic_write_text(artifact_path, artifact_text)
+atomic_write_yaml(intent_path, intent_doc)
+atomic_write_yaml(result_path, result_doc)
+receipts.append(receipt)
+inventory["receipts"] = receipts
+atomic_write_yaml(inventory_path, inventory)
+
+print(f"record-fallback-receipt: appended provider_limited_fallback receipt for ({phase}, {role}, {family})")
+print(f"record-fallback-receipt: inventory={rel_to_repo(inventory_path)}")
+print(f"record-fallback-receipt: dispatch_intent={rel_to_repo(intent_path)}")
+print(f"record-fallback-receipt: dispatch_result={rel_to_repo(result_path)}")
+PY
 }
 
 # ---------------------------------------------------------------------------
@@ -1320,7 +2063,7 @@ cmd_verify_live_docs() {
     esac
     shift || true
   done
-  python3 - "$repo_root" "${policy:+$(abs_path "$policy")}" <<'PY'
+  python3 - "$repo_root" "$(framework_path_or_self)" "${policy:+$(abs_path "$policy")}" <<'PY'
 import sys
 import re
 from pathlib import Path
@@ -1328,10 +2071,44 @@ from pathlib import Path
 import yaml
 
 repo = Path(sys.argv[1]).resolve()
-explicit_policy = Path(sys.argv[2]).resolve() if len(sys.argv) > 2 and sys.argv[2] else None
+framework = Path(sys.argv[2]).resolve()
+# v1.12.0 (C1): the banner-guard text machinery lives in the shared
+# _lib module (extracted after the v1.11.1 R2 eleven-round board);
+# this command keeps only policy handling and the two banner rules.
+# D.4 (D3-3): the import is FAIL-CLOSED — a copied-wrapper layout
+# whose framework path lacks _lib must refuse, not fall through to
+# whatever modules the adopter root happens to contain (the board
+# demonstrated a shim-injection false PASS).
+_lib_dir = (framework / "scripts" / "_lib").resolve()
+for _required in ("visible_text.py", "semver.py"):
+    if not (_lib_dir / _required).is_file():
+        raise SystemExit(
+            f"verify-live-docs: framework _lib module missing: "
+            f"{_lib_dir / _required} — refusing to import from elsewhere "
+            f"(check .llm-dev/config.yaml framework_path)"
+        )
+sys.path.insert(0, str(_lib_dir))
+import visible_text as _vt_mod  # noqa: E402
+import semver as _semver_mod  # noqa: E402
+for _mod in (_vt_mod, _semver_mod):
+    _mod_file = Path(getattr(_mod, "__file__", "")).resolve()
+    if not str(_mod_file).startswith(str(_lib_dir)):
+        raise SystemExit(
+            f"verify-live-docs: module {_mod.__name__} resolved outside the "
+            f"framework _lib ({_mod_file}) — refusing (fail-closed)"
+        )
+_visible_text = _vt_mod.visible_text
+_first_visible_line = _vt_mod.first_visible_line
+version_tuple = _semver_mod.loose_version_tuple
+
+explicit_policy = Path(sys.argv[3]).resolve() if len(sys.argv) > 3 and sys.argv[3] else None
 if explicit_policy and not explicit_policy.is_file():
     raise SystemExit(f"verify-live-docs: policy file not found: {explicit_policy}")
 roots = [
+    # v1.11.1: README.md added — the most visible live doc was the one
+    # file the sweep never read (it drifted to two releases stale
+    # without a single hit).
+    repo / "README.md",
     repo / "CHANGELOG.md",
     repo / "ROADMAP.md",
     repo / "framework.md",
@@ -1340,8 +2117,55 @@ roots = [
     repo / "templates",
     repo / "docs",
 ]
+
+
+def _changelog_current_version():
+    """Derive the current released version from CHANGELOG.md.
+
+    v1.11.1: replaces the hardcoded current_version literal, which had
+    silently gone two releases stale and neutered every version-aware
+    rule. The regex is kept textually identical to the one in
+    scripts/verify-version-bump.sh (the suite's existing ground truth
+    for CHANGELOG release headings) — update both together.
+    """
+    changelog = repo / "CHANGELOG.md"
+    if not changelog.is_file():
+        raise SystemExit(
+            "verify-live-docs: CHANGELOG.md not found — cannot derive "
+            "current_version (declare one in a live-docs policy file to "
+            "override)"
+        )
+    # D.4 fix for D.2 review ADV-3/D3-4: tolerate en/em/hyphen dashes
+    # and a capitalized "(Released" so release-like heading variants
+    # cannot fall out of the version-aware rules. Keep textually
+    # identical to the three sites in scripts/verify-version-bump.sh.
+    # Spec-defined semantics (D.3 ruling on D3-5): the derived version
+    # is the TOP released heading — CHANGELOG is newest-first by
+    # contract; ordering itself is not validated here.
+    heading = re.compile(r"^##\s+v(\d+\.\d+\.\d+)\s+[—–-]\s+(?:Released|.*\((?:Released|released)\b)")
+    for line in changelog.read_text(encoding="utf-8", errors="replace").splitlines():
+        m = heading.match(line)
+        if m:
+            return m.group(1)
+    raise SystemExit(
+        "verify-live-docs: no `## vX.Y.Z — ... (released ...)` heading in "
+        "CHANGELOG.md — cannot derive current_version (declare one in a "
+        "live-docs policy file to override)"
+    )
+
+
 policy = {
-    "current_version": "1.10.1",
+    # D.4 fix for D.2 review PEER-2/ALIGN-1 (D3-2): current_version is
+    # derived LAZILY after policy files merge, so an explicit policy
+    # value can rescue an underivable CHANGELOG as the diagnostics
+    # promise. None = derive after merge.
+    "current_version": None,
+    # Files whose first non-blank, non-HTML-comment line must name the
+    # current version (the README-title drift class). Mergeable from
+    # policy files; entries must stay inside the repo (D3-3).
+    "required_current_version_banners": [
+        "README.md",
+    ],
     "excluded_prefixes": [
         "docs/logs",
         "docs/handoffs",
@@ -1375,7 +2199,7 @@ def merge_policy_file(path):
         raise SystemExit(f"verify-live-docs: policy must be a mapping: {path}")
     if doc.get("current_version"):
         policy["current_version"] = str(doc["current_version"])
-    for key in ("excluded_prefixes", "patterns", "historical_allow"):
+    for key in ("excluded_prefixes", "patterns", "historical_allow", "required_current_version_banners"):
         if key in doc:
             if not isinstance(doc[key], list):
                 raise SystemExit(f"verify-live-docs: policy.{key} must be a list: {path}")
@@ -1388,13 +2212,9 @@ for policy_path in (
 ):
     merge_policy_file(policy_path)
 
-def version_tuple(value):
-    text = str(value or "").strip()
-    text = text[1:] if text.startswith("v") else text
-    nums = [int(x) for x in re.findall(r"\d+", text)[:3]]
-    while len(nums) < 3:
-        nums.append(0)
-    return tuple(nums)
+if not policy["current_version"]:
+    policy["current_version"] = _changelog_current_version()
+
 
 def frontmatter_target_release(text):
     lines = text.splitlines()
@@ -1452,6 +2272,89 @@ for root in roots:
         files.extend(p for p in root.rglob("*.md") if p.is_file())
 
 hits = []
+
+# v1.11.1 banner check: the first VISIBLE line of each listed file must
+# name the current version. This is the mechanical guard for the
+# README-title drift class (title pinned to an old release while the
+# CHANGELOG moves on).
+#
+# D.4 fixes for the D.2 round:
+#   - D3-1 (blocker): HTML-comment lines are skipped when selecting the
+#     banner line (a hidden `<!-- v1.11.0 -->` above a stale visible
+#     title used to satisfy the check), and the version must match with
+#     boundaries (a prerelease-looking `v1.11.0-beta` or a longer
+#     version containing the needle no longer passes).
+#   - D3-3: banner entries are constrained to files inside the repo;
+#     absolute or escaping paths fail closed with a named hit instead
+#     of reading (and partially disclosing) outside-repo files.
+banner_needle = f"v{policy['current_version']}"
+# D.4 round-2 fix (ADV-R2-1): '.' in the lookahead too — `v3.1.0.1`
+# satisfied the check by prefix when only the lookbehind excluded dots.
+banner_rx = re.compile(
+    r"(?<![0-9A-Za-z.\-])" + re.escape(banner_needle) + r"(?![0-9A-Za-z.\-])"
+)
+
+
+
+
+for rel_name in policy["required_current_version_banners"]:
+    banner_rel = Path(str(rel_name))
+    if banner_rel.is_absolute():
+        hits.append(("stale-version-banner", banner_rel, 0, "banner path must be repo-relative (absolute path rejected)"))
+        continue
+    banner_path = (repo / banner_rel).resolve()
+    try:
+        banner_path.relative_to(repo)
+    except ValueError:
+        hits.append(("stale-version-banner", banner_rel, 0, "banner path escapes the repo (rejected)"))
+        continue
+    if not banner_path.is_file():
+        hits.append(("stale-version-banner", banner_rel, 0, "file missing"))
+        continue
+    banner_text = banner_path.read_text(encoding="utf-8", errors="replace")
+    first_line_no, first_line, first_raw_line = _first_visible_line(banner_text)
+    if not banner_rx.search(_visible_text(first_line)):
+        hits.append(
+            (
+                "stale-version-banner",
+                banner_rel,
+                first_line_no,
+                f"{first_raw_line}  [expected {banner_needle} per CHANGELOG.md]",
+            )
+        )
+    else:
+        # D.4 round-6 structural rule (board convergence): six closure
+        # rounds showed that hidden-syntax stripping is an arms race —
+        # every leak vector smuggled the CURRENT version past a STALE
+        # visible title. Inverted check: any version-shaped token on
+        # the RAW banner line that is not the current version fails,
+        # regardless of where it hides. The stale token in the drift
+        # class is by definition visible, so this closes the whole
+        # leak family structurally; the visible-text approximation
+        # above remains as the guard for versionless-title masking.
+        any_version_rx = re.compile(
+            r"(?<![0-9A-Za-z.\-])v\d+\.\d+\.\d+(?![0-9A-Za-z.\-])"
+        )
+        # D.4 round-10 fix (ADV-R10-1): the token rule scans the RAW
+        # source line, not the block-stripped one — comment/script-
+        # embedded conflicting tokens on the banner line must count.
+        conflicting = sorted(
+            {
+                tok
+                for tok in any_version_rx.findall(first_raw_line)
+                if tok != banner_needle
+            }
+        )
+        if conflicting:
+            hits.append(
+                (
+                    "conflicting-version-token",
+                    banner_rel,
+                    first_line_no,
+                    f"{first_raw_line}  [token(s) {', '.join(conflicting)} conflict with {banner_needle} per CHANGELOG.md]",
+                )
+            )
+
 for path in sorted(set(files)):
     rel = path.relative_to(repo)
     if is_excluded(rel):
@@ -1488,6 +2391,67 @@ cmd_strict_p3_commands() {
     --adopter-root "$repo_root" \
     --framework-root "$fw" \
     "$(abs_path "$manifest")"
+}
+
+# ---------------------------------------------------------------------------
+# gate-preflight <manifest> [--category <name>] [--all] — v1.11.0 (issue #64
+# item 4). The mechanical "run your manifest grep gates yourself BEFORE
+# D.6" surface: gate environment preflight first (halts on
+# environment-setup failure so it is never misread as product behavior),
+# then the exemption-aware forbidden-symbol scan, then scope-category
+# gate commands (--all runs every category).
+# ---------------------------------------------------------------------------
+cmd_gate_preflight() {
+  local manifest="" all=0 fw
+  local -a categories=()
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --category)
+        shift
+        [[ -n "${1:-}" ]] || die "gate-preflight: missing value after --category"
+        categories+=("$1")
+        ;;
+      --all) all=1 ;;
+      -*) die "gate-preflight: unknown argument: $1" ;;
+      *)
+        [[ -z "$manifest" ]] || die "gate-preflight: multiple manifest paths given"
+        manifest="$1"
+        ;;
+    esac
+    shift || true
+  done
+  [[ -n "$manifest" ]] || die "gate-preflight requires <manifest-path>"
+  fw="$(framework_path_or_self)"
+  local mpath
+  mpath="$(abs_path "$manifest")"
+
+  # --scope gate (issue #64 PR review): only entries declared scope
+  # gate|both can block this preflight — verify-gate-commands.sh never
+  # executes smoke-scoped entries, so a required smoke-only variable
+  # must not block a gate-only run.
+  echo "llm-dev gate-preflight: 1/3 gate environment (verify-gate-environment.sh --scope gate)"
+  bash "$fw/scripts/verify-gate-environment.sh" --manifest "$mpath" --scope gate \
+    || die "gate-preflight halted: environment-setup failure (fix the environment; this is NOT a product-behavior failure)"
+
+  echo
+  echo "llm-dev gate-preflight: 2/3 forbidden-symbol scan (grep-forbidden-symbols.sh)"
+  bash "$fw/scripts/grep-forbidden-symbols.sh" --manifest "$mpath" \
+    || die "gate-preflight halted: forbidden-symbol match on runtime surfaces"
+
+  echo
+  if [[ "$all" -eq 1 ]]; then
+    echo "llm-dev gate-preflight: 3/3 gate commands (all categories)"
+    bash "$fw/scripts/verify-gate-commands.sh" --manifest "$mpath"
+  elif [[ ${#categories[@]} -gt 0 ]]; then
+    echo "llm-dev gate-preflight: 3/3 gate commands (categories: ${categories[*]})"
+    local -a cat_flags=()
+    local c
+    for c in "${categories[@]}"; do cat_flags+=(--category "$c"); done
+    bash "$fw/scripts/verify-gate-commands.sh" --manifest "$mpath" "${cat_flags[@]}"
+  else
+    echo "llm-dev gate-preflight: 3/3 gate commands (--category scope; use --all for every category)"
+    bash "$fw/scripts/verify-gate-commands.sh" --manifest "$mpath" --category scope
+  fi
 }
 
 # ---------------------------------------------------------------------------
@@ -1641,7 +2605,9 @@ cmd_agents_install() {
   [[ -w "$agents_target" ]] || die "AGENTS.md is not writable: ${agents_target#$repo_root/}"
 
   block_file="$(mktemp)"
+  _track_tmp "$block_file"
   tmp="$(mktemp)"
+  _track_tmp "$tmp"
   agents_block > "$block_file"
   has_custom="$(
     awk \
@@ -1790,12 +2756,22 @@ main() {
     verify-lifecycle)   cmd_verify_lifecycle "$@" ;;
     verify-staging)     cmd_verify_staging "$@" ;;
     re-adjudication)    cmd_re_adjudication "$@" ;;
+    record-fallback-receipt) cmd_record_fallback_receipt "$@" ;;
     rebind-artifact)    cmd_rebind_artifact "$@" ;;
     repair-redispatch)  cmd_repair_redispatch "$@" ;;
     post-merge)         cmd_post_merge "$@" ;;
     review-chain)       cmd_review_chain "$@" ;;
     verify-live-docs)   cmd_verify_live_docs "$@" ;;
+    verify-authoring-constraints) cmd_fw_script verify-authoring-constraints.py "$@" ;;
+    verify-post-d6-scope) cmd_fw_script verify-post-d6-scope.sh "$@" ;;
+    verify-handoff-base) cmd_fw_script verify-handoff-base.sh "$@" ;;
     strict-p3-commands) cmd_strict_p3_commands "$@" ;;
+    goal-card)          cmd_fw_script emit-goal-card.py "$@" ;;
+    review-seats)       cmd_fw_script review-seats.sh "$@" ;;
+    gate-preflight)     cmd_gate_preflight "$@" ;;
+    lint-artifact)      cmd_fw_script verify-dispatch-shape.sh "$@" ;;
+    append-supplemental-review) cmd_fw_script append-supplemental-review.sh "$@" ;;
+    capability)         cmd_capability "$@" ;;
     generate-overlays)  cmd_generate_overlays "$@" ;;
     update)             cmd_update "$@" ;;
     agents)             cmd_agents_install "$@" ;;
