@@ -23,6 +23,7 @@ allowed_orphan_paths = [
     "docs/reviews/**",               # lifecycle review packets — per-project rollups
     "docs/retros/**",                # project retros — per-project rollups
     "docs/trackers/**",              # project trackers — top-level index docs
+    "docs/handoffs/**",              # lifecycle handoffs/kickoffs — terminal coordination artifacts
     "docs/reference/Migration_*.md", # version migration guides
 ]
 
