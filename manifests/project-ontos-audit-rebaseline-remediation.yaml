@@ -194,6 +194,7 @@ scope:
     - "tests/test_cli_contract_v4.py"
     - "tests/test_config.py"
     - "tests/test_consolidate.py"
+    - "tests/test_context_contention.py"
     - "tests/test_cycle_detection.py"
     - "tests/test_describes.py"
     - "tests/test_document_loading_contract_a1.py"
@@ -373,14 +374,14 @@ self_review_caveats:
     phases: ["D.3"]
     rationale: "Codex authored the frozen implementation snapshot and performs structural fast-path consolidation only after three non-author D.2 engineering reviews plus the Product review; D.5 remains fully external."
 
-lifecycle_receipt_inventory_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/lifecycle-receipt-inventory.yaml"
+lifecycle_receipt_inventory_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/lifecycle-receipt-inventory-recertification.yaml"
 required_dispatch_bundles:
   - phase: "B.1"
-    intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-dispatch-intent.yaml"
-    result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-dispatch-result.yaml"
+    intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-recertification-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-recertification-dispatch-result.yaml"
   - phase: "B.2"
-    intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-dispatch-intent.yaml"
-    result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-dispatch-result.yaml"
+    intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-recertification-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-recertification-dispatch-result.yaml"
   - phase: "D.2"
     intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-dispatch-intent.yaml"
     result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-dispatch-result.yaml"
@@ -427,8 +428,8 @@ gate_prerequisites:
     description: "The user-facing Product verdict exists for B.1, B.2, and D.2."
     verification:
       command: >-
-        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-claude-product.md &&
-        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-claude-product.md &&
+        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-recert-claude-product.md &&
+        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-recert-claude-product.md &&
         test -f docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-claude-product.md
       expect: "exit-0"
   - id: G-blocker-1
@@ -473,3 +474,5 @@ references:
     relevance: "Machine-readable truth for implemented, partial, open, and externally blocked findings."
   - path: "docs/trackers/project-ontos-audit-remediation-release-line.md"
     relevance: "Release ledger and explicit shared-tree integration blocker that this umbrella lifecycle must preserve."
+  - path: "docs/reviews/project-ontos-audit-rebaseline-remediation/receipt-recovery.md"
+    relevance: "Non-certifying record of the strict verifier/wrapper retry-backlink mismatch and genuine recertification decision."

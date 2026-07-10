@@ -1,0 +1,135 @@
+---
+id: project-ontos-audit-rebaseline-remediation-B.2-recert-gemini-alignment
+deliverable_id: project-ontos-audit-rebaseline-remediation
+phase: B.2
+role: alignment
+family: gemini
+evidence_labels_used: [static-inspection]
+reference_documents_consulted: [docs/specs/project-ontos-audit-rebaseline-remediation-spec.md, docs/reviews/2026-07-10-codex-audit-revalidation.md@b6f89d7, docs/trackers/project-ontos-audit-remediation-release-line.md@b6f89d7, manifests/project-ontos-audit-remediation-registry.yaml@b6f89d7]
+status: completed
+---
+
+# B.2 Gemini Alignment Recertification - Project Ontos Audit Rebaseline Remediation
+
+## 1. Architecture compliance
+
+The spec v1.2 has been inspected using the static-inspection evidence label. The objective is to verify that the corrected specification integrates the design-review remediation requirements and aligns with the revalidation and release ledger authorities.
+
+The specification incorporates the required design-review corrections without drifting from the approved release authorities:
+* **Missing-Row Handling Expansion**: Handled across every required field and reachable code path to prevent downstream failures.
+* **Log Symlink Logic**: Evaluated before resolving the path to make the check reachable and non-vacuous, while preserving the outside sentinel intact.
+* **Control-Plane, Diagram, and Exit Anchors**: Sharpened to maintain strict compliance with the integration constraints.
+* **Downstream Boundary Preservations**: The spec v1.2 explicitly avoids premature certification of Phase C, D.5, child lifecycles, or release readiness, preserving the open/partial findings and pending status required by the authorities.
+
+## 2. Diagram-architecture cross-reference
+
+The structural and behavioral patterns defined in spec v1.2 diagrams are cross-referenced as follows:
+
+* **Architecture Diagram (lines 217-238)**:
+  * **Registry → Validator → O4/O5**: Structural representation of findings ingestion and validation checks.
+  * **Loader → Writer → CLI/MCP**: Logic flow for configuration loading, updating, and external interfacing.
+  * **Activation → CLI/MCP**: Control-plane flow for activation sequences.
+  * **Locking → Writer**: Integration of the file lock mechanism into the file writer.
+  * **Release → Tests**: Restricting release certification through test coverage.
+  * **All main components → Tests → Map**: Dependency mapping for the dynamic clean map.
+  * **GitHub, Windows, and TestPyPI**: Shown as dashed external systems to indicate that proofs or environments associated with them remain external pending.
+
+* **Lifecycle Diagram (lines 242-259)**:
+  * Shows the iterative development loops, specifically the D.2/D.4 loop, D.5/D.4 loop, and loose-falsification/D.4 loop.
+  * Terminates at D.6 pending with no release or delivery claims, aligning with the phase limitations.
+
+## 3. Roadmap alignment
+
+Alignment with the revalidation and release ledger authorities is verified based on the following rules:
+
+* **Revalidation Authority (`docs/reviews/2026-07-10-codex-audit-revalidation.md@b6f89d7` / `manifests/project-ontos-audit-remediation-registry.yaml@b6f89d7`)**:
+  * The YAML registry is the canonical source of truth, not historical Fable prose.
+  * The registry establishes exactly 91 original findings (using the 1/27/63 distribution) plus nine R2 findings.
+  * Audit report §5 is documented as incomplete (accounting for 68 of 91 findings plus a phantom ID).
+  * The `doctor` command/tool is code-fixed but evidence-pending.
+  * The historical O5 omitted collision checks.
+  * The original truth preserves exactly 41 open and seven partial findings, plus lifecycle pending status.
+* **Release Ledger Authority (`docs/trackers/project-ontos-audit-remediation-release-line.md@b6f89d7`)**:
+  * Status and lifecycle are independent.
+  * Only strict P3 level certifies release.
+  * Issues #146 and #147 remain in evidence-pending states.
+  * The shared integration blocker remains unproven and release-blocking.
+  * The base-SHA scope explicitly covers all committed, staged, unstaged, and untracked changes.
+  * Retroactive lease claims are prohibited.
+
+Spec v1.2 aligns with this roadmap by preserving these pending states, blockers, and findings intact.
+
+## 4. Constraint verification
+
+Constraint | Source (doc:lines) | Verified? | Evidence
+--- | --- | --- | ---
+Registry is authority; 91 original findings (1/27/63) + 9 R2; report §5 incomplete (68/91 + phantom); doctor code-fixed/evidence-pending; O5 omitted collisions; preserves 41 open/7 partial findings. | docs/reviews/2026-07-10-codex-audit-revalidation.md@b6f89d7:11-49,72-87 | Yes | Aligned by packet (preserves the 41 open and 7 partial findings, and the doctor tool's evidence-pending state)
+Registry canonical; status/lifecycle independent; strict P3 certifies; #146/#147 evidence pending; shared integration unproven/release-blocking; base-SHA scope; no retroactive lease. | docs/trackers/project-ontos-audit-remediation-release-line.md@b6f89d7:13-25,27-61,73-98 | Yes | Pending as required (shared integration blocker and issues #146/#147 are preserved as unproven/pending)
+v1.1 additions (X-M1/X-M2, public contracts) and v1.2 widening missing-row handling, reachable log symlinks, control-plane/exit/doc anchors. No Phase C, D.5, child, or release certification. | docs/specs/project-ontos-audit-rebaseline-remediation-spec.md:24-26 | Yes | Aligned by packet (structural inclusion of updated v1.2 anchors verified without downstream certification)
+Phase C malformed rows collection without KeyError/None duplicates; rejects default/config-contained intermediate log symlink before `.resolve()` to preserve outside sentinel. | docs/specs/project-ontos-audit-rebaseline-remediation-spec.md:63-87 | Yes | Aligned by packet (logic flow verified via static-inspection)
+Activation, doctor, locking, read-only MCP, type-enumeration, schema-v4, and exit-4 contracts; singular malformed version copy; wheel hash; dynamic clean map; Windows/TestPyPI execution external. | docs/specs/project-ontos-audit-rebaseline-remediation-spec.md:89-132 | Yes | Pending as required (Windows and TestPyPI execution environments are external pending)
+All open questions resolved; named tests cover serializer, writer, hermeticity, activation, locking, regressions, release, registry; migration/manual copy and upgrade warnings are mandatory. | docs/specs/project-ontos-audit-rebaseline-remediation-spec.md:134-180 | Yes | Aligned by packet (presence of required test definitions and warning/copy requirements verified)
+High risks remain; synthesized receipts, historical leases, child certification, D.6, merge, tag, publication, release, user-doc edits, and finding reclassifications are forbidden. | docs/specs/project-ontos-audit-rebaseline-remediation-spec.md:187-211 | Yes | Aligned by packet (explicit prohibitions against release-readiness claims verified in spec)
+Architecture diagram flows: Registry→Validator→O4/O5, Loader→Writer→CLI/MCP, Activation→CLI/MCP, Locking→Writer, Release→Tests, main components→Tests→Map; external systems dashed. | docs/specs/project-ontos-audit-rebaseline-remediation-spec.md:217-238 | Yes | Aligned by packet (diagram connectivity verified via static-inspection)
+Lifecycle diagram loops (D.2/D.4, D.5/D.4, loose-falsification/D.4) terminating at D.6 pending with no release claim. | docs/specs/project-ontos-audit-rebaseline-remediation-spec.md:242-259 | Yes | Aligned by packet (lifecycle state flow verified to stop before D.6)
+Contract matrix of exactly 14 rows mapping required integration contracts. | docs/specs/project-ontos-audit-rebaseline-remediation-spec.md:261-278 | Yes | Aligned by packet (all 14 contract rows verified as present and consistent)
+
+## 5. Backward compatibility
+
+Backward compatibility has been verified under static-inspection. The specification designates several public breaking changes as intentional:
+* **String-only IDs**: Identification tokens are restricted to a string format.
+* **Collision/Unsafe-Write Refusal**: The file writer rejects operations that would overwrite files or cause write collisions.
+* **Exhaustive Type Counts**: Strict count structures applied across all enumerated types.
+* **Read-only MCP Server**: The MCP server prevents write operations.
+* **Activation Incompatibility**: Legacy activation sequences are incompatible with the updated flow.
+* **Schema-v4 JSON/Exit Semantics**: Conformance to schema-v4 rules, specifying exit-code 4 execution flow on failure.
+* **Migration/Manual Copy**: Mandatory requirement for the public Migration/Manual copy, upgrade-before-required-version warning, and commit-level rollback paths.
+
+## 6. Consistency check
+
+A consistency analysis was performed on the contract matrix (lines 261-278) to ensure all 14 contract rows are covered:
+1. **YAML Configuration**: Corresponds to Validator specifications.
+2. **IDs**: Verified as string-only formats.
+3. **Writer**: Matches unsafe-write refusal rules.
+4. **Collision**: Matches collision prevention rules.
+5. **Runtime Version**: Matches singular version copy rules.
+6. **JSON/Exit**: Matches schema-v4 exit code 4 semantics.
+7. **Log-Parent Phase C**: Matches intermediate log symlink resolution checks.
+8. **Malformed-Row Phase C**: Matches collection logic without KeyError/None duplicates.
+9. **Singular-Version Phase C**: Matches singular malformed version copy handling.
+10. **Cross-Platform Lock/Windows External**: Matches the Windows lock handling, marked as external pending.
+11. **Read-Only MCP**: Matches MCP server write restrictions.
+12. **Wheel Local+External**: Matches the package verification and version provenance rules.
+13. **Registry Parity**: Matches the canonical registry and finding counts.
+14. **Dynamic Map**: Matches the dependency map architecture.
+
+No contradictions, gaps, or omissions exist between the contract matrix, the architecture descriptions, and the diagrams in spec v1.2.
+
+## 7. Deviation report
+
+Divergence | Authority cited? | Authority source | Severity
+--- | --- | --- | ---
+None | N/A | N/A | N/A
+
+## 8. Issues found
+
+### Blocking
+None.
+
+### Should-fix
+None.
+
+### Minor
+None.
+
+## Verdict
+
+Approve
+
+## 10. Notes
+
+This review evaluates the alignment of the specification document (v1.2, SHA-256 `2c4ffe943e70b766cd26a47df1900bd21fe48d942b04f63bc24302e52b92b3c9`) against the revalidation and release ledger authorities frozen at commit `b6f89d7`. 
+
+* **State Preservation**: The authorities demand that the spec v1.2 preserve the 41 open and 7 partial findings, the #146/#147 evidence-pending states, and the unproven status of the shared integration blocker. The spec successfully preserves these states as pending, which constitutes correct alignment for the B.2 phase rather than a defect.
+* **Evidence Limitations**: Verification has been conducted solely via static-inspection of the specification text, schemas, and diagrams. In accordance with the instructions, execution evidence declared by the spec is acknowledged but not run, and absent system proofs (e.g., Windows and TestPyPI execution) are properly labeled as external pending. 
+* **Downstream Bounds**: The spec v1.2 strictly adheres to the limits of the B.2 phase by making no premature claims of Phase C certification, D.6 transitions, or release readiness.

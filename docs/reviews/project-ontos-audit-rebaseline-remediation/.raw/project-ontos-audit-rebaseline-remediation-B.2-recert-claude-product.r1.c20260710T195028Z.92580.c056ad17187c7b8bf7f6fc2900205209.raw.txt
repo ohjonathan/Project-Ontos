@@ -1,0 +1,19 @@
+Shape gate passes: `verdict_shaped`, `missing: []`, `verdict_vocab: approve`. The review is complete.
+
+## Product review — B.2 recertification (verdict: **Approve**)
+
+Wrote `docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-recert-claude-product.md` (only that file; no commit — orchestrator stages Product artifacts per Template 01 commit-split).
+
+**What I did.** Reviewed corrected spec v1.2 against frozen I0 `b6f89d7`. Because the manifest declares `implementation_sequencing.mode: code-first-user-gated`, I ran the §2.2 spec-vs-implementation cross-reference against I0 bytes (`git show b6f89d7:<path>`) — not the current worktree, which carries an in-progress Phase C. No other verdict consulted.
+
+**Confirmation of the dispatch question.** v1.2 makes the focus-area contracts testable and honest without claiming release or per-issue certification:
+- Every user-visible copy string / error code I sampled matches I0 bytes: `Incompatible Ontos version…`, `Invalid [ontos].required_version…`, `E_ACTIVATION_UNUSABLE`/`not_usable`, `Document id must be a string…`, `E_LOG_EXISTS` (no-overwrite), schema `4.0`, exit taxonomy `{0,1,2,3,5,130}` with `4` reserved, doctor PATH-skew fallback copy.
+- The one deferred surface — Migration/Manual copy (§7) — is an explicit Phase C gate whose drift blocks D.1, the correct disposition under code-first sequencing.
+- Release-evidence wording (Windows/TestPyPI/PyPI/GitHub) degrades to explicit blockers, never synthetic receipts; nonclaim discipline holds across §2/§3/§8/§9.
+
+**Findings (all non-gating).**
+- PRD-1 (should-fix): `E_LOG_EXISTS` copy states the path but no recovery step.
+- PRD-2 (should-fix): activation/version errors don't point to the mandated Migration/Manual section — discoverability gap for the new `[ontos].required_version` key.
+- PRD-3 (minor): English-only copy, no i18n hook (not a regression this deliverable introduces).
+
+All three are `static-inspection`, so they cannot gate advance on their own (P5) — UX refinements to already-honest contracts. Verdict: **Approve**.

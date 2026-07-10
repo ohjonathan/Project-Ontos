@@ -1,0 +1,825 @@
+[0m
+> build · glm-5.2
+[0m
+[0m→ [0mRead .llm-dev/framework/templates/01-worker-session-contract.md
+[0m→ [0mRead .llm-dev/framework/templates/02-phase-dispatch-handoff.md
+[0m→ [0mRead .llm-dev/framework/templates/03-review-board-peer.md
+[0m→ [0mRead .llm-dev/framework/templates/02-phase-dispatch-handoff.md[90m [offset=878][0m
+[0m
+[0m$ [0mgit rev-parse --short HEAD && git branch --show-current && git log --oneline -15
+5e04094
+codex/audit-rebaseline-remediation-lifecycle
+5e04094 Authorize Phase C registry regression
+3827a65 Approve audit remediation design
+e63a0a5 Incorporate B.2 design findings
+7145b39 Record B.2 audit design review
+19af0c9 Clarify B.2 verdict shapes
+5367842 Freeze B.2 review dispatch
+02afc68 Record B.1 audit design review
+eb045e9 Make B.1 GLM route-redaction safe
+5c73c3d Prepare B.1 provenance redispatch
+ce60f6e Incorporate B.1 design findings
+469d4c1 Route B.1 GLM through F38 capture
+dfd9143 Pin B.1 Gemini artifact fields
+d24e1b7 Harden B.1 capture prompts
+a29e446 Clarify B.1 Gemini verdict shape
+1973cca Freeze B.1 review dispatch
+[0m
+[0m✱ [0mGlob "docs/reviews/project-ontos-audit-rebaseline-remediation/**/*"[90m 100 matches[0m
+[0m
+[0m$ [0mgit show b6f89d7 --stat --oneline | head -60
+b6f89d7 Implement audit rebaseline remediation
+ .github/workflows/ci.yml                           |   95 +-
+ .github/workflows/publish.yml                      |  282 +++++-
+ .ontos-internal/logs/2026-07-02_init.md            |   21 -
+ .ontos-internal/logs/2026-07-03_init.md            |   21 -
+ .ontos-internal/logs/2026-07-09_init.md            |   21 -
+ .ontos.toml                                        |    2 +-
+ .ontos/hooks/pre-commit                            |   14 +-
+ .ontos/hooks/pre-push                              |   14 +-
+ .ontos/scripts/tests/test_context.py               |   14 +-
+ .ontos/scripts/tests/test_schema.py                |   21 +-
+ .pre-commit-config.yaml                            |   19 +-
+ AGENTS.md                                          |   29 +-
+ Ontos_Context_Map.md                               |   52 +-
+ ..._merge-pr-118-v4-5-closes-issues-115-116-117.md |    2 +-
+ .../2026-07-10_audit-rebaseline-remediation.md     |   58 ++
+ docs/reference/Migration_v3_to_v4.md               |    2 +-
+ docs/reference/Ontos_Manual.md                     |   11 +-
+ .../retros/project-ontos-audit-doctor-rce-retro.md |   82 +-
+ docs/reviews/2026-07-02-fable-repo-audit.md        |    8 +-
+ .../reviews/2026-07-10-codex-audit-revalidation.md |  262 +++++
+ .../.prompts/B.1-gemini-adversarial.prompt.md      |   61 ++
+ .../.prompts/B.1-gpt-alignment.prompt.md           |   55 +
+ .../.prompts/D.2-gemini-adversarial.prompt.md      |   55 +
+ .../.prompts/D.2-gpt-alignment.prompt.md           |   55 +
+ .../.prompts/D.5-gemini-verifier.prompt.md         |   43 +
+ .../.prompts/D.5-gpt-verifier.prompt.md            |   45 +
+ ...1400Z.84663.3f5a1693dca6cb90f2d5532289375508.md |   61 ++
+ ....84663.3f5a1693dca6cb90f2d5532289375508.raw.txt |    0
+ ...663.3f5a1693dca6cb90f2d5532289375508.stderr.txt |   19 +
+ .../B.1-gemini-dispatch-intent.yaml                |   32 +
+ .../B.1-gemini-dispatch-result.yaml                |   72 ++
+ .../B.1-gpt-dispatch-intent.yaml                   |   31 +
+ .../D.2-gemini-dispatch-intent.yaml                |   32 +
+ .../D.2-gpt-dispatch-intent.yaml                   |   31 +
+ .../D.5-gemini-dispatch-intent.yaml                |   32 +
+ .../D.5-gpt-dispatch-intent.yaml                   |   31 +
+ .../final-approval.md                              |   68 +-
+ .../lifecycle-receipt-inventory.yaml               |   35 +-
+ .../strict-p3-dispatch-readiness.txt               |   64 ++
+ docs/specs/project-ontos-audit-doctor-rce-spec.md  |   35 +-
+ docs/trackers/project-ontos-audit-doctor-rce.md    |   89 +-
+ ...project-ontos-audit-remediation-release-line.md |  304 +++---
+ manifests/project-ontos-audit-doctor-rce.yaml      |  160 ++-
+ .../project-ontos-audit-remediation-registry.yaml  | 1046 ++++++++++++++++++++
+ .../project-ontos-audit-serializer-corruption.yaml |   82 +-
+ ontos/_hooks/pre-commit                            |   12 +-
+ ontos/_hooks/pre-push                              |   12 +-
+ ontos/cli.py                                       |  376 ++++---
+ ontos/command_registry.py                          |  123 +++
+ ontos/commands/activate.py                         |    9 +
+ ontos/commands/doctor.py                           |  136 ++-
+ ontos/commands/init.py                             |    1 +
+ ontos/commands/link_check.py                       |    4 +-
+ ontos/commands/log.py                              |   88 +-
+ ontos/commands/map.py                              |    9 +-
+ ontos/commands/migrate.py                          |   12 +-
+ ontos/commands/promote.py                          |   20 +-
+ ontos/commands/retrofit.py                         |   73 +-
+ ontos/commands/scaffold.py                         |   42 +-
+[0m
+[0m$ [0mgit log --oneline bf91b42..b6f89d7 2>/dev/null | head -30; echo "---DIFFSTAT---"; git diff bf91b42...b6f89d7 --stat 2>/dev/null | head -60
+b6f89d7 Implement audit rebaseline remediation
+---DIFFSTAT---
+ .github/workflows/ci.yml                           |   95 +-
+ .github/workflows/publish.yml                      |  282 +++++-
+ .ontos-internal/logs/2026-07-02_init.md            |   21 -
+ .ontos-internal/logs/2026-07-03_init.md            |   21 -
+ .ontos-internal/logs/2026-07-09_init.md            |   21 -
+ .ontos.toml                                        |    2 +-
+ .ontos/hooks/pre-commit                            |   14 +-
+ .ontos/hooks/pre-push                              |   14 +-
+ .ontos/scripts/tests/test_context.py               |   14 +-
+ .ontos/scripts/tests/test_schema.py                |   21 +-
+ .pre-commit-config.yaml                            |   19 +-
+ AGENTS.md                                          |   29 +-
+ Ontos_Context_Map.md                               |   52 +-
+ ..._merge-pr-118-v4-5-closes-issues-115-116-117.md |    2 +-
+ .../2026-07-10_audit-rebaseline-remediation.md     |   58 ++
+ docs/reference/Migration_v3_to_v4.md               |    2 +-
+ docs/reference/Ontos_Manual.md                     |   11 +-
+ .../retros/project-ontos-audit-doctor-rce-retro.md |   82 +-
+ docs/reviews/2026-07-02-fable-repo-audit.md        |    8 +-
+ .../reviews/2026-07-10-codex-audit-revalidation.md |  262 +++++
+ .../.prompts/B.1-gemini-adversarial.prompt.md      |   61 ++
+ .../.prompts/B.1-gpt-alignment.prompt.md           |   55 +
+ .../.prompts/D.2-gemini-adversarial.prompt.md      |   55 +
+ .../.prompts/D.2-gpt-alignment.prompt.md           |   55 +
+ .../.prompts/D.5-gemini-verifier.prompt.md         |   43 +
+ .../.prompts/D.5-gpt-verifier.prompt.md            |   45 +
+ ...1400Z.84663.3f5a1693dca6cb90f2d5532289375508.md |   61 ++
+ ....84663.3f5a1693dca6cb90f2d5532289375508.raw.txt |    0
+ ...663.3f5a1693dca6cb90f2d5532289375508.stderr.txt |   19 +
+ .../B.1-gemini-dispatch-intent.yaml                |   32 +
+ .../B.1-gemini-dispatch-result.yaml                |   72 ++
+ .../B.1-gpt-dispatch-intent.yaml                   |   31 +
+ .../D.2-gemini-dispatch-intent.yaml                |   32 +
+ .../D.2-gpt-dispatch-intent.yaml                   |   31 +
+ .../D.5-gemini-dispatch-intent.yaml                |   32 +
+ .../D.5-gpt-dispatch-intent.yaml                   |   31 +
+ .../final-approval.md                              |   68 +-
+ .../lifecycle-receipt-inventory.yaml               |   35 +-
+ .../strict-p3-dispatch-readiness.txt               |   64 ++
+ docs/specs/project-ontos-audit-doctor-rce-spec.md  |   35 +-
+ docs/trackers/project-ontos-audit-doctor-rce.md    |   89 +-
+ ...project-ontos-audit-remediation-release-line.md |  304 +++---
+ manifests/project-ontos-audit-doctor-rce.yaml      |  160 ++-
+ .../project-ontos-audit-remediation-registry.yaml  | 1046 ++++++++++++++++++++
+ .../project-ontos-audit-serializer-corruption.yaml |   82 +-
+ ontos/_hooks/pre-commit                            |   12 +-
+ ontos/_hooks/pre-push                              |   12 +-
+ ontos/cli.py                                       |  376 ++++---
+ ontos/command_registry.py                          |  123 +++
+ ontos/commands/activate.py                         |    9 +
+ ontos/commands/doctor.py                           |  136 ++-
+ ontos/commands/init.py                             |    1 +
+ ontos/commands/link_check.py                       |    4 +-
+ ontos/commands/log.py                              |   88 +-
+ ontos/commands/map.py                              |    9 +-
+ ontos/commands/migrate.py                          |   12 +-
+ ontos/commands/promote.py                          |   20 +-
+ ontos/commands/retrofit.py                         |   73 +-
+ ontos/commands/scaffold.py                         |   42 +-
+ ontos/commands/stub.py                             |   11 +-
+[0m
+[0m✱ [0mGlob "docs/specs/**/*audit*"[90m 3 matches[0m
+[0m→ [0mRead docs/specs/project-ontos-audit-rebaseline-remediation-spec.md
+[0m→ [0mRead docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/B.2-recert-glm-peer.prompt.md
+[0m→ [0mRead docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-recert-glm-peer.md
+[0m
+[0m# [0mTodos
+[•] Overwrite B.2-recert-glm-peer.md wrapper with 'pending wrapper F38 promotion'
+[ ] Independently review spec v1.2 and I0 b6f89d7 via bounded git inspection
+[ ] Write verdict to .raw/...review.txt with Template-03 sections + bare verdict token
+[ ] Emit stdout: Created + backticked .raw path; edit no other file, no commit
+[0m
+[0m← [0mWrite docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-recert-glm-peer.md
+Wrote file successfully.
+[0m
+[0m# [0mTodos
+[✓] Overwrite B.2-recert-glm-peer.md wrapper with 'pending wrapper F38 promotion'
+[•] Independently review spec v1.2 and I0 b6f89d7 via bounded git inspection
+[ ] Write verdict to .raw/...review.txt with Template-03 sections + bare verdict token
+[ ] Emit stdout: Created + backticked .raw path; edit no other file, no commit
+[0m
+[0m$ [0mecho "=== validator malformed-row sites (X-M2 anchors) ==="; git show b6f89d7:scripts/validate-audit-remediation-registry.py | rg -n 'row\.get\("id"\)|Counter\(ids\)|row\["id"\]|KeyError|missing fields|"issue"|require_external_parity|def validate' | head -40
+=== validator malformed-row sites (X-M2 anchors) ===
+32:    "issue",
+167:            "issue",
+209:def validate(require_external_parity: bool) -> list[str]:
+219:    ids = [row.get("id") for row in findings if isinstance(row, dict)]
+220:    duplicate_ids = sorted(key for key, count in Counter(ids).items() if count > 1)
+230:            errors.append(f"{row.get('id', index)} missing fields: {missing}")
+241:        if row.get("issue") not in range(146, 159):
+244:    original = {row["id"]: row for row in findings if row.get("origin") == "fable_audit"}
+245:    r2 = {row["id"]: row for row in findings if row.get("origin") == "codex_revalidation"}
+268:    fixed_original = {row["id"] for row in original.values() if row.get("status") == "code_fixed"}
+275:        row["id"]
+286:        row["id"]
+338:    calculated_counts = Counter(row["issue"] for row in original.values())
+348:    calculated_registry_counts = Counter(row["issue"] for row in findings)
+369:        by_issue[row["issue"]].append(row)
+370:    program_by_issue = {program["issue"]: program for program in programs}
+372:        program = program_by_issue.get(row["issue"])
+374:            if row["issue"] != 158:
+423:        program["issue"]
+471:                    pair = {left["issue"], right["issue"]}
+594:    if require_external_parity:
+622:            rows_by_issue[row["issue"]].append(row)
+632:            expected_ids = {row["id"] for row in expected_rows}
+656:                if row["id"] not in checkbox_states:
+659:                if checkbox_states[row["id"]] != expected_checked:
+706:        errors = validate(args.require_external_parity)
+715:    mode = "local+external" if args.require_external_parity else "local"
+[0m
+[0m$ [0mecho "=== log.py resolve/collision sites (X-M1 anchors) ==="; git show b6f89d7:ontos/commands/log.py | rg -n '\.resolve\(\)|open\(|E_LOG_EXISTS|logs_dir|_validate_path|SessionContext' | head -40
+=== log.py resolve/collision sites (X-M1 anchors) ===
+115:    logs_dir = (project_root / config.paths.logs_dir).resolve()
+118:    output_path = logs_dir / filename
+294:                code="E_LOG_EXISTS",
+337:    with output_path.open("x", encoding="utf-8", newline="") as handle:
+[0m
+[0m$ [0mecho "=== config.py version/required_version anchors ==="; git show b6f89d7:ontos/core/config.py | rg -n 'Incompatible Ontos version|Invalid \[ontos\]|invalid.*version clause|required_version|_validate_path' | head -40
+=== config.py version/required_version anchors ===
+49:    required_version: Optional[str] = None
+128:def _validate_path(path_str: str, repo_root: Path) -> bool:
+148:        ("ontos", "required_version"): str,
+167:            if section == "ontos" and key == "required_version" and value is None:
+176:    required_version = (
+177:        ontos_section.get("required_version")
+181:    if isinstance(required_version, str) and required_version.strip():
+184:        version_satisfies_requirement("0.0.0", required_version)
+226:    Supported clauses match the public ``required_version`` contract:
+243:            "ontos.required_version must be a valid semver range "
+249:def required_version_incompatibility(
+260:        return f"Invalid [ontos].required_version {required!r}: {exc}"
+264:        f"Incompatible Ontos version: running {running_version}, but this project "
+291:        raise ConfigError(f"invalid version clause {clause!r}")
+321:        raise ConfigError(f"invalid version clause {clause!r}")
+333:        raise ConfigError(f"invalid wildcard version clause {clause!r}")
+342:            raise ConfigError(f"invalid wildcard version clause {clause!r}")
+345:        raise ConfigError(f"invalid wildcard version clause {clause!r}")
+362:                if not _validate_path(paths_section[key], repo_root):
+[0m
+[0m$ [0mecho "=== json_output exit codes (reserved 4) ==="; git show b6f89d7:ontos/ui/json_output.py | rg -n 'exit_code|== 4|schema_version|"warnings"|"error"|"result"|"data"' | head -40
+=== json_output exit codes (reserved 4) ===
+24:    WARNINGS = "warnings"
+26:    ERROR = "error"
+45:    WARNINGS = "warnings"
+49:    ERROR = "error"
+67:        "warnings",
+83:    "warnings": ResultStatus.WARNINGS,
+117:            "status": "error",
+133:            "data": to_json(data),
+190:        exit_code=1,
+204:    exit_code: int,
+209:    schema_version: str = COMMAND_ENVELOPE_SCHEMA_VERSION,
+219:        schema_version=schema_version,
+222:        exit_code=exit_code,
+238:    exit_code: int,
+245:    schema_version: str = COMMAND_ENVELOPE_SCHEMA_VERSION,
+270:    execution_status = "success" if execution_succeeded else "error"
+272:        schema_version=schema_version,
+275:        exit_code=exit_code,
+291:    schema_version: str,
+294:    exit_code: int,
+315:        exit_code=exit_code,
+325:        exit_code=exit_code,
+331:            "schema_version": schema_version,
+334:            "exit_code": exit_code,
+336:            "result": {
+342:            "data": serialized_data,
+343:            "warnings": warnings or [],
+344:            "error": error,
+394:                "basis": "data",
+417:    exit_code: int,
+422:    if execution_status == "error":
+449:    if exit_code == 0:
+457:    exit_code: int,
+460:    if exit_code == 130:
+468:    if exit_code == 2:
+470:    if exit_code == 5:
+[0m
+[0m$ [0mecho "=== registry cardinality (91+9, 41 confirmed_open, 7 partial) ==="; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | rg -n '^- origin:|^- id:|^  status:|^  origin:|confirmed_open|partial|R2-|code_fixed' | head -20; echo "--- counts ---"; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | rg -c '^- id:' ; echo "origins:"; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | rg -c 'origin: fable_audit'; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | rg -c 'origin: codex_revalidation'; echo "confirmed_open:"; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | rg -c 'status: confirmed_open'; echo "partial-ish (contains 'partial'):"; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | rg -c 'partial'
+=== registry cardinality (91+9, 41 confirmed_open, 7 partial) ===
+50:      reason: "Issue reopened with the code_fixed_evidence_pending evidence contract on 2026-07-10."
+59:  status: unproven_rebaseline_integration
+73:    status: confirmed_open
+80:    status: code_fixed
+88:    status: confirmed_open
+104:    lifecycle_state: code_fixed_evidence_pending
+134:    lifecycle_state: code_fixed_evidence_pending
+160:    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+192:    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+231:    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+313:    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+338:    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+369:    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+385:    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+452:    status: code_fixed_evidence_pending
+453:    lifecycle_state: code_fixed_evidence_pending
+517:    status: partial_implementation_uncommitted_verification_pending
+518:    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+589:    status: partial_implementation_uncommitted_verification_pending
+590:    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+--- counts ---
+origins:
+2
+1
+confirmed_open:
+2
+partial-ish (contains 'partial'):
+21
+[0m
+[0m$ [0mecho "=== ci.yml windows anchors (139-170) ==="; git show b6f89d7:.github/workflows/ci.yml | rg -n 'windows-latest|msvcrt|windows-base-cli|runs-on:' | head; echo "=== publish.yml anchors (74-102,128-167,249-320) ==="; git show b6f89d7:.github/workflows/publish.yml | rg -n 'id-token: write|ontos==|--no-deps|TestPyPI|verify-wheel|manifest|sha256' | head -25
+=== ci.yml windows anchors (139-170) ===
+14:    runs-on: ubuntu-latest
+87:    runs-on: ubuntu-latest
+139:  windows-base-cli:
+141:    runs-on: windows-latest
+166:          python -c "from ontos.core.locking import backend_name; assert backend_name() == 'msvcrt', backend_name()"
+=== publish.yml anchors (74-102,128-167,249-320) ===
+2:# Build once, verify the downloaded wheel, publish that artifact to TestPyPI,
+3:# prove TestPyPI serves the same bytes, then promote the original artifact.
+90:            --write-manifest release-integrity.json
+98:      - name: Upload release integrity manifest
+104:  verify-wheel:
+122:      - name: Download release integrity manifest
+142:            --verify-manifest release-integrity.json
+161:    name: Publish to TestPyPI
+162:    needs: verify-wheel
+167:      id-token: write
+182:      - name: Download release integrity manifest
+199:            --verify-manifest release-integrity.json
+201:      - name: Publish to TestPyPI
+208:    name: Verify TestPyPI Artifact
+225:      - name: Download release integrity manifest
+249:      - name: Download and compare the exact TestPyPI wheel
+263:              --no-deps \
+266:              "ontos==${expected_version}"; then
+271:              echo "TestPyPI artifact not available yet (attempt $attempt/12); retrying"
+276:            echo "Exact TestPyPI artifact was not available after 12 attempts"
+281:            echo "Expected exactly one TestPyPI wheel, found ${#wheels[@]}"
+287:            --verify-manifest release-integrity.json
+289:      - name: Install the exact TestPyPI version without dependencies
+299:            --no-deps \
+301:            "ontos==${expected_version}"
+[0m
+[0m$ [0mecho "=== confirm Phase-C-required test files ABSENT at I0 ==="; for f in tests/test_audit_remediation_registry_validator.py tests/commands/test_log.py; do echo "--- $f ---"; git show b6f89d7:$f 2>&1 | rg -n 'test_default_logs_dir_symlink_is_rejected_before_resolution|test_distinct_missing_required_fields_are_collected_without_traceback|test_invalid_required_version_clause_is_reported_once' || echo "(absent or no such test fn at I0)"; done; echo "=== confirm existing test anchors present at I0 ==="; for f in tests/test_cli_contract_v4.py tests/test_document_loading_contract_a1.py tests/test_frontmatter_roundtrip_regression.py; do echo "--- $f ---"; git show b6f89d7:$f 2>&1 | rg -c '' ; done
+=== confirm Phase-C-required test files ABSENT at I0 ===
+--- tests/test_audit_remediation_registry_validator.py ---
+(absent or no such test fn at I0)
+--- tests/commands/test_log.py ---
+(absent or no such test fn at I0)
+=== confirm existing test anchors present at I0 ===
+--- tests/test_cli_contract_v4.py ---
+222
+--- tests/test_document_loading_contract_a1.py ---
+166
+--- tests/test_frontmatter_roundtrip_regression.py ---
+90
+[0m
+[0m$ [0mecho "=== registry top-level structure ==="; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | rg -n '^[a-z_]+:' | head -40
+=== registry top-level structure ===
+1:schema_version: 1
+2:registry_id: project-ontos-audit-remediation-registry
+3:source_audit: docs/reviews/2026-07-02-fable-repo-audit.md
+4:audit_baseline_commit: 589d919
+5:revalidation_commit: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+6:revalidation_report: docs/reviews/2026-07-10-codex-audit-revalidation.md
+7:generated_artifacts:
+9:github_snapshot:
+58:shared_tree_integration:
+69:row_templates:
+93:programs:
+414:shared_path_leases:
+447:findings:
+[0m
+[0m$ [0mecho "=== distinct status values + counts ==="; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | rg -o 'status: [a-z_]+' | sort | uniq -c | sort -rn; echo "=== distinct lifecycle_state values + counts ==="; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | rg -o 'lifecycle_state: [a-z_]+' | sort | uniq -c | sort -rn; echo "=== distinct origin values + counts ==="; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | rg -o 'origin: [a-z_]+' | sort | uniq -c | sort -rn
+=== distinct status values + counts ===
+  48 status: implemented_uncommitted_verification_pending
+   7 status: partial_implementation_uncommitted_verification_pending
+   2 status: resolved
+   2 status: confirmed_open
+   1 status: unproven_rebaseline_integration
+   1 status: implemented_uncommitted_parity_verified
+   1 status: code_fixed_evidence_pending
+   1 status: code_fixed
+=== distinct lifecycle_state values + counts ===
+  51 lifecycle_state: implementation_uncommitted_lifecycle_pending
+  14 lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+   3 lifecycle_state: code_fixed_evidence_pending
+   1 lifecycle_state: parity_verified_commit_pending
+=== distinct origin values + counts ===
+   2 origin: fable_audit
+   1 origin: codex_revalidation
+[0m
+[0m$ [0mecho "=== any '41' or tally fields ==="; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | rg -n '41|confirmed_open|open_count|count|tally|total' | head -30; echo "=== github_snapshot (lines 9-58) ==="; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | rg -n '' | rg '^(9|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-8]):' | head -55
+=== any '41' or tally fields ===
+17:  issue_finding_counts:
+30:  registry_finding_counts:
+73:    status: confirmed_open
+81:    fix_commit: 03c36e6ac999d2c411c13252baa2e8fcff60e6ed
+88:    status: confirmed_open
+132:    base_sha: c8672e90f2382f4147ef61b4fba918969483e73e
+133:    implementation_ref: 03c36e6ac999d2c411c13252baa2e8fcff60e6ed
+459:  - {<<: [*original_open, *p148], id: D1b-counts-1, severity: P1, release: v4.8.0}
+460:  - {<<: [*original_open, *p148], id: D1b-counts-2, severity: P1, release: v4.8.0}
+461:  - {<<: [*original_open, *p148], id: D1b-counts-3, severity: P1, release: v4.8.0}
+462:  - {<<: [*original_open, *p148], id: D1b-counts-4, severity: P1, release: v4.8.0}
+812:  - {<<: [*original_open, *p154], id: D1b-counts-5, severity: P2, release: v4.9.0}
+813:  - {<<: [*original_open, *p154], id: D1b-counts-6, severity: P2, release: v4.9.0}
+=== github_snapshot (lines 9-58) ===
+9:github_snapshot:
+10:  observed_at: "2026-07-10"
+11:  epic_issue: 158
+12:  epic_release_line_synced: true
+13:  r2_checklists_synced: true
+14:  original_checklist_policy: merged_and_verified_only
+15:  uncommitted_original_checklists_remain_unchecked: true
+16:  source_issues: [146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157]
+17:  issue_finding_counts:
+18:    146: 1
+19:    147: 2
+20:    148: 11
+21:    149: 20
+22:    150: 15
+23:    151: 5
+24:    152: 6
+25:    153: 9
+26:    154: 14
+27:    155: 1
+28:    156: 5
+29:    157: 2
+30:  registry_finding_counts:
+31:    146: 2
+32:    147: 2
+33:    148: 12
+34:    149: 21
+35:    150: 16
+36:    151: 6
+37:    152: 6
+38:    153: 12
+39:    154: 14
+40:    155: 1
+41:    156: 5
+42:    157: 2
+43:    158: 1
+44:  external_drift:
+45:    - issue: 147
+46:      field: state
+47:      observed: open
+48:      expected: open
+49:      status: resolved
+50:      reason: "Issue reopened with the code_fixed_evidence_pending evidence contract on 2026-07-10."
+51:    - issue: 149
+52:      field: severity
+53:      observed: P1
+54:      expected: P1
+55:      status: resolved
+56:      reason: "Issue retitled and relabeled P1-containing and moved to Audit Release N+1 on 2026-07-10."
+57:
+58:shared_tree_integration:
+[0m
+[0m$ [0mecho "=== findings section shape (447+) entry count ==="; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | awk 'NR>=447 && NR<=470' | rg -n 'id:|issue:|origin:|status:|R2-' ; echo "=== count finding entries (id: under findings) ==="; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | awk 'NR>=447' | rg -c 'id:' ; echo "=== R2- ids present? ==="; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | rg -o 'R2-[0-9]+' | sort -u | wc -l; echo "=== program rows count ==="; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | awk 'NR>=93 && NR<414' | rg -c 'issue:'
+=== findings section shape (447+) entry count ===
+3:    id: D2b-roundtrip-3
+6:    status: code_fixed_evidence_pending
+11:  - {<<: [*original_fixed, *p147], id: D4b-trust-1, severity: P1, release: v4.7.1}
+12:  - {<<: [*original_fixed, *p147], id: D4b-trust-2, severity: P2, release: v4.7.1}
+13:  - {<<: [*original_open, *p148], id: D1b-counts-1, severity: P1, release: v4.8.0}
+14:  - {<<: [*original_open, *p148], id: D1b-counts-2, severity: P1, release: v4.8.0}
+15:  - {<<: [*original_open, *p148], id: D1b-counts-3, severity: P1, release: v4.8.0}
+16:  - {<<: [*original_open, *p148], id: D1b-counts-4, severity: P1, release: v4.8.0}
+18:    id: D2a-write-safety-2
+21:    status: implemented_uncommitted_verification_pending
+=== count finding entries (id: under findings) ===
+100
+=== R2- ids present? ===
+       0
+=== program rows count ===
+12
+[0m
+[0m$ [0mecho "=== row_templates anchors (69-93) ==="; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | awk 'NR>=69 && NR<=93'; echo "=== anchor-usage counts in findings (447+) ==="; echo -n "original_open usages: "; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | awk 'NR>=447' | rg -c '\*original_open'; echo -n "original_fixed usages: "; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | awk 'NR>=447' | rg -c '\*original_fixed'; echo -n "original_partial usages: "; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | awk 'NR>=447' | rg -c '\*original_partial|partial'
+=== row_templates anchors (69-93) ===
+row_templates:
+  original_open: &original_open
+    origin: fable_audit
+    baseline_commit: 589d919
+    status: confirmed_open
+    fix_commit: null
+    verification_evidence:
+      - docs/reviews/2026-07-02-fable-repo-audit.md
+  original_fixed: &original_fixed
+    origin: fable_audit
+    baseline_commit: 589d919
+    status: code_fixed
+    fix_commit: 03c36e6ac999d2c411c13252baa2e8fcff60e6ed
+    verification_evidence:
+      - tests/test_doctor_mcp_probe_regression.py
+      - SECURITY.md
+  r2_open: &r2_open
+    origin: codex_revalidation
+    baseline_commit: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+    status: confirmed_open
+    fix_commit: null
+    verification_evidence:
+      - docs/reviews/2026-07-10-codex-audit-revalidation.md
+
+programs:
+=== anchor-usage counts in findings (447+) ===
+original_open usages: 89
+original_fixed usages: 2
+original_partial usages: 14
+[0m
+[0m$ [0mecho "=== search for R2 markers / codex_revalidation anchor in findings ==="; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | rg -n 'R2|codex_revalidation|revalidation' | head -20; echo "=== how are the 9 extra (registry vs issue) findings distinguished? Sample ids around codex_revalidation ==="; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | rg -n '<<: \*\w+' | head; echo "=== distinct anchors used in findings ==="; git show b6f89d7:manifests/project-ontos-audit-remediation-registry.yaml | awk 'NR>=447' | rg -o '\*[a-z_]+' | sort | uniq -c | sort -rn
+=== search for R2 markers / codex_revalidation anchor in findings ===
+5:revalidation_commit: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+6:revalidation_report: docs/reviews/2026-07-10-codex-audit-revalidation.md
+86:    origin: codex_revalidation
+91:      - docs/reviews/2026-07-10-codex-audit-revalidation.md
+913:    id: R2-test-hermeticity-1
+926:    id: R2-context-tmp-symlink-1
+939:    id: R2-loader-id-type-1
+953:    id: R2-windows-fcntl-import-1
+968:    id: R2-lifecycle-type-enumeration-1
+984:    id: R2-testpypi-provenance-1
+996:    id: R2-activation-version-skew-1
+1015:    id: R2-mcp-readonly-export-1
+1030:    id: R2-control-plane-parity-1
+1041:      - docs/reviews/2026-07-10-codex-audit-revalidation.md
+=== how are the 9 extra (registry vs issue) findings distinguished? Sample ids around codex_revalidation ===
+1029:  - <<: *r2_open
+=== distinct anchors used in findings ===
+  99 *p
+  89 *original_open
+   9 *r
+   2 *original_fixed
+[0m
+[0m$ [0mecho "=== validate() control flow 219-300 (does missing-field check return early?) ==="; git show b6f89d7:scripts/validate-audit-remediation-registry.py | awk 'NR>=219 && NR<=300{printf "%d: %s\n", NR, $0}'
+=== validate() control flow 219-300 (does missing-field check return early?) ===
+219:     ids = [row.get("id") for row in findings if isinstance(row, dict)]
+220:     duplicate_ids = sorted(key for key, count in Counter(ids).items() if count > 1)
+221:     if duplicate_ids:
+222:         errors.append(f"duplicate registry IDs: {duplicate_ids}")
+223: 
+224:     for index, row in enumerate(findings):
+225:         if not isinstance(row, dict):
+226:             errors.append(f"finding row {index} is not a mapping")
+227:             continue
+228:         missing = sorted(REQUIRED_FINDING_FIELDS - row.keys())
+229:         if missing:
+230:             errors.append(f"{row.get('id', index)} missing fields: {missing}")
+231:         if not isinstance(row.get("verification_evidence"), list) or not row.get("verification_evidence"):
+232:             errors.append(f"{row.get('id', index)} has no verification evidence")
+233:         else:
+234:             for evidence_path in row["verification_evidence"]:
+235:                 if not isinstance(evidence_path, str) or not (ROOT / evidence_path).exists():
+236:                     errors.append(
+237:                         f"{row.get('id', index)} evidence path is missing: {evidence_path!r}"
+238:                     )
+239:         if not isinstance(row.get("allowed_paths"), list) or not row.get("allowed_paths"):
+240:             errors.append(f"{row.get('id', index)} has no allowed paths")
+241:         if row.get("issue") not in range(146, 159):
+242:             errors.append(f"{row.get('id', index)} has invalid issue assignment {row.get('issue')!r}")
+243: 
+244:     original = {row["id"]: row for row in findings if row.get("origin") == "fable_audit"}
+245:     r2 = {row["id"]: row for row in findings if row.get("origin") == "codex_revalidation"}
+246:     if set(original) != set(audit):
+247:         errors.append(
+248:             "original register mismatch: "
+249:             f"missing={sorted(set(audit) - set(original))}, extra={sorted(set(original) - set(audit))}"
+250:         )
+251:     for finding_id in sorted(set(original) & set(audit)):
+252:         if original[finding_id].get("severity") != audit[finding_id]:
+253:             errors.append(
+254:                 f"severity mismatch for {finding_id}: registry={original[finding_id].get('severity')} "
+255:                 f"report={audit[finding_id]}"
+256:             )
+257:     original_counts = Counter(row.get("severity") for row in original.values())
+258:     if original_counts != Counter({"P0": 1, "P1": 27, "P2": 63}):
+259:         errors.append(f"original severity totals are wrong: {dict(original_counts)}")
+260:     if set(r2) != EXPECTED_R2_IDS:
+261:         errors.append(
+262:             f"R2 register mismatch: missing={sorted(EXPECTED_R2_IDS - set(r2))}, "
+263:             f"extra={sorted(set(r2) - EXPECTED_R2_IDS)}"
+264:         )
+265:     if "D6a-test-gaps-3" in original:
+266:         errors.append("phantom roadmap ID D6a-test-gaps-3 must not enter the registry")
+267: 
+268:     fixed_original = {row["id"] for row in original.values() if row.get("status") == "code_fixed"}
+269:     if fixed_original != {"D4b-trust-1", "D4b-trust-2"}:
+270:         errors.append(f"unexpected committed code-fixed original set: {sorted(fixed_original)}")
+271:     serializer_row = original.get("D2b-roundtrip-3", {})
+272:     if serializer_row.get("status") != "code_fixed_evidence_pending" or serializer_row.get("fix_commit") is not None:
+273:         errors.append("D2b-roundtrip-3 must be uncommitted code_fixed_evidence_pending")
+274:     implemented_original = {
+275:         row["id"]
+276:         for row in original.values()
+277:         if row.get("status") == "implemented_uncommitted_verification_pending"
+278:     }
+279:     if implemented_original != EXPECTED_IMPLEMENTED_UNCOMMITTED_ORIGINAL_IDS:
+280:         errors.append(
+281:             "implemented-uncommitted original set mismatch: "
+282:             f"missing={sorted(EXPECTED_IMPLEMENTED_UNCOMMITTED_ORIGINAL_IDS - implemented_original)}, "
+283:             f"extra={sorted(implemented_original - EXPECTED_IMPLEMENTED_UNCOMMITTED_ORIGINAL_IDS)}"
+284:         )
+285:     partial_original = {
+286:         row["id"]
+287:         for row in original.values()
+288:         if row.get("status") == "partial_implementation_uncommitted_verification_pending"
+289:     }
+290:     if partial_original != EXPECTED_PARTIAL_UNCOMMITTED_ORIGINAL_IDS:
+291:         errors.append(
+292:             "partial-uncommitted original set mismatch: "
+293:             f"missing={sorted(EXPECTED_PARTIAL_UNCOMMITTED_ORIGINAL_IDS - partial_original)}, "
+294:             f"extra={sorted(partial_original - EXPECTED_PARTIAL_UNCOMMITTED_ORIGINAL_IDS)}"
+295:         )
+296:     expected_status_counts = Counter(
+297:         {
+298:             "confirmed_open": 41,
+299:             "implemented_uncommitted_verification_pending": 40,
+300:             "partial_implementation_uncommitted_verification_pending": 7,
+[0m
+[0m$ [0mecho "=== lines 340-385 (covers 348, 369, 372-387) ==="; git show b6f89d7:scripts/validate-audit-remediation-registry.py | awk 'NR>=340 && NR<=385{printf "%d: %s\n", NR, $0}'; echo "=== lines 615-665 (covers 622, 632, 656-661) ==="; git show b6f89d7:scripts/validate-audit-remediation-registry.py | awk 'NR>=615 && NR<=665{printf "%d: %s\n", NR, $0}'
+=== lines 340-385 (covers 348, 369, 372-387) ===
+340:     if dict(sorted(calculated_counts.items())) != dict(sorted(normalized_snapshot_counts.items())):
+341:         errors.append(
+342:             "GitHub issue finding-count snapshot mismatch: "
+343:             f"registry={dict(sorted(calculated_counts.items()))}, snapshot={normalized_snapshot_counts}"
+344:         )
+345:     registry_snapshot_counts = (
+346:         registry.get("github_snapshot", {}).get("registry_finding_counts", {})
+347:     )
+348:     calculated_registry_counts = Counter(row["issue"] for row in findings)
+349:     normalized_registry_counts = {
+350:         int(key): int(value) for key, value in registry_snapshot_counts.items()
+351:     }
+352:     if dict(sorted(calculated_registry_counts.items())) != dict(
+353:         sorted(normalized_registry_counts.items())
+354:     ):
+355:         errors.append(
+356:             "GitHub all-finding count snapshot mismatch: "
+357:             f"registry={dict(sorted(calculated_registry_counts.items()))}, "
+358:             f"snapshot={normalized_registry_counts}"
+359:         )
+360:     if sum(calculated_registry_counts.values()) != len(findings) or len(findings) != 100:
+361:         errors.append(
+362:             "registry count invariant failed: "
+363:             f"mapped={sum(calculated_registry_counts.values())}, rows={len(findings)}, expected=100"
+364:         )
+365: 
+366:     severity_rank = {"P0": 0, "P1": 1, "P2": 2}
+367:     by_issue: dict[int, list[dict[str, Any]]] = defaultdict(list)
+368:     for row in original.values():
+369:         by_issue[row["issue"]].append(row)
+370:     program_by_issue = {program["issue"]: program for program in programs}
+371:     for row in findings:
+372:         program = program_by_issue.get(row["issue"])
+373:         if program is None:
+374:             if row["issue"] != 158:
+375:                 errors.append(f"{row['id']} has no owning program row")
+376:             continue
+377:         uncovered = [
+378:             path
+379:             for path in row.get("allowed_paths", [])
+380:             if not any(
+381:                 path_scope_covers(program_path, path)
+382:                 for program_path in program.get("allowed_paths", [])
+383:             )
+384:         ]
+385:         if uncovered:
+=== lines 615-665 (covers 622, 632, 656-661) ===
+615:                 errors.append(
+616:                     f"external parity drift marked resolved with unequal values: "
+617:                     f"issue #{item.get('issue')} {item.get('field')}"
+618:                 )
+619: 
+620:         rows_by_issue: dict[int, list[dict[str, Any]]] = defaultdict(list)
+621:         for row in findings:
+622:             rows_by_issue[row["issue"]].append(row)
+623:         milestone_markers = {
+624:             1: "Audit Release N",
+625:             2: "Audit Release N+1",
+626:             3: "Audit Release N+2",
+627:         }
+628:         for issue in range(146, 159):
+629:             live = live_github_issue(issue)
+630:             program = program_by_issue.get(issue)
+631:             expected_rows = rows_by_issue.get(issue, [])
+632:             expected_ids = {row["id"] for row in expected_rows}
+633:             body = live.get("body") or ""
+634: 
+635:             if issue == 158 and not expected_ids <= set(body.split()):
+636:                 # Epic punctuation/backticks make token equality inconvenient;
+637:                 # require every epic-owned ID literally in the body.
+638:                 missing = sorted(item for item in expected_ids if item not in body)
+639:                 if missing:
+640:                     errors.append(f"live GitHub epic #158 is missing rows: {missing}")
+641: 
+642:             checkbox_states = github_checkbox_states(body)
+643:             if issue <= 157 and set(checkbox_states) != expected_ids:
+644:                 errors.append(
+645:                     f"live GitHub issue #{issue} finding checklist mismatch: "
+646:                     f"missing={sorted(expected_ids - set(checkbox_states))}, "
+647:                     f"extra={sorted(set(checkbox_states) - expected_ids)}"
+648:                 )
+649:             missing_checkboxes = expected_ids - set(checkbox_states)
+650:             if missing_checkboxes:
+651:                 errors.append(
+652:                     f"live GitHub issue #{issue} is missing checklist rows: "
+653:                     f"{sorted(missing_checkboxes)}"
+654:                 )
+655:             for row in expected_rows:
+656:                 if row["id"] not in checkbox_states:
+657:                     continue
+658:                 expected_checked = row.get("status") == "code_fixed"
+659:                 if checkbox_states[row["id"]] != expected_checked:
+660:                     errors.append(
+661:                         f"live GitHub checklist status mismatch for {row['id']}: "
+662:                         f"checked={checkbox_states[row['id']]} expected={expected_checked}"
+663:                     )
+664: 
+665:             expected_state = (program or {}).get("github_state", "open").upper()
+[0m
+[0m$ [0mecho "=== schema.py ID contract (83-97, 315-343) ==="; git show b6f89d7:ontos/core/schema.py | awk 'NR>=83 && NR<=97{printf "%d: %s\n", NR, $0}'; git show b6f89d7:ontos/core/schema.py | awk 'NR>=315 && NR<=343{printf "%d: %s\n", NR, $0}' | rg -n 'def |string|empty|pattern|ValueError|Document id' | head -15
+=== schema.py ID contract (83-97, 315-343) ===
+83: def validate_document_id(value: Any) -> str:
+84:     """Return a valid document ID or raise a user-actionable ``ValueError``."""
+85:     if not isinstance(value, str):
+86:         raise ValueError(
+87:             f"Document id must be a string, got {type(value).__name__}: {value!r}"
+88:         )
+89:     normalized = value.strip()
+90:     if not normalized:
+91:         raise ValueError("Document id must not be empty")
+92:     if not DOCUMENT_ID_PATTERN.fullmatch(normalized):
+93:         raise ValueError(
+94:             "Document id must start and end with an alphanumeric character "
+95:             "and contain only letters, numbers, '_', '-', or '.'"
+96:         )
+97:     return normalized
+1:315: def serialize_frontmatter(fm: Dict[str, Any]) -> str:
+8:322:         YAML-formatted string without the surrounding --- markers.
+[0m
+[0m$ [0mecho "=== context.py writer anchor (645-770: reject outside-root/symlink/exclusive/flush+fsync/replace) ==="; git show b6f89d7:ontos/core/context.py | awk 'NR>=645 && NR<=770{printf "%d: %s\n", NR, $0}' | rg -n 'def |symlink|fsync|flush|os.replace|open\(|exclusive|\.resolve|outside|O_EXCL|chmod' | head -20; echo "=== locking.py (13-81) fcntl/msvcrt ==="; git show b6f89d7:ontos/core/locking.py | rg -n 'fcntl|msvcrt|def |import|backend_name' | head
+=== context.py writer anchor (645-770: reject outside-root/symlink/exclusive/flush+fsync/replace) ===
+1:645:     def _reject_parent_symlinks(self, path: Path) -> None:
+2:646:         root = self.repo_root.expanduser().resolve()
+8:652:                 raise ValueError(f"operation path must not contain a symlink: {current}")
+12:656:     def _entry_stat(self, anchor: _DirectoryAnchor, name: str) -> Optional[os.stat_result]:
+15:659:                 return os.stat(name, dir_fd=anchor.fd, follow_symlinks=False)
+20:664:     def _entry_is_regular(self, anchor: _DirectoryAnchor, name: str) -> bool:
+26:670:             raise ValueError(f"destination must not be a symlink: {path}")
+31:675:     def _create_unique_file(
+46:690:         flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
+51:695:                 fd = os.open(name, flags, 0o600, dir_fd=anchor.fd)
+56:700:     def _stage_text(
+62:706:         """Write and fsync UTF-8 content to an anchored exclusive temp file."""
+68:712:                     f"destination must not be a symlink: {anchor.path / final_name}"
+81:725:             if hasattr(os, "fchmod"):
+83:727:                 os.fchmod(fd, mode)
+84:728:             with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
+87:731:                 handle.flush()
+88:732:                 os.fsync(handle.fileno())
+96:740:     def _reserve_backup(self, anchor: _DirectoryAnchor, final_name: str) -> str:
+105:749:     def _replace_entry(
+=== locking.py (13-81) fcntl/msvcrt ===
+3:The package supports Windows for its base CLI, so importing Ontos must not
+4:unconditionally import the POSIX-only :mod:`fcntl` module.  Both the CLI write
+8:from __future__ import annotations
+10:import os
+11:from typing import IO
+14:    import fcntl as _fcntl
+16:    _fcntl = None
+18:try:  # pragma: no branch - imported only on Windows.
+19:    import msvcrt as _msvcrt
+21:    _msvcrt = None
+[0m
+[0m$ [0mecho "=== test anchors exist at I0? ==="; for f in tests/core/test_config_phase3.py tests/commands/test_agentic_activation_resilience.py tests/commands/test_doctor_phase4.py tests/mcp/test_locking.py tests/test_ci_release_workflows.py tests/test_frontmatter_roundtrip_regression.py tests/test_document_loading_contract_a1.py tests/test_cli_contract_v4.py tests/mcp/test_read_only_registration.py tests/test_session_context.py tests/commands/test_log.py; do n=$(git show b6f89d7:$f 2>/dev/null | rg -c '' ); [ -z "$n" ] && n="ABSENT"; echo "$f -> $n lines"; done
+=== test anchors exist at I0? ===
+tests/core/test_config_phase3.py -> 261 lines
+tests/commands/test_agentic_activation_resilience.py -> 254 lines
+tests/commands/test_doctor_phase4.py -> 707 lines
+tests/mcp/test_locking.py -> 76 lines
+tests/test_ci_release_workflows.py -> 88 lines
+tests/test_frontmatter_roundtrip_regression.py -> 90 lines
+tests/test_document_loading_contract_a1.py -> 166 lines
+tests/test_cli_contract_v4.py -> 222 lines
+tests/mcp/test_read_only_registration.py -> 174 lines
+tests/test_session_context.py -> 399 lines
+tests/commands/test_log.py -> 176 lines
+[0m
+[0m$ [0mecho "=== reserved exit code 4 coverage in v4 contract tests ==="; git show b6f89d7:tests/test_cli_contract_v4.py | rg -n 'reserved|exit_code.*4|== 4|!= 4|"4"|code 4' | head; echo "(blank above = no reserved-4 assertion)"; echo "=== json_output exit branches (confirm no code-4) ==="; git show b6f89d7:ontos/ui/json_output.py | awk 'NR>=445 && NR<=475{printf "%d: %s\n", NR, $0}'
+=== reserved exit code 4 coverage in v4 contract tests ===
+(blank above = no reserved-4 assertion)
+=== json_output exit branches (confirm no code-4) ===
+445:     ):
+446:         return ResultStatus.INCOMPLETE.value
+447:     if selected is not None:
+448:         return selected.value
+449:     if exit_code == 0:
+450:         return ResultStatus.CLEAN.value
+451:     return ResultStatus.FINDINGS.value
+452: 
+453: 
+454: def _exit_category(
+455:     *,
+456:     execution_status: str,
+457:     exit_code: int,
+458:     result_status: str,
+459: ) -> str:
+460:     if exit_code == 130:
+461:         return ExitCategory.INTERRUPTED.value
+462:     if execution_status == "success":
+463:         if result_status == ResultStatus.CLEAN.value:
+464:             return ExitCategory.CLEAN.value
+465:         if result_status == ResultStatus.WARNINGS.value:
+466:             return ExitCategory.WARNINGS.value
+467:         return ExitCategory.FINDINGS.value
+468:     if exit_code == 2:
+469:         return ExitCategory.USAGE.value
+470:     if exit_code == 5:
+471:         return ExitCategory.INTERNAL.value
+472:     return ExitCategory.ERROR.value
+473: 
+474: 
+475: def validate_json_output(output: str) -> bool:
+[0m
+[0m# [0mTodos
+[✓] Overwrite B.2-recert-glm-peer.md wrapper with 'pending wrapper F38 promotion'
+[✓] Independently review spec v1.2 and I0 b6f89d7 via bounded git inspection
+[•] Write verdict to .raw/...review.txt with Template-03 sections + bare verdict token
+[ ] Emit stdout: Created + backticked .raw path; edit no other file, no commit
+[0m

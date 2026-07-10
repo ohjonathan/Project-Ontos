@@ -1,0 +1,17 @@
+Shape verified manually — frontmatter complete, `status: completed`, H1 present, `## Verdict` first non-blank line is bare `Approve`. (The repo's `scripts/llm-dev lint-artifact` itself fails to start under Python 3.14 on an em-dash `SyntaxError` — a repo tooling issue, not an artifact defect.) The throwaway I0 worktree is removed; my artifact is the only new file. As a review-phase worker I do not commit — the orchestrator stages on my behalf.
+
+## Final report — project-ontos-audit-rebaseline-remediation / B.1 (recert) / adversarial / claude
+
+- **Status:** completed
+- **Artifacts written:** `docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-recert-claude-adversarial.md` (only)
+- **Verdict:** **Approve**
+- **Blockers:** none. Should-fix: 1 (X-SF1, reachability caution for the Phase C X-M2 regression). Minor: 2 (corroboration of the spec's disclosed X-M1 / X-M2 gates).
+- **Smoke checks:** registry validator at frozen I0 `b6f89d7` = **pass** (`exit 0`, 100 findings, `P0=1/P1=27/P2=63`, `confirmed_open=41`, `partial_uncommitted=7`) — evidence: direct-run. Cardinality "registry = 100 findings" = **pass** (direct-run). Frozen snapshot exists = **pass** (direct-run).
+- **Cardinality checks:** 91+9 = 100 assignment cardinality = pass; `shared_tree_integration.release_blocking is True` = pass (direct-run).
+- **Commit:** not committed (review-phase worker; orchestrator stages). Branch `codex/audit-rebaseline-remediation-lifecycle` @ `5e04094`.
+- **Notes:**
+  - Reviewed against the **frozen I0 snapshot** in an isolated detached worktree + venv, not the HEAD working tree. The validator *fails at HEAD* (post-I0 "Phase C registry regression" churn, O4 lifecycle-state drift) but *passes at I0*; the HEAD failure is out of scope and was deliberately excluded to avoid a false blocker.
+  - Every §11 `direct-run`-claimed invariant survived adversarial direct-run (serializer round-trip 15/15 fail-closed; writer rejects symlink-parent / symlink-dest / outside-root with a non-vacuous inside-root control; log collision refused; registry status parity enforced).
+  - The two reproducible defects (X-M1 log `.resolve()` symlink escape; X-M2 validator `KeyError` on a missing-`id` row at line 244) are the spec's **own explicitly-disclosed, correctly-cited, Phase-C-gated** items — accurate disclosure, not overclaim. B.1 approval does not discharge them.
+  - Family-diversity invariant satisfied (author `codex` / reviewer `claude`). No same-provider halt.
+  - Repo hygiene: throwaway worktree removed; no repo file other than the artifact written.

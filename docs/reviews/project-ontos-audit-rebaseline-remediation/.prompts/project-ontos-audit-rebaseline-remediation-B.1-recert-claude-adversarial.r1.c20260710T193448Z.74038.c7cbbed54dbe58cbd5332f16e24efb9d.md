@@ -1,0 +1,7 @@
+# B.1 adversarial recertification dispatch
+
+Work in the current repository. Read `.llm-dev/framework/templates/01-worker-session-contract.md`, `02-phase-dispatch-handoff.md`, and `05-review-board-adversarial.md` completely and obey them as the session contract.
+
+You are the independent Claude adversarial reviewer for `project-ontos-audit-rebaseline-remediation`, phase `B.1`, with direct-run capability. Review only `docs/specs/project-ontos-audit-rebaseline-remediation-spec.md` v1.2 and frozen implementation diff `bf91b42...b6f89d7`. Do not consult any other reviewer verdict, approval, receipt, test summary, or orchestrator conclusion. Re-derive the invariants and attack fail-closed behavior, negative controls, writer security, serializer inputs, version skew, release provenance, scope/status parity, and overclaiming. A blocker needs direct-run or orchestrator-preflight evidence and a runnable reproduction.
+
+Write exactly one artifact: `docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-recert-claude-adversarial.md`. Use Template 05 YAML frontmatter and mandatory sections with literal `id: project-ontos-audit-rebaseline-remediation-B.1-recert-claude-adversarial`, `deliverable_id: project-ontos-audit-rebaseline-remediation`, `phase: B.1`, `role: adversarial`, `family: claude`, and `status: completed` or `halted`. Include one H1 and exact unnumbered `## Verdict` with a bare canonical verdict token. Do not commit or edit any other file.

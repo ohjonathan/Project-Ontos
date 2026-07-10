@@ -1,0 +1,39 @@
+---
+id: project-ontos-audit-rebaseline-remediation-B.1-recert-gemini-alignment
+deliverable_id: project-ontos-audit-rebaseline-remediation
+phase: B.1
+role: alignment
+family: gemini
+evidence_labels_used: [static-inspection]
+status: completed
+---
+
+# B.1 Alignment Recertification
+
+### 1. Authority Alignment and Core Binding
+* **Authority Definition**: Binds Spec v1.2 base `bf91b42` to frozen I0 `b6f89d7`.
+* **Cardinality Track**: 91 original plus 9 R2 findings, preserving 41 open and 7 partial rows.
+* **Metadata Baseline**: Generated metadata derived entirely from a clean tracked snapshot.
+* **Explicit Disclaimers**: Disclaims historical lease proof, per-issue certification, D.6, release, and edits to the two preserved user documents.
+
+### 2. Implementation and System Requirements
+* **Data Integrity**: Enforces semantic YAML round trips and string IDs.
+* **Workspace Safety**: Enforces workspace-contained no-follow writes and log collision refusal.
+* **Environment Verification**: Enforces repository-version activation/doctor checks and cross-platform locks.
+* **Behavior Constraints**: Exhaustive lifecycle types and non-mutating read-only MCP.
+* **Interface Parity**: Enforces schema-v4 CLI contracts, registry parity, and one-wheel publishing provenance.
+
+### 3. External Dependencies & Blockers
+* **External Pending Evidence**: Windows and TestPyPI executions are treated as external pending evidence.
+
+### 4. Phase C Alignment Readyness
+* **Malformation Handling**: Supports all-field malformed-registry collection.
+* **Regression Prevention**: Targets reachable default-path symlink regressions.
+* **Version Safety**: Implements singular version diagnostics.
+* **Manual & Migration**: Prepares public manual/migration copy and committed-but-uncertified registry states.
+
+## Verdict
+Approve
+
+## Notes
+The alignment analysis confirms that all specifications for Phase B.1 are met under the static evidence constraint. All disclaimers and external dependency classifications match the v1.2 specification boundaries.

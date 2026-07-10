@@ -1,0 +1,17 @@
+Product recertification complete. I wrote the single required artifact and did not commit (review-phase workers leave staging to the orchestrator).
+
+**Verdict: Approve** — `docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-recert-claude-product.md`
+
+This was a code-first B.1 recert (manifest declares `mode: code-first-user-gated`, `implementation_ref: b6f89d7`), so I ran the §2.2 spec-vs-implementation cross-reference against the frozen I0 diff (`bf91b42..b6f89d7`), reading committed bytes via `git show` — evidence is `static-inspection` throughout, so nothing is raised at blocking severity.
+
+Key conclusions:
+- **Every user-facing surface the spec claims *for I0* is present and matches its pinned copy**: `E_LOG_EXISTS` (never overwrites, JSON+text), ID-validation copy, activation quartet (`shell 1` + `E_ACTIVATION_UNUSABLE` + `data.status: not_usable` + "Incompatible Ontos version…"), the 9-key schema-v4 envelope with exit `4` reserved/omitted, and read-only MCP that *omits* write tools.
+- **Deferred surfaces are honestly labeled Phase C gates, not overclaimed**: I confirmed the log writer still `.resolve()`s `logs_dir` at I0 (symlink no-follow absent) and the Migration doc lacks the exit/`E_LOG_EXISTS`/`required_version` copy — both consistent with the spec's own §4.3/§7/§11 gate labeling.
+
+Findings (0 blocking, 3 should-fix, 2 minor):
+- **PRD-1** (should-fix): unsafe-path/symlink write refusal is promised in prose but its *user-facing* code/copy is never inventoried the way `E_LOG_EXISTS` is; at I0 those refusals are bare `ValueError`s and `log`'s catches (`FileExistsError`/`OSError` only) would let one escape as a traceback.
+- **PRD-2** (should-fix): log-collision copy dead-ends with no recovery hint.
+- **PRD-3** (should-fix): §7 migration obligation should explicitly warn that warnings now return exit `3`, breaking `exit==0` CI/hooks.
+- **PRD-4/5** (minor): activation message names no target version/command; ID pattern-failure branch omits the offending value.
+
+Halt conditions: none triggered — spec declares `user_facing: true` and has evaluable user-value/surfaces.

@@ -1,0 +1,20 @@
+Throwaway removed; only my artifact was written. Session complete.
+
+## Final report — project-ontos-audit-rebaseline-remediation / B.2 / adversarial / claude
+- **Status:** completed
+- **Artifacts written:** `docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-recert-claude-adversarial.md`
+- **Smoke checks:** frozen-diff reproduction = pass (evidence: direct-run, throwaway detached I0 worktree at `b6f89d7`, removed after use)
+- **Cardinality checks:** one artifact at the mandated path = pass; one H1, one unnumbered `## Verdict` with bare canonical token = pass
+- **Commit:** not committed — review-phase worker per Template 01 §Commit-split; orchestrator stages/commits
+- **Verdict:** `Request changes`
+- **Notes:** Cross-provider adversarial (author `codex` ≠ reviewer `claude`); strict-P3, no fallback labeling.
+
+### What I found (verdict: Request changes — 0 blockers, 2 Major should-fix, 1 minor)
+
+- **X-1 (should-fix, direct-run).** §4.1's operative anchors permit a vacuous pass against its own universal clause. The enumerated site list omits the reachable `row["severity"]` subscript at `validate-audit-remediation-registry.py:404`, and the mandated omission regressions cover only `id`/`issue`. Direct-run on a throwaway I0 checkout: a `severity`-missing `fable_audit` row raises `KeyError: 'severity'` at line 404, bypassing the intended collected-`missing fields` path (falls to the generic `except → exit 2`). Fix: complete the enumeration, or mandate a row-level skip, or add a `severity` regression. (I verified 348/369/622 are *forced* by the `issue` regression, so severity is the only true gap.)
+- **X-2 (should-fix, direct-run).** The named test `…_reported_once` can green on unfixed code — the `Invalid [ontos].required_version` prefix is already singular at I0; the actually-duplicated token is the clause literal (`version clause 'garbage' 'garbage' …`). Spec should pin the assertion to the clause token.
+- **M-1 (minor, static-inspection).** §4.3's "config-contained path… not rejected by config" + "outside-workspace sentinel unchanged" are only jointly realizable via the no-follow pin / plant-after-load ordering, because `_validate_path` `.resolve()`s and rejects outside-resolving paths; the non-vacuous construction is left implicit.
+
+Confirmed sound / no finding: log-symlink fix direction (I0 defect is real), status/lifecycle count-pinning, and public-contract fidelity (ID copy + regex `^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$` match the spec exactly).
+
+One process note for you: this artifact is written but **uncommitted** by design — it needs orchestrator staging, and the B.3 consolidation gate should run `verify-family-dispatch.sh --require-complete` before consuming it.

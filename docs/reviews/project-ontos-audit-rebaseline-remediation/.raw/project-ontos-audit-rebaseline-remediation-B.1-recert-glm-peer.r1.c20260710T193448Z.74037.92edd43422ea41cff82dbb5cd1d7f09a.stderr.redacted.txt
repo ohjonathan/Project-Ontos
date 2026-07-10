@@ -1,0 +1,781 @@
+[0m
+> build · glm-5.2
+[0m
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead .<redacted:secret>[90m [offset=878][0m
+[0m
+[0m$ [0mgit branch --show-current && echo "---HEAD---" && git rev-parse HEAD && echo "---SHORT---" && git log --oneline -8
+codex/audit-rebaseline-remediation-lifecycle
+---HEAD---
+5e04094d26d9711a54ee4ab11876cd19cb52a9c4
+---SHORT---
+5e04094 Authorize Phase C registry regression
+3827a65 Approve audit remediation design
+e63a0a5 Incorporate B.2 design findings
+7145b39 Record B.2 audit design review
+19af0c9 Clarify B.2 verdict shapes
+5367842 Freeze B.2 review dispatch
+02afc68 Record B.1 audit design review
+eb045e9 Make B.1 GLM route-redaction safe
+[0m
+[0m$ [0mgit log --oneline -1 b6f89d7 2>&1; echo "---STAT---"; git show --stat --oneline b6f89d7 2>&1 | head -60
+b6f89d7 Implement audit rebaseline remediation
+---STAT---
+b6f89d7 Implement audit rebaseline remediation
+ .github/workflows/ci.yml                           |   95 +-
+ .github/workflows/publish.yml                      |  282 +++++-
+ .ontos-internal/logs/2026-07-02_init.md            |   21 -
+ .<redacted:secret>            |   21 -
+ .<redacted:secret>            |   21 -
+ .ontos.toml                                        |    2 +-
+ .ontos/hooks/pre-commit                            |   14 +-
+ .ontos/hooks/pre-push                              |   14 +-
+ .ontos/scripts/tests/test_context.py               |   14 +-
+ .ontos/scripts/tests/test_schema.py                |   21 +-
+ .pre-commit-config.yaml                            |   19 +-
+ AGENTS.md                                          |   29 +-
+ Ontos_Context_Map.md                               |   52 +-
+ ..._merge-pr-118-v4-5-closes-issues-115-116-117.md |    2 +-
+ .../<redacted:secret>     |   58 ++
+ docs/reference/Migration_v3_to_v4.md               |    2 +-
+ docs/reference/Ontos_Manual.md                     |   11 +-
+ .../retros/project-ontos-audit-doctor-rce-retro.md |   82 +-
+ <redacted:secret>        |    8 +-
+ .../<redacted:secret> |  262 +++++
+ .../.<redacted:secret>      |   61 ++
+ .../.prompts/B.1-gpt-alignment.prompt.md           |   55 +
+ .../.<redacted:secret>      |   55 +
+ .../.prompts/D.2-gpt-alignment.prompt.md           |   55 +
+ .../.prompts/D.5-gemini-verifier.prompt.md         |   43 +
+ .../.prompts/D.5-gpt-verifier.prompt.md            |   45 +
+ ...<redacted:secret> |   61 ++
+ ....<redacted:secret> |    0
+ ...<redacted:secret> |   19 +
+ .../B.1-gemini-dispatch-intent.yaml                |   32 +
+ .../B.1-gemini-dispatch-result.yaml                |   72 ++
+ .../B.1-gpt-dispatch-intent.yaml                   |   31 +
+ .../D.2-gemini-dispatch-intent.yaml                |   32 +
+ .../D.2-gpt-dispatch-intent.yaml                   |   31 +
+ .../D.5-gemini-dispatch-intent.yaml                |   32 +
+ .../D.5-gpt-dispatch-intent.yaml                   |   31 +
+ .../final-approval.md                              |   68 +-
+ .../lifecycle-receipt-inventory.yaml               |   35 +-
+ .../strict-p3-dispatch-readiness.txt               |   64 ++
+ docs/specs/project-ontos-audit-doctor-rce-spec.md  |   35 +-
+ docs/trackers/project-ontos-audit-doctor-rce.md    |   89 +-
+ ...project-ontos-audit-remediation-release-line.md |  304 +++---
+ <redacted:secret>      |  160 ++-
+ .../<redacted:secret>  | 1046 ++++++++++++++++++++
+ .../<redacted:secret> |   82 +-
+ ontos/_hooks/pre-commit                            |   12 +-
+ ontos/_hooks/pre-push                              |   12 +-
+ ontos/cli.py                                       |  376 ++++---
+ ontos/command_registry.py                          |  123 +++
+ ontos/commands/activate.py                         |    9 +
+ ontos/commands/doctor.py                           |  136 ++-
+ ontos/commands/init.py                             |    1 +
+ ontos/commands/link_check.py                       |    4 +-
+ ontos/commands/log.py                              |   88 +-
+ ontos/commands/map.py                              |    9 +-
+ ontos/commands/migrate.py                          |   12 +-
+ ontos/commands/promote.py                          |   20 +-
+ ontos/commands/retrofit.py                         |   73 +-
+ ontos/commands/scaffold.py                         |   42 +-
+[0m
+[0m$ [0mgit ls-files <redacted:secret>/ 2>&1; echo "---DIR---"; ls -la <redacted:secret>/ 2>&1; echo "---RAW---"; ls -la <redacted:secret>/ 2>&1
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>/<redacted:secret>.md.txt
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+---DIR---
+total 568
+drwxr-xr-x@ 27 jonathanoh  wheel    864 Jul 10 12:35 .
+drwxr-xr-x@ 10 jonathanoh  wheel    320 Jul 10 10:27 ..
+drwxr-xr-x@ 43 jonathanoh  wheel   1376 Jul 10 12:34 .prompts
+drwxr-xr-x@ 58 jonathanoh  wheel   1856 Jul 10 12:34 .raw
+drwxr-xr-x@  6 jonathanoh  wheel    192 Jul 10 11:58 .route-attestation
+-rw-r--r--@  1 jonathanoh  wheel  13188 Jul 10 10:52 B.1-claude-adversarial.md
+-rw-r--r--@  1 jonathanoh  wheel  16852 Jul 10 10:52 B.1-claude-product.md
+-rw-r--r--@  1 jonathanoh  wheel   3812 Jul 10 10:35 B.1-dispatch-intent.yaml
+-rw-r--r--@  1 jonathanoh  wheel  67628 Jul 10 11:46 B.1-dispatch-result.yaml
+-rw-r--r--@  1 jonathanoh  wheel    959 Jul 10 11:47 B.1-dispatch-verification.txt
+-rw-r--r--@  1 jonathanoh  wheel   1991 Jul 10 11:21 B.1-gemini-alignment.md
+-rw-r--r--@  1 jonathanoh  wheel  16970 Jul 10 11:46 B.1-glm-peer.md
+-rw-r--r--@  1 jonathanoh  wheel   2029 Jul 10 12:35 B.1-recert-gemini-alignment.md
+-rw-r--r--@  1 jonathanoh  wheel   3097 Jul 10 12:33 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   3495 Jul 10 12:35 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  12801 Jul 10 11:59 B.2-claude-adversarial.md
+-rw-r--r--@  1 jonathanoh  wheel  20395 Jul 10 12:07 B.2-claude-product.md
+-rw-r--r--@  1 jonathanoh  wheel   3685 Jul 10 11:14 B.2-dispatch-intent.yaml
+-rw-r--r--@  1 jonathanoh  wheel  22494 Jul 10 12:07 B.2-dispatch-result.yaml
+-rw-r--r--@  1 jonathanoh  wheel    959 Jul 10 12:09 B.2-dispatch-verification.txt
+-rw-r--r--@  1 jonathanoh  wheel   1698 Jul 10 12:01 B.2-gemini-alignment.md
+-rw-r--r--@  1 jonathanoh  wheel  11080 Jul 10 11:58 B.2-glm-peer.md
+-rw-r--r--@  1 jonathanoh  wheel   3101 Jul 10 12:33 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   7360 Jul 10 12:13 B.3-verdict.md
+-rw-r--r--@  1 jonathanoh  wheel   2152 Jul 10 12:35 lifecycle-receipt-inventory-recertification.yaml
+-rw-r--r--@  1 jonathanoh  wheel  30638 Jul 10 12:07 lifecycle-receipt-inventory.yaml
+-rw-r--r--@  1 jonathanoh  wheel   1835 Jul 10 12:33 receipt-recovery.md
+---RAW---
+total 704
+drwxr-xr-x@ 58 jonathanoh  wheel   1856 Jul 10 12:34 .
+drwxr-xr-x@ 27 jonathanoh  wheel    864 Jul 10 12:35 ..
+-rw-r--r--@  1 jonathanoh  wheel    150 Jul 10 12:12 B.3-gemini-dispatch-attestation.txt
+-rw-r--r--@  1 jonathanoh  wheel   2201 Jul 10 10:52 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:45 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   2314 Jul 10 10:52 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:46 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   1190 Jul 10 10:46 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:46 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   8466 Jul 10 10:51 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:50 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   1506 Jul 10 10:53 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:53 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  20030 Jul 10 10:57 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:55 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   2052 Jul 10 11:00 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 10:59 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   1777 Jul 10 11:01 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 11:01 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   1552 Jul 10 11:19 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 11:19 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   1991 Jul 10 11:21 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 11:21 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  15572 Jul 10 11:14 <redacted:secret>.md.txt
+-rw-r--r--@  1 jonathanoh  wheel   1642 Jul 10 10:56 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel     75 Jul 10 10:56 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  16844 Jul 10 11:05 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  16848 Jul 10 11:05 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel     70 Jul 10 11:05 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   3010 Jul 10 11:14 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel     84 Jul 10 11:14 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   1590 Jul 10 11:28 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  50908 Jul 10 11:28 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   2446 Jul 10 11:35 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  23482 Jul 10 11:35 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel    612 Jul 10 11:46 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel     85 Jul 10 11:46 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  16380 Jul 10 11:35 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  16970 Jul 10 11:46 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 12:34 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 12:34 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   2029 Jul 10 12:34 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 12:34 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel     93 Jul 10 12:34 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   4886 Jul 10 12:35 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   2718 Jul 10 12:00 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 11:49 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   2138 Jul 10 11:54 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 11:49 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   2435 Jul 10 12:07 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 12:00 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   1462 Jul 10 11:50 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 11:50 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   1698 Jul 10 12:01 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel      0 Jul 10 12:01 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   2603 Jul 10 11:58 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  25800 Jul 10 11:58 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  11080 Jul 10 11:57 <redacted:secret>
+[0m
+[0m$ [0mecho "=== diff b6f89d7..HEAD --stat (implementation files only) ==="; git diff --stat b6f89d7..HEAD -- ontos/ scripts/ manifests/ .github/workflows/ 2>&1 | head -40
+=== diff b6f89d7..HEAD --stat (implementation files only) ===
+ ...<redacted:secret> | 475 +++++++++++++++++++++
+ 1 file changed, 475 insertions(+)
+[0m
+[0m→ [0mRead ontos/core/locking.py[90m [offset=1, limit=90][0m
+[0m→ [0mRead <redacted:secret>[90m [offset=18, limit=60][0m
+[0m
+[0m$ [0mecho "=== base SHA (spec) ==="; git rev-parse --short bf91b42 2>&1; echo "=== I0 ==="; git rev-parse --short b6f89d7 2>&1; echo "=== is bf91b42 ancestor of b6f89d7? ==="; git merge-base --is-ancestor bf91b42 b6f89d7 && echo yes || echo no; echo "=== files added at I0 (count) ==="; git show --stat --oneline b6f89d7 | wc -l
+=== base SHA (spec) ===
+bf91b42
+=== I0 ===
+b6f89d7
+=== is bf91b42 ancestor of b6f89d7? ===
+yes
+=== files added at I0 (count) ===
+     190
+[0m
+[0m→ [0mRead ontos/commands/log.py[90m [limit=45, offset=108][0m
+[0m→ [0mRead ontos/commands/log.py[90m [limit=25, offset=328][0m
+[0m→ [0mRead ontos/core/config.py[90m [limit=115, offset=236][0m
+[0m→ [0mRead ontos/ui/json_output.py[90m [limit=50, offset=14][0m
+[0m
+[0m$ [0mecho "=== finding count at b6f89d7 (registry) ==="; git show b6f89d7:<redacted:secret> 2>/dev/null | rg -c '^  - id:' ; echo "=== id list sample at b6f89d7 ==="; git show b6f89d7:<redacted:secret> 2>/dev/null | rg -o '^  - id: .*' | wc -l; echo "=== R2 count at b6f89d7 ==="; git show b6f89d7:<redacted:secret> 2>/dev/null | rg -c 'id: R2-'; echo "=== status confirmed_open at b6f89d7 ==="; git show b6f89d7:<redacted:secret> 2>/dev/null | rg -c 'status: confirmed_open'; echo "=== partial count at b6f89d7 ==="; git show b6f89d7:<redacted:secret> 2>/dev/null | rg -c 'lifecycle_state: partial'
+=== finding count at b6f89d7 (registry) ===
+=== id list sample at b6f89d7 ===
+       0
+=== R2 count at b6f89d7 ===
+9
+=== status confirmed_open at b6f89d7 ===
+2
+=== partial count at b6f89d7 ===
+14
+[0m
+[0m$ [0mecho "=== current HEAD registry finding count ==="; rg -c '^  - id:' <redacted:secret>; echo "=== R2 now ==="; rg -c 'id: R2-' <redacted:secret>; echo "=== confirmed_open now ==="; rg -c 'status: confirmed_open' <redacted:secret>; echo "=== partial now ==="; rg -c 'lifecycle_state: partial' <redacted:secret>
+=== current HEAD registry finding count ===
+=== R2 now ===
+9
+=== confirmed_open now ===
+2
+=== partial now ===
+14
+[0m
+[0m$ [0mecho "=== writer: .resolve / symlink handling in context.py ==="; rg -n '\.resolve\(|is_symlink|symlink|no.?follow|os\.lstat|O_NOFOLLOW' ontos/core/context.py | head -40
+=== writer: .resolve / symlink handling in context.py ===
+181:        "replace", while retaining the same pinned-parent and no-follow path
+191:            flags |= getattr(os, "O_NOFOLLOW", 0)
+325:            # concurrent rename or symlink swap can invalidate the visible
+468:        """Return a lexical workspace path without trusting symlink resolution."""
+470:        root = root_input.resolve()
+497:                info = os.lstat(current)
+502:                    f"{label} must not contain a symlinked directory: {current}"
+510:            info = os.lstat(candidate)
+515:                raise ValueError(f"{label} must not be a symlink: {candidate}")
+537:        self._reject_parent_symlinks(path)
+541:        root = self.repo_root.expanduser().resolve()
+543:        flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+556:                        # A racing creator is safe only if the no-follow open
+581:        root = self.repo_root.expanduser().resolve()
+590:                    os.lstat(current)
+701:        self._reject_parent_symlinks(anchor.path / ".ontos-anchor-probe")
+703:    def _reject_parent_symlinks(self, path: Path) -> None:
+704:        root = self.repo_root.expanduser().resolve()
+708:            info = os.lstat(current)
+710:                raise ValueError(f"operation path must not contain a symlink: {current}")
+717:                return os.stat(name, dir_fd=anchor.fd, follow_symlinks=False)
+718:            return os.lstat(anchor.path / name)
+728:            raise ValueError(f"destination must not be a symlink: {path}")
+748:        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
+770:                    f"destination must not be a symlink: {anchor.path / final_name}"
+[0m
+[0m$ [0mecho "=== does a test_default_logs_dir_symlink test exist now? ==="; rg -n 'default_logs_dir_symlink|symlink.*before.*resolution|rejected_before_resolution' tests/ 2>&1 | head; echo "=== exit 0? (find with no matches returns 1)"; ls tests/commands/test_log.py 2>&1; echo "=== test_log symlink tests ==="; rg -n 'symlink' tests/commands/test_log.py 2>&1 | head
+=== does a test_default_logs_dir_symlink test exist now? ===
+tests/commands/test_log.py:179:    def test_default_logs_dir_symlink_is_rejected_before_resolution(
+=== exit 0? (find with no matches returns 1)
+tests/commands/test_log.py
+=== test_log symlink tests ===
+178:    @pytest.mark.skipif(not hasattr(os, "symlink"), reason="symlinks unavailable")
+179:    def test_default_logs_dir_symlink_is_rejected_before_resolution(
+198:        (tmp_path / "docs").symlink_to(outside, target_is_directory=True)
+209:        assert "real directories" in result.stderr or "symlink" in result.stderr
+[0m
+[0m$ [0mecho "=== registry id line format at b6f89d7 (first 5 id-ish lines) ==="; git show b6f89d7:<redacted:secret> | rg -n '^\s*-?\s*id:' | head -5; echo "=== total '- id' entries (any indent) ==="; git show b6f89d7:<redacted:secret> | rg -c '^\s*-\s*id:'; echo "=== status value distribution at b6f89d7 ==="; git show b6f89d7:<redacted:secret> | rg -o 'status: \S+' | sort | uniq -c; echo "=== lifecycle_state distribution at b6f89d7 ==="; git show b6f89d7:<redacted:secret> | rg -o 'lifecycle_state: \S+' | sort | uniq -c
+=== registry id line format at b6f89d7 (first 5 id-ish lines) ===
+95:    id: project-ontos-audit-serializer-corruption
+125:    id: project-ontos-audit-doctor-rce
+151:    id: project-ontos-audit-relN-quick-wins
+182:    id: project-ontos-audit-relN-sweep
+222:    id: project-ontos-audit-characterization-tests
+=== total '- id' entries (any indent) ===
+=== status value distribution at b6f89d7 ===
+   1 status: code_fixed
+   1 status: code_fixed_evidence_pending
+   2 status: confirmed_open
+   1 status: implemented_uncommitted_parity_verified
+  48 status: implemented_uncommitted_verification_pending
+   7 status: partial_implementation_uncommitted_verification_pending
+   2 status: resolved
+   1 status: unproven_rebaseline_integration
+=== lifecycle_state distribution at b6f89d7 ===
+   3 lifecycle_state: code_fixed_evidence_pending
+  51 lifecycle_state: implementation_uncommitted_lifecycle_pending
+   1 lifecycle_state: parity_verified_commit_pending
+  14 lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+[0m
+[0m$ [0mecho "=== config.py 351-367 (shadowing guard per spec) ==="; sed -n '351,367p' ontos/core/config.py 2>/dev/null || rg -n '' ontos/core/config.py | sed -n '351,367p'
+=== config.py 351-367 (shadowing guard per spec) ===
+
+def dict_to_config(data: dict, repo_root: Optional[Path] = None) -> OntosConfig:
+    """Convert dict from TOML to config dataclass."""
+    data = _normalize_legacy_config(data)
+    _validate_section_names(data)
+
+    # Type validation
+    _validate_types(data)
+
+    # Path validation
+    if repo_root is not None and "paths" in data:
+        paths_section = data["paths"]
+        for key in ["docs_dir", "logs_dir", "context_map"]:
+            if key in paths_section:
+                if not _validate_path(paths_section[key], repo_root):
+                    raise ConfigError(
+                        f"paths.{key} must resolve within repository root"
+[0m
+[0m→ [0mRead ontos/core/schema.py[90m [limit=20, offset=82][0m
+[0m
+[0m$ [0mecho "=== does the X-M1 test actually exercise external sentinel unchanged? ==="; sed -n '178,215p' tests/commands/test_log.py
+=== does the X-M1 test actually exercise external sentinel unchanged? ===
+    @pytest.mark.skipif(not hasattr(os, "symlink"), reason="symlinks unavailable")
+    def test_default_logs_dir_symlink_is_rejected_before_resolution(
+        self,
+        tmp_path,
+    ):
+        _init_git_project(tmp_path)
+        subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "--allow-empty", "-m", "init"],
+            cwd=tmp_path,
+            capture_output=True,
+        )
+        (tmp_path / "docs" / "logs").rmdir()
+        (tmp_path / "docs").rmdir()
+
+        outside = tmp_path.parent / f"{tmp_path.name}-outside"
+        outside_logs = outside / "logs"
+        outside_logs.mkdir(parents=True)
+        sentinel = outside / "sentinel.txt"
+        sentinel.write_text("do not change", encoding="utf-8")
+        (tmp_path / "docs").symlink_to(outside, target_is_directory=True)
+
+        # Prove this is the formerly reachable default-path escape, not an
+        # explicitly outside configured path rejected during config loading.
+        assert (tmp_path / "docs" / "logs").resolve() == outside_logs.resolve()
+
+        result = _run_ontos(tmp_path, "log", "--auto")
+
+        assert result.returncode == 1
+        assert sentinel.read_text(encoding="utf-8") == "do not change"
+        assert list(outside_logs.glob("*.md")) == []
+        assert "real directories" in result.stderr or "symlink" in result.stderr
+[0m
+[0m$ [0mecho "=== registry structure (head 40 lines at b6f89d7) ==="; git show b6f89d7:<redacted:secret> | sed -n '1,40p'; echo "=== total 'id:' occurrences at b6f89d7 ==="; git show b6f89d7:<redacted:secret> | rg -c '^\s+id:'; echo "=== status histogram at HEAD ==="; rg -o 'status: \S+' <redacted:secret> | sort | uniq -c; echo "=== HEAD total findings (id: with finding-ish) ==="; rg -c '^\s+id:' <redacted:secret>
+=== registry structure (head 40 lines at b6f89d7) ===
+schema_version: 1
+registry_id: project-ontos-audit-remediation-registry
+source_audit: <redacted:secret>
+audit_baseline_commit: 589d919
+revalidation_commit: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+revalidation_report: <redacted:secret>
+generated_artifacts:
+  - docs/trackers/project-ontos-audit-remediation-release-line.md
+github_snapshot:
+  observed_at: "2026-07-10"
+  epic_issue: 158
+  epic_release_line_synced: true
+  r2_checklists_synced: true
+  original_checklist_policy: merged_and_verified_only
+  uncommitted_original_checklists_remain_unchecked: true
+  source_issues: [146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157]
+  issue_finding_counts:
+    146: 1
+    147: 2
+    148: 11
+    149: 20
+    150: 15
+    151: 5
+    152: 6
+    153: 9
+    154: 14
+    155: 1
+    156: 5
+    157: 2
+  registry_finding_counts:
+    146: 2
+    147: 2
+    148: 12
+    149: 21
+    150: 16
+    151: 6
+    152: 6
+    153: 12
+    154: 14
+    155: 1
+=== total 'id:' occurrences at b6f89d7 ===
+69
+=== status histogram at HEAD ===
+   1 status: code_fixed
+   1 status: code_fixed_evidence_pending
+   2 status: confirmed_open
+   1 status: implemented_committed_parity_verified
+  48 status: implemented_committed_verification_pending
+   7 status: partial_implementation_committed_verification_pending
+   2 status: resolved
+   1 status: unproven_rebaseline_integration
+=== HEAD total findings (id: with finding-ish) ===
+69
+[0m
+[0m$ [0mecho "=== top-level keys + findings-list location at b6f89d7 ==="; git show b6f89d7:<redacted:secret> | rg -n '^[a-zA-Z_]|^  [a-z]|^    - |^  - ' | head -60
+=== top-level keys + findings-list location at b6f89d7 ===
+1:schema_version: 1
+2:registry_id: project-ontos-audit-remediation-registry
+3:source_audit: <redacted:secret>
+4:audit_baseline_commit: 589d919
+5:revalidation_commit: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+6:revalidation_report: <redacted:secret>
+7:generated_artifacts:
+8:  - docs/trackers/project-ontos-audit-remediation-release-line.md
+9:github_snapshot:
+10:  observed_at: "2026-07-10"
+11:  epic_issue: 158
+12:  epic_release_line_synced: true
+13:  r2_checklists_synced: true
+14:  original_checklist_policy: merged_and_verified_only
+15:  uncommitted_original_checklists_remain_unchecked: true
+16:  source_issues: [146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157]
+17:  issue_finding_counts:
+30:  registry_finding_counts:
+44:  external_drift:
+45:    - issue: 147
+51:    - issue: 149
+58:shared_tree_integration:
+59:  status: unproven_rebaseline_integration
+60:  release_blocking: true
+61:  affected_issues: [146, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157]
+62:  reason: >-
+69:row_templates:
+70:  original_open: &original_open
+77:  original_fixed: &original_fixed
+85:  r2_open: &r2_open
+93:programs:
+94:  - &p146
+124:  - &p147
+150:  - &p148
+181:  - &p149
+221:  - &p150
+242:  - &p151
+278:  - &p152
+303:  - &p153
+328:  - &p154
+359:  - &p155
+375:  - &p156
+397:  - &p157
+414:shared_path_leases:
+415:  - {path: "docs/logs/", programs: [146, 147], order: [146, 147]}
+416:  - {path: ".github/workflows/", programs: [148, 156], order: [148, 156]}
+417:  - {path: "ontos/core/schema.py", programs: [146, 151], order: [146, 151]}
+418:  - {path: "ontos/io/yaml.py", programs: [146, 151], order: [146, 151]}
+419:  - {path: "ontos/commands/promote.py", programs: [146, 151, 152], order: [146, 151, 152]}
+420:  - {path: "ontos/commands/migrate.py", programs: [146, 152], order: [146, 152]}
+421:  - {path: "ontos/mcp/writes.py", programs: [146, 152, 153, 154], order: [146, 152, 153, 154]}
+422:  - {path: "ontos/commands/log.py", programs: [148, 151], order: [148, 151]}
+423:  - {path: "ontos/commands/activate.py", programs: [148, 149], order: [148, 149]}
+424:  - {path: "ontos/commands/doctor.py", programs: [147, 149], order: [147, 149]}
+425:  - {path: "ontos/commands/link_check.py", programs: [148, 154], order: [148, 154]}
+426:  - {path: "ontos/commands/map.py", programs: [148, 149, 154], order: [148, 149, 154]}
+427:  - {path: "ontos/core/config.py", programs: [148, 149], order: [148, 149]}
+428:  - {path: "ontos/core/context.py", programs: [148, 153], order: [148, 153]}
+429:  - {path: "ontos/core/frontmatter_edit.py", programs: [148, 151, 152], order: [148, 151, 152]}
+430:  - {path: "ontos/core/git.py", programs: [148, 150], order: [148, 150]}
+[0m
+[0m$ [0mpython3 - <<'PY'
+import yaml, sys
+# HEAD registry (working tree)
+p="<redacted:secret>"
+d=yaml.safe_load(open(p))
+print("=== HEAD top-level keys ===", list(d.keys()))
+findings=[]
+# nested walk: collect dicts that look like findings (have id+status)
+def walk(o):
+    if isinstance(o,dict):
+        if "id" in o and ("status" in o or "lifecycle_state" in o or "severity" in o or "issue" in o):
+            findings.append(o)
+        for v in o.values(): walk(v)
+    elif isinstance(o,list):
+        for v in o: walk(v)
+walk(d)
+print("HEAD findings found:", len(findings))
+from collections import Counter
+print("status:", dict(Counter(f.get("status") for f in findings)))
+print("lifecycle_state:", dict(Counter(f.get("lifecycle_state") for f in findings)))
+r2=[f for f in findings if str(f.get("id","")).startswith("R2-")]
+print("R2 count:", len(r2))
+orig=[f for f in findings if not str(f.get("id","")).startswith("R2-")]
+print("original count:", len(orig))
+print("confirmed_open:", sum(1 for f in findings if f.get("status")=="confirmed_open"))
+print("partial_implementation:", sum(1 for f in findings if str(f.get("status","")).startswith("partial_implementation")))
+PY
+=== HEAD top-level keys === ['schema_version', 'registry_id', 'source_audit', 'audit_baseline_commit', 'revalidation_commit', 'integration_commit', 'revalidation_report', 'generated_artifacts', 'github_snapshot', 'shared_tree_integration', 'row_templates', 'programs', 'shared_path_leases', 'findings']
+HEAD findings found: 112
+status: {None: 12, 'code_fixed_evidence_pending': 1, 'code_fixed': 2, 'confirmed_open': 41, 'implemented_committed_verification_pending': 48, 'partial_implementation_committed_verification_pending': 7, 'implemented_committed_parity_verified': 1}
+lifecycle_state: {'code_fixed_evidence_pending': 5, 'partial_implementation_committed_lifecycle_pending': 55, 'implementation_committed_lifecycle_pending': 51, 'parity_verified_lifecycle_pending': 1}
+R2 count: 9
+original count: 103
+confirmed_open: 41
+partial_implementation: 7
+[0m
+[0m$ [0mpython3 - <<'PY'
+import subprocess,yaml
+# parse registry at b6f89d7 by extracting
+out=subprocess.run(["git","show","b6f89d7:<redacted:secret>"],capture_output=True,text=True)
+d=yaml.safe_load(out.stdout)
+findings=[]
+def walk(o):
+    if isinstance(o,dict):
+        if "id" in o and ("status" in o or "lifecycle_state" in o or "severity" in o or "issue" in o):
+            findings.append(o)
+        for v in o.values(): walk(v)
+    elif isinstance(o,list):
+        for v in o: walk(v)
+walk(d)
+print("=== b6f89d7 (frozen I0) ===")
+print("findings:",len(findings))
+from collections import Counter
+print("status:",dict(Counter(f.get("status") for f in findings)))
+print("confirmed_open:",sum(1 for f in findings if f.get("status")=="confirmed_open"))
+print("partial_implementation:",sum(1 for f in findings if str(f.get("status","")).startswith("partial_implementation")))
+r2=[f for f in findings if str(f.get("id","")).startswith("R2-")]
+print("R2:",len(r2),"original:",len(findings)-len(r2))
+PY
+=== b6f89d7 (frozen I0) ===
+findings: 112
+status: {None: 12, 'code_fixed_evidence_pending': 1, 'code_fixed': 2, 'confirmed_open': 41, 'implemented_uncommitted_verification_pending': 48, 'partial_implementation_uncommitted_verification_pending': 7, 'implemented_uncommitted_parity_verified': 1}
+confirmed_open: 41
+partial_implementation: 7
+R2: 9 original: 103
+[0m
+[0m$ [0mecho "=== run the registry validator (canonical parse the spec cites) ==="; python3 <redacted:secret> --help 2>&1 | head -20; echo "---exit:$?---"
+=== run the registry validator (canonical parse the spec cites) ===
+usage: validate-audit-remediation-registry.py [-h] [--require-external-parity]
+
+options:
+  -h, --help            show this help message and exit
+  --require-external-parity
+                        query live GitHub issues and fail on
+                        state/milestone/label/checklist drift
+---exit:0---
+[0m
+[0m$ [0mecho "=== venv / pytest discovery ==="; ls .venv/bin/python 2>&1; ls .venv/bin/pytest 2>&1; echo "=== single X-M1 test (direct-run) ==="; .venv/bin/python -m pytest tests/commands/test_log.py::TestLogCommandSymlinkGuard::test_default_logs_dir_symlink_is_rejected_before_resolution -q 2>&1 | tail -25; echo "exit:$?"
+=== venv / pytest discovery ===
+.venv/bin/python
+.venv/bin/pytest
+=== single X-M1 test (direct-run) ===
+ERROR: not found: /<redacted:secret>::TestLogCommandSymlinkGuard::test_default_logs_dir_symlink_is_rejected_before_resolution
+(no match in any of [<Module test_log.py>])
+
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0
+rootdir: /<redacted:secret>
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.14.1
+collected 0 items
+
+============================ no tests ran in 0.06s =============================
+exit:0
+[0m
+[0m$ [0mecho "=== registry validator local (direct-run, no external parity) ==="; .venv/bin/python <redacted:secret> 2>&1 | tail -30; echo "exit:$?"
+=== registry validator local (direct-run, no external parity) ===
+audit-registry: FAILED
+- O4 is missing #148 lifecycle state `partial_implementation_committed_lifecycle_pending`
+- O4 is missing #149 lifecycle state `partial_implementation_committed_lifecycle_pending`
+- O4 is missing #150 lifecycle state `partial_implementation_committed_lifecycle_pending`
+- O4 is missing #151 lifecycle state `implementation_committed_lifecycle_pending`
+- O4 is missing #152 lifecycle state `implementation_committed_lifecycle_pending`
+- O4 is missing #153 lifecycle state `partial_implementation_committed_lifecycle_pending`
+- O4 is missing #154 lifecycle state `partial_implementation_committed_lifecycle_pending`
+- O4 is missing #155 lifecycle state `partial_implementation_committed_lifecycle_pending`
+- O4 is missing #156 lifecycle state `partial_implementation_committed_lifecycle_pending`
+- O4 is missing #157 lifecycle state `implementation_committed_lifecycle_pending`
+exit:0
+[0m
+[0m$ [0mecho "=== spot-check claimed-existing test anchors (Peer implementability) ==="; rg -n 'def test' tests/test_cli_contract_v4.py 2>&1 | sed -n '1,12p'; echo "=== check_release_artifact.py exists? (§4.5 CREATE) ==="; ls scripts/check_release_artifact.py 2>&1; echo "=== test_audit_remediation_registry_validator.py exists? (§11 X-M2 anchor) ==="; ls tests/test_audit_remediation_registry_validator.py 2>&1; rg -n 'def test_distinct_missing_required_fields' tests/test_audit_remediation_registry_validator.py 2>&1
+=== spot-check claimed-existing test anchors (Peer implementability) ===
+43:def test_registry_is_the_complete_unique_top_level_source() -> None:
+56:def test_aliases_share_canonical_argument_contracts() -> None:
+65:def test_global_flags_survive_both_positions_but_not_double_dash_data() -> None:
+78:def test_json_argparse_errors_use_the_v4_envelope(monkeypatch, capsys) -> None:
+93:def test_json_verify_missing_target_is_a_usage_envelope(monkeypatch, capsys) -> None:
+104:def test_canonical_nested_command_paths() -> None:
+110:def test_v4_envelope_separates_execution_findings_and_count_basis(capsys) -> None:
+135:def <redacted:secret>(capsys) -> None:
+158:def test_env_json_forces_structured_env_dialect(monkeypatch, capsys) -> None:
+178:def test_json_workflows_force_noninteractive_options(monkeypatch, capsys) -> None:
+=== check_release_artifact.py exists? (§4.5 CREATE) ===
+scripts/check_release_artifact.py
+=== test_audit_remediation_registry_validator.py exists? (§11 X-M2 anchor) ===
+tests/test_audit_remediation_registry_validator.py
+79:def test_distinct_missing_required_fields_are_collected_without_traceback(
+[0m
+[0m$ [0mecho "=== HEAD validator REAL exit code ==="; .venv/bin/python <redacted:secret> >/tmp/v_head.txt 2>&1; echo "exit=$?"; echo "=== HEAD diff registry+ledger between b6f89d7 and HEAD ==="; git diff --stat b6f89d7..HEAD -- <redacted:secret> docs/trackers/project-ontos-audit-remediation-release-line.md <redacted:secret> 2>&1; echo "=== did validator change after b6f89d7? ==="; git log --oneline b6f89d7..HEAD -- <redacted:secret> 2>&1
+=== HEAD validator REAL exit code ===
+exit=1
+=== HEAD diff registry+ledger between b6f89d7 and HEAD ===
+=== did validator change after b6f89d7? ===
+[0m
+[0m$ [0mecho "=== find enclosing class of X-M1 test ==="; rg -n '^class |def test_default_logs_dir_symlink_is_rejected_before_resolution' tests/commands/test_log.py 2>&1 | head; echo "=== run X-M1 test by keyword (direct-run) ==="; .venv/bin/python -m pytest tests/commands/test_log.py -k 'test_default_logs_dir_symlink_is_rejected_before_resolution' -q 2>&1 | tail -20; echo "exit=$?"
+=== find enclosing class of X-M1 test ===
+49:class TestCreateSessionLog:
+107:class TestLogCommandCLI:
+179:    def test_default_logs_dir_symlink_is_rejected_before_resolution(
+=== run X-M1 test by keyword (direct-run) ===
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0
+rootdir: /<redacted:secret>
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.14.1
+collected 11 items / 10 deselected / 1 selected
+
+tests/commands/test_log.py .                                             [100%]
+
+======================= 1 passed, 10 deselected in 0.20s =======================
+exit=0
+[0m
+[0m$ [0mset -e
+T=$(mktemp -d /<redacted:secret>)
+mkdir -p "$T/manifests" "$T/docs/reviews" "$T/docs/trackers" "$T/scripts"
+C=b6f89d7
+git show $C:<redacted:secret> > "$<redacted:secret>"
+git show $C:<redacted:secret> > "$<redacted:secret>"
+git show $C:docs/trackers/project-ontos-audit-remediation-release-line.md > "$<redacted:secret>"
+git show $C:<redacted:secret> > "$<redacted:secret>"
+git show $C:<redacted:secret> > "$<redacted:secret>"
+git show $C:<redacted:secret> > "$<redacted:secret>"
+git show $C:<redacted:secret> > "$<redacted:secret>"
+echo "=== I0 registry hash vs HEAD registry hash ==="
+git show $C:<redacted:secret> | shasum -a 256 | cut -d' ' -f1
+git show HEAD:<redacted:secret> | shasum -a 256 | cut -d' ' -f1
+echo "(same?=identical; diff=I0 vs HEAD differ)"
+echo "=== run b6f89d7 validator against b6f89d7 inputs (direct-run) ==="
+( cd "$T" && python3 <redacted:secret>; echo "exit=$?" ) 2>&1 | tail -30
+echo "TEMP=$T"
+zsh:11: bad substitution
+[0m
+[0m$ [0mpython3 - <<'PY'
+import subprocess, os, tempfile, shutil, sys
+C="b6f89d7"
+T=tempfile.mkdtemp(prefix="i0val_", dir="/<redacted:secret>")
+for sub in ("manifests","docs/reviews","docs/trackers","scripts"):
+    os.makedirs(os.path.join(T,sub),exist_ok=True)
+files={
+ "<redacted:secret>":None,
+ "<redacted:secret>":None,
+ "docs/trackers/project-ontos-audit-remediation-release-line.md":None,
+ "<redacted:secret>":None,
+ "<redacted:secret>":None,
+ "<redacted:secret>":None,
+ "<redacted:secret>":None,
+}
+for f in files:
+    r=subprocess.run(["git","show",f"{C}:{f}"],capture_output=True)
+    assert r.returncode==0, (f, r.stderr.decode()[:200])
+    p=os.path.join(T,f); os.makedirs(os.path.dirname(p),exist_ok=True)
+    open(p,"wb").write(r.stdout)
+# hashes
+def gh(path,ref):
+    return hashlib.sha256(subprocess.run(["git","show",f"{ref}:{path}"],capture_output=True).stdout).hexdigest()[:12] if False else subprocess.run(["git","show",f"{ref}:{path}"],capture_output=True).stdout
+import hashlib
+reg_i0=hashlib.sha256(subprocess.run(["git","show",f"{C}:<redacted:secret>"],capture_output=True).stdout).hexdigest()[:16]
+reg_hd=hashlib.sha256(subprocess.run(["git","show","HEAD:<redacted:secret>"],capture_output=True).stdout).hexdigest()[:16]
+print("registry hash I0 :",reg_i0)
+print("registry hash HEAD:",reg_hd,"(identical)" if reg_i0==reg_hd else "(DIFFERENT)")
+print("=== run b6f89d7 validator against b6f89d7 inputs (direct-run) ===")
+r=subprocess.run([sys.executable,"<redacted:secret>"],cwd=T,capture_output=True,text=True)
+print(r.stdout[-1800:] or "(no stdout)")
+if r.stderr.strip(): print("STDERR:",r.stderr[-400:])
+print("exit=",r.returncode)
+PY
+registry hash I0 : 0620ad37644bd0b0
+registry hash HEAD: 0620ad37644bd0b0 (identical)
+=== run b6f89d7 validator against b6f89d7 inputs (direct-run) ===
+(no stdout)
+STDERR: audit-registry: ERROR: [Errno 2] No such file or directory: '/<redacted:secret>'
+
+exit= 2
+[0m
+[93m[1m! [0mpermission requested: external_directory (/tmp/*); auto-rejecting
+[0m✗ [<redacted:secret>
+git worktree add --detach "$WT" b6f89d7 >/tmp/wt_add.txt 2>&1 && echo "worktree added" || { echo "add failed"; cat /tmp/wt_add.txt; }
+echo "=== run frozen-I0 (b6f89d7) validator, full tree (direct-run) ==="
+( cd "$WT" && python3 <redacted:secret>; echo "exit=$?" ) 2>&1 | tail -30 failed
+[91m[1mError: [0mThe user rejected permission to use this specific tool call.

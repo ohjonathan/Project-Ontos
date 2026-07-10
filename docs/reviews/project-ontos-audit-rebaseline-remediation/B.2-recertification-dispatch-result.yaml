@@ -1,0 +1,306 @@
+results:
+- dispatch_id: project-ontos-audit-rebaseline-remediation-B.2-recert-claude-product
+  capture_id: project-ontos-audit-rebaseline-remediation-B.2-recert-claude-product.r1.c20260710T195028Z.92580.c056ad17187c7b8bf7f6fc2900205209
+  round: 1
+  family: claude
+  actual_executed_family: claude
+  role: product
+  execution_provider: claude
+  execution_cli: claude
+  resolved_executable: /Users/jonathanoh/.local/bin/claude
+  resolved_executable_realpath: /Users/jonathanoh/.local/share/claude/versions/2.1.206
+  cli_version: 2.1.206 (Claude Code)
+  provider_probe_hash: sha256:a864a7e725ad523d54c9040b841e68009b1857543196058b8a805223f8137cdd
+  model_id: auto
+  resolved_model: opus
+  model_probe_command: claude --help 2>&1 | grep -oE "'(opus|sonnet|haiku)'" | sort
+    -u
+  model_candidate_list:
+  - opus
+  - sonnet
+  model_selection_rule: claude-cli-alias-strongest
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - claude
+  - --permission-mode
+  - bypassPermissions
+  - --add-dir
+  - .
+  - -p
+  - <prompt-body-redacted>
+  - --model
+  - opus
+  prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/project-ontos-audit-rebaseline-remediation-B.2-recert-claude-product.r1.c20260710T195028Z.92580.c056ad17187c7b8bf7f6fc2900205209.md
+  prompt_sha256: sha256:010bab645439f97b2d1891e14490833ea63ef32eb883a0d28d034aeec75ff88e
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-07-10T19:50:29Z'
+  ended_at: '2026-07-10T19:55:13Z'
+  raw_output_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/project-ontos-audit-rebaseline-remediation-B.2-recert-claude-product.r1.c20260710T195028Z.92580.c056ad17187c7b8bf7f6fc2900205209.raw.txt
+  raw_output_hash: sha256:3fbc1f9f464d332a0b61236713ffbbe065247118128c1b6cb1e40ffc3e9701b4
+  stderr_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/project-ontos-audit-rebaseline-remediation-B.2-recert-claude-product.r1.c20260710T195028Z.92580.c056ad17187c7b8bf7f6fc2900205209.stderr.txt
+  stderr_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  evidence_cap: direct-run
+  evidence_labels_used:
+  - direct-run
+  - static-inspection
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-recert-claude-product.md
+  artifact_sha256: sha256:297182687cc7c3e44d624013255fbcdb0cee7ad7b10c0b2f248a5ed419712c24
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: opus
+  model_used: opus
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: opus
+    exit_code: 0
+    started_at: '2026-07-10T19:50:29Z'
+    ended_at: '2026-07-10T19:55:13Z'
+    detected_429: false
+    stderr_tail_200: ''
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: worker_file
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  dispatch_batch_id: audit-rebaseline-B2-recert-wave
+  intent_model_restrictions:
+    family: claude
+    execution_cli: claude
+    denied_models: []
+    allowed_models: []
+    active: false
+- dispatch_id: project-ontos-audit-rebaseline-remediation-B.2-recert-gemini-alignment
+  capture_id: project-ontos-audit-rebaseline-remediation-B.2-recert-gemini-alignment.r1.c20260710T202245Z.72597.e1de89bbe921bf4856d5e6750bc3d8d8
+  round: 1
+  family: gemini
+  actual_executed_family: gemini
+  role: alignment
+  execution_provider: gemini
+  execution_cli: agy
+  resolved_executable: /Users/jonathanoh/.local/libexec/llm-dev-agy-1.1.0/agy
+  resolved_executable_realpath: /Users/jonathanoh/.local/libexec/llm-dev-agy-1.1.0/agy
+  cli_version: 1.1.0
+  provider_probe_hash: sha256:7fbd210ebec11f65a97190ef900795c4b8da3805af3f5a1b8d1d272556b292ca
+  model_id: auto
+  resolved_model: cli-default-unknown
+  model_probe_command: (post-dispatch) grep -iE 'model:' <raw_stderr> | head -1
+  model_candidate_list:
+  - cli-config-default
+  model_selection_rule: cli-config-default+post-dispatch-best-effort
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - agy
+  - --sandbox
+  - --print
+  - --print-timeout
+  - 10m
+  prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/project-ontos-audit-rebaseline-remediation-B.2-recert-gemini-alignment.r1.c20260710T202245Z.72597.e1de89bbe921bf4856d5e6750bc3d8d8.md
+  prompt_sha256: sha256:8b06ee1e5cb1b91f9d10ef2ecb87db0ed709893189114f52fc0e96a1626faa3c
+  stdin_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/project-ontos-audit-rebaseline-remediation-B.2-recert-gemini-alignment.r1.c20260710T202245Z.72597.e1de89bbe921bf4856d5e6750bc3d8d8.md
+  stdin_sha256: sha256:8b06ee1e5cb1b91f9d10ef2ecb87db0ed709893189114f52fc0e96a1626faa3c
+  exit_code: 0
+  started_at: '2026-07-10T20:22:49Z'
+  ended_at: '2026-07-10T20:23:15Z'
+  raw_output_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/project-ontos-audit-rebaseline-remediation-B.2-recert-gemini-alignment.r1.c20260710T202245Z.72597.e1de89bbe921bf4856d5e6750bc3d8d8.raw.txt
+  raw_output_hash: sha256:33cfbca9aaf14d287418619b06c778e05ee396aafc9b1b0ceae8e5ef2b722519
+  stderr_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/project-ontos-audit-rebaseline-remediation-B.2-recert-gemini-alignment.r1.c20260710T202245Z.72597.e1de89bbe921bf4856d5e6750bc3d8d8.stderr.txt
+  stderr_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  evidence_cap: static-inspection
+  evidence_labels_used:
+  - static-inspection
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-recert-gemini-alignment.md
+  artifact_sha256: sha256:33cfbca9aaf14d287418619b06c778e05ee396aafc9b1b0ceae8e5ef2b722519
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: null
+  model_used: cli-default-unknown
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: ''
+    exit_code: 0
+    started_at: '2026-07-10T20:22:49Z'
+    ended_at: '2026-07-10T20:23:15Z'
+    detected_429: false
+    stderr_tail_200: ''
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: raw_stdout
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  dispatch_batch_id: audit-rebaseline-B2-recert-wave
+  credential_class: unknown
+  intent_model_restrictions:
+    family: gemini
+    execution_cli: agy
+    denied_models: []
+    allowed_models: []
+    active: false
+  gemini_via_agy_substrate: true
+  expected_version_regex_matched: true
+  superseded_by_capture_id: project-ontos-audit-rebaseline-remediation-B.2-recert-gemini-alignment.r2.c20260710T202955Z.24684.72cba855bed454bc0c0f806b02ffb13c
+  superseded_at: '2026-07-10T20:30:24Z'
+  supersession_reason: redispatch round 2
+- dispatch_id: project-ontos-audit-rebaseline-remediation-B.2-recert-gemini-alignment
+  capture_id: project-ontos-audit-rebaseline-remediation-B.2-recert-gemini-alignment.r2.c20260710T202955Z.24684.72cba855bed454bc0c0f806b02ffb13c
+  round: 2
+  family: gemini
+  actual_executed_family: gemini
+  role: alignment
+  execution_provider: gemini
+  execution_cli: agy
+  resolved_executable: /Users/jonathanoh/.local/libexec/llm-dev-agy-1.1.0/agy
+  resolved_executable_realpath: /Users/jonathanoh/.local/libexec/llm-dev-agy-1.1.0/agy
+  cli_version: 1.1.0
+  provider_probe_hash: sha256:7fbd210ebec11f65a97190ef900795c4b8da3805af3f5a1b8d1d272556b292ca
+  model_id: auto
+  resolved_model: cli-default-unknown
+  model_probe_command: (post-dispatch) grep -iE 'model:' <raw_stderr> | head -1
+  model_candidate_list:
+  - cli-config-default
+  model_selection_rule: cli-config-default+post-dispatch-best-effort
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - agy
+  - --sandbox
+  - --print
+  - --print-timeout
+  - 10m
+  prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/project-ontos-audit-rebaseline-remediation-B.2-recert-gemini-alignment.r2.c20260710T202955Z.24684.72cba855bed454bc0c0f806b02ffb13c.md
+  prompt_sha256: sha256:954b9a1b2a9270f15e1270fdc1eed03efad3f356ee1adcd2c64128e04905e0ed
+  stdin_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/project-ontos-audit-rebaseline-remediation-B.2-recert-gemini-alignment.r2.c20260710T202955Z.24684.72cba855bed454bc0c0f806b02ffb13c.md
+  stdin_sha256: sha256:954b9a1b2a9270f15e1270fdc1eed03efad3f356ee1adcd2c64128e04905e0ed
+  exit_code: 0
+  started_at: '2026-07-10T20:29:58Z'
+  ended_at: '2026-07-10T20:30:24Z'
+  raw_output_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/project-ontos-audit-rebaseline-remediation-B.2-recert-gemini-alignment.r2.c20260710T202955Z.24684.72cba855bed454bc0c0f806b02ffb13c.raw.txt
+  raw_output_hash: sha256:80ce65a8557081188fa437b578952f72316477e937353446216d10e686accb07
+  stderr_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/project-ontos-audit-rebaseline-remediation-B.2-recert-gemini-alignment.r2.c20260710T202955Z.24684.72cba855bed454bc0c0f806b02ffb13c.stderr.txt
+  stderr_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  evidence_cap: static-inspection
+  evidence_labels_used:
+  - static-inspection
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-recert-gemini-alignment.md
+  artifact_sha256: sha256:80ce65a8557081188fa437b578952f72316477e937353446216d10e686accb07
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: null
+  model_used: cli-default-unknown
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: ''
+    exit_code: 0
+    started_at: '2026-07-10T20:29:58Z'
+    ended_at: '2026-07-10T20:30:24Z'
+    detected_429: false
+    stderr_tail_200: ''
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: raw_stdout
+  artifact_write_conflict: true
+  artifact_prewrite_sha256: sha256:33cfbca9aaf14d287418619b06c778e05ee396aafc9b1b0ceae8e5ef2b722519
+  dispatch_batch_id: audit-rebaseline-B2-recert-wave
+  credential_class: unknown
+  intent_model_restrictions:
+    family: gemini
+    execution_cli: agy
+    denied_models: []
+    allowed_models: []
+    active: false
+  gemini_via_agy_substrate: true
+  expected_version_regex_matched: true
+  supersedes_capture_ids:
+  - project-ontos-audit-rebaseline-remediation-B.2-recert-gemini-alignment.r1.c20260710T202245Z.72597.e1de89bbe921bf4856d5e6750bc3d8d8
+- dispatch_id: project-ontos-audit-rebaseline-remediation-B.2-recert-claude-adversarial
+  capture_id: project-ontos-audit-rebaseline-remediation-B.2-recert-claude-adversarial.r1.c20260710T202245Z.72605.d5470c1857f1a3c9a08ccfeaf8561678
+  round: 1
+  family: claude
+  actual_executed_family: claude
+  role: adversarial
+  execution_provider: claude
+  execution_cli: claude
+  resolved_executable: /Users/jonathanoh/.local/bin/claude
+  resolved_executable_realpath: /Users/jonathanoh/.local/share/claude/versions/2.1.206
+  cli_version: 2.1.206 (Claude Code)
+  provider_probe_hash: sha256:a864a7e725ad523d54c9040b841e68009b1857543196058b8a805223f8137cdd
+  model_id: auto
+  resolved_model: opus
+  model_probe_command: claude --help 2>&1 | grep -oE "'(opus|sonnet|haiku)'" | sort
+    -u
+  model_candidate_list:
+  - opus
+  - sonnet
+  model_selection_rule: claude-cli-alias-strongest
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - claude
+  - --permission-mode
+  - bypassPermissions
+  - --add-dir
+  - .
+  - -p
+  - <prompt-body-redacted>
+  - --model
+  - opus
+  prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/project-ontos-audit-rebaseline-remediation-B.2-recert-claude-adversarial.r1.c20260710T202245Z.72605.d5470c1857f1a3c9a08ccfeaf8561678.md
+  prompt_sha256: sha256:1d9d6a2544d797d68873e04ef55581538fc648270f78506fb3cb5b32bd575997
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-07-10T20:22:46Z'
+  ended_at: '2026-07-10T20:34:29Z'
+  raw_output_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/project-ontos-audit-rebaseline-remediation-B.2-recert-claude-adversarial.r1.c20260710T202245Z.72605.d5470c1857f1a3c9a08ccfeaf8561678.raw.txt
+  raw_output_hash: sha256:5ae48ea2cb1ad84745230e0845fc87fe77b7319298b0a0ca82cd286754edb557
+  stderr_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/project-ontos-audit-rebaseline-remediation-B.2-recert-claude-adversarial.r1.c20260710T202245Z.72605.d5470c1857f1a3c9a08ccfeaf8561678.stderr.txt
+  stderr_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  evidence_cap: direct-run
+  evidence_labels_used:
+  - direct-run
+  - static-inspection
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-recert-claude-adversarial.md
+  artifact_sha256: sha256:8eb78ec3a02044f8f1322ef13e5bde156b6696e6788b2fa42dfa0c34e09067a7
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: opus
+  model_used: opus
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: opus
+    exit_code: 0
+    started_at: '2026-07-10T20:22:46Z'
+    ended_at: '2026-07-10T20:34:29Z'
+    detected_429: false
+    stderr_tail_200: ''
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: worker_file
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  dispatch_batch_id: audit-rebaseline-B2-recert-wave
+  intent_model_restrictions:
+    family: claude
+    execution_cli: claude
+    denied_models: []
+    allowed_models: []
+    active: false

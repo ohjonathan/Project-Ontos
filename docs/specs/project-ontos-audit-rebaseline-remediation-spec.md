@@ -5,13 +5,13 @@ type: atom
 status: draft
 role: spec-author
 family: codex
-version: 1.2
+version: 1.3
 depends_on:
   - project-ontos-codex-audit-revalidation-2026-07
   - project_ontos_audit_remediation_release_line_tracker
 ---
 
-# Spec v1.2 — project-ontos-audit-rebaseline-remediation
+# Spec v1.3 — project-ontos-audit-rebaseline-remediation
 
 ## 1. Overview
 
@@ -24,6 +24,8 @@ Evidence baseline: the 100-row registry contains the 91 original findings and ni
 **B.1 incorporation note:** v1.1 converts Claude adversarial findings X-M1 and X-M2 into Phase C requirements and makes the public version, ID, JSON, migration, and platform evidence contracts explicit. The B.1 approval does not discharge those requirements or any lifecycle/release nonclaim below.
 
 **B.2 incorporation note:** v1.2 widens malformed-row handling to every required field and reachable subscript, makes the log-symlink regression non-vacuous, and sharpens control-plane, diagram, exit-code, documentation, and evidence anchors. B.2 approval likewise does not certify Phase C, D.5, any child lifecycle, or a release.
+
+**B.2 recertification / Phase C incorporation note:** v1.3 converts Claude X-1/X-2 and the independently reproduced Phase C gaps into construction-level gates rather than finite call-site promises. Finding and program rows must be typed and quarantined before every downstream consumer; malformed-clause tests count the offending literal rather than an already-singular prefix; all log-side writes and both workspace-lock entry points are no-follow; CLI ID copy comes from the canonical validator; and migration/error copy is actionable. These are requirements to implement and verify, not claims that the current Phase C worktree or its tests already satisfy them. The immutable SHA/count boundary and every external, per-issue, D.6, merge, tag, publication, and release nonclaim remain unchanged.
 
 ## 2. Scope
 
@@ -68,7 +70,9 @@ The validator requires every finding field, exact original and R2 cardinality, s
 
 O4 is the generated 12-deliverable human verification ledger showing status, evidence, and active blockers; O5 is the generated file-ownership lease table derived from deliverable manifests/allowed paths, and it blocks overlapping leases among simultaneously active work.
 
-Phase C must close B.1 X-M2/B.2 X-1 and M-1: any finding row missing **any** required field must yield collected `missing fields` errors and a non-zero exit at every direct-subscript site, never an uncaught `KeyError`. Regressions must cover at least two distinct omissions (`id` and `issue`), and duplicate-ID analysis must skip missing/`None` IDs rather than report `[None]` (current sites: `scripts/validate-audit-remediation-registry.py:219-223,244-286,338,372-387,632,656-661`).
+Phase C must close B.1 X-M2 and both rounds of B.2 X-1 by construction. Before any indexing, hashing, `set`/`Counter`, sorting, severity aggregation, path normalization/overlap, count, lookup, or local/external GitHub parity operation, the validator must perform a structural and type-validation pass over **both** `findings` and `programs`. Each collection must be a list; every row must be a mapping; every required field must be present and have its registry-schema type; nullable fields are nullable only where the schema says so; issues and milestones are integers but not booleans; IDs and other keyed values are hashable strings; and path/evidence collections contain strings rather than `None` or nested/unhashable values. Invalid rows are diagnosed with row context, quarantined from every downstream collection, and produce the ordinary validation-failure exit `1`—never an exception-derived exit `2`, bare `KeyError`/`TypeError`, or misleading secondary error such as duplicate ID `[None]`.
+
+The same fail-closed boundary applies to registry-owned GitHub metadata used by external parity, including snapshot count maps and every `external_drift` entry, before issue lookup, comparison, or formatting. Live GitHub transport/service failures remain explicit external blockers, but malformed local or returned metadata must be reported as parity/validation errors rather than crash the validator. The acceptance proof is table-driven: omit every required finding field and every required program field in turn, then exercise non-mapping rows, wrong and unhashable keyed values, `None` path elements, malformed GitHub metadata, and duplicate missing/`None` IDs. No finite list of current subscript line numbers is the safety boundary; quarantine before all consumers is.
 
 ### 4.2 Canonical Loader and Serializer
 
@@ -76,15 +80,19 @@ Phase C must close B.1 X-M2/B.2 X-1 and M-1: any finding row missing **any** req
 
 The public `serialize_frontmatter(mapping) -> str` signature remains stable. Output preserves field order and must parse to a semantically equal mapping; IDs are strings matching the documented ID pattern (direct-read: `ontos/core/schema.py:315-343`, `ontos/io/files.py:388-414`). Format-preserving edit paths retain comments, BOM, quoting, line endings, and multiline values where the operation does not require normalizing the affected node.
 
-The public ID contract is exact: IDs are strings matching `^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$`; non-strings raise `ValueError` beginning `Document id must be a string`, empty IDs say `Document id must not be empty`, and pattern failures use the copy at `ontos/core/schema.py:83-97`. Batch loading records these as `parse_error`; CLI-supplied invalid IDs use `E_USER_INPUT` (tests: `tests/test_document_loading_contract_a1.py:61-79`, `ontos/commands/stub.py:183-192`).
+The public ID contract is exact: IDs are strings matching `^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$`; non-strings raise `ValueError` beginning `Document id must be a string`, empty IDs say `Document id must not be empty`, and pattern failures use the plain-language copy at `ontos/core/schema.py:83-97`. Batch loading records these as `parse_error`. Every CLI-supplied ID must call the same canonical validator and surface its message through `E_USER_INPUT`; a CLI must not maintain a divergent regex or regex-only error string (current CLI anchor: `ontos/commands/stub.py:183-192`).
 
 ### 4.3 Safe Writer and CLI Logging
 
-**MODIFY:** `ontos/core/context.py`, `ontos/commands/log.py`, MCP shared writes, and their tests. The writer rejects outside-root paths, symlink parents and destinations, duplicate pending destinations, and non-regular targets. It stages unique exclusive files, writes UTF-8, preserves mode, flushes/fsyncs, and replaces through anchored directories (direct-read: `ontos/core/context.py:645-770`).
+**MODIFY:** `ontos/core/context.py`, `ontos/commands/log.py`, MCP shared writes, and their tests. The writer rejects outside-root paths, symlink/reparse parents and destinations, duplicate pending destinations, and non-regular targets. It stages unique exclusive files, writes UTF-8, preserves mode, flushes/fsyncs, and replaces through anchored directories (direct-read: `ontos/core/context.py:645-770`).
 
-Log creation uses configured `logs_dir`, the shared safe serializer, and exclusive creation. A collision is a user-visible `E_LOG_EXISTS` error and never overwrites the existing log (direct-read: `ontos/commands/log.py:283-300`). Interrupted multi-file work is best-effort rollback with retained recovery evidence; durable crash recovery remains one of the seven partial areas.
+Log creation uses configured `logs_dir`, the shared safe serializer, and exclusive creation. A collision is a user-visible `E_LOG_EXISTS` error and never overwrites the existing log (direct-read: `ontos/commands/log.py:283-300`). Its human and JSON message retains the existing path/no-overwrite fact and adds an actionable recovery hint: choose a different title/slug, or move/remove the existing log intentionally. Interrupted multi-file work is best-effort rollback with retained recovery evidence; durable crash recovery remains one of the seven partial areas.
 
-Phase C must close B.1 X-M1/B.2 X-2: log creation must reject every symlinked `logs_dir` component or use the same anchored no-follow parent pin as `SessionContext` **before and without collapsing the path through `.resolve()`**. The regression must exercise the reachable default `docs/logs` path, or another config-contained path, with an intermediate symlink—not an explicitly outside-configured `logs_dir` rejected by config—and prove an outside-workspace sentinel is unchanged (current defect: `ontos/commands/log.py:115,334-340`; shadowing guard: `ontos/core/config.py:360-363`).
+Phase C must close B.1 X-M1/B.2 X-2 and the recertification M-1: log creation must reject every symlinked `logs_dir` component or use the same anchored no-follow parent pin as `SessionContext` **before and without collapsing the path through `.resolve()`**. The regression must exercise the reachable default `docs/logs` path, or another config-contained path, with an intermediate symlink—not an explicitly outside-configured `logs_dir` rejected by config—and prove an outside-workspace sentinel is unchanged (current defect: `ontos/commands/log.py:115,334-340`; shadowing guard: `ontos/core/config.py:360-363`). To prevent a vacuous config-layer pass, a default-path test must prove no explicit `logs_dir` was configured and that the default symlink would otherwise resolve outside; a configured-path test must instead plant the redirect after configuration validation and before the write. In either construction, the observed rejection must come from the log/write no-follow boundary.
+
+Every write caused by `ontos log`, not only the Markdown document, must use the same workspace-contained no-follow pipeline. This includes the best-effort `.ontos/session_archived` marker and any future ancillary marker, metadata, or recovery write; an ancillary failure may retain its documented non-fatal policy, but it may not follow a symlink/reparse path or mutate an external inode.
+
+The workspace lock is part of the write boundary. Both `SessionContext.commit` and MCP `workspace_lock` must create/open `<workspace>/.ontos.lock` through a workspace-root anchor with no-follow/reparse protection, verify that the opened object is the intended regular file, and fail closed if the path or final entry is a symlink, junction, or reparse point. Regressions must exercise both entry points and prove an external sentinel's contents and inode remain unchanged; ordinary pre-v4.1 regular lockfiles remain compatible.
 
 ### 4.4 CLI, MCP, Activation, and Platform Contracts
 
@@ -100,7 +108,9 @@ PATH program and compares its reported version (direct-read:
 `ontos/core/config.py:223-266`, `ontos/commands/doctor.py:593-692`).
 
 The shared lock abstraction selects `fcntl` or `msvcrt` without unconditional
-Windows-incompatible imports (direct-read: `ontos/core/locking.py:13-81`). MCP
+Windows-incompatible imports (direct-read: `ontos/core/locking.py:13-81`) and
+implements the no-follow workspace-lock open contract from §4.3 for both CLI
+and MCP callers. MCP
 read-only mode omits write tools, refuses persistent graph export, suppresses
 usage logs, and opens only an existing immutable portfolio snapshot (direct-read:
 `ontos/mcp/server.py:191-204,1055-1077`, `ontos/mcp/tools.py:384-405`). Type counts
@@ -108,7 +118,7 @@ must enumerate every canonical lifecycle type, including zero-count types.
 
 The schema-v4 CLI envelope has exactly the top-level keys `schema_version`, `command`, `status`, `exit_code`, `message`, `result`, `data`, `warnings`, and `error`; `result` separates domain status, result kind, exit category, and diagnostic basis/count completeness. Public exit codes are `0` clean, `1` findings, `2` usage, `3` warnings, `5` internal, and `130` interrupted; code `4` is reserved and must not be emitted or reassigned without an explicit schema-version change (code: `ontos/ui/json_output.py:16-49,202-345,414-472`; tests: `tests/test_cli_contract_v4.py:78-155`, `tests/commands/test_link_check.py:315-325`).
 
-`[ontos].required_version` mismatch is exact public behavior: activation returns shell `1`, JSON `error.code: E_ACTIVATION_UNUSABLE`, `data.status: not_usable`, and reason beginning `Incompatible Ontos version`; invalid ranges begin `Invalid [ontos].required_version`. Phase C must remove duplicated invalid-clause copy so each malformed clause appears once in one actionable message (current branches: `ontos/core/config.py:239-266,279-345`).
+`[ontos].required_version` mismatch is exact public behavior: activation returns shell `1`, JSON `error.code: E_ACTIVATION_UNUSABLE`, `data.status: not_usable`, and reason beginning `Incompatible Ontos version`; invalid ranges begin `Invalid [ontos].required_version`. Both failure forms must point users to the Migration/Manual `required_version` guidance without changing those leading prefixes, codes, or status. Phase C must remove duplicated invalid-clause copy so each non-empty malformed clause's literal/repr appears exactly once in one actionable message (current branches: `ontos/core/config.py:239-266,279-345`). The regression must count the malformed clause token itself, across representative malformed clauses, not the already-singular `Invalid [ontos].required_version` prefix; empty-clause diagnostics must remain actionable without inventing a literal that was not present.
 
 ### 4.5 Release Pipeline, Tests, and Generated Metadata
 
@@ -147,7 +157,9 @@ Unit and integration evidence must include:
 - Serializer fixtures for quotes, commas in list items, YAML-like/hash-leading
   scalars, date-like IDs, multiline text, Unicode, and every CLI/MCP writer.
 - Writer cases for pre-existing temps, temp/destination symlinks, outside-root
-  paths, duplicate writes, interrupted commits, recovery, and unchanged externals.
+  paths, duplicate writes, interrupted commits, recovery, and unchanged externals;
+  both SessionContext and MCP `.ontos.lock` symlink/reparse attacks preserve the
+  external sentinel's contents and inode.
 - Hermetic log/map tests in temporary projects plus a post-suite clean-tree check.
 - Activation skew, PATH executable version mismatch, lifecycle-type completeness,
   read-only MCP no-write assertions, and Linux/Windows lock smoke. Concrete
@@ -156,8 +168,17 @@ Unit and integration evidence must include:
   `tests/commands/test_doctor_phase4.py:176-234`; lock anchors are
   `tests/mcp/test_locking.py:21-76`, `tests/test_ci_release_workflows.py:20-32`,
   and `.github/workflows/ci.yml:139-170`.
-- B.1 regressions for a symlinked `logs_dir`, malformed registry rows, and
-  one-copy invalid `required_version` diagnostics.
+- B.1/B.2 regressions for a non-vacuously reached symlinked `logs_dir`; safe
+  no-follow archive-marker creation; and table-driven registry validation that
+  omits every finding/program required field and covers non-mappings,
+  wrong/unhashable types, `None` paths, malformed external-parity metadata, and
+  no exception/exit `2`.
+- Required-version regressions assert each malformed non-empty clause literal or
+  repr exactly once (not the message prefix), and public-copy tests require the
+  Migration/Manual pointer while retaining the leading prefix/code/status.
+- CLI invalid-ID tests assert message equality with the canonical validator and
+  preserve `E_USER_INPUT`; log-collision tests assert no overwrite plus the
+  title/slug-or-move/remove recovery hint.
 - Wheel metadata/hash/import tests and static workflow assertions for exact
   TestPyPI version, `--no-deps`, single-artifact promotion, and OIDC scoping.
 - Registry validation locally and with live GitHub parity; exact 91+9 assignment
@@ -177,7 +198,7 @@ paths fail; MCP type counts become exhaustive; read-only MCP performs no writes;
 activation reports version incompatibility; and CLI JSON/exit semantics use the
 documented schema. Existing valid call signatures remain compatible where stated.
 
-Phase C must add normative migration copy to `docs/reference/Migration_v3_to_v4.md` and reference copy to `docs/reference/Ontos_Manual.md`. Both must document supported `required_version` ranges, the exact activation exit/code/message contract, string-only ID rules (including quoting date-like, numeric, and `null` YAML scalars), loader `parse_error`, CLI `E_USER_INPUT`, log-collision `E_LOG_EXISTS`, schema `4.0`, reserved exit code `4`, and the public exit taxonomy. They must warn adopters to upgrade and verify repository, PATH, hook, and CI runtimes before adding `required_version`, because pre-adoption runtimes can reject the key or fail activation. Documentation drift from the code/test anchors in §§4.2/4.4 blocks D.1.
+Phase C must add normative migration copy to `docs/reference/Migration_v3_to_v4.md` and reference copy to `docs/reference/Ontos_Manual.md`. Both must document supported `required_version` ranges, the exact activation exit/code/message contract and its guidance pointer, string-only ID rules (including quoting date-like, numeric, and `null` YAML scalars), loader `parse_error`, CLI `E_USER_INPUT`, log-collision `E_LOG_EXISTS` plus its recovery choices, schema `4.0`, reserved exit code `4`, and the public exit taxonomy. They must warn adopters to upgrade and verify repository, PATH, hook, and CI runtimes before adding `required_version`, because pre-adoption runtimes can reject the key or fail activation. They must also call out the migration impact of warnings-only exit `3`: shell automation that previously treated every non-zero result as a hard error must distinguish warnings from findings, usage errors, and internal failures. Documentation drift from the code/test anchors in §§4.2/4.4 blocks D.1.
 
 Rollback is commit-level: revert I0 as one integration unit, then regenerate map
 and agent metadata from the reverted clean snapshot. Do not selectively roll back
@@ -224,6 +245,7 @@ flowchart LR
   A -->|"CLI/MCP finding contracts"| C
   X["Activation + Doctor"] --> C
   K["Cross-platform Locking"] --> W
+  K --> C
   P["Release Pipeline"] --> T["Tests + Lifecycle Evidence"]
   S --> T
   W --> T
@@ -263,14 +285,18 @@ stateDiagram-v2
 | Contract or invariant | Implementation anchor | Test / verification anchor | Evidence |
 |---|---|---|---|
 | Semantic YAML round trip | `ontos.core.schema.serialize_frontmatter` | `tests/test_frontmatter_roundtrip_regression.py` | direct-run |
-| String, pattern-valid document ID | `ontos.core.schema.validate_document_id` | `tests/test_document_loading_contract_a1.py` | direct-run |
+| String, pattern-valid document ID and canonical CLI copy | `ontos.core.schema.validate_document_id`; CLI ID consumers | loader + CLI equality/`E_USER_INPUT` regressions | Phase C direct-run required |
 | Workspace-contained exclusive commit | `SessionContext.commit` | `tests/test_session_context.py` | direct-run |
-| Log collision refusal | `ontos.commands.log.log_command` | `tests/commands/test_log.py` | direct-run |
+| Log collision refusal and actionable recovery | `ontos.commands.log.log_command` | no-overwrite/path + title/slug-or-move/remove message regression | Phase C direct-run required |
 | Runtime version compatibility | `ontos/core/config.py:223-266`; `ontos/commands/activate.py:85-95`; `ontos/commands/doctor.py:593-692` | `tests/core/test_config_phase3.py:107-113,222-245`; `tests/commands/test_agentic_activation_resilience.py:75-93`; `tests/commands/test_doctor_phase4.py:176-234` | direct-run |
 | Schema-v4 JSON and exit taxonomy | `ontos/ui/json_output.py:16-49,202-345,414-472` | `tests/test_cli_contract_v4.py:78-155`; `tests/commands/test_link_check.py:315-325` | direct-run |
-| X-M1 reachable log-parent no-follow | `ontos/commands/log.py:115,334-340`; `ontos/core/config.py:360-363` | `tests/commands/test_log.py::test_default_logs_dir_symlink_is_rejected_before_resolution` | Phase C direct-run required |
-| X-M2 all-field malformed-row collection | `scripts/validate-audit-remediation-registry.py:219-223,244-286,338,372-387,632,656-661` | `tests/test_audit_remediation_registry_validator.py::test_distinct_missing_required_fields_are_collected_without_traceback` | Phase C direct-run required |
-| Required-version clause copy is singular | `ontos/core/config.py:249-266,279-345` | `tests/core/test_config_phase3.py::test_invalid_required_version_clause_is_reported_once` | Phase C direct-run required |
+| X-M1 reachable log-parent no-follow | `ontos/commands/log.py`; `ontos/core/config.py` path guard | default-path provenance or post-config plant + external-sentinel regression | Phase C direct-run required |
+| Every log write, including archive marker, is no-follow | `ontos.commands.log`; `SessionContext` safe writer | primary log + `.ontos/session_archived` symlink/reparse regressions | Phase C direct-run required |
+| Finding/program malformed rows are typed and quarantined | `validate-audit-remediation-registry.py` structural pass before all consumers | every required field + non-mapping/wrong/unhashable/`None` path tests; validation exit `1`, never exception/exit `2` | Phase C direct-run required |
+| Local/external GitHub metadata fails closed | registry validator parity input boundary | malformed snapshot/drift/live-response metadata regressions | Phase C direct-run required; live service proof external pending |
+| Required-version clause copy is singular and actionable | `ontos/core/config.py:249-266,279-345` | malformed clause literal/repr count plus guidance-pointer contract tests | Phase C direct-run required |
+| Workspace lock open is no-follow for CLI and MCP | `SessionContext` lock acquisition; `ontos.mcp.locking.workspace_lock` | symlink/reparse lock attacks; external contents/inode unchanged | Phase C direct-run required; Windows reparse proof external pending |
+| Migration warns about warnings exit `3` | `Migration_v3_to_v4.md`; `Ontos_Manual.md` | documentation contract inspection/test | Phase C static-inspection required |
 | Cross-platform lock backend | `ontos/core/locking.py:13-81` | `tests/mcp/test_locking.py:21-76`; `tests/test_ci_release_workflows.py:20-32`; `.github/workflows/ci.yml:139-170` | local direct-run/static-inspection; Windows external pending |
 | Read-only MCP performs no writes | `build_server`, `export_graph`, `PortfolioIndex` | `tests/mcp/test_read_only_registration.py` | direct-run |
 | Exact wheel provenance | `scripts/check_release_artifact.py` | release artifact/workflow tests + tag-run | local direct-run; external pending |
@@ -305,3 +331,12 @@ stateDiagram-v2
   (static-inspection).
 - B.2 X-1/X-2 and M-1/M-2 are incorporated without weakening the immutable SHA,
   external-proof, per-issue, D.6, merge, tag, publication, or release nonclaims.
+- v1.3 removes finite registry-subscript enumeration as an acceptance boundary:
+  finding/program rows and GitHub parity metadata are structurally validated and
+  quarantined before downstream operations, with exhaustive missing-field and
+  malformed-type regressions required (spec review; execution still pending).
+- v1.3 makes the required-version test non-vacuous by counting the malformed
+  clause literal/repr, extends no-follow protection to ancillary log writes and
+  both `.ontos.lock` entry points, and requires canonical CLI ID copy plus
+  actionable recovery/guidance and warnings-exit-`3` migration copy. None of
+  these specification gates is represented here as already implemented or green.

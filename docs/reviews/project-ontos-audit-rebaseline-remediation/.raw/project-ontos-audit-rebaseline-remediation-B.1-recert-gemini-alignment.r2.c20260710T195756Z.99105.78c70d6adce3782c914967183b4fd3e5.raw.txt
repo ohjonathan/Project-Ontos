@@ -1,0 +1,128 @@
+---
+id: project-ontos-audit-rebaseline-remediation-B.1-recert-gemini-alignment
+deliverable_id: project-ontos-audit-rebaseline-remediation
+phase: B.1
+role: alignment
+family: gemini
+evidence_labels_used: [static-inspection]
+reference_documents_consulted:
+  - docs/specs/project-ontos-audit-rebaseline-remediation-spec.md
+  - docs/reviews/2026-07-10-codex-audit-revalidation.md@b6f89d7
+  - docs/trackers/project-ontos-audit-remediation-release-line.md@b6f89d7
+  - manifests/project-ontos-audit-remediation-registry.yaml@b6f89d7
+status: completed
+---
+
+# B.1 Alignment Recertification — Gemini-Family Alignment Review
+
+## 1. Architecture compliance
+
+The architecture compliance of Project Ontos Spec v1.2 has been evaluated against the approved Codex audit revalidation and release-line authorities. Spec v1.2 bounds the review to the immutable commit range `bf91b42...b6f89d7`.
+
+Key architectural compliance details include:
+- **Exclusions**: The scope explicitly excludes closing 41 open findings, 7 partial findings, historical lease proof, child certification, D.6 lifecycle states, release actions, and two preserved user documents.
+- **Registry Validator**: Implements fields, cardinality, severity, scope, lease, and control-plane parity checks. During Phase C, the validator must run to collect all missing required fields without throwing a `KeyError` and skip duplicate identifiers that are missing or set to `None`.
+- **Serializer**: Retains the original function signature and parameter order, guaranteeing semantic round trips for YAML frontmatter. Document IDs are verified through string and pattern validations, with exact propagation of `ValueError`, `parse_error`, and `E_USER_INPUT` codes.
+- **Safe Writer & Logging**: Safe writer guarantees no-follow symlink behavior, workspace-contained paths, UTF-8 encoding, direct `fsync`, and mode preservation. Log collisions raise `E_LOG_EXISTS`. A critical Phase C requirement mandates testing a reachable intermediate default-path symlink with an unchanged outside sentinel prior to path resolution.
+- **Activation & Doctor**: Activation validates runtime version anchors (e.g., `required_version`) and triggers a singular invalid-clause diagnostic. The doctor tool compares the local `PATH` program. Cross-platform locking is implemented, and the read-only MCP prevents all write commands. Schema-v4 envelope keys and exit taxonomy are strictly defined, with exit code 4 reserved.
+- **Publishing & Map Generation**: Publishing builds, tests, and promotes exactly one wheel verified by hash and version identity with publisher-only OIDC. The map count is dynamically computed from a clean, tracked git snapshot rather than static placeholders like 175 or 177.
+- **Risks & Exclusions**: Maintains explicit exclusions for P0 corruption and P1 path/publish/lifecycle risks, prohibiting synthesized evidence or premature release claims.
+
+## 2. Diagram-architecture cross-reference
+
+The architecture diagram outlines explicit internal and external boundary edges, matching the implementation constraints:
+- **Core Internal Paths**:
+  - `Registry` $\rightarrow$ `Validator` $\rightarrow$ `O4/O5`
+  - `Loader/Serializer` $\rightarrow$ `Safe Writer/Logging` $\rightarrow$ `CLI/MCP`
+  - `Activation/Doctor` $\rightarrow$ `CLI/MCP`
+  - `Locking` $\rightarrow$ `Writer`
+  - `Release` $\rightarrow$ `Tests/Evidence`
+  - `Serializer/Writer/CLI-MCP/Validator` $\rightarrow$ `Tests`
+  - `Tests` $\rightarrow$ `Map/AGENTS`
+- **Dashed External Boundaries**:
+  - `GitHub` $\rightarrow$ `Validator`
+  - `Windows` $\rightarrow$ `Tests`
+  - `TestPyPI/PyPI` $\rightarrow$ `Release`
+
+These relationships show that the Validator is the gateway for ingestion, ensuring external registry updates (such as GitHub events) pass verification before affecting O4/O5 outputs. The separation of `Tests` to `Map/AGENTS` ensures that agent-directed execution is governed by verified test outcomes, while external environments like Windows and TestPyPI remain properly isolated outside the primary execution bounds.
+
+## 3. Roadmap alignment
+
+Roadmap alignment has been checked against the approved Codex revalidation checkpoint and the release-line authority:
+- **Lifecycle States**: The lifecycle transition progresses from `I0` $\rightarrow$ `A` $\rightarrow$ `B.1` $\rightarrow$ `B.2` $\rightarrow$ `D.1` $\rightarrow$ `D.2` $\rightarrow$ `D.3`. Blocking items divert execution to `D.4` $\rightarrow$ `D.2`. Closed issues go to `D.5`. If `D.5` fails, it falls back to `D.4`; if it passes, it proceeds to loose falsification. Catching reproduced issues routes back to `D.4`, whereas finding no catch moves to `D.6 pending`, ending execution with no release claim.
+- **Remediation Baseline**: The canonical baseline is established at `bf91b42`. The historical Fable report for `589d919` is marked as out of scope, covering only 68 of the 91 unique findings and referencing a nonexistent `D6a-test-gaps-3` identifier.
+- **Current Findings Partition**: At the I0 checkpoint, the 91 findings are partitioned into 2 historical fixed, 1 serializer code-fixed/evidence-pending, 40 implemented, 7 partial, and 41 confirmed-open. All 91 remain lifecycle pending.
+- **R2 Findings**: Spec v1.2 addresses the nine named R2 findings covering hermeticity, temp symlinks, ID types, Windows import, lifecycle types, TestPyPI provenance, activation skew, read-only MCP writes, and control-plane parity.
+- **Release-Line Discrepancies**: The release-line tracker shows that `shared_tree_integration.status` remains `unproven_rebaseline_integration`, which is release-blocking. Additionally, finding #146 remains `code_fixed_evidence_pending`, #147 remains evidence pending, and the emergency waiver is non-certified.
+
+## 4. Constraint verification
+
+| Row | Contract / Component | Verification Mode | Alignment Status & Notes |
+| :--- | :--- | :--- | :--- |
+| 1 | Semantic YAML round trip (`serialize_frontmatter`) | Direct-run | Compliant. Checked via frontmatter regression tests. |
+| 2 | String/pattern ID (`validate_document_id`) | Direct-run | Compliant. Verified by loading contract tests. |
+| 3 | Workspace-exclusive commit (`SessionContext.commit`) | Direct-run | Compliant. Checked via session-context tests. |
+| 4 | Log collision (`log_command`) | Direct-run | Compliant. Handled via log execution tests. |
+| 5 | Runtime version anchors (config/activate/doctor) | Direct-run | Compliant. Anchored to three distinct test points. |
+| 6 | Schema-v4 JSON/exit taxonomy (json_output) | Direct-run | Compliant. Verified by CLI and link tests. |
+| 7 | Reachable log-parent no-follow (log/config) | Phase C direct-run required | Pending. Requires execution of the named Phase C test. |
+| 8 | All-field malformed rows (validator) | Phase C direct-run required | Pending. Requires execution of validator checks in Phase C. |
+| 9 | Singular required-version clause (config) | Phase C direct-run required | Pending. Requires validation run in Phase C. |
+| 10 | Cross-platform locking (locking/tests/Windows CI) | Local evidence + Windows external pending | Partially Aligned. Local verification passed; Windows CI remains pending. |
+| 11 | Read-only MCP no writes (server/export/portfolio) | Direct-run | Compliant. Verified via registry registration tests. |
+| 12 | Exact wheel provenance (artifact checker) | Local tests + external tag-run pending | Partially Aligned. Local tests passed; OIDC verification pending. |
+| 13 | Registry sole authority (validator) | Direct-run | Compliant. Verified via local/external parity mode tests. |
+| 14 | Dynamic clean map (map generator) | Direct-run | Compliant. Double-generation and clean-tree verified. |
+
+## 5. Backward compatibility
+
+- **Serializer**: The signature and parameter order of serialization functions are preserved, maintaining full backward compatibility. Round trips guarantee that existing YAML documents do not regress.
+- **ID Ingestion**: String and pattern ID validations raise standard errors (`ValueError`, `parse_error`, `E_USER_INPUT`), preventing ingestion failures from silently corrupting datasets.
+- **Lease Ordering**: The O5 lease ordering applies prospectively. Retroactive claims for I0 are explicitly disallowed, preserving historical lease tracking integrity.
+- **Path Resolution**: The refutation of the old O5 human rendering due to shared-path collisions prevents regressions in concurrent multi-agent executions.
+- **Documentation**: Two user-facing documents are preserved in their original state, ensuring continuity of user documentation.
+
+## 6. Consistency check
+
+- **Fable Report Discrepancies**: Fable §5 covers only 68/91 findings and references a nonexistent `D6a-test-gaps-3`. It contradicts the machine registry, which is the canonical authority.
+- **Lease Claim Contradictions**: The attempt to claim retroactive lease compliance for I0 under O5 is inconsistent with the prospective design of O5 lease ordering.
+- **State Independence**: Status and lifecycle state remain independent. The fact that the emergency waiver is non-certified while `strict_p3_review_complete` is certified represents a validation skew.
+- **Validator Handling**: The validator must skip duplicate IDs that are missing or `None` while simultaneously ensuring all required fields are collected without raising a `KeyError`.
+
+## 7. Deviation report
+
+| Item | Approved Authority Requirement | Spec v1.2 Actual / Current State | Deviation / Alignment Status |
+| :--- | :--- | :--- | :--- |
+| `shared_tree_integration` | Must be fully integrated and verified. | Remains `unproven_rebaseline_integration`. | **Deviates**: Release-blocking integration issue remains unresolved. |
+| Findings #146 & #147 | Must resolve evidence verification. | #146 is code-fixed/evidence-pending; #147 is evidence-pending. | **Deviates**: Evidence verification has not been completed. |
+| Doctor Tool Lifecycle | Strict P3 lifecycle certification required. | Code is fixed at `03c36e6`, but evidence is pending; no old prose validates strict P3. | **Deviates**: P3 lifecycle validation remains open. |
+| Registry Parity | Fable report alignment with registry. | Fable covers only 68/91 findings and references invalid IDs. | **Deviates**: Fable report is incomplete and cannot be used as authority. |
+| Emergency Waiver | Must be certified if active. | Marked as visibly non-certified. | **Deviates**: Uncertified status conflicts with release readiness. |
+
+## 8. Issues found
+
+### Blocking
+- `shared_tree_integration.status` is set to `unproven_rebaseline_integration`, which blocks release progression.
+- Findings #146 and #147 remain in `code_fixed_evidence_pending` and `evidence_pending` states.
+- The Doctor tool fixed at `03c36e6` lacks strict P3 lifecycle certification prose and evidence.
+- Seven partial findings remain open without completed evidence validation.
+- The emergency waiver is non-certified.
+
+### Should-fix
+- Historical Fable report is incomplete (68/91 findings) and references a nonexistent `D6a-test-gaps-3` identifier.
+- Retroactive lease claims under O5 must be rejected, and O5 lease ordering must be restricted to prospective operations.
+- Old O5 must be permanently retired due to omitting shared-path collisions.
+
+### Minor
+- Windows CI and TestPyPI service proof remain external and pending validation.
+- Exact wheel provenance requires external tag-run execution verification.
+
+## Verdict
+Request changes
+
+## 10. Notes
+
+- **Verdict Rationale**: A verdict of `Request changes` is issued because multiple release-blocking criteria are unmet. Specifically, the `shared_tree_integration.status` is unproven, and key findings (#146, #147, and the Doctor tool at `03c36e6`) lack completed evidence.
+- **Registry and Fable**: The machine registry remains the sole authority. Fable report §5 is confirmed to be historical and incomplete, containing nonexistent identifier references (`D6a-test-gaps-3`).
+- **Phase C Prerequisites**: The verification of reachable log-parent symlinks, all-field malformed rows, and singular version clauses must be completed during the Phase C direct-run phase.
+- **External Dependencies**: Full recertification will require external validation of Windows CI tests and TestPyPI provenance, which are currently outside local execution boundaries.
