@@ -181,6 +181,47 @@ def resolve_ontos_launcher() -> Tuple[str, List[str]]:
     return str(Path(sys.executable).resolve()), ["-m", "ontos"]
 
 
+def is_ontos_managed_launcher(command: str, args: List[str]) -> bool:
+    """Return whether a command line matches Ontos's own launcher prefix.
+
+    Prefix-only check. It does NOT establish that a command line is safe to
+    execute: when Ontos is on PATH the expected prefix is empty, so every argv
+    whose executable resolves to Ontos satisfies it. Callers about to spawn a
+    process must use :func:`is_ontos_managed_serve_argv` instead.
+    """
+    expected_command, expected_prefix_args = resolve_ontos_launcher()
+    resolved_command = resolve_executable(command)
+    resolved_expected = resolve_executable(expected_command)
+    if not resolved_command or not resolved_expected:
+        return False
+    if resolved_command != resolved_expected:
+        return False
+    return args[: len(expected_prefix_args)] == expected_prefix_args
+
+
+def is_ontos_managed_serve_argv(command: str, args: List[str], workspace_root: Path) -> bool:
+    """Return whether (command, args) is exactly the serve entry Ontos generates.
+
+    The argv must equal ``[*prefix, "serve", "--workspace", <workspace_root>]``
+    with an optional trailing ``--read-only``. Anything else -- an extra token,
+    a duplicated ``--workspace``, a reordered flag, or a subcommand smuggled
+    ahead of ``serve`` behind a ``--`` separator -- is rejected, even when the
+    executable is Ontos's own trusted launcher.
+    """
+    expected_command, _ = resolve_ontos_launcher()
+    resolved_command = resolve_executable(command)
+    resolved_expected = resolve_executable(expected_command)
+    if not resolved_command or not resolved_expected:
+        return False
+    if resolved_command != resolved_expected:
+        return False
+    candidate = list(args)
+    return any(
+        candidate == build_ontos_stdio_entry(workspace_root, write_enabled=write_enabled)["args"]
+        for write_enabled in (False, True)
+    )
+
+
 def build_ontos_stdio_entry(workspace_root: Path, *, write_enabled: bool = False) -> Dict[str, Any]:
     """Build a stdio MCP entry for Ontos."""
     command, prefix_args = resolve_ontos_launcher()

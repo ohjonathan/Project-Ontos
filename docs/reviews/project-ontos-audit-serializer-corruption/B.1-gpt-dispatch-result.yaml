@@ -1,0 +1,77 @@
+results:
+- dispatch_id: project-ontos-audit-serializer-corruption-B.1-gpt-alignment
+  capture_id: project-ontos-audit-serializer-corruption-B.1-gpt-alignment.r1.c20260703T092213Z.93487.00f5f5860c61f9e8851a1d3f66779f4f
+  round: 1
+  family: gpt
+  role: alignment
+  execution_provider: gpt
+  execution_cli: codex
+  resolved_executable: /opt/homebrew/bin/codex
+  resolved_executable_realpath: /opt/homebrew/Caskroom/codex/0.141.0/codex-aarch64-apple-darwin
+  cli_version: codex-cli 0.141.0
+  provider_probe_hash: sha256:f2205c74d6fd6b19c43b8ba6464f176be8d2c8c862b3463f30fde7c19a84e414
+  model_id: gpt-5
+  resolved_model: gpt-5
+  model_probe_command: (none) same-family literal accepted under P14
+  model_candidate_list:
+  - gpt-5
+  model_selection_rule: same-family-literal
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - codex
+  - exec
+  - --dangerously-bypass-approvals-and-sandbox
+  - --sandbox
+  - workspace-write
+  - --skip-git-repo-check
+  - --output-last-message
+  - <artifact-path>
+  - --model
+  - gpt-5
+  - <prompt-body-redacted>
+  prompt_path: docs/reviews/project-ontos-audit-serializer-corruption/.prompts/project-ontos-audit-serializer-corruption-B.1-gpt-alignment.r1.c20260703T092213Z.93487.00f5f5860c61f9e8851a1d3f66779f4f.md
+  prompt_sha256: sha256:a88794c1a5aab2f74e22684f0a39698d44ba310adff30695a8a3962ef6525b79
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 1
+  started_at: '2026-07-03T09:22:13Z'
+  ended_at: '2026-07-03T09:22:15Z'
+  raw_output_path: docs/reviews/project-ontos-audit-serializer-corruption/.raw/project-ontos-audit-serializer-corruption-B.1-gpt-alignment.r1.c20260703T092213Z.93487.00f5f5860c61f9e8851a1d3f66779f4f.raw.txt
+  raw_output_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  stderr_path: docs/reviews/project-ontos-audit-serializer-corruption/.raw/project-ontos-audit-serializer-corruption-B.1-gpt-alignment.r1.c20260703T092213Z.93487.00f5f5860c61f9e8851a1d3f66779f4f.stderr.txt
+  stderr_hash: sha256:5260482da80deb60656955c2f84b9cf5c4f6dcccc48bfc7bc3effc77d3972953
+  evidence_cap: direct-run
+  evidence_labels_used: []
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-audit-serializer-corruption/B.1-gpt-alignment.md
+  artifact_sha256: sha256:missing
+  status: failed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: gpt-5
+  model_used: gpt-5
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: gpt-5
+    exit_code: 1
+    started_at: '2026-07-03T09:22:13Z'
+    ended_at: '2026-07-03T09:22:15Z'
+    detected_429: false
+    stderr_tail_200: 'Codex with a ChatGPT account."}}
+
+      ERROR: {"type":"error","status":400,"error":{"type":"invalid_request_error","message":"The
+      ''gpt-5'' model is not supported when using Codex with a ChatGPT account."}}'
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: worker_file
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  intent_model_restrictions:
+    family: gpt
+    execution_cli: codex
+    denied_models: []
+    allowed_models: []
+    active: false

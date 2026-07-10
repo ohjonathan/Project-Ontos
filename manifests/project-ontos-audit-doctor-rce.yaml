@@ -1,0 +1,287 @@
+manifest_version: "1.10.2"
+id: project-ontos-audit-doctor-rce
+slug: project-ontos-audit-doctor-rce
+summary: "Fix issue #147 by preventing `ontos doctor` from executing repo-committed Cursor MCP commands, while correcting SECURITY.md's MCP write-tool description."
+
+lifecycle_mode: framework lifecycle
+deliverable_type: standard
+
+owners:
+  - "Project Ontos Maintainers"
+
+scope:
+  allowed_paths:
+    - "SECURITY.md"
+    - "docs/logs/2026-07-03_merge-pull-request-145-from-ohjonathan-docs-fable.md"
+    - "docs/retros/project-ontos-audit-doctor-rce-retro.md"
+    - "docs/specs/project-ontos-audit-doctor-rce-spec.md"
+    - "docs/trackers/project-ontos-audit-doctor-rce.md"
+    - "manifests/project-ontos-audit-doctor-rce.yaml"
+    - "ontos/commands/doctor.py"
+    - "ontos/core/cursor_mcp.py"
+    - "ontos/core/mcp_shared.py"
+    - "tests/test_doctor_mcp_probe_regression.py"
+  allowed_path_patterns:
+    - "docs/reviews/project-ontos-audit-doctor-rce/*"
+  composition_targets:
+    - path: "docs/handoffs/project-ontos-audit-remediation-2026-07-dispatch-147-doctor-rce.md"
+      rationale: "Dispatch authority and exact artifact list; read-only input."
+      shares_with_deliverable_id: "project-ontos-audit-remediation-2026-07"
+    - path: "docs/trackers/project-ontos-audit-remediation-release-line.md"
+      rationale: "O5 scope-lock and O4 release ledger; read-only input for this deliverable."
+      shares_with_deliverable_id: "project-ontos-audit-remediation-2026-07"
+    - path: "docs/reviews/2026-07-02-fable-repo-audit.md"
+      rationale: "Audit evidence for D4b-trust-1 and D4b-trust-2; read-only input."
+      shares_with_deliverable_id: "project-ontos-audit-remediation-2026-07"
+  forbidden_paths:
+    - ".github/"
+    - ".llm-dev/framework/"
+    - "dist/"
+    - "build/"
+    - "site/"
+    - "docs/handoffs/project-ontos-audit-remediation-2026-07-dispatch-146-serializer-corruption.md"
+    - "docs/trackers/project-ontos-audit-serializer-corruption.md"
+    - "manifests/project-ontos-audit-serializer-corruption.yaml"
+    - "ontos/core/schema.py"
+    - "ontos/io/yaml.py"
+    - "ontos/mcp/"
+  forbidden_symbols:
+    - "git reset --hard"
+    - "git checkout -- ."
+  cardinality_assertions:
+    - name: "Doctor disables unmanaged project Cursor probes"
+      command: "grep -c 'allow_project_unmanaged_probe=False' ontos/commands/doctor.py"
+      expect: "gte:1"
+    - name: "Regression test includes hostile python -c Cursor payload"
+      command: "grep -c 'python3.*-c' tests/test_doctor_mcp_probe_regression.py"
+      expect: "gte:1"
+    - name: "SECURITY.md names mutable MCP write tools"
+      command: "grep -c 'scaffold_document.*log_session.*session_end.*promote_document.*rename_document' SECURITY.md"
+      expect: "gte:1"
+
+artifacts:
+  spec:              "docs/specs/project-ontos-audit-doctor-rce-spec.md"
+  family_verdict:    "docs/reviews/project-ontos-audit-doctor-rce/<phase>-<family>-<role>.md"
+  canonical_verdict: "docs/reviews/project-ontos-audit-doctor-rce/<phase>-verdict.md"
+  fix_summary:       "docs/reviews/project-ontos-audit-doctor-rce/D.4-fix-summary.md"
+  verification:      "docs/reviews/project-ontos-audit-doctor-rce/D.5-<family>-verifier.md"
+  final_approval:    "docs/reviews/project-ontos-audit-doctor-rce/final-approval.md"
+  retro:             "docs/retros/project-ontos-audit-doctor-rce-retro.md"
+
+model_assignments:
+  - phase: "A"
+    assignments:
+      codex: spec-author
+  - phase: "B.1"
+    assignments:
+      claude-sonnet: peer
+      gemini: adversarial
+      gpt: alignment
+  - phase: "B.3"
+    assignments:
+      codex: meta-consolidator
+  - phase: "C"
+    assignments:
+      codex: implementation-author
+  - phase: "D.1"
+    assignments:
+      codex: peer
+  - phase: "D.2"
+    assignments:
+      claude-sonnet: peer
+      gemini: adversarial
+      gpt: alignment
+  - phase: "D.3"
+    assignments:
+      codex: meta-consolidator
+  - phase: "D.4"
+    assignments:
+      codex: fix-author
+  - phase: "D.5"
+    assignments:
+      claude: verifier
+      gemini: verifier
+      gpt: verifier
+  - phase: "D.6"
+    assignments:
+      codex: final-approval
+  - phase: "E"
+    assignments:
+      codex: retro
+
+cli_capability_matrix:
+  codex:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+  claude:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+  claude-sonnet:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+    model_restrictions:
+      allowed_models:
+        - sonnet
+  gemini:
+    shell: false
+    git: false
+    test_runner: false
+    doc_index: true
+    evidence_cap: static-inspection
+    writes_files_non_interactively: false
+  gpt:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+    expected_version_regex: "^codex"
+
+smoke_checks:
+  - phase: "C"
+    checks:
+      - name: "doctor RCE regression"
+        command: ".venv/bin/python -m pytest tests/test_doctor_mcp_probe_regression.py -q"
+        expect: "exit-0"
+      - name: "cursor and doctor focused suites"
+        command: ".venv/bin/python -m pytest tests/core/test_cursor_mcp.py tests/commands/test_doctor_phase4.py -q"
+        expect: "exit-0"
+  - phase: "D.6"
+    checks:
+      - name: "full test suite"
+        command: ".venv/bin/python -m pytest tests/ -q"
+        expect: "exit-0"
+
+regression_guards: []
+sibling_deliverable_ids:
+  - project-ontos-audit-serializer-corruption
+self_review_caveats:
+  - family: codex
+    phases: ["D.3"]
+    rationale: "Codex authored Phase C and fast-path consolidates D.3 after three external D.2 review families; D.5 verification remains non-author families only."
+consolidation_mode: fast-path
+reviewer_family_substitutes: []
+
+lifecycle_receipt_inventory_path: "docs/reviews/project-ontos-audit-doctor-rce/lifecycle-receipt-inventory.yaml"
+fallback_evidence_mode: provider_limited_fallback
+harness_blocked_families:
+  - family: gpt
+    provider: openai
+    affected_phases: ["B.1", "D.2", "D.5"]
+    affected_role: "alignment/verifier"
+    blockage_category: model_unavailable
+    blockage_evidence_path: "docs/reviews/project-ontos-audit-doctor-rce/gpt-model-access-blockage.md"
+    blockage_evidence_sha256: "1d48eacf1dd290c4a020fe18c151f6f3737fac1152000beb2d974f07819bb14e"
+    first_observed: "2026-07-03T09:17:00-07:00"
+    retry_policy: "Probed gpt-5, gpt-4o, gpt-4-turbo, gpt-5-codex, gpt-4.1, gpt-4.1-mini, gpt-4.1-nano, and gpt-4o-mini through Codex CLI; all returned unsupported-model errors for this ChatGPT account."
+    fallback_route: "provider-limited-review-exception authorized by Jonathan on 2026-07-03; artifacts are warning-only and not strict-P3 evidence."
+    re_adjudication_owner: "Project Ontos Maintainers"
+    re_adjudication_ref: "readjudicate-gpt-family-review"
+provider_limited_review_exception:
+  scope: "All B.1, B.3, D.2, D.3, and D.5 review artifacts for project-ontos-audit-doctor-rce after GPT-family dispatch was blocked by model access."
+  strict_p3_roles_unsatisfied:
+    - "gpt alignment"
+    - "gpt verifier"
+  fallback_roles_used:
+    - "codex-authored warning-only fallback review artifacts"
+    - "mechanical tests and D.6 gate evidence"
+  evidence_type: framework_fallback_evidence
+  strict_p3_certified: false
+  authorization_ref: "docs/trackers/project-ontos-audit-doctor-rce.md fallback authorization row; user chat 2026-07-03"
+  caveat_text: "Strict P3 is not certified; provider-limited fallback was authorized after GPT-family model access failed."
+re_adjudication_queue:
+  - id: "readjudicate-gpt-family-review"
+    artifact_under_judgment: "docs/reviews/project-ontos-audit-doctor-rce/final-approval.md"
+    blocked_family_ref: "gpt"
+    reason: "GPT-family review and verification could not run because the Codex CLI account rejected every probed gpt-* model."
+    rerun_trigger: "A working gpt-* model becomes available through the Codex CLI substrate for this account."
+    owner: "Project Ontos Maintainers"
+    priority: high
+    expected_rerun_command: "bash .llm-dev/framework/scripts/dispatch-family-review.sh --family gpt --model <working-gpt-model> ..."
+    status: pending
+
+merge_authority:
+  mode: recommendation_only
+
+cross_repo_dependencies: []
+historical_receipt_gaps: []
+gate_only_invariants: []
+convergence_metrics: []
+
+gate_prerequisites:
+  - id: G-test-1
+    category: test
+    description: "Doctor RCE regression test passes."
+    verification:
+      command: ".venv/bin/python -m pytest tests/test_doctor_mcp_probe_regression.py -q"
+      expect: "exit-0"
+  - id: G-test-2
+    category: test
+    description: "Full test suite passes."
+    verification:
+      command: ".venv/bin/python -m pytest tests/ -q"
+      expect: "exit-0"
+  - id: G-scope-1
+    category: scope
+    description: "No edited tracked paths outside the #147 lease."
+    verification:
+      command: "git diff --name-only | grep -vE '^(SECURITY\\.md|docs/logs/2026-07-03_merge-pull-request-145-from-ohjonathan-docs-fable\\.md|docs/retros/project-ontos-audit-doctor-rce-retro\\.md|docs/specs/project-ontos-audit-doctor-rce-spec\\.md|docs/trackers/project-ontos-audit-doctor-rce\\.md|docs/reviews/project-ontos-audit-doctor-rce/|manifests/project-ontos-audit-doctor-rce\\.yaml|ontos/commands/doctor\\.py|ontos/core/cursor_mcp\\.py|ontos/core/mcp_shared\\.py|tests/test_doctor_mcp_probe_regression\\.py)$'"
+      expect: "exit-nonzero"
+  - id: G-cardinality-1
+    category: cardinality
+    description: "Doctor explicitly disables unmanaged project Cursor probes."
+    verification:
+      command: "grep -c 'allow_project_unmanaged_probe=False' ontos/commands/doctor.py"
+      expect: "gte:1"
+  - id: G-cardinality-2
+    category: cardinality
+    description: "SECURITY.md documents the MCP write tools."
+    verification:
+      command: "grep -c 'scaffold_document.*log_session.*session_end.*promote_document.*rename_document' SECURITY.md"
+      expect: "gte:1"
+  - id: G-verdict-1
+    category: verdict-presence
+    description: "Canonical Phase B.3 verdict exists."
+    verification:
+      command: "test -f docs/reviews/project-ontos-audit-doctor-rce/B.3-verdict.md"
+      expect: "exit-0"
+  - id: G-verdict-2
+    category: verdict-presence
+    description: "Canonical Phase D.3 verdict exists."
+    verification:
+      command: "test -f docs/reviews/project-ontos-audit-doctor-rce/D.3-verdict.md"
+      expect: "exit-0"
+  - id: G-blocker-1
+    category: blocker-closure
+    description: "No unresolved blocker lines remain in canonical verdicts."
+    verification:
+      command: "awk '/^## Preserved blockers/,/^## /' docs/reviews/project-ontos-audit-doctor-rce/*-verdict.md | grep -E '^- \\*\\*ID:\\*\\*'"
+      expect: "exit-nonzero"
+  - id: G-branch-1
+    category: branch
+    description: "Release actions are deferred; no commit/tag/push is part of this session."
+    verification:
+      command: "git log -1 --pretty=%D"
+      expect: "regex:.*"
+
+review_rounds: []
+
+tracker:
+  path: "docs/trackers/project-ontos-audit-doctor-rce.md"
+  columns: [phase, owner, status, artifact, evidence, timestamp]
+
+branch_map:
+  default: "codex/project-ontos-audit-doctor-rce-<PHASE_ID>-<ROLE>-<FAMILY>"
+
+references:
+  - path: "docs/handoffs/project-ontos-audit-remediation-2026-07-dispatch-147-doctor-rce.md"
+    relevance: "Dispatch authority for issue #147."
+  - path: "docs/reviews/2026-07-02-fable-repo-audit.md"
+    relevance: "Audit evidence D4b-trust-1 and D4b-trust-2."
+  - path: "docs/trackers/project-ontos-audit-remediation-release-line.md"
+    relevance: "O5 scope-lock and v4.7.1 release-line custody."

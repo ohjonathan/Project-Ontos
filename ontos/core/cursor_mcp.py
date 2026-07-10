@@ -12,6 +12,7 @@ from ontos.core.mcp_shared import (
     ManagedMCPAdapter,
     build_ontos_stdio_entry,
     extract_workspace_arg,
+    is_ontos_managed_serve_argv,
     load_json_object_config,
     probe_mcp_initialize,
     remove_named_server_entry,
@@ -106,6 +107,7 @@ def inspect_cursor_ontos_config(
     workspace_root: Path,
     home: Optional[Path] = None,
     config_path_override: Optional[Path] = None,
+    allow_unmanaged_probe: bool = False,
 ) -> CursorInspection:
     """Inspect one Cursor scope for a managed Ontos MCP entry."""
     config_path = cursor_config_path(
@@ -259,6 +261,30 @@ def inspect_cursor_ontos_config(
         )
 
     mode = "read-only" if "--read-only" in args else "write-enabled"
+    # A project-scope entry is attacker-controlled (`.cursor/mcp.json` is routinely
+    # committed), so it is only ever probed when its argv is exactly the entry Ontos
+    # would generate for *this* repo root. User scope is owned by the user, so its
+    # argv is pinned to the workspace it names rather than the current root.
+    expected_probe_root = workspace if scope == "user" else workspace_root
+    if not allow_unmanaged_probe and not is_ontos_managed_serve_argv(command, args, expected_probe_root):
+        return CursorInspection(
+            scope=scope,
+            code="unmanaged_probe_skipped",
+            ok=False,
+            message=f"Cursor {scope} Ontos entry uses an unmanaged command; direct MCP initialize probe skipped",
+            details=(
+                "Run 'ontos mcp install --client cursor --scope "
+                f"{scope}' to regenerate the Ontos-managed launcher."
+            ),
+            config_path=config_path,
+            file_present=True,
+            entry_present=True,
+            mode=mode,
+            command=command,
+            args=tuple(args),
+            workspace=workspace,
+        )
+
     probe = probe_mcp_initialize(command, args)
     if not probe.ok:
         return CursorInspection(

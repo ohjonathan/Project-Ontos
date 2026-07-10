@@ -1,0 +1,23 @@
+manifest_version: "1.10.2"
+authoring_session_family: codex
+meta_orchestrator_family: codex
+deliverable_author_family: codex
+deliverable_id: project-ontos-audit-serializer-corruption
+artifact_root: docs/reviews/project-ontos-audit-serializer-corruption
+dispatches:
+  - dispatch_id: project-ontos-audit-serializer-corruption-B.1-gemini-adversarial
+    family: gemini
+    role: adversarial
+    review_mode: full-3-lens
+    expected_provider: gemini
+    expected_cli: gemini
+    legacy_execution_cli_override_reason: "Host has legacy Gemini CLI from llm-dev doctor; AGY is not available in this session, so #146 uses the explicit v1.10 legacy Gemini CLI override."
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-audit-serializer-corruption/B.1-gemini-adversarial.md
+    prompt_path: docs/reviews/project-ontos-audit-serializer-corruption/.prompts/B.1-gemini-adversarial.prompt.md
+    evidence_cap: static-inspection
+    dispatch_method: external-cli
+    fallback_models: []
+    status: pending
+    scope: |
+      Adversarial review the Phase A spec for #146. Stress-test safety claims, write-path coverage, edge cases around YAML quoting/type preservation, and any path by which a valid document could still be corrupted.

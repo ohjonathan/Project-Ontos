@@ -1,0 +1,75 @@
+results:
+- dispatch_id: project-ontos-audit-serializer-corruption-B.1-claude-sonnet-peer
+  capture_id: project-ontos-audit-serializer-corruption-B.1-claude-sonnet-peer.r1.c20260703T091641Z.79455.680962287d881adb377bff6afe3c088c
+  round: 1
+  family: claude-sonnet
+  role: peer
+  execution_provider: claude
+  execution_cli: claude
+  resolved_executable: /Users/jonathanoh/.local/bin/claude
+  resolved_executable_realpath: /Users/jonathanoh/.local/share/claude/versions/2.1.198
+  cli_version: 2.1.198 (Claude Code)
+  provider_probe_hash: sha256:57dd5560369d1b627ea728b5d0f4023ee583b73b903f546eece1c1cf3acd7288
+  model_id: sonnet
+  resolved_model: sonnet
+  model_probe_command: (none) same-family literal accepted under P14
+  model_candidate_list:
+  - sonnet
+  model_selection_rule: same-family-literal
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - claude
+  - --permission-mode
+  - bypassPermissions
+  - --add-dir
+  - .
+  - -p
+  - <prompt-body-redacted>
+  - --model
+  - sonnet
+  prompt_path: docs/reviews/project-ontos-audit-serializer-corruption/.prompts/project-ontos-audit-serializer-corruption-B.1-claude-sonnet-peer.r1.c20260703T091641Z.79455.680962287d881adb377bff6afe3c088c.md
+  prompt_sha256: sha256:70010967bff234f2bd15116ea081bc01f645de46130c36e82e8d0c6cba4b8154
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-07-03T09:16:42Z'
+  ended_at: '2026-07-03T09:22:04Z'
+  raw_output_path: docs/reviews/project-ontos-audit-serializer-corruption/.raw/project-ontos-audit-serializer-corruption-B.1-claude-sonnet-peer.r1.c20260703T091641Z.79455.680962287d881adb377bff6afe3c088c.raw.txt
+  raw_output_hash: sha256:95e3f36f997147fc272de6b428388a9cfa136dc0618217486261c9c7f4942a00
+  stderr_path: docs/reviews/project-ontos-audit-serializer-corruption/.raw/project-ontos-audit-serializer-corruption-B.1-claude-sonnet-peer.r1.c20260703T091641Z.79455.680962287d881adb377bff6afe3c088c.stderr.txt
+  stderr_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  evidence_cap: direct-run
+  evidence_labels_used: []
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-audit-serializer-corruption/B.1-claude-sonnet-peer.md
+  artifact_sha256: sha256:95e3f36f997147fc272de6b428388a9cfa136dc0618217486261c9c7f4942a00
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: sonnet
+  model_used: sonnet
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: sonnet
+    exit_code: 0
+    started_at: '2026-07-03T09:16:42Z'
+    ended_at: '2026-07-03T09:22:04Z'
+    detected_429: false
+    stderr_tail_200: ''
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: raw_transcript_promoted
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  raw_transcript_sha256: sha256:95e3f36f997147fc272de6b428388a9cfa136dc0618217486261c9c7f4942a00
+  promoted_artifact_sha256: sha256:95e3f36f997147fc272de6b428388a9cfa136dc0618217486261c9c7f4942a00
+  recovery_caveat: 'raw_transcript_promoted: expected artifact not produced at /Users/jonathanoh/Developer/workspaces/Project-Ontos/docs/reviews/project-ontos-audit-serializer-corruption/B.1-claude-sonnet-peer.md'
+  intent_model_restrictions:
+    family: claude-sonnet
+    execution_cli: claude
+    denied_models: []
+    allowed_models: []
+    active: false

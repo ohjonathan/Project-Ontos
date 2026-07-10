@@ -456,6 +456,10 @@ def test_doctor_json_includes_cursor_mcp_project_precedence_success(tmp_path: Pa
 
     probe_script = tmp_path / "bin" / "cursor-ok"
     _write_probe_script(probe_script, exit_code=0)
+    # Only an Ontos-managed argv is probed, so the stub must resolve to the launcher.
+    from ontos.core import mcp_shared
+
+    monkeypatch.setattr(mcp_shared, "resolve_ontos_launcher", lambda: (str(probe_script.resolve()), []))
     _write_json(
         workspace / ".cursor" / "mcp.json",
         {

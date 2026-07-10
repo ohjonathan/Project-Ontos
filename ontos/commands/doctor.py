@@ -779,14 +779,18 @@ def _format_cursor_details(project_status: str, project_reason: str, user_status
     return f"project: {project_status} - {project_reason}; user: {user_status} - {user_reason}"
 
 
-def _inspect_cursor_scope(scope: str, repo_root: Path) -> Any:
+def _inspect_cursor_scope(scope: str, repo_root: Path, *, allow_unmanaged_probe: bool = True) -> Any:
     """Compatibility wrapper around the Cursor adapter inspection entry point."""
     from ontos.core.cursor_mcp import inspect_cursor_ontos_config
 
-    return inspect_cursor_ontos_config(scope=scope, workspace_root=repo_root)
+    return inspect_cursor_ontos_config(
+        scope=scope,
+        workspace_root=repo_root,
+        allow_unmanaged_probe=allow_unmanaged_probe,
+    )
 
 
-def check_cursor_mcp(repo_root: Optional[Path] = None) -> CheckResult:
+def check_cursor_mcp(repo_root: Optional[Path] = None, *, allow_project_unmanaged_probe: bool = False) -> CheckResult:
     """Check 11: Cursor native MCP config status with project precedence."""
     try:
         root = resolve_project_root(repo_root=repo_root)
@@ -798,7 +802,11 @@ def check_cursor_mcp(repo_root: Optional[Path] = None) -> CheckResult:
             details=str(exc),
         )
 
-    project = _inspect_cursor_scope("project", root)
+    project = _inspect_cursor_scope(
+        "project",
+        root,
+        allow_unmanaged_probe=allow_project_unmanaged_probe,
+    )
     user = _inspect_cursor_scope("user", root)
     project_status, project_reason = _cursor_scope_summary(project)
     user_status, user_reason = _cursor_scope_summary(user)
@@ -921,7 +929,7 @@ def _run_doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
         lambda: check_agents_staleness(repo_root),
         lambda: check_environment_manifests(repo_root),
         check_antigravity_mcp,
-        lambda: check_cursor_mcp(repo_root),
+        lambda: check_cursor_mcp(repo_root, allow_project_unmanaged_probe=False),
     ]
     if options.frontmatter:
         checks.append(lambda: check_frontmatter_enums(options.scope, repo_root))
