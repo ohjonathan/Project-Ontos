@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from ontos.core import mcp_shared
 from ontos.core.cursor_mcp import inspect_cursor_ontos_config
 
 
@@ -148,6 +149,7 @@ def test_inspect_cursor_ontos_config_warns_on_malformed_json(tmp_path: Path) -> 
 )
 def test_inspect_cursor_ontos_config_reports_validation_failures(
     tmp_path: Path,
+    monkeypatch,
     name: str,
     payload: dict,
     expected_code: str,
@@ -180,6 +182,9 @@ def test_inspect_cursor_ontos_config_reports_validation_failures(
     elif name == "initialize_probe_failure":
         probe_script = tmp_path / "bin" / "cursor-fail"
         _write_probe_script(probe_script, exit_code=3)
+        # Only an Ontos-managed argv is ever probed, so this entry must resolve to
+        # the launcher to reach probe_mcp_initialize at all.
+        monkeypatch.setattr(mcp_shared, "resolve_ontos_launcher", lambda: (str(probe_script.resolve()), []))
         payload = {"mcpServers": {"ontos": {"command": str(probe_script), "args": ["serve", "--workspace", str(workspace.resolve()), "--read-only"]}}}
 
     _write_json(config_path, payload)
@@ -191,11 +196,12 @@ def test_inspect_cursor_ontos_config_reports_validation_failures(
     assert expected_snippet in result.message or expected_snippet in (result.details or "")
 
 
-def test_inspect_cursor_ontos_config_returns_success_for_valid_entry(tmp_path: Path) -> None:
+def test_inspect_cursor_ontos_config_returns_success_for_valid_entry(tmp_path: Path, monkeypatch) -> None:
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     probe_script = tmp_path / "bin" / "cursor-ok"
     _write_probe_script(probe_script, exit_code=0)
+    monkeypatch.setattr(mcp_shared, "resolve_ontos_launcher", lambda: (str(probe_script.resolve()), []))
     config_path = workspace / ".cursor" / "mcp.json"
     _write_json(
         config_path,
