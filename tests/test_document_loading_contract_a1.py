@@ -1,7 +1,12 @@
 """Tests for the canonical document loading contract (Track A1)."""
 import pytest
 from pathlib import Path
-from ontos.io.files import load_document_from_content, DocumentLoadIssue
+from ontos.io.files import (
+    DocumentLoadIssue,
+    load_document,
+    load_document_from_content,
+    load_documents,
+)
 from ontos.io.yaml import parse_frontmatter_content
 from ontos.core.types import DocumentType, DocumentStatus
 
@@ -79,7 +84,29 @@ def test_batch_loader_reports_non_string_id_as_parse_error(tmp_path):
     assert "Document id must be a string" in result.issues[0].message
 
 
-from ontos.io.files import load_documents
+def test_batch_loader_reports_invalid_utf8_as_parse_error(tmp_path):
+    path = tmp_path / "invalid-utf8.md"
+    path.write_bytes(
+        b"---\nid: invalid_utf8\ntype: atom\nstatus: active\n---\nbody:\xff\n"
+    )
+
+    result = load_documents([path], parse_frontmatter_content)
+
+    assert result.documents == {}
+    assert len(result.issues) == 1
+    assert result.issues[0].code == "parse_error"
+    assert "can't decode byte 0xff" in result.issues[0].message
+
+
+def test_direct_loader_rejects_invalid_utf8(tmp_path):
+    path = tmp_path / "invalid-utf8.md"
+    path.write_bytes(
+        b"---\nid: invalid_utf8\ntype: atom\nstatus: active\n---\nbody:\xff\n"
+    )
+
+    with pytest.raises(UnicodeDecodeError):
+        load_document(path, parse_frontmatter_content)
+
 
 def test_loader_duplicate_contract_deterministic_first_wins(tmp_path):
     """Verify that lexicographically first path wins for collisions."""

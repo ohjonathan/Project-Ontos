@@ -46,3 +46,7 @@ env/
 # Pytest cache
 .pytest_cache/
 build/
+
+# Coverage artifacts
+.coverage
+coverage.xml

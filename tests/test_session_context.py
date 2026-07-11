@@ -726,7 +726,13 @@ class TestSessionContext:
         real_create = ctx._create_unique_file
         exchanged = False
 
-        def exchange_parent_then_create(anchor, *, prefix, suffix):  # noqa: ANN001
+        def exchange_parent_then_create(  # noqa: ANN001
+            anchor,
+            *,
+            prefix,
+            suffix,
+            creation_mode=0o600,
+        ):
             nonlocal exchanged
             if not exchanged:
                 exchanged = True
@@ -735,7 +741,12 @@ class TestSessionContext:
                     safe_parent.symlink_to(outside, target_is_directory=True)
                 except OSError as exc:  # pragma: no cover - platform capability.
                     pytest.skip(f"symlinks unavailable: {exc}")
-            return real_create(anchor, prefix=prefix, suffix=suffix)
+            return real_create(
+                anchor,
+                prefix=prefix,
+                suffix=suffix,
+                creation_mode=creation_mode,
+            )
 
         monkeypatch.setattr(ctx, "_create_unique_file", exchange_parent_then_create)
 
@@ -810,6 +821,19 @@ class TestSessionContext:
         ctx.buffer_write(target, "new")
         ctx.commit()
         assert stat.S_IMODE(target.stat().st_mode) == 0o640
+
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX umask semantics")
+    def test_commit_new_file_honors_process_umask(self, tmp_path):
+        target = tmp_path / "secret.md"
+        previous_umask = os.umask(0o077)
+        try:
+            ctx = SessionContext(repo_root=tmp_path, config={})
+            ctx.buffer_write(target, "secret")
+            ctx.commit()
+        finally:
+            os.umask(previous_umask)
+
+        assert stat.S_IMODE(target.stat().st_mode) == 0o600
 
     def test_rollback_clears_buffer(self):
         """Rollback should clear pending writes without executing."""

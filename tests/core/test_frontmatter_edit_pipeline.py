@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from ontos.core.frontmatter_edit import patch_frontmatter_fields
-from ontos.io.yaml import parse_frontmatter_content
+from ontos.io.yaml import parse_frontmatter_content, split_frontmatter_text
 
 
 def test_patch_preserves_bom_crlf_comments_quoting_and_body() -> None:
@@ -39,6 +39,66 @@ def test_patch_preserves_indented_frontmatter_block_delimiter() -> None:
     frontmatter, body = parse_frontmatter_content(updated)
     assert frontmatter["summary"] == "phase --- two\n"
     assert body == "body\n"
+
+
+def test_frontmatter_fences_accept_trailing_horizontal_whitespace() -> None:
+    original = (
+        "---   \n"
+        "id: spaced_fence\n"
+        "type: atom\n"
+        "status: draft\n"
+        "---\t\n"
+        "body\n"
+    )
+
+    updated = patch_frontmatter_fields(original, {"status": "active"})
+
+    frontmatter, body = parse_frontmatter_content(updated)
+    assert frontmatter["id"] == "spaced_fence"
+    assert frontmatter["status"] == "active"
+    assert body == "body\n"
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        " ---\nid: indented\n---\n",
+        "prefix---\nid: embedded\n---\n",
+        "---suffix\nid: suffixed\n---\n",
+    ],
+)
+def test_frontmatter_fences_remain_line_delimited_and_unindented(content: str) -> None:
+    assert split_frontmatter_text(content) is None
+
+
+def test_patch_preserves_filename_derived_id_semantics() -> None:
+    original = "---\ntype: atom\nstatus: draft\n---\nbody\n"
+
+    updated = patch_frontmatter_fields(original, {"status": "active"})
+
+    frontmatter, body = parse_frontmatter_content(updated)
+    assert "id" not in frontmatter
+    assert frontmatter["status"] == "active"
+    assert body == "body\n"
+
+
+def test_patch_validates_an_id_added_to_an_idless_document() -> None:
+    original = "---\ntype: atom\nstatus: draft\n---\nbody\n"
+
+    updated = patch_frontmatter_fields(original, {"id": "derived_doc"})
+
+    frontmatter, _ = parse_frontmatter_content(updated)
+    assert frontmatter["id"] == "derived_doc"
+
+
+@pytest.mark.parametrize("invalid_id", [None, 20260711, "bad/id"])
+def test_patch_rejects_invalid_explicit_or_added_id(invalid_id: object) -> None:
+    id_line = "id: null\n" if invalid_id is None else ""
+    original = f"---\n{id_line}type: atom\nstatus: draft\n---\nbody\n"
+    updates = {"status": "active"} if id_line else {"id": invalid_id}
+
+    with pytest.raises(ValueError, match="Document id"):
+        patch_frontmatter_fields(original, updates)
 
 
 def test_patch_rejects_duplicate_target_field() -> None:

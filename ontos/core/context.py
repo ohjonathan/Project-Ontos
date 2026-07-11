@@ -18,7 +18,6 @@ import errno
 import os
 import secrets
 import stat
-import tempfile
 import time
 
 from ontos.core.locking import (
@@ -1025,21 +1024,24 @@ class SessionContext:
         *,
         prefix: str,
         suffix: str,
+        creation_mode: int = 0o600,
     ) -> tuple[int, str]:
-        if anchor.fd is None:
-            fd, path = tempfile.mkstemp(
-                dir=str(anchor.path),
-                prefix=prefix,
-                suffix=suffix,
-            )
-            return fd, Path(path).name
-
-        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
+        """Create an exclusive temporary entry with normal umask semantics."""
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        flags |= getattr(os, "O_NOFOLLOW", 0)
         flags |= getattr(os, "O_CLOEXEC", 0)
         while True:
             name = f"{prefix}{secrets.token_hex(12)}{suffix}"
             try:
-                fd = os.open(name, flags, 0o600, dir_fd=anchor.fd)
+                if anchor.fd is not None:
+                    fd = os.open(
+                        name,
+                        flags,
+                        creation_mode,
+                        dir_fd=anchor.fd,
+                    )
+                else:
+                    fd = os.open(anchor.path / name, flags, creation_mode)
             except FileExistsError:
                 continue
             return fd, name
@@ -1067,6 +1069,7 @@ class SessionContext:
             anchor,
             prefix=f".{final_name}.",
             suffix=".tmp",
+            creation_mode=0o600 if final_info is not None else 0o666,
         )
         staged_binding: Optional[_EntryBinding] = None
         try:
@@ -1076,9 +1079,8 @@ class SessionContext:
                 anchor.path / temp_name,
                 "staged write",
             )
-            if hasattr(os, "fchmod"):
-                mode = stat.S_IMODE(final_info.st_mode) if final_info else 0o644
-                os.fchmod(fd, mode)
+            if final_info is not None and hasattr(os, "fchmod"):
+                os.fchmod(fd, stat.S_IMODE(final_info.st_mode))
             with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
                 fd = -1
                 handle.write(content)

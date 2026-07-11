@@ -282,14 +282,16 @@ def load_documents(
                     pass # Handled below by catch-all
             
             if doc is None:
-                # Lenient read (BOM stripping and leading lstrip for frontmatter detection)
+                # Detection-lenient, encoding-strict read: accept a UTF-8 BOM
+                # and leading whitespace before frontmatter, but reject invalid
+                # UTF-8 instead of silently materializing U+FFFD. Mutation
+                # callers share this loader, so decoding must fail closed.
                 raw_bytes = path.read_bytes()
                 if raw_bytes.startswith(b'\xef\xbb\xbf'):
                     raw_bytes = raw_bytes[3:]
-                # .lstrip() intentionally strips leading whitespace/BOM before frontmatter detection.
-                # This is more lenient than the legacy parser (core/frontmatter.py) which required
-                # content.startswith('---') with no leading whitespace. The leniency handles BOM
-                # artifacts and minor formatting issues in imported/external files.
+                # .lstrip() intentionally strips leading whitespace before
+                # frontmatter detection. This remains more detection-lenient
+                # than core/frontmatter.py, while decoding itself stays strict.
                 content = raw_bytes.decode('utf-8', errors='strict').lstrip()
 
                 # README and template files without an explicit id are not
@@ -376,10 +378,9 @@ def load_document(
     raw_bytes = path.read_bytes()
     if raw_bytes.startswith(b'\xef\xbb\xbf'):
         raw_bytes = raw_bytes[3:]
-    # .lstrip() intentionally strips leading whitespace/BOM before frontmatter detection.
-    # This is more lenient than the legacy parser (core/frontmatter.py) which required
-    # content.startswith('---') with no leading whitespace. The leniency handles BOM
-    # artifacts and minor formatting issues in imported/external files.
+    # Detection is lenient (UTF-8 BOM plus leading whitespace); decoding is
+    # intentionally strict so callers never mistake replacement characters for
+    # document content or write them back through a mutation path.
     content = raw_bytes.decode('utf-8', errors='strict').lstrip()
     doc, _ = load_document_from_content(path, content, frontmatter_parser)
     return doc

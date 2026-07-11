@@ -53,23 +53,30 @@ def dump_yaml(
 def split_frontmatter_text(content: str) -> Optional[Tuple[str, str, int]]:
     """Split a Markdown document on line-delimited frontmatter fences.
 
-    A literal ``---`` inside a YAML scalar is not a delimiter unless it is the
-    complete line.  Returns ``(yaml_text, body, body_offset)`` or ``None``.
+    A fence must be unindented and contain only ``---`` plus optional trailing
+    horizontal whitespace. A literal ``---`` inside a YAML scalar is not a
+    delimiter. Returns ``(yaml_text, body, body_offset)`` or ``None``.
     """
     lines = content.splitlines(keepends=True)
-    if not lines or lines[0].rstrip("\r\n") != "---":
+    if not lines or not _is_frontmatter_fence(lines[0]):
         return None
 
     offset = len(lines[0])
     for index in range(1, len(lines)):
         line = lines[index]
-        if line.rstrip("\r\n") == "---":
+        if _is_frontmatter_fence(line):
             frontmatter = "".join(lines[1:index])
             body_offset = offset + len(line)
             body = "".join(lines[index + 1 :])
             return frontmatter, body, body_offset
         offset += len(line)
     return None
+
+
+def _is_frontmatter_fence(line: str) -> bool:
+    """Return true for an unindented fence with optional spaces or tabs."""
+    return line.rstrip("\r\n").rstrip(" \t") == "---"
+
 
 def parse_frontmatter_content(content: str) -> tuple:
     """Parse frontmatter and return (frontmatter_dict, body_string).

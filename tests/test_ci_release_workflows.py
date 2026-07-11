@@ -32,6 +32,28 @@ def test_ci_has_clean_tree_gate_and_windows_boundary_smokes():
     assert ".ontos/scripts/tests" not in source
 
 
+def test_ci_gates_measured_coverage_and_validates_audit_registry():
+    workflow, _ = _workflow("ci.yml")
+    test_job = workflow["jobs"]["test"]
+
+    checkout = test_job["steps"][0]
+    assert checkout["with"]["fetch-depth"] == 0
+
+    coverage = _step(test_job, "Check coverage")
+    assert coverage.get("continue-on-error") is not True
+    assert "--cov-fail-under=70" in coverage["run"]
+    assert "--cov-fail-under=82" in coverage["run"]
+
+    registry = _step(test_job, "Validate audit remediation registry")
+    assert registry["if"] == "matrix.python-version == '3.11'"
+    assert registry["run"] == "python scripts/validate-audit-remediation-registry.py"
+
+
+def test_local_coverage_outputs_are_ignored_by_git():
+    ignored = set((REPO_ROOT / ".gitignore").read_text(encoding="utf-8").splitlines())
+    assert {".coverage", "coverage.xml"} <= ignored
+
+
 def test_repository_hooks_delegate_to_package_cli():
     for relative in (
         ".ontos/hooks/pre-commit",

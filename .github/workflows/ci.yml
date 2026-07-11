@@ -20,6 +20,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
@@ -40,6 +42,10 @@ jobs:
           python -m ontos --version
           python -c "import ontos; print(f'Version: {ontos.__version__}')"
 
+      - name: Validate audit remediation registry
+        if: matrix.python-version == '3.11'
+        run: python scripts/validate-audit-remediation-registry.py
+
       - name: Run tests
         run: |
           if [ "${{ matrix.python-version }}" = "3.9" ]; then
@@ -56,11 +62,10 @@ jobs:
       - name: Check coverage
         run: |
           if [ "${{ matrix.python-version }}" = "3.9" ]; then
-            pytest tests/ --ignore=tests/mcp --cov=ontos --cov-report=xml:${RUNNER_TEMP}/coverage.xml
+            pytest tests/ --ignore=tests/mcp --cov=ontos --cov-fail-under=70 --cov-report=xml:${RUNNER_TEMP}/coverage.xml
           else
-            pytest tests/ --cov=ontos --cov-report=xml:${RUNNER_TEMP}/coverage.xml
+            pytest tests/ --cov=ontos --cov-fail-under=82 --cov-report=xml:${RUNNER_TEMP}/coverage.xml
           fi
-        continue-on-error: true
 
       - name: Upload coverage
         uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6

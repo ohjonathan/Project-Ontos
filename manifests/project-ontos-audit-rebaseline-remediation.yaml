@@ -26,6 +26,7 @@ authorship:
 scope:
   allowed_paths:
     - ".gitattributes"
+    - ".gitignore"
     - ".github/workflows/ci.yml"
     - ".github/workflows/publish.yml"
     - ".ontos-internal/logs/2026-07-02_init.md"
@@ -41,6 +42,7 @@ scope:
     - "Ontos_Context_Map.md"
     - "docs/logs/2026-05-22_merge-pr-118-v4-5-closes-issues-115-116-117.md"
     - "docs/logs/2026-07-10_audit-rebaseline-remediation.md"
+    - "docs/logs/2026-07-11_pr-161-fable-feedback-remediation.md"
     - "docs/reference/Migration_v3_to_v4.md"
     - "docs/reference/Ontos_Manual.md"
     - "docs/retros/project-ontos-audit-doctor-rce-retro.md"

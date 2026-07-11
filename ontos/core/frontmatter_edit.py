@@ -120,7 +120,13 @@ def patch_frontmatter_fields(content: str, updates: Mapping[str, Any]) -> str:
     )
     from ontos.core.schema import validate_document_id
 
-    validate_document_id(reparsed.get("id"))
+    # ID-less documents are a supported loader input: their canonical ID is
+    # derived from the filename, which this content-only helper cannot see.
+    # Validate an ID whenever the document declares (or this patch adds) one,
+    # while preserving the absence of an explicit ID for filename-derived
+    # documents.
+    if "id" in reparsed:
+        validate_document_id(reparsed["id"])
     for key, expected in updates.items():
         if reparsed.get(key) != expected:
             raise ValueError(
