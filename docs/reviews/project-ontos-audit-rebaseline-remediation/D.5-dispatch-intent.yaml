@@ -1,0 +1,67 @@
+manifest_version: "2.0.0"
+authoring_session_family: codex
+meta_orchestrator_family: codex
+deliverable_author_family: codex
+deliverable_author_families: [codex]
+artifact_root: docs/reviews/project-ontos-audit-rebaseline-remediation
+deliverable_id: project-ontos-audit-rebaseline-remediation
+strict_p3_claim: true
+review_board_classification:
+  mode: strict_p3_verification
+  strict_p3_capable_evidence: true
+  strict_p3_certified: false
+  merge_authority: recommendation_only
+  rationale: "Fresh three-family D.5 verification of I2, including the non-waivable D4-INFRA-1 framework blocker."
+dispatches:
+  - dispatch_id: audit-rb-D5-cv
+    family: claude
+    role: verifier
+    review_mode: verification
+    expected_provider: claude
+    expected_cli: claude
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-claude-verifier.md
+    prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/D.5-claude-verifier.prompt.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    fallback_models: []
+    scope: "Direct pre-fix/post-fix verification of all six D.3 findings, repository smoke gates, and D4-INFRA-1."
+    status: pending
+  - dispatch_id: audit-rb-D5-gv
+    family: gemini
+    role: verifier
+    review_mode: verification
+    expected_provider: gemini
+    expected_cli: agy
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-gemini-verifier.md
+    prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/D.5-gemini-verifier.prompt.md
+    evidence_cap: static-inspection
+    dispatch_method: external-cli
+    fallback_models: []
+    scope: "Independent static verification of the fix-summary traceability, I2 diff, and EH-15-A adopter integration blocker."
+    status: pending
+  - dispatch_id: audit-rb-D5-glv
+    family: glm
+    role: verifier
+    review_mode: verification
+    expected_provider: glm
+    expected_cli: opencode
+    expected_model: glm-5.2
+    expected_artifact: docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-glm-verifier.md
+    prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/D.5-glm-verifier.prompt.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    serving_provider: neuralwatt
+    wire_protocol: openai-compatible
+    opencode_provider_id: neuralwatt
+    opencode_model_ref: neuralwatt/glm-5.2
+    opencode_base_url_env: NEURALWATT_BASE_URL
+    opencode_api_key_env: NEURALWATT_API_KEY
+    endpoint_origin_label: neuralwatt
+    evidence_trust_tier: attested-third-party
+    route_attestation_profile_id: neuralwatt-opencode-glm-5-2-v1
+    advisory_only: false
+    fallback_models: []
+    scope: "Independent direct pre-fix/post-fix verification of all six findings and the framework blocker."
+    status: pending
