@@ -8,7 +8,12 @@ logs_dir = "docs/logs"
 context_map = "Ontos_Context_Map.md"
 
 [scanning]
-skip_patterns = ["_template.md", "archive/*", "*/docs/reviews/*/.prompts/*"]
+skip_patterns = [
+    "_template.md",
+    "archive/*",
+    "*/docs/reviews/*/.prompts/*",
+    "*/docs/reviews/*/.raw/*",
+]
 
 [validation]
 max_dependency_depth = 5

@@ -1,0 +1,791 @@
+[0m
+> build · glm-5.2
+[0m
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m
+[0m$ [0mgit log --oneline -15
+9dbe5e1 Prepare D2 implementation review board
+43583df Record D1 implementation pre-review
+7467a73 Prepare D1 implementation pre-review
+1acd232 Record Phase C close evidence
+05b090d Complete Phase C audit remediation reconciliation
+eeddf0f Complete final Phase B lifecycle review
+d12f851 Prepare final B2 corrected-spec review
+206bbbc Complete final B1 and incorporate falsification findings
+43dd7dc Prepare final design receipt recertification
+af1e6ac Record failed B.2 recertification and revise design
+c104758 Recertify audit design and revise spec
+5e04094 Authorize Phase C registry regression
+3827a65 Approve audit remediation design
+e63a0a5 Incorporate B.2 design findings
+7145b39 Record B.2 audit design review
+[0m
+[0m$ [0mgit status --short --branch
+## codex/audit-rebaseline-remediation-lifecycle
+ M Ontos_Context_Map.md
+ M <redacted:secret>
+ M <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+[0m
+[0m$ [0mgit show --stat --format=fuller 05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0
+commit 05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0
+Author:     Jonathan Oh <38262248+ohjonathan@users.noreply.github.com>
+AuthorDate: Fri Jul 10 17:34:01 2026 -0700
+Commit:     Jonathan Oh <38262248+ohjonathan@users.noreply.github.com>
+CommitDate: Fri Jul 10 17:34:01 2026 -0700
+
+    Complete Phase C audit remediation reconciliation
+
+ Ontos_Context_Map.md                               |   87 +-
+ docs/reference/Migration_v3_to_v4.md               |   75 +-
+ docs/reference/Ontos_Manual.md                     |   73 +-
+ .../<redacted:secret> |   72 +-
+ .../C-phase-falsification-findings.md              |   25 +-
+ .../project-ontos-audit-rebaseline-remediation.md  |    6 +-
+ ...project-ontos-audit-remediation-release-line.md |  138 +-
+ ...<redacted:secret> |    2 +
+ .../<redacted:secret>  |  368 +++--
+ ontos/commands/log.py                              |   86 +-
+ ontos/commands/map.py                              |   35 +-
+ ontos/commands/stub.py                             |   17 +-
+ ontos/core/config.py                               |   24 +-
+ ontos/core/context.py                              |  664 ++++++++-
+ ontos/core/locking.py                              |  555 +++++++-
+ ontos/mcp/locking.py                               |   82 +-
+ ontos/mcp/rename_tool.py                           |   45 +-
+ ontos/mcp/writes.py                                |   49 +-
+ <redacted:secret>     | 1477 ++++++++++++++++++--
+ tests/commands/test_doctor_phase4.py               |    7 +-
+ tests/commands/test_log.py                         |  103 +-
+ tests/commands/test_map.py                         |   46 +
+ tests/commands/test_stub_parity.py                 |   57 +
+ tests/core/test_config_phase3.py                   |   54 +
+ tests/mcp/test_locking.py                          |   86 ++
+ tests/mcp/test_write_tools.py                      |   69 +
+ tests/test_audit_remediation_registry_validator.py | 1407 +++++++++++++++++++
+ tests/test_cli_contract_v4.py                      |   18 +-
+ tests/test_context_contention.py                   |   72 +-
+ tests/test_session_context.py                      |  869 ++++++++++++
+ 30 files changed, 6073 insertions(+), 595 deletions(-)
+[0m
+[0m$ [0mgit diff --stat bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95 05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0
+.gitattributes                                     |    6 +
+ .github/workflows/ci.yml                           |   95 +-
+ .github/workflows/publish.yml                      |  282 ++-
+ .ontos-internal/logs/2026-07-02_init.md            |   21 -
+ .<redacted:secret>            |   21 -
+ .<redacted:secret>            |   21 -
+ .ontos.toml                                        |    2 +-
+ .ontos/hooks/pre-commit                            |   14 +-
+ .ontos/hooks/pre-push                              |   14 +-
+ .ontos/scripts/tests/test_context.py               |   14 +-
+ .ontos/scripts/tests/test_schema.py                |   21 +-
+ .pre-commit-config.yaml                            |   19 +-
+ AGENTS.md                                          |   29 +-
+ Ontos_Context_Map.md                               |  112 +-
+ ..._merge-pr-118-v4-5-closes-issues-115-116-117.md |    2 +-
+ .../<redacted:secret>     |   88 +
+ docs/reference/Migration_v3_to_v4.md               |   77 +-
+ docs/reference/Ontos_Manual.md                     |   84 +-
+ .../retros/project-ontos-audit-doctor-rce-retro.md |   82 +-
+ <redacted:secret>        |    8 +-
+ .../<redacted:secret> |  272 +++
+ .../.<redacted:secret>      |   61 +
+ .../.prompts/B.1-gpt-alignment.prompt.md           |   55 +
+ .../.<redacted:secret>      |   55 +
+ .../.prompts/D.2-gpt-alignment.prompt.md           |   55 +
+ .../.prompts/D.5-gemini-verifier.prompt.md         |   43 +
+ .../.prompts/D.5-gpt-verifier.prompt.md            |   45 +
+ ...<redacted:secret> |   61 +
+ ....<redacted:secret> |    0
+ ...<redacted:secret> |   19 +
+ .../B.1-gemini-dispatch-intent.yaml                |   32 +
+ .../B.1-gemini-dispatch-result.yaml                |   72 +
+ .../B.1-gpt-dispatch-intent.yaml                   |   31 +
+ .../D.2-gemini-dispatch-intent.yaml                |   32 +
+ .../D.2-gpt-dispatch-intent.yaml                   |   31 +
+ .../D.5-gemini-dispatch-intent.yaml                |   32 +
+ .../D.5-gpt-dispatch-intent.yaml                   |   31 +
+ .../final-approval.md                              |   68 +-
+ .../lifecycle-receipt-inventory.yaml               |   35 +-
+ .../strict-p3-dispatch-readiness.txt               |   64 +
+ .../.<redacted:secret>      |   13 +
+ .../.prompts/B.1-claude-product.prompt.md          |    7 +
+ .../B.1-final-claude-adversarial.prompt.md         |    7 +
+ .../.<redacted:secret>    |    7 +
+ .../.<redacted:secret>  |   21 +
+ .../.prompts/B.1-final-glm-peer.prompt.md          |    7 +
+ .../.prompts/B.1-gemini-alignment.prompt.md        |    7 +
+ .../.prompts/B.1-glm-peer.prompt.md                |    7 +
+ .../B.1-recert-claude-adversarial.prompt.md        |    7 +
+ .../.prompts/B.1-recert-claude-product.prompt.md   |    7 +
+ .../.<redacted:secret> |   86 +
+ .../.prompts/B.1-recert-glm-peer.prompt.md         |    7 +
+ .../.<redacted:secret>      |    7 +
+ .../.prompts/B.2-claude-product.prompt.md          |    7 +
+ .../B.2-final-claude-adversarial.prompt.md         |    7 +
+ .../.<redacted:secret>    |    7 +
+ .../.<redacted:secret>  |   19 +
+ .../.prompts/B.2-final-glm-peer.prompt.md          |    7 +
+ .../.prompts/B.2-gemini-alignment.prompt.md        |    7 +
+ .../.prompts/B.2-glm-peer.prompt.md                |    5 +
+ .../B.2-recert-claude-adversarial.prompt.md        |    7 +
+ .../.prompts/B.2-recert-claude-product.prompt.md   |    7 +
+ .../.<redacted:secret> |   34 +
+ .../.prompts/B.2-recert-glm-peer.prompt.md         |    5 +
+ ...<redacted:secret> |   19 +
+ ...<redacted:secret> |   13 +
+ ...4609Z.83781.10cb800a4e963df66c17f6fe3046b445.md |    7 +
+ ...<redacted:secret> |    7 +
+ ...1103Z.61729.2e76ca8a897a8a2f1f3e2aac33c479d2.md |    7 +
+ ...<redacted:secret> |   21 +
+ ...<redacted:secret> |   21 +
+ ...1103Z.61737.7224a08f7d32c7fba0a14df87225e798.md |    7 +
+ ...<redacted:secret> |    7 +
+ ...4606Z.83288.1c20dfb7d81c7f75f8a0df0746cef88b.md |   15 +
+ ...4930Z.90511.64a48f3766a2067a44c9a8ee4fa5570a.md |   15 +
+ ...<redacted:secret> |   15 +
+ ...75324Z.4223.c9b2103b1cd3ca8d245c14b4ca2e3b84.md |   15 +
+ ...5524Z.28037.54d6028139819ef8c64d804a7d920041.md |   15 +
+ ...5948Z.51860.9438a5737dbe5eadb80eae833f4de6af.md |    7 +
+ ...0104Z.54056.b082e5cc1d0228b2efd3781c3392d6c1.md |    7 +
+ ...<redacted:secret> |    7 +
+ ...2023Z.93846.3ad1e5493eaef3fcae38bba15aa14d1e.md |    7 +
+ ...2126Z.95446.d1a59c575b3dc8b80a9289d45a287866.md |    7 +
+ ...4636Z.84734.f54946b0709d2e42bf5b3d339f28f920.md |    7 +
+ ...<redacted:secret> |    7 +
+ ...0850Z.75966.d82734dcb3306a7993619ccf7ee99948.md |    7 +
+ ...2235Z.96396.3af012e8accd8a261f609f4899e42654.md |    7 +
+ ...3200Z.10437.bb7f31941361410945b0c4c527c7a9ba.md |    7 +
+ ...<redacted:secret> |    7 +
+ ...3448Z.74038.c7cbbed54dbe58cbd5332f16e24efb9d.md |    7 +
+ ...5028Z.92579.63696b6fb345b547ff6bcdbab39d392c.md |    7 +
+ ...1914Z.45995.fc087fb4277e79df4ec016a991143337.md |    7 +
+ ...3448Z.74036.bc3031d23711a6b77d37a265422e1c71.md |    7 +
+ ...5725Z.97671.9525c274490d55f5d801edd95ea9543a.md |   82 +
+ ...<redacted:secret> |   82 +
+ ...<redacted:secret> |   86 +
+ ...3448Z.74037.92edd43422ea41cff82dbb5cd1d7f09a.md |    7 +
+ ...4357Z.83263.946fe7cdd71e4f93d066d2e930431b9c.md |    7 +
+ ...4932Z.28500.fb94b75d4ced4eede25bb5b5fe810ff0.md |    7 +
+ ...4952Z.28920.f9c0fd55d19144454c07f29f1a6fed23.md |    7 +
+ ...0055Z.85485.b4c0129aa4dad702492a94296600b2c2.md |    7 +
+ ...1638Z.92943.86509214c05edce8b3826b5c351fd50c.md |    7 +
+ ...1638Z.92997.a37b95d4169f926c8b8c3533bf226fc8.md |    7 +
+ ...<redacted:secret> |   19 +
+ ...1638Z.92978.0f3f682c3df9e0612a4002f1939983e4.md |    7 +
+ ...5017Z.29519.9d8996ea3e4b66b228f72229c9077603.md |    7 +
+ ...0101Z.87024.cc36cd2fbc79af7a6cd64c2a2dc90b90.md |    7 +
+ ...<redacted:secret> |    5 +
+ ...<redacted:secret> |    7 +
+ ...<redacted:secret> |    7 +
+ ...5028Z.92580.c056ad17187c7b8bf7f6fc2900205209.md |    7 +
+ ...4750Z.78255.e09d94dc209cd05f19581643608cc540.md |    7 +
+ ...2245Z.72597.e1de89bbe921bf4856d5e6750bc3d8d8.md |   32 +
+ ...2955Z.24684.72cba855bed454bc0c0f806b02ffb13c.md |   34 +
+ ...<redacted:secret> |   34 +
+ ...<redacted:secret> |    5 +
+ ...<redacted:secret> |    5 +
+ .../.raw/B.3-gemini-dispatch-attestation.txt       |    1 +
+ ....<redacted:secret> |   13 +
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |   18 +
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |   14 +
+ ...<redacted:secret> |    0
+ ....61729.2e76ca8a897a8a2f1f3e2aac33c479d2.raw.txt |   18 +
+ ...729.2e76ca8a897a8a2f1f3e2aac33c479d2.stderr.txt |    0
+ ....<redacted:secret> |   85 +
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |   88 +
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |   18 +
+ ...<redacted:secret> | 1239 +++++++++++
+ ....<redacted:secret> |   15 +
+ ...<redacted:secret> | 2272 ++++++++++++++++++++
+ ...eline-remediation-B.1-final-glm-peer.review.txt |  233 ++
+ ....<redacted:secret> |   19 +
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |   87 +
+ ...<redacted:secret> |    0
+ ...Z.4223.c9b2103b1cd3ca8d245c14b4ca2e3b84.raw.txt |   26 +
+ ...223.c9b2103b1cd3ca8d245c14b4ca2e3b84.stderr.txt |    0
+ ....<redacted:secret> |  245 +++
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |   34 +
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |   24 +
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |   23 +
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |   24 +
+ ...<redacted:secret> |    0
+ ...<redacted:secret>.md.txt |  231 ++
+ ....<redacted:secret> |   13 +
+ ...<redacted:secret> |    2 +
+ ...<redacted:secret> |  104 +
+ ....<redacted:secret> |  105 +
+ ...<redacted:secret> |    2 +
+ ....<redacted:secret> |   17 +
+ ...4dcb3306a7993619ccf7ee99948.stderr.redacted.txt |    2 +
+ ....<redacted:secret> |   13 +
+ ...<redacted:secret> | 1271 +++++++++++
+ ....10437.bb7f31941361410945b0c4c527c7a9ba.raw.txt |   12 +
+ ...<redacted:secret> |  490 +++++
+ ....<redacted:secret> |    7 +
+ ...<redacted:secret> |    2 +
+ ...t-rebaseline-remediation-B.1-glm-peer.review.md |  279 +++
+ ...-<redacted:secret> |  245 +++
+ ....<redacted:secret> |   17 +
+ ...<redacted:secret> |    0
+ ....92579.63696b6fb345b547ff6bcdbab39d392c.raw.txt |   17 +
+ ...579.63696b6fb345b547ff6bcdbab39d392c.stderr.txt |    0
+ ....<redacted:secret> |   11 +
+ ...<redacted:secret> |    0
+ ....74036.bc3031d23711a6b77d37a265422e1c71.raw.txt |   39 +
+ ...036.bc3031d23711a6b77d37a265422e1c71.stderr.txt |    0
+ ....<redacted:secret> |  128 ++
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |  115 +
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |   16 +
+ ...<redacted:secret> |  781 +++++++
+ ....<redacted:secret> |   24 +
+ ...<redacted:secret> |  593 +++++
+ ...line-remediation-B.1-recert-glm-peer.review.txt |   83 +
+ ....28500.fb94b75d4ced4eede25bb5b5fe810ff0.raw.txt |   20 +
+ ...500.fb94b75d4ced4eede25bb5b5fe810ff0.stderr.txt |    0
+ ....<redacted:secret> |   18 +
+ ...<redacted:secret> |    0
+ ....85485.b4c0129aa4dad702492a94296600b2c2.raw.txt |   22 +
+ ...485.b4c0129aa4dad702492a94296600b2c2.stderr.txt |    0
+ ....<redacted:secret> |   15 +
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |   14 +
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |   88 +
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |   21 +
+ ...<redacted:secret> | 1193 ++++++++++
+ ...eline-remediation-B.2-final-glm-peer.review.txt |  245 +++
+ ....<redacted:secret> |   33 +
+ ...<redacted:secret> |    0
+ ....87024.cc36cd2fbc79af7a6cd64c2a2dc90b90.raw.txt |   37 +
+ ...024.cc36cd2fbc79af7a6cd64c2a2dc90b90.stderr.txt |    0
+ ....<redacted:secret> |   17 +
+ ...773a8d435c3cfa54ef3d3942ebe.stderr.redacted.txt |  528 +++++
+ ...-<redacted:secret> |  166 ++
+ ....<redacted:secret> |   20 +
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |   13 +
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |   19 +
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |   18 +
+ ...255.e09d94dc209cd05f19581643608cc540.stderr.txt |    0
+ ....<redacted:secret> |  135 ++
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |  161 ++
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |  110 +
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |   15 +
+ ...<redacted:secret> |  825 +++++++
+ ....<redacted:secret> |   26 +
+ ...<redacted:secret> |    2 +
+ ...line-remediation-B.2-recert-glm-peer.review.txt |  187 ++
+ ...<redacted:secret> |   10 +
+ ...<redacted:secret> |   10 +
+ ...<redacted:secret> |   10 +
+ ...<redacted:secret> |   10 +
+ ...<redacted:secret> |   10 +
+ ...<redacted:secret> |   10 +
+ ...<redacted:secret> |   10 +
+ ...<redacted:secret> |   10 +
+ .../B.1-claude-adversarial.md                      |  172 ++
+ .../B.1-claude-product.md                          |  223 ++
+ .../B.1-dispatch-intent.yaml                       |   81 +
+ .../B.1-dispatch-result.yaml                       | 1434 ++++++++++++
+ .../B.1-dispatch-verification.txt                  |    9 +
+ .../B.1-final-claude-adversarial.md                |  202 ++
+ .../B.1-final-claude-product.md                    |  197 ++
+ .../B.1-final-dispatch-intent.yaml                 |   81 +
+ .../B.1-final-dispatch-result.yaml                 |  527 +++++
+ .../B.1-final-gemini-alignment.md                  |   88 +
+ .../B.1-final-glm-peer.md                          |  233 ++
+ .../B.1-gemini-alignment.md                        |   24 +
+ .../B.1-glm-peer.md                                |  245 +++
+ .../B.1-recert-claude-adversarial.md               |  113 +
+ .../B.1-recert-claude-product.md                   |  259 +++
+ .../B.1-recert-gemini-alignment.md                 |  115 +
+ .../B.1-recert-glm-peer.md                         |   83 +
+ .../<redacted:secret>       |   81 +
+ .../<redacted:secret>       |  685 ++++++
+ .../B.2-claude-adversarial.md                      |  162 ++
+ .../B.2-claude-product.md                          |  261 +++
+ .../B.2-dispatch-intent.yaml                       |   81 +
+ .../B.2-dispatch-result.yaml                       |  500 +++++
+ .../B.2-dispatch-verification.txt                  |    9 +
+ .../B.2-final-claude-adversarial.md                |  235 ++
+ .../B.2-final-claude-product.md                    |  199 ++
+ .../B.2-final-dispatch-intent.yaml                 |   81 +
+ .../B.2-final-dispatch-result.yaml                 |  342 +++
+ .../B.2-final-gemini-alignment.md                  |   88 +
+ .../B.2-final-glm-peer.md                          |  245 +++
+ .../B.2-gemini-alignment.md                        |   37 +
+ .../B.2-glm-peer.md                                |  166 ++
+ .../B.2-recert-claude-adversarial.md               |  186 ++
+ .../B.2-recert-claude-product.md                   |  226 ++
+ .../B.2-recert-gemini-alignment.md                 |  110 +
+ .../B.2-recert-glm-peer.md                         |  187 ++
+ .../<redacted:secret>       |   81 +
+ .../<redacted:secret>       |  664 ++++++
+ .../B.3-verdict.md                                 |  210 ++
+ .../C-phase-falsification-findings.md              |   61 +
+ .../lifecycle-receipt-inventory-final.yaml         |  321 +++
+ ...ifecycle-receipt-inventory-recertification.yaml |  498 +++++
+ .../lifecycle-receipt-inventory.yaml               |  508 +++++
+ .../receipt-recovery.md                            |   68 +
+ docs/specs/project-ontos-audit-doctor-rce-spec.md  |   35 +-
+ ...ject-ontos-audit-rebaseline-remediation-spec.md |  388 ++++
+ docs/trackers/project-ontos-audit-doctor-rce.md    |   89 +-
+ .../project-ontos-audit-rebaseline-remediation.md  |  133 ++
+ ...project-ontos-audit-remediation-release-line.md |  316 +--
+ <redacted:secret>      |  160 +-
+ ...<redacted:secret> |  480 +++++
+ .../<redacted:secret>  | 1118 ++++++++++
+ .../<redacted:secret> |   82 +-
+ ontos/_hooks/pre-commit                            |   12 +-
+ ontos/_hooks/pre-push                              |   12 +-
+ ontos/cli.py                                       |  376 +++-
+ ontos/command_registry.py                          |  123 ++
+ ontos/commands/activate.py                         |    9 +
+ ontos/commands/doctor.py                           |  136 +-
+ ontos/commands/init.py                             |    1 +
+ ontos/commands/link_check.py                       |    4 +-
+ ontos/commands/log.py                              |  150 +-
+ ontos/commands/map.py                              |   44 +-
+ ontos/commands/migrate.py                          |   12 +-
+ ontos/commands/promote.py                          |   20 +-
+ ontos/commands/retrofit.py                         |   73 +-
+ ontos/commands/scaffold.py                         |   42 +-
+ ontos/commands/stub.py                             |   28 +-
+ ontos/commands/verify.py                           |   41 +-
+ ontos/core/body_refs.py                            |   95 +-
+ ontos/core/config.py                               |  195 +-
+ ontos/core/context.py                              | 1320 +++++++++++-
+ ontos/core/errors.py                               |    4 +-
+ ontos/core/frontmatter.py                          |  116 +-
+ ontos/core/frontmatter_edit.py                     |  211 +-
+ ontos/core/frontmatter_repair.py                   |   47 +-
+ ontos/core/git.py                                  |   51 +-
+ ontos/core/graph.py                                |  333 ++-
+ ontos/core/history.py                              |    9 +-
+ ontos/core/instruction_protocol.py                 |   30 +-
+ ontos/core/link_diagnostics.py                     |  324 ++-
+ ontos/core/locking.py                              |  596 +++++
+ ontos/core/schema.py                               |  156 +-
+ ontos/io/files.py                                  |   29 +-
+ ontos/io/git.py                                    |    6 +-
+ ontos/io/toml.py                                   |   53 +-
+ ontos/io/yaml.py                                   |   68 +-
+ ontos/mcp/locking.py                               |   90 +-
+ ontos/mcp/portfolio.py                             |   41 +-
+ ontos/mcp/rename_tool.py                           |   45 +-
+ ontos/mcp/schemas.py                               |   13 +-
+ ontos/mcp/server.py                                |   53 +-
+ ontos/mcp/tools.py                                 |   69 +-
+ ontos/mcp/writes.py                                |   60 +-
+ ontos/ui/json_output.py                            |  330 ++-
+ pyproject.toml                                     |    3 -
+ scripts/check_release_artifact.py                  |  144 ++
+ <redacted:secret>     | 1897 ++++++++++++++++
+ tests/commands/golden/query_help.txt               |   39 +-
+ tests/commands/golden/scaffold_help.txt            |   22 +-
+ <redacted:secret>              |    5 +-
+ .../test_activate_json_warning_metadata.py         |    6 +-
+ .../commands/test_agentic_activation_resilience.py |   21 +
+ tests/commands/test_consolidate_parity.py          |   35 +-
+ tests/commands/test_doctor_phase4.py               |   81 +-
+ tests/commands/test_env.py                         |   17 +-
+ tests/commands/test_hook_phase4.py                 |   24 +
+ tests/commands/test_instruction_protocol.py        |   45 +
+ tests/commands/test_link_check.py                  |   21 +-
+ tests/commands/test_log.py                         |  146 ++
+ tests/commands/test_map.py                         |   48 +-
+ tests/commands/test_mcp_command.py                 |    2 +-
+ tests/commands/test_query_parity.py                |   24 +
+ tests/commands/test_rename.py                      |   21 +
+ tests/commands/test_retrofit.py                    |   21 +-
+ tests/commands/test_scaffold_parity.py             |    1 +
+ tests/commands/test_stub_parity.py                 |   88 +-
+ tests/commands/test_verify_parity.py               |   10 +-
+ tests/commands/test_verify_portfolio.py            |   10 +-
+ tests/conftest.py                                  |   36 +-
+ tests/core/test_body_refs.py                       |   66 +
+ tests/core/test_config_phase3.py                   |  106 +
+ tests/core/test_frontmatter_edit_pipeline.py       |   61 +
+ tests/core/test_frontmatter_repair.py              |   22 +-
+ tests/core/test_git_safety.py                      |   41 +
+ tests/core/test_graph.py                           |  123 ++
+ tests/core/test_link_diagnostics.py                |  147 +-
+ tests/core/test_schema.py                          |   34 +-
+ tests/golden/README.md                             |   12 +-
+ tests/golden/baselines/medium/context_map.md       |  292 +--
+ tests/golden/baselines/medium/log_metadata.json    |    4 +-
+ tests/golden/baselines/medium/log_stdout.txt       |    2 +-
+ tests/golden/baselines/medium/map_metadata.json    |    4 +-
+ tests/golden/baselines/medium/map_stdout.txt       |   21 +-
+ tests/golden/baselines/medium/session_log.md       |   28 +-
+ tests/golden/baselines/small/context_map.md        |  111 +-
+ tests/golden/baselines/small/log_metadata.json     |    4 +-
+ tests/golden/baselines/small/log_stdout.txt        |    2 +-
+ tests/golden/baselines/small/map_metadata.json     |    4 +-
+ tests/golden/baselines/small/map_stdout.txt        |   16 +-
+ tests/golden/baselines/small/session_log.md        |   25 +-
+ tests/golden/capture_golden_master.py              |   23 +-
+ tests/golden/compare_golden_master.py              |  104 +-
+ tests/golden/test_golden_master.py                 |    3 -
+ tests/io/test_git_empty_diff.py                    |   29 +
+ tests/io/test_toml_roundtrip.py                    |   38 +
+ tests/mcp/test_activation.py                       |   26 +-
+ tests/mcp/test_bundler.py                          |    2 +-
+ tests/mcp/test_cache.py                            |    2 +-
+ tests/mcp/test_context_bundle.py                   |    2 +-
+ tests/mcp/test_context_bundle_config.py            |    2 +-
+ tests/mcp/test_context_map.py                      |    2 +-
+ tests/mcp/test_error_paths.py                      |    2 +-
+ tests/mcp/test_export_graph.py                     |    2 +-
+ tests/mcp/test_get_document.py                     |    2 +-
+ tests/mcp/test_health.py                           |    2 +-
+ tests/mcp/test_list_documents.py                   |    2 +-
+ tests/mcp/test_locking.py                          |   86 +
+ tests/mcp/test_parity.py                           |    2 +-
+ tests/mcp/test_portfolio.py                        |    2 +-
+ tests/mcp/test_portfolio_integration.py            |    2 +-
+ tests/mcp/test_query.py                            |    2 +-
+ tests/mcp/test_read_only_registration.py           |  119 +-
+ tests/mcp/test_refresh.py                          |    2 +-
+ tests/mcp/test_rename_document.py                  |    2 +-
+ <redacted:secret>      |    2 +-
+ tests/mcp/test_schemas.py                          |    2 +-
+ tests/mcp/test_server_integration.py               |    2 +-
+ tests/mcp/test_server_portfolio_mode.py            |    2 +-
+ tests/mcp/test_stream_routing.py                   |    2 +-
+ tests/mcp/test_workspace_overview.py               |   44 +-
+ tests/mcp/test_write_tools.py                      |   71 +-
+ tests/{mcp/__init__.py => mcp_helpers.py}          |   85 +-
+ tests/test_audit_remediation_registry_validator.py | 1407 ++++++++++++
+ tests/test_ci_release_workflows.py                 |   88 +
+ tests/test_cli.py                                  |   44 +-
+ tests/test_cli_contract_v4.py                      |  238 ++
+ tests/test_config.py                               |  113 -
+ tests/test_consolidate.py                          |   88 -
+ tests/test_context_contention.py                   |   72 +-
+ tests/test_cycle_detection.py                      |  168 --
+ tests/test_describes.py                            |    5 -
+ <redacted:secret>         |   21 +
+ tests/test_dual_mode.py                            |    4 -
+ tests/test_end_session.py                          |  263 ---
+ tests/test_frontmatter_roundtrip_regression.py     |   90 +
+ tests/test_immutable_history.py                    |    5 -
+ tests/test_lint.py                                 |  192 --
+ tests/test_maintain.py                             |   46 -
+ tests/test_orphan_detection.py                     |  252 ---
+ tests/test_pre_commit_check.py                     |  319 ---
+ tests/test_pre_push_check.py                       |   61 -
+ tests/test_query.py                                |   91 -
+ tests/test_release_artifact.py                     |   91 +
+ tests/test_session_context.py                      | 1107 ++++++++++
+ tests/test_test_isolation.py                       |   41 +
+ tests/test_v284_refactor.py                        |  149 --
+ tests/test_validation.py                           |  436 ----
+ tests/test_yaml_edge_cases.py                      |  236 --
+ tests/ui/test_json_output.py                       |   16 +-
+ 433 files changed, 40686 insertions(+), 4447 deletions(-)
+[0m
+[0m# [0mTodos
+[✓] Read framework templates (01,02,04) and spec v1.5
+[•] Verify §4.1 registry/lease quarantine-before-consumers in validate-audit-remediation-registry.py
+[ ] Verify §4.3 safe writer no-follow binding in context.py + log.py + archive marker
+[ ] Verify §4.3 workspace lock no-follow single-link in context.py + mcp/locking.py
+[ ] Verify §4.4 CLI/MCP/activation/platform contracts (config.py, json_output, stub.py, command_registry, doctor, mcp read-only)
+[ ] Verify §4.4 required_version clause copy singular/eager/multi-clause
+[ ] Verify §4.5 release pipeline (ci.yml, publish.yml, check_release_artifact.py, context map)
+[ ] Verify §7 migration docs (Migration_v3_to_v4.md, Ontos_Manual.md)
+[ ] Verify §9 exclusion list + lifecycle diagram + nonclaims
+[ ] Write D.2-glm-alignment.md verdict artifact
+[0m
+[0m$ [0mgit diff --stat 05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0 HEAD
+.gitattributes                                     |     1 +
+ AGENTS.md                                          |    12 +-
+ Ontos_Context_Map.md                               |     8 +-
+ .../<redacted:secret> |    18 +-
+ .../.packets/D.2-I1-to-evidence.patch              |   406 +
+ .../.packets/D.2-base-to-I1.patch                  | 51028 ++++++++++++++++++
+ .../.<redacted:secret>  |    31 +
+ .../.prompts/D.1-claude-peer.prompt.md             |    37 +
+ .../.prompts/D.2-claude-peer.prompt.md             |    33 +
+ .../.prompts/D.2-claude-product.prompt.md          |    32 +
+ .../.<redacted:secret>      | 52271 +++++++++++++++++++
+ .../.prompts/D.2-glm-alignment.prompt.md           |    32 +
+ ...4335Z.19519.b515bc29d4d1c1588530c477c6e83289.md |    37 +
+ ....<redacted:secret> |    21 +
+ ...<redacted:secret> |     0
+ .../C-phase-falsification-findings.md              |    32 +-
+ .../D.1-claude-peer.md                             |   277 +
+ .../D.1-dispatch-intent.yaml                       |    29 +
+ .../D.1-dispatch-result.yaml                       |    79 +
+ .../D.2-dispatch-intent.yaml                       |    97 +
+ .../project-ontos-audit-rebaseline-remediation.md  |    25 +-
+ ...project-ontos-audit-remediation-release-line.md |    14 +-
+ ...<redacted:secret> |    13 +-
+ .../<redacted:secret>  |     6 +-
+ <redacted:secret>     |    24 +-
+ tests/test_audit_remediation_registry_validator.py |    29 +
+ 26 files changed, 104540 insertions(+), 52 deletions(-)
+[0m
+[0m$ [0mgit show 05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0:<redacted:secret> | wc -l
+1897
+[0m
+[0m$ [0mgit diff 05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0 HEAD -- <redacted:secret>
+diff --git <redacted:secret> <redacted:secret>
+index 88bdddf..89857f0 100644
+--- <redacted:secret>
++++ <redacted:secret>
+@@ -30,6 +30,7 @@ GITHUB_REPOSITORY = "ohjonathan/Project-Ontos"
+ AUDIT_BASELINE_COMMIT = "589d919"
+ REVALIDATION_COMMIT = "bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95"
+ INTEGRATION_COMMIT = "b6f89d77e7fb684b8bd9a181a24c773d5777397a"
++CONTROL_PLANE_FIX_COMMIT = "05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0"
+ DOCTOR_BASE_COMMIT = "c8672e90f2382f4147ef61b4fba918969483e73e"
+ DOCTOR_FIX_COMMIT = "03c36e6ac999d2c411c13252baa2e8fcff60e6ed"
+ 
+@@ -1264,14 +1265,29 @@ def validate(require_external_parity: bool) -> list[str]:
+                 f"!= {expected_lifecycle!r}"
+             )
+     for finding_id, row in r2.items():
+-        expected_status = "implemented_committed_verification_pending"
++        is_control_plane = finding_id == "R2-control-plane-parity-1"
++        expected_status = (
++            "implemented_committed_parity_verified"
++            if is_control_plane
++            else "implemented_committed_verification_pending"
++        )
+         if row.get("status") != expected_status:
+             errors.append(
+                 f"{finding_id} status mismatch: {row.get('status')!r} != {expected_status!r}"
+             )
+-        if row.get("fix_commit") != "b6f89d77e7fb684b8bd9a181a24c773d5777397a":
+-            errors.append(f"{finding_id} must bind its fix commit to I0")
+-        expected_lifecycle = "implementation_committed_lifecycle_pending"
++        expected_fix_commit = (
++            CONTROL_PLANE_FIX_COMMIT if is_control_plane else INTEGRATION_COMMIT
++        )
++        if row.get("fix_commit") != expected_fix_commit:
++            checkpoint = "Phase C close I1" if is_control_plane else "I0"
++            errors.append(
++                f"{finding_id} must bind its fix commit to {checkpoint}"
++            )
++        expected_lifecycle = (
++            "parity_verified_lifecycle_pending"
++            if is_control_plane
++            else "implementation_committed_lifecycle_pending"
++        )
+         if row.get("lifecycle_state") != expected_lifecycle:
+             errors.append(
+                 f"{finding_id} lifecycle mismatch: {row.get('lifecycle_state')!r} "
+[0m
+[0m✱ [0mGrep "def (validate_|_validate|_quarantine|_type_check|main)"[90m in scripts · 1 match[0m
+[0m→ [0mRead <redacted:secret>[90m [offset=1, limit=120][0m
+[0m✱ [0mGrep "(quarantin|isinstance|type_validat|_require_|KeyError|TypeError|exit\(2\|exit\(1\|#146|#157|normalized_program|st_nlink|nlink)"[90m in scripts · 61 matches[0m
+[0m→ [0mRead <redacted:secret>[90m [limit=320, offset=850][0m
+[0m→ [0mRead <redacted:secret>[90m [limit=330, offset=1169][0m
+[0m→ [0mRead <redacted:secret>[90m [limit=300, offset=1498][0m
+[0m→ [0mRead <redacted:secret>[90m [limit=120, offset=1798][0m
+[0m→ [0mRead <redacted:secret>[90m [limit=360, offset=253][0m
+[0m✱ [0mGrep "(exit_code|returncode|exit\(|FAILED|ERROR|def test_)"[90m in tests · 65 matches[0m
+[0m✱ [0mGrep "(st_nlink|nNumberOfLinks|_no_follow|no_follow|st_ino|st_dev|os\.lstat|is_symlink|reparse|_binding|_entry_binding|workspace_lock|\.ontos\.lock|single.?link|nlink)"[90m in ontos/core · 100 matches[0m
+[0m✱ [0mGrep "(st_nlink|nNumberOfLinks|no_follow|_binding|workspace_lock|\.ontos\.lock|single.?link|nlink|lstat|symlink|reparse)"[90m in ontos/mcp · 18 matches[0m
+[0m→ [0mRead ontos/core/locking.py[90m [limit=200, offset=1][0m
+[0m→ [0mRead ontos/core/locking.py[90m [limit=200, offset=200][0m
+[0m→ [0mRead ontos/core/locking.py[90m [limit=197, offset=400][0m
+[0m→ [0mRead ontos/mcp/locking.py
+[0m✱ [0mGrep "(session_archived|archive marker|warnings|exit.*3|E_LOG_EXISTS|logs_dir|no.follow|resolve|symlink|SessionContext|safe_)"[90m in ontos/commands · 14 matches[0m
+[0m→ [0mRead ontos/commands/log.py[90m [limit=100, offset=108][0m
+[0m→ [0mRead ontos/commands/log.py[90m [limit=80, offset=300][0m
+[0m→ [0mRead ontos/commands/log.py[90m [limit=10, offset=375][0m
+[0m
+[0m# [0mTodos
+[✓] Read framework templates (01,02,04) and spec v1.5
+[✓] Verify §4.1 registry/lease quarantine-before-consumers in validate-audit-remediation-registry.py
+[✓] Verify §4.3 safe writer no-follow binding in context.py + log.py + archive marker
+[✓] Verify §4.3 workspace lock no-follow single-link in context.py + mcp/locking.py
+[•] Verify §4.4 required_version clause copy singular/eager/multi-clause + config.py
+[ ] Verify §4.4 CLI/MCP/activation/platform contracts (json_output, stub.py, command_registry, doctor, mcp read-only)
+[ ] Verify §4.5 release pipeline (ci.yml, publish.yml, check_release_artifact.py, context map)
+[ ] Verify §7 migration docs (Migration_v3_to_v4.md, Ontos_Manual.md)
+[ ] Verify §9 exclusion list + lifecycle diagram + nonclaims
+[ ] Write D.2-glm-alignment.md verdict artifact
+[0m
+[0m→ [0mRead ontos/core/config.py[90m [limit=200, offset=223][0m
+[0m→ [0mRead tests/core/test_config_phase3.py
+[0m✱ [0mGrep "(VALID_EXIT_CODES|exit_code.*=|schema_version|E_ACTIVATION|E_LOG_EXISTS|E_USER_INPUT|code 4|reserved)"[90m in ontos/ui · 15 matches[0m
+[0m✱ [0mGrep "(validate_document_id|E_USER_INPUT|id must)"[90m in ontos/commands · 7 matches[0m
+[0m✱ [0mGrep "(audit-remediation-compatibility-contracts|warnings.*exit|exit.*3|required_version|E_LOG_EXISTS|E_USER_INPUT|E_ACTIVATION_UNUSABLE|reserved.*4|schema.*4\.0|string.*ID|parse_error)"[90m in docs/reference · 15 matches[0m
+[0m→ [0mRead docs/reference/Migration_v3_to_v4.md[90m [limit=90, offset=115][0m
+[0m→ [0mRead ontos/ui/json_output.py[90m [limit=60, offset=16][0m
+[0m✱ [0mGrep "(audit-remediation-compatibility-contracts|required_version|exit.*3|warnings|E_LOG_EXISTS|E_USER_INPUT|E_ACTIVATION|schema.*4|reserved.*4|string.*ID)"[90m in docs/reference · 25 matches[0m
+[0m✱ [0mGrep "(windows|Windows|os:|matrix|python-version|3\.9|3\.1[0-3])"[90m in .github/workflows · 17 matches[0m
+[0m→ [0mRead ontos/ui/json_output.py[90m [limit=40, offset=440][0m
+[0m✱ [0mGrep "(TestPyPI|testpypi|--no-deps|OIDC|id-token|ontologia|ontos==|permissions|wheel|sha256|hash)"[90m in .github/workflows · 61 matches[0m
+[0m✱ [0mGrep "(def |sha256|TestPyPI|version|wheel|--no-deps|manifest)"[90m in scripts · 42 matches[0m
+[0m→ [0mRead .github/workflows/publish.yml[90m [limit=30, offset=1][0m
+[0m✱ [0mGrep "(read.only|read_only|readonly|write_tools|export_graph|usage_log|portfolio|snapshot|immut)"[90m in ontos/mcp · 100 matches[0m
+[0m✱ [0mGrep "(lifecycle_type|zero.count|enumerate|type_counts|canonical.*type|exhaustive)"[90m in ontos/core · 2 matches[0m
+[0m✱ [0mGrep "(zero.count|all_types|exhaustive|type_counts|canonical.*types|TYPES|type_count)"[90m in ontos · 8 matches[0m
+[0m
+[0m$ [0mgit diff --name-only bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95 05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0 -- docs/specs/project-ontos-rationale-capture-template-proposal.md docs/zeta.md
+(no output)
+[0m
+[0m→ [0mRead ontos/mcp/tools.py[90m [limit=50, offset=60][0m
+[0m
+[0m$ [0mpython3 <redacted:secret>
+audit-registry: PASS
+mode: local
+original findings: 91 (P0=1, P1=27, P2=63)
+original status: committed_fixed=2, code_fixed_evidence_pending=1, implemented_committed_pending=40, partial_committed_pending=7, confirmed_open=41
+revalidation findings: 9
+[0m
+[0m$ [0mpython3 -m pytest tests/core/test_config_phase3.py tests/test_audit_remediation_registry_validator.py -x -q 2>&1 | tail -20
+/opt/homebrew/opt/python@3.14/bin/python3.14: No module named pytest
+[0m
+[0m$ [0mls .venv/bin/python 2>/dev/null
+.venv/bin/python
+[0m
+[0m$ [0mls .venv/bin/pytest 2>/dev/null
+.venv/bin/pytest
+[0m
+[0m$ [0m.venv/bin/python -m pytest tests/core/test_config_phase3.py tests/test_audit_remediation_registry_validator.py -x -q 2>&1 | tail -15
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0
+rootdir: /<redacted:secret>
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.14.1
+collected 249 items
+
+tests/core/test_config_phase3.py ....................................... [ 15%]
+................                                                         [ 22%]
+tests/test_audit_remediation_registry_validator.py ..................... [ 30%]
+........................................................................ [ 59%]
+........................................................................ [ 88%]
+.............................                                            [100%]
+
+============================= 249 passed in 38.51s =============================
+[0m
+[0m✱ [0mGrep "(double.generat|second.*gen|identical|timestamp|diff|clean.tree|clean_tree|tracked|untracked)"[90m in tests/commands · 4 matches[0m
+[0m✱ [0mGrep "(entry_binding|binding.*before|external.*sentinel|sentinel.*unchanged|st_nlink|nlink|symlink.*swap|hard.link|move.*delete|backup.*reservation|descriptor.*close)"[90m in tests · 46 matches[0m
+[0m→ [0mRead ontos/core/schema.py[90m [limit=35, offset=83][0m
+[0m→ [0mRead ontos/core/schema.py[90m [limit=35, offset=315][0m
+[0m→ [0mRead ontos/io/files.py[90m [limit=30, offset=388][0m
+[0m
+[0m$ [0mgit diff --name-only bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95 05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0 -- .llm-dev/framework/ .git/ .venv/
+(no output)
+[0m
+[0m# [0mTodos
+[✓] Read framework templates (01,02,04) and spec v1.5
+[✓] Verify §4.1 registry/lease quarantine-before-consumers in validate-audit-remediation-registry.py
+[✓] Verify §4.3 safe writer no-follow binding in context.py + log.py + archive marker
+[✓] Verify §4.3 workspace lock no-follow single-link in context.py + mcp/locking.py
+[✓] Verify §4.4 required_version clause copy singular/eager/multi-clause + config.py
+[✓] Verify §4.4 CLI/MCP/activation/platform contracts (json_output, stub.py, command_registry, doctor, mcp read-only)
+[✓] Verify §4.5 release pipeline (ci.yml, publish.yml, check_release_artifact.py, context map)
+[✓] Verify §7 migration docs (Migration_v3_to_v4.md, Ontos_Manual.md)
+[✓] Verify §9 exclusion list + lifecycle diagram + nonclaims
+[•] Write D.2-glm-alignment.md verdict artifact
+[0m
+[0m← [0mWrite <redacted:secret>
+Wrote file successfully.
+[0m
+[0m→ [0mRead <redacted:secret>[90m [limit=50, offset=1][0m
+[0m✱ [0mGrep "^## "[90m in <redacted:secret> · 10 matches[0m
+[0m→ [0mRead <redacted:secret>[90m [limit=25, offset=295][0m
+[0m
+[0m← [0mEdit <redacted:secret>
+Index: /<redacted:secret>
+===================================================================
+--- /<redacted:secret>
++++ /<redacted:secret>
+@@ -315,9 +315,9 @@
+ - TestPyPI/PyPI and live GitHub parity are verified only through static
+   workflow/report inspection, not a tag-run or live API call — the spec §3
+   correctly treats these as external proof pending.
+ 
+-## 9. Verdict
++## Verdict
+ 
+ Approve
+ 
+ The Phase C implementation at I1 `05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0`
+
+[0m
+[0m→ [0mRead <redacted:secret>[90m [limit=50, offset=319][0m
+[0m
+[0m$ [0mgit status --short
+M Ontos_Context_Map.md
+ M <redacted:secret>
+ M <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+[0m
+[0m# [0mTodos
+[✓] Read framework templates (01,02,04) and spec v1.5
+[✓] Verify §4.1 registry/lease quarantine-before-consumers in validate-audit-remediation-registry.py
+[✓] Verify §4.3 safe writer no-follow binding in context.py + log.py + archive marker
+[✓] Verify §4.3 workspace lock no-follow single-link in context.py + mcp/locking.py
+[✓] Verify §4.4 required_version clause copy singular/eager/multi-clause + config.py
+[✓] Verify §4.4 CLI/MCP/activation/platform contracts (json_output, stub.py, command_registry, doctor, mcp read-only)
+[✓] Verify §4.5 release pipeline (ci.yml, publish.yml, check_release_artifact.py, context map)
+[✓] Verify §7 migration docs (Migration_v3_to_v4.md, Ontos_Manual.md)
+[✓] Verify §9 exclusion list + lifecycle diagram + nonclaims
+[✓] Write D.2-glm-alignment.md verdict artifact
+[0m

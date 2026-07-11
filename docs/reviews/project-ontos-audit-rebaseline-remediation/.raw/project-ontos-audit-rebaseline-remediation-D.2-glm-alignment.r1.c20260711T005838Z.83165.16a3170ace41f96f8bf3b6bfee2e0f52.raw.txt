@@ -1,0 +1,19 @@
+I'll start by reading the required template files and the spec in parallel.
+Now let me read the rest of template 02, the spec, and examine the git state.
+Now let me read the spec and inspect the Phase C implementation diff. I'll also check the historical base commit.
+Let me verify the base commit and the implementation relationship, and start inspecting the key implementation files that the spec constraints reference.
+Let me set up my task tracking and inspect the changes between the implementation commit and the current checkpoint, plus read the key implementation files.
+The validator diff is substantial. Let me read the current state of the key implementation files the spec's constraints reference.
+Let me continue inspecting the key files: validator main(), log.py, config.py (required_version), and mcp/locking.py.
+Let me continue reading the validator's main function and the other key constraint files (config.py for required_version, mcp/locking.py for workspace lock, stub.py for CLI ID copy).
+Let me read the validator's main()/exit behavior and the other constraint files (mcp/locking.py workspace lock, stub.py CLI ID, locking.py single-link, json_output.py).
+Let me read the locking.py single-link check, stub.py CLI ID copy, json_output.py envelope, and the release workflow files.
+Let me read the rest of locking.py (Windows nNumberOfLinks), the JSON output envelope, schema.py ID validation, and run the registry validator as a bounded check.
+The registry validator passes locally. Let me read the Windows link check completion and run a bounded quarantine-behavior check to verify exit 1/FAILED never exit 2/ERROR (a key spec §4.1 constraint).
+Let me run the registry validator test module as a bounded check (it exercises the exit 1/FAILED-never-exit-2/ERROR contract), and reset the todo.
+pytest isn't in system Python. Let me find the venv and check the JSON envelope keys, migration docs, and release workflows.
+194 validator tests pass. Let me inspect the JSON envelope construction (the spec's exact-keys anchor) and the migration docs.
+The envelope, migration docs, and exit taxonomy all match spec §4.4/§7. Let me verify the activation command, MCP read-only mode, schema ID validation, and release workflow.
+Let me verify the MCP export_graph read-only refusal, the schema ID validation, OIDC scoping, and Windows CI jobs.
+Let me verify the ID pattern, run bounded focused checks on the writer/lock/log tests, and the context-map double-generation cleanliness.
+87 config/stub/cli tests pass. The ID pattern matches spec exactly. Let me run the context-map double-generation check (§4.5) and verify the clean-tree invariant.

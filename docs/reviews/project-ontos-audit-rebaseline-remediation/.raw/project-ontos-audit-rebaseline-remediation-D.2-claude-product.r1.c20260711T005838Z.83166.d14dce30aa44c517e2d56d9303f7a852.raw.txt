@@ -1,0 +1,18 @@
+Review complete. The only file I created is the product review; per Template 19 review-phase discipline I do not commit (the orchestrator stages/commits). Temp scratch dirs cleaned up.
+
+## Final report — project-ontos-audit-rebaseline-remediation / D.2 / product / claude
+
+- **Status:** completed
+- **Artifacts written:** `docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-claude-product.md`
+- **Smoke checks:** verdict shape = pass (first non-blank line under exact unnumbered `## Verdict` is bare canonical token `Request changes`; frontmatter carries `id`/`deliverable_id`/`phase`/`role`/`family`/`status: completed`; H1 present) (evidence: direct-run)
+- **Cardinality checks:** single artifact at the one declared path = pass; no other file created/modified (evidence: direct-run `git status`)
+- **Commit:** none — review-phase worker; orchestrator stages/commits
+- **Verdict:** Request changes (no blocking findings; two should-fix failure-visibility/copy items on the activation-failure surface)
+
+**Notes.** Reviewed spec v1.5 against exact I1 `05b090d` (exercised via `git archive` of I1 through the repo `.venv`, since worktree HEAD `9dbe5e1` carries later review-board scaffolding + a validator/registry delta). Charter surfaces exercised with `direct-run` evidence: activation golden + incompatible + malformed-range + recovery; doctor skew (normal/shadow/incompatible via PATH shim); log collision + archive-marker warning (exit 3, external sentinel preserved); schema-v4 JSON envelope + exit taxonomy (code 4 reserved/absent); read-only MCP (write tools omitted, `E_READ_ONLY`); exhaustive 15-type reporting incl. zero-count; map double-generation stability; release-artifact provenance messaging; CLI invalid-ID `E_USER_INPUT`; migration anchor resolves.
+
+Two should-fix findings, both direct-run with exact reproductions:
+- **PRD-1:** human `ontos activate` output never renders the failure `reason` (`format_activation_output`, `activate.py:218-245`) — operator sees `not_usable`/`halt` with no explanation; JSON path (primary agent consumer) does carry reason+anchor, so should-fix not blocking.
+- **PRD-2:** malformed `required_version` surfaces `Config error: version clause '…' …` instead of the spec-mandated `Invalid [ontos].required_version …` + migration anchor, because the load-time eager parse (`config.py:181-184`) shadows the anchored branch (`config.py:273`); also makes `Migration_v3_to_v4.md:141` inaccurate. Cross-cuts Alignment on the doc/code copy contract.
+
+Did not run the full suite; did not read D.1 / B-family / sibling D.2 verdicts, dispatch results, receipts, or tracker conclusions; did not convert honestly external-pending Windows/TestPyPI/PyPI proofs into product failures.

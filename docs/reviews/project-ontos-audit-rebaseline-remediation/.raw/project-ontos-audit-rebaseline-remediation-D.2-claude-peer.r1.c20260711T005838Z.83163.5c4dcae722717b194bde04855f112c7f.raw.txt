@@ -1,0 +1,22 @@
+The artifact passes the F35 verdict-shape gate (`verdict_shaped (verdict: approve)`). Review complete.
+
+## Summary
+
+I completed the independent Claude **peer** review for D.2, writing only `docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-claude-peer.md` (not committed — Peer workers don't commit; the orchestrator stages/commits).
+
+**Verdict: Approve.**
+
+I independently inspected the base→I1 diff and the committed I1→HEAD control-plane evidence delta, avoiding D.1, B-family verdicts, sibling D.2 reviews, dispatch results, receipts, and tracker conclusions. Rather than trust green tests, I reproduced every load-bearing spec v1.5 contract against I1 via `direct-run`:
+
+- **§4.1** validator fails closed (exit `1`/`FAILED`, never `2`/`ERROR`) across nine malformed control-plane shapes — root-as-list, non-mapping row, unhashable/absolute/`None`/escaping `verification_evidence`, bad enum, dropped `#146`, non-list leases, duplicate `affected_issues`.
+- **§4.4** `required_version` parses all clauses eagerly (earlier-false doesn't hide later-invalid), names the offending clause, prints its literal exactly once; JSON envelope has the exact nine keys and `0/1/2/3/5/130` taxonomy with `4` reserved/absent.
+- **§4.3** log collision `E_LOG_EXISTS` + recovery hint; archive-marker → warnings-only exit `3`; workspace lock centralized with `O_NOFOLLOW` + `st_nlink`/`nNumberOfLinks` re-checked before acquisition, used by both CLI and MCP.
+- **§4.2/§4.5** CLI uses the canonical `validate_document_id`; all CREATE artifacts tracked; CI Windows job + TestPyPI `--no-deps` single-wheel present.
+- Blessing-test greps clean; focused suites `270` + `111` passed; non-vacuous X-M1 log-symlink and C-FZ-6 Windows-NUL regressions confirmed.
+
+**Findings (none blocking):**
+- **P-1 (should-fix):** the committed evidence delta promotes `R2-control-plane-parity-1` to a `parity_verified` status/lifecycle vocabulary that spec v1.5 never names — honest and validator-enforced, but not spec-traceable.
+- **P-2 (minor):** validator hardcodes a per-finding-ID special-case that won't scale.
+- **P-3 (minor):** a few current-tree line anchors drifted slightly after I0→I1.
+
+External Windows/TestPyPI/PyPI claims left external; no synthesis. The verdict is umbrella lifecycle-local and certifies nothing downstream of D.2.

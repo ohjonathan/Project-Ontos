@@ -66,3 +66,25 @@ redispatched at round 1 with fresh intent, result, prompt, raw-output, and
 verdict paths. No receipt row is copied, hand-created, edited, or reconstructed.
 D.2 and D.5 append to that final inventory only after both final design bundles
 verify complete.
+
+## D.2 inventory rollover
+
+The first D.2 bundle produced four genuine family artifacts and wrapper
+captures. Its GLM slot required a provenance-only corrective round because
+OpenCode wrote the canonical artifact directly while R30-B permits that route
+to certify only wrapper-promoted bytes. The corrective round successfully used
+`opencode_written_file_promoted`, but the wrapper then placed the generated
+round-1 run identifier in the round-2 receipt's `supersedes_run_ids[]`. The
+pinned v2.0.1 strict verifier rejects that wrapper-owned value as an unredacted
+high-entropy token. `verify-family-dispatch --require-complete` passes all four
+D.2 seats; `verify-lifecycle --mode strict-p3` fails only this route-redaction
+defect plus the not-yet-run D.5 seats.
+
+The same immutable-receipt rule applies. No D.2 receipt is edited, copied,
+reconstructed, or restamped. `lifecycle-receipt-inventory-final.yaml` and all
+of its prompts, transcripts, failed attempts, route attestations, and verdicts
+remain non-certifying attempt history. The manifest rolls to a new inventory,
+and every B.1, B.2, and D.2 engineering/Product seat is dispatched again as a
+fresh round-1 wrapper capture with new intent, result, prompt, raw-output, and
+verdict paths. D.3 remains blocked until those three fresh bundles and strict
+lifecycle verification pass.

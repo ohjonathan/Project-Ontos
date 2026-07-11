@@ -1,0 +1,14 @@
+I'll start by reading the required template files and spec, then examine the implementation evidence.
+Now let me read the spec and examine the implementation evidence.
+Let me examine the Phase C implementation commit and the diff from the base.
+Let me now examine the key implementation areas against the spec requirements. Let me start with the most critical code paths.
+Let me check the existing review directory structure and examine the key quarantine-before-consumers pattern.
+Let me examine the critical main() function for exit code behavior, and the key context.py writer sections.
+Let me now examine the validate() function, the context.py writer, and the log command.
+Let me examine the context.py writer's no-follow behavior and the D.2 GLM alignment prompt.
+Let me check the publish workflow OIDC scoping, MCP read-only mode, and run a bounded focused test to verify a key claim.
+Let me check the MCP read-only assertions and the JSON output exit codes, then run a bounded check on the registry validator.
+Let me verify a few more spec requirements: exit code 4 absence, MCP read-only exports, and the migration documentation anchor.
+I have now gathered comprehensive evidence. Let me check the `.raw` directory exists and write the review.
+I now have comprehensive evidence. Let me write the complete alignment review.
+Wrote `docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/glm-D2-r2.review.md`

@@ -1,0 +1,34 @@
+I'll start by activating Ontos context and reading the required template files in parallel.
+Now let me read the three required template files completely, plus the spec.
+Let me read the rest of template 02, the spec, and the dispatch artifacts in parallel.
+Now let me examine the git state, the dispatch artifacts, and the actual code changes. Let me gather evidence in parallel.
+Let me examine the diff statistics, dispatch intent/result, and current evidence checkpoint.
+Let me read the dispatch result and the prompt for this GLM alignment review, plus inspect key source files.
+Let me inspect the key source files. I'll start with the registry validator, context.py (safe writer), and config.py (required_version) in parallel.
+Let me inspect the key code sections. I'll read the validator's quarantine logic, context.py no-follow/binding, and config.py required_version parsing.
+Let me read the critical code sections in the validator, config, and context modules.
+Good progress. Let me now check the MCP read-only, log.py no-follow, locking.py workspace lock, and release workflow in parallel.
+Let me check the log.py collision/archive marker, MCP tools read-only, migration docs, and release workflow.
+Good evidence gathered. Let me check the JSON output taxonomy, release workflow, context map, and the validator's program/lease validation.
+Let me check the TestPyPI download, context map generation, validator's lease validation, and config shadowing guard.
+Let me check the MCP locking, validator's lease/shared_tree_integration validation, and run a bounded check.
+Let me check the validator's normalize functions for leases/integration, the `main()` exit behavior, and the config path shadowing guard.
+Let me read the normalize functions for leases/integration and run a bounded check on the validator.
+Let me check the programs validation section and the program issue set verification.
+Let me verify the entry-binding recheck before mutation (Phase C requirement) and the schema.py ID validation.
+Let me do final checks on the ID pattern, exclusion list compliance, and a bounded test of the entry binding.
+Let me verify the exact ID pattern, then I'll run a quick bounded check and write the review.
+Let me verify the CI Windows jobs, the `required_version` clause identification, and then write the review.
+Let me check the final PyPI publish job OIDC scoping and then write the review.
+All evidence gathered. Let me now write the verdict artifact.
+Now let me write the complete verdict-shaped review to the designated `.raw` path.
+Let me verify the written file has the correct verdict shape and content.
+The `## Verdict` heading needs to be unnumbered per the prompt. Let me fix it.
+The independent alignment review is complete. I re-derived every constraint from spec v1.5 and inspected the actual Phase C I1 code (`05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0`) against historical base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95` and the evidence checkpoint at HEAD `9dbe5e1`.
+
+Key findings:
+- **No blocking deviations.** The quarantine-before-consumers boundary, no-follow writer with entry-binding rechecks, workspace-lock single-link verification (CLI + MCP), eager clause parsing, MCP read-only non-mutation, one-wheel release provenance with OIDC publisher-only scoping, and migration documentation all faithfully implement spec v1.5.
+- **One should-fix (A-1):** The validator `main()` catch-all at line 1891 returns exit 2 for uncaught exceptions; the spec says table-driven constructions must never exit 2. The normalize functions properly quarantine all spec-listed constructions, so this is defense-in-depth, not a current quarantine failure.
+- The 41 open / 7 partial nonclaim, three external-proof dependencies (Windows/GitHub/TestPyPI), and preserved user documents are all correctly preserved as pending/untouched.
+
+Wrote `docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/glm-D2-r2.review.md`

@@ -44,8 +44,3 @@ so the wrapper can bind the sibling source. Follow Template 04 with literal
 reference documents, and `status: completed` or `halted`. Include every
 mandatory section and exact unnumbered `## Verdict` with one bare canonical
 token first. Do not edit any other file, spawn nested agents, or commit.
-
-Route-redaction constraint: describe workflow identity-token permissions as
-"OIDC permission" in prose. Do not quote or reproduce secret-shaped
-configuration keys followed by literal values. Regenerate and overwrite the
-designated sibling review on this attempt, then emit the required `Wrote` line.
