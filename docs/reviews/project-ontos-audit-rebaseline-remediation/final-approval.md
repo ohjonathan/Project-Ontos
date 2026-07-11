@@ -36,6 +36,7 @@ checks are green, but strict lifecycle evidence is not mechanically admissible.
 | Complete local suite | `1740 passed, 1 warning` |
 | Manifest conformance | PASS, `4/4` |
 | Closeout-proof metadata | PASS; proof-test, product-code-scope, and live-doc reconciliation gates are explicit |
+| Lifecycle verifier | Strict mode exits `1` with `status=manifest_valid`; fallback mode exits `1` with `status=provider_limited_fallback_incomplete` |
 | D.6 shape | `verify-d6-gate --allow-gated` PASS; strict-P3 mode intentionally fails |
 
 ## Certification statement

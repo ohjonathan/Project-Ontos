@@ -48,11 +48,15 @@ raw captures, and receipts were used; no prior receipt was edited or recreated.
 
 Strict gates still fail. `verify-family-dispatch --require-complete` reports two
 completed seats and the failed Gemini seat, plus v2.0.1 rejects the GLM
-`worker_file` receipt/prompt. `verify-lifecycle --mode strict-p3` returns exit
-`1`, `status=review_pending`; its GLM supersession backlink triggers the known
-route-redaction defect. Applying the framework receipt schema independently
-returns exit `1` with the same six producer/schema mismatches recorded before.
-EH-15-A remains independently reproducible.
+`worker_file` receipt/prompt. Before the fallback declaration was added,
+`verify-lifecycle --mode strict-p3` returned exit `1`,
+`status=review_pending`. On the final fallback-declared manifest, strict mode
+instead rejects `fallback_evidence_mode: provider_limited_fallback` at exit `1`
+with `status=manifest_valid`, while fallback mode exits `1` with
+`status=provider_limited_fallback_incomplete` (failed Gemini dispatch, missing
+fallback receipt, and GLM route-redaction diagnostics). Applying the framework
+receipt schema independently returns exit `1` with the same six producer/schema
+mismatches recorded before. EH-15-A remains independently reproducible.
 
 D.6 was therefore run only as a withheld gate at `final-approval.md`; no
 passing rows, waiver, receipt reconstruction, merge, or release action exists.
