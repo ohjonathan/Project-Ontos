@@ -14,21 +14,16 @@ should-fixes CAN-ACT-1/2, CAN-CP-1/2/3, and CAN-ID-1; the empty D.3 blocker list
 does not waive them. Verify D4-INFRA-1 directly. If it holds, return
 `Request changes` even when product tests pass.
 
-Use only these two orchestrator-prepared, plain snapshots inside the served
-repository; neither contains a `.git` pointer, so no sandbox-external git access
-is needed:
-
-- post-fix: `/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation/.venv/d5-glm-post`
-- same tests with only the five target implementation files restored from
-  pre-fix `aa41c39`: `/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation/.venv/d5-glm-pre`
-
-Use
-`/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation/.venv/bin/python`
-and confirm its `ontos.__file__` resolves under the snapshot whose tests you are
-running. For each group, run the identical selection in `d5-glm-post` and
-require pass, then in `d5-glm-pre` and require nonzero. Use `-B` plus
-`--cache-clear` on every focused invocation; do not combine `--cache-clear` with
-`-p no:cacheprovider` because that removes the option's owning plugin:
+Use only
+`/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation/.venv/d5-glm-worktree`
+for source swaps/tests. This disposable worktree is deliberately nested inside
+the served repository so the OpenCode sandbox can access it. Confirm its HEAD is
+`8d5096eba940aafe1e8b86bdd3a8852961bab815` and its entry state is clean. Use
+`/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation/.venv/bin/python`;
+confirm imports resolve from the disposable worktree. For each group, run the
+post-fix tests, restore the listed implementation files from pre-fix
+`aa41c3982e21b0e0cff6c3c5486f4af9e5e55e05`, rerun the identical tests with
+`--cache-clear` and require nonzero, restore from HEAD, and require pass:
 
 1. `ontos/commands/activate.py ontos/core/config.py` with
    `tests/commands/test_agentic_activation_resilience.py -k 'human_renders_incompatible or human_renders_malformed or json_renders_malformed'`.
@@ -37,12 +32,13 @@ require pass, then in `d5-glm-pre` and require nonzero. Use `-B` plus
 3. `ontos/commands/rename.py ontos/mcp/rename_tool.py` with
    `tests/commands/test_rename.py tests/mcp/test_rename_document.py -k 'rename_invalid_ids_use_canonical or rename_invalid_id_is_rejected_before_project_discovery or build_rename_plan_uses_canonical or rename_document_invalid_ids_use_canonical or rename_document_rejects_invalid_id_before_preflight'`.
 
-Do not edit either snapshot. Run the full `tests/` suite in `d5-glm-post` with
-`-q -p no:cacheprovider`. From the lifecycle worktree,
+`git restore --source <sha> -- <listed-files>` is authorized only in this
+disposable verification worktree. Restore clean HEAD at the end. Run the full
+`tests/` suite there with `-q -p no:cacheprovider`. From the lifecycle worktree,
 run registry local/external parity, changed-path scope, manifest conformance,
-`git diff --check HEAD`, plus the summary's manifest-mode and absolute
-explicit-path EH-15-A probes. Record exact commands and evidence; do not call an
-expected nonzero pre-fix or infrastructure probe a test-harness failure.
+`git diff --check HEAD`, plus the summary's manifest-mode and explicit-path
+EH-15-A probes. Record exact commands and evidence; do not call an expected
+nonzero pre-fix or infrastructure probe a test-harness failure.
 
 Write only the wrapper-designated artifact, using Template 15 frontmatter with
 `id: audit-rb-D5-glv`, `phase: D.5`, `role: verifier`, `family: glm`,

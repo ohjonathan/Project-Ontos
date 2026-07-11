@@ -1,0 +1,77 @@
+[0m
+> build · glm-5.2
+[0m
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>
+[0m
+[0m$ [0m./.venv/bin/python -m ontos activate 2>&1 | head -40
+Activation status: usable_with_warnings
+Map: refreshed
+Docs scanned: 229
+Documents loaded: 229
+Issues: load=1, validation_errors=0, validation_warnings=1
+Top enum diagnostics:
+  - <redacted:secret>:9 status='halted': Change 'status' to one of: draft, active, deprecated, archived, rejected, complete, auto-generated, scaffold, pending_curation, in_progress, proposed, ready, completed, revised, in-lifecycle, unknown. Preserve the old value as original_status if it carries lifecycle nuance.
+Top warning groups:
+  - curation x1 (warning=1) — e.g. <redacted:secret>
+Recommended agent action: continue; use direct reads for task-critical docs
+Loaded: ['ontos_manual', '<redacted:secret>', 'ontos_agent_instructions', 'project_ontos_audit_remediation_release_line_tracker', 'ontology_spec']
+[0m
+[0m# [0mTodos
+[✓] Read template files (01, 15)
+[•] Locate and read D.3 canonical verdict, D.4 fix summary, D.4 scope recovery, manifest
+[ ] Review code/test diff from aa41c39 to HEAD 311b60b
+[ ] Set up disposable worktree at .venv/d5-glm-worktree, confirm HEAD 8d5096e, clean entry state
+[ ] Confirm python imports resolve from disposable worktree
+[ ] Group 1: verify CAN-ACT-1/2 (activate.py, config.py)
+[ ] Group 2: verify CAN-CP-1/2/3 (validate-audit-remediation-registry.py)
+[ ] Group 3: verify CAN-ID-1 (rename.py, rename_tool.py)
+[ ] Verify D4-INFRA-1 directly
+[ ] Run full tests/ suite in disposable worktree
+[ ] Run registry local/external parity, changed-path scope, manifest conformance from lifecycle worktree
+[ ] Run git diff --check HEAD, manifest-mode and explicit-path EH-15-A probes
+[ ] Restore clean HEAD at end of disposable worktree
+[ ] Write the wrapper-designated artifact with Template 15 frontmatter
+[0m
+[0m$ [0mgit log --oneline aa41c3982e21b0e0cff6c3c5486f4af9e5e55e05..311b60b6e86abe6d0b5a7ac61e16d07049387707 2>&1 | head -30
+311b60b Use canonical ID validation for rename
+2dede68 Bind control-plane registry evidence to D4 fix
+5c5a9cd Harden audit remediation control-plane validation
+f6d6b77 Fix D3 activation diagnostics
+[0m
+[0m✱ [0mGlob "<redacted:secret>/**/*.md"[90m 50 matches[0m
+[0m✱ [0mGlob "**/*manifest*.yaml"[90m 0 matches[0m
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m✱ [0mGlob "**/*manifest*.{yaml,yml}"[90m 0 matches[0m
+[0m✱ [0mGlob "manifests/**/*.yaml"[90m 7 matches[0m
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m
+[0m$ [0mls -la /<redacted:secret> 2>&1 | head -5
+total 448
+drwxr-xr-x@ 35 jonathanoh  wheel   1120 Jul 10 20:16 .
+drwxr-xr-x@  9 jonathanoh  wheel    288 Jul 10 20:19 ..
+drwxr-xr-x@  3 jonathanoh  wheel     96 Jul 10 20:16 .agent
+-rw-r--r--@  1 jonathanoh  wheel   2207 Jul 10 20:16 .cursorrules
+[0m
+[93m[1m! [0mpermission requested: external_directory (/<redacted:secret>/*); auto-rejecting
+[0m✗ [0mgit rev-parse HEAD && git status --porcelain 2>&1 | head -5 failed
+[91m[1mError: [0mThe user rejected permission to use this specific tool call.
+[0m
+[0m$ [0mgit diff --stat aa41c3982e21b0e0cff6c3c5486f4af9e5e55e05 311b60b6e86abe6d0b5a7ac61e16d07049387707 2>&1
+.../<redacted:secret>  |   2 +-
+ ontos/commands/activate.py                         |  28 ++-
+ ontos/commands/rename.py                           |  69 ++++--
+ ontos/core/config.py                               |  35 ++-
+ ontos/mcp/rename_tool.py                           |  30 ++-
+ <redacted:secret>     |  85 ++++++--
+ .../commands/test_agentic_activation_resilience.py |  88 +++++++-
+ tests/commands/test_rename.py                      | 151 ++++++++++++-
+ tests/core/test_config_phase3.py                   |  27 +++
+ tests/mcp/test_rename_document.py                  |  68 +++++-
+ tests/test_audit_remediation_registry_validator.py | 237 ++++++++++++++++++++-
+ 11 files changed, 735 insertions(+), 85 deletions(-)
+[0m

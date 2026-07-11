@@ -1,0 +1,6 @@
+I'll start by reading the required template files and understanding the project state. Let me activate Ontos and read the templates in parallel.
+Let me locate the D.3 verdict, D.4 fix summary, D.4 scope recovery, and manifest documents.
+Let me read the D.3 verdict, D.4 fix summary, and D.4 scope recovery, and search for manifests.
+Let me find the manifest and the existing D.5 verifier artifacts to understand what I'm verifying against.
+Now let me read the manifest and check the disposable worktree state.
+Let me check the disposable worktree's HEAD and clean state, and view the code diff.
