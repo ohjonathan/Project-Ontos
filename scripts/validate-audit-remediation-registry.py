@@ -33,6 +33,22 @@ INTEGRATION_COMMIT = "b6f89d77e7fb684b8bd9a181a24c773d5777397a"
 CONTROL_PLANE_FIX_COMMIT = "05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0"
 DOCTOR_BASE_COMMIT = "c8672e90f2382f4147ef61b4fba918969483e73e"
 DOCTOR_FIX_COMMIT = "03c36e6ac999d2c411c13252baa2e8fcff60e6ed"
+CONTROL_PLANE_FINDING_ID = "R2-control-plane-parity-1"
+CONTROL_PLANE_ISSUE = 158
+CONTROL_PLANE_OWNER = {
+    "id": "project-ontos-audit-remediation-2026-07",
+    "root_program": "project-ontos-audit-remediation-2026-07",
+    "issue": CONTROL_PLANE_ISSUE,
+    "base_sha": REVALIDATION_COMMIT,
+    "allowed_paths": (
+        "manifests/project-ontos-audit-remediation-registry.yaml",
+        "docs/reviews/2026-07-10-codex-audit-revalidation.md",
+        "docs/trackers/project-ontos-audit-remediation-release-line.md",
+        "docs/handoffs/project-ontos-audit-remediation-2026-07-*.md",
+        "scripts/validate-audit-remediation-registry.py",
+        "tests/test_audit_remediation_registry_validator.py",
+    ),
+}
 
 REQUIRED_FINDING_FIELDS = {
     "id",
@@ -206,6 +222,10 @@ EXPECTED_RELEASE_COUNTS = Counter(
 )
 
 
+class ControlPlaneInputError(Exception):
+    """A malformed or unreadable operator-controlled YAML input."""
+
+
 def load_yaml(path: Path) -> Any:
     """Load YAML without imposing a root type on every document.
 
@@ -213,7 +233,16 @@ def load_yaml(path: Path) -> Any:
     malformed registry or child manifest is a normal validation failure
     (exit 1), not an exception-derived validator error (exit 2).
     """
-    return yaml.safe_load(path.read_text(encoding="utf-8"))
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        raise ControlPlaneInputError(
+            f"cannot read YAML input {path}: {exc}"
+        ) from exc
+    try:
+        return yaml.safe_load(text)
+    except yaml.YAMLError as exc:
+        raise ControlPlaneInputError(f"invalid YAML in {path}: {exc}") from exc
 
 
 def audit_register() -> dict[str, str]:
@@ -445,6 +474,12 @@ def normalize_shared_path_leases(
             ):
                 errors.append(
                     f"shared_path_leases row {index} has invalid {field}: "
+                    f"{issue_values!r}"
+                )
+                item_invalid = True
+            elif field in item and len(set(issue_values)) != len(issue_values):
+                errors.append(
+                    f"shared_path_leases row {index} has duplicate {field}: "
                     f"{issue_values!r}"
                 )
                 item_invalid = True
@@ -1326,6 +1361,10 @@ def validate(require_external_parity: bool) -> list[str]:
         for program in programs
         if isinstance(program.get("issue"), int)
     }
+    finding_owner_by_issue = {
+        **program_by_issue,
+        CONTROL_PLANE_ISSUE: CONTROL_PLANE_OWNER,
+    }
     for issue, program in sorted(program_by_issue.items()):
         expected_base = (
             DOCTOR_BASE_COMMIT if issue == 147 else REVALIDATION_COMMIT
@@ -1376,7 +1415,17 @@ def validate(require_external_parity: bool) -> list[str]:
     for row in findings:
         issue = row.get("issue")
         finding_id = row.get("id", "<missing-id>")
-        program = program_by_issue.get(issue)
+        if finding_id == CONTROL_PLANE_FINDING_ID and issue != CONTROL_PLANE_ISSUE:
+            errors.append(
+                f"{CONTROL_PLANE_FINDING_ID} must be assigned to issue "
+                f"#{CONTROL_PLANE_ISSUE}, not #{issue}"
+            )
+        if issue == CONTROL_PLANE_ISSUE and finding_id != CONTROL_PLANE_FINDING_ID:
+            errors.append(
+                f"{finding_id} cannot be assigned to reserved issue "
+                f"#{CONTROL_PLANE_ISSUE}"
+            )
+        owner = finding_owner_by_issue.get(issue)
         expected_baseline = (
             AUDIT_BASELINE_COMMIT
             if row.get("origin") == "fable_audit"
@@ -1387,9 +1436,7 @@ def validate(require_external_parity: bool) -> list[str]:
                 f"{finding_id} baseline_commit mismatch: "
                 f"{row.get('baseline_commit')!r} != {expected_baseline!r}"
             )
-        expected_base = (
-            program.get("base_sha") if program is not None else REVALIDATION_COMMIT
-        )
+        expected_base = owner.get("base_sha") if owner is not None else REVALIDATION_COMMIT
         if row.get("base_sha") != expected_base:
             errors.append(
                 f"{finding_id} base_sha mismatch: "
@@ -1401,27 +1448,31 @@ def validate(require_external_parity: bool) -> list[str]:
             commit_value = row.get(commit_field)
             if isinstance(commit_value, str) and is_commit_ref(commit_value):
                 commit_refs.add(commit_value)
-        if program is None:
-            if issue != 158:
-                errors.append(f"{finding_id} has no owning program row")
+        if owner is None:
+            errors.append(f"{finding_id} has no owning program row")
             continue
-        if row.get("root_program") != program.get("root_program"):
+        if row.get("root_program") != owner.get("root_program"):
             errors.append(
                 f"{finding_id} root_program mismatch for issue #{issue}: "
                 f"finding={row.get('root_program')!r}, "
-                f"program={program.get('root_program')!r}"
+                f"owner={owner.get('root_program')!r}"
             )
         uncovered = [
             path
             for path in row.get("allowed_paths", [])
             if not any(
-                path_scope_covers(program_path, path)
-                for program_path in program.get("allowed_paths", [])
+                path_scope_covers(owner_path, path)
+                for owner_path in owner.get("allowed_paths", [])
             )
         ]
         if uncovered:
+            owner_label = (
+                f"owner #{issue}"
+                if issue == CONTROL_PLANE_ISSUE
+                else f"program #{issue}"
+            )
             errors.append(
-                f"{finding_id} finding scope exceeds program #{issue}: {uncovered}"
+                f"{finding_id} finding scope exceeds {owner_label}: {uncovered}"
             )
     for program in programs:
         for commit_field in ("base_sha", "implementation_ref"):
@@ -1888,6 +1939,10 @@ def main() -> int:
     args = parser.parse_args()
     try:
         errors = validate(args.require_external_parity)
+    except ControlPlaneInputError as exc:
+        print("audit-registry: FAILED", file=sys.stderr)
+        print(f"- {exc}", file=sys.stderr)
+        return 1
     except Exception as exc:  # validation should fail closed with useful context
         print(f"audit-registry: ERROR: {exc}", file=sys.stderr)
         return 2

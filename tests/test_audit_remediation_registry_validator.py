@@ -501,6 +501,97 @@ def test_finding_root_program_must_match_owning_program(
 
 
 @pytest.mark.parametrize(
+    ("field", "replacement", "expected_fragment"),
+    [
+        (
+            "root_program",
+            "project-ontos-audit-remediation-wrong-owner",
+            "root_program mismatch for issue #158",
+        ),
+        (
+            "allowed_paths",
+            ["SECURITY.md"],
+            "finding scope exceeds owner #158",
+        ),
+    ],
+)
+def test_issue_158_control_plane_finding_is_checked_against_synthetic_owner(
+    validator_module,
+    monkeypatch,
+    tmp_path,
+    capsys,
+    field,
+    replacement,
+    expected_fragment,
+):
+    registry = copy.deepcopy(
+        validator_module.load_yaml(validator_module.REGISTRY_PATH)
+    )
+    finding = next(
+        row
+        for row in registry["findings"]
+        if row["id"] == "R2-control-plane-parity-1"
+    )
+    finding[field] = replacement
+
+    exit_code = _run_main_with_registry(
+        validator_module,
+        monkeypatch,
+        tmp_path,
+        registry,
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert "audit-registry: FAILED" in captured.err
+    assert expected_fragment in captured.err
+    assert "audit-registry: ERROR" not in captured.err
+
+
+@pytest.mark.parametrize(
+    ("control_issue", "other_issue"),
+    [(157, 158)],
+)
+def test_control_plane_finding_id_and_issue_158_are_reserved_as_a_pair(
+    validator_module,
+    monkeypatch,
+    tmp_path,
+    capsys,
+    control_issue,
+    other_issue,
+):
+    registry = copy.deepcopy(
+        validator_module.load_yaml(validator_module.REGISTRY_PATH)
+    )
+    control_finding = next(
+        row
+        for row in registry["findings"]
+        if row["id"] == "R2-control-plane-parity-1"
+    )
+    other_finding = next(
+        row
+        for row in registry["findings"]
+        if row["issue"] == control_issue
+        and row["id"] != "R2-control-plane-parity-1"
+    )
+    control_finding["issue"] = control_issue
+    other_finding["issue"] = other_issue
+
+    exit_code = _run_main_with_registry(
+        validator_module,
+        monkeypatch,
+        tmp_path,
+        registry,
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert "R2-control-plane-parity-1 must be assigned to issue #158" in captured.err
+    assert f"{other_finding['id']} cannot be assigned to reserved issue #158" in captured.err
+    assert "audit-registry: ERROR" not in captured.err
+
+
+@pytest.mark.parametrize(
     ("collection", "field", "invalid_path", "expected_fragment"),
     [
         ("findings", "verification_evidence", "/tmp/external", "evidence path"),
@@ -622,6 +713,61 @@ def test_malformed_shared_path_lease_values_are_quarantined(
         f"shared_path_leases row 0 has invalid {field}" in error
         for error in errors
     )
+
+
+@pytest.mark.parametrize(
+    ("field", "duplicate_values", "rendered_row"),
+    [
+        (
+            "programs",
+            [146, 147, 147],
+            "| `docs/logs/` | #146, #147, #147 | #146 → #147 | ordered |",
+        ),
+        (
+            "order",
+            [146, 147, 147],
+            "| `docs/logs/` | #146, #147 | #146 → #147 → #147 | ordered |",
+        ),
+    ],
+)
+def test_duplicate_lease_lists_fail_even_when_o5_is_synchronized(
+    validator_module,
+    monkeypatch,
+    tmp_path,
+    capsys,
+    field,
+    duplicate_values,
+    rendered_row,
+):
+    registry = copy.deepcopy(
+        validator_module.load_yaml(validator_module.REGISTRY_PATH)
+    )
+    registry["shared_path_leases"][0][field] = duplicate_values
+
+    original_row = (
+        "| `docs/logs/` | #146, #147 | #146 → #147 | ordered |"
+    )
+    ledger = validator_module.LEDGER_PATH.read_text(encoding="utf-8")
+    assert original_row in ledger
+    ledger_path = tmp_path / "ledger.md"
+    ledger_path.write_text(
+        ledger.replace(original_row, rendered_row, 1),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(validator_module, "LEDGER_PATH", ledger_path)
+
+    exit_code = _run_main_with_registry(
+        validator_module,
+        monkeypatch,
+        tmp_path,
+        registry,
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert "audit-registry: FAILED" in captured.err
+    assert f"shared_path_leases row 0 has duplicate {field}" in captured.err
+    assert "audit-registry: ERROR" not in captured.err
 
 
 @pytest.mark.parametrize("missing_field", INTEGRATION_REQUIRED_FIELDS)
@@ -767,6 +913,93 @@ def test_malformed_registry_root_returns_exit_one_never_two(
     assert "audit-registry: FAILED" in captured.err
     assert "registry root must be a YAML mapping" in captured.err
     assert "audit-registry: ERROR" not in captured.err
+
+
+def test_malformed_registry_yaml_returns_exit_one_never_two(
+    validator_module,
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    registry_path = tmp_path / "registry.yaml"
+    registry_path.write_text("findings: [\n", encoding="utf-8")
+    monkeypatch.setattr(validator_module, "REGISTRY_PATH", registry_path)
+    monkeypatch.setattr(validator_module.sys, "argv", [str(VALIDATOR_PATH)])
+
+    exit_code = validator_module.main()
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert "audit-registry: FAILED" in captured.err
+    assert f"invalid YAML in {registry_path}" in captured.err
+    assert "audit-registry: ERROR" not in captured.err
+
+
+@pytest.mark.parametrize("issue", [146, 147])
+def test_malformed_child_manifest_yaml_returns_exit_one_never_two(
+    validator_module,
+    monkeypatch,
+    tmp_path,
+    capsys,
+    issue,
+):
+    manifest_path = tmp_path / f"manifest-{issue}.yaml"
+    manifest_path.write_text("scope: [\n", encoding="utf-8")
+    constant = (
+        "SERIALIZER_MANIFEST_PATH" if issue == 146 else "DOCTOR_MANIFEST_PATH"
+    )
+    monkeypatch.setattr(validator_module, constant, manifest_path)
+    monkeypatch.setattr(validator_module.sys, "argv", [str(VALIDATOR_PATH)])
+
+    exit_code = validator_module.main()
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert "audit-registry: FAILED" in captured.err
+    assert f"invalid YAML in {manifest_path}" in captured.err
+    assert "audit-registry: ERROR" not in captured.err
+
+
+@pytest.mark.parametrize("failure", ["read", "decode"])
+def test_registry_yaml_input_failures_return_exit_one_never_two(
+    validator_module,
+    monkeypatch,
+    tmp_path,
+    capsys,
+    failure,
+):
+    registry_path = tmp_path / "registry.yaml"
+    if failure == "decode":
+        registry_path.write_bytes(b"findings: \xff\n")
+    monkeypatch.setattr(validator_module, "REGISTRY_PATH", registry_path)
+    monkeypatch.setattr(validator_module.sys, "argv", [str(VALIDATOR_PATH)])
+
+    exit_code = validator_module.main()
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert "audit-registry: FAILED" in captured.err
+    assert f"cannot read YAML input {registry_path}" in captured.err
+    assert "audit-registry: ERROR" not in captured.err
+
+
+def test_unexpected_validator_runtime_error_remains_exit_two(
+    validator_module,
+    monkeypatch,
+    capsys,
+):
+    def raise_unexpected(_require_external_parity):
+        raise RuntimeError("unexpected invariant failure")
+
+    monkeypatch.setattr(validator_module, "validate", raise_unexpected)
+    monkeypatch.setattr(validator_module.sys, "argv", [str(VALIDATOR_PATH)])
+
+    exit_code = validator_module.main()
+    captured = capsys.readouterr()
+
+    assert exit_code == 2
+    assert "audit-registry: ERROR: unexpected invariant failure" in captured.err
+    assert "audit-registry: FAILED" not in captured.err
 
 
 @pytest.mark.parametrize("issue", [146, 147])
