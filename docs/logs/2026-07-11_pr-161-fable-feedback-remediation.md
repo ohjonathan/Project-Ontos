@@ -33,6 +33,9 @@ Make PR #161 safer and more reviewable while preserving its draft,
 - Once jobs could run, exact help snapshots compared interpreter-controlled
   `argparse` presentation. Python 3.9-3.12 and 3.14 differ in usage wrapping,
   section labels, and repeated alias metavars despite equivalent CLI behavior.
+- The advisory Codecov action downloads its uploader and checksum files into
+  the checkout. A clean-tree assertion placed after that action misclassified
+  the third-party download as a test-suite mutation.
 
 ## Fix Applied
 
@@ -45,6 +48,8 @@ Make PR #161 safer and more reviewable while preserving its draft,
 - Canonicalize only the known stdlib-controlled help presentation differences
   in golden assertions while retaining exact option order, names, descriptions,
   metavars, and command behavior.
+- Use Codecov's documented `working-directory` input to keep its uploader and
+  checksums under `runner.temp`, preserving the final clean-tree assertion.
 - Add a migration note and a complete PR-feedback disposition/status record.
 
 ## Key Decisions
@@ -77,6 +82,10 @@ drift. Existing public schema-v4 semantics and lifecycle evidence remain intact.
   with `1737 passed, 2 failed`, and Python 3.9 also recorded the equivalent
   `scaffold` help presentation drift before fail-fast cancellation. Windows
   3.9/3.14 and non-editable smoke passed; the follow-up head rerun is pending.
+- GitHub Actions run `29155102929`: ordinary suites passed on Python 3.9-3.12
+  and the 3.11 coverage gate passed; its clean-tree step then found only the
+  Codecov uploader and checksum downloads. The temp-directory follow-up is
+  pending.
 - Registry local and live GitHub parity: PASS.
 - Manifest conformance: `4/4`; changed-path scope: PASS.
 - Strict lifecycle: expected `review_pending`; receipt schema: expected

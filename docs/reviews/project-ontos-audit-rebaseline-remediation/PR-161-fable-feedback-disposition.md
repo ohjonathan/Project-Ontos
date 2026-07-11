@@ -93,6 +93,7 @@ This proof is deliberately not represented as a strict-P3 receipt.
 | Changed-path scope after follow-up | PASS — `605` paths from `bf91b42`, including exact `.gitignore` and session-log lease additions |
 | `git diff --check bf91b42..HEAD` | PASS |
 | First executable GitHub Actions matrix, run `29154665641` | DISCOVERY FAILURE — Python 3.10 completed with `1737 passed, 2 failed`; Python 3.9 also recorded the same presentation-only help-golden drift in `scaffold` before fail-fast cancellation. Windows 3.9/3.14 and non-editable smoke passed. The cross-version golden canonicalizer above is the focused follow-up; its head rerun is pending at this commit. |
+| Cross-version follow-up matrix, run `29155102929` | DISCOVERY FAILURE — the ordinary suite passed on Python 3.9, 3.10, 3.11, and 3.12, proving the help fix. The 3.11 coverage gate passed, then `codecov-action` downloaded `codecov` and two checksum files into the checkout before the clean-tree assertion, creating a false test-hermeticity failure; matrix fail-fast canceled the other coverage jobs. The action's documented `working-directory` input now redirects those downloads to `runner.temp` while preserving the final clean-tree assertion. |
 | Strict lifecycle | EXPECTED BLOCK — exit `1`, `status=review_pending`; Gemini receipt missing and GLM/dispatch evidence invalid |
 | Strict receipt-inventory schema | EXPECTED BLOCK — exit `1`, six v2.0.1 producer/schema mismatches (three Product roles, three OpenCode promotion sources) |
 
@@ -100,8 +101,11 @@ This proof is deliberately not represented as a strict-P3 receipt.
 
 Follow-up code verification passes locally. The first executable remote matrix
 exposed and reproduced cross-version `argparse` presentation drift in three
-exact help snapshots; the narrow test-contract fix is included and its head
-rerun is pending. `D4-INFRA-1` and `D5-INFRA-2` remain open, D.5 remains
-`review_pending`, strict-P3 certification is not claimed, and D.6 has not been
-run. No receipt or prior D.5 artifact is modified or reinterpreted by this
-disposition.
+exact help snapshots; the narrow test-contract fix passed on every supported
+Linux interpreter. That run then exposed a third-party Codecov checkout side
+effect after the coverage gate, so the advisory upload is now redirected to
+`runner.temp` while the final hermeticity assertion is preserved; the
+replacement head rerun is pending.
+`D4-INFRA-1` and `D5-INFRA-2` remain open, D.5 remains `review_pending`,
+strict-P3 certification is not claimed, and D.6 has not been run. No receipt or
+prior D.5 artifact is modified or reinterpreted by this disposition.

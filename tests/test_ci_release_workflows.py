@@ -20,8 +20,15 @@ def _step(job: dict, name: str) -> dict:
 def test_ci_has_clean_tree_gate_and_windows_boundary_smokes():
     workflow, source = _workflow("ci.yml")
 
+    test_steps = workflow["jobs"]["test"]["steps"]
     clean_gate = _step(workflow["jobs"]["test"], "Verify tests left the checkout unchanged")
     assert "git status --porcelain=v1 --untracked-files=all" in clean_gate["run"]
+    upload = _step(workflow["jobs"]["test"], "Upload coverage")
+    assert upload["with"]["working-directory"] == "${{ runner.temp }}"
+    step_names = [step.get("name") for step in test_steps]
+    assert step_names.index("Upload coverage") < step_names.index(
+        "Verify tests left the checkout unchanged"
+    )
 
     windows = workflow["jobs"]["windows-base-cli"]
     assert windows["runs-on"] == "windows-latest"
