@@ -1,0 +1,12 @@
+Artifact written. Per Template 01, Adversarial (review-phase) workers do not commit — I leave staging/commit to the orchestrator. I wrote only the single allowed file.
+
+## Final report — project-ontos-audit-rebaseline-remediation / B.1 / adversarial / claude
+
+- **Status:** completed
+- **Artifacts written:** `docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-strict-claude-adversarial.md`
+- **Smoke checks:** n/a for a review artifact; verification was per-anchor `git show b6f89d7:<path>` + `yaml.safe_load` of the frozen registry = pass (evidence: direct-run)
+- **Cardinality checks:** registry = 100 findings (91 fable_audit + 9 R2) = pass; 41 confirmed_open, 7 partial = pass; program set exactly #146–#157, #158 = epic = pass (evidence: direct-run)
+- **Commit:** not committed — review-phase worker defers staging/commit to orchestrator (Template 01 commit-split-by-role)
+- **Verdict:** Approve
+
+**Notes:** Blind adversarial pass over spec v1.5 + frozen I0 `b6f89d7` against base `bf91b42`. Every falsifiable claim the spec makes about I0 verified reproducibly accurate — all direct-read anchors (schema/files/log/config/context/mcp-locking/server/tools/doctor/locking/command_registry/json_output/validator), the exit taxonomy (`0/1/2/3/5/130`, `4` reserved and unemitted), the ID pattern, exact `#146`–`#157` program membership, read-only MCP gating, publishing OIDC/`--no-deps`/one-wheel provenance, and the 41-open/7-partial/91+9=100 state counts. The quarantine-before-consumers boundary, log/lock no-follow discipline, eager version-clause parsing, and archive-marker warnings-exit-`3` are correctly scoped as Phase C construction gates and explicitly *not* claimed satisfied by I0; the frozen-I0 defects (short-circuit `all()`, `.resolve()` log path, plain MCP lock open) are corroborated exactly as the spec labels them. Lifecycle/release nonclaims preserved and backed by mechanical manifest gates. One non-blocking readability nit (X-m1: §3 "#146–#158" vs §4.1 "#146–#157", reconciled by #158 being the epic). No blockers, no should-fix. Constraints honored: no worktree, no full suite, no nested agents, no implementation edits, no sibling reviews read.

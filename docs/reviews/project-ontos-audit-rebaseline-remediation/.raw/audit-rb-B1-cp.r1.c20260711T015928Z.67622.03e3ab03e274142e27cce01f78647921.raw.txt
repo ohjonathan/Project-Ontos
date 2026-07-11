@@ -1,0 +1,15 @@
+Done. Product recertification review written and shape-validated.
+
+**Verdict: Approve** — `docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-strict-claude-product.md` (passes strict-P3 shape gate: `verdict_shaped (verdict: approve)`).
+
+Key results from the operator/adopter lens, all checked against frozen I0 `b6f89d7` via `git show` (static-inspection; no CLI/tests run per dispatch):
+
+- **Central test passed**: nonclaims on Windows, TestPyPI, child lifecycle, D.6, and release are honest and not overstated — the operator is never shown a false-green or synthetic receipt (§3/§9/§11 + lifecycle diagram).
+- **Surfaces verified present & clear at I0**: invalid-ID copy, doctor PATH-skew (with `-m ontos` recovery in-line — a model message), reserved exit `4` omitted, exhaustive zero-count lifecycle types, read-only MCP omitting write tools, activation prefixes.
+- **Honestly gated to Phase C** (not misrepresented as green): log-collision recovery hint, archive-marker visibility+exit-`3` (silent at I0), single-count malformed-clause copy, migration copy.
+
+Two **should-fix** (both static-inspection → non-blocking per P5):
+- **PRD-1**: unsafe-path/workspace-lock refusal is a declared user-visible failure path but its human/JSON presentation + recovery hint aren't pinned (bare `ValueError`/`RuntimeError` at I0; stale-lock case gives no safe next step).
+- **PRD-2**: the activation guidance pointer `Migration_v3_to_v4.md#audit-remediation-compatibility-contracts` isn't required to resolve to a real heading (absent at I0) — potential dead recovery link.
+
+No commit made (review-phase worker; orchestrator stages/commits). No other file edited.
