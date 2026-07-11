@@ -8,7 +8,11 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import ontos
 from ontos.commands.map import GenerateMapOptions, generate_context_map
-from ontos.core.config import required_version_incompatibility
+from ontos.core.config import (
+    InvalidRequiredVersionError,
+    format_invalid_required_version,
+    required_version_incompatibility,
+)
 from ontos.core.frontmatter_repair import enum_issue_summary
 from ontos.core.types import DocumentData
 from ontos.core.warning_groups import (
@@ -84,6 +88,11 @@ def run_activation(
 
     try:
         config = load_project_config(repo_root=project_root)
+    except InvalidRequiredVersionError as exc:
+        return 1, _not_usable(
+            format_invalid_required_version(exc.detail),
+            project_root=project_root,
+        )
     except Exception as exc:
         return 1, _not_usable(f"Config error: {exc}", project_root=project_root)
 
@@ -218,10 +227,21 @@ def run_activation(
 def format_activation_output(payload: Dict[str, Any]) -> List[str]:
     lines = [
         f"Activation status: {payload['status']}",
-        f"Map: {'refreshed' if payload['map']['refreshed'] else 'existing'}",
-        f"Docs scanned: {payload.get('files_scanned', 0)}",
-        f"Documents loaded: {payload.get('documents', 0)}",
     ]
+    reason = payload.get("reason")
+    if (
+        payload.get("status") == "not_usable"
+        and isinstance(reason, str)
+        and reason.strip()
+    ):
+        lines.append(f"Reason: {reason.strip()}")
+    lines.extend(
+        [
+            f"Map: {'refreshed' if payload['map']['refreshed'] else 'existing'}",
+            f"Docs scanned: {payload.get('files_scanned', 0)}",
+            f"Documents loaded: {payload.get('documents', 0)}",
+        ]
+    )
     summary = payload.get("summary", {})
     if summary:
         lines.append(

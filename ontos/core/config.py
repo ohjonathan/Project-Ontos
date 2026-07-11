@@ -33,6 +33,20 @@ class ConfigError(Exception):
     pass
 
 
+class InvalidRequiredVersionError(ConfigError):
+    """Raised when ``[ontos].required_version`` cannot be parsed eagerly."""
+
+    def __init__(self, detail: str):
+        self.detail = detail
+        super().__init__(detail)
+
+
+REQUIRED_VERSION_MIGRATION_ANCHOR = (
+    "docs/reference/Migration_v3_to_v4.md"
+    "#audit-remediation-compatibility-contracts"
+)
+
+
 _VERSION_PATTERN = re.compile(
     r"^v?(?P<major>0|[1-9][0-9]*)"
     r"(?:\.(?P<minor>0|[1-9][0-9]*))?"
@@ -181,7 +195,10 @@ def _validate_types(data: dict) -> None:
     if isinstance(required_version, str) and required_version.strip():
         # Parse the range at config-load time. The dummy running version is
         # irrelevant; this call exists to reject malformed clauses early.
-        version_satisfies_requirement("0.0.0", required_version)
+        try:
+            version_satisfies_requirement("0.0.0", required_version)
+        except ConfigError as exc:
+            raise InvalidRequiredVersionError(str(exc)) from exc
 
     list_of_str_requirements = [
         ("scanning", "skip_patterns"),
@@ -260,23 +277,27 @@ def required_version_incompatibility(
     running_version: str,
 ) -> Optional[str]:
     """Return an actionable incompatibility message, or ``None`` if valid."""
-    help_path = (
-        "docs/reference/Migration_v3_to_v4.md"
-        "#audit-remediation-compatibility-contracts"
-    )
     required = str(requirement or "").strip()
     if not required:
         return None
     try:
         compatible = version_satisfies_requirement(running_version, required)
     except ConfigError as exc:
-        return f"Invalid [ontos].required_version: {exc}. See {help_path}."
+        return format_invalid_required_version(str(exc))
     if compatible:
         return None
     return (
         f"Incompatible Ontos version: running {running_version}, but this project "
         f"requires {required!r}. Use a compatible Ontos installation. "
-        f"See {help_path}."
+        f"See {REQUIRED_VERSION_MIGRATION_ANCHOR}."
+    )
+
+
+def format_invalid_required_version(detail: str) -> str:
+    """Render the public malformed ``required_version`` diagnostic."""
+    return (
+        f"Invalid [ontos].required_version: {detail}. "
+        f"See {REQUIRED_VERSION_MIGRATION_ANCHOR}."
     )
 
 

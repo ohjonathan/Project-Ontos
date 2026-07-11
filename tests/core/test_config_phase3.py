@@ -4,12 +4,14 @@ from pathlib import Path
 
 from ontos.core.config import (
     ConfigError,
+    InvalidRequiredVersionError,
     OntosConfig,
     WorkflowConfig,
     PathsConfig,
     default_config,
     config_to_dict,
     dict_to_config,
+    format_invalid_required_version,
     required_version_incompatibility,
     version_satisfies_requirement,
     _validate_types,
@@ -296,6 +298,31 @@ def test_config_validation_does_not_short_circuit_before_malformed_later_clause(
         )
 
     assert str(exc_info.value).count(repr("not-a-range")) == 1
+
+
+def test_eager_required_version_validation_preserves_typed_raw_detail():
+    with pytest.raises(ConfigError) as exc_info:
+        _validate_types(
+            {"ontos": {"required_version": ">=4.7.0, not-a-range, <5.0.0"}}
+        )
+
+    error = exc_info.value
+    assert isinstance(error, InvalidRequiredVersionError)
+    assert error.detail == (
+        "version clause 'not-a-range' is not a valid semantic version"
+    )
+
+
+def test_invalid_required_version_public_formatter_adds_contract_once():
+    detail = "version clause 'not-a-range' is not a valid semantic version"
+    message = format_invalid_required_version(detail)
+
+    assert message.startswith("Invalid [ontos].required_version:")
+    assert message.count(repr("not-a-range")) == 1
+    assert message.count(
+        "docs/reference/Migration_v3_to_v4.md"
+        "#audit-remediation-compatibility-contracts"
+    ) == 1
 
 
 @pytest.mark.parametrize(

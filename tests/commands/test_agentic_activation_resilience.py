@@ -9,8 +9,14 @@ import sys
 from pathlib import Path
 from textwrap import dedent
 
+import pytest
+
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+REQUIRED_VERSION_ANCHOR = (
+    "docs/reference/Migration_v3_to_v4.md"
+    "#audit-remediation-compatibility-contracts"
+)
 
 
 def _write(path: Path, content: str) -> None:
@@ -55,6 +61,17 @@ def _workspace(root: Path) -> Path:
     return root
 
 
+def _set_required_version(root: Path, requirement: str) -> None:
+    config_path = root / ".ontos.toml"
+    config_path.write_text(
+        config_path.read_text(encoding="utf-8").replace(
+            'version = "4.4"',
+            f'version = "4.4"\nrequired_version = "{requirement}"',
+        ),
+        encoding="utf-8",
+    )
+
+
 def test_activate_json_generates_usable_context_map_with_valid_status(tmp_path: Path) -> None:
     root = _workspace(tmp_path)
 
@@ -66,6 +83,7 @@ def test_activate_json_generates_usable_context_map_with_valid_status(tmp_path: 
     assert payload["data"]["status"] in {"usable", "usable_with_warnings"}
     assert payload["data"]["map"]["refreshed"] is True
     assert payload["data"]["loaded_ids"] == ["atom_doc"]
+    assert "Reason:" not in _run(root, "activate").stdout
 
     context_map = root / "Ontos_Context_Map.md"
     assert context_map.exists()
@@ -74,14 +92,7 @@ def test_activate_json_generates_usable_context_map_with_valid_status(tmp_path: 
 
 def test_activate_json_fails_explicitly_on_required_version_mismatch(tmp_path: Path) -> None:
     root = _workspace(tmp_path)
-    config_path = root / ".ontos.toml"
-    config_path.write_text(
-        config_path.read_text(encoding="utf-8").replace(
-            'version = "4.4"',
-            'version = "4.4"\nrequired_version = ">=99.0.0"',
-        ),
-        encoding="utf-8",
-    )
+    _set_required_version(root, ">=99.0.0")
 
     result = _run(root, "--json", "activate")
     payload = json.loads(result.stdout)
@@ -91,6 +102,67 @@ def test_activate_json_fails_explicitly_on_required_version_mismatch(tmp_path: P
     assert payload["data"]["status"] == "not_usable"
     assert "Incompatible Ontos version" in payload["data"]["reason"]
     assert not (root / "Ontos_Context_Map.md").exists()
+
+
+def test_activate_human_renders_incompatible_version_reason_once(tmp_path: Path) -> None:
+    root = _workspace(tmp_path)
+    _set_required_version(root, ">=99.0.0")
+
+    result = _run(root, "activate")
+    reason_lines = [
+        line for line in result.stdout.splitlines() if line.startswith("Reason:")
+    ]
+
+    assert result.returncode == 1
+    assert len(reason_lines) == 1
+    assert reason_lines[0].startswith("Reason: Incompatible Ontos version:")
+    assert reason_lines[0].count(">=99.0.0") == 1
+    assert reason_lines[0].count(REQUIRED_VERSION_ANCHOR) == 1
+
+
+def test_activate_human_renders_malformed_range_contract_once(tmp_path: Path) -> None:
+    root = _workspace(tmp_path)
+    _set_required_version(root, ">=4.7.0, not-a-range, <5.0.0")
+
+    result = _run(root, "activate")
+    reason_lines = [
+        line for line in result.stdout.splitlines() if line.startswith("Reason:")
+    ]
+
+    assert result.returncode == 1
+    assert len(reason_lines) == 1
+    assert reason_lines[0].startswith("Reason: Invalid [ontos].required_version:")
+    assert reason_lines[0].count(repr("not-a-range")) == 1
+    assert reason_lines[0].count(REQUIRED_VERSION_ANCHOR) == 1
+    assert "Config error:" not in reason_lines[0]
+
+
+@pytest.mark.parametrize(
+    ("requirement", "offending_clause"),
+    [
+        ("not-a-range", "not-a-range"),
+        (">=4.7.0, not-a-range, <5.0.0", "not-a-range"),
+    ],
+)
+def test_activate_json_renders_malformed_range_contract_once(
+    tmp_path: Path,
+    requirement: str,
+    offending_clause: str,
+) -> None:
+    root = _workspace(tmp_path)
+    _set_required_version(root, requirement)
+
+    result = _run(root, "--json", "activate")
+    payload = json.loads(result.stdout)
+    reason = payload["data"]["reason"]
+
+    assert result.returncode == 1
+    assert payload["error"]["code"] == "E_ACTIVATION_UNUSABLE"
+    assert payload["data"]["status"] == "not_usable"
+    assert reason.startswith("Invalid [ontos].required_version:")
+    assert reason.count(repr(offending_clause)) == 1
+    assert reason.count(REQUIRED_VERSION_ANCHOR) == 1
+    assert "Config error:" not in reason
 
 
 def test_doctor_frontmatter_reports_precise_enum_diagnostics(tmp_path: Path) -> None:
