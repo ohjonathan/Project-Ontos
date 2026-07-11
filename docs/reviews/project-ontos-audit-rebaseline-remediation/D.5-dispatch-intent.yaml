@@ -33,6 +33,7 @@ dispatches:
     review_mode: verification
     expected_provider: gemini
     expected_cli: agy
+    legacy_execution_cli_override_reason: "AGY returned unrelated CLI-help output on the first capture and timed out on the second; use the same Gemini family through the direct Gemini CLI without changing provider identity or evidence cap."
     expected_model: auto
     expected_artifact: docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-gemini-verifier.md
     prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/D.5-gemini-verifier.prompt.md
