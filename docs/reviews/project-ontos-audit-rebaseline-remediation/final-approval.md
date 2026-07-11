@@ -22,8 +22,8 @@ checks are green, but strict lifecycle evidence is not mechanically admissible.
 | Blocker | Current result | Evidence |
 |---|---|---|
 | Gemini D.5 verifier | Genuine retry failed, exit `55`; no verdict or receipt | `D.5-current-dispatch-result.yaml` plus its wrapper-captured Gemini stderr |
-| D.5 Claude verifier | Current-head artifact and genuine round-2 receipt exist; verdict `Request changes` | `D.5-current-claude.md` |
-| D.5 GLM verifier | Current-head artifact and genuine round-2 receipt exist, but v2.0.1 records a non-interactive OpenCode result as `worker_file` and rejects its own supersession backlink | `D.5-current-glm.md`; strict lifecycle diagnostics |
+| D.5 Claude verifier | Artifact and genuine round-2 receipt bound to product snapshot `388845c` exist; verdict `Request changes` | `D.5-current-claude.md` |
+| D.5 GLM verifier | Artifact and genuine round-2 receipt bound to product snapshot `388845c` exist, but v2.0.1 records a non-interactive OpenCode result as `worker_file` and rejects its own supersession backlink | `D.5-current-glm.md`; strict lifecycle diagnostics |
 | EH-15-A | Manifest mode returns false-green exit `0`; explicit adopter summary mode fails registered-fixture resolution | `D.5-current-claude.md` |
 | Receipt schema | The manifest inventory fails the pinned framework schema on six framework-emitted Product/OpenCode values; `verify-lifecycle` does not apply that schema | receipt-schema command output recorded in the D.5 status |
 
@@ -39,14 +39,19 @@ checks are green, but strict lifecycle evidence is not mechanically admissible.
 | Lifecycle verifier | Strict mode exits `1` with `status=manifest_valid`; fallback mode exits `1` with `status=provider_limited_fallback_incomplete` |
 | D.6 shape | `verify-d6-gate --allow-gated` PASS; strict-P3 mode intentionally fails |
 
-## Certification statement
+## Maintainer-directed handoff status (not framework certification)
 
 `provider_limited_fallback_complete; strict P3 not certified; maintainer release actions deferred`
 
-This is the maintainer-authorized warning-only fallback label. It is not a
-framework strict-P3 success. The v2.0.1 fallback generator also cannot upgrade
-the existing schema-v1 append-only inventory without mutating or reconstructing
-historical receipts, so no synthetic fallback receipt was created.
+The `_complete` token is retained only because the 2026-07-11 maintainer
+handoff required that exact fallback report string after a genuine retry. The
+pinned framework did not emit or mechanically attain it: fallback verification
+exits `1` with `status=provider_limited_fallback_incomplete`. Under the
+framework's D.6 contract the certification outcome is therefore `not complete`,
+and this gate remains `WITHHELD`. The v2.0.1 fallback generator also cannot
+upgrade the existing schema-v1 append-only inventory without mutating or
+reconstructing historical receipts, so no synthetic fallback receipt was
+created.
 
 ## Release-action split
 
@@ -58,5 +63,5 @@ historical receipts, so no synthetic fallback receipt was created.
 ## Recommended next action
 
 Upgrade to a framework release that resolves llm-dev-framework issue #214,
-restore a supported Gemini/AGY route, re-run the three current-head D.5 seats
-against the eventual release slice, and only then issue a passing D.6 artifact.
+restore a supported Gemini/AGY route, re-run the three D.5 seats against the
+eventual release-slice head, and only then issue a passing D.6 artifact.

@@ -33,7 +33,7 @@ Repository outcome at I3: the five loose-falsification regressions pass,
 registry validation passes, and the complete suite is `1725 passed, 1 warning`.
 Lifecycle outcome: `review_pending`. D.6 was not run.
 
-## Current-head retry — 2026-07-11
+## Exact product-snapshot retry — 2026-07-11
 
 The maintainer authorized one genuine strict retry against exact product head
 `388845c`, followed by the documented warning-only fallback if the pinned
@@ -61,6 +61,12 @@ mismatches recorded before. EH-15-A remains independently reproducible.
 D.6 was therefore run only as a withheld gate at `final-approval.md`; no
 passing rows, waiver, receipt reconstruction, merge, or release action exists.
 
-Final status:
+Maintainer-directed final report label (not verifier output):
 
 `provider_limited_fallback_complete; strict P3 not certified; maintainer release actions deferred`
+
+The `_complete` token is retained only because the 2026-07-11 maintainer
+handoff required that exact fallback report string after a genuine retry. The
+pinned framework did not emit or mechanically attain it: fallback verification
+exits `1` with `status=provider_limited_fallback_incomplete`; D.6 therefore
+remains `WITHHELD`.
