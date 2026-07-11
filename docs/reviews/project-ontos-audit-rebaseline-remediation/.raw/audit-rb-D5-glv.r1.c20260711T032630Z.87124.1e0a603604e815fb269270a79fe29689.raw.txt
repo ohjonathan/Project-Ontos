@@ -1,0 +1,9 @@
+I'll read the two framework templates completely as instructed first.
+I've read both templates. Now let me set up my task tracking and begin gathering the required inputs.
+Let me explore the repo state and locate all the required input artifacts in parallel.
+The two snapshots exist and I have the commit range. Let me locate the D.3 verdict, D.4 fix summary, D.4 scope recovery, and manifest artifacts.
+Let me find the specific review/manifest files for this deliverable.
+I found the key files. Let me read the D.3 verdict, D.4 fix summary, D.4 scope recovery, manifest, and the GLM verifier prompt in parallel.
+Now let me read the manifest, the GLM verifier prompt, and the D.5 dispatch intent/result to find the artifact output path.
+I have all the inputs. The wrapper-designated artifact is `docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-glm-verifier.md`. Let me update my todos and start verifying the snapshots and venv python resolution.
+Let me confirm the venv python resolves `ontos.__file__` under each snapshot, and check that the snapshots differ in the expected five files.

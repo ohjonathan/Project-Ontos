@@ -18,16 +18,14 @@ Use only these two orchestrator-prepared, plain snapshots inside the served
 repository; neither contains a `.git` pointer, so no sandbox-external git access
 is needed:
 
-- post-fix: `.venv/d5-glm-post`
+- post-fix: `/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation/.venv/d5-glm-post`
 - same tests with only the five target implementation files restored from
-  pre-fix `aa41c39`: `.venv/d5-glm-pre`
+  pre-fix `aa41c39`: `/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation/.venv/d5-glm-pre`
 
-Use repository-relative commands only: from each snapshot directory the test
-interpreter is `../bin/python`. Do not expand these paths to `/tmp/...`; the
-OpenCode permission broker treats absolute ignored-directory paths as external
-even though the directories sit under the served workspace. Confirm
-`ontos.__file__` resolves under the snapshot whose tests you are running. For
-each group, run the identical selection in `d5-glm-post` and
+Use
+`/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation/.venv/bin/python`
+and confirm its `ontos.__file__` resolves under the snapshot whose tests you are
+running. For each group, run the identical selection in `d5-glm-post` and
 require pass, then in `d5-glm-pre` and require nonzero. Use `-B` plus
 `--cache-clear` on every focused invocation; do not combine `--cache-clear` with
 `-p no:cacheprovider` because that removes the option's owning plugin:

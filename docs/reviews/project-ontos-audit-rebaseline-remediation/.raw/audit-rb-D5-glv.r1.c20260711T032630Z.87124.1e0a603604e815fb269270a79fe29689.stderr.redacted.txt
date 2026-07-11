@@ -1,0 +1,299 @@
+[0m
+> build · glm-5.2
+[0m
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>
+[0m
+[0m# [0mTodos
+[•] Locate and consume D.3 verdict, D.4 fix summary, D.4 scope recovery, manifest, code/test diff (aa41c39..311b60b)
+[ ] Verify snapshots d5-glm-post and d5-glm-pre exist and confirm venv python ontos.__file__ resolves correctly
+[ ] Run group 1 focused tests (activate/config) in post then pre snapshots
+[ ] Run group 2 focused tests (validate-audit-remediation-registry) in post then pre snapshots
+[ ] Run group 3 focused tests (rename) in post then pre snapshots
+[ ] Run full tests/ suite in d5-glm-post with -q -p no:cacheprovider
+[ ] From lifecycle worktree run registry parity, changed-path scope, manifest conformance, git diff --check HEAD, EH-15-A probes
+[ ] Verify all six canonical should-fixes CAN-ACT-1/2, CAN-CP-1/2/3, CAN-ID-1
+[ ] Verify D4-INFRA-1 directly
+[ ] Write the wrapper-designated artifact with Template 15 frontmatter and all required sections
+[0m
+[0m$ [0mgit log --oneline -20
+016735f Preserve D5 provider failures and prepare GLM snapshots
+8e58cc7 Authorize same-family Gemini D5 CLI rollback
+2910a14 Preserve initial D5 attempts and Claude verification
+0941d2f Prepare strict D5 verification dispatch
+8d5096e Record D4 functional fixes and framework halt
+737fe27 Correct D4 rename scope omission
+311b60b Use canonical ID validation for rename
+2dede68 Bind control-plane registry evidence to D4 fix
+5c5a9cd Harden audit remediation control-plane validation
+f6d6b77 Fix D3 activation diagnostics
+aa41c39 Record canonical D3 remediation verdict
+94eb92c Record independent D2 dispatch attestation
+0bcd0e8 Record fresh strict D2 review bundle
+bfc0ca8 Record fresh strict B2 review bundle
+6aae524 Record fresh strict B1 review bundle
+fe585c5 Prepare strict inventory review rollover
+640883b Preserve D2 review attempt history
+9dbe5e1 Prepare D2 implementation review board
+43583df Record D1 implementation pre-review
+7467a73 Prepare D1 implementation pre-review
+[0m
+[0m$ [0mgit log --oneline aa41c3982e21b0e0cff6c3c5486f4af9e5e55e05..311b60b6e86abe6d0b5a7ac61e16d07049387707 2>&1 | head -50
+311b60b Use canonical ID validation for rename
+2dede68 Bind control-plane registry evidence to D4 fix
+5c5a9cd Harden audit remediation control-plane validation
+f6d6b77 Fix D3 activation diagnostics
+[0m
+[0m$ [0mls -la .venv/d5-glm-post .venv/d5-glm-pre 2>&1 | head -40
+.venv/d5-glm-post:
+total 440
+drwxr-xr-x@ 34 jonathanoh  wheel   1088 Jul 10 20:25 .
+drwxr-xr-x@ 10 jonathanoh  wheel    320 Jul 10 20:25 ..
+drwxr-xr-x@  3 jonathanoh  wheel     96 Jul 10 20:09 .agent
+-rw-r--r--@  1 jonathanoh  wheel   2207 Jul 10 20:09 .cursorrules
+drwxr-xr-x@  4 jonathanoh  wheel    128 Jul 10 20:09 .gemini
+-rw-r--r--@  1 jonathanoh  wheel    549 Jul 10 20:09 .gitattributes
+drwxr-xr-x@  5 jonathanoh  wheel    160 Jul 10 20:09 .github
+-rw-r--r--@  1 jonathanoh  wheel    468 Jul 10 20:09 .gitignore
+-rw-r--r--@  1 jonathanoh  wheel    119 Jul 10 20:09 .gitmodules
+-rw-r--r--@  1 jonathanoh  wheel    342 Jul 10 20:09 .johnny-os.yaml
+drwxr-xr-x@  5 jonathanoh  wheel    160 Jul 10 20:09 .llm-dev
+drwxr-xr-x@  7 jonathanoh  wheel    224 Jul 10 20:09 .ontos
+drwxr-xr-x@ 12 jonathanoh  wheel    384 Jul 10 20:09 .ontos-internal
+-rw-r--r--@  1 jonathanoh  wheel   1355 Jul 10 20:09 .ontos.toml
+-rw-r--r--@  1 jonathanoh  wheel    773 Jul 10 20:09 .pre-commit-config.yaml
+drwxr-xr-x@  5 jonathanoh  wheel    160 Jul 10 20:09 .project-internal
+-rw-r--r--@  1 jonathanoh  wheel     57 Jul 10 20:09 .trufflehog-exclude-paths.txt
+drwxr-xr-x@  3 jonathanoh  wheel     96 Jul 10 20:09 .vscode
+-rw-r--r--@  1 jonathanoh  wheel   4890 Jul 10 20:09 AGENTS.md
+-rw-r--r--@  1 jonathanoh  wheel  26656 Jul 10 20:09 CHANGELOG.md
+-rw-r--r--@  1 jonathanoh  wheel    620 Jul 10 20:09 CLAUDE.md
+-rw-r--r--@  1 jonathanoh  wheel  11351 Jul 10 20:09 LICENSE
+-rw-r--r--@  1 jonathanoh  wheel  55719 Jul 10 20:09 Ontos_CHANGELOG.md
+-rw-r--r--@  1 jonathanoh  wheel  35282 Jul 10 20:09 Ontos_Context_Map.md
+-rw-r--r--@  1 jonathanoh  wheel  29233 Jul 10 20:09 README.md
+-rw-r--r--@  1 jonathanoh  wheel   4052 Jul 10 20:09 SECURITY.md
+drwxr-xr-x@ 12 jonathanoh  wheel    384 Jul 10 20:09 docs
+drwxr-xr-x@  3 jonathanoh  wheel     96 Jul 10 20:09 examples
+drwxr-xr-x@  9 jonathanoh  wheel    288 Jul 10 20:09 manifests
+drwxr-xr-x@ 14 jonathanoh  wheel    448 Jul 10 20:25 ontos
+-rw-r--r--@  1 jonathanoh  wheel   2086 Jul 10 20:09 pyproject.toml
+-rw-r--r--@  1 jonathanoh  wheel    170 Jul 10 20:09 requirements.txt
+drwxr-xr-x@  5 jonathanoh  wheel    160 Jul 10 20:09 scripts
+drwxr-xr-x@ 37 jonathanoh  wheel   1184 Jul 10 20:09 tests
+
+.venv/d5-glm-pre:
+total 440
+drwxr-xr-x@ 34 jonathanoh  wheel   1088 Jul 10 20:25 .
+[0m
+[0m$ [0mgit diff --stat aa41c3982e21b0e0cff6c3c5486f4af9e5e55e05 311b60b6e86abe6d0b5a7ac61e16d07049387707
+.../<redacted:secret>  |   2 +-
+ ontos/commands/activate.py                         |  28 ++-
+ ontos/commands/rename.py                           |  69 ++++--
+ ontos/core/config.py                               |  35 ++-
+ ontos/mcp/rename_tool.py                           |  30 ++-
+ <redacted:secret>     |  85 ++++++--
+ .../commands/test_agentic_activation_resilience.py |  88 +++++++-
+ tests/commands/test_rename.py                      | 151 ++++++++++++-
+ tests/core/test_config_phase3.py                   |  27 +++
+ tests/mcp/test_rename_document.py                  |  68 +++++-
+ tests/test_audit_remediation_registry_validator.py | 237 ++++++++++++++++++++-
+ 11 files changed, 735 insertions(+), 85 deletions(-)
+[0m
+[0m$ [0mgit ls-files | rg -i 'D3|D4|verdict|fix.?sum|scope.?recov|manifest|audit.?rb' | head -60
+.<redacted:secret>
+.<redacted:secret>
+.<redacted:secret>
+.<redacted:secret>
+.<redacted:secret>
+.<redacted:secret>
+.<redacted:secret>
+.<redacted:secret>
+.<redacted:secret>
+.<redacted:secret>
+.<redacted:secret>
+.<redacted:secret>
+.<redacted:secret>
+.<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+[0m
+[0m$ [0mls -la docs/.project-internal/ 2>&1
+ls: docs/.project-internal/: No such file or directory
+[0m
+[0m$ [0mgit ls-files '<redacted:secret>/' | rg -iv '\.prompts/|\.raw/' | head -60
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+[0m
+[0m$ [0mgit ls-files | rg -i 'manifest.*audit-rb|audit-rb.*manifest' | head -20
+(no output)
+[0m
+[0m$ [0mgit ls-files '<redacted:secret>/' | rg -i 'D\.3|D\.4|D\.5|manifest' | head -40
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+[0m
+[0m✱ [0mGlob "manifests/**/*audit*rebaseline*"[90m 1 match[0m
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m
+[0m# [0mTodos
+[✓] Locate and consume D.3 verdict, D.4 fix summary, D.4 scope recovery, manifest, code/test diff (aa41c39..311b60b)
+[•] Verify snapshots d5-glm-post and d5-glm-pre exist and confirm venv python ontos.__file__ resolves correctly
+[ ] Run group 1 focused tests (activate/config) in post then pre snapshots
+[ ] Run group 2 focused tests (validate-audit-remediation-registry) in post then pre snapshots
+[ ] Run group 3 focused tests (rename) in post then pre snapshots
+[ ] Run full tests/ suite in d5-glm-post with -q -p no:cacheprovider
+[ ] From lifecycle worktree run registry parity, changed-path scope, manifest conformance, git diff --check HEAD, EH-15-A probes
+[ ] Verify all six canonical should-fixes CAN-ACT-1/2, CAN-CP-1/2/3, CAN-ID-1
+[ ] Verify D4-INFRA-1 directly
+[ ] Write the wrapper-designated artifact with Template 15 frontmatter and all required sections
+[0m
+[93m[1m! [0mpermission requested: external_directory (/<redacted:secret>/*); auto-rejecting
+[0m✗ [0mcd /<redacted:secret> && /<redacted:secret> -c "import ontos; print(ontos.__file__)" failed
+[91m[1mError: [0mThe user rejected permission to use this specific tool call.
+[93m[1m! [0mpermission requested: external_directory (/<redacted:secret>/*); auto-rejecting
+[0m✗ [0mcd /<redacted:secret> && /<redacted:secret> -c "import ontos; print(ontos.__file__)" failed
+[91m[1mError: [0mThe user rejected permission to use this specific tool call.
+[0m
+[0m$ [0mdiff -r /<redacted:secret> /<redacted:secret> 2>&1 | head -20; echo "---SCRIPTS---"; diff /<redacted:secret> /<redacted:secret> 2>&1 | head -5
+Only in /<redacted:secret>: __pycache__
+diff -r /<redacted:secret> /<redacted:secret>
+11,15c11
+< from ontos.core.config import (
+<     InvalidRequiredVersionError,
+<     format_invalid_required_version,
+<     required_version_incompatibility,
+< )
+---
+> from ontos.core.config import required_version_incompatibility
+91,95d86
+<     except InvalidRequiredVersionError as exc:
+<         return 1, _not_usable(
+<             format_invalid_required_version(exc.detail),
+<             project_root=project_root,
+<         )
+229a221,223
+>         f"Map: {'refreshed' if payload['map']['refreshed'] else 'existing'}",
+>         f"Docs scanned: {payload.get('files_scanned', 0)}",
+>         f"Documents loaded: {payload.get('documents', 0)}",
+---SCRIPTS---
+33c33
+< CONTROL_PLANE_FIX_COMMIT = "5c5a9cd8eb92df961146a7ffddabee3bc091ab43"
+---
+> CONTROL_PLANE_FIX_COMMIT = "05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0"
+36,51d35
+[0m
