@@ -501,6 +501,71 @@ def test_finding_root_program_must_match_owning_program(
 
 
 @pytest.mark.parametrize(
+    ("colliding_issue", "expected_owner"),
+    [
+        (147, "#147"),
+        (158, "#158 (synthetic)"),
+    ],
+)
+def test_program_identity_collision_fails_when_findings_and_o4_are_synchronized(
+    validator_module,
+    monkeypatch,
+    tmp_path,
+    capsys,
+    colliding_issue,
+    expected_owner,
+):
+    registry = copy.deepcopy(
+        validator_module.load_yaml(validator_module.REGISTRY_PATH)
+    )
+    target = next(row for row in registry["programs"] if row["issue"] == 146)
+    if colliding_issue == 158:
+        colliding_identity = validator_module.CONTROL_PLANE_OWNER["id"]
+    else:
+        colliding_identity = next(
+            row["id"]
+            for row in registry["programs"]
+            if row["issue"] == colliding_issue
+        )
+
+    original_identity = target["id"]
+    target["id"] = colliding_identity
+    target["root_program"] = colliding_identity
+    for finding in registry["findings"]:
+        if finding["issue"] == 146:
+            finding["root_program"] = colliding_identity
+
+    ledger = validator_module.LEDGER_PATH.read_text(encoding="utf-8")
+    original_cell = f"| `{original_identity}` | #146 |"
+    replacement_cell = f"| `{colliding_identity}` | #146 |"
+    assert original_cell in ledger
+    ledger_path = tmp_path / "ledger.md"
+    ledger_path.write_text(
+        ledger.replace(original_cell, replacement_cell, 1),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(validator_module, "LEDGER_PATH", ledger_path)
+
+    exit_code = _run_main_with_registry(
+        validator_module,
+        monkeypatch,
+        tmp_path,
+        registry,
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert "audit-registry: FAILED" in captured.err
+    assert (
+        f"duplicate normalized program identity {colliding_identity!r} "
+        f"across owners #146, {expected_owner}"
+    ) in captured.err
+    assert "O4 row #146 differs from registry authority" not in captured.err
+    assert "root_program mismatch for issue #146" not in captured.err
+    assert "audit-registry: ERROR" not in captured.err
+
+
+@pytest.mark.parametrize(
     ("field", "replacement", "expected_fragment"),
     [
         (

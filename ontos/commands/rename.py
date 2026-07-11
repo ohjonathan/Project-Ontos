@@ -19,7 +19,7 @@ from ontos.core.frontmatter_edit import (
     _read_decoded_content,
     _split_frontmatter,
 )
-from ontos.core.schema import validate_document_id
+from ontos.core.schema import serialize_frontmatter, validate_document_id
 from ontos.core.types import DocumentData
 from ontos.io.config import load_project_config
 from ontos.io.files import DocumentLoadIssue, find_project_root, load_documents, scan_documents
@@ -964,7 +964,11 @@ def _patch_scalar_after_colon(after_colon: str, old_id: str, new_id: str) -> Tup
     if decoded != old_id:
         return after_colon, False, None
 
-    replacement_token = f"{quote}{new_id}{quote}" if quote is not None else new_id
+    replacement_token = (
+        f"{quote}{new_id}{quote}"
+        if quote is not None
+        else _serialize_document_id_scalar(new_id)
+    )
     replaced = _replace_preserving_padding(value_part, replacement_token)
     return replaced + comment_part, True, None
 
@@ -1016,7 +1020,11 @@ def _patch_inline_list_after_colon(
         decoded, quote_char = _decode_scalar_token(segment_token)
         if decoded != old_id:
             continue
-        replacement_token = f"{quote_char}{new_id}{quote_char}" if quote_char is not None else new_id
+        replacement_token = (
+            f"{quote_char}{new_id}{quote_char}"
+            if quote_char is not None
+            else _serialize_document_id_scalar(new_id)
+        )
         segments[index] = _replace_preserving_padding(segment, replacement_token)
         changed = True
 
@@ -1032,6 +1040,18 @@ def _decode_scalar_token(token: str) -> Tuple[str, Optional[str]]:
     if len(token) >= 2 and token[0] == token[-1] and token[0] in {"'", '"'}:
         return token[1:-1], token[0]
     return token, None
+
+
+def _serialize_document_id_scalar(document_id: str) -> str:
+    """Return the canonical YAML scalar token for an unquoted document ID."""
+    serialized = serialize_frontmatter({"id": document_id})
+    prefix = "id:"
+    if "\n" in serialized or not serialized.startswith(prefix):
+        raise ValueError("Document ID serializer returned an unexpected YAML shape")
+    token = serialized[len(prefix) :].strip()
+    if not token:
+        raise ValueError("Document ID serializer returned an empty YAML scalar")
+    return token
 
 
 def _split_comment_unquoted(text: str) -> Tuple[str, str]:

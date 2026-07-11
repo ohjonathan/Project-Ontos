@@ -291,6 +291,11 @@ def is_nonempty_string(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
 
+def normalize_program_identity(value: str) -> str:
+    """Return the comparison key for a structurally valid program identity."""
+    return value.strip().casefold()
+
+
 def is_string_list(value: Any) -> bool:
     return (
         isinstance(value, list)
@@ -1199,6 +1204,29 @@ def validate(require_external_parity: bool) -> list[str]:
             f"missing={sorted(REQUIRED_PROGRAM_ISSUES - observed_program_issues)}, "
             f"extra={sorted(observed_program_issues - REQUIRED_PROGRAM_ISSUES)}"
         )
+
+    # Program IDs and root-program names form one ownership namespace.  Check
+    # it before issue-keyed dictionaries or rendered O4 rows can overwrite or
+    # legitimize a duplicate owner.  Structurally invalid rows remain
+    # quarantined above and therefore cannot reach this comparison.
+    identity_owners: dict[str, list[str]] = defaultdict(list)
+    program_owners = [
+        (program, f"#{program['issue']}")
+        for program in programs
+    ] + [(CONTROL_PLANE_OWNER, f"#{CONTROL_PLANE_ISSUE} (synthetic)")]
+    for program, owner_label in program_owners:
+        identities = {
+            normalize_program_identity(program[field])
+            for field in ("id", "root_program")
+        }
+        for identity in identities:
+            identity_owners[identity].append(owner_label)
+    for identity, owners in sorted(identity_owners.items()):
+        if len(owners) > 1:
+            errors.append(
+                f"duplicate normalized program identity {identity!r} "
+                f"across owners {', '.join(owners)}"
+            )
 
     original = {
         row.get("id"): row

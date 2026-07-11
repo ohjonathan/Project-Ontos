@@ -509,6 +509,56 @@ def test_rename_quoted_single_id_value_preserves_quote_style(tmp_path: Path):
     assert "id: 'new_id'" in updated
 
 
+@pytest.mark.parametrize("new_id", ["123", "2026-07-10", "1.2"])
+def test_rename_yaml_like_ids_remain_strings_in_all_frontmatter_shapes(
+    tmp_path: Path,
+    new_id: str,
+):
+    from ontos.io.files import load_document_from_content
+    from ontos.io.yaml import parse_frontmatter_content
+
+    _init_repo(tmp_path)
+    target = tmp_path / "docs" / "target.md"
+    scalar = tmp_path / "docs" / "scalar.md"
+    block = tmp_path / "docs" / "block.md"
+    inline = tmp_path / "docs" / "inline.md"
+    _write_doc(target, "old_id", doc_type="strategy")
+    _write_doc(scalar, "scalar_doc", depends_on="old_id")
+    _write_doc(block, "block_doc", impacts="\n  - old_id")
+    _write_doc(inline, "inline_doc", describes="[old_id, other_doc]")
+    _init_git_repo(tmp_path)
+
+    result = _run_ontos(tmp_path, "rename", "old_id", new_id, "--apply")
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    parsed = {}
+    for name, path in {
+        "target": target,
+        "scalar": scalar,
+        "block": block,
+        "inline": inline,
+    }.items():
+        content = path.read_text(encoding="utf-8")
+        parsed[name], _ = parse_frontmatter_content(content)
+
+    assert parsed["target"]["id"] == new_id
+    assert type(parsed["target"]["id"]) is str
+    assert parsed["scalar"]["depends_on"] == new_id
+    assert type(parsed["scalar"]["depends_on"]) is str
+    assert parsed["block"]["impacts"] == [new_id]
+    assert type(parsed["block"]["impacts"][0]) is str
+    assert parsed["inline"]["describes"] == [new_id, "other_doc"]
+    assert type(parsed["inline"]["describes"][0]) is str
+
+    loaded, issues = load_document_from_content(
+        target,
+        target.read_text(encoding="utf-8"),
+        parse_frontmatter_content,
+    )
+    assert loaded.id == new_id
+    assert issues == []
+
+
 def test_rename_anchor_alias_detection_warns_and_blocks_apply(tmp_path: Path):
     _init_repo(tmp_path)
     path = tmp_path / "docs" / "anchor.md"
