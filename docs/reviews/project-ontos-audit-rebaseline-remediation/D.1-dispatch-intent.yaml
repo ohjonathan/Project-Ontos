@@ -1,0 +1,29 @@
+manifest_version: "2.0.0"
+authoring_session_family: codex
+meta_orchestrator_family: codex
+deliverable_author_family: codex
+deliverable_author_families: [codex]
+artifact_root: docs/reviews/project-ontos-audit-rebaseline-remediation
+deliverable_id: project-ontos-audit-rebaseline-remediation
+strict_p3_claim: false
+review_board_classification:
+  mode: non_certifying_pre_review
+  strict_p3_capable_evidence: false
+  strict_p3_certified: false
+  merge_authority: recommendation_only
+  rationale: "Fresh D.1 peer review before the receipt-bound implementation board."
+dispatches:
+  - dispatch_id: project-ontos-audit-rebaseline-remediation-D.1-claude-peer
+    family: claude
+    role: peer
+    review_mode: code-review
+    expected_provider: claude
+    expected_cli: claude
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-audit-rebaseline-remediation/D.1-claude-peer.md
+    prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/D.1-claude-peer.prompt.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    fallback_models: []
+    scope: "Independent code-quality and completeness review of spec v1.5 against I1 and the committed C-close evidence checkpoint."
+    status: pending
