@@ -1,0 +1,12 @@
+I'll start by reading the two framework templates that define my contract, and in parallel verify the git HEAD target and working-tree state.
+HEAD is `388845c` — matches the target. Now let me locate and read the required input documents in parallel.
+`git diff --check` is clean (exit 0). Now let me read the required input documents.
+Now let me read the manifest, get the full diff `859ecf7..388845c`, and locate the EH-15-A / lifecycle verification scripts.
+The diff `859ecf7..388845c` (stat) confirms the PR-161 fable-feedback fix series touches `ontos/core/context.py`, `ontos/core/frontmatter_edit.py`, `ontos/io/files.py`, `ontos/io/yaml.py` plus the 6 addendum test files. The large diff body also captured the historical `.raw/audit-rb-D5-glv.review.md` transcript content.
+
+Now let me run the actual verification commands myself at the current head. First, a batch of fast read-only checks in parallel.
+Most checks pass. The EH-15-A probes now behave differently than the historical transcript (both exit 2 with "manifest not found"/"cannot read" — path-resolution issue). Let me inspect the EH-15-A script's path resolution and find `verify-lifecycle` and the receipt inventory.
+EH-15-A confirmed: probe 1 (manifest-mode, abs path) fail-opens with `OK (no D.4 fix-summary exists at ...)` exit 0 despite the file existing at adopter root; probe 2 (direct abs path) exits 1 `FAILED` because fixtures resolve under the framework bundle, not the adopter root. Now let me run the focused tests, full suite, and verify-lifecycle in parallel.
+Strong results: focused tests **104 passed**, full suite **1740 passed, 1 warning**, registry/scope/manifest all PASS. `verify-lifecycle` strict-p3 FAILS with `status=review_pending` (5 issues). The receipt inventory is schema_version 1 with historical D.5 receipts (claude + glm only; gemini missing).
+
+Now I need the receipt-inventory schema and to confirm whether `verify-lifecycle` applies it. Let me also capture clean exit codes for the test runs.

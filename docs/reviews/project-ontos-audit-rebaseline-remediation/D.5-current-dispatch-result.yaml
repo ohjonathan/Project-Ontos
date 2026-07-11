@@ -1,0 +1,440 @@
+results:
+- dispatch_id: audit-rb-D5-current-gv
+  capture_id: audit-rb-D5-current-gv.r2.c20260711T181904Z.15040.4f6b3ae8e1bd84cf814c460a5ca9950d
+  round: 2
+  family: gemini
+  actual_executed_family: gemini
+  role: verifier
+  execution_provider: gemini
+  execution_cli: gemini
+  resolved_executable: /opt/homebrew/bin/gemini
+  resolved_executable_realpath: /opt/homebrew/Cellar/gemini-cli/0.44.0/libexec/lib/node_modules/@google/gemini-cli/bundle/gemini.js
+  cli_version: 0.44.0
+  provider_probe_hash: sha256:99baa89c145382ab7fe63b66e7aa650d76f8293fde6ce8c3d6c486a7dc45ceca
+  model_id: auto
+  resolved_model: cli-default-unknown
+  model_probe_command: (post-dispatch) grep -iE 'model:' <raw_stderr> | head -1
+  model_candidate_list:
+  - cli-config-default
+  model_selection_rule: cli-config-default+post-dispatch-best-effort
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - gemini
+  - -p
+  - <prompt-body-redacted>
+  prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/audit-rb-D5-current-gv.r2.c20260711T181904Z.15040.4f6b3ae8e1bd84cf814c460a5ca9950d.md
+  prompt_sha256: sha256:d0153db5ded8813990027e84a09483079def50d4b032ead0ecfbe8401ab8fb98
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 55
+  started_at: '2026-07-11T18:19:05Z'
+  ended_at: '2026-07-11T18:19:08Z'
+  raw_output_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-D5-current-gv.r2.c20260711T181904Z.15040.4f6b3ae8e1bd84cf814c460a5ca9950d.raw.txt
+  raw_output_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  stderr_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-D5-current-gv.r2.c20260711T181904Z.15040.4f6b3ae8e1bd84cf814c460a5ca9950d.stderr.txt
+  stderr_hash: sha256:a679000b7c760893a6990750b02ccb92d4fffc5adbce5330a46127921813e656
+  evidence_cap: static-inspection
+  evidence_labels_used: []
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-gemini.md
+  artifact_sha256: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  status: failed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: null
+  model_used: cli-default-unknown
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: ''
+    exit_code: 55
+    started_at: '2026-07-11T18:19:05Z'
+    ended_at: '2026-07-11T18:19:08Z'
+    detected_429: false
+    stderr_tail_200: _CLI_TRUST_WORKSPACE=true` environment variable, or trust this
+      directory in interactive mode. For more details, see https://geminicli.com/docs/cli/trusted-folders/#headless-and-automated-environments
+    stdout_substantive: false
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: raw_stdout
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  dispatch_batch_id: audit-rb-D5-current-r2
+  intent_model_restrictions:
+    family: gemini
+    execution_cli: gemini
+    denied_models: []
+    allowed_models: []
+    active: false
+- dispatch_id: audit-rb-D5-current-glv
+  capture_id: audit-rb-D5-current-glv.r2.c20260711T181904Z.15037.6a5388a9698b06c47bdba5e997b5037d
+  round: 2
+  family: glm
+  actual_executed_family: glm
+  role: verifier
+  execution_provider: glm
+  execution_cli: opencode
+  resolved_executable: /Users/jonathanoh/.opencode/bin/opencode
+  resolved_executable_realpath: /Users/jonathanoh/.opencode/bin/opencode
+  cli_version: 1.17.18
+  provider_probe_hash: sha256:2d1776e670484c41da86c59f688f0559b0b1413bf75d2e05dd69548918e18ea0
+  model_id: glm-5.2
+  resolved_model: glm-5.2
+  model_probe_command: (intent) OpenCode advisory route logical model_id with opencode_model_ref
+  model_candidate_list:
+  - glm-5.2
+  model_selection_rule: operator-declared-advisory-route
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - opencode
+  - run
+  - --model
+  - neuralwatt/glm-5.2
+  - --dir
+  - <repo-root>
+  - <prompt-body-redacted>
+  prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/audit-rb-D5-current-glv.r2.c20260711T181904Z.15037.6a5388a9698b06c47bdba5e997b5037d.md
+  prompt_sha256: sha256:441fb0e4f534ecefe7c3d8fdd029c5be681a42e1fc8aeb89dd66ba4dfcfd0c8e
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-07-11T18:19:05Z'
+  ended_at: '2026-07-11T18:26:43Z'
+  raw_output_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-D5-current-glv.r2.c20260711T181904Z.15037.6a5388a9698b06c47bdba5e997b5037d.raw.txt
+  raw_output_hash: sha256:4619eceaa9b0fc516d5cf067d4130ba8a37b38772c6d3a108575e63129a77444
+  stderr_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-D5-current-glv.r2.c20260711T181904Z.15037.6a5388a9698b06c47bdba5e997b5037d.stderr.redacted.txt
+  stderr_hash: sha256:a23795b1ba2f504120c690c772b07e75f740cf8ddc79ba1f7e762b382ea86c42
+  evidence_cap: direct-run
+  evidence_labels_used: []
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-glm.md
+  artifact_sha256: sha256:missing
+  status: failed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: glm-5.2
+  model_used: glm-5.2
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: glm-5.2
+    exit_code: 0
+    started_at: '2026-07-11T18:19:05Z'
+    ended_at: '2026-07-11T18:26:42Z'
+    detected_429: false
+    stderr_tail_200: "put ---\n    emit_error(\"Failed\", \"E999\")\n\n-- Docs: https://<redacted:secret>\n\
+      ================= 1740 passed, 1 warning in 130.19s (0:02:10) ==================\n\
+      \e[0m"
+    stdout_substantive: false
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: worker_file
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  dispatch_batch_id: audit-rb-D5-current-r2
+  intent_model_restrictions:
+    family: glm
+    execution_cli: opencode
+    denied_models: []
+    allowed_models: []
+    active: false
+  opencode_model_ref: neuralwatt/glm-5.2
+  opencode_provider_id: neuralwatt
+  opencode_base_url_env: NEURALWATT_BASE_URL
+  opencode_api_key_env: NEURALWATT_API_KEY
+  serving_provider: neuralwatt
+  wire_protocol: openai-compatible
+  evidence_trust_tier: attested-third-party
+  endpoint_origin_redacted: true
+  endpoint_origin_hash: sha256:c0029dc16c79fb52971abbf65f3d94c7dcbdc7ebf8d7b1a8ab454f05fa17f95f
+  endpoint_origin_label: neuralwatt
+  command_env_redacted:
+    NEURALWATT_API_KEY: <redacted:env>
+    NEURALWATT_BASE_URL: <redacted:env>
+    OPENCODE_CONFIG_CONTENT: <redacted>
+  provider_config_redacted:
+    model_ref: neuralwatt/glm-5.2
+    npm: '@ai-sdk/openai-compatible'
+    options:
+      apiKey: <redacted:env>
+      apiKey_env: NEURALWATT_API_KEY
+      baseURL: <redacted>
+      baseURL_env: NEURALWATT_BASE_URL
+    provider_id: neuralwatt
+  opencode_dispatch_failure_class: auth-401-403
+  route_attestation_profile_id: neuralwatt-opencode-glm-5-2-v1
+  superseded_by_capture_id: audit-rb-D5-current-glv.r2.c20260711T182834Z.76052.50cadf742c6495152a3e7a704d628b60
+  superseded_at: '2026-07-11T18:34:33Z'
+  supersession_reason: redispatch round 2
+- dispatch_id: audit-rb-D5-current-cv
+  capture_id: audit-rb-D5-current-cv.r2.c20260711T181904Z.15036.5f9e3672a5c0252529ef5807a4ca274a
+  round: 2
+  family: claude
+  actual_executed_family: claude
+  role: verifier
+  execution_provider: claude
+  execution_cli: claude
+  resolved_executable: /Users/jonathanoh/.local/bin/claude
+  resolved_executable_realpath: /Users/jonathanoh/.local/share/claude/versions/2.1.206
+  cli_version: 2.1.206 (Claude Code)
+  provider_probe_hash: sha256:a864a7e725ad523d54c9040b841e68009b1857543196058b8a805223f8137cdd
+  model_id: auto
+  resolved_model: opus
+  model_probe_command: claude --help 2>&1 | grep -oE "'(opus|sonnet|haiku)'" | sort
+    -u
+  model_candidate_list:
+  - opus
+  - sonnet
+  model_selection_rule: claude-cli-alias-strongest
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - claude
+  - --permission-mode
+  - bypassPermissions
+  - --add-dir
+  - .
+  - -p
+  - <prompt-body-redacted>
+  - --model
+  - opus
+  prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/audit-rb-D5-current-cv.r2.c20260711T181904Z.15036.5f9e3672a5c0252529ef5807a4ca274a.md
+  prompt_sha256: sha256:c1e30cb41052ffcf99d8be20012402659e4e1896dca764ccb03eed6778925fb9
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-07-11T18:19:06Z'
+  ended_at: '2026-07-11T18:26:52Z'
+  raw_output_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-D5-current-cv.r2.c20260711T181904Z.15036.5f9e3672a5c0252529ef5807a4ca274a.raw.txt
+  raw_output_hash: sha256:326a32acd7c2db0912df927cfaa77d9a2341056dbeb99f3b6636a4c839f8efb7
+  stderr_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-D5-current-cv.r2.c20260711T181904Z.15036.5f9e3672a5c0252529ef5807a4ca274a.stderr.txt
+  stderr_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  evidence_cap: direct-run
+  evidence_labels_used: []
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-claude.md
+  artifact_sha256: sha256:missing
+  status: failed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: opus
+  model_used: opus
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: opus
+    exit_code: 0
+    started_at: '2026-07-11T18:19:06Z'
+    ended_at: '2026-07-11T18:26:52Z'
+    detected_429: false
+    stderr_tail_200: ''
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: worker_file
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  dispatch_batch_id: audit-rb-D5-current-r2
+  intent_model_restrictions:
+    family: claude
+    execution_cli: claude
+    denied_models: []
+    allowed_models: []
+    active: false
+  superseded_by_capture_id: audit-rb-D5-current-cv.r2.c20260711T182834Z.76056.d3357043253aa45a9cc0e07e8a848f72
+  superseded_at: '2026-07-11T18:31:01Z'
+  supersession_reason: redispatch round 2
+- dispatch_id: audit-rb-D5-current-cv
+  capture_id: audit-rb-D5-current-cv.r2.c20260711T182834Z.76056.d3357043253aa45a9cc0e07e8a848f72
+  round: 2
+  family: claude
+  actual_executed_family: claude
+  role: verifier
+  execution_provider: claude
+  execution_cli: claude
+  resolved_executable: /Users/jonathanoh/.local/bin/claude
+  resolved_executable_realpath: /Users/jonathanoh/.local/share/claude/versions/2.1.206
+  cli_version: 2.1.206 (Claude Code)
+  provider_probe_hash: sha256:a864a7e725ad523d54c9040b841e68009b1857543196058b8a805223f8137cdd
+  model_id: auto
+  resolved_model: opus
+  model_probe_command: claude --help 2>&1 | grep -oE "'(opus|sonnet|haiku)'" | sort
+    -u
+  model_candidate_list:
+  - opus
+  - sonnet
+  model_selection_rule: claude-cli-alias-strongest
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - claude
+  - --permission-mode
+  - bypassPermissions
+  - --add-dir
+  - .
+  - -p
+  - <prompt-body-redacted>
+  - --model
+  - opus
+  prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/audit-rb-D5-current-cv.r2.c20260711T182834Z.76056.d3357043253aa45a9cc0e07e8a848f72.md
+  prompt_sha256: sha256:f99e72fa11b17e592c39b07809edc02d1b21cbedc71b0ff2097534b607e68cb9
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-07-11T18:28:35Z'
+  ended_at: '2026-07-11T18:31:01Z'
+  raw_output_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-D5-current-cv.r2.c20260711T182834Z.76056.d3357043253aa45a9cc0e07e8a848f72.raw.txt
+  raw_output_hash: sha256:1d4ecbfb083245ba0b4b1b4ec0f42c6df9b16323bdf0d76ce4929f56ef6faed5
+  stderr_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-D5-current-cv.r2.c20260711T182834Z.76056.d3357043253aa45a9cc0e07e8a848f72.stderr.txt
+  stderr_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  evidence_cap: direct-run
+  evidence_labels_used:
+  - direct-run
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-claude.md
+  artifact_sha256: sha256:0a05067d7da1f1f8941f5764700f1215d3c13331b799511d3d6a328dddacc9c2
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: opus
+  model_used: opus
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: opus
+    exit_code: 0
+    started_at: '2026-07-11T18:28:35Z'
+    ended_at: '2026-07-11T18:31:01Z'
+    detected_429: false
+    stderr_tail_200: ''
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: worker_file
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  dispatch_batch_id: audit-rb-D5-current-r2
+  intent_model_restrictions:
+    family: claude
+    execution_cli: claude
+    denied_models: []
+    allowed_models: []
+    active: false
+  supersedes_capture_ids:
+  - audit-rb-D5-current-cv.r2.c20260711T181904Z.15036.5f9e3672a5c0252529ef5807a4ca274a
+- dispatch_id: audit-rb-D5-current-glv
+  capture_id: audit-rb-D5-current-glv.r2.c20260711T182834Z.76052.50cadf742c6495152a3e7a704d628b60
+  round: 2
+  family: glm
+  actual_executed_family: glm
+  role: verifier
+  execution_provider: glm
+  execution_cli: opencode
+  resolved_executable: /Users/jonathanoh/.opencode/bin/opencode
+  resolved_executable_realpath: /Users/jonathanoh/.opencode/bin/opencode
+  cli_version: 1.17.18
+  provider_probe_hash: sha256:2d1776e670484c41da86c59f688f0559b0b1413bf75d2e05dd69548918e18ea0
+  model_id: glm-5.2
+  resolved_model: glm-5.2
+  model_probe_command: (intent) OpenCode advisory route logical model_id with opencode_model_ref
+  model_candidate_list:
+  - glm-5.2
+  model_selection_rule: operator-declared-advisory-route
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - opencode
+  - run
+  - --model
+  - neuralwatt/glm-5.2
+  - --dir
+  - <repo-root>
+  - <prompt-body-redacted>
+  prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/audit-rb-D5-current-glv.r2.c20260711T182834Z.76052.50cadf742c6495152a3e7a704d628b60.md
+  prompt_sha256: sha256:5dc1da0ab00c73633be37a42ba0a745c9680f373e24c8150adf3c34e3e04cef4
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-07-11T18:28:35Z'
+  ended_at: '2026-07-11T18:34:33Z'
+  raw_output_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-D5-current-glv.r2.c20260711T182834Z.76052.50cadf742c6495152a3e7a704d628b60.raw.txt
+  raw_output_hash: sha256:ebb67013b266bc3b2f01b606593d5f1e622eb5b9fdbd1b6dce77ebad8841a399
+  stderr_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-D5-current-glv.r2.c20260711T182834Z.76052.50cadf742c6495152a3e7a704d628b60.stderr.redacted.txt
+  stderr_hash: sha256:4912f045d14dbda8bb1a4ee1856c164cd0269e63f85724cd2016387e7a448856
+  evidence_cap: direct-run
+  evidence_labels_used:
+  - direct-run
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-glm.md
+  artifact_sha256: sha256:cc51c2faaacac42d72e2c66ea94f759d9f5a8baf6b7d4af520ddb9e26de71d70
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: glm-5.2
+  model_used: glm-5.2
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: glm-5.2
+    exit_code: 0
+    started_at: '2026-07-11T18:28:35Z'
+    ended_at: '2026-07-11T18:34:33Z'
+    detected_429: false
+    stderr_tail_200: ", clean product/test tree, diff --check, scope\n[\u2713] Write\
+      \ D.5-current-glm.md artifact using preceding attempt's findings (short SHAs\
+      \ only, no tokens/capture-IDs)\n[\u2713] Print exact completion notice\n\e[0m"
+    stdout_substantive: false
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: worker_file
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  dispatch_batch_id: audit-rb-D5-current-r2
+  intent_model_restrictions:
+    family: glm
+    execution_cli: opencode
+    denied_models: []
+    allowed_models: []
+    active: false
+  opencode_model_ref: neuralwatt/glm-5.2
+  opencode_provider_id: neuralwatt
+  opencode_base_url_env: NEURALWATT_BASE_URL
+  opencode_api_key_env: NEURALWATT_API_KEY
+  serving_provider: neuralwatt
+  wire_protocol: openai-compatible
+  evidence_trust_tier: attested-third-party
+  endpoint_origin_redacted: true
+  endpoint_origin_hash: sha256:c0029dc16c79fb52971abbf65f3d94c7dcbdc7ebf8d7b1a8ab454f05fa17f95f
+  endpoint_origin_label: neuralwatt
+  command_env_redacted:
+    NEURALWATT_API_KEY: <redacted:env>
+    NEURALWATT_BASE_URL: <redacted:env>
+    OPENCODE_CONFIG_CONTENT: <redacted>
+  provider_config_redacted:
+    model_ref: neuralwatt/glm-5.2
+    npm: '@ai-sdk/openai-compatible'
+    options:
+      apiKey: <redacted:env>
+      apiKey_env: NEURALWATT_API_KEY
+      baseURL: <redacted>
+      baseURL_env: NEURALWATT_BASE_URL
+    provider_id: neuralwatt
+  route_attestation_profile_id: neuralwatt-opencode-glm-5-2-v1
+  route_attestation_evidence:
+    live_probe:
+      artifact_sha256: sha256:cc51c2faaacac42d72e2c66ea94f759d9f5a8baf6b7d4af520ddb9e26de71d70
+      artifact_source: worker_file
+      captured_at: '2026-07-11T18:34:33Z'
+      evidence_artifact_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.route-attestation/audit-rb-D5-current-glv.r2.c20260711T182834Z.76052.50cadf742c6495152a3e7a704d628b60.live-probe.yaml
+      evidence_artifact_sha256: sha256:274416d87fd66791a532454d77f7cf0835d3f9ced65c995cbd439a40a363e3fc
+      family: glm
+      model_id: glm-5.2
+      producer: dispatch-family-review.sh
+      profile_id: neuralwatt-opencode-glm-5-2-v1
+      prompt_sha256: sha256:5dc1da0ab00c73633be37a42ba0a745c9680f373e24c8150adf3c34e3e04cef4
+      schema_version: 1
+      status: passed
+  supersedes_capture_ids:
+  - audit-rb-D5-current-glv.r2.c20260711T181904Z.15037.6a5388a9698b06c47bdba5e997b5037d

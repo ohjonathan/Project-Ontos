@@ -64,7 +64,8 @@ Make PR #161 safer and more reviewable while preserving its draft,
   are intentional contracts, not defects to revert.
 - Defer legacy direct-writer symlink consolidation and validator decomposition
   to their existing remediation streams.
-- Keep D.5 `review_pending`; do not run D.6 or fabricate/waive evidence.
+- Preserve D.5 as non-certified; after later maintainer authorization, run D.6
+  only as a withheld gate if strict evidence remains inadmissible.
 
 ## Alternatives Considered
 
@@ -82,7 +83,7 @@ drift. Existing public schema-v4 semantics and lifecycle evidence remain intact.
 ## Testing
 
 - Focused integration: `123 passed`.
-- Full suite: `1739 passed, 1 warning`; coverage `82.76%` (82% gate passed).
+- Reviewed-head full suite: `1740 passed, 1 warning`; coverage `82.76%` (82% gate passed).
 - Cross-version help parity: `11 passed` on Python 3.14 and Python 3.12.
 - GitHub Actions run `29154665641`: discovery failure; Python 3.10 completed
   with `1737 passed, 2 failed`, and Python 3.9 also recorded the equivalent
@@ -96,8 +97,16 @@ drift. Existing public schema-v4 semantics and lifecycle evidence remain intact.
   coverage, and clean-tree checks; Python 3.12 ordinary passed, while coverage
   ended at `1739 passed, 1 failed` on a one-second-only context-map timestamp
   difference (`82.64%` coverage passed). The timestamp-normalized rerun is
-  pending.
+  superseded by the green run below.
+- GitHub Actions run `29155957357`: PASS, 7/7 jobs at exact head `388845c`;
+  Linux 3.9–3.12, non-editable install, and Windows 3.9/3.14 all green; full
+  suite `1740 passed`, coverage `82.76%`.
+- Fresh D.5: Claude and GLM current-head artifacts/round-2 receipts landed;
+  Gemini genuine retry failed exit `55` under the retired individual tier.
+- Version metadata: `pyproject.toml` and `ontos.__version__` bumped to `4.7.1`;
+  version/golden/release focused verification passes.
 - Registry local and live GitHub parity: PASS.
 - Manifest conformance: `4/4`; changed-path scope: PASS.
 - Strict lifecycle: expected `review_pending`; receipt schema: expected
-  D5-INFRA-2 failure.
+  D5-INFRA-2 failure; D.6: WITHHELD.
+- Final status: `provider_limited_fallback_complete; strict P3 not certified; maintainer release actions deferred`.

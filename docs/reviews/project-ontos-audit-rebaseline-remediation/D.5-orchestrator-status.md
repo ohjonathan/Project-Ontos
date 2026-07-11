@@ -32,3 +32,31 @@ Two upstream framework defects independently prevent honest certification:
 Repository outcome at I3: the five loose-falsification regressions pass,
 registry validation passes, and the complete suite is `1725 passed, 1 warning`.
 Lifecycle outcome: `review_pending`. D.6 was not run.
+
+## Current-head retry — 2026-07-11
+
+The maintainer authorized one genuine strict retry against exact product head
+`388845c`, followed by the documented warning-only fallback if the pinned
+framework still halted. Fresh dispatch IDs, prompts, result rows, artifacts,
+raw captures, and receipts were used; no prior receipt was edited or recreated.
+
+| Seat | Outcome | Evidence |
+|---|---|---|
+| Claude verifier | Completed after one wrapper-shape correction; `104` focused and `1740` full-suite tests passed; verdict `Request changes` on the two framework defects | `D.5-current-claude.md`; round-2 receipt and raw capture in `lifecycle-receipt-inventory-strict-final.yaml` |
+| Gemini verifier | Genuine direct-provider invocation failed with exit `55`: the individual-client tier is no longer supported; no verdict or receipt | `D.5-current-dispatch-result.yaml`; wrapper-captured stderr SHA-256 `a679000b…e656` |
+| GLM verifier | Direct checks passed (`104` focused; `1740` full); artifact and receipt landed after one wrapper-shape correction; verdict `Request changes` | `D.5-current-glm.md`; round-2 receipt, raw capture, and route-attestation sidecar |
+
+Strict gates still fail. `verify-family-dispatch --require-complete` reports two
+completed seats and the failed Gemini seat, plus v2.0.1 rejects the GLM
+`worker_file` receipt/prompt. `verify-lifecycle --mode strict-p3` returns exit
+`1`, `status=review_pending`; its GLM supersession backlink triggers the known
+route-redaction defect. Applying the framework receipt schema independently
+returns exit `1` with the same six producer/schema mismatches recorded before.
+EH-15-A remains independently reproducible.
+
+D.6 was therefore run only as a withheld gate at `final-approval.md`; no
+passing rows, waiver, receipt reconstruction, merge, or release action exists.
+
+Final status:
+
+`provider_limited_fallback_complete; strict P3 not certified; maintainer release actions deferred`

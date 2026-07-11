@@ -1,0 +1,1063 @@
+[0m
+> build · glm-5.2
+[0m
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>
+[0m
+[0m$ [0mgit rev-parse HEAD && echo "---SHORT---" && git rev-parse --short HEAD && echo "---BRANCH---" && git rev-parse --abbrev-ref HEAD
+388845cbd0cfc6ee8a9b2f61f7ebe5f14eff70a2
+---SHORT---
+388845c
+---BRANCH---
+codex/audit-rebaseline-remediation-lifecycle
+[0m
+[0m$ [0mgit status --porcelain && echo "---EXIT:$?---"
+M Ontos_Context_Map.md
+ M <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+---EXIT:0---
+[0m
+[0m✱ [0mGlob "<redacted:secret>/*.md"[90m 56 matches[0m
+[0m
+[0m$ [0mgit diff --stat 859ecf7..388845c
+.github/workflows/ci.yml                           |   16 +-
+ .gitignore                                         |    4 +
+ AGENTS.md                                          |   12 +-
+ Ontos_Context_Map.md                               |   50 +-
+ ...<redacted:secret> |  103 +
+ docs/reference/Migration_v3_to_v4.md               |    2 +-
+ ...4249Z.33586.8fe2dfb62eab025d9d29b4434690d412.md |   70 +
+ ....<redacted:secret> |   30 +
+ ...<redacted:secret> | 2287 ++++++++++++++++++++
+ .../.raw/audit-rb-D5-glv.review.md                 |  338 +++
+ .../D.4-fix-summary.md                             |   16 +-
+ .../D.5-dispatch-result.yaml                       |  103 +
+ .../D.5-orchestrator-status.md                     |   34 +
+ .../<redacted:secret>           |  114 +
+ .../loose-falsification-codex.md                   |   47 +
+ .../project-ontos-audit-rebaseline-remediation.md  |    7 +-
+ ...<redacted:secret> |    9 +-
+ ontos/core/context.py                              |   30 +-
+ ontos/core/frontmatter_edit.py                     |    8 +-
+ ontos/io/files.py                                  |   19 +-
+ ontos/io/yaml.py                                   |   15 +-
+ tests/commands/test_query_parity.py                |   20 +-
+ tests/commands/test_scaffold_parity.py             |    4 +-
+ tests/commands/test_verify_parity.py               |    4 +-
+ tests/conftest.py                                  |   52 +
+ tests/core/test_frontmatter_edit_pipeline.py       |   62 +-
+ tests/mcp/test_context_map.py                      |   11 +-
+ tests/test_ci_release_workflows.py                 |   31 +
+ <redacted:secret>         |   31 +-
+ tests/test_session_context.py                      |   28 +-
+ 30 files changed, 3492 insertions(+), 65 deletions(-)
+[0m
+[0m$ [0mgit diff --check bf91b42..388845c; echo "---EXIT:$?---"
+---EXIT:0---
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m✱ [0mGlob ".llm-dev/framework/scripts/verify-*.sh"[90m 0 matches[0m
+[0m
+[0m$ [0mgit diff 859ecf7..388845c --stat; echo "===FULL DIFF BELOW==="; git diff 859ecf7..388845c
+...output truncated...
+
+Full output saved to: /<redacted:secret>
+
++FAILED tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_human_usage_error[old_id-bad new!-bad new!] - AssertionError: assert 1 == 2
++ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', 'rename', 'old_id', 'bad new!'], returncode=1, stdout='Error [invalid_new_id]: new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$\n', stderr='').returncode
++FAILED tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_human_usage_error[bad same!-bad same!-bad same!] - AssertionError: assert 0 == 2
++ +  where 0 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', 'rename', 'bad same!', 'bad same!'], returncode=0, stdout='Rename no-op: old_id and new_id are identical (nothing_to_do).\n', stderr='').returncode
++FAILED tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[bad old!-new_id-bad old!] - assert 1 == 2
++ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'bad old!', 'new_id'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "old_id \'bad old!\' must exist exactly once as an explicit frontmatter id. Found 0.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "bad old!", "new_id": "new_id", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "old_id_not_found"}}\n', stderr='').returncode
++FAILED tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[old_id-bad new!-bad new!] - assert 1 == 2
++ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'old_id', 'bad new!'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "old_id", "new_id": "bad new!", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "invalid_new_id"}}\n', stderr='').returncode
++FAILED tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[bad same!-bad same!-bad same!] - assert 0 == 2
++ +  where 0 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'bad same!', 'bad same!'], returncode=0, stdout='{"schema_version": "4.0", "command": "rename", "status": "success", "exit_code": 0, "message": "nothing_to_do", "result": {"status": "clean", "kind": "diagnostic", "exit_category": "clean", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "bad same!", "new_id": "bad same!", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": []}, "warnings": [], "error": null}\n', stderr='').returncode
++FAILED tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[bad old!-new_id-bad old!] - assert 1 == 2
++ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'bad old!', 'new_id'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "bad old!", "new_id": "new_id", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
++FAILED tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[old_id-bad new!-bad new!] - assert 1 == 2
++ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'old_id', 'bad new!'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "old_id", "new_id": "bad new!", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
++FAILED tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[bad same!-bad same!-bad same!] - assert 1 == 2
++ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'bad same!', 'bad same!'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "bad same!", "new_id": "bad same!", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
++FAILED tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[   -new_id-   ] - assert 1 == 2
++ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', '   ', 'new_id'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "   ", "new_id": "new_id", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
++FAILED tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[old_id-   -   ] - assert 1 == 2
++ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'old_id', '   '], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "old_id", "new_id": "   ", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
++FAILED tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[bad old!-new_id-invalid_old_id-bad old!] - AssertionError: assert 'old_id_not_found' == 'invalid_old_id'
++  
++  - invalid_old_id
++  + old_id_not_found
++FAILED tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[old_id-bad new!-invalid_new_id-bad new!] - assert 'new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$' == "Document id must start and end with an alphanumeric character and contain only letters, numbers, '_', '-', or '.'"
++  
++  - Document id must start and end with an alphanumeric character and contain only letters, numbers, '_', '-', or '.'
++  + new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$
++FAILED tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[bad same!-bad same!-invalid_old_id-bad same!] - AssertionError: assert RenamePlan(mode='dry_run', scope=<ScanScope.DOCS: 'docs'>, old_id='bad same!', new_id='bad same!', summary=RenameSummary(files_scanned=0, documents_loaded=0, planned_files=0, frontmatter_edits=0, body_edits=0, skipped_zone_sightings=0, warnings=0), files=[], warnings=[], no_op=True) is None
++FAILED tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[bad old!-renamed-bad old!] - AssertionError: assert 'E_DOCUMENT_NOT_FOUND' == 'E_USER_INPUT'
++  
++  - E_USER_INPUT
++  + E_DOCUMENT_NOT_FOUND
++FAILED tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[kernel_doc-bad new!-bad new!] - AssertionError: assert 'E_INVALID_ID' == 'E_USER_INPUT'
++  
++  - E_USER_INPUT
++  + E_INVALID_ID
++FAILED tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[bad same!-bad same!-bad same!] - assert False is True
++ +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{"success": true, "old_id": "bad same!", "new_id": "bad same!", "path": "", "references_updated": 0, "updated_files": []}', annotations=None, meta=None)], structuredContent={'success': True, 'old_id': 'bad same!', 'new_id': 'bad same!', 'path': '', 'references_updated': 0, 'updated_files': []}, isError=False).isError
++FAILED tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[   -renamed-   ] - AssertionError: assert 'E_INVALID_DOCUMENT_ID' == 'E_USER_INPUT'
++  
++  - E_USER_INPUT
++  + E_INVALID_DOCUMENT_ID
++FAILED tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[kernel_doc-   -   ] - AssertionError: assert 'E_INVALID_ID' == 'E_USER_INPUT'
++  
++  - E_USER_INPUT
++  + E_INVALID_ID
++FAILED tests/mcp/test_rename_document.py::<redacted:secret>[bad old!-new_id-bad old!] - AssertionError: preflight must not run for invalid IDs
++FAILED tests/mcp/test_rename_document.py::<redacted:secret>[old_id-bad new!-bad new!] - AssertionError: preflight must not run for invalid IDs
++FAILED tests/mcp/test_rename_document.py::<redacted:secret>[bad same!-bad same!-bad same!] - AssertionError: preflight must not run for invalid IDs
++FAILED tests/mcp/test_rename_document.py::<redacted:secret>[   -new_id-   ] - AssertionError: preflight must not run for invalid IDs
++FAILED tests/mcp/test_rename_document.py::<redacted:secret>[old_id-   -   ] - AssertionError: preflight must not run for invalid IDs
++====================== 24 failed, 51 deselected in 1.66s =======================
++EXIT=1
++[0m
++[0m$ [0mcd .venv/d5-glm-post && ../bin/python -m pytest tests/ -q -p no:cacheprovider 2>&1; echo "EXIT=$?"
++============================= test session starts ==============================
++platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0
++rootdir: /<redacted:secret>
++configfile: pyproject.toml
++plugins: cov-5.0.0, anyio-4.14.1
++collected 1720 items
++
++tests/commands/test_activate_json_warning_metadata.py .................. [  1%]
++....                                                                     [  1%]
++tests/commands/test_agentic_activation_resilience.py ...........         [  1%]
++tests/commands/test_agents.py ................................           [  3%]
++tests/commands/test_antigravity_mcp_docs.py .....                        [  4%]
++<redacted:secret> .                            [  4%]
++tests/commands/test_b2_promote_absolute_path.py .                        [  4%]
++tests/commands/test_consolidate_parity.py ...                            [  4%]
++tests/commands/test_consolidate_root_regression.py .......               [  4%]
++tests/commands/test_doctor_hooks.py ..........                           [  5%]
++tests/commands/test_doctor_phase4.py ................................... [  7%]
++..                                                                       [  7%]
++tests/commands/test_env.py .............                                 [  8%]
++tests/commands/test_export_all.py ..                                     [  8%]
++tests/commands/test_export_data_parity.py .......                        [  8%]
++tests/commands/test_export_phase4.py ......................              [ 10%]
++tests/commands/test_health_count_consistency.py .......                  [ 10%]
++tests/commands/test_hook_phase4.py ...........                           [ 11%]
++tests/commands/test_init_phase3.py ....................                  [ 12%]
++tests/commands/test_init_scaffold.py .........................           [ 13%]
++tests/commands/test_instruction_protocol.py ..........                   [ 14%]
++tests/commands/test_json_contract_a3.py .                                [ 14%]
++tests/commands/test_link_check.py ...............................        [ 16%]
++tests/commands/test_log.py .............                                 [ 16%]
++tests/commands/test_maintain.py ..........................               [ 18%]
++tests/commands/test_map.py ...........................                   [ 20%]
++tests/commands/test_map_obsidian.py ........                             [ 20%]
++tests/commands/test_map_resilience.py .....                              [ 20%]
++tests/commands/test_map_tier1_key_documents.py .......                   [ 21%]
++tests/commands/test_mcp_command.py ..........................            [ 22%]
++tests/commands/test_mcp_write_tool_docs.py ..                            [ 22%]
++tests/commands/test_migrate_parity.py ........                           [ 23%]
++tests/commands/test_migration_report_parity.py .....                     [ 23%]
++tests/commands/test_promote_parity.py ...                                [ 23%]
++tests/commands/test_query_parity.py ....                                 [ 23%]
++tests/commands/test_rename.py ........................................   [ 26%]
++tests/commands/test_retrofit.py ......................                   [ 27%]
++tests/commands/test_s2_yaml_warnings.py .                                [ 27%]
++tests/commands/test_scaffold_parity.py ...                               [ 27%]
++tests/commands/test_scan_scope_integration.py .......................... [ 29%]
++...                                                                      [ 29%]
++tests/commands/test_stub_parity.py .....................                 [ 30%]
++tests/commands/test_verify_parity.py ...                                 [ 30%]
++tests/commands/test_verify_portfolio.py .............                    [ 31%]
++tests/core/test_body_refs.py ........................................... [ 34%]
++.......................................................                  [ 37%]
++tests/core/test_cache.py ...                                             [ 37%]
++tests/core/test_config_phase3.py ....................................... [ 39%]
++..................                                                       [ 40%]
++tests/core/test_cursor_mcp.py .............                              [ 41%]
++tests/core/test_frontmatter_edit_pipeline.py .....                       [ 41%]
++tests/core/test_frontmatter_repair.py .....                              [ 42%]
++tests/core/test_git_safety.py ...                                        [ 42%]
++tests/core/test_graph.py .........................................       [ 44%]
++tests/core/test_legacy_config_compat.py .....                            [ 45%]
++tests/core/test_link_diagnostics.py .........................            [ 46%]
++tests/core/test_migration.py ......                                      [ 46%]
++tests/core/test_ontology.py ..                                           [ 46%]
++tests/core/test_paths_runtime_root.py ....                               [ 47%]
++tests/core/test_proposals_runtime_paths.py ....                          [ 47%]
++tests/core/test_schema.py .......................................        [ 49%]
++tests/core/test_snapshot.py ........                                     [ 50%]
++tests/core/test_warning_groups.py .................                      [ 51%]
++tests/golden/test_golden_master.py ..                                    [ 51%]
++tests/io/test_config_phase3.py ................                          [ 52%]
++tests/io/test_files_status_parsing.py .                                  [ 52%]
++tests/io/test_git_empty_diff.py ...                                      [ 52%]
++tests/io/test_load_frontmatter_contract.py .                             [ 52%]
++tests/io/test_scan_scope.py .............                                [ 53%]
++tests/io/test_toml_roundtrip.py ...                                      [ 53%]
++tests/mcp/test_activation.py ...................                         [ 54%]
++tests/mcp/test_bundler.py ................                               [ 55%]
++tests/mcp/test_cache.py ......                                           [ 55%]
++tests/mcp/test_context_bundle.py ......                                  [ 56%]
++tests/mcp/test_context_bundle_config.py .......                          [ 56%]
++tests/mcp/test_context_map.py ..                                         [ 56%]
++tests/mcp/test_error_paths.py ..........                                 [ 57%]
++tests/mcp/test_export_graph.py ..                                        [ 57%]
++tests/mcp/test_get_document.py ...                                       [ 57%]
++tests/mcp/test_health.py ..                                              [ 57%]
++tests/mcp/test_list_documents.py ..                                      [ 57%]
++tests/mcp/test_locking.py ......                                         [ 58%]
++tests/mcp/test_module_exports.py ....                                    [ 58%]
++tests/mcp/test_parity.py ..                                              [ 58%]
++tests/mcp/test_portfolio.py ............................................ [ 60%]
++.....                                                                    [ 61%]
++tests/mcp/test_portfolio_config.py ...................                   [ 62%]
++tests/mcp/test_portfolio_integration.py ..                               [ 62%]
++tests/mcp/test_project_registry.py ..                                    [ 62%]
++tests/mcp/test_query.py .                                                [ 62%]
++tests/mcp/test_read_only_registration.py .......                         [ 63%]
++tests/mcp/test_refresh.py ..                                             [ 63%]
++tests/mcp/test_rename_document.py ...................................    [ 65%]
++<redacted:secret> .                          [ 65%]
++tests/mcp/test_scanner.py .................                              [ 66%]
++tests/mcp/test_schemas.py .....                                          [ 66%]
++tests/mcp/test_search.py ........                                        [ 67%]
++tests/mcp/test_server_integration.py ........                            [ 67%]
++tests/mcp/test_server_portfolio_mode.py ...                              [ 67%]
++tests/mcp/test_stream_routing.py ...                                     [ 67%]
++tests/mcp/test_validation_helpers.py ..                                  [ 67%]
++tests/mcp/test_workspace_overview.py ..                                  [ 68%]
++tests/mcp/test_write_tools.py ..............................             [ 69%]
++tests/test_audit_remediation_registry_validator.py ..................... [ 71%]
++........................................................................ [ 75%]
++........................................................................ [ 79%]
++........................................                                 [ 81%]
++tests/test_ci_release_workflows.py ....                                  [ 81%]
++tests/test_cli.py .............................................          [ 84%]
++tests/test_cli_contract_v4.py ...........                                [ 85%]
++tests/test_cli_cwd_fix.py ..                                             [ 85%]
++tests/test_cli_phase4.py ......................                          [ 86%]
++tests/test_context_contention.py ..........                              [ 87%]
++tests/test_describes.py .............................                    [ 88%]
++tests/test_doctor_mcp_probe_regression.py .....                          [ 89%]
++<redacted:secret> ............                  [ 89%]
++tests/test_dual_mode.py ...                                              [ 90%]
++tests/test_env_cli.py .....                                              [ 90%]
++tests/test_frontmatter_parsing.py .....                                  [ 90%]
++tests/test_frontmatter_roundtrip_regression.py ...........               [ 91%]
++tests/test_frontmatter_tags.py ..                                        [ 91%]
++tests/test_immutable_history.py ...............                          [ 92%]
++tests/test_lib.py ...............                                        [ 93%]
++tests/test_map_compact.py ....................                           [ 94%]
++tests/test_map_filter.py ...                                             [ 94%]
++tests/test_release_artifact.py ...                                       [ 94%]
++tests/test_session_context.py .......................................... [ 97%]
++..........                                                               [ 97%]
++tests/test_suggestions.py ..........                                     [ 98%]
++tests/test_test_isolation.py ....                                        [ 98%]
++tests/test_validation_concepts_a1.py .....                               [ 98%]
++tests/ui/test_json_output.py .....................                       [100%]
++
++=============================== warnings summary ===============================
++tests/ui/test_json_output.py::TestConvenienceFunctions::test_emit_error
++  /<redacted:secret>:148: DeprecationWarning: emit_error() is deprecated; use emit_command_error().
++    emit_error("Failed", "E999")
++
++-- Docs: https://<redacted:secret>
++================== 1720 passed, 1 warning in 96.60s (0:01:36) ==================
++EXIT=0
++[0m
++[0m→ [0mRead <redacted:secret>
++[0m
++[0m$ [0mgit status --short --branch 2>&1
++## codex/audit-rebaseline-remediation-lifecycle
++ M Ontos_Context_Map.md
++ M <redacted:secret>
++ D <redacted:secret>
++?? <redacted:secret>
++?? <redacted:secret>
++?? <redacted:secret>
++[0m
++[0m$ [0mgit diff --check HEAD 2>&1; echo "EXIT=$?"
++EXIT=0
++[0m
++[0m$ [0mpython3 <redacted:secret> 2>&1; echo "EXIT=$?"
++audit-registry: PASS
++mode: local
++original findings: 91 (P0=1, P1=27, P2=63)
++original status: committed_fixed=2, code_fixed_evidence_pending=1, implemented_committed_pending=40, partial_committed_pending=7, confirmed_open=41
++revalidation findings: 9
++EXIT=0
++[0m
++[0m$ [0mgit diff --check <redacted:secret> 2>&1; echo "EXIT=$?"
++EXIT=0
++[0m
++[0m$ [0mscripts/llm-dev verify 2>&1; echo "EXIT=$?"
++llm-dev: verify requires <manifest-path>
++EXIT=1
++[0m
++[0m$ [0mbash .<redacted:secret> --manifest <redacted:secret> --base bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95 2>&1; echo "EXIT=$?"
++verify-changed-path-scope: OK (598 changed path(s) within scope)
++EXIT=0
++[0m
++[0m$ [0mpython3 <redacted:secret> --require-external-parity 2>&1; echo "EXIT=$?"
++audit-registry: PASS
++mode: local+external
++original findings: 91 (P0=1, P1=27, P2=63)
++original status: committed_fixed=2, code_fixed_evidence_pending=1, implemented_committed_pending=40, partial_committed_pending=7, confirmed_open=41
++revalidation findings: 9
++EXIT=0
++[0m
++[0m$ [0mscripts/llm-dev verify <redacted:secret> 2>&1; echo "EXIT=$?"
++verify-adopter: validating /<redacted:secret> against 4 checks
++verify-adopter: NOTE — manifest conformance only; does NOT prove
++                lifecycle execution. For strict-P3 receipt verification,
++                run: scripts/llm-dev verify-lifecycle <manifest>
++
++::: verify-schema.sh --manifest <manifest> :::
++verify-schema: validating /<redacted:secret> against /<redacted:secret>
++ok -- validation done
++verify-schema: OK (1 manifests validated)
++
++::: verify-p3.sh --manifest <manifest> :::
++verify-p3: OK — all manifests satisfy strict P3 (user-facing extension checked on 1 of 1 manifests)
++verify-p3: project-ontos-audit-rebaseline-remediation: user_facing=true -> Product seats required on B.1 + B.2 + D.2 (BOTH design rounds); run scripts/review-seats.sh /<redacted:secret> for the full seat table
++
++::: verify-gate-categories.sh --manifest <manifest> :::
++verify-gate-categories: OK (all six categories covered)
++
++::: verify-artifact-paths.sh --manifest <manifest> :::
++verify-artifact-paths: OK (canonical_verdict / family_verdict / verification / product_verdict placeholders valid across 1 manifests)
++
++-----------------------------------------------------------------
++verify-adopter: PASSED manifest-conformance (4/4 checks against /<redacted:secret>)
++                manifest-only — does NOT prove lifecycle execution.
++                Run: scripts/llm-dev verify-lifecycle <manifest> for strict-P3 proof.
++EXIT=0
++[0m
++[0m$ [0mbash .<redacted:secret> --manifest "$<redacted:secret>" 2>&1; echo "EXIT=$?"
++verify-fix-summary-regressions: OK (no D.4 fix-summary exists at <redacted:secret>)
++EXIT=0
++[0m
++[0m$ [0mbash .<redacted:secret> --help 2>&1 || bash .<redacted:secret> 2>&1; echo "EXIT=$?"
++usage: bash <redacted:secret> [--manifest <path>] [fix-summary.md ...]
++
++Validates EH-15-A Regression Coverage rows in D.4 fix summaries.
++EXIT=0
++[0m
++[0m$ [0mbash .<redacted:secret> <redacted:secret> 2>&1; echo "EXIT=$?"
++verify-fix-summary-regressions: cannot read <redacted:secret>
++EXIT=2
++[0m
++[0m$ [0mbash .<redacted:secret> "$<redacted:secret>" 2>&1; echo "EXIT=$?"
++verify-fix-summary-regressions: FAILED
++  - /<redacted:secret>: row 1 finding 'CAN-ACT-1': fixture 'tests/commands/test_agentic_activation_resilience.py' does not exist
++  - /<redacted:secret>: row 1 finding 'CAN-ACT-1': fixture 'tests/commands/test_agentic_activation_resilience.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
++  - /<redacted:secret>: row 2 finding 'CAN-ACT-2': fixture 'tests/commands/test_agentic_activation_resilience.py' does not exist
++  - /<redacted:secret>: row 2 finding 'CAN-ACT-2': fixture 'tests/commands/test_agentic_activation_resilience.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
++  - /<redacted:secret>: row 2 finding 'CAN-ACT-2': fixture 'tests/core/test_config_phase3.py' does not exist
++  - /<redacted:secret>: row 2 finding 'CAN-ACT-2': fixture 'tests/core/test_config_phase3.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
++  - /<redacted:secret>: row 3 finding 'CAN-CP-1': fixture 'tests/test_audit_remediation_registry_validator.py' does not exist
++  - /<redacted:secret>: row 3 finding 'CAN-CP-1': fixture 'tests/test_audit_remediation_registry_validator.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
++  - /<redacted:secret>: row 4 finding 'CAN-CP-2': fixture 'tests/test_audit_remediation_registry_validator.py' does not exist
++  - /<redacted:secret>: row 4 finding 'CAN-CP-2': fixture 'tests/test_audit_remediation_registry_validator.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
++  - /<redacted:secret>: row 5 finding 'CAN-CP-3': fixture 'tests/test_audit_remediation_registry_validator.py' does not exist
++  - /<redacted:secret>: row 5 finding 'CAN-CP-3': fixture 'tests/test_audit_remediation_registry_validator.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
++  - /<redacted:secret>: row 6 finding 'CAN-ID-1': fixture 'tests/commands/test_rename.py' does not exist
++  - /<redacted:secret>: row 6 finding 'CAN-ID-1': fixture 'tests/commands/test_rename.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
++  - /<redacted:secret>: row 6 finding 'CAN-ID-1': fixture 'tests/mcp/test_rename_document.py' does not exist
++  - /<redacted:secret>: row 6 finding 'CAN-ID-1': fixture 'tests/mcp/test_rename_document.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
++EXIT=1
++[0m
++[0m$ [0mpython3 -c "import yaml; print(len(yaml.safe_load(open('<redacted:secret>'))['findings']))" 2>&1
++100
++[0m
++[0m$ [0mgit cat-file -e b6f89d77e7fb684b8bd9a181a24c773d5777397a^{commit} 2>&1; echo "I0_EXIT=$?"; git cat-file -e 05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0^{commit} 2>&1; echo "I1_EXIT=$?"; git cat-file -e 311b60b6e86abe6d0b5a7ac61e16d07049387707^{commit} 2>&1; echo "I2_EXIT=$?"; test ! -e docs/specs/project-ontos-rationale-capture-template-proposal.md && test ! -e docs/zeta.md; echo "FORBIDDEN_ABSENT_EXIT=$?"
++I0_EXIT=0
++I1_EXIT=0
++I2_EXIT=0
++FORBIDDEN_ABSENT_EXIT=0
++[0m
++[0m$ [0mgit log --oneline -10 HEAD 2>&1; echo "---"; git cat-file -e 737fe27^{commit} 2>&1; echo "SCOPE_RECOVERY_EXIT=$?"; echo "---"; git log --oneline 311b60b..HEAD 2>&1
++6b36973 Preserve initial D5 GLM verification evidence
++599ae90 Preserve final Gemini failure and refine GLM sandbox path
++016735f Preserve D5 provider failures and prepare GLM snapshots
++8e58cc7 Authorize same-family Gemini D5 CLI rollback
++2910a14 Preserve initial D5 attempts and Claude verification
++0941d2f Prepare strict D5 verification dispatch
++8d5096e Record D4 functional fixes and framework halt
++737fe27 Correct D4 rename scope omission
++311b60b Use canonical ID validation for rename
++2dede68 Bind control-plane registry evidence to D4 fix
++---
++SCOPE_RECOVERY_EXIT=0
++---
++6b36973 Preserve initial D5 GLM verification evidence
++599ae90 Preserve final Gemini failure and refine GLM sandbox path
++016735f Preserve D5 provider failures and prepare GLM snapshots
++8e58cc7 Authorize same-family Gemini D5 CLI rollback
++2910a14 Preserve initial D5 attempts and Claude verification
++0941d2f Prepare strict D5 verification dispatch
++8d5096e Record D4 functional fixes and framework halt
++737fe27 Correct D4 rename scope omission
++[0m
++[0m$ [0mls -la <redacted:secret>/ 2>&1 | head -20
++total 3192
++drwxr-xr-x@ 175 jonathanoh  wheel    5600 Jul 10 20:42 .
++drwxr-xr-x@  87 jonathanoh  wheel    2784 Jul 10 20:41 ..
++-rw-r--r--@   1 jonathanoh  wheel     150 Jul 10 16:29 B.3-gemini-dispatch-attestation.txt
++-rw-r--r--@   1 jonathanoh  wheel    8792 Jul 10 19:35 D.2-strict-dispatch-attestation-gemini.raw.txt
++-rw-r--r--@   1 jonathanoh  wheel    2199 Jul 10 19:05 <redacted:secret>
++-rw-r--r--@   1 jonathanoh  wheel       0 Jul 10 18:59 <redacted:secret>
++-rw-r--r--@   1 jonathanoh  wheel    1678 Jul 10 19:05 <redacted:secret>
++-rw-r--r--@   1 jonathanoh  wheel       0 Jul 10 18:59 <redacted:secret>
++-rw-r--r--@   1 jonathanoh  wheel    8156 Jul 10 18:59 <redacted:secret>
++-rw-r--r--@   1 jonathanoh  wheel       0 Jul 10 18:59 <redacted:secret>
++-rw-r--r--@   1 jonathanoh  wheel    5744 Jul 10 19:06 <redacted:secret>
++-rw-r--r--@   1 jonathanoh  wheel      75 Jul 10 19:06 <redacted:secret>
++-rw-r--r--@   1 jonathanoh  wheel   13240 Jul 10 19:05 audit-rb-B1-gp.review.md
++-rw-r--r--@   1 jonathanoh  wheel    2156 Jul 10 19:16 <redacted:secret>
++-rw-r--r--@   1 jonathanoh  wheel       0 Jul 10 19:07 <redacted:secret>
++-rw-r--r--@   1 jonathanoh  wheel    2158 Jul 10 19:12 <redacted:secret>
++-rw-r--r--@   1 jonathanoh  wheel       0 Jul 10 19:07 <redacted:secret>
++-rw-r--r--@   1 jonathanoh  wheel    6632 Jul 10 19:08 <redacted:secret>
++-rw-r--r--@   1 jonathanoh  wheel       0 Jul 10 19:07 <redacted:secret>
++[0m
++[0m$ [0mgit ls-files <redacted:secret> <redacted:secret> <redacted:secret> 2>&1
++<redacted:secret>
++<redacted:secret>
++<redacted:secret>
++[0m
++[0m→ [0mRead <redacted:secret>[90m [limit=50][0m
++[0m→ [0mRead <redacted:secret>[90m [limit=80][0m
++[0m
++[0m← [0mWrite <redacted:secret>
++Wrote file successfully.
++[0m
++[0m$ [0mgit ls-files <redacted:secret> 2>&1; echo "---tracked?---"; test -f <redacted:secret> && echo "FILE EXISTS" || echo "MISSING"
++---tracked?---
++FILE EXISTS
++[0m
++[0m$ [0mscripts/llm-dev lint-artifact <redacted:secret> 2>&1; echo "EXIT=$?"
++verify-dispatch-shape: OK — verdict_shaped (verdict: request_changes)
++EXIT=0
++[0m
++[0m$ [0mecho "=== Canonical artifact (must be unmodified by me) ==="; git diff --name-only HEAD -- <redacted:secret> 2>&1; echo "=== Sibling file verdict line ==="; grep -A1 '^## Verdict' <redacted:secret> 2>&1 | head -3; echo "=== Frontmatter id/phase/role/family/status ==="; grep -E '^(id|phase|role|family|evidence_mode|status|verdict):' <redacted:secret> 2>&1
++=== Canonical artifact (must be unmodified by me) ===
++<redacted:secret>
++=== Sibling file verdict line ===
++## Verdict
++
++=== Frontmatter id/phase/role/family/status ===
++id: audit-rb-D5-glv
++role: verifier
++family: glm
++phase: D.5
++evidence_mode: direct-run
++status: completed
++verdict: Request Further Fixes
++[0m
++[0m→ [0mRead <redacted:secret>[90m [offset=180, limit=20][0m
++[0m
++[0m$ [0mgit diff --stat HEAD -- <redacted:secret> 2>&1
++.../D.5-glm-verifier.md                            | 231 ---------------------
++ 1 file changed, 231 deletions(-)
++[0m
++[0m→ [0mRead <redacted:secret>[90m [limit=20, offset=258][0m
++[0m→ [0mRead <redacted:secret>[90m [limit=20, offset=295][0m
++[0m→ [0mRead <redacted:secret>[90m [limit=25, offset=310][0m
+diff --git <redacted:secret> <redacted:secret>
+new file mode 100644
+index 0000000..387fa6c
+--- /dev/null
++++ <redacted:secret>
+@@ -0,0 +1,338 @@
++---
++id: audit-rb-D5-glv
++deliverable_id: project-ontos-audit-rebaseline-remediation
++role: verifier
++family: glm
++phase: D.5
++evidence_mode: direct-run
++canonical_verdict_consumed: <redacted:secret>
++fix_summary_consumed: <redacted:secret>
++clarification_artifacts: []
++status: completed
++verdict: Request Further Fixes
++---
++
++# Verification — project-ontos-audit-rebaseline-remediation / D.5 / glm
++
++Every one of the six canonical D.3 should-fixes is independently reproduced as
++broken pre-fix and closed post-fix by direct execution against parallel
++repository-local snapshots. The full suite is green at 1720 passed. The product
++fixes are functionally sound.
++
++D.4 is nevertheless honestly `status: halted` on **D4-INFRA-1**. I verified
++that claim directly, not by accepting it. It holds, and the fail-open surface is
++materially worse than a missing registration: the EH-15-A manifest-mode gate
++returns **exit 0 / `OK`** while asserting the fix summary "does not exist"
++at a path where a tracked file plainly does exist. A gate that cannot find
++the artifact it is gating and reports success is fail-open. Functional success
++is therefore not certification, and my body verdict is `Request changes`.
++
++## Environment and snapshots
++
++Pre-fix implementation: `aa41c3982e21b0e0cff6c3c5486f4af9e5e55e05`.
++Post-fix implementation (I2): `311b60b6e86abe6d0b5a7ac61e16d07049387707`.
++Scope-recovery checkpoint: `737fe27`.
++
++Two orchestrator-prepared, plain snapshots inside the served repository (neither
++contains a `.git` pointer; no sandbox-external git access is needed):
++
++- post-fix: `.venv/d5-glm-post`
++- pre-fix: `.venv/d5-glm-pre` — same tests with only the five target
++  implementation files (`ontos/commands/activate.py`, `ontos/core/config.py`,
++  `ontos/commands/rename.py`, `ontos/mcp/rename_tool.py`,
++  `<redacted:secret>`) restored from pre-fix
++  `aa41c39`.
++
++From each snapshot directory the test interpreter is `../bin/python` (resolves
++to `.venv/bin/python`, Python 3.14.6); all commands are repository-relative.
++
++| Precondition | Observed | Evidence |
++|---|---|---|
++| `ontos.__file__` resolves under `d5-glm-post` | `.venv/d5-glm-post/ontos/__init__.py` | direct-run |
++| `ontos.__file__` resolves under `d5-glm-pre` | `.venv/d5-glm-pre/ontos/__init__.py` | direct-run |
++| Post snapshot has fix markers | `Reason:` in activate.py (1); `InvalidRequiredVersionError` in config.py (2); `_ID_PATTERN` absent from rename.py (0); `validate_rename_ids` in rename.py (4) + rename_tool.py (2); `ControlPlaneInputError` (4) + `CONTROL_PLANE_OWNER` (2) in validator | direct-run |
++| Pre snapshot has pre-fix markers | `Reason:` absent (0); `InvalidRequiredVersionError` absent (0); `_ID_PATTERN` present in rename.py (3); `validate_rename_ids` absent from rename.py (0) + rename_tool.py (0); `ControlPlaneInputError` absent (0); `CONTROL_PLANE_OWNER` absent (0) | direct-run |
++
++The import-origin check is load-bearing: the interpreter is shared (`../bin/python`),
++but `ontos.__file__` resolves under each snapshot whose tests are being run, so
++the five-file restore genuinely takes effect — post-fix code runs in `d5-glm-post`
++and pre-fix code runs in `d5-glm-pre`, against the SAME post-fix test files in
++both snapshots.
++
++### pytest flag discipline
++
++Every focused snapshot invocation used `-B` plus `--cache-clear` (never combined
++with `-p no:cacheprovider`, which removes the owning plugin and rejects
++`--cache-clear`). The full-suite run used `-q -p no:cacheprovider` as directed.
++The bounded group-3 selector avoids a false secret-scanner match on a long
++pytest identifier while selecting the same regression set.
++
++## Per-should-fix verification table
++
++The D.3 preserved-blocker list is empty (`preserved_blocker_ids: []`). The empty
++blocker list does not waive the six canonical should-fix findings — each was
++directly reproduced pre-fix and closed post-fix.
++
++| Blocker ID | Original failure reproduced? | Fix addresses it? | Regression test fails pre-fix? | Regression test passes post-fix? | Evidence label |
++|---|---|---|---|---|---|
++| CAN-ACT-1 | Yes — human `not_usable` output carried 0 `Reason:` lines (`assert 0 == 1`) | Yes | Yes — exit `1`, 4 failed | Yes — exit `0`, 4 passed | direct-run |
++| CAN-ACT-2 | Yes — malformed range reason began with `Config error:` instead of `Invalid [ontos].required_version:` prefix/anchor | Yes | Yes — exit `1`, 4 failed | Yes — exit `0`, 4 passed | direct-run |
++| CAN-CP-1 | Yes — issue-158 root/scope mutations not detected; `root_program mismatch for issue #158` and `finding scope exceeds owner #158` never emitted | Yes | Yes — exit `1`, 8 failed | Yes — exit `0`, 8 passed | direct-run |
++| CAN-CP-2 | Yes — `shared_path_leases row 0 has duplicate programs` / `duplicate order` never emitted under synchronized O5 | Yes | Yes — exit `1`, 8 failed | Yes — exit `0`, 8 passed | direct-run |
++| CAN-CP-3 | Yes — malformed registry + both child manifests returned exit `2`/`ERROR` (`assert 2 == 1`), the fail-open routing | Yes | Yes — exit `1`, 8 failed | Yes — exit `0`, 8 passed | direct-run |
++| CAN-ID-1 | Yes — incl. the invalid same-ID false-green (live pre-fix CLI returned exit `0`/`nothing_to_do`); MCP preflight ran before validation | Yes | Yes — exit `1`, 24 failed | Yes — exit `0`, 24 passed | direct-run |
++
++### Group 1 — CAN-ACT-1 / CAN-ACT-2
++
++Selection: `tests/commands/test_agentic_activation_resilience.py -k 'human_renders_incompatible or human_renders_malformed or json_renders_malformed'`
++
++| Snapshot | Collected | Deselected | Selected | Passed | Failed | Exit |
++|---|---|---|---|---|---|---|
++| `d5-glm-post` | 11 | 7 | 4 | 4 | 0 | 0 |
++| `d5-glm-pre` | 11 | 7 | 4 | 0 | 4 | 1 |
++
++```bash
++# post-fix (expect pass)
++cd .venv/d5-glm-post
++../bin/python -B -m pytest tests/commands/test_agentic_activation_resilience.py \
++  -k 'human_renders_incompatible or human_renders_malformed or json_renders_malformed' \
++  --cache-clear -v
++# → 4 passed, 7 deselected
++
++# pre-fix (expect nonzero)
++cd .venv/d5-glm-pre
++../bin/python -B -m pytest tests/commands/test_agentic_activation_resilience.py \
++  -k 'human_renders_incompatible or human_renders_malformed or json_renders_malformed' \
++  --cache-clear -v
++# → 4 failed, 7 deselected, exit 1
++```
++
++Pre-fix behavioral failures: CAN-ACT-1 — `assert 0 == 1` where `0 = len([])`
++(the human output rendered zero `Reason:` lines for `not_usable`). CAN-ACT-2 —
++`assert False` where the JSON reason was `"Config error: version clause
++'not-a-range' is not a valid semantic version"`, missing the mandated
++`Invalid [ontos].required_version:` prefix and Migration anchor.
++
++### Group 2 — CAN-CP-1 / CAN-CP-2 / CAN-CP-3
++
++Selection: `tests/test_audit_remediation_registry_validator.py -k 'issue_158_control_plane or control_plane_finding_id_and_issue_158 or duplicate_lease_lists or malformed_registry_yaml or malformed_child_manifest_yaml'`
++
++| Snapshot | Collected | Deselected | Selected | Passed | Failed | Exit |
++|---|---|---|---|---|---|---|
++| `d5-glm-post` | 205 | 197 | 8 | 8 | 0 | 0 |
++| `d5-glm-pre` | 205 | 197 | 8 | 0 | 8 | 1 |
++
++```bash
++# post-fix (expect pass)
++cd .venv/d5-glm-post
++../bin/python -B -m pytest tests/test_audit_remediation_registry_validator.py \
++  -k 'issue_158_control_plane or control_plane_finding_id_and_issue_158 or duplicate_lease_lists or malformed_registry_yaml or malformed_child_manifest_yaml' \
++  --cache-clear -v
++# → 8 passed, 197 deselected
++
++# pre-fix (expect nonzero)
++cd .venv/d5-glm-pre
++../bin/python -B -m pytest tests/test_audit_remediation_registry_validator.py \
++  -k 'issue_158_control_plane or control_plane_finding_id_and_issue_158 or duplicate_lease_lists or malformed_registry_yaml or malformed_child_manifest_yaml' \
++  --cache-clear -v
++# → 8 failed, 197 deselected, exit 1
++```
++
++Pre-fix behavioral failures: CAN-CP-1 — issue-158 root/scope authority checks
++absent; the expected fragments (`root_program mismatch for issue #158`,
++`finding scope exceeds owner #158`) never appeared. CAN-CP-2 — duplicate
++lease-list values not rejected; expected `shared_path_leases row 0 has duplicate
++programs/order` absent while synchronized-O5 mutations passed through. CAN-CP-3
++— `assert 2 == 1` for malformed registry YAML and both child-manifest YAML
++cases: exit `2`/`audit-registry: ERROR` instead of exit `1`/`FAILED`.
++
++### Group 3 — CAN-ID-1
++
++Selection: `tests/commands/test_rename.py tests/mcp/test_rename_document.py -k 'rename_invalid_ids_use_canonical or rename_invalid_id_is_rejected_before_project_discovery or build_rename_plan_uses_canonical or rename_document_invalid_ids_use_canonical or rejects_invalid_id_before_preflight'`
++
++| Snapshot | Collected | Deselected | Selected | Passed | Failed | Exit |
++|---|---|---|---|---|---|---|
++| `d5-glm-post` | 75 | 51 | 24 | 24 | 0 | 0 |
++| `d5-glm-pre` | 75 | 51 | 24 | 0 | 24 | 1 |
++
++```bash
++# post-fix (expect pass)
++cd .venv/d5-glm-post
++../bin/python -B -m pytest tests/commands/test_rename.py tests/mcp/test_rename_document.py \
++  -k 'rename_invalid_ids_use_canonical or rename_invalid_id_is_rejected_before_project_discovery or build_rename_plan_uses_canonical or rename_document_invalid_ids_use_canonical or rejects_invalid_id_before_preflight' \
++  --cache-clear -v
++# → 24 passed, 51 deselected
++
++# pre-fix (expect nonzero)
++cd .venv/d5-glm-pre
++../bin/python -B -m pytest tests/commands/test_rename.py tests/mcp/test_rename_document.py \
++  -k 'rename_invalid_ids_use_canonical or rename_invalid_id_is_rejected_before_project_discovery or build_rename_plan_uses_canonical or rename_document_invalid_ids_use_canonical or rejects_invalid_id_before_preflight' \
++  --cache-clear -v
++# → 24 failed, 51 deselected, exit 1
++```
++
++Pre-fix behavioral failures: CAN-ID-1 — invalid old ID returned
++`old_id_not_found` (not `invalid_old_id`); invalid new ID used regex copy
++`new_id must match ^[A-Za-z0-9]...` instead of canonical `validate_document_id`
++message; invalid same-ID returned exit `0`/`nothing_to_do` (the false-green);
++CLI returned exit `1` instead of canonical exit `2`; MCP returned
++`E_INVALID_ID`/`E_DOCUMENT_NOT_FOUND` instead of `E_USER_INPUT`; MCP preflight
++ran before ID validation (`AssertionError: preflight must not run for invalid
++IDs`); `build_rename_plan` reported `old_id_not_found` and accepted the
++same-ID no-op for invalid operands.
++
++## Regression check
++
++### Full smoke suite (post-fix)
++
++| Smoke check | Result | Evidence |
++|---|---|---|
++| Full `tests/` suite in `d5-glm-post` | PASS — 1720 passed, 1 deprecation warning, exit 0 | direct-run |
++
++```bash
++cd .venv/d5-glm-post
++../bin/python -m pytest tests/ -q -p no:cacheprovider
++# → 1720 passed, 1 warning in 96.60s, exit 0
++```
++
++### Lifecycle worktree checks
++
++| Check | Command | Result | Evidence |
++|---|---|---|---|
++| Registry local validation | `python3 <redacted:secret>` | PASS — `audit-registry: PASS`, exit 0 | direct-run |
++| Registry external parity | `python3 <redacted:secret> --require-external-parity` | PASS — `audit-registry: PASS, mode: local+external`, exit 0 | direct-run |
++| Changed-path scope | `bash .<redacted:secret> --manifest <redacted:secret> --base bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95` | PASS — `OK (598 changed path(s) within scope)`, exit 0 | direct-run |
++| Manifest conformance | `scripts/llm-dev verify <redacted:secret>` | PASS — `PASSED manifest-conformance (4/4 checks)`, exit 0 | direct-run |
++| `git diff --check HEAD` | `git diff --check HEAD` | PASS — exit 0 | direct-run |
++| `git diff --check` (D.2 base) | `git diff --check <redacted:secret>` | PASS — exit 0 | direct-run |
++
++### Cardinality assertions
++
++| Cardinality assertion | Result | Evidence |
++|---|---|---|
++| Registry contains exactly 100 findings | PASS — `100` | direct-run |
++| I0 exists (`b6f89d77...`) | PASS — exit 0 | direct-run |
++| I1 exists (`05b090d5...`) | PASS — exit 0 | direct-run |
++| I2 exists (`311b60b6...`) | PASS — exit 0 | direct-run |
++| Forbidden paths absent | PASS — exit 0 | direct-run |
++
++Narrative: the scope-recovery commit `737fe27` added only `ontos/commands/rename.py`
++to `scope.allowed_paths` (manifest line 86) without amending `311b60b`; the
++changed-path gate reports 598 paths within scope (the delta from the D.4
++summary's 559 reflects post-recovery D.5 review files added under the
++`<redacted:secret>/**` pattern).
++
++## Scope-lock check
++
++- Paths touched outside allowed set: **none.** All implementation and test
++  changes fall within the manifest's `scope.allowed_paths` or the
++  `<redacted:secret>/**` pattern.
++- The five target implementation files (`ontos/commands/activate.py`,
++  `ontos/core/config.py`, `ontos/commands/rename.py`,
++  `ontos/mcp/rename_tool.py`, `<redacted:secret>`)
++  are all explicitly listed in `scope.allowed_paths` (lines 78, 92, 86, 111,
++  119).
++
++## D4-INFRA-1 — framework integration blocker (verified directly)
++
++The D.4 fix summary halts on D4-INFRA-1: `verify-fix-summary-regressions.sh`
++hard-binds its bundle, registry,
+[0m
+[0m$ [0mecho "=== product/test working-tree cleanliness ==="; git status --porcelain=v1 --untracked-files=no -- ontos/ scripts/ tests/; echo "ONTOREXIT=$?"; echo "--- (empty above = clean) ---"; echo "=== full status for context ==="; git status --short --branch | head -5
+=== product/test working-tree cleanliness ===
+ONTOREXIT=0
+--- (empty above = clean) ---
+=== full status for context ===
+## <redacted:secret>
+ M Ontos_Context_Map.md
+ M <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+[0m
+[0m$ [0mecho "=== registry LOCAL ==="; python3 <redacted:secret>; echo "REG_LOCAL_EXIT=$?"
+=== registry LOCAL ===
+audit-registry: PASS
+mode: local
+original findings: 91 (P0=1, P1=27, P2=63)
+original status: committed_fixed=2, code_fixed_evidence_pending=1, implemented_committed_pending=40, partial_committed_pending=7, confirmed_open=41
+revalidation findings: 9
+REG_LOCAL_EXIT=0
+[0m
+[0m$ [0mecho "=== EH-15-A probe 1 (manifest-mode, fail-open check) ==="; bash .<redacted:secret> --manifest <redacted:secret>; echo "EH15_PROBE1_EXIT=$?"
+=== EH-15-A probe 1 (manifest-mode, fail-open check) ===
+verify-fix-summary-regressions: manifest not found: <redacted:secret>
+EH15_PROBE1_EXIT=2
+[0m
+[0m$ [0mecho "=== changed-path scope bf91b42 ==="; bash .<redacted:secret> --manifest <redacted:secret> --base bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95; echo "SCOPE_EXIT=$?"
+=== changed-path scope bf91b42 ===
+verify-changed-path-scope: OK (624 changed path(s) within scope)
+SCOPE_EXIT=0
+[0m
+[0m$ [0mecho "=== EH-15-A probe 2 (direct fix-summary path) ==="; bash .<redacted:secret> <redacted:secret>; echo "EH15_PROBE2_EXIT=$?"
+=== EH-15-A probe 2 (direct fix-summary path) ===
+verify-fix-summary-regressions: cannot read <redacted:secret>
+EH15_PROBE2_EXIT=2
+[0m
+[0m$ [0mecho "=== locate lifecycle scripts + receipt inventory ==="; ls .llm-dev/framework/scripts/ 2>/dev/null | head -40; echo "---verify-lifecycle candidates---"; ls scripts/ 2>/dev/null; echo "---receipt inventory---"; ls <redacted:secret>-*.yaml 2>/dev/null
+=== locate lifecycle scripts + receipt inventory ===
+_lib
+append-supplemental-review.sh
+check-handoff.sh
+check-meta-orchestrator-handoff.sh
+clean-tree-scoped.sh
+cli-probe.sh
+dispatch-family-review.sh
+emit-goal-card.py
+emit-strict-p3-commands.sh
+generate-overlays.sh
+grep-code-only.sh
+grep-forbidden-symbols.sh
+install-adopter.sh
+llm-dev
+model-availability-probe.sh
+model-capability-assess.py
+post-rebase-tracker-restamp.sh
+review-seats.sh
+setup-neuralwatt-creds.sh
+verify-adopter.sh
+verify-advisory-stress-test.sh
+verify-all.sh
+verify-artifact-paths.sh
+verify-authoring-constraints.py
+verify-blind-review.sh
+verify-c4-shadow-equivalence.sh
+verify-capability.sh
+verify-changed-path-scope.sh
+verify-circuit-breaker.sh
+verify-cleanliness-scope.sh
+verify-coverage.sh
+verify-cross-repo-dependencies.sh
+verify-d6-gate.sh
+verify-dispatch-shape.sh
+verify-eh15b-must-fire-corpus.sh
+verify-family-dispatch.sh
+verify-fix-summary-regressions.sh
+verify-frontmatter.sh
+verify-gate-categories.sh
+verify-gate-commands.sh
+---verify-lifecycle candidates---
+__pycache__
+check_release_artifact.py
+llm-dev
+validate-audit-remediation-registry.py
+---receipt inventory---
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+[0m
+[0m$ [0mecho "=== manifest conformance ==="; scripts/llm-dev verify <redacted:secret>; echo "MANIFEST_EXIT=$?"
+=== manifest conformance ===
+verify-adopter: validating /<redacted:secret> against 4 checks
+verify-adopter: NOTE — manifest conformance only; does NOT prove
+                lifecycle execution. For strict-P3 receipt verification,
+                run: scripts/llm-dev verify-lifecycle <manifest>
+
+::: verify-schema.sh --manifest <manifest> :::
+verify-schema: validating /<redacted:secret> against /<redacted:secret>
+ok -- validation done
+verify-schema: OK (1 manifests validated)
+
+::: verify-p3.sh --manifest <manifest> :::
+verify-p3: OK — all manifests satisfy strict P3 (user-facing extension checked on 1 of 1 manifests)
+verify-p3: project-ontos-audit-rebaseline-remediation: user_facing=true -> Product seats required on B.1 + B.2 + D.2 (BOTH design rounds); run scripts/review-seats.sh /<redacted:secret> for the full seat table
+
+::: verify-gate-categories.sh --manifest <manifest> :::
+verify-gate-categories: OK (all six categories covered)
+
+::: verify-artifact-paths.sh --manifest <manifest> :::
+verify-artifact-paths: OK (canonical_verdict / family_verdict / verification / product_verdict placeholders valid across 1 manifests)
+
+-----------------------------------------------------------------
+verify-adopter: PASSED manifest-conformance (4/4 checks against /<redacted:secret>)
+                manifest-only — does NOT prove lifecycle execution.
+                Run: scripts/llm-dev verify-lifecycle <manifest> for strict-P3 proof.
+MANIFEST_EXIT=0
+[0m
+[0m$ [0mecho "=== registry EXTERNAL parity ==="; python3 <redacted:secret> --require-external-parity; echo "REG_EXT_EXIT=$?"
+=== registry EXTERNAL parity ===
+audit-registry: PASS
+mode: local+external
+original findings: 91 (P0=1, P1=27, P2=63)
+original status: committed_fixed=2, code_fixed_evidence_pending=1, implemented_committed_pending=40, partial_committed_pending=7, confirmed_open=41
+revalidation findings: 9
+REG_EXT_EXIT=0
+[0m
+[0m→ [0mRead .<redacted:secret>
+[0m
+[0m$ [0mecho "=== llm-dev wrapper ==="; cat scripts/llm-dev 2>/dev/null | head -60; echo "=== help for verify-lifecycle ==="; scripts/llm-dev verify-lifecycle --help 2>&1 | head -40; echo "VL_HELP_EXIT=$?"
+=== llm-dev wrapper ===
+#!/usr/bin/env bash
+# llm-dev — repo-local adopter wrapper for llm-dev-framework (v1.5.0+).
+#
+# This script is copied verbatim into adopter repos at scripts/llm-dev
+# by `scripts/install-adopter.sh`. It resolves the framework checkout
+# from .llm-dev/config.yaml so agents never need a hard-wired absolute
+# framework path.
+#
+# Commands:
+#   doctor                                 — environment + config health check
+#                                            accepts --intent for Gemini cutoff advisories
+#   new <deliverable-id>                   — scaffold manifest + tracker
+#   verify <manifest-path>                 — run framework verify-adopter.sh
+#                                            (manifest conformance only;
+#                                            does NOT prove lifecycle
+#                                            execution or reviewer dispatch)
+#   verify-lifecycle <manifest-path>       — run framework verify-lifecycle.sh
+#                                            in --mode strict-p3 by default;
+#                                            v1.8.0+ accepts --mode
+#                                            provider-limited-fallback for
+#                                            honest fallback verification
+#                                            (issue #5 + issue #10)
+#   re-adjudication list|verify <manifest> — v1.8.0+ inspect or validate
+#                                            the manifest's
+#                                            re_adjudication_queue[]
+#                                            (issue #10)
+#   record-fallback-receipt --manifest ...  — append a hash-bound
+#                                            provider-limited fallback
+#                                            receipt for a declared
+#                                            blocked family/provider
+#   rebind-artifact --result ...           — validate and rebind a dispatch
+#                                            result row to a moved artifact
+#   repair-redispatch --manifest ...       — mark redispatch supersession
+#                                            and optionally freeze shared
+#                                            captures to capture-specific
+#                                            paths
+#   post-merge --pr ... --branch ...       — reconcile/report PR branch
+#                                            reachability after merge
+#   review-chain report <manifest>         — non-gating review-chain depth
+#                                            report
+#   verify-live-docs [--policy <path>]     — stale live-doc phrase sweep
+#   verify-authoring-constraints ...       — v1.10.3 scoped authoring
+#                                            scanner
+#   verify-post-d6-scope ...               — v1.10.3 post-D.6 drift gate
+#   verify-handoff-base ...                — v1.10.3 stale-base preflight
+#   strict-p3-commands <manifest-path>      — v1.9.0+ emit canonical final
+#                                            verification commands for a
+#                                            strict-P3 lifecycle
+#   goal-card <kind> ...                    — emit a bounded, non-evidence
+#                                            goal-mode launch card for a
+#                                            human orchestrator
+#   capability assess ...                  — run advisory model capability
+#                                            assessment for route tuples
+#   generate-overlays --target ... --out ... — emit non-evidence runtime
+#                                            overlay packages for skills,
+#                                            plugins, and extensions
+#                                            (codex|claude|gemini|agy|all)
+#   update --to latest|vX.Y.Z|<ref>        — re-pin framework checkout
+#   agents install                         — insert/refresh AGENTS.md block
+#
+=== help for verify-lifecycle ===
+usage: scripts/llm-dev verify-lifecycle [--mode strict-p3|provider-limited-fallback]
+                                         [--allow-warn]
+                                         [--explain-recovery]
+                                         <manifest-path>
+
+Run scripts/verify-lifecycle.sh against <manifest-path>. Default mode
+is strict-p3. v1.8.0 (Issue #10) adds --mode provider-limited-fallback
+for honest fallback verification (mutually exclusive with --allow-warn).
+
+With --explain-recovery, each failure is tagged with a recovery class
+(v1.7.0: missing-receipt,
+ failed-dispatch-raw-verdict-candidate-available,
+ receipt-present-artifact-frontmatter-invalid,
+ stderr-throttle-valid-artifact, artifact-summary-stub,
+ true-no-evidence, dispatch-attestation-failed,
+ parallelism-attestation-missing; v1.8.0 adds
+ blocked-family-evidence-missing, fallback-receipt-missing,
+ re-adjudication-missing, mechanical-stub-only,
+ provider-limited-fallback-incomplete) and a next-action hint.
+VL_HELP_EXIT=0
+[0m
+[0m$ [0mecho "=== probe1 abs-path manifest ==="; bash .<redacted:secret> --manifest "$<redacted:secret>"; echo "P1ABS_EXIT=$?"; echo "=== probe2 abs-path fix-summary ==="; bash .<redacted:secret> "$<redacted:secret>"; echo "P2ABS_EXIT=$?"
+=== probe1 abs-path manifest ===
+verify-fix-summary-regressions: OK (no D.4 fix-summary exists at <redacted:secret>)
+P1ABS_EXIT=0
+=== probe2 abs-path fix-summary ===
+verify-fix-summary-regressions: FAILED
+  - /<redacted:secret>: row 1 finding 'CAN-ACT-1': fixture 'tests/commands/test_agentic_activation_resilience.py' does not exist
+  - /<redacted:secret>: row 1 finding 'CAN-ACT-1': fixture 'tests/commands/test_agentic_activation_resilience.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 2 finding 'CAN-ACT-2': fixture 'tests/commands/test_agentic_activation_resilience.py' does not exist
+  - /<redacted:secret>: row 2 finding 'CAN-ACT-2': fixture 'tests/commands/test_agentic_activation_resilience.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 2 finding 'CAN-ACT-2': fixture 'tests/core/test_config_phase3.py' does not exist
+  - /<redacted:secret>: row 2 finding 'CAN-ACT-2': fixture 'tests/core/test_config_phase3.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 3 finding 'CAN-CP-1': fixture 'tests/test_audit_remediation_registry_validator.py' does not exist
+  - /<redacted:secret>: row 3 finding 'CAN-CP-1': fixture 'tests/test_audit_remediation_registry_validator.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 4 finding 'CAN-CP-2': fixture 'tests/test_audit_remediation_registry_validator.py' does not exist
+  - /<redacted:secret>: row 4 finding 'CAN-CP-2': fixture 'tests/test_audit_remediation_registry_validator.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 5 finding 'CAN-CP-3': fixture 'tests/test_audit_remediation_registry_validator.py' does not exist
+  - /<redacted:secret>: row 5 finding 'CAN-CP-3': fixture 'tests/test_audit_remediation_registry_validator.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 6 finding 'CAN-ID-1': fixture 'tests/commands/test_rename.py' does not exist
+  - /<redacted:secret>: row 6 finding 'CAN-ID-1': fixture 'tests/commands/test_rename.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 6 finding 'CAN-ID-1': fixture 'tests/mcp/test_rename_document.py' does not exist
+  - /<redacted:secret>: row 6 finding 'CAN-ID-1': fixture 'tests/mcp/test_rename_document.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+P2ABS_EXIT=1
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m
+[0m$ [0mecho "=== verify-lifecycle strict-p3 ==="; scripts/llm-dev verify-lifecycle --explain-recovery <redacted:secret> 2>&1 | tail -50; echo "VLIFE_EXIT=${PIPESTATUS[0]}"
+=== verify-lifecycle strict-p3 ===
+verify-lifecycle: FAIL — strict-P3 lifecycle verification rejected (5 issue(s))
+verify-lifecycle: problem groups:
+  - dispatch-entry-not-found: 1
+  - dispatch-verifier-output: 1
+  - dispatch-verify-failed: 1
+  - missing-receipt: 1
+  - route-redaction: 1
+  ↳ dispatch-verify-failed: receipt ('D.5', 'verifier', 'claude') round=1 intent=D.5-dispatch-intent.yaml exit=1
+  ↳ dispatch-verifier-output: FAIL result-status:    audit-rb-D5-gv — result.status=failed
+FAIL result-status:    audit-rb-D5-glv — result.status=failed
+verify-family-dispatch: FAILED — 2 violation(s) across 3 dispatches
+  ↳ missing-receipt: phase=D.5 role=verifier family=gemini
+  ↳ route-redaction: receipt ('D.5', 'verifier', 'glm') round=1 secret-redaction: unredacted high-entropy token in receipt ('D.5', 'verifier', 'glm') artifact
+  ↳ dispatch-entry-not-found: receipt ('D.5', 'verifier', 'glm') round=1 entry status='completed' not in recognized strict completion set ['completed']
+
+verify-lifecycle: --explain-recovery classifications:
+  recovery_class: true-no-evidence
+    problem: dispatch-verify-failed: receipt ('D.5', 'verifier', 'claude') round=1 intent=D.5-dispatch-intent.yaml exit=1
+    next_action: Investigate the problem; the strict-P3 path has no recorded evidence for this failure class. Consider whether the manifest or inventory is misconfigured before re-dispatching.
+  recovery_class: dispatch-attestation-failed
+    problem: dispatch-verifier-output: FAIL result-status:    audit-rb-D5-gv — result.status=failed
+FAIL result-status:    audit-rb-D5-glv — result.status=failed
+verify-family-dispatch: FAILED — 2 violation(s) across 3 dispatches
+    next_action: The dispatch-bundle (intent + result) verification failed. Run scripts/verify-family-dispatch.sh --require-complete with the same intent/result pair for the precise diagnostic, and re-dispatch if a hash mismatch is found.
+  recovery_class: missing-receipt
+    problem: missing-receipt: phase=D.5 role=verifier family=gemini
+    next_action: Re-dispatch the missing (phase, role, family) tuple via scripts/dispatch-family-review.sh --append-receipt <inventory>. Under --mode provider-limited-fallback, declare the family in harness_blocked_families[] with hash-bound evidence to discharge this gap honestly.
+  recovery_class: true-no-evidence
+    problem: route-redaction: receipt ('D.5', 'verifier', 'glm') round=1 secret-redaction: unredacted high-entropy token in receipt ('D.5', 'verifier', 'glm') artifact
+    next_action: Investigate the problem; the strict-P3 path has no recorded evidence for this failure class. Consider whether the manifest or inventory is misconfigured before re-dispatching.
+  recovery_class: true-no-evidence
+    problem: dispatch-entry-not-found: receipt ('D.5', 'verifier', 'glm') round=1 entry status='completed' not in recognized strict completion set ['completed']
+    next_action: Investigate the problem; the strict-P3 path has no recorded evidence for this failure class. Consider whether the manifest or inventory is misconfigured before re-dispatching.
+verify-lifecycle: status=review_pending
+VLIFE_EXIT=
+[0m
+[0m$ [0mecho "=== FOCUSED current-head tests (6 addendum files) ==="; .venv/bin/python -m pytest tests/core/test_frontmatter_edit_pipeline.py tests/test_session_context.py <redacted:secret> tests/test_ci_release_workflows.py tests/test_test_isolation.py tests/commands/test_query_parity.py tests/commands/test_verify_parity.py tests/commands/test_scaffold_parity.py tests/mcp/test_context_map.py -p no:cacheprovider -q 2>&1 | tail -20; echo "FOCUSED_EXIT=${PIPESTATUS[0]}"
+=== FOCUSED current-head tests (6 addendum files) ===
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0
+rootdir: /<redacted:secret>
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.14.1
+collected 104 items
+
+tests/core/test_frontmatter_edit_pipeline.py ..............              [ 13%]
+tests/test_session_context.py .......................................... [ 53%]
+...........                                                              [ 64%]
+<redacted:secret> ..............                [ 77%]
+tests/test_ci_release_workflows.py ......                                [ 83%]
+tests/test_test_isolation.py ....                                        [ 87%]
+tests/commands/test_query_parity.py .....                                [ 92%]
+tests/commands/test_verify_parity.py ...                                 [ 95%]
+tests/commands/test_scaffold_parity.py ...                               [ 98%]
+tests/mcp/test_context_map.py ..                                         [100%]
+
+============================= 104 passed in 1.62s ==============================
+FOCUSED_EXIT=
+[0m
+[0m$ [0mecho "=== FULL tests/ suite ==="; .venv/bin/python -m pytest tests/ -q -p no:cacheprovider 2>&1 | tail -8; echo "FULL_EXIT=${PIPESTATUS[0]}"
+=== FULL tests/ suite ===
+
+=============================== warnings summary ===============================
+tests/ui/test_json_output.py::TestConvenienceFunctions::test_emit_error
+  /<redacted:secret>:148: DeprecationWarning: emit_error() is deprecated; use emit_command_error().
+    emit_error("Failed", "E999")
+
+-- Docs: https://<redacted:secret>
+================= 1740 passed, 1 warning in 113.18s (0:01:53) ==================
+FULL_EXIT=
+[0m
+[0m• [0mFind receipt-inventory schema + verify-lifecycle script[90m Explore Agent[0m
+[93m[1m! [0mpermission requested: external_directory (/tmp/*); auto-rejecting
+[0m✗ [0mecho "=== clean exit capture: verify-lifecycle ==="; scripts/llm-dev verify-lifecycle <redacted:secret> >/tmp/d5-vlife.txt 2>&1; echo "VLIFE_EXIT=$?"; echo "--- full output ---"; cat /tmp/d5-vlife.txt failed
+[91m[1mError: [0mThe user rejected permission to use this specific tool call.
+[0m✓ [0mFind receipt-inventory schema + verify-lifecycle script[90m Explore Agent[0m
+[0m
+[0m$ [0mecho "=== clean exit capture: focused ==="; .venv/bin/python -m pytest tests/core/test_frontmatter_edit_pipeline.py tests/test_session_context.py <redacted:secret> tests/test_ci_release_workflows.py tests/test_test_isolation.py tests/commands/test_query_parity.py tests/commands/test_verify_parity.py tests/commands/test_scaffold_parity.py tests/mcp/test_context_map.py -p no:cacheprovider -q >/dev/null 2>&1; echo "FOCUSED_EXIT=$?"; echo "=== clean exit capture: full suite ==="; .venv/bin/python -m pytest tests/ -q -p no:cacheprovider >/tmp/d5-full-out.txt 2>&1; echo "FULL_EXIT=$?"; echo "--- tail of full output ---"; tail -4 /tmp/d5-full-out.txt
+=== clean exit capture: focused ===
+FOCUSED_EXIT=0
+=== clean exit capture: full suite ===
+FULL_EXIT=0
+--- tail of full output ---
+    emit_error("Failed", "E999")
+
+-- Docs: https://<redacted:secret>
+================= 1740 passed, 1 warning in 130.19s (0:02:10) ==================
+[0m

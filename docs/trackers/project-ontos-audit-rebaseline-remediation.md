@@ -23,6 +23,8 @@ reuse or broaden the narrower #146 or #147 deliverable lifecycles.
 | Phase C close snapshot (I1) | `05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0` |
 | D.4 functional-fix snapshot (I2) | `311b60b6e86abe6d0b5a7ac61e16d07049387707` |
 | Post-falsification functional-fix snapshot (I3) | `859ecf778389aaa67f69146d7ae8cd2564445af5` |
+| PR-feedback verification target | `388845cbd0cfc6ee8a9b2f61f7ebe5f14eff70a2` |
+| Post-D.5 mechanical delta | Version surfaces bumped to `4.7.1`; `.coverage.*` ignored; no certification claim extends beyond `388845c` |
 | Integration target branch | `codex/audit-rebaseline-remediation` |
 | Lifecycle worktree branch | `codex/audit-rebaseline-remediation-lifecycle` |
 | Dedicated worktree | `/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation` |
@@ -41,6 +43,14 @@ This tracker section and the matching session-log section are the auditable
 sequence, not the rigor: Phase A still authors the spec; B.1 reviews the spec
 and I0; B.2 re-reviews the corrected spec; C reconciles I0 against the approved
 spec; and the complete D review chain runs through D.5.
+
+### Maintainer handoff — 2026-07-11
+
+The maintainer subsequently authorized a fresh three-family D.5 retry against
+`388845c`, D.6, and the exact provider-limited fallback label if the same
+v2.0.1 defects persisted. That authorization permits a withheld D.6 and the
+warning-only fallback record; it does not authorize merge, tag, publication,
+release, issue closure, receipt fabrication, or a strict-P3 waiver.
 
 ## Certification boundary
 
@@ -62,8 +72,10 @@ Explicit non-claims:
 - Its receipts do **not** substitute for #146 or #147 receipts and do not
   certify any #146–#157 issue lifecycle individually.
 - It does **not** complete the registry's confirmed-open or partial rows.
-- It does **not** authorize D.6, Phase E, merge, tag, TestPyPI/PyPI publication,
-  release, GitHub issue closure, or checkbox completion.
+- The original gate did **not** authorize D.6. The 2026-07-11 maintainer
+  handoff later authorized a D.6 attempt, which is withheld rather than passed.
+  Phase E, merge, tag, TestPyPI/PyPI publication, release, GitHub issue closure,
+  and checkbox completion remain unauthorized.
 - The two user-owned documents excluded from I0 remain outside lifecycle scope:
   `docs/specs/project-ontos-rationale-capture-template-proposal.md` and
   `docs/zeta.md`.
@@ -136,10 +148,23 @@ and requires fresh D.5 verification.
 | D.2 — implementation board | Claude peer; Gemini adversarial; GLM alignment; Claude Product | **complete; strict inventory verified 4/4** | Complete hash-bound code-review bundle and verdicts, including Template-05 falsification | Fresh strict board: Claude Peer `Request changes`, Gemini adversarial `Request changes`, GLM alignment `Approve`, Claude Product `Approve`; blind-review and family-dispatch verification pass. Strict lifecycle now reports only the three expected D.5 receipt gaps. Earlier attempt inventory/captures remain preserved without editing or reconstruction. |
 | D.3 — code-review consolidation | Independent Codex meta-consolidator | **complete — Needs Fixes** | Canonical blocker disposition | `D.3-verdict.md`; zero preserved blockers and six directly reproduced should-fix findings: CAN-ACT-1/2, CAN-CP-1/2/3, CAN-ID-1. Strict D.2 dispatch recheck and Gemini blind-packet verification pass; independent Gemini dispatch hash attestation matches. |
 | D.4 — fixes | Codex fix-author | **functional fixes complete at I3; halted on D4-INFRA-1** | Per-ID fix summary, test-first evidence, scope proof, and honest framework-blocker disposition | I2 closes all six D.3 findings. Loose falsification added LF-ID-1/LF-CP-1; I3 `859ecf7` closes both. Full suite: `1725 passed`. Framework v2.0.1 EH-15-A remains fail-open/unavailable, so D.4 is not certified. |
-| D.5 — independent verification | Claude, Gemini, and GLM verifiers | **halted — review_pending** | Each preserved blocker reproduced pre-fix and closed post-fix; strict receipts complete | Claude and GLM directly verified the six I2 fixes; Gemini produced no valid artifact/receipt. GLM provenance repair failed wrapper promotion. I3 postdates those reviews, so no strict D.5 claim is made. See `D.5-orchestrator-status.md`. |
+| D.5 — independent verification | Claude, Gemini, and GLM verifiers | **provider-limited fallback complete; strict P3 not certified** | Fresh current-head artifacts/receipts or preserved provider blockage; strict gates remain fail-closed | At exact target `388845c`, Claude and GLM directly verified the current head (`104` focused; `1740` full) and landed genuine round-2 artifacts/receipts. Gemini's genuine retry failed exit `55` under the retired individual client. EH-15-A, receipt-schema drift, GLM receipt-source/backlink rejection, and `status=review_pending` persist. See `D.5-orchestrator-status.md`. |
 | Loose falsification review | Fresh Codex session; provider attempts recorded separately | **complete — two findings reproduced and fixed at I3** | Reproduce-and-loop any valid catch; report discovery result without certification language | `loose-falsification-codex.md`; five pre-fix failures, five post-fix passes; complete suite `1725 passed`. |
-| D.6 — final approval | Maintainer/orchestrator | **not authorized in this run** | Requires a separate decision after D.5 and falsification | Out of requested scope |
-| E — retrospective | Assigned only after D.6/merge authority | **not authorized in this run** | Post-approval lifecycle closeout | Out of requested scope |
+| D.6 — final approval | Maintainer/orchestrator | **executed — WITHHELD** | A passing gate requires strict-P3 or a mechanically complete framework fallback; neither is available | `final-approval.md` passes only the framework's `--allow-gated`/withheld shape. It contains no passing gate rows and defers every release action. |
+| E — retrospective | Assigned only after a passing D.6/merge authority | **not run** | Post-approval lifecycle closeout | D.6 is withheld; Phase E is not authorized. |
+
+## Merge and rollback recommendation
+
+Recommend **split before release/merge**. The branch contains 55 commits and
+605 committed paths across the registry's v4.7.1, v4.8.0, and v4.9.0 programs;
+13 implementation paths have multi-release ownership. There is no honest
+whole-file cherry-pick for the hotfix, so extraction requires hunk-level
+decomposition plus fresh tests and lifecycle review. Put the `4.7.1` release
+metadata on that extracted hotfix slice.
+
+If the maintainer nevertheless chooses a whole-PR merge, require a merge commit
+and record the atomic rollback command `git revert -m 1 <merge-commit>`. Avoid a
+rebase merge: it destroys the only clean whole-PR revert boundary.
 
 ### D.1 minor dispositions
 

@@ -1,0 +1,121 @@
+[0m
+> build · glm-5.2
+[0m
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>
+[0m
+[0m$ [0mgit rev-parse HEAD && echo "---STATUS---" && git status --porcelain
+388845cbd0cfc6ee8a9b2f61f7ebe5f14eff70a2
+---STATUS---
+ M Ontos_Context_Map.md
+ M <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+[0m
+[0m✱ [0mGlob "docs/reviews/**/D.{3,4}*.md"[90m 11 matches[0m
+[0m✱ [0mGlob "docs/reviews/**/PR-161*.md"[90m 1 match[0m
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m
+[0m$ [0mls -la <redacted:secret>.* && echo "---DIFFSTAT---" && git diff --stat 859ecf7..388845c | tail -5 && echo "---PRODUCT/TEST STATUS---" && git status --porcelain -- ontos tests scripts manifests 2>/dev/null | head -20 && echo "done"
+-rw-r--r--@ 1 jonathanoh  wheel   348 Jul 11 11:29 <redacted:secret>
+-rw-r--r--@ 1 jonathanoh  wheel  4676 Jul 11 11:29 <redacted:secret>
+---DIFFSTAT---
+ tests/mcp/test_context_map.py                      |   11 +-
+ tests/test_ci_release_workflows.py                 |   31 +
+ <redacted:secret>         |   31 +-
+ tests/test_session_context.py                      |   28 +-
+ 30 files changed, 3492 insertions(+), 65 deletions(-)
+---PRODUCT/TEST STATUS---
+ M <redacted:secret>
+done
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m
+[0m$ [0mecho "===DIFFCHECK===" && git diff --check bf91b42..388845c; echo "exit=$?"; echo "===NAMEONLY859===" && git diff --name-only 859ecf7..388845c; echo "===NAMEONLYBF91===" && git diff --name-only bf91b42..388845c | wc -l
+===DIFFCHECK===
+exit=0
+===NAMEONLY859===
+.github/workflows/ci.yml
+.gitignore
+AGENTS.md
+Ontos_Context_Map.md
+<redacted:secret>
+docs/reference/Migration_v3_to_v4.md
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+ontos/core/context.py
+ontos/core/frontmatter_edit.py
+ontos/io/files.py
+ontos/io/yaml.py
+tests/commands/test_query_parity.py
+tests/commands/test_scaffold_parity.py
+tests/commands/test_verify_parity.py
+tests/conftest.py
+tests/core/test_frontmatter_edit_pipeline.py
+tests/mcp/test_context_map.py
+tests/test_ci_release_workflows.py
+<redacted:secret>
+tests/test_session_context.py
+===NAMEONLYBF91===
+     605
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>[90m [offset=686, limit=340][0m
+[0m→ [0mRead <redacted:secret>[90m [limit=40, offset=1026][0m
+[0m
+[0m# [0mTodos
+[✓] Read framework templates + source docs + preceding capture findings
+[✓] Confirm HEAD=388845c, clean product/test tree, diff --check, scope
+[•] Write D.5-current-glm.md artifact using preceding attempt's findings (short SHAs only, no tokens/capture-IDs)
+[ ] Print exact completion notice
+[0m
+[0m← [0mWrite <redacted:secret>
+Wrote file successfully.
+[0m
+[0m# [0mTodos
+[✓] Read framework templates + source docs + preceding capture findings
+[✓] Confirm HEAD=388845c, clean product/test tree, diff --check, scope
+[✓] Write D.5-current-glm.md artifact using preceding attempt's findings (short SHAs only, no tokens/capture-IDs)
+[✓] Print exact completion notice
+[0m

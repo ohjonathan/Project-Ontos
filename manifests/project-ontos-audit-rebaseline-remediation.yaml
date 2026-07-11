@@ -6,9 +6,43 @@ summary: "Review and certify the frozen audit-rebaseline integration snapshot wi
 lifecycle_mode: framework lifecycle
 deliverable_type: closeout-proof
 user_facing: true
-fallback_evidence_mode: strict_p3
+fallback_evidence_mode: provider_limited_fallback
 require_lifecycle_dispatch_bundles: true
 strict_p3_required_phases: ["B.1", "D.2", "D.5"]
+
+harness_blocked_families:
+  - family: gemini
+    provider: google
+    affected_phases: ["D.5"]
+    affected_role: verifier
+    blockage_category: provider_policy
+    blockage_evidence_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-D5-current-gv.r2.c20260711T181904Z.15040.4f6b3ae8e1bd84cf814c460a5ca9950d.stderr.txt"
+    blockage_evidence_sha256: a679000b7c760893a6990750b02ccb92d4fffc5adbce5330a46127921813e656
+    first_observed: "2026-07-11T18:19:05Z"
+    retry_policy: "One genuine direct-Gemini retry was performed after the maintainer reported quota reset; the provider rejected the retired individual client with exit 55. No blind retry loop or cross-family relabeling is authorized."
+    fallback_route: "Warning-only current-head Claude and GLM verifier evidence; no substitute is represented as Gemini."
+    re_adjudication_owner: "Project Ontos Maintainers"
+    re_adjudication_ref: ra-pr161-d5-gemini-verifier
+
+provider_limited_review_exception:
+  scope: "PR #161 current-head D.5 Gemini verifier seat and the pinned v2.0.1 receipt-verifier defects only."
+  strict_p3_roles_unsatisfied: [verifier]
+  fallback_roles_used: [verifier]
+  evidence_type: framework_fallback_evidence
+  strict_p3_certified: false
+  authorization_ref: "Maintainer handoff dated 2026-07-11: use the documented provider-limited fallback after one genuine retry if v2.0.1 still halts."
+  caveat_text: "provider_limited_fallback_complete; strict P3 not certified; maintainer release actions deferred"
+
+re_adjudication_queue:
+  - id: ra-pr161-d5-gemini-verifier
+    artifact_under_judgment: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-claude.md"
+    blocked_family_ref: gemini
+    reason: "The current-head functional result is supported by Claude and GLM, but the independent Gemini verifier could not run because the provider rejected the retired individual client; the D.5 conclusion must be rerun under Gemini when access returns."
+    rerun_trigger: "A supported Gemini or AGY route with valid entitlement can produce a wrapper-verifiable Template-15 artifact."
+    owner: "Project Ontos Maintainers"
+    priority: blocking
+    expected_rerun_command: "Re-run audit-rb-D5-current-gv through dispatch-family-review.sh with the manifest-declared Gemini route and append a genuine receipt; then rerun family, receipt-schema, lifecycle, and D.6 gates."
+    status: pending
 
 implementation_sequencing:
   mode: code-first-user-gated
@@ -43,6 +77,7 @@ scope:
     - "docs/logs/2026-05-22_merge-pr-118-v4-5-closes-issues-115-116-117.md"
     - "docs/logs/2026-07-10_audit-rebaseline-remediation.md"
     - "docs/logs/2026-07-11_pr-161-fable-feedback-remediation.md"
+    - "docs/logs/2026-07-11_stabilize-context-map-alias-parity.md"
     - "docs/reference/Migration_v3_to_v4.md"
     - "docs/reference/Ontos_Manual.md"
     - "docs/retros/project-ontos-audit-doctor-rce-retro.md"
@@ -75,6 +110,7 @@ scope:
     - "manifests/project-ontos-audit-serializer-corruption.yaml"
     - "ontos/_hooks/pre-commit"
     - "ontos/_hooks/pre-push"
+    - "ontos/__init__.py"
     - "ontos/cli.py"
     - "ontos/command_registry.py"
     - "ontos/commands/activate.py"
@@ -403,8 +439,8 @@ required_dispatch_bundles:
     intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-strict-final-dispatch-intent.yaml"
     result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-strict-final-dispatch-result.yaml"
   - phase: "D.5"
-    intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-dispatch-intent.yaml"
-    result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-dispatch-result.yaml"
+    intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-dispatch-result.yaml"
 
 gate_prerequisites:
   - id: G-test-1
@@ -433,12 +469,14 @@ gate_prerequisites:
       expect: "exit-0"
   - id: G-verdict-1
     category: verdict-presence
-    description: "B.3 and D.3 canonical verdicts and all three D.5 verifier artifacts exist."
+    description: "B.3 and D.3 canonical verdicts and all three current-head D.5 verifier artifacts exist."
     verification:
       command: >-
         test -f docs/reviews/project-ontos-audit-rebaseline-remediation/B.3-verdict.md &&
         test -f docs/reviews/project-ontos-audit-rebaseline-remediation/D.3-verdict.md &&
-        test "$(find docs/reviews/project-ontos-audit-rebaseline-remediation -maxdepth 1 -type f -name 'D.5-*-verifier.md' | wc -l | tr -d ' ')" -eq 3
+        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-claude.md &&
+        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-gemini.md &&
+        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-glm.md
       expect: "exit-0"
   - id: G-verdict-2
     category: verdict-presence

@@ -1,0 +1,15 @@
+Exactly one H1 outside code fences — the other nine matches were shell comments inside fenced blocks. The artifact is well-formed.
+
+## Completion notice — D.5 / verifier / claude
+
+Wrote `docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-claude.md` (single worker file, as instructed). No commit, no staging, no agents spawned.
+
+**Verdict: `Request changes`** — the product target is clean; both framework defects are preserved as required further action.
+
+What I did this session: confirmed `git rev-parse HEAD` = `388845cbd0cfc6ee8a9b2f61f7ebe5f14eff70a2` and that working-tree differences are lifecycle evidence only (`docs/reviews/`, `manifests/`, `Ontos_Context_Map.md`) — `git status --porcelain -- ontos/ tests/ scripts/ .github/ pyproject.toml` returns 0 lines. I re-confirmed `git diff --check bf91b42..388845c` exits 0. I did not rerun the test suite, per the route instruction.
+
+I recovered my preceding attempt's analysis from its wrapper capture at `.raw/audit-rb-D5-current-cv.r2.c20260711T181904Z.15036.….raw.txt` (17,419 bytes), which contained the complete artifact bytes emitted on stdout inside a fenced block. That capture was my own direct-run verification session, so the findings and command results promoted into the worker file are direct-run evidence, not a prior-reviewer claim converted into my own. Worth flagging: the *later* capture (`182834Z`) is 0 bytes, so had the route promoted the most recent capture rather than the one that completed, it would have promoted nothing.
+
+The substance carried over unchanged. All six canonical D.3 findings, both loose-falsification findings, and all six current-head addendum rows verify at `388845c`; full suite `1740 passed`, registry parity passes locally and against live GitHub, changed-path scope `OK` at 624 paths, manifest conformance `4/4`. Approval is withheld on two framework defects reproduced at this exact head: **D4-INFRA-1**, where EH-15-A's manifest path *fails open* (exit 0 reporting "no D.4 fix-summary exists" while that file is tracked and present), and **D5-INFRA-2**, where the pinned framework's receipt schema rejects the `role: product` and `opencode_written_file_promoted` values its own Template 19 and dispatch tooling emit, with no framework command ever applying the schema to this inventory. Neither is closable from inside this repo. One new minor finding (**FW-3**): the addendum's PR161-FENCE row cites the wrong test file — the fix is real and covered, but the regressions live in `tests/core/test_frontmatter_edit_pipeline.py:44,70`, not the cited file.
+
+Shape checks: `scripts/llm-dev lint-artifact` exits 0 (`verdict_shaped (verdict: request_changes)`), one H1, `## Verdict` followed first by the bare canonical phrase `Request changes`. The artifact claims no D.6, strict-P3, merge, tag, or release.

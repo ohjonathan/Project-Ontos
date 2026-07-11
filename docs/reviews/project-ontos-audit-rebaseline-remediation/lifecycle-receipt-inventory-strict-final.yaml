@@ -507,6 +507,9 @@ receipts:
   meta_orchestrator_family: codex
   deliverable_author_family: codex
   dispatch_batch_id: audit-rb-D5-final-20260711
+  superseded_by_run_id: audit-rb-D5-current-cv.r2.c20260711T182834Z.76056.d3357043253aa45a9cc0e07e8a848f72-verifier
+  superseded_at: '2026-07-11T18:31:01Z'
+  supersession_reason: redispatch round 2
 - run_id: audit-rb-D5-glv.r1.c20260711T032919Z.90340.c4a1f3cbcf4257b0ef49360bb7253974-verifier
   dispatch_id: audit-rb-D5-glv
   capture_id: audit-rb-D5-glv.r1.c20260711T032919Z.90340.c4a1f3cbcf4257b0ef49360bb7253974
@@ -576,3 +579,110 @@ receipts:
       schema_version: 1
       status: passed
   dispatch_batch_id: audit-rb-D5-final-20260711
+  superseded_by_run_id: audit-rb-D5-current-glv.r2.c20260711T182834Z.76052.50cadf742c6495152a3e7a704d628b60-verifier
+  superseded_at: '2026-07-11T18:34:33Z'
+  supersession_reason: redispatch round 2
+- run_id: audit-rb-D5-current-cv.r2.c20260711T182834Z.76056.d3357043253aa45a9cc0e07e8a848f72-verifier
+  dispatch_id: audit-rb-D5-current-cv
+  capture_id: audit-rb-D5-current-cv.r2.c20260711T182834Z.76056.d3357043253aa45a9cc0e07e8a848f72
+  deliverable_id: project-ontos-audit-rebaseline-remediation
+  phase: D.5
+  round: 2
+  role: verifier
+  family: claude
+  actual_executed_family: claude
+  provider: claude
+  template_id: 15-verifier
+  template_version: 1.0.0
+  prompt_sha256: f99e72fa11b17e592c39b07809edc02d1b21cbedc71b0ff2097534b607e68cb9
+  input_artifact_sha256: f99e72fa11b17e592c39b07809edc02d1b21cbedc71b0ff2097534b607e68cb9
+  output_artifact_path: docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-claude.md
+  output_artifact_sha256: 0a05067d7da1f1f8941f5764700f1215d3c13331b799511d3d6a328dddacc9c2
+  transcript_or_log_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-D5-current-cv.r2.c20260711T182834Z.76056.d3357043253aa45a9cc0e07e8a848f72.raw.txt
+  stderr_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-D5-current-cv.r2.c20260711T182834Z.76056.d3357043253aa45a9cc0e07e8a848f72.stderr.txt
+  stderr_sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  started_at: '2026-07-11T18:28:35Z'
+  ended_at: '2026-07-11T18:31:01Z'
+  exit_code: 0
+  strict_p3_candidate: true
+  provider_limited_fallback: false
+  dispatch_intent_path: docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-dispatch-intent.yaml
+  dispatch_result_path: docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-dispatch-result.yaml
+  meta_orchestrator_family: codex
+  deliverable_author_family: codex
+  dispatch_batch_id: audit-rb-D5-current-r2
+  supersedes_run_ids:
+  - audit-rb-D5-cv.r1.c20260711T031309Z.38581.1154bf89c0d4283015dc2fb5d5971f6e-verifier
+  supersession_reason: redispatch round 2
+- run_id: audit-rb-D5-current-glv.r2.c20260711T182834Z.76052.50cadf742c6495152a3e7a704d628b60-verifier
+  dispatch_id: audit-rb-D5-current-glv
+  capture_id: audit-rb-D5-current-glv.r2.c20260711T182834Z.76052.50cadf742c6495152a3e7a704d628b60
+  deliverable_id: project-ontos-audit-rebaseline-remediation
+  phase: D.5
+  round: 2
+  role: verifier
+  family: glm
+  actual_executed_family: glm
+  provider: glm
+  template_id: 15-verifier
+  template_version: 1.0.0
+  prompt_sha256: 5dc1da0ab00c73633be37a42ba0a745c9680f373e24c8150adf3c34e3e04cef4
+  input_artifact_sha256: 5dc1da0ab00c73633be37a42ba0a745c9680f373e24c8150adf3c34e3e04cef4
+  output_artifact_path: docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-glm.md
+  output_artifact_sha256: cc51c2faaacac42d72e2c66ea94f759d9f5a8baf6b7d4af520ddb9e26de71d70
+  transcript_or_log_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-D5-current-glv.r2.c20260711T182834Z.76052.50cadf742c6495152a3e7a704d628b60.raw.txt
+  stderr_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-D5-current-glv.r2.c20260711T182834Z.76052.50cadf742c6495152a3e7a704d628b60.stderr.redacted.txt
+  stderr_sha256: 4912f045d14dbda8bb1a4ee1856c164cd0269e63f85724cd2016387e7a448856
+  started_at: '2026-07-11T18:28:35Z'
+  ended_at: '2026-07-11T18:34:33Z'
+  exit_code: 0
+  strict_p3_candidate: true
+  provider_limited_fallback: false
+  dispatch_intent_path: docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-dispatch-intent.yaml
+  dispatch_result_path: docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-dispatch-result.yaml
+  meta_orchestrator_family: codex
+  deliverable_author_family: codex
+  execution_cli: opencode
+  model_id: glm-5.2
+  serving_provider: neuralwatt
+  wire_protocol: openai-compatible
+  evidence_trust_tier: attested-third-party
+  opencode_model_ref: neuralwatt/glm-5.2
+  opencode_provider_id: neuralwatt
+  opencode_base_url_env: NEURALWATT_BASE_URL
+  opencode_api_key_env: NEURALWATT_API_KEY
+  endpoint_origin_redacted: true
+  endpoint_origin_hash: sha256:c0029dc16c79fb52971abbf65f3d94c7dcbdc7ebf8d7b1a8ab454f05fa17f95f
+  endpoint_origin_label: neuralwatt
+  command_env_redacted:
+    NEURALWATT_API_KEY: <redacted:env>
+    NEURALWATT_BASE_URL: <redacted:env>
+    OPENCODE_CONFIG_CONTENT: <redacted>
+  provider_config_redacted:
+    model_ref: neuralwatt/glm-5.2
+    npm: '@ai-sdk/openai-compatible'
+    options:
+      apiKey: <redacted:env>
+      apiKey_env: NEURALWATT_API_KEY
+      baseURL: <redacted>
+      baseURL_env: NEURALWATT_BASE_URL
+    provider_id: neuralwatt
+  route_attestation_profile_id: neuralwatt-opencode-glm-5-2-v1
+  route_attestation_evidence:
+    live_probe:
+      artifact_sha256: sha256:cc51c2faaacac42d72e2c66ea94f759d9f5a8baf6b7d4af520ddb9e26de71d70
+      artifact_source: worker_file
+      captured_at: '2026-07-11T18:34:33Z'
+      evidence_artifact_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.route-attestation/audit-rb-D5-current-glv.r2.c20260711T182834Z.76052.50cadf742c6495152a3e7a704d628b60.live-probe.yaml
+      evidence_artifact_sha256: sha256:274416d87fd66791a532454d77f7cf0835d3f9ced65c995cbd439a40a363e3fc
+      family: glm
+      model_id: glm-5.2
+      producer: dispatch-family-review.sh
+      profile_id: neuralwatt-opencode-glm-5-2-v1
+      prompt_sha256: sha256:5dc1da0ab00c73633be37a42ba0a745c9680f373e24c8150adf3c34e3e04cef4
+      schema_version: 1
+      status: passed
+  dispatch_batch_id: audit-rb-D5-current-r2
+  supersedes_run_ids:
+  - audit-rb-D5-glv.r1.c20260711T032919Z.90340.c4a1f3cbcf4257b0ef49360bb7253974-verifier
+  supersession_reason: redispatch round 2

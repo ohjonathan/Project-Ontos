@@ -29,8 +29,8 @@ establish it), and **out of scope** (not authorized for this PR follow-up).
 | Zero blockers and zero majors | partially valid | No new major product defect was established by the comment, but PR #161 still has the declared `D4-INFRA-1` and `D5-INFRA-2` lifecycle/framework blockers. “Zero blockers” is valid only if narrowly limited to Fable's newly reported product findings. |
 | The serializer P0 is genuinely fixed | confirmed | The named quoted, comma-bearing list, mapping-like, and hash-leading values survive semantic YAML round trips through the real dumper. This proves value preservation, not byte-for-byte preservation of the original frontmatter formatting. |
 | Frontmatter parsing is consolidated in `ontos/io/yaml.py` | partially valid | The principal readers use the shared splitter and the old substring splits are gone. Pressure testing found that the reviewed head rejected whitespace-suffixed fences accepted by the base and required by audit `D3a-parsers-3`; focused positive and boundary-negative regressions now restore that contract. |
-| The lifecycle is strict and complete through D.5 | partially valid | Fresh, hash-bound B.1, B.2, and D.2 boards verify `4/4` each. D.5 contains real attempts, but Gemini has no valid receipt, the active GLM promotion failed, the I3 fixes postdate the I2 verifier runs, and strict lifecycle verification fails. D.5 remains `review_pending`, not certified. |
-| The PR body is honest | confirmed | The PR is a draft and explicitly says D.5 is pending, D.6 was not run, strict-P3 certification is not claimed, and the framework/provider gaps remain open. The summary phrase “through D.5” should be read as attempted through D.5, not completed. |
+| The lifecycle is strict and complete through D.5 | partially valid | Fresh, hash-bound B.1, B.2, and D.2 boards verify `4/4` each. A later current-head retry produced genuine Claude and GLM artifacts/receipts, but Gemini failed under a retired provider tier and the v2.0.1 schema/verifier defects remain. D.5 is warning-only fallback, not strict-P3 certified. |
+| The PR body is honest | confirmed | The PR remained draft and did not claim strict-P3. The later maintainer-authorized retry and withheld D.6 require the body to state the final provider-limited status rather than the earlier “D.6 not run” wording. |
 | 1. `patch_frontmatter_fields()` breaks id-less documents | confirmed | The failure is broader than the cited fail-soft commands: any caller patching a valid document whose ID is derived from its filename can reach unconditional ID validation. The reviewed default scope contained 166 id-less paths, including 10 with nonempty lifecycle frontmatter, so the claim that no real repository document omits `id` is false. Focused regressions now preserve filename-derived IDs while validating explicit or newly added IDs. |
 | 2. New staged files ignore a restrictive umask | confirmed | `_stage_text` hard-codes `0o644` for a new file; under umask `0o077` that widens the result compared with normal creation semantics. A focused regression was reproduced and the new-file mode calculation was fixed while preserving existing-file modes. |
 | 3. `link-check --json` changed line numbering and envelope shape | confirmed | The physical-file line numbers, top-level `result`, and schema `4.0` are intentional, version-signaled public contract changes. They require consumer migration awareness but are not a silent defect to revert in this follow-up. |
@@ -41,12 +41,12 @@ establish it), and **out of scope** (not authorized for this PR follow-up).
 | The PR's 602-path scope result lacks matching committed evidence | confirmed | The exact head count and scope pass were reproduced below. Earlier lifecycle artifacts record 559/578/594/598 because they bind earlier snapshots. This is a committed-evidence gap, not a scope failure; this section records the result plainly without inventing a receipt. |
 | Existing CI hardening is sound | partially valid | The clean-tree gate, retirement of legacy injected tests, Windows boundary job, and non-editable smoke are sound. The reviewed workflow placed `runner.temp` in job-level `env`, where that context is unavailable; pushes failed before creating any job. The coverage-file environment is now step-scoped and regression-locked. |
 | Coverage is still advisory | confirmed | The reviewed coverage step used `continue-on-error: true`. Direct measurements were 82.73% for the full/MCP suite and 70.33% without MCP; CI now gates at conservative floors of 82 and 70 respectively. |
-| Coverage artifacts should be ignored | confirmed | Added `.coverage` and `coverage.xml` to the repository ignore contract and covered it with workflow/hermeticity regression tests. |
+| Coverage artifacts should be ignored | confirmed | Added `.coverage`, `.coverage.*`, and `coverage.xml` to the repository ignore contract and covered the primary workflow/hermeticity behavior with regressions. |
 | The audit registry validator should run in CI | confirmed | The validator is the local registry/ledger/lease parity gate but was not invoked by `ci.yml`. A local, non-networked validation step is justified. Live GitHub parity remains a separately credentialed check. |
 | The registry validator would itself prevent PR-body/scope-receipt drift | unsupported | It validates registry structure, evidence paths, leases, child-manifest parity, rendered ledger state, and optional GitHub issue parity. It does not validate the PR body, the current changed-path count, or this deliverable's receipt inventory. Those need their own evidence/gates. |
 | Land all six findings as code changes | partially valid | Items 1, 2, and 4 justify fixes. Item 3 is an intentional versioned contract, item 5 retains strict decoding with clarified tests, and item 6 is a follow-up maintainability note. |
-| Finish D.6 before dropping draft status | out of scope | D.6 is explicitly forbidden by the user for this run and cannot begin while D.5 and framework blockers remain. The PR must remain draft. |
-| Split the PR into release slices now | out of scope | The branch intentionally reviews one integrated, snapshot-bound re-baseline spanning the v4.7.1/v4.8.0/v4.9.0 registry. Re-splitting now would invalidate review/evidence bindings and requires a separate maintainer decision. |
+| Finish D.6 before dropping draft status | out of scope | D.6 was forbidden during the original feedback fix. A later maintainer handoff authorized an attempt; it is now honestly `WITHHELD`, and the PR remains draft. |
+| Split the PR into release slices now | out of scope | Re-splitting was not authorized during the original fix. The later maintainership handoff requests a recommendation: split before release/merge because this branch spans all three release lines; perform fresh review on the extracted hotfix. |
 
 ## Initial head scope proof
 
@@ -95,8 +95,13 @@ This proof is deliberately not represented as a strict-P3 receipt.
 | First executable GitHub Actions matrix, run `29154665641` | DISCOVERY FAILURE — Python 3.10 completed with `1737 passed, 2 failed`; Python 3.9 also recorded the same presentation-only help-golden drift in `scaffold` before fail-fast cancellation. Windows 3.9/3.14 and non-editable smoke passed. The cross-version golden canonicalizer above is the focused follow-up; its head rerun is pending at this commit. |
 | Cross-version follow-up matrix, run `29155102929` | DISCOVERY FAILURE — the ordinary suite passed on Python 3.9, 3.10, 3.11, and 3.12, proving the help fix. The 3.11 coverage gate passed, then `codecov-action` downloaded `codecov` and two checksum files into the checkout before the clean-tree assertion, creating a false test-hermeticity failure; matrix fail-fast canceled the other coverage jobs. The action's documented `working-directory` input now redirects those downloads to `runner.temp` while preserving the final clean-tree assertion. |
 | Coverage/hermeticity follow-up matrix, run `29155457389` | DISCOVERY FAILURE — Python 3.9, 3.10, and 3.11 passed their ordinary suites, coverage gates, and clean-tree assertions; Python 3.11 also proved the redirected Codecov upload clean. Python 3.12's ordinary suite passed, but its much slower coverage rerun crossed a one-second boundary between two context-map renders, exposing a volatile-timestamp equality assertion (`1739 passed, 1 failed`; coverage itself `82.64%`). The alias-parity test now uses the map generator's existing timestamp normalizer and still compares every nonvolatile byte. |
-| Strict lifecycle | EXPECTED BLOCK — exit `1`, `status=review_pending`; Gemini receipt missing and GLM/dispatch evidence invalid |
+| Final current-head matrix, run `29155957357` | PASS — 7/7 jobs at exact head `388845c`; all Linux 3.9–3.12 jobs, non-editable install, and Windows 3.9/3.14 smoke checks green; full suite `1740 passed`, coverage `82.76%` |
+| Current-head D.5 retry | PROVIDER-LIMITED — Claude and GLM each produced a genuine current-head artifact and round-2 receipt after one shape correction; Gemini's genuine retry failed exit `55` under the retired individual-client tier |
+| Strict lifecycle | EXPECTED BLOCK — exit `1`, `status=review_pending`; Gemini receipt missing and v2.0.1 GLM source/supersession checks reject wrapper-produced evidence |
 | Strict receipt-inventory schema | EXPECTED BLOCK — exit `1`, six v2.0.1 producer/schema mismatches (three Product roles, three OpenCode promotion sources) |
+| D.6 | WITHHELD — `verify-d6-gate.sh --allow-gated` only; no passing row or release authority |
+| Final candidate scope | PASS — `636` committed/staged/unstaged/untracked paths within the exact manifest lease from `bf91b42` before commit |
+| Post-version-bump full suite | PASS — `1740 passed, 1 warning` in `122.68s` |
 
 ## Certification boundary
 
@@ -108,7 +113,12 @@ effect after the coverage gate, so the advisory upload is now redirected to
 `runner.temp` while the final hermeticity assertion is preserved; the
 replacement run then exposed a timestamp-only test race under slow Python 3.12
 coverage. That comparison now ignores only the generator's three declared
-volatile timestamp fields, and the replacement head rerun is pending.
-`D4-INFRA-1` and `D5-INFRA-2` remain open, D.5 remains `review_pending`,
-strict-P3 certification is not claimed, and D.6 has not been run. No receipt or
-prior D.5 artifact is modified or reinterpreted by this disposition.
+volatile timestamp fields; run `29155957357` closed the matrix at 7/7 green.
+
+The fresh D.5 retry verified product head `388845c` but reproduced the provider
+and framework blockers. D.6 is therefore withheld, not passed. The two release
+version surfaces are bumped mechanically to `4.7.1` after that target and are
+verified separately; they do not expand the current-head receipts.
+`D4-INFRA-1` and `D5-INFRA-2` remain open. Final status:
+
+`provider_limited_fallback_complete; strict P3 not certified; maintainer release actions deferred`
