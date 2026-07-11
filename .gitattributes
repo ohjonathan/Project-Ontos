@@ -1,6 +1,7 @@
 # Hash-bound lifecycle captures must remain byte-identical to provider output.
 docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/* -whitespace
 docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/* -whitespace
+docs/reviews/project-ontos-audit-rebaseline-remediation/.packets/* -whitespace
 docs/reviews/project-ontos-audit-rebaseline-remediation/.route-attestation/* -whitespace
 docs/reviews/project-ontos-audit-rebaseline-remediation/*.md -whitespace
 docs/reviews/project-ontos-audit-rebaseline-remediation/*.yaml -whitespace
