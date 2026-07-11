@@ -1,0 +1,23 @@
+Done. The artifact passes the shape gate (`verify-dispatch-shape: OK — verdict_shaped (verdict: approve)`), has the exact unnumbered `## Verdict` with bare `Approve` first, and I wrote only the single allowed path. Temp I1 worktree cleaned up; per review-phase discipline I did not commit.
+
+## Summary
+
+I reviewed spec v1.5 against the exact Phase C implementation I1 `05b090d…` by exercising it from a clean detached worktree at that commit (source is byte-identical to HEAD for every operator-visible surface; only the registry validator drifted I1→HEAD).
+
+**Verdict: Approve** — 0 blocking, 2 should-fix, 1 minor.
+
+**What works well (direct-run):**
+- **Log collision** → `E_LOG_EXISTS`, no overwrite, path retained + two concrete recovery actions.
+- **Archive-marker failure** → warnings-only exit `3`, `result.status: warnings`, message begins exactly "Session log created, but archive marker was not updated:", external sentinel inode/contents provably untouched, primary log intact.
+- **Doctor skew** → clear WARN (names both versions) vs FAIL (incompatible), with the fallback command.
+- **JSON envelope** exactly 9 keys @ `schema_version 4.0`; **exit taxonomy** `0/1/2/3` consistent everywhere.
+- **Read-only MCP** omits write tools (7/7 test); **exhaustive type counts** seed all 15 canonical types; **map** double-gen byte-identical with preserved docs excluded; **release provenance** fails closed with correct non-zero exits.
+
+**Findings (both should-fix, activation-version surface, no dead-ends):**
+- **PRD-1** — human `ontos activate` output omits the actionable reason (`activate.py:218-247`); it's in `data.reason` but never rendered, so a human sees only `not_usable`/`halt`.
+- **PRD-2** — malformed `required_version` renders "Config error: …" (eager load-time validation at `config.py:181-184`), but the user-facing migration doc (`Migration_v3_to_v4.md:140-141`) promises "Invalid [ontos].required_version"; that documented branch (`config.py:273`) is shadowed on the activation path. Rendered copy is actionable, so I ranked it should-fix and noted the exact-prefix §4.4 contract is Alignment's to gate.
+- **PRD-3** (minor) — archive-marker warning line prints before the created-confirmation.
+
+I honored the external-pending marking for Windows/TestPyPI (not converted to product failures), and flagged one early "doctor OK 4.7.0" reading as my own `PYTHONPATH`-inheritance test artifact, re-verified clean.
+
+One note for you as orchestrator: a pre-existing detached worktree `…-c-close-05b090d` at `05b090d` is present (not mine — I created and removed my own `ontos-i1-review`).

@@ -1,0 +1,32 @@
+I'll begin by reading the three required framework templates and the spec. Let me start by locating the files.
+Now let me read the other two templates and the spec.
+Let me read the rest of this template and the third template in parallel.
+Now let me read the spec and check the git state in parallel.
+I've read all three templates and the spec. Now let me understand the git history and the Phase C implementation. Let me run several independent read-only checks.
+The Phase C reconciliation is commit `05b090d` (I1) building on I0 (`b6f89d7`). Let me inspect the key implementation diffs for the constraint-critical files. I'll read several in parallel.
+Let me read the current state of the smaller constraint-critical files and the relevant functions.
+Let me verify the canonical ID validator and the actual log collision handler in the current code.
+The ID validator and log collision handler match the spec. Now let me inspect the larger constraint-critical files: the no-follow writer, locking, MCP lock, and registry validator. Let me look at the MCP lock diff and grep the key files for critical behaviors.
+The MCP lock now uses the shared no-follow guard with single-link checks. Let me read the context.py no-follow writer discipline and the registry validator's quarantine boundary.
+Let me read the registry validator's `main()` and quarantine structure carefully — this is the §4.1 centerpiece.
+This is an important area. The validator's `main()` has an `except Exception` returning **exit 2 with "ERROR"** — the spec explicitly forbids exit 2/ERROR for malformed control-plane inputs. I need to determine whether `validate()` quarantines malformed inputs before they can raise, or whether the exit-2 path is reachable for the spec's enumerated cases. Let me examine the validation structure and run a bounded check.
+The validator has intentional exit-1-vs-exit-2 design notes (lines 214, 846). Let me read `validate()` to understand the quarantine boundary, then verify behavior with a bounded direct-run check.
+Let me examine `load_yaml` and how unhashable keys/values are handled — the most likely path to the exit-2 catch-all — then run a bounded direct check.
+`load_yaml` does NOT catch `yaml.YAMLError` and the `main()` catch-all returns exit 2 — a structural risk against the spec's "never exit 2/ERROR" requirement. I need direct-run evidence. Let me verify the runtime and run the validator and its table-driven tests as bounded checks.
+Validator passes on the real registry (91 originals + 9 R2, 41 confirmed_open, 7 partial — matches spec). Now let me run the table-driven acceptance tests as a bounded direct-run check on the exit-1/FAILED-never-exit-2 contract.
+All 194 table-driven registry tests pass — direct-run evidence the quarantine boundary produces exit 1/FAILED. Let me quickly confirm the tests assert the exit-code contract, then move to the remaining constraint areas.
+Registry quarantine confirmed compliant. Let me now verify the remaining constraint areas in parallel: exit-code taxonomy, activation contract, migration docs, and release pipeline.
+Migration docs and activation contract match. The publish.yml removed top-level `id-token: write` (spec wants OIDC only on publisher jobs). Let me confirm OIDC scoping, TestPyPI `--no-deps`, Windows CI, read-only MCP, and exhaustive type counts.
+Strong compliance on release pipeline (OIDC scoped to publisher jobs only, TestPyPI `--no-deps` exact version, one-wheel), Windows CI jobs present, read-only MCP enforced, exhaustive type counts. Let me verify the writer's atomic-replace binding recheck, the context-map idempotency, and that `SessionContext.commit` uses the no-follow lock.
+`SessionContext.commit` uses the no-follow workspace guard with single-link verification (context.py:1389-1419), and the writer's rollback path re-verifies bindings before unlink/replace. Let me run a bounded set of Phase C-relevant tests for direct-run confirmation and check the context-map idempotency test.
+All 106 Phase C-relevant tests pass and the context-map idempotency test exists (`test_second_identical_map_generation_preserves_bytes_and_mtime`). Let me do final nonclaim verification: preserved user docs untouched, immutable SHA constants, and no framework hand-edits.
+All nonclaims verified: immutable SHA pair pinned (`revalidation=bf91b42`, `integration=b6f89d7` — matches spec), preserved user docs and framework untouched (zero changes base→I1). Let me confirm I preserved the worktree and verify the output directory exists before writing the verdict.
+Worktree is preserved (only pre-existing modifications; no test artifacts added since I used `-p no:cacheprovider`). Before finalizing my one finding about `load_yaml` not quarantining `YAMLError`, let me verify whether the test suite covers syntactically-broken YAML — this determines if it's a real gap.
+Confirmed: the registry validator source has no `YAMLError` handling, `main()` has `except Exception → return 2`, and no test feeds syntactically-broken YAML to the registry validator (the YAMLError test that exists is in `test_lib.py` for a different loader). My one should-fix finding is accurate. I have comprehensive coverage of every constraint area. Let me write the verdict artifact.
+Let me verify the written artifact passes the F35 verdict-shape predicate before finishing.
+The wrapper isn't a Python module. Let me invoke it correctly as a script.
+The artifact passes the F35 verdict-shape gate (`verdict_shaped`, verdict: approve, exit 0).
+
+Review complete. Independent GLM alignment review of Phase C implementation I1 `05b090d` against approved spec v1.5, with constraints re-derived from the spec and verified via static-inspection of the actual diff/code plus bounded direct-run checks (registry validator PASS; 194 registry table-driven tests; 106 Phase C tests across CLI/config/log/locking/stub — all passing). No blocking deviations found; should-fix A-1 (residual exit-2 path for syntactically-broken YAML, outside the enumerated acceptance set which is satisfied) and minor A-2 (recovery-hint wording) recorded. Worktree preserved; sibling verdicts/results/receipts not read; route-redaction honored (OIDC permission described in prose, no secret-shaped keys quoted).
+
+Wrote `docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-D2-gla.review.md`

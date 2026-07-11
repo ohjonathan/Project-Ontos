@@ -1,0 +1,14 @@
+Verdict shape is now correct: exactly one unnumbered `## Verdict` with the bare token `Request changes` first. As a review-phase (peer) worker I do not commit — the orchestrator stages my artifact. Final report:
+
+## Final report — project-ontos-audit-rebaseline-remediation / D.2 / peer / claude
+
+- **Status:** completed
+- **Artifacts written:** `docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-strict-claude-peer.md` (only)
+- **Verdict:** Request changes (no blockers; one Should-fix Major)
+- **Smoke checks:** focused suites = pass (`direct-run`) — 225 package tests (`test_session_context`, `test_log`, `test_locking`, `test_config_phase3`, `test_stub_parity`, `test_map`, `test_cli_contract_v4`, `test_write_tools`, `test_context_contention`) + 193 (I1) / 194 (HEAD) registry-validator tests; independent malformed-registry repro → `main()` exit 1/FAILED across 5 shapes. Full suite deliberately **not-run** per instructions.
+- **Cardinality / evidence checks:** I0→I1→HEAD ancestry verified; `ontos/` byte-identical I1↔HEAD (`direct-run`); registry preserves 41 open + 7 partial at I1; D-phase blessing-test greps = **zero hits** (`direct-run`).
+- **Blockers:** none.
+- **Should-fix (Major):** P-1 — `rename` CLI/MCP ID validation violates §4.2 "every CLI-supplied ID uses the canonical validator / `E_USER_INPUT`, no divergent regex or regex-only error string" (`ontos/commands/rename.py:28,324,326-327`; `ontos/mcp/rename_tool.py:77`); behavior-equivalent today, untested for canonical parity; direct-run + repro cited.
+- **Minor:** P-2 (`.match` vs `.fullmatch` in rename — subsumed by P-1); P-3 (`--quiet` suppresses archive-marker warning text while still returning exit 3).
+- **Commit:** none — review-phase worker does not commit; orchestrator stages/commits on my behalf.
+- **Notes:** Did not read D.1 / B-family / D.2 sibling reviews / dispatch results / receipts / tracker. External Windows, TestPyPI/PyPI, and live-GitHub claims left external (`not-run`). Ran exact-I1 validator from a pre-existing detached I1 checkout (rev-parse-confirmed I1) and preserved this worktree. Did not edit any other file or spawn nested agents.
