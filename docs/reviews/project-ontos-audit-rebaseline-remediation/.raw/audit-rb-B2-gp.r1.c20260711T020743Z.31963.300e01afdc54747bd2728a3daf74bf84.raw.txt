@@ -1,0 +1,20 @@
+I'll start by reading the three framework template files completely, then gather what I need to perform the review.
+I've read all three templates. Now I need to continue reading Template 02 (capped at 50KB), and locate the spec v1.5, the I0 commit, and the C-phase findings doc. Let me set up a task list and continue gathering materials.
+I've now read all three templates completely. Let me locate the I0 commit and read the spec and falsification findings.
+The spec is 388 lines and falsification findings is 65 lines. Let me read the spec, the findings, and the rest of the I0 commit stat.
+I now have the spec, falsification findings, and I0 commit overview. Let me verify the I0 code anchors the spec cites, using bounded `git show`. I'll check the key v1.5-relevant anchors in parallel.
+Anchors confirmed: the lazy `all()` generator in config.py:252 (eager-parsing defect), `.resolve()` collapse in log.py:~115, plain `open("a+")` in mcp/locking.py:21-27, and the validator `main()` returning exit 2 on exception. Let me verify a few more anchors: the safe writer at context.py:645-770, the Migration guidance anchor, and the registry program membership.
+Two things to verify: the Migration guidance anchor doesn't appear at I0 (grep returned nothing), and the spec claims program set `#146`–`#157` but the validator uses `range(146, 159)` = `#146`–`#158`. Let me investigate the actual registry program membership carefully.
+The program-membership question is important: the spec says program set `#146`–`#157` but the registry has a `#158` row (`project-ontos-audit-remediation-2026-07`) plus `epic_issue: 158`. Let me confirm where the `#158` row lives in the registry structure.
+The structure is now clear: `programs:` (line 93) holds exactly #146–#157, while #158 is the `github_snapshot.epic_issue` plus an R2 *finding* row — so the spec's "program issue set #146–#157" is correct. Let me verify one implementability point: whether `result.status: warnings` (§4.3) is a recognized domain status in the I0 JSON envelope, and confirm the `_create_archive_marker` is currently silent on failure.
+Let me verify the unprefixed anchors the spec cites (e.g., `ontos/core/schema.py:315-343`) — whether they match I0 or reference current/Phase-C code, since the spec mixes `b6f89d7:`-prefixed and unprefixed anchors.
+All anchors verified against I0. The unprefixed anchors (`schema.py:315-343`, `stub.py:183-192`) reference I0 code accurately; the Migration anchor is correctly framed as a Phase C addition. Now let me write the placeholder file and the review artifact.
+All anchors verified and directories exist. Let me write the placeholder file, then compose the full review.
+Now the full review artifact:
+Let me verify the artifact shape and confirm only the two intended files were touched.
+My two files are present and untracked. The other changed/untracked files (.prompts, .raw captures, parallel-family verdicts, the `M` inventory file) are from the orchestrator/wrapper and parallel dispatches — not my edits. Let me verify the F35 artifact shape with the lint tool.
+The `llm-dev` wrapper isn't directly runnable that way. Let me verify the shape via the verdict-shape library directly.
+The `_lib` directory isn't in this worktree (framework-side). Let me verify the F35 shape manually by reading the artifact's frontmatter, H1, and Verdict section.
+Shape verified: valid frontmatter (no `id`, no `execution_provider`), one H1, unnumbered `## Verdict` with bare `Approve`. Let me do a final check for long SHAs / high-entropy strings and confirm the placeholder content.
+All checks pass: placeholder is the single required line, only short SHA `b6f89d7` is used, no high-entropy or secret-shaped literal values appear (the two prose hits only describe the redaction approach), shape is valid, and only the two named files were written.
+Created `docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-B2-gp.review.md`

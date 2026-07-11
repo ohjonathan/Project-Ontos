@@ -1,0 +1,17 @@
+Done. Wrote `docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-strict-claude-product.md` and edited no other file.
+
+**Verdict: Approve** (Product lens, B.2 spec v1.5).
+
+What I verified against the charter, grounded in the spec plus frozen I0 `b6f89d7` (static-inspection only — no CLI run, no worktree, no agents, no sibling reviews consulted):
+
+- **Created log + failed marker is understandable/recoverable in both modes** — §4.3 ¶4: human warning `Session log created, but archive marker was not updated:`, same string in JSON `warnings[]`, exit `3` with `result.status: warnings`, and the created log path retained in `data`. I0 confirms this replaces a genuinely worse pre-upgrade state (marker failure was silent at exit `0` — `b6f89d7:ontos/commands/log.py:314,343-350`).
+- **Exit 3 is not described as failure** — framed as `warnings` at every occurrence (§4.3/§4.4/§7/§11), and §7 explicitly tells adopters to stop treating non-zero as a hard error.
+- **Exact migration anchor is discoverable** — `#audit-remediation-compatibility-contracts` pinned identically at §4.4, §7, §11; drift-free.
+- **Late malformed clauses** — spec requires eager parsing; I0 confirms the real defect (`all()` short-circuits, masking a malformed later clause as merely "Incompatible" — `b6f89d7:ontos/core/config.py:238-246`).
+- **Windows / TestPyPI / child-lifecycle / D.6 / release** — all remain explicitly pending/nonclaimed.
+
+Findings (none blocking; no `direct-run` evidence at spec stage so none can gate):
+- **PRD-1 (should-fix):** the archive-marker warning states the fact but, unlike the log-collision copy, gives no consequence or next step — asymmetric failure-visibility copy.
+- **PRD-2 / PRD-3 (minor):** collision recovery-hint literal string not yet pinned; multi-field JSON status model needs one worked automation example in migration copy.
+
+Structure follows the override: one H1, numbered §1–8, unnumbered `## Verdict` with the bare token, then `## 10. Notes` — no `## 9. Verdict`, no trailing Final report. Per Template 19/contract, review-phase workers don't commit, so I left staging to the orchestrator.

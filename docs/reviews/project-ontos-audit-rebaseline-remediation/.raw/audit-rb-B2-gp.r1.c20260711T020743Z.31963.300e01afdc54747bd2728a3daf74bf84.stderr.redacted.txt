@@ -1,0 +1,1329 @@
+[0m
+> build · glm-5.2
+[0m
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>
+[0m
+[0m# [0mTodos
+[•] Read Template 02 remainder (lines 878+)
+[ ] Locate and read spec v1.5
+[ ] Inspect I0 commit b6f89d7 with bounded git show/diff
+[ ] Read C-phase-falsification-findings.md (reproduction statements only)
+[ ] Write placeholder file B.2-strict-glm-peer.md
+[ ] Analyze v1.5 corrections and write review artifact
+[ ] Verify artifact shape and output Created + path
+[0m
+[0m→ [0mRead .<redacted:secret>[90m [offset=878][0m
+[0m✱ [0mGlob "**/*spec*.md"[90m 7 matches[0m
+[0m✱ [0mGlob "**/C-phase-falsification-findings.md"[90m 1 match[0m
+[0m
+[0m$ [0mgit log --oneline -15
+6aae524 Record fresh strict B1 review bundle
+fe585c5 Prepare strict inventory review rollover
+640883b Preserve D2 review attempt history
+9dbe5e1 Prepare D2 implementation review board
+43583df Record D1 implementation pre-review
+7467a73 Prepare D1 implementation pre-review
+1acd232 Record Phase C close evidence
+05b090d Complete Phase C audit remediation reconciliation
+eeddf0f Complete final Phase B lifecycle review
+d12f851 Prepare final B2 corrected-spec review
+206bbbc Complete final B1 and incorporate falsification findings
+43dd7dc Prepare final design receipt recertification
+af1e6ac Record failed B.2 recertification and revise design
+c104758 Recertify audit design and revise spec
+5e04094 Authorize Phase C registry regression
+[0m
+[0m$ [0mgit show b6f89d7 --stat --oneline | head -40
+b6f89d7 Implement audit rebaseline remediation
+ .github/workflows/ci.yml                           |   95 +-
+ .github/workflows/publish.yml                      |  282 +++++-
+ .ontos-internal/logs/2026-07-02_init.md            |   21 -
+ .<redacted:secret>            |   21 -
+ .<redacted:secret>            |   21 -
+ .ontos.toml                                        |    2 +-
+ .ontos/hooks/pre-commit                            |   14 +-
+ .ontos/hooks/pre-push                              |   14 +-
+ .ontos/scripts/tests/test_context.py               |   14 +-
+ .ontos/scripts/tests/test_schema.py                |   21 +-
+ .pre-commit-config.yaml                            |   19 +-
+ AGENTS.md                                          |   29 +-
+ Ontos_Context_Map.md                               |   52 +-
+ ..._merge-pr-118-v4-5-closes-issues-115-116-117.md |    2 +-
+ .../<redacted:secret>     |   58 ++
+ docs/reference/Migration_v3_to_v4.md               |    2 +-
+ docs/reference/Ontos_Manual.md                     |   11 +-
+ .../retros/project-ontos-audit-doctor-rce-retro.md |   82 +-
+ <redacted:secret>        |    8 +-
+ .../<redacted:secret> |  262 +++++
+ .../.<redacted:secret>      |   61 ++
+ .../.prompts/B.1-gpt-alignment.prompt.md           |   55 +
+ .../.<redacted:secret>      |   55 +
+ .../.prompts/D.2-gpt-alignment.prompt.md           |   55 +
+ .../.prompts/D.5-gemini-verifier.prompt.md         |   43 +
+ .../.prompts/D.5-gpt-verifier.prompt.md            |   45 +
+ ...<redacted:secret> |   61 ++
+ ....<redacted:secret> |    0
+ ...<redacted:secret> |   19 +
+ .../B.1-gemini-dispatch-intent.yaml                |   32 +
+ .../B.1-gemini-dispatch-result.yaml                |   72 ++
+ .../B.1-gpt-dispatch-intent.yaml                   |   31 +
+ .../D.2-gemini-dispatch-intent.yaml                |   32 +
+ .../D.2-gpt-dispatch-intent.yaml                   |   31 +
+ .../D.5-gemini-dispatch-intent.yaml                |   32 +
+ .../D.5-gpt-dispatch-intent.yaml                   |   31 +
+ .../final-approval.md                              |   68 +-
+ .../lifecycle-receipt-inventory.yaml               |   35 +-
+ .../strict-p3-dispatch-readiness.txt               |   64 ++
+[0m
+[0m$ [0mwc -l <redacted:secret> <redacted:secret>
+388 <redacted:secret>
+      65 <redacted:secret>
+     453 total
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m
+[0m$ [0mgit show b6f89d7 --stat --oneline | tail -n +3
+.github/workflows/publish.yml                      |  282 +++++-
+ .ontos-internal/logs/2026-07-02_init.md            |   21 -
+ .<redacted:secret>            |   21 -
+ .<redacted:secret>            |   21 -
+ .ontos.toml                                        |    2 +-
+ .ontos/hooks/pre-commit                            |   14 +-
+ .ontos/hooks/pre-push                              |   14 +-
+ .ontos/scripts/tests/test_context.py               |   14 +-
+ .ontos/scripts/tests/test_schema.py                |   21 +-
+ .pre-commit-config.yaml                            |   19 +-
+ AGENTS.md                                          |   29 +-
+ Ontos_Context_Map.md                               |   52 +-
+ ..._merge-pr-118-v4-5-closes-issues-115-116-117.md |    2 +-
+ .../<redacted:secret>     |   58 ++
+ docs/reference/Migration_v3_to_v4.md               |    2 +-
+ docs/reference/Ontos_Manual.md                     |   11 +-
+ .../retros/project-ontos-audit-doctor-rce-retro.md |   82 +-
+ <redacted:secret>        |    8 +-
+ .../<redacted:secret> |  262 +++++
+ .../.<redacted:secret>      |   61 ++
+ .../.prompts/B.1-gpt-alignment.prompt.md           |   55 +
+ .../.<redacted:secret>      |   55 +
+ .../.prompts/D.2-gpt-alignment.prompt.md           |   55 +
+ .../.prompts/D.5-gemini-verifier.prompt.md         |   43 +
+ .../.prompts/D.5-gpt-verifier.prompt.md            |   45 +
+ ...<redacted:secret> |   61 ++
+ ....<redacted:secret> |    0
+ ...<redacted:secret> |   19 +
+ .../B.1-gemini-dispatch-intent.yaml                |   32 +
+ .../B.1-gemini-dispatch-result.yaml                |   72 ++
+ .../B.1-gpt-dispatch-intent.yaml                   |   31 +
+ .../D.2-gemini-dispatch-intent.yaml                |   32 +
+ .../D.2-gpt-dispatch-intent.yaml                   |   31 +
+ .../D.5-gemini-dispatch-intent.yaml                |   32 +
+ .../D.5-gpt-dispatch-intent.yaml                   |   31 +
+ .../final-approval.md                              |   68 +-
+ .../lifecycle-receipt-inventory.yaml               |   35 +-
+ .../strict-p3-dispatch-readiness.txt               |   64 ++
+ docs/specs/project-ontos-audit-doctor-rce-spec.md  |   35 +-
+ docs/trackers/project-ontos-audit-doctor-rce.md    |   89 +-
+ ...project-ontos-audit-remediation-release-line.md |  304 +++---
+ <redacted:secret>      |  160 ++-
+ .../<redacted:secret>  | 1046 ++++++++++++++++++++
+ .../<redacted:secret> |   82 +-
+ ontos/_hooks/pre-commit                            |   12 +-
+ ontos/_hooks/pre-push                              |   12 +-
+ ontos/cli.py                                       |  376 ++++---
+ ontos/command_registry.py                          |  123 +++
+ ontos/commands/activate.py                         |    9 +
+ ontos/commands/doctor.py                           |  136 ++-
+ ontos/commands/init.py                             |    1 +
+ ontos/commands/link_check.py                       |    4 +-
+ ontos/commands/log.py                              |   88 +-
+ ontos/commands/map.py                              |    9 +-
+ ontos/commands/migrate.py                          |   12 +-
+ ontos/commands/promote.py                          |   20 +-
+ ontos/commands/retrofit.py                         |   73 +-
+ ontos/commands/scaffold.py                         |   42 +-
+ ontos/commands/stub.py                             |   11 +-
+ ontos/commands/verify.py                           |   41 +-
+ ontos/core/body_refs.py                            |   95 +-
+ ontos/core/config.py                               |  181 +++-
+ ontos/core/context.py                              |  762 +++++++++++++-
+ ontos/core/errors.py                               |    4 +-
+ ontos/core/frontmatter.py                          |  116 +--
+ ontos/core/frontmatter_edit.py                     |  211 +++-
+ ontos/core/frontmatter_repair.py                   |   47 +-
+ ontos/core/git.py                                  |   51 +-
+ ontos/core/graph.py                                |  333 +++++--
+ ontos/core/history.py                              |    9 +-
+ ontos/core/instruction_protocol.py                 |   30 +-
+ ontos/core/link_diagnostics.py                     |  324 +++++-
+ ontos/core/locking.py                              |   81 ++
+ ontos/core/schema.py                               |  156 ++-
+ ontos/io/files.py                                  |   29 +-
+ ontos/io/git.py                                    |    6 +-
+ ontos/io/toml.py                                   |   53 +-
+ ontos/io/yaml.py                                   |   68 +-
+ ontos/mcp/locking.py                               |   14 +-
+ ontos/mcp/portfolio.py                             |   41 +-
+ ontos/mcp/schemas.py                               |   13 +-
+ ontos/mcp/server.py                                |   53 +-
+ ontos/mcp/tools.py                                 |   69 +-
+ ontos/mcp/writes.py                                |   11 +-
+ ontos/ui/json_output.py                            |  330 +++++-
+ pyproject.toml                                     |    3 -
+ scripts/check_release_artifact.py                  |  144 +++
+ <redacted:secret>     |  728 ++++++++++++++
+ tests/commands/golden/query_help.txt               |   39 +-
+ tests/commands/golden/scaffold_help.txt            |   22 +-
+ <redacted:secret>              |    5 +-
+ .../test_activate_json_warning_metadata.py         |    6 +-
+ .../commands/test_agentic_activation_resilience.py |   21 +
+ tests/commands/test_consolidate_parity.py          |   35 +-
+ tests/commands/test_doctor_phase4.py               |   74 +-
+ tests/commands/test_env.py                         |   17 +-
+ tests/commands/test_hook_phase4.py                 |   24 +
+ tests/commands/test_instruction_protocol.py        |   45 +
+ tests/commands/test_link_check.py                  |   21 +-
+ tests/commands/test_log.py                         |   45 +
+ tests/commands/test_map.py                         |    2 +-
+ tests/commands/test_mcp_command.py                 |    2 +-
+ tests/commands/test_query_parity.py                |   24 +
+ tests/commands/test_rename.py                      |   21 +
+ tests/commands/test_retrofit.py                    |   21 +-
+ tests/commands/test_scaffold_parity.py             |    1 +
+ tests/commands/test_stub_parity.py                 |   31 +-
+ tests/commands/test_verify_parity.py               |   10 +-
+ tests/commands/test_verify_portfolio.py            |   10 +-
+ tests/conftest.py                                  |   36 +-
+ tests/core/test_body_refs.py                       |   66 ++
+ tests/core/test_config_phase3.py                   |   52 +
+ tests/core/test_frontmatter_edit_pipeline.py       |   61 ++
+ tests/core/test_frontmatter_repair.py              |   22 +-
+ tests/core/test_git_safety.py                      |   41 +
+ tests/core/test_graph.py                           |  123 +++
+ tests/core/test_link_diagnostics.py                |  147 ++-
+ tests/core/test_schema.py                          |   34 +-
+ tests/golden/README.md                             |   12 +-
+ tests/golden/baselines/medium/context_map.md       |  292 +++---
+ tests/golden/baselines/medium/log_metadata.json    |    4 +-
+ tests/golden/baselines/medium/log_stdout.txt       |    2 +-
+ tests/golden/baselines/medium/map_metadata.json    |    4 +-
+ tests/golden/baselines/medium/map_stdout.txt       |   21 +-
+ tests/golden/baselines/medium/session_log.md       |   28 +-
+ tests/golden/baselines/small/context_map.md        |  111 ++-
+ tests/golden/baselines/small/log_metadata.json     |    4 +-
+ tests/golden/baselines/small/log_stdout.txt        |    2 +-
+ tests/golden/baselines/small/map_metadata.json     |    4 +-
+ tests/golden/baselines/small/map_stdout.txt        |   16 +-
+ tests/golden/baselines/small/session_log.md        |   25 +-
+ tests/golden/capture_golden_master.py              |   23 +-
+ tests/golden/compare_golden_master.py              |  104 +-
+ tests/golden/test_golden_master.py                 |    3 -
+ tests/io/test_git_empty_diff.py                    |   29 +
+ tests/io/test_toml_roundtrip.py                    |   38 +
+ tests/mcp/test_activation.py                       |   26 +-
+ tests/mcp/test_bundler.py                          |    2 +-
+ tests/mcp/test_cache.py                            |    2 +-
+ tests/mcp/test_context_bundle.py                   |    2 +-
+ tests/mcp/test_context_bundle_config.py            |    2 +-
+ tests/mcp/test_context_map.py                      |    2 +-
+ tests/mcp/test_error_paths.py                      |    2 +-
+ tests/mcp/test_export_graph.py                     |    2 +-
+ tests/mcp/test_get_document.py                     |    2 +-
+ tests/mcp/test_health.py                           |    2 +-
+ tests/mcp/test_list_documents.py                   |    2 +-
+ tests/mcp/test_parity.py                           |    2 +-
+ tests/mcp/test_portfolio.py                        |    2 +-
+ tests/mcp/test_portfolio_integration.py            |    2 +-
+ tests/mcp/test_query.py                            |    2 +-
+ tests/mcp/test_read_only_registration.py           |  119 ++-
+ tests/mcp/test_refresh.py                          |    2 +-
+ tests/mcp/test_rename_document.py                  |    2 +-
+ <redacted:secret>      |    2 +-
+ tests/mcp/test_schemas.py                          |    2 +-
+ tests/mcp/test_server_integration.py               |    2 +-
+ tests/mcp/test_server_portfolio_mode.py            |    2 +-
+ tests/mcp/test_stream_routing.py                   |    2 +-
+ tests/mcp/test_workspace_overview.py               |   44 +-
+ tests/mcp/test_write_tools.py                      |    2 +-
+ tests/{mcp/__init__.py => mcp_helpers.py}          |   85 +-
+ tests/test_ci_release_workflows.py                 |   88 ++
+ tests/test_cli.py                                  |   44 +-
+ tests/test_cli_contract_v4.py                      |  222 +++++
+ tests/test_config.py                               |  113 ---
+ tests/test_consolidate.py                          |   88 --
+ tests/test_cycle_detection.py                      |  168 ----
+ tests/test_describes.py                            |    5 -
+ <redacted:secret>         |   21 +
+ tests/test_dual_mode.py                            |    4 -
+ tests/test_end_session.py                          |  263 -----
+ tests/test_frontmatter_roundtrip_regression.py     |   90 ++
+ tests/test_immutable_history.py                    |    5 -
+ tests/test_lint.py                                 |  192 ----
+ tests/test_maintain.py                             |   46 -
+ tests/test_orphan_detection.py                     |  252 -----
+ tests/test_pre_commit_check.py                     |  319 ------
+ tests/test_pre_push_check.py                       |   61 --
+ tests/test_query.py                                |   91 --
+ tests/test_release_artifact.py                     |   91 ++
+ tests/test_session_context.py                      |  238 +++++
+ tests/test_test_isolation.py                       |   41 +
+ tests/test_v284_refactor.py                        |  149 ---
+ tests/test_validation.py                           |  436 --------
+ tests/test_yaml_edge_cases.py                      |  236 -----
+ tests/ui/test_json_output.py                       |   16 +-
+ 188 files changed, 9520 insertions(+), 4356 deletions(-)
+[0m
+[0m$ [0mgit show b6f89d7:ontos/core/config.py 2>/dev/null | sed -n '225,350p'
+Supported clauses match the public ``required_version`` contract:
+    comma-separated comparisons (for example ``>=4.7.0, <5.0.0``), tilde
+    ranges (``~4.7``), and ``x``/``*`` wildcards (``4.7.x``). An empty
+    requirement is intentionally compatible for projects that do not pin a
+    runtime.
+
+    Raises:
+        ConfigError: If either the running version or requirement is invalid.
+    """
+    required = str(requirement or "").strip()
+    if not required:
+        return True
+
+    running = _parse_version(running_version, label="running Ontos version")
+    clauses = [clause.strip() for clause in required.split(",")]
+    if not clauses or any(not clause for clause in clauses):
+        raise ConfigError(
+            "ontos.required_version must be a valid semver range "
+            "(for example '>=4.7.0, <5.0.0')"
+        )
+    return all(_version_clause_matches(running, clause) for clause in clauses)
+
+
+def required_version_incompatibility(
+    requirement: Optional[str],
+    running_version: str,
+) -> Optional[str]:
+    """Return an actionable incompatibility message, or ``None`` if valid."""
+    required = str(requirement or "").strip()
+    if not required:
+        return None
+    try:
+        compatible = version_satisfies_requirement(running_version, required)
+    except ConfigError as exc:
+        return f"Invalid [ontos].required_version {required!r}: {exc}"
+    if compatible:
+        return None
+    return (
+        f"Incompatible Ontos version: running {running_version}, but this project "
+        f"requires {required!r}. Use a compatible Ontos installation."
+    )
+
+
+def _parse_version(value: str, *, label: str) -> tuple[int, int, int]:
+    text = str(value).strip()
+    match = _VERSION_PATTERN.fullmatch(text)
+    if match is None:
+        raise ConfigError(f"{label} {text!r} is not a valid semantic version")
+    return tuple(
+        int(match.group(name) or 0) for name in ("major", "minor", "patch")
+    )
+
+
+def _version_clause_matches(running: tuple[int, int, int], clause: str) -> bool:
+    if clause.startswith("~"):
+        raw_base = clause[1:].strip()
+        base, component_count = _parse_requirement_base(raw_base, clause)
+        if component_count == 1:
+            upper = (base[0] + 1, 0, 0)
+        else:
+            upper = (base[0], base[1] + 1, 0)
+        return base <= running < upper
+
+    comparator_match = _COMPARATOR_PATTERN.fullmatch(clause)
+    if comparator_match is None:
+        raise ConfigError(f"invalid version clause {clause!r}")
+    comparator = comparator_match.group(1) or "="
+    raw_version = comparator_match.group(2).strip()
+
+    if "x" in raw_version.lower() or "*" in raw_version:
+        if comparator not in {"=", "=="}:
+            raise ConfigError(
+                f"wildcard version clause {clause!r} cannot use {comparator!r}"
+            )
+        return _wildcard_clause_matches(running, raw_version, clause)
+
+    expected = _parse_version(raw_version, label=f"version clause {clause!r}")
+    comparisons = {
+        "=": running == expected,
+        "==": running == expected,
+        ">=": running >= expected,
+        "<=": running <= expected,
+        ">": running > expected,
+        "<": running < expected,
+    }
+    return comparisons[comparator]
+
+
+def _parse_requirement_base(
+    raw_version: str,
+    clause: str,
+) -> tuple[tuple[int, int, int], int]:
+    component_text = raw_version[1:] if raw_version.startswith("v") else raw_version
+    component_count = len(component_text.split("."))
+    if component_count > 3:
+        raise ConfigError(f"invalid version clause {clause!r}")
+    return _parse_version(raw_version, label=f"version clause {clause!r}"), component_count
+
+
+def _wildcard_clause_matches(
+    running: tuple[int, int, int],
+    raw_version: str,
+    clause: str,
+) -> bool:
+    text = raw_version[1:] if raw_version.startswith("v") else raw_version
+    components = text.split(".")
+    if not 1 <= len(components) <= 3:
+        raise ConfigError(f"invalid wildcard version clause {clause!r}")
+
+    wildcard_seen = False
+    expected_prefix = []
+    for component in components:
+        if component.lower() == "x" or component == "*":
+            wildcard_seen = True
+            continue
+        if wildcard_seen or not component.isdigit():
+            raise ConfigError(f"invalid wildcard version clause {clause!r}")
+        expected_prefix.append(int(component))
+    if not wildcard_seen:
+        raise ConfigError(f"invalid wildcard version clause {clause!r}")
+    return running[:len(expected_prefix)] == tuple(expected_prefix)
+
+
+def dict_to_config(data: dict, repo_root: Optional[Path] = None) -> OntosConfig:
+    """Convert dict from TOML to config dataclass."""
+[0m
+[0m$ [0mgit show b6f89d7:ontos/commands/log.py 2>/dev/null | sed -n '100,120p;300,345p'
+impacts=options.impacts,
+    )
+    
+    # Get template body (with alias support for Bug 3 fix)
+    template = _get_template(options.event_type)
+    
+    # Fill in section placeholders
+    body = f"# {topic}\n\n{template}"
+    for section, placeholder in SECTION_TEMPLATES.items():
+        body = body.replace(f"## {section}\n\n", f"## {section}\n\n{placeholder}\n\n")
+    
+    # Combine content
+    content = f"---\n{frontmatter}\n---\n\n{body}"
+    
+    config = load_project_config(repo_root=project_root)
+    logs_dir = (project_root / config.paths.logs_dir).resolve()
+    
+    filename = f"{date_str}_{topic_slug}.md"
+    output_path = logs_dir / filename
+    
+    return content, output_path
+        return 1
+    except OSError as exc:
+        message = f"Unable to create session log {output_path}: {exc}"
+        if options.json_output:
+            emit_command_error(
+                command="log",
+                exit_code=1,
+                code="E_COMMAND_FAILED",
+                message=message,
+            )
+        else:
+            output.error(message)
+        return 1
+
+    # Create marker for pre-push enforcement (best effort)
+    _create_archive_marker(project_root, output_path)
+
+    # Output result
+    if options.json_output:
+        emit_command_success(
+            command="log",
+            exit_code=0,
+            message="Session log created",
+            data={
+                "path": str(output_path),
+                "log_id": output_path.stem,
+            },
+        )
+    elif not options.quiet:
+        output.success(f"Session log created: {output_path}")
+
+    return 0
+
+
+def _write_log_exclusively(output_path: Path, content: str) -> None:
+    """Create a UTF-8 log atomically with collision refusal."""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("x", encoding="utf-8", newline="") as handle:
+        handle.write(content)
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def _create_archive_marker(project_root: Path, log_path: Path) -> None:
+    """Create marker file to signal that a session was archived."""
+    marker_path = project_root / ".ontos" / "session_archived"
+[0m
+[0m$ [0mgit show b6f89d7:ontos/mcp/locking.py 2>/dev/null | sed -n '1,40p'
+"""Workspace-level advisory locking for MCP and CLI write paths."""
+
+from __future__ import annotations
+
+from contextlib import contextmanager
+from pathlib import Path
+import time
+from typing import Iterator
+
+from ontos.core.errors import OntosUserError
+from ontos.core.locking import (
+    release_exclusive,
+    set_non_inheritable,
+    try_acquire_exclusive,
+)
+
+
+@contextmanager
+def workspace_lock(workspace_root: Path, timeout: float = 5.0) -> Iterator[None]:
+    """Acquire an exclusive flock on ``<workspace>/.ontos.lock``."""
+    lock_path = workspace_root / ".ontos.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+
+    handle = lock_path.open("a+", encoding="utf-8")
+    set_non_inheritable(handle)
+    start = time.monotonic()
+    try:
+        while True:
+            try:
+                if not try_acquire_exclusive(handle):
+                    raise BlockingIOError
+                break
+            except BlockingIOError:
+                if time.monotonic() - start >= timeout:
+                    raise OntosUserError(
+                        "Workspace is locked by another process.",
+                        code="E_WORKSPACE_BUSY",
+                    )
+                time.sleep(0.1)
+        yield
+[0m
+[0m$ [0mgit show b6f89d7:<redacted:secret> 2>/dev/null | sed -n '1,30p;700,728p'
+#!/usr/bin/env python3
+"""Validate the audit registry and its local rendered control-plane artifacts."""
+
+from __future__ import annotations
+
+import argparse
+from collections import Counter, defaultdict
+import json
+from pathlib import Path
+import re
+import subprocess
+import sys
+from typing import Any
+
+import yaml
+
+
+ROOT = Path(__file__).resolve().parents[1]
+REGISTRY_PATH = ROOT / "<redacted:secret>"
+AUDIT_PATH = ROOT / "<redacted:secret>"
+LEDGER_PATH = ROOT / "docs/trackers/project-ontos-audit-remediation-release-line.md"
+REVALIDATION_PATH = ROOT / "<redacted:secret>"
+DOCTOR_MANIFEST_PATH = ROOT / "<redacted:secret>"
+SERIALIZER_MANIFEST_PATH = ROOT / "<redacted:secret>"
+GITHUB_REPOSITORY = "ohjonathan/Project-Ontos"
+
+REQUIRED_FINDING_FIELDS = {
+    "id",
+    "baseline_commit",
+    "severity",
+        "--require-external-parity",
+        action="store_true",
+        help="query live GitHub issues and fail on state/milestone/label/checklist drift",
+    )
+    args = parser.parse_args()
+    try:
+        errors = validate(args.require_external_parity)
+    except Exception as exc:  # validation should fail closed with useful context
+        print(f"audit-registry: ERROR: {exc}", file=sys.stderr)
+        return 2
+    if errors:
+        print("audit-registry: FAILED", file=sys.stderr)
+        for error in errors:
+            print(f"- {error}", file=sys.stderr)
+        return 1
+    mode = "local+external" if args.require_external_parity else "local"
+    print("audit-registry: PASS")
+    print(f"mode: {mode}")
+    print("original findings: 91 (P0=1, P1=27, P2=63)")
+    print(
+        "original status: committed_fixed=2, code_fixed_evidence_pending=1, "
+        "implemented_uncommitted=40, partial_uncommitted=7, confirmed_open=41"
+    )
+    print("revalidation findings: 9")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+[0m
+[0m$ [0mgit show b6f89d7:ontos/core/context.py 2>/dev/null | sed -n '645,775p'
+def _reject_parent_symlinks(self, path: Path) -> None:
+        root = self.repo_root.expanduser().resolve()
+        current = root
+        for component in path.parent.relative_to(root).parts:
+            current /= component
+            info = os.lstat(current)
+            if stat.S_ISLNK(info.st_mode):
+                raise ValueError(f"operation path must not contain a symlink: {current}")
+            if not stat.S_ISDIR(info.st_mode):
+                raise ValueError(f"operation path parent must be a directory: {current}")
+
+    def _entry_stat(self, anchor: _DirectoryAnchor, name: str) -> Optional[os.stat_result]:
+        try:
+            if anchor.fd is not None:
+                return os.stat(name, dir_fd=anchor.fd, follow_symlinks=False)
+            return os.lstat(anchor.path / name)
+        except FileNotFoundError:
+            return None
+
+    def _entry_is_regular(self, anchor: _DirectoryAnchor, name: str) -> bool:
+        info = self._entry_stat(anchor, name)
+        if info is None:
+            return False
+        path = anchor.path / name
+        if stat.S_ISLNK(info.st_mode):
+            raise ValueError(f"destination must not be a symlink: {path}")
+        if not stat.S_ISREG(info.st_mode):
+            raise ValueError(f"operation path must name a regular file: {path}")
+        return True
+
+    def _create_unique_file(
+        self,
+        anchor: _DirectoryAnchor,
+        *,
+        prefix: str,
+        suffix: str,
+    ) -> tuple[int, str]:
+        if anchor.fd is None:
+            fd, path = tempfile.mkstemp(
+                dir=str(anchor.path),
+                prefix=prefix,
+                suffix=suffix,
+            )
+            return fd, Path(path).name
+
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
+        flags |= getattr(os, "O_CLOEXEC", 0)
+        while True:
+            name = f"{prefix}{secrets.token_hex(12)}{suffix}"
+            try:
+                fd = os.open(name, flags, 0o600, dir_fd=anchor.fd)
+            except FileExistsError:
+                continue
+            return fd, name
+
+    def _stage_text(
+        self,
+        anchor: _DirectoryAnchor,
+        final_name: str,
+        content: str,
+    ) -> str:
+        """Write and fsync UTF-8 content to an anchored exclusive temp file."""
+        self._verify_anchor_binding(anchor)
+        final_info = self._entry_stat(anchor, final_name)
+        if final_info is not None:
+            if stat.S_ISLNK(final_info.st_mode):
+                raise ValueError(
+                    f"destination must not be a symlink: {anchor.path / final_name}"
+                )
+            if not stat.S_ISREG(final_info.st_mode):
+                raise ValueError(
+                    f"destination must be a regular file: {anchor.path / final_name}"
+                )
+
+        fd, temp_name = self._create_unique_file(
+            anchor,
+            prefix=f".{final_name}.",
+            suffix=".tmp",
+        )
+        try:
+            if hasattr(os, "fchmod"):
+                mode = stat.S_IMODE(final_info.st_mode) if final_info else 0o644
+                os.fchmod(fd, mode)
+            with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
+                fd = -1
+                handle.write(content)
+                handle.flush()
+                os.fsync(handle.fileno())
+            return temp_name
+        except BaseException:
+            if fd >= 0:
+                os.close(fd)
+            self._unlink_entry(anchor, temp_name, missing_ok=True)
+            raise
+
+    def _reserve_backup(self, anchor: _DirectoryAnchor, final_name: str) -> str:
+        fd, backup_name = self._create_unique_file(
+            anchor,
+            prefix=f".{final_name}.",
+            suffix=".bak",
+        )
+        os.close(fd)
+        return backup_name
+
+    def _replace_entry(
+        self,
+        source_anchor: _DirectoryAnchor,
+        source_name: str,
+        destination_anchor: _DirectoryAnchor,
+        destination_name: str,
+    ) -> None:
+        if source_anchor.fd is not None and destination_anchor.fd is not None:
+            os.replace(
+                source_name,
+                destination_name,
+                src_dir_fd=source_anchor.fd,
+                dst_dir_fd=destination_anchor.fd,
+            )
+            return
+        self._verify_anchor_binding(source_anchor)
+        if destination_anchor is not source_anchor:
+            self._verify_anchor_binding(destination_anchor)
+        os.replace(
+            source_anchor.path / source_name,
+            destination_anchor.path / destination_name,
+        )
+
+    @staticmethod
+    def _unlink_entry(
+        anchor: _DirectoryAnchor,
+        name: str,
+[0m
+[0m$ [0mgit show b6f89d7:ontos/core/config.py 2>/dev/null | sed -n '354,368p'
+# Type validation
+    _validate_types(data)
+
+    # Path validation
+    if repo_root is not None and "paths" in data:
+        paths_section = data["paths"]
+        for key in ["docs_dir", "logs_dir", "context_map"]:
+            if key in paths_section:
+                if not _validate_path(paths_section[key], repo_root):
+                    raise ConfigError(
+                        f"paths.{key} must resolve within repository root"
+                    )
+
+    # Build config with defaults for missing fields
+    ontos = OntosSection(**_section_kwargs(OntosSection, "ontos", data.get("ontos")))
+[0m
+[0m$ [0mgit show b6f89d7:docs/reference/Migration_v3_to_v4.md 2>/dev/null | grep -n "audit-remediation-compatibility-contracts" | head
+(no output)
+[0m
+[0m$ [0mgit show b6f89d7:<redacted:secret> 2>/dev/null | grep -nE "REQUIRED_PROGRAM_ISSUES|146|157|acitve|lease_state|number" | head -30
+173:            "number,state,title,labels,milestone,body",
+241:        if row.get("issue") not in range(146, 159):
+390:        146: 1,
+401:        157: 3,
+425:        if program.get("lease_state") == "implementation_uncommitted_integration_pending"
+426:    } | {146}
+440:        (146, SERIALIZER_MANIFEST_PATH),
+510:    active_programs = [program for program in programs if program.get("lease_state") == "active"]
+582:        errors.append("#146 manifest must declare its authorized provider-limited mode")
+585:        errors.append("#146 manifest must activate the framework changed-path scope verifier")
+590:        errors.append("#146 scope gate must cover the registry base SHA")
+592:        errors.append("#146 branch gate must use base ancestry, not a literal branch name")
+628:        for issue in range(146, 159):
+643:            if issue <= 157 and set(checkbox_states) != expected_ids:
+[0m
+[0m$ [0mgit show b6f89d7:<redacted:secret> 2>/dev/null | sed -n '235,250p;620,660p'
+if not isinstance(evidence_path, str) or not (ROOT / evidence_path).exists():
+                    errors.append(
+                        f"{row.get('id', index)} evidence path is missing: {evidence_path!r}"
+                    )
+        if not isinstance(row.get("allowed_paths"), list) or not row.get("allowed_paths"):
+            errors.append(f"{row.get('id', index)} has no allowed paths")
+        if row.get("issue") not in range(146, 159):
+            errors.append(f"{row.get('id', index)} has invalid issue assignment {row.get('issue')!r}")
+
+    original = {row["id"]: row for row in findings if row.get("origin") == "fable_audit"}
+    r2 = {row["id"]: row for row in findings if row.get("origin") == "codex_revalidation"}
+    if set(original) != set(audit):
+        errors.append(
+            "original register mismatch: "
+            f"missing={sorted(set(audit) - set(original))}, extra={sorted(set(original) - set(audit))}"
+        )
+        rows_by_issue: dict[int, list[dict[str, Any]]] = defaultdict(list)
+        for row in findings:
+            rows_by_issue[row["issue"]].append(row)
+        milestone_markers = {
+            1: "Audit Release N",
+            2: "Audit Release N+1",
+            3: "Audit Release N+2",
+        }
+        for issue in range(146, 159):
+            live = live_github_issue(issue)
+            program = program_by_issue.get(issue)
+            expected_rows = rows_by_issue.get(issue, [])
+            expected_ids = {row["id"] for row in expected_rows}
+            body = live.get("body") or ""
+
+            if issue == 158 and not expected_ids <= set(body.split()):
+                # Epic punctuation/backticks make token equality inconvenient;
+                # require every epic-owned ID literally in the body.
+                missing = sorted(item for item in expected_ids if item not in body)
+                if missing:
+                    errors.append(f"live GitHub epic #158 is missing rows: {missing}")
+
+            checkbox_states = github_checkbox_states(body)
+            if issue <= 157 and set(checkbox_states) != expected_ids:
+                errors.append(
+                    f"live GitHub issue #{issue} finding checklist mismatch: "
+                    f"missing={sorted(expected_ids - set(checkbox_states))}, "
+                    f"extra={sorted(set(checkbox_states) - expected_ids)}"
+                )
+            missing_checkboxes = expected_ids - set(checkbox_states)
+            if missing_checkboxes:
+                errors.append(
+                    f"live GitHub issue #{issue} is missing checklist rows: "
+                    f"{sorted(missing_checkboxes)}"
+                )
+            for row in expected_rows:
+                if row["id"] not in checkbox_states:
+                    continue
+                expected_checked = row.get("status") == "code_fixed"
+                if checkbox_states[row["id"]] != expected_checked:
+                    errors.append(
+[0m
+[0m$ [0mgit show b6f89d7:<redacted:secret> 2>/dev/null | grep -nE "issue:|program_id:|root_program:" | head -60
+11:  epic_issue: 158
+45:    - issue: 147
+51:    - issue: 149
+96:    root_program: project-ontos-audit-serializer-corruption
+97:    issue: 146
+126:    root_program: project-ontos-audit-doctor-rce
+127:    issue: 147
+152:    root_program: project-ontos-audit-relN-quick-wins
+153:    issue: 148
+183:    root_program: project-ontos-audit-relN-sweep
+184:    issue: 149
+223:    root_program: project-ontos-audit-characterization-tests
+224:    issue: 150
+244:    root_program: project-ontos-audit-parser-consolidation
+245:    issue: 151
+280:    root_program: project-ontos-audit-writepath-bodyref
+281:    issue: 152
+305:    root_program: project-ontos-audit-mcp-dispatch-rename
+306:    issue: 153
+330:    root_program: project-ontos-audit-exitcode-envelope
+331:    issue: 154
+361:    root_program: project-ontos-audit-cli-command-table
+362:    issue: 155
+377:    root_program: project-ontos-audit-precommit-rewire-slim
+378:    issue: 156
+399:    root_program: project-ontos-audit-graph-traversal
+400:    issue: 157
+1032:    root_program: project-ontos-audit-remediation-2026-07
+1033:    issue: 158
+[0m
+[0m$ [0mgit show b6f89d7:<redacted:secret> 2>/dev/null | sed -n '1,15p;1020,1046p'
+schema_version: 1
+registry_id: project-ontos-audit-remediation-registry
+source_audit: <redacted:secret>
+audit_baseline_commit: 589d919
+revalidation_commit: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+revalidation_report: <redacted:secret>
+generated_artifacts:
+  - docs/trackers/project-ontos-audit-remediation-release-line.md
+github_snapshot:
+  observed_at: "2026-07-10"
+  epic_issue: 158
+  epic_release_line_synced: true
+  r2_checklists_synced: true
+  original_checklist_policy: merged_and_verified_only
+  uncommitted_original_checklists_remain_unchecked: true
+    verification_evidence:
+      - tests/mcp/test_read_only_registration.py
+    allowed_paths:
+      - ontos/mcp/portfolio.py
+      - ontos/mcp/server.py
+      - ontos/mcp/tools.py
+      - tests/mcp/test_export_graph.py
+      - tests/mcp/test_read_only_registration.py
+    summary: "Read-only MCP mode still permits filesystem writes through export_graph."
+  - <<: *r2_open
+    id: R2-control-plane-parity-1
+    severity: P1
+    root_program: project-ontos-audit-remediation-2026-07
+    issue: 158
+    release: v4.7.1
+    base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+    status: implemented_uncommitted_parity_verified
+    lifecycle_state: parity_verified_commit_pending
+    lease_state: active
+    allowed_paths:
+      - <redacted:secret>
+      - <redacted:secret>
+      - docs/trackers/project-ontos-audit-remediation-release-line.md
+      - <redacted:secret>-*.md
+    verification_evidence:
+      - <redacted:secret>
+    summary: "Roadmap, leases, scope checks, GitHub state, and lifecycle evidence can disagree without a blocking parity gate."
+[0m
+[0m$ [0mgit show b6f89d7:<redacted:secret> 2>/dev/null | grep -nE "^programs:|^findings:|^shared_path_leases:|^shared_tree_integration:|^external_drift:|epic_issue:" | head
+11:  epic_issue: 158
+58:shared_tree_integration:
+93:programs:
+414:shared_path_leases:
+447:findings:
+[0m
+[0m$ [0mgit show b6f89d7:ontos/ui/json_output.py 2>/dev/null | sed -n '16,49p'
+COMMAND_ENVELOPE_SCHEMA_VERSION = "4.0"
+
+
+class ResultStatus(str, Enum):
+    """Domain outcome, independent of whether command execution succeeded."""
+
+    CLEAN = "clean"
+    FINDINGS = "findings"
+    WARNINGS = "warnings"
+    INCOMPLETE = "incomplete"
+    ERROR = "error"
+
+
+class ExitCode(IntEnum):
+    """Public numeric exit-code taxonomy introduced with schema v4."""
+
+    CLEAN = 0
+    FINDINGS = 1
+    USAGE = 2
+    WARNINGS = 3
+    INTERNAL = 5
+    INTERRUPTED = 130
+
+
+class ExitCategory(str, Enum):
+    """Machine-readable exit category for the v4 command contract."""
+
+    CLEAN = "clean"
+    FINDINGS = "findings"
+    WARNINGS = "warnings"
+    USAGE = "usage"
+    INTERNAL = "internal"
+    INTERRUPTED = "interrupted"
+    ERROR = "error"
+[0m
+[0m$ [0mgit show b6f89d7:ontos/ui/json_output.py 2>/dev/null | grep -nE "status.*=|warnings|\"success\"|\"findings\"|\"warning\"|RESULT_STATUS|ExitCategory" | head -30
+9:import warnings
+23:    FINDINGS = "findings"
+24:    WARNINGS = "warnings"
+40:class ExitCategory(str, Enum):
+44:    FINDINGS = "findings"
+45:    WARNINGS = "warnings"
+57:        "findings",
+60:        "load_warnings",
+66:        "validation_warnings",
+67:        "warnings",
+71:    {"load_issues", "load_warnings", "parse_failed_candidates"}
+73:_LEGACY_RESULT_STATUS = {
+78:    "findings": ResultStatus.FINDINGS,
+82:    "warning": ResultStatus.WARNINGS,
+83:    "warnings": ResultStatus.WARNINGS,
+132:            "status": "success",
+183:    warnings.warn(
+207:    warnings: Optional[List[str]] = None,
+210:    result_status: Optional[str] = None,
+221:        execution_status="success",
+225:        warnings=warnings,
+227:        result_status=result_status,
+243:    warnings: Optional[List[str]] = None,
+247:    result_status: Optional[str] = None,
+270:    execution_status = "success" if execution_succeeded else "error"
+274:        execution_status=execution_status,
+278:        warnings=warnings,
+280:        result_status=result_status,
+297:    warnings: Optional[List[str]],
+314:        execution_status=execution_status,
+[0m
+[0m$ [0mgit show b6f89d7:ontos/commands/log.py 2>/dev/null | sed -n '345,400p'
+marker_path = project_root / ".ontos" / "session_archived"
+    try:
+        marker_path.parent.mkdir(parents=True, exist_ok=True)
+        marker_path.write_text(str(log_path), encoding="utf-8")
+    except OSError:
+        # Non-fatal: marker creation failure shouldn't break logging
+        pass
+[0m
+[0m$ [0mgit show b6f89d7:ontos/core/schema.py 2>/dev/null | sed -n '310,345p'; echo "---STUB---"; git show b6f89d7:ontos/commands/stub.py 2>/dev/null | sed -n '180,195p'
+errors.append(str(exc))
+    
+    return len(errors) == 0, errors
+
+
+def serialize_frontmatter(fm: Dict[str, Any]) -> str:
+    """Serialize frontmatter as safe YAML with semantic round-trip checks.
+
+    Args:
+        fm: Frontmatter dictionary.
+
+    Returns:
+        YAML-formatted string without the surrounding --- markers.
+
+    Examples:
+        >>> serialize_frontmatter({"id": "test", "type": "atom"})
+        'id: test\\ntype: atom'
+        >>> serialize_frontmatter({"id": "test", "depends_on": ["foo", "bar"]})
+        'id: test\\ndepends_on: [foo, bar]'
+    """
+    from ontos.io.yaml import assert_frontmatter_roundtrip, dump_yaml
+
+    if not isinstance(fm, dict):
+        raise TypeError("Frontmatter must be a dictionary")
+    if "id" in fm:
+        validate_document_id(fm["id"])
+
+    blocks: List[str] = []
+    
+    # Define field order for consistent output
+    field_order = [
+        'id', 'type', 'status', 'ontos_schema', 'curation_level',
+        'depends_on', 'concepts', 'describes', 'describes_verified',
+        'event_type', 'impacts', 'implements', 'tests', 'deprecates'
+    ]
+    
+---STUB---
+    return exit_code
+
+
+def _validate_stub_params(params: dict) -> None:
+    """Validate non-interactive and interactive stub payload before create_stub."""
+    doc_id = str(params.get("id", "")).strip()
+    if not doc_id:
+        raise OntosUserError("Document ID is required.", code="E_USER_INPUT")
+    if not _ID_PATTERN.match(doc_id):
+        raise OntosUserError(
+            "Invalid --id. Expected ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$",
+            code="E_USER_INPUT",
+        )
+
+    doc_type = str(params.get("type", "")).strip().lower()
+    if doc_type not in _VALID_DOC_TYPES:
+[0m
+[0m$ [0mgit show b6f89d7:docs/reference/Migration_v3_to_v4.md 2>/dev/null | sed -n '1,60p' | grep -nE "audit-remediation|compatibility-contracts|required_version|warnings|exit" | head; echo "exit=$?"
+10:This guide covers the new capabilities in Ontos v4.0 through v4.7 and how to enable them. Existing CLI commands, configuration, and frontmatter files remain supported. Machine-contract changes: v4.6 made `ontos activate --json` emit structured validation issue objects instead of bare warning/error strings; v4.7 wraps `ontos link-check --json` in the standard command envelope (shell exit codes unchanged) and returns grouped activation warnings by default (`--warnings full` restores inline records).
+52:| `activate` | Mandatory best-effort session activation with loaded IDs and warnings |
+53:| `workspace_overview` | Structured orientation — key documents, graph stats, warnings |
+exit=0
+[0m
+[0m$ [0mls <redacted:secret>/ ; echo "---raw---"; ls <redacted:secret>/ 2>/dev/null || echo "no .raw dir"
+B.1-claude-adversarial.md
+B.1-claude-product.md
+B.1-dispatch-intent.yaml
+B.1-dispatch-result.yaml
+B.1-dispatch-verification.txt
+B.1-final-claude-adversarial.md
+B.1-final-claude-product.md
+B.1-final-dispatch-intent.yaml
+B.1-final-dispatch-result.yaml
+B.1-final-gemini-alignment.md
+B.1-final-glm-peer.md
+B.1-gemini-alignment.md
+B.1-glm-peer.md
+B.1-recert-claude-adversarial.md
+B.1-recert-claude-product.md
+B.1-recert-gemini-alignment.md
+B.1-recert-glm-peer.md
+<redacted:secret>
+<redacted:secret>
+B.1-strict-claude-adversarial.md
+B.1-strict-claude-product.md
+B.1-strict-final-dispatch-intent.yaml
+B.1-strict-final-dispatch-result.yaml
+B.1-strict-gemini-alignment.md
+B.1-strict-glm-peer.md
+B.2-claude-adversarial.md
+B.2-claude-product.md
+B.2-dispatch-intent.yaml
+B.2-dispatch-result.yaml
+B.2-dispatch-verification.txt
+B.2-final-claude-adversarial.md
+B.2-final-claude-product.md
+B.2-final-dispatch-intent.yaml
+B.2-final-dispatch-result.yaml
+B.2-final-gemini-alignment.md
+B.2-final-glm-peer.md
+B.2-gemini-alignment.md
+B.2-glm-peer.md
+B.2-recert-claude-adversarial.md
+B.2-recert-claude-product.md
+B.2-recert-gemini-alignment.md
+B.2-recert-glm-peer.md
+<redacted:secret>
+<redacted:secret>
+B.2-strict-final-dispatch-intent.yaml
+B.2-strict-final-dispatch-result.yaml
+B.2-strict-gemini-alignment.md
+B.3-verdict.md
+C-phase-falsification-findings.md
+D.1-claude-peer.md
+D.1-dispatch-intent.yaml
+D.1-dispatch-result.yaml
+D.2-claude-peer.md
+D.2-claude-product.md
+D.2-dispatch-intent.yaml
+D.2-dispatch-result.yaml
+D.2-gemini-adversarial.md
+D.2-glm-alignment.md
+D.2-strict-final-dispatch-intent.yaml
+lifecycle-receipt-inventory-final.yaml
+lifecycle-receipt-inventory-recertification.yaml
+lifecycle-receipt-inventory-strict-final.yaml
+lifecycle-receipt-inventory.yaml
+receipt-recovery.md
+---raw---
+B.3-gemini-dispatch-attestation.txt
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+audit-rb-B1-gp.review.md
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+glm-D2-r2.review.md
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>.md.txt
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+[0m
+[0m← [0mWrite <redacted:secret>
+Wrote file successfully.
+[0m
+[0m← [0mWrite <redacted:secret>
+Wrote file successfully.
+[0m
+[0m$ [0mgit status --short
+M <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+[0m
+[0m$ [0mls scripts/llm-dev 2>/dev/null && python3 scripts/_lib/verdict_shape.py <redacted:secret> 2>/dev/null; echo "exit=$?"
+scripts/llm-dev
+exit=2
+[0m
+[0m$ [0mpython3 scripts/llm-dev lint-artifact <redacted:secret> 2>&1 | tail -20; echo "---exit=${PIPESTATUS[0]}---"
+File "/<redacted:secret>", line 125
+    `verify`            — manifest conformance only (does not prove
+                        ^
+SyntaxError: invalid character '—' (U+2014)
+---exit=---
+[0m
+[0m$ [0mpython3 -c "
+import sys; sys.path.insert(0, 'scripts')
+from _lib.verdict_shape import expected_shape_contract
+data = open('<redacted:secret>').read()
+ok, errs = expected_shape_contract(data, require_h1=True)
+print('ok=', ok)
+for e in errs: print('ERR:', e)
+" 2>&1 | tail -20
+Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    from _lib.verdict_shape import expected_shape_contract
+ModuleNotFoundError: No module named '_lib'
+[0m
+[0m$ [0mcd scripts && python3 -c "
+import sys
+from _lib.verdict_shape import expected_shape_contract
+data = open('../<redacted:secret>').read()
+ok, errs = expected_shape_contract(data, require_h1=True)
+print('shape_ok=', ok)
+for e in errs: print('ERR:', e)
+" 2>&1 | tail -20
+Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    from _lib.verdict_shape import expected_shape_contract
+ModuleNotFoundError: No module named '_lib'
+[0m
+[0m$ [0mls scripts/_lib/ 2>/dev/null; echo "---"; grep -rn "def expected_shape_contract\|def check\|def validate" scripts/_lib/verdict_shape.py 2>/dev/null | head
+---
+[0m
+[0m→ [0mRead <redacted:secret>[90m [limit=25][0m
+[0m
+[0m$ [0mgrep -n "^## Verdict" <redacted:secret>; echo "--- next non-blank lines ---"; awk '/^## Verdict/{f=1;next} f&&/^$/{next} f{print; c++} c>=3{exit}' <redacted:secret>; echo "--- checks ---"; grep -c "^# Peer Review" <redacted:secret>; grep -c "execution_provider" <redacted:secret>
+188:## Verdict
+--- next non-blank lines ---
+Approve
+The spec is complete, internally consistent, accurately anchored to frozen-I0 `b6f89d7`,
+and implementable without blocking follow-up. All v1.5 corrections are present as
+--- checks ---
+1
+0
+[0m
+[0m$ [0mecho "=== placeholder ==="; cat <redacted:secret>; echo "=== long-hex scan (should be empty) ==="; grep -nE "[0-9a-f]{40}|[0-9a-f]{64}|sha256:[0-9a-f]|API_KEY|api_key|TOKEN|secret" <redacted:secret> || echo "none"; echo "=== sha refs (short only) ==="; grep -oE "b6f89d7[a-f0-9]*" <redacted:secret> | sort -u
+=== placeholder ===
+pending wrapper F38 promotion
+=== long-hex scan (should be empty) ===
+125:with the external release-proof boundary; no secret-shaped configuration is relied upon
+208:  as OIDC permission granted only to publisher jobs; no secret-shaped configuration keys
+=== sha refs (short only) ===
+b6f89d7
+[0m
+[0m# [0mTodos
+[✓] Read Template 02 remainder (lines 878+)
+[✓] Locate and read spec v1.5
+[✓] Inspect I0 commit b6f89d7 with bounded git show/diff
+[✓] Read C-phase-falsification-findings.md (reproduction statements only)
+[✓] Write placeholder file B.2-strict-glm-peer.md
+[✓] Analyze v1.5 corrections and write review artifact
+[✓] Verify artifact shape and output Created + path
+[0m

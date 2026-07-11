@@ -1,0 +1,15 @@
+Review complete. I wrote only the required artifact at `docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-strict-claude-adversarial.md` and made no other changes (no commit — the orchestrator stages review-phase artifacts).
+
+**Verdict: Approve**
+
+What I did:
+- Read Templates 01, 02, 05 completely; confirmed branch `codex/audit-rebaseline-remediation-lifecycle` @ `6aae524`, tracked inputs present.
+- Blindly reviewed spec v1.5 against frozen I0 `b6f89d7` / base `bf91b42` and the C-FZ-* reproduction statements only. Did not read B.1/B.2 verdicts, receipts, result bundles, summaries, trackers, or sibling reviews.
+- Falsified each corrected construction by verifying ~15 load-bearing anchors with bounded `git show`/`git grep` (read-only, state preserved).
+
+Key results:
+- **Every frozen-I0 citation is accurate** — log collision/defect, config version branches + shadowing guard, context no-follow writer, core/mcp locking, validator `main()` at 728, schema ID copy, divergent stub regex, JSON exit taxonomy (`WARNINGS=3`, reserved `4`), activation strings (`E_ACTIVATION_UNUSABLE`, `Incompatible Ontos version`, `Invalid [ontos].required_version`), and CI/publish workflow anchors.
+- **Reproductions confirmed**: I0's `required_version` uses lazy `all()` (C-FZ-1), MCP lock uses a plain `open("a+")` (C-FZ-6), stub keeps a divergent ID regex/copy, `logs_dir` collapses through `.resolve()`. The spec's gates target exactly these and are non-vacuous by construction.
+- **No blocker** — no finding admits a runnable reproduction of a spec defect (I0 anchors are pre-upgrade evidence; Phase C gates are correctly hedged as not-yet-satisfied).
+
+Substantive finding (**should-fix S-1**): finding `R2-control-plane-parity-1` is explicitly owned by umbrella program `#158`, which §4.1 excludes from the mandated "exactly `#146`–`#157`" program set while §3 requires parity over `#146`–`#158`. The spec never reconciles how `#158` participates as finding-owner/parity-target without a `KeyError` — the exact exit-2 class the gate forbids. Plus two minors (§3 vs §4.1 range wording; a loose compound citation at `schema.py:315-343`).
