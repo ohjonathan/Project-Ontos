@@ -87,9 +87,14 @@ pip install 'ontos[mcp]'    # Adds mcp>=1.27.0 and pydantic>=2.0
 | `promote_document` | Change curation level without moving the file |
 | `rename_document` | Rename an ID across all referencing files |
 
-All write tools use advisory flock locking (`workspace_lock()`) for cross-process safety and perform rollback-then-rebuild recovery on commit failure.
+All write tools use the cross-platform `workspace_lock()` abstraction for
+cross-process safety and perform rollback-then-rebuild recovery on commit
+failure.
 
-All tools are read-only except `export_graph` with `export_to_file` (writes within workspace root) and the write tools above. In read-only mode, use the CLI fallback `ontos log -e "slug"` for session archives.
+In mutable mode, `export_graph` may use `export_to_file` within the workspace.
+In `--read-only` mode, persistent export is rejected, usage logging is
+suppressed, and no MCP operation writes to the filesystem. Use the CLI fallback
+`ontos log -e "slug"` for session archives.
 
 ### v4.4-v4.7 Activation and Diagnostics
 
@@ -111,6 +116,66 @@ v4.5 makes common lifecycle artifact tagging first-class. In addition to the cor
 v4.6 changes only the `activate --json` validation payload shape. `payload.data.validation.warnings` and `payload.data.validation.errors` are now lists of objects carrying `severity`, `message`, and, when available, `rule_id`, `document_id`, and `file_path`. Consumers that previously expected `list[str]` should read `record["message"]`.
 
 v4.7 groups activation warnings by default: `data.validation.warnings` is `[]` unless you pass `--warnings full`, with grouped summaries in `warning_groups` and totals in `warnings_total`/`warnings_truncated` (`validation.errors` is always complete). `link-check --json` emits the standard command envelope — read counts from `.data.summary` and result quality from `.data.result_status`. The audit-remediation contract bumps the envelope to `schema_version: "4.0"` and separates shell outcomes: `0` clean, `1` findings, `2` usage, `3` warnings-only, `5` internal, and `130` interrupted. Resolved-on-disk `depends_on` targets move from broken references to `data.file_dependencies`, controllable via `[validation] allowed_external_dependency_paths` (note: ontos ≤ 4.6.0 rejects configs containing this key — upgrade every CLI install before adopting it).
+
+### Audit-remediation compatibility contracts
+
+Upgrade every Ontos runtime that can touch the repository **before** adding a
+new compatibility key. Verify the repository virtual environment, the `ontos`
+found on `PATH`, installed Git hooks, and CI jobs separately. A pre-adoption
+runtime can reject `required_version` as an unknown key or fail activation
+before it can explain the intended fallback.
+
+`[ontos].required_version` accepts comma-separated comparisons, tilde ranges,
+and `x`/`*` wildcards:
+
+```toml
+[ontos]
+version = "4.4"
+required_version = ">=4.7.0, <5.0.0"
+```
+
+Examples of supported ranges are `>=4.7.0, <5.0.0`, `~4.7`, and `4.7.x`.
+An incompatible runtime makes `ontos activate` exit `1`; JSON output uses
+`error.code: E_ACTIVATION_UNUSABLE`, `data.status: not_usable`, and a
+`data.reason` beginning `Incompatible Ontos version`. A malformed range uses a
+reason beginning `Invalid [ontos].required_version`. Generated agent activation
+must try the repository runtime first and fall back when a candidate is absent
+**or incompatible**.
+
+Document IDs are strings matching
+`^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$`. Quote YAML scalars that a YAML
+loader could coerce to another type:
+
+```yaml
+id: "2026-07-10"  # not a date
+# id: "123"       # not an integer
+# id: "null"      # not YAML null
+```
+
+Non-string IDs fail with a message beginning `Document id must be a string`;
+empty and pattern-invalid IDs are also rejected. Batch loading records the
+document failure as `parse_error`. Invalid IDs supplied to a CLI command use
+`E_USER_INPUT` (shell exit `2`).
+
+Session logs use the configured `paths.logs_dir`, safe YAML serialization, and
+exclusive creation. A same-name collision is never overwritten: human output
+reports the collision, while JSON uses `E_LOG_EXISTS` (shell exit `1`). Choose a
+different title/slug, or intentionally move/remove the existing log before
+retrying. Unsafe or symlinked log paths fail closed. If the primary log is
+created but the best-effort `.ontos/session_archived` marker cannot be updated,
+human output warns with `Session log created, but archive marker was not
+updated:`, JSON returns the same message in `warnings[]`, and the command exits
+`3` while retaining the created log path in `data`. Fix the `.ontos` path or
+permissions before pushing.
+
+The public JSON command envelope is schema `4.0` with exactly these top-level
+keys: `schema_version`, `command`, `status`, `exit_code`, `message`, `result`,
+`data`, `warnings`, and `error`. The public exit taxonomy is `0` clean, `1`
+findings, `2` usage/user input, `3` warnings, `5` internal, and `130`
+interrupted. Exit code `4` is reserved; do not emit or reassign it without an
+explicit schema-version change. Automation that previously treated every
+non-zero result as a hard failure must distinguish warnings-only exit `3` from
+findings, usage errors, and internal failures.
 
 ### File-Mtime Cache Invalidation
 
@@ -210,9 +275,11 @@ log_window_days = 30
 
 Four write-capable MCP tools ship in v4.1: `scaffold_document`, `log_session`, `promote_document`, and `rename_document`. They are registered only when the server runs without `--read-only`.
 
-### Advisory Flock Locking
+### Cross-platform Advisory Locking
 
-All write paths (CLI and MCP) now use `workspace_lock()` with advisory flock on `<workspace>/.ontos.lock`. Ensure `.ontos.lock` is in your `.gitignore`.
+All write paths (CLI and MCP) use `workspace_lock()` on
+`<workspace>/.ontos.lock`. The abstraction selects the supported POSIX or
+Windows backend; ensure `.ontos.lock` is in your `.gitignore`.
 
 ### Verify Subcommand
 

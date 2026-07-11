@@ -100,9 +100,13 @@ class TestA1OwnsLockRegression:
 
     def test_owns_lock_false_allows_commit_under_workspace_lock(self, tmp_path):
         target = tmp_path / "note.md"
-        with workspace_lock(tmp_path, timeout=5.0):
+        with workspace_lock(tmp_path, timeout=5.0) as guard:
             ctx = SessionContext(
-                repo_root=tmp_path, config={}, owns_lock=False
+                repo_root=tmp_path,
+                config={},
+                owns_lock=False,
+                expected_workspace_binding=guard.workspace_binding,
+                external_lock_guard=guard,
             )
             ctx.buffer_write(target, "hello A1")
             modified = ctx.commit()
@@ -132,16 +136,53 @@ class TestA1OwnsLockRegression:
             )
             assert ctx._lock_handle is None
 
-    def test_owns_lock_false_acquire_release_are_noops(self, tmp_path):
+    def test_owns_lock_false_requires_bound_outer_guard(self, tmp_path):
         ctx = SessionContext(
             repo_root=tmp_path, config={}, owns_lock=False
         )
         lock_path = tmp_path / ".ontos.lock"
-        # No outer flock held — the contract is still "do nothing".
-        assert ctx._acquire_lock(lock_path, timeout=0.1) is True
+        with pytest.raises(RuntimeError, match="outer lock guard"):
+            ctx._acquire_lock(lock_path, timeout=0.1)
         assert ctx._lock_handle is None
         ctx._release_lock(lock_path)  # Must not raise.
         assert ctx._lock_handle is None
+
+    def test_owns_lock_false_rejects_arbitrary_callable(self, tmp_path):
+        target = tmp_path / "unlocked.md"
+        ctx = SessionContext(
+            repo_root=tmp_path,
+            config={},
+            owns_lock=False,
+            external_lock_guard=lambda: None,  # type: ignore[arg-type]
+        )
+        ctx.buffer_write(target, "must not be written")
+
+        with pytest.raises(RuntimeError, match="bound outer lock guard"):
+            ctx.commit()
+
+        assert not target.exists()
+        assert not (tmp_path / ".ontos.lock").exists()
+
+    def test_owns_lock_false_rejects_guard_from_other_workspace(self, tmp_path):
+        guarded_root = tmp_path / "guarded"
+        target_root = tmp_path / "target"
+        guarded_root.mkdir()
+        target_root.mkdir()
+        target = target_root / "wrong-guard.md"
+
+        with workspace_lock(guarded_root) as guard:
+            ctx = SessionContext(
+                repo_root=target_root,
+                config={},
+                owns_lock=False,
+                external_lock_guard=guard,
+            )
+            ctx.buffer_write(target, "must not be written")
+            with pytest.raises(RuntimeError, match="different workspace"):
+                ctx.commit()
+
+        assert not target.exists()
+        assert not (target_root / ".ontos.lock").exists()
 
 
 class TestTwoWriterContention:
@@ -325,20 +366,27 @@ class TestM12HandleLeakFix:
         ctx = SessionContext(repo_root=tmp_path, config={})
         lock_path = tmp_path / ".ontos.lock"
 
-        opened_handles: list = []
-        real_open = Path.open
+        import ontos.core.context as context_module
 
-        def tracking_open(self: Path, *args, **kwargs):
-            handle = real_open(self, *args, **kwargs)
-            if self == lock_path:
+        opened_handles: list = []
+        real_open = context_module.open_lock_file
+
+        def tracking_open(path: Path):
+            handle = real_open(path)
+            if path == lock_path:
                 opened_handles.append(handle)
             return handle
 
-        def exploding_flock(fd, op):  # noqa: ANN001
+        def exploding_flock(handle):  # noqa: ANN001
+            _ = handle
             raise OSError("induced flock failure")
 
-        monkeypatch.setattr(Path, "open", tracking_open)
-        monkeypatch.setattr(fcntl, "flock", exploding_flock)
+        monkeypatch.setattr(context_module, "open_lock_file", tracking_open)
+        monkeypatch.setattr(
+            context_module,
+            "try_acquire_exclusive",
+            exploding_flock,
+        )
 
         with pytest.raises(OSError, match="induced flock failure"):
             ctx._acquire_lock(lock_path, timeout=1.0)

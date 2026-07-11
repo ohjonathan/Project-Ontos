@@ -2,18 +2,16 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-import re
 from typing import List, Optional, Tuple
 
 from ontos.core.curation import create_stub, generate_id_from_path
-from ontos.core.schema import serialize_frontmatter
+from ontos.core.schema import serialize_frontmatter, validate_document_id
 from ontos.core.context import SessionContext
 from ontos.core.errors import OntosUserError
 from ontos.core.ontology import get_valid_types
 from ontos.io.files import find_project_root
 from ontos.ui.output import OutputHandler
 
-_ID_PATTERN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$")
 _VALID_DOC_TYPES = frozenset(get_valid_types())
 
 
@@ -89,7 +87,6 @@ def write_stub_to_context(
 
 <!-- Add your content here -->
 """
-        filepath.parent.mkdir(parents=True, exist_ok=True)
         ctx.buffer_write(filepath, content)
         return True
     except Exception as e:
@@ -182,14 +179,10 @@ def stub_command(options: StubOptions) -> int:
 
 def _validate_stub_params(params: dict) -> None:
     """Validate non-interactive and interactive stub payload before create_stub."""
-    doc_id = str(params.get("id", "")).strip()
-    if not doc_id:
-        raise OntosUserError("Document ID is required.", code="E_USER_INPUT")
-    if not _ID_PATTERN.match(doc_id):
-        raise OntosUserError(
-            "Invalid --id. Expected ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$",
-            code="E_USER_INPUT",
-        )
+    try:
+        params["id"] = validate_document_id(params.get("id"))
+    except ValueError as exc:
+        raise OntosUserError(str(exc), code="E_USER_INPUT") from exc
 
     doc_type = str(params.get("type", "")).strip().lower()
     if doc_type not in _VALID_DOC_TYPES:

@@ -8,7 +8,6 @@ Phase 2 Decomposition - Created from Phase2-Implementation-Spec.md Section 4.11
 """
 
 from __future__ import annotations
-import os
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -16,6 +15,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any, Set, Tuple
 
 from ontos.core.suggestions import suggest_impacts, load_document_index, validate_concepts
+from ontos.core.config import ConfigError
+from ontos.core.context import SessionContext
 from ontos.core.schema import serialize_frontmatter
 from ontos.core.types import TEMPLATES, SECTION_TEMPLATES
 from ontos.io.config import load_project_config
@@ -112,7 +113,9 @@ def create_session_log(
     content = f"---\n{frontmatter}\n---\n\n{body}"
     
     config = load_project_config(repo_root=project_root)
-    logs_dir = (project_root / config.paths.logs_dir).resolve()
+    # Keep this path lexical.  Resolving it here would collapse a symlinked
+    # default ``docs`` component before the no-follow writer can reject it.
+    logs_dir = project_root / config.paths.logs_dir
     
     filename = f"{date_str}_{topic_slug}.md"
     output_path = logs_dir / filename
@@ -280,13 +283,35 @@ def log_command(options: LogOptions) -> int:
         source=options.source or "cli",
     )
 
-    # Create the log content
-    content, output_path = create_session_log(project_root, session_options, git_info)
+    # Create the log content and lexical destination. Configuration errors must
+    # remain command failures rather than escaping as tracebacks.
+    try:
+        content, output_path = create_session_log(
+            project_root,
+            session_options,
+            git_info,
+        )
+    except (ConfigError, OSError, ValueError) as exc:
+        message = f"Unable to prepare session log: {exc}"
+        if options.json_output:
+            emit_command_error(
+                command="log",
+                exit_code=1,
+                code="E_COMMAND_FAILED",
+                message=message,
+            )
+        else:
+            output.error(message)
+        return 1
 
     try:
-        _write_log_exclusively(output_path, content)
+        _write_log_exclusively(project_root, output_path, content)
     except FileExistsError:
-        message = f"Session log already exists: {output_path}"
+        message = (
+            f"Session log already exists: {output_path}. "
+            "Choose a different --title, or intentionally move/remove the "
+            "existing log before retrying."
+        )
         if options.json_output:
             emit_command_error(
                 command="log",
@@ -298,7 +323,7 @@ def log_command(options: LogOptions) -> int:
         else:
             output.error(message)
         return 1
-    except OSError as exc:
+    except (OSError, ValueError, RuntimeError) as exc:
         message = f"Unable to create session log {output_path}: {exc}"
         if options.json_output:
             emit_command_error(
@@ -311,41 +336,52 @@ def log_command(options: LogOptions) -> int:
             output.error(message)
         return 1
 
-    # Create marker for pre-push enforcement (best effort)
-    _create_archive_marker(project_root, output_path)
+    # Create marker for pre-push enforcement (best effort, but visible when
+    # skipped so a later pre-push refusal is not surprising).
+    marker_warning = _create_archive_marker(project_root, output_path)
+    result_exit_code = 3 if marker_warning else 0
 
     # Output result
     if options.json_output:
         emit_command_success(
             command="log",
-            exit_code=0,
+            exit_code=result_exit_code,
             message="Session log created",
             data={
                 "path": str(output_path),
                 "log_id": output_path.stem,
             },
+            warnings=[marker_warning] if marker_warning else [],
+            result_status="warnings" if marker_warning else "clean",
         )
     elif not options.quiet:
         output.success(f"Session log created: {output_path}")
+        if marker_warning:
+            output.warning(marker_warning)
 
-    return 0
-
-
-def _write_log_exclusively(output_path: Path, content: str) -> None:
-    """Create a UTF-8 log atomically with collision refusal."""
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("x", encoding="utf-8", newline="") as handle:
-        handle.write(content)
-        handle.flush()
-        os.fsync(handle.fileno())
+    return result_exit_code
 
 
-def _create_archive_marker(project_root: Path, log_path: Path) -> None:
-    """Create marker file to signal that a session was archived."""
+def _write_log_exclusively(
+    project_root: Path,
+    output_path: Path,
+    content: str,
+) -> None:
+    """Create a UTF-8 log through the workspace-safe exclusive writer."""
+    context = SessionContext(repo_root=project_root, config={})
+    context.create_text_file_exclusively(output_path, content)
+
+
+def _create_archive_marker(project_root: Path, log_path: Path) -> Optional[str]:
+    """Create the archive marker or return a non-fatal user warning."""
     marker_path = project_root / ".ontos" / "session_archived"
     try:
-        marker_path.parent.mkdir(parents=True, exist_ok=True)
-        marker_path.write_text(str(log_path), encoding="utf-8")
-    except OSError:
-        # Non-fatal: marker creation failure shouldn't break logging
-        pass
+        context = SessionContext(repo_root=project_root, config={})
+        context.buffer_write(marker_path, str(log_path))
+        context.commit()
+    except (OSError, RuntimeError, ValueError) as exc:
+        return (
+            "Session log created, but archive marker was not updated: "
+            f"{exc}. Fix the .ontos path or permissions before pushing."
+        )
+    return None

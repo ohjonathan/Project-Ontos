@@ -50,6 +50,39 @@ def _val(item: Any) -> str:
     return item.value if hasattr(item, "value") else str(item)
 
 
+_GENERATED_TIMESTAMP_PREFIXES = (
+    "generated_at: ",
+    "> Last updated: ",
+    "- **Last Updated:** ",
+)
+
+
+def _without_generated_timestamps(content: str) -> str:
+    """Normalize volatile map timestamps for semantic equality checks."""
+    normalized = []
+    for line in content.splitlines(keepends=True):
+        ending = "\n" if line.endswith("\n") else ""
+        value = line[:-1] if ending else line
+        for prefix in _GENERATED_TIMESTAMP_PREFIXES:
+            if value.startswith(prefix):
+                value = f"{prefix}<generated>"
+                break
+        normalized.append(value + ending)
+    return "".join(normalized)
+
+
+def _write_context_map_if_changed(output_path: Path, content: str) -> bool:
+    """Write a generated map only when non-timestamp content changed."""
+    if output_path.exists():
+        existing = output_path.read_text(encoding="utf-8")
+        if _without_generated_timestamps(existing) == _without_generated_timestamps(
+            content
+        ):
+            return False
+    output_path.write_text(content, encoding="utf-8")
+    return True
+
+
 def _log_date_sort_key(doc: Any) -> tuple:
     """Sort key for log documents: dated entries first, then undated by ID.
 
@@ -958,7 +991,7 @@ def map_command(options: MapOptions) -> int:
 
     # Write output
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(content, encoding="utf-8")
+    _write_context_map_if_changed(output_path, content)
     
     # Sync AGENTS.md if flag is set and file exists
     if options.sync_agents:

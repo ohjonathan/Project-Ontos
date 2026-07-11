@@ -14,6 +14,12 @@ not a rewrite of the Fable report. The canonical machine-readable finding and
 assignment register is
 `manifests/project-ontos-audit-remediation-registry.yaml`.
 
+Implementation snapshot I0 is
+`b6f89d77e7fb684b8bd9a181a24c773d5777397a`. It commits the integrated
+post-baseline work for review; it does not supply historical per-deliverable
+lease receipts, strict-P3 child certification, merge evidence, or release
+authority.
+
 ## Executive verdict
 
 The Fable audit is a useful, high-signal defect baseline for `589d919`; it is not
@@ -27,7 +33,7 @@ attribution are not sufficiently reproducible to be release gates.
 | Issues #146–#157 assign all 91 findings exactly once. | Confirmed from the issue bodies observed 2026-07-10: no missing, duplicate, extra, or severity-mismatched original IDs. |
 | Report §5 is the complete finding-to-work-stream roadmap. | Refuted. Expanded literally, it mentions 68 of the 91 confirmed IDs and also cites `D6a-test-gaps-3`, which is not a registered finding. |
 | The release-line, dispatch, and #147 artifacts are uncommitted. | Obsolete. Those artifacts and the #147 code landed through PR #160 and are reachable from `bf91b42`. |
-| `D2b-roundtrip-3` is a live P0. | Confirmed at `bf91b42`. After revalidation, a safe serializer/ID/write-path implementation was added to the uncommitted working tree; its current state is `code_fixed_evidence_pending`, not a committed or certified fix. |
+| `D2b-roundtrip-3` is a live P0. | Confirmed at `bf91b42`. The safe serializer/ID/write-path implementation is committed in I0 (`b6f89d7`); its current state remains `code_fixed_evidence_pending`, not lifecycle-certified or released. |
 | The doctor RCE is remediated. | Code-fixed, evidence-pending. Commit `03c36e6` validates the complete managed `serve --workspace <root> [--read-only]` argv and five focused regressions pass. Existing lifecycle artifacts have no wrapper receipts and do not certify strict P3. |
 | O5 prevents cross-deliverable collisions. | Refuted. The old table omitted or misassigned numerous collisions, including `commands/map.py`, `commands/log.py`, `core/context.py`, `core/git.py`, `core/config.py`, `core/paths.py`, `mcp/tools.py`, `mcp/writes.py`, `mcp/server.py`, `commands/query.py`, `commands/verify.py`, `core/link_diagnostics.py`, and shared test infrastructure. |
 | Three independent reviewers reproduced every finding; C+ is the repository grade; per-model attribution is reliable. | Not independently auditable from repository evidence. These may be useful narrative context but must not determine release state. |
@@ -37,16 +43,17 @@ the other 89 original findings remain open. The observed suite result was `1447
 passed, 2 skipped`, but that green result is overstated until the suite proves it
 leaves a clean tracked and untracked workspace.
 
-The shared post-baseline working tree now contains a code fix for
+The shared post-baseline integration snapshot I0 contains a code fix for
 `D2b-roundtrip-3`, complete implementations for 40 other original findings,
 partial implementations for seven, and implementations for all nine R2
-findings. None of that post-baseline work has a fix commit. The 91-row original
-register therefore currently partitions into 2 committed code-fixed, 1
-uncommitted code-fixed/evidence-pending, 40 implemented-uncommitted, 7
-partial-uncommitted, and 41 confirmed-open rows. Product rows remain
+findings. Those 57 I0-backed rows bind their fix reference to `b6f89d7`. The
+91-row original register therefore currently partitions into 2 historical
+code-fixed, 1 code-fixed/evidence-pending, 40 implemented-committed pending, 7
+partial-committed pending, and 41 confirmed-open rows. Product rows remain
 verification/lifecycle pending; the control-plane row alone is
-`implemented_uncommitted_parity_verified`. These states do not revise the
-historical `bf91b42` verdict or imply lifecycle certification.
+`implemented_committed_verification_pending`. These states do not revise the
+historical `bf91b42` verdict or imply lifecycle certification, historical lease
+proof, merge, release, or per-issue completion.
 
 ## Pressure-test method and evidence
 
@@ -91,24 +98,24 @@ must not be silently folded into an older ID.
 The table groups original rows for readability; the registry retains one row
 and its concrete evidence paths per finding.
 
-| Finding(s) | Working-tree status | Evidence anchors |
+| Finding(s) | I0 status | Evidence anchors |
 |---|---|---|
 | `D2b-roundtrip-3` | `code_fixed_evidence_pending` | `tests/core/test_schema.py`; `tests/test_frontmatter_roundtrip_regression.py` |
-| `D1a-graph-link-1` through `D1a-graph-link-9` | `implemented_uncommitted_verification_pending` | `tests/core/test_graph.py`; `tests/core/test_body_refs.py`; `tests/core/test_link_diagnostics.py`; `tests/commands/test_rename.py` |
-| `D2a-write-safety-2`, `D2a-write-safety-7`, `D2a-write-safety-9`, `D2b-roundtrip-1`, `D2b-roundtrip-4`, `D2b-roundtrip-5`, `D3a-parsers-2`, `D3a-parsers-3`, `D3b-structure-1`, `D3b-structure-2`, `D4a-config-2` | `implemented_uncommitted_verification_pending` | `tests/core/test_git_safety.py`; `tests/test_session_context.py`; `tests/core/test_frontmatter_edit_pipeline.py`; `tests/core/test_frontmatter_repair.py`; `tests/commands/test_log.py`; `tests/core/test_config_phase3.py` |
-| `D5a-repo-redundancy-1`, `D5a-repo-redundancy-2`, `D5b-dead-code-7` | `implemented_uncommitted_verification_pending` | `tests/test_ci_release_workflows.py`; `tests/test_test_isolation.py`; `tests/commands/test_agentic_activation_resilience.py`; `tests/commands/test_doctor_phase4.py` |
-| `D6a-test-gaps-2`, `D6a-test-gaps-4`, `D6a-test-gaps-6`, `D6a-test-gaps-8`, `D6a-test-gaps-10`, `D6b-test-quality-1`, `D6b-test-quality-5`, `D6b-test-quality-9` | `implemented_uncommitted_verification_pending` | `tests/io/test_git_empty_diff.py`; `tests/commands/test_hook_phase4.py`; `tests/golden/test_golden_master.py`; `tests/io/test_toml_roundtrip.py`; `tests/commands/test_consolidate_parity.py`; `tests/test_test_isolation.py` |
-| `D1c-envelope-4`, `D1c-envelope-5`, `D7-cli-consistency-2`, `D7-cli-consistency-3`, `D7-cli-consistency-4`, `D7-cli-consistency-6`, `D7-cli-consistency-7`, `D7-cli-consistency-8`, `D7-cli-consistency-10` | `implemented_uncommitted_verification_pending` | `tests/test_cli_contract_v4.py`; `tests/ui/test_json_output.py`; `tests/commands/test_verify_portfolio.py` |
-| `D2a-write-safety-6`, `D3b-structure-6`, `D5a-repo-redundancy-3`, `D6a-test-gaps-7`, `D6a-test-gaps-9`, `D6b-test-quality-6`, `D7-cli-consistency-5` | `partial_implementation_uncommitted_verification_pending` | See the residual-risk list below and the per-row registry evidence. |
-| `R2-test-hermeticity-1` | `implemented_uncommitted_verification_pending` | `tests/test_test_isolation.py`; `tests/conftest.py` |
-| `R2-context-tmp-symlink-1` | `implemented_uncommitted_verification_pending` | `tests/test_session_context.py` |
-| `R2-loader-id-type-1` | `implemented_uncommitted_verification_pending` | `tests/test_document_loading_contract_a1.py` |
-| `R2-windows-fcntl-import-1` | `implemented_uncommitted_verification_pending` | `ontos/core/locking.py`; `tests/test_ci_release_workflows.py` |
-| `R2-lifecycle-type-enumeration-1` | `implemented_uncommitted_verification_pending` | `tests/commands/test_stub_parity.py`; `tests/mcp/test_workspace_overview.py` |
-| `R2-testpypi-provenance-1` | `implemented_uncommitted_verification_pending` | `tests/test_release_artifact.py`; `tests/test_ci_release_workflows.py` |
-| `R2-activation-version-skew-1` | `implemented_uncommitted_verification_pending` | `tests/commands/test_agentic_activation_resilience.py`; `tests/commands/test_doctor_phase4.py`; `tests/commands/test_instruction_protocol.py` |
-| `R2-mcp-readonly-export-1` | `implemented_uncommitted_verification_pending` | `ontos/mcp/portfolio.py`; `tests/mcp/test_read_only_registration.py` |
-| `R2-control-plane-parity-1` | `implemented_uncommitted_parity_verified` | `scripts/validate-audit-remediation-registry.py` passes in local and external-parity modes after GitHub synchronization. |
+| `D1a-graph-link-1` through `D1a-graph-link-9` | `implemented_committed_verification_pending` | `tests/core/test_graph.py`; `tests/core/test_body_refs.py`; `tests/core/test_link_diagnostics.py`; `tests/commands/test_rename.py` |
+| `D2a-write-safety-2`, `D2a-write-safety-7`, `D2a-write-safety-9`, `D2b-roundtrip-1`, `D2b-roundtrip-4`, `D2b-roundtrip-5`, `D3a-parsers-2`, `D3a-parsers-3`, `D3b-structure-1`, `D3b-structure-2`, `D4a-config-2` | `implemented_committed_verification_pending` | `tests/core/test_git_safety.py`; `tests/test_session_context.py`; `tests/core/test_frontmatter_edit_pipeline.py`; `tests/core/test_frontmatter_repair.py`; `tests/commands/test_log.py`; `tests/core/test_config_phase3.py` |
+| `D5a-repo-redundancy-1`, `D5a-repo-redundancy-2`, `D5b-dead-code-7` | `implemented_committed_verification_pending` | `tests/test_ci_release_workflows.py`; `tests/test_test_isolation.py`; `tests/commands/test_agentic_activation_resilience.py`; `tests/commands/test_doctor_phase4.py` |
+| `D6a-test-gaps-2`, `D6a-test-gaps-4`, `D6a-test-gaps-6`, `D6a-test-gaps-8`, `D6a-test-gaps-10`, `D6b-test-quality-1`, `D6b-test-quality-5`, `D6b-test-quality-9` | `implemented_committed_verification_pending` | `tests/io/test_git_empty_diff.py`; `tests/commands/test_hook_phase4.py`; `tests/golden/test_golden_master.py`; `tests/io/test_toml_roundtrip.py`; `tests/commands/test_consolidate_parity.py`; `tests/test_test_isolation.py` |
+| `D1c-envelope-4`, `D1c-envelope-5`, `D7-cli-consistency-2`, `D7-cli-consistency-3`, `D7-cli-consistency-4`, `D7-cli-consistency-6`, `D7-cli-consistency-7`, `D7-cli-consistency-8`, `D7-cli-consistency-10` | `implemented_committed_verification_pending` | `tests/test_cli_contract_v4.py`; `tests/ui/test_json_output.py`; `tests/commands/test_verify_portfolio.py` |
+| `D2a-write-safety-6`, `D3b-structure-6`, `D5a-repo-redundancy-3`, `D6a-test-gaps-7`, `D6a-test-gaps-9`, `D6b-test-quality-6`, `D7-cli-consistency-5` | `partial_implementation_committed_verification_pending` | See the residual-risk list below and the per-row registry evidence. |
+| `R2-test-hermeticity-1` | `implemented_committed_verification_pending` | `tests/test_test_isolation.py`; `tests/conftest.py` |
+| `R2-context-tmp-symlink-1` | `implemented_committed_verification_pending` | `tests/mcp/test_write_tools.py`; `tests/test_session_context.py` |
+| `R2-loader-id-type-1` | `implemented_committed_verification_pending` | `tests/test_document_loading_contract_a1.py` |
+| `R2-windows-fcntl-import-1` | `implemented_committed_verification_pending` | `ontos/core/locking.py`; `ontos/mcp/locking.py`; `tests/mcp/test_locking.py`; `tests/test_ci_release_workflows.py` |
+| `R2-lifecycle-type-enumeration-1` | `implemented_committed_verification_pending` | `tests/commands/test_stub_parity.py`; `tests/mcp/test_workspace_overview.py` |
+| `R2-testpypi-provenance-1` | `implemented_committed_verification_pending` | `tests/test_release_artifact.py`; `tests/test_ci_release_workflows.py` |
+| `R2-activation-version-skew-1` | `implemented_committed_verification_pending` | `tests/commands/test_agentic_activation_resilience.py`; `tests/commands/test_doctor_phase4.py`; `tests/commands/test_instruction_protocol.py` |
+| `R2-mcp-readonly-export-1` | `implemented_committed_verification_pending` | `ontos/mcp/portfolio.py`; `tests/mcp/test_read_only_registration.py` |
+| `R2-control-plane-parity-1` | `implemented_committed_verification_pending` | `scripts/validate-audit-remediation-registry.py`; `tests/test_audit_remediation_registry_validator.py`. I0 added the parity validator, but Phase C falsification proved that provenance, rendered O4/O5 order, and malformed child-manifest roots were not yet fail-closed. Promotion waits for the C-close fix commit and fresh local/external evidence. |
 
 A reconciliation-focused cross-section passed `354` tests; the MCP import-
 cleanup suite separately passed `268`, and the final CLI-contract follow-up
@@ -161,15 +168,16 @@ The same pass found that publishing promoted an unverified sdist beside the
 verified wheel; the workflow now builds and publishes the wheel as the sole
 artifact. A focused acceptance replay across frontmatter, migration, MCP writes,
 the secure writer, retrofit, read-only portfolio, and activation passed `130`
-tests. These follow-up fixes remain uncommitted and lifecycle-pending.
+tests. These follow-up fixes are included in I0 and remain verification- and
+lifecycle-pending.
 
 ## Current lifecycle truth
 
 ### #146 serializer corruption
 
 The safe serializer, string-ID validation, and writer-surface regression net are
-present in the uncommitted working tree and focused tests pass. `fix_commit`
-remains null. Phase B.1 still has one authentic Claude Sonnet wrapper receipt,
+present in I0, focused tests pass, and `fix_commit` is `b6f89d7`. Phase B.1
+still has one authentic Claude Sonnet wrapper receipt,
 one failed GPT dispatch, and a pending Gemini intent with no result. Provider-
 limited continuation was authorized on 2026-07-03, but that authorization is not
 completion and is not strict-P3 certification. The manifest now declares the
@@ -254,9 +262,11 @@ retitled/relabeled P1-containing; #148/#149 are on Audit Release N+1; R2 rows
 are present on #146/#148/#149/#150/#151/#153; and epic #158 carries the revised
 release line and mapping. #156 is also on Audit Release N+1 with the v4.8
 package-CLI rewire separated from its v4.9 archive/slimming remainder. Both
-local and external-parity registry validation now pass. Original issue
-checkboxes intentionally remain unchecked under the recorded
-`merged_and_verified_only` policy: dirty-tree implementation status is tracked
-in the registry and ledger, not misrepresented on GitHub as merged completion.
+local and external-parity registry validation now pass. Except for the two
+historically merged-and-verified #147 rows, original issue checkboxes
+intentionally remain unchecked under the recorded `merged_and_verified_only`
+policy. Every I0-backed evidence-pending, implemented, and partial row remains
+unchecked: committed-but-uncertified implementation status is tracked in the
+registry and ledger, not misrepresented on GitHub as merged completion.
 External validation now reads issues #146–#158 live through authenticated `gh`;
 the stored synchronization booleans are no longer accepted as sufficient proof.

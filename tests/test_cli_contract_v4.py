@@ -15,7 +15,13 @@ from ontos.cli import (
     main,
 )
 from ontos.command_registry import COMMAND_SPECS, command_path
-from ontos.ui.json_output import emit_command_error, emit_command_success
+from ontos.ui.json_output import (
+    ExitCategory,
+    ExitCode,
+    _exit_category,
+    emit_command_error,
+    emit_command_success,
+)
 
 
 def _subparsers(parser: argparse.ArgumentParser) -> argparse._SubParsersAction:
@@ -51,6 +57,16 @@ def test_registry_is_the_complete_unique_top_level_source() -> None:
     assert set(_subparsers(complete).choices) == {
         spec.name for spec in COMMAND_SPECS
     }
+
+
+def test_exit_code_four_remains_reserved() -> None:
+    assert {int(code) for code in ExitCode} == {0, 1, 2, 3, 5, 130}
+    assert 4 not in {int(code) for code in ExitCode}
+    assert _exit_category(
+        execution_status="error",
+        exit_code=4,
+        result_status="error",
+    ) == ExitCategory.ERROR.value
 
 
 def test_aliases_share_canonical_argument_contracts() -> None:

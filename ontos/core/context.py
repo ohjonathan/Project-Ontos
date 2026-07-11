@@ -22,9 +22,17 @@ import tempfile
 import time
 
 from ontos.core.locking import (
-    release_exclusive,
+    WorkspaceBinding,
+    WorkspaceLockGuard,
+    close_lock_resources,
+    open_workspace_guard,
+    open_lock_file,
     set_non_inheritable,
     try_acquire_exclusive,
+    try_acquire_workspace_guard,
+    verify_lock_file_binding,
+    verify_workspace_binding,
+    verify_workspace_guard,
 )
 
 
@@ -53,6 +61,15 @@ class _DirectoryAnchor:
     windows_handles: List[int] = field(default_factory=list)
 
 
+@dataclass(frozen=True)
+class _EntryBinding:
+    """No-follow identity captured while a temporary entry is still open."""
+
+    device: int
+    inode: int
+    file_type: int
+
+
 @dataclass
 class _CommitRecord:
     """Prepared operation and its rollback state."""
@@ -62,8 +79,11 @@ class _CommitRecord:
     destination: Optional[Path] = None
     final_anchor: Optional[_DirectoryAnchor] = None
     source_anchor: Optional[_DirectoryAnchor] = None
+    source_binding: Optional[_EntryBinding] = None
     temp_name: Optional[str] = None
+    temp_binding: Optional[_EntryBinding] = None
     backup_name: Optional[str] = None
+    backup_binding: Optional[_EntryBinding] = None
     backup_has_original: bool = False
     applied: bool = False
 
@@ -94,16 +114,34 @@ class SessionContext:
     # When True (default), commit() acquires and releases an advisory lock on
     # <repo_root>/.ontos.lock around the critical section. When False,
     # commit() assumes the caller already holds that flock (for example,
-    # via an outer workspace-lock context manager) and _acquire_lock /
-    # _release_lock become no-ops. See the v4.1 spec addendum A1 for
-    # the full contract.
+    # via an outer workspace-lock context manager). The outer owner must
+    # provide ``external_lock_verifier``; acquisition fails closed without
+    # that bound proof. See the v4.1 spec addendum A1 for the full contract.
     owns_lock: bool = True
+
+    # Optional identity captured by an outer preflight. MCP write tools pass
+    # this through their workspace-lock boundary so an ``owns_lock=False``
+    # context cannot adopt a replacement directory after validation.
+    expected_workspace_binding: Optional[WorkspaceBinding] = None
+
+    # Typed guard supplied by an outer lock owner. MCP uses this to bind its
+    # ``workspace_lock`` handles to the inner ``owns_lock=False`` transaction.
+    external_lock_guard: Optional[WorkspaceLockGuard] = field(
+        default=None,
+        repr=False,
+    )
 
     # Mutable state (changes during session)
     pending_writes: List[PendingWrite] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
     _lock_handle: Optional[object] = field(default=None, init=False, repr=False)
+    _root_lock_fd: Optional[int] = field(default=None, init=False, repr=False)
+    _workspace_binding: Optional[_EntryBinding] = field(
+        default=None,
+        init=False,
+        repr=False,
+    )
 
     @classmethod
     def from_repo(cls, repo_root: Path) -> 'SessionContext':
@@ -143,6 +181,7 @@ class SessionContext:
             path: Target file path.
             content: Content to write.
         """
+        self._bind_existing_workspace()
         self.pending_writes.append(PendingWrite(
             operation=FileOperation.WRITE,
             path=path,
@@ -155,6 +194,7 @@ class SessionContext:
         Args:
             path: File path to delete.
         """
+        self._bind_existing_workspace()
         self.pending_writes.append(PendingWrite(
             operation=FileOperation.DELETE,
             path=path
@@ -167,11 +207,82 @@ class SessionContext:
             source: Source file path.
             destination: Destination file path.
         """
+        self._bind_existing_workspace()
         self.pending_writes.append(PendingWrite(
             operation=FileOperation.MOVE,
             path=source,
             destination=destination
         ))
+
+    def _bind_existing_workspace(self) -> None:
+        """Pin an existing root when mutation intent is first buffered.
+
+        Buffering historically permits a not-yet-created root, so absence is
+        deferred to commit.  An existing root is bound immediately; replacing
+        it between buffering and commit is then rejected.
+        """
+        try:
+            self._workspace_root()
+        except (FileNotFoundError, ValueError):
+            return
+
+    def create_text_file_exclusively(self, path: Path, content: str) -> Path:
+        """Create one workspace-contained UTF-8 file without following links.
+
+        This is the collision-refusing counterpart to :meth:`commit`.  It is
+        used by commands whose contract is "create once" rather than
+        "replace", while retaining the same pinned-parent and no-follow path
+        guarantees as buffered writes.
+        """
+        candidate = self._safe_workspace_path(path, "operation path")
+        anchor = self._open_parent_anchor(candidate, create=True)
+        fd = -1
+        created_info: Optional[os.stat_result] = None
+        try:
+            self._verify_anchor_binding(anchor)
+            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+            flags |= getattr(os, "O_NOFOLLOW", 0)
+            flags |= getattr(os, "O_CLOEXEC", 0)
+            if anchor.fd is not None:
+                fd = os.open(candidate.name, flags, 0o644, dir_fd=anchor.fd)
+            else:
+                fd = os.open(candidate, flags, 0o644)
+            created_info = os.fstat(fd)
+
+            with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
+                fd = -1
+                handle.write(content)
+                handle.flush()
+                os.fsync(handle.fileno())
+
+            self._verify_anchor_binding(anchor)
+            visible_info = self._entry_stat(anchor, candidate.name)
+            if visible_info is None or created_info is None or (
+                visible_info.st_dev,
+                visible_info.st_ino,
+            ) != (created_info.st_dev, created_info.st_ino):
+                raise RuntimeError(
+                    f"Workspace entry changed during exclusive create: {candidate}"
+                )
+            if anchor.fd is not None:
+                os.fsync(anchor.fd)
+            return candidate
+        except BaseException:
+            if fd >= 0:
+                os.close(fd)
+            if created_info is not None:
+                try:
+                    visible_info = self._entry_stat(anchor, candidate.name)
+                    if visible_info is not None and (
+                        visible_info.st_dev,
+                        visible_info.st_ino,
+                    ) == (created_info.st_dev, created_info.st_ino):
+                        self._unlink_entry(anchor, candidate.name, missing_ok=True)
+                except OSError:
+                    pass
+            raise
+        finally:
+            self._close_anchor(anchor)
 
     def commit(self) -> List[Path]:
         """Execute all buffered operations from the current session.
@@ -216,7 +327,7 @@ class SessionContext:
             for op in operations:
                 if op.operation == FileOperation.WRITE:
                     final_anchor = anchor_for(op.path, create=True)
-                    temp_name = self._stage_text(
+                    temp_name, temp_binding = self._stage_text(
                         final_anchor,
                         op.path.name,
                         op.content or "",
@@ -227,6 +338,7 @@ class SessionContext:
                             op.path,
                             final_anchor=final_anchor,
                             temp_name=temp_name,
+                            temp_binding=temp_binding,
                         )
                     )
                 elif op.operation == FileOperation.DELETE:
@@ -234,12 +346,18 @@ class SessionContext:
                         final_anchor = anchor_for(op.path, create=False)
                     except FileNotFoundError:
                         continue
-                    if self._entry_is_regular(final_anchor, op.path.name):
+                    source_binding = self._existing_regular_binding(
+                        final_anchor,
+                        op.path.name,
+                        "delete source",
+                    )
+                    if source_binding is not None:
                         staged.append(
                             _CommitRecord(
                                 op.operation,
                                 op.path,
                                 final_anchor=final_anchor,
+                                source_binding=source_binding,
                             )
                         )
                 elif op.operation == FileOperation.MOVE:
@@ -247,7 +365,12 @@ class SessionContext:
                         source_anchor = anchor_for(op.path, create=False)
                     except FileNotFoundError:
                         continue
-                    if self._entry_is_regular(source_anchor, op.path.name):
+                    source_binding = self._existing_regular_binding(
+                        source_anchor,
+                        op.path.name,
+                        "move source",
+                    )
+                    if source_binding is not None:
                         assert op.destination is not None
                         final_anchor = anchor_for(
                             op.destination,
@@ -260,6 +383,7 @@ class SessionContext:
                                 destination=op.destination,
                                 final_anchor=final_anchor,
                                 source_anchor=source_anchor,
+                                source_binding=source_binding,
                             )
                         )
 
@@ -272,53 +396,177 @@ class SessionContext:
                 assert record.final_anchor is not None
                 self._verify_anchor_binding(record.final_anchor)
 
-                if self._entry_is_regular(record.final_anchor, final.name):
-                    record.backup_name = self._reserve_backup(
+                if record.operation == FileOperation.DELETE:
+                    assert record.source_binding is not None
+                    self._verify_entry_binding(
+                        record.final_anchor,
+                        final.name,
+                        record.source_binding,
+                        "delete source",
+                    )
+
+                final_info = self._entry_stat(record.final_anchor, final.name)
+                if record.operation == FileOperation.DELETE and final_info is None:
+                    raise RuntimeError(
+                        f"delete source disappeared during commit: {record.path}"
+                    )
+                if final_info is not None:
+                    if record.operation == FileOperation.DELETE:
+                        assert record.source_binding is not None
+                        original_binding = record.source_binding
+                    else:
+                        original_binding = self._regular_binding(
+                            final_info,
+                            record.final_anchor.path / final.name,
+                            "destination",
+                        )
+                    (
+                        record.backup_name,
+                        record.backup_binding,
+                    ) = self._reserve_backup(
                         record.final_anchor,
                         final.name,
                     )
+                    reservation_binding = record.backup_binding
+                    assert reservation_binding is not None
                     try:
+                        self._verify_entry_binding(
+                            record.final_anchor,
+                            record.backup_name,
+                            record.backup_binding,
+                            "commit backup reservation",
+                        )
+                        self._verify_entry_binding(
+                            record.final_anchor,
+                            final.name,
+                            original_binding,
+                            "commit destination",
+                        )
                         self._replace_entry(
                             record.final_anchor,
                             final.name,
                             record.final_anchor,
                             record.backup_name,
+                            source_binding=original_binding,
+                            destination_binding=record.backup_binding,
                         )
-                    except BaseException:
-                        # The reserved name is only an empty placeholder until
-                        # the rename succeeds. It must never be mistaken for a
-                        # recovery copy.
-                        self._unlink_entry(
+                    except BaseException as exc:
+                        # A rename can complete and still surface an ambiguous
+                        # exception. Reconcile the name before deciding whether
+                        # it is an empty reservation or the recovery copy.
+                        backup_path = (
+                            record.final_anchor.path / record.backup_name
+                        )
+                        backup_info = self._entry_stat(
                             record.final_anchor,
                             record.backup_name,
-                            missing_ok=True,
                         )
-                        record.backup_name = None
-                        raise
+                        actual_binding = None
+                        if backup_info is not None:
+                            try:
+                                actual_binding = self._regular_binding(
+                                    backup_info,
+                                    backup_path,
+                                    "commit backup",
+                                )
+                            except RuntimeError:
+                                pass
+                        if actual_binding == original_binding:
+                            record.backup_has_original = True
+                            record.backup_binding = original_binding
+                            raise
+                        if actual_binding == reservation_binding:
+                            final_now = self._entry_stat(
+                                record.final_anchor,
+                                final.name,
+                            )
+                            final_binding = (
+                                self._regular_binding(
+                                    final_now,
+                                    record.final_anchor.path / final.name,
+                                    "commit destination",
+                                )
+                                if final_now is not None
+                                else None
+                            )
+                            if final_binding == original_binding:
+                                self._unlink_bound_entry(
+                                    record.final_anchor,
+                                    record.backup_name,
+                                    reservation_binding,
+                                    "commit backup reservation",
+                                )
+                                record.backup_name = None
+                                record.backup_binding = None
+                                raise
+                        raise RuntimeError(
+                            f"{exc}; ambiguous backup rename state; recovery "
+                            f"entry preserved at {backup_path}"
+                        ) from exc
                     record.backup_has_original = True
+                    record.backup_binding = original_binding
+                    self._verify_entry_binding(
+                        record.final_anchor,
+                        record.backup_name,
+                        original_binding,
+                        "commit recovery backup",
+                    )
+                    if record.operation == FileOperation.DELETE:
+                        self._verify_entry_absent(
+                            record.final_anchor,
+                            final.name,
+                            "deleted destination",
+                        )
 
                 if record.operation == FileOperation.WRITE:
                     assert record.temp_name is not None
+                    assert record.temp_binding is not None
+                    self._verify_entry_binding(
+                        record.final_anchor,
+                        record.temp_name,
+                        record.temp_binding,
+                        "staged write",
+                    )
                     self._replace_entry(
                         record.final_anchor,
                         record.temp_name,
                         record.final_anchor,
                         final.name,
+                        source_binding=record.temp_binding,
+                        destination_binding=None,
                     )
                     record.temp_name = None
+                    record.applied = True
+                    self._verify_entry_binding(
+                        record.final_anchor,
+                        final.name,
+                        record.temp_binding,
+                        "committed write",
+                    )
                 elif record.operation == FileOperation.MOVE:
                     assert record.source_anchor is not None
+                    assert record.source_binding is not None
                     self._verify_anchor_binding(record.source_anchor)
-                    if not self._entry_is_regular(
+                    self._verify_entry_binding(
                         record.source_anchor,
                         record.path.name,
-                    ):
-                        raise FileNotFoundError(record.path)
+                        record.source_binding,
+                        "move source",
+                    )
                     self._replace_entry(
                         record.source_anchor,
                         record.path.name,
                         record.final_anchor,
                         final.name,
+                        source_binding=record.source_binding,
+                        destination_binding=None,
+                    )
+                    record.applied = True
+                    self._verify_entry_binding(
+                        record.final_anchor,
+                        final.name,
+                        record.source_binding,
+                        "moved destination",
                     )
                 # DELETE is applied by moving the original to its backup.
 
@@ -335,10 +583,23 @@ class SessionContext:
                 ):
                     self._fsync_anchor(record.source_anchor)
 
+            # Keep recovery copies until the root and lock identities have
+            # been revalidated after every mutation.  A tampered visible
+            # lock then enters the normal rollback path instead of allowing a
+            # successful commit under an orphaned advisory lock.
+            self._verify_held_lock(lock_path)
+
             for record in staged:
                 if record.backup_name is not None:
                     try:
                         assert record.final_anchor is not None
+                        assert record.backup_binding is not None
+                        self._verify_entry_binding(
+                            record.final_anchor,
+                            record.backup_name,
+                            record.backup_binding,
+                            "commit recovery backup",
+                        )
                         self._unlink_entry(
                             record.final_anchor,
                             record.backup_name,
@@ -349,6 +610,7 @@ class SessionContext:
                         self.warn(f"Could not remove commit backup {backup}: {exc}")
                     else:
                         record.backup_name = None
+                        record.backup_binding = None
                         record.backup_has_original = False
 
         except BaseException as e:
@@ -409,7 +671,7 @@ class SessionContext:
     def _safe_workspace_path(self, path: Path, label: str) -> Path:
         """Return a lexical workspace path without trusting symlink resolution."""
         root_input = Path(os.path.abspath(self.repo_root.expanduser()))
-        root = root_input.resolve()
+        root = self._workspace_root()
         candidate = path.expanduser()
         if candidate.is_absolute():
             candidate = Path(os.path.abspath(candidate))
@@ -459,6 +721,37 @@ class SessionContext:
                 raise ValueError(f"{label} must name a regular file: {path}")
         return candidate
 
+    def _workspace_root(self) -> Path:
+        """Return a real workspace root while rejecting a redirected root."""
+        root_input = Path(os.path.abspath(self.repo_root.expanduser()))
+        info = os.lstat(root_input)
+        reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
+        file_attributes = getattr(info, "st_file_attributes", 0)
+        if stat.S_ISLNK(info.st_mode) or (
+            reparse_flag and file_attributes & reparse_flag
+        ):
+            raise ValueError(
+                f"workspace root must not be a symlink or reparse point: {root_input}"
+            )
+        if not stat.S_ISDIR(info.st_mode):
+            raise ValueError(f"workspace root must be a directory: {root_input}")
+        binding = self._binding_from_stat(info)
+        public_binding = (binding.device, binding.inode, binding.file_type)
+        if (
+            self.expected_workspace_binding is not None
+            and public_binding != self.expected_workspace_binding
+        ):
+            raise RuntimeError(
+                f"workspace root changed since preflight: {root_input}"
+            )
+        if self._workspace_binding is None:
+            self._workspace_binding = binding
+        elif binding != self._workspace_binding:
+            raise RuntimeError(
+                f"workspace root changed during session: {root_input}"
+            )
+        return root_input.resolve(strict=True)
+
     def _open_parent_anchor(self, path: Path, *, create: bool) -> _DirectoryAnchor:
         """Pin every parent component without following links.
 
@@ -480,12 +773,16 @@ class SessionContext:
         return _DirectoryAnchor(path=path.parent)
 
     def _open_posix_parent(self, path: Path, *, create: bool) -> _DirectoryAnchor:
-        root = self.repo_root.expanduser().resolve()
+        root = self._workspace_root()
         relative_parent = path.parent.relative_to(root)
         flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
         flags |= getattr(os, "O_CLOEXEC", 0)
         current_fd = os.open(root, flags)
         try:
+            if self._binding_from_stat(os.fstat(current_fd)) != self._workspace_binding:
+                raise RuntimeError(
+                    f"workspace root changed before directory pin: {root}"
+                )
             for component in relative_parent.parts:
                 try:
                     next_fd = os.open(component, flags, dir_fd=current_fd)
@@ -520,12 +817,16 @@ class SessionContext:
         create: bool,
     ) -> _DirectoryAnchor:
         """Pin a Windows directory chain against rename/reparse races."""
-        root = self.repo_root.expanduser().resolve()
+        root = self._workspace_root()
         relative_parent = path.parent.relative_to(root)
         handles: List[int] = []
         current = root
         try:
             handles.append(self._pin_windows_directory(current))
+            if self._binding_from_stat(os.lstat(current)) != self._workspace_binding:
+                raise RuntimeError(
+                    f"workspace root changed before directory pin: {root}"
+                )
             for component in relative_parent.parts:
                 current /= component
                 try:
@@ -643,7 +944,7 @@ class SessionContext:
         self._reject_parent_symlinks(anchor.path / ".ontos-anchor-probe")
 
     def _reject_parent_symlinks(self, path: Path) -> None:
-        root = self.repo_root.expanduser().resolve()
+        root = self._workspace_root()
         current = root
         for component in path.parent.relative_to(root).parts:
             current /= component
@@ -661,16 +962,62 @@ class SessionContext:
         except FileNotFoundError:
             return None
 
-    def _entry_is_regular(self, anchor: _DirectoryAnchor, name: str) -> bool:
+    def _existing_regular_binding(
+        self,
+        anchor: _DirectoryAnchor,
+        name: str,
+        label: str,
+    ) -> Optional[_EntryBinding]:
         info = self._entry_stat(anchor, name)
         if info is None:
-            return False
-        path = anchor.path / name
-        if stat.S_ISLNK(info.st_mode):
-            raise ValueError(f"destination must not be a symlink: {path}")
+            return None
+        return self._regular_binding(info, anchor.path / name, label)
+
+    @staticmethod
+    def _binding_from_stat(info: os.stat_result) -> _EntryBinding:
+        return _EntryBinding(
+            device=info.st_dev,
+            inode=info.st_ino,
+            file_type=stat.S_IFMT(info.st_mode),
+        )
+
+    def _regular_binding(
+        self,
+        info: os.stat_result,
+        path: Path,
+        label: str,
+    ) -> _EntryBinding:
         if not stat.S_ISREG(info.st_mode):
-            raise ValueError(f"operation path must name a regular file: {path}")
-        return True
+            raise RuntimeError(f"{label} must remain a regular file: {path}")
+        return self._binding_from_stat(info)
+
+    def _verify_entry_binding(
+        self,
+        anchor: _DirectoryAnchor,
+        name: str,
+        expected: _EntryBinding,
+        label: str,
+    ) -> None:
+        """Revalidate an entry by no-follow identity immediately before use."""
+        path = anchor.path / name
+        info = self._entry_stat(anchor, name)
+        if info is None:
+            raise RuntimeError(f"{label} disappeared during commit: {path}")
+        actual = self._regular_binding(info, path, label)
+        if actual != expected:
+            raise RuntimeError(f"{label} changed during commit: {path}")
+
+    def _verify_entry_absent(
+        self,
+        anchor: _DirectoryAnchor,
+        name: str,
+        label: str,
+    ) -> None:
+        """Require an anchored entry name to remain unoccupied."""
+        if self._entry_stat(anchor, name) is not None:
+            raise RuntimeError(
+                f"{label} appeared during commit: {anchor.path / name}"
+            )
 
     def _create_unique_file(
         self,
@@ -702,7 +1049,7 @@ class SessionContext:
         anchor: _DirectoryAnchor,
         final_name: str,
         content: str,
-    ) -> str:
+    ) -> tuple[str, _EntryBinding]:
         """Write and fsync UTF-8 content to an anchored exclusive temp file."""
         self._verify_anchor_binding(anchor)
         final_info = self._entry_stat(anchor, final_name)
@@ -721,7 +1068,14 @@ class SessionContext:
             prefix=f".{final_name}.",
             suffix=".tmp",
         )
+        staged_binding: Optional[_EntryBinding] = None
         try:
+            staged_info = os.fstat(fd)
+            staged_binding = self._regular_binding(
+                staged_info,
+                anchor.path / temp_name,
+                "staged write",
+            )
             if hasattr(os, "fchmod"):
                 mode = stat.S_IMODE(final_info.st_mode) if final_info else 0o644
                 os.fchmod(fd, mode)
@@ -730,21 +1084,48 @@ class SessionContext:
                 handle.write(content)
                 handle.flush()
                 os.fsync(handle.fileno())
-            return temp_name
+                staged_info = os.fstat(handle.fileno())
+            return temp_name, self._regular_binding(
+                staged_info,
+                anchor.path / temp_name,
+                "staged write",
+            )
         except BaseException:
             if fd >= 0:
                 os.close(fd)
-            self._unlink_entry(anchor, temp_name, missing_ok=True)
+            if staged_binding is not None:
+                try:
+                    self._unlink_bound_entry(
+                        anchor,
+                        temp_name,
+                        staged_binding,
+                        "failed staged write",
+                    )
+                except (OSError, RuntimeError):
+                    # A changed temp entry belongs to the racer. Leave it
+                    # untouched rather than unlinking an unbound name.
+                    pass
             raise
 
-    def _reserve_backup(self, anchor: _DirectoryAnchor, final_name: str) -> str:
+    def _reserve_backup(
+        self,
+        anchor: _DirectoryAnchor,
+        final_name: str,
+    ) -> tuple[str, _EntryBinding]:
         fd, backup_name = self._create_unique_file(
             anchor,
             prefix=f".{final_name}.",
             suffix=".bak",
         )
-        os.close(fd)
-        return backup_name
+        try:
+            info = os.fstat(fd)
+        finally:
+            os.close(fd)
+        return backup_name, self._regular_binding(
+            info,
+            anchor.path / backup_name,
+            "commit backup reservation",
+        )
 
     def _replace_entry(
         self,
@@ -752,7 +1133,29 @@ class SessionContext:
         source_name: str,
         destination_anchor: _DirectoryAnchor,
         destination_name: str,
+        *,
+        source_binding: _EntryBinding,
+        destination_binding: Optional[_EntryBinding],
     ) -> None:
+        self._verify_entry_binding(
+            source_anchor,
+            source_name,
+            source_binding,
+            "rename source",
+        )
+        if destination_binding is None:
+            self._verify_entry_absent(
+                destination_anchor,
+                destination_name,
+                "rename destination",
+            )
+        else:
+            self._verify_entry_binding(
+                destination_anchor,
+                destination_name,
+                destination_binding,
+                "rename destination",
+            )
         if source_anchor.fd is not None and destination_anchor.fd is not None:
             os.replace(
                 source_name,
@@ -768,6 +1171,17 @@ class SessionContext:
             source_anchor.path / source_name,
             destination_anchor.path / destination_name,
         )
+
+    def _unlink_bound_entry(
+        self,
+        anchor: _DirectoryAnchor,
+        name: str,
+        binding: _EntryBinding,
+        label: str,
+    ) -> None:
+        """Unlink only the entry whose no-follow identity was captured."""
+        self._verify_entry_binding(anchor, name, binding, label)
+        self._unlink_entry(anchor, name, missing_ok=False)
 
     @staticmethod
     def _unlink_entry(
@@ -794,27 +1208,36 @@ class SessionContext:
 
             if record.operation == FileOperation.MOVE and record.applied:
                 assert record.source_anchor is not None
+                assert record.source_binding is not None
                 try:
-                    if self._entry_stat(record.final_anchor, final.name) is not None:
-                        self._replace_entry(
-                            record.final_anchor,
-                            final.name,
-                            record.source_anchor,
-                            record.path.name,
+                    if self._entry_stat(record.final_anchor, final.name) is None:
+                        raise RuntimeError(
+                            "moved destination disappeared; original source "
+                            f"cannot be restored: {final}"
                         )
+                    self._replace_entry(
+                        record.final_anchor,
+                        final.name,
+                        record.source_anchor,
+                        record.path.name,
+                        source_binding=record.source_binding,
+                        destination_binding=None,
+                    )
                     record.applied = False
-                except OSError as exc:
+                except (OSError, RuntimeError) as exc:
                     errors.append(f"could not restore move source {record.path}: {exc}")
                     can_restore_destination = False
             elif record.operation == FileOperation.WRITE and record.applied:
+                assert record.temp_binding is not None
                 try:
-                    self._unlink_entry(
+                    self._unlink_bound_entry(
                         record.final_anchor,
                         final.name,
-                        missing_ok=True,
+                        record.temp_binding,
+                        "failed committed write",
                     )
                     record.applied = False
-                except OSError as exc:
+                except (OSError, RuntimeError) as exc:
                     errors.append(f"could not remove failed write {final}: {exc}")
                     can_restore_destination = False
 
@@ -822,19 +1245,32 @@ class SessionContext:
                 backup_path = record.final_anchor.path / record.backup_name
                 if can_restore_destination:
                     try:
+                        if record.backup_binding is None:
+                            raise RuntimeError(
+                                f"recovery backup identity is unavailable: {backup_path}"
+                            )
+                        self._verify_entry_binding(
+                            record.final_anchor,
+                            record.backup_name,
+                            record.backup_binding,
+                            "commit recovery backup",
+                        )
                         self._replace_entry(
                             record.final_anchor,
                             record.backup_name,
                             record.final_anchor,
                             final.name,
+                            source_binding=record.backup_binding,
+                            destination_binding=None,
                         )
-                    except OSError as exc:
+                    except (OSError, RuntimeError) as exc:
                         errors.append(
                             f"could not restore {final}: {exc}; recovery backup "
                             f"preserved at {backup_path}"
                         )
                     else:
                         record.backup_name = None
+                        record.backup_binding = None
                         record.backup_has_original = False
                 else:
                     errors.append(
@@ -843,27 +1279,36 @@ class SessionContext:
             elif record.backup_name is not None:
                 # A reservation that never received the original is disposable.
                 try:
-                    self._unlink_entry(
+                    if record.backup_binding is None:
+                        raise RuntimeError(
+                            "backup reservation identity is unavailable"
+                        )
+                    self._unlink_bound_entry(
                         record.final_anchor,
                         record.backup_name,
-                        missing_ok=True,
+                        record.backup_binding,
+                        "commit backup reservation",
                     )
-                except OSError as exc:
+                except (OSError, RuntimeError) as exc:
                     errors.append(
                         f"could not remove empty backup reservation "
                         f"{record.final_anchor.path / record.backup_name}: {exc}"
                     )
                 else:
                     record.backup_name = None
+                    record.backup_binding = None
 
             if record.temp_name is not None:
                 try:
-                    self._unlink_entry(
+                    if record.temp_binding is None:
+                        raise RuntimeError("staged write identity is unavailable")
+                    self._unlink_bound_entry(
                         record.final_anchor,
                         record.temp_name,
-                        missing_ok=True,
+                        record.temp_binding,
+                        "staged write cleanup",
                     )
-                except OSError as exc:
+                except (OSError, RuntimeError) as exc:
                     errors.append(
                         f"could not remove staged write "
                         f"{record.final_anchor.path / record.temp_name}: {exc}"
@@ -921,36 +1366,115 @@ class SessionContext:
         workspace-lock context manager) and this method is a no-op —
         see v4.1 spec addendum A1.
         """
+        self._workspace_root()
+        assert self._workspace_binding is not None
+        workspace_binding = (
+            self._workspace_binding.device,
+            self._workspace_binding.inode,
+            self._workspace_binding.file_type,
+        )
         if not self.owns_lock:
+            guard = self.external_lock_guard
+            if not isinstance(guard, WorkspaceLockGuard):
+                raise RuntimeError(
+                    "owns_lock=False requires a bound outer lock guard"
+                )
+            if guard.workspace_binding != workspace_binding:
+                raise RuntimeError(
+                    "outer lock guard belongs to a different workspace"
+                )
+            guard.verify()
             return True
 
-        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        guard_fd = open_workspace_guard(self.repo_root, workspace_binding)
+        guard_acquired = False
+        handle = None
+        lock_acquired = False
         start = time.monotonic()
-        handle = lock_path.open("a+", encoding="utf-8")
-        set_non_inheritable(handle)
-
         try:
             while time.monotonic() - start < timeout:
+                verify_workspace_binding(self.repo_root, workspace_binding)
+                verify_workspace_guard(guard_fd, workspace_binding)
+                if try_acquire_workspace_guard(guard_fd):
+                    guard_acquired = True
+                    break
+                time.sleep(0.1)
+            if not guard_acquired:
+                if guard_fd is not None:
+                    os.close(guard_fd)
+                return False
+
+            verify_workspace_binding(self.repo_root, workspace_binding)
+            handle = open_lock_file(lock_path)
+            set_non_inheritable(handle)
+            verify_lock_file_binding(handle, lock_path)
+            while time.monotonic() - start < timeout:
                 try:
+                    verify_workspace_binding(self.repo_root, workspace_binding)
+                    verify_workspace_guard(guard_fd, workspace_binding)
+                    verify_lock_file_binding(handle, lock_path)
                     if not try_acquire_exclusive(handle):
                         raise BlockingIOError
+                    lock_acquired = True
+                    verify_lock_file_binding(handle, lock_path)
+                    verify_workspace_binding(self.repo_root, workspace_binding)
                 except BlockingIOError:
                     time.sleep(0.1)
                     continue
                 # flock succeeded — hand ownership of the handle to the
                 # instance so _release_lock can close it.
                 self._lock_handle = handle
+                self._root_lock_fd = guard_fd
                 return True
         except BaseException:
             # m-12: any non-BlockingIOError raised between open() and a
             # successful flock (signals, OSError from sleep, etc.) must
             # not leak the file handle. Close and re-raise.
-            handle.close()
+            try:
+                close_lock_resources(
+                    handle,
+                    lock_acquired=lock_acquired,
+                    guard_fd=guard_fd,
+                    guard_acquired=guard_acquired,
+                )
+            except BaseException:
+                # Preserve the acquisition failure after exhausting cleanup.
+                pass
             raise
 
         # Timed out waiting for the lock — close the handle and report.
-        handle.close()
+        close_lock_resources(
+            handle,
+            lock_acquired=lock_acquired,
+            guard_fd=guard_fd,
+            guard_acquired=guard_acquired,
+        )
         return False
+
+    def _verify_held_lock(self, lock_path: Path) -> None:
+        """Revalidate the root and active lock before discarding backups."""
+        self._workspace_root()
+        assert self._workspace_binding is not None
+        workspace_binding = (
+            self._workspace_binding.device,
+            self._workspace_binding.inode,
+            self._workspace_binding.file_type,
+        )
+        if not self.owns_lock:
+            guard = self.external_lock_guard
+            if not isinstance(guard, WorkspaceLockGuard):
+                raise RuntimeError("bound outer lock guard is unavailable")
+            if guard.workspace_binding != workspace_binding:
+                raise RuntimeError(
+                    "outer lock guard belongs to a different workspace"
+                )
+            guard.verify()
+            return
+        if self._lock_handle is None:
+            raise RuntimeError("workspace lock handle is not held")
+        verify_workspace_guard(self._root_lock_fd, workspace_binding)
+        verify_workspace_binding(self.repo_root, workspace_binding)
+        verify_lock_file_binding(self._lock_handle, lock_path)
 
     def _release_lock(self, lock_path: Path) -> None:
         """Release the file lock.
@@ -964,12 +1488,16 @@ class SessionContext:
         _ = lock_path
         if not self.owns_lock:
             return
-        if self._lock_handle is None:
-            return
+        handle = self._lock_handle
+        guard_fd = self._root_lock_fd
+        self._lock_handle = None
+        self._root_lock_fd = None
         try:
-            release_exclusive(self._lock_handle)
-        except OSError:
-            pass
-        finally:
-            self._lock_handle.close()
-            self._lock_handle = None
+            close_lock_resources(
+                handle,
+                lock_acquired=handle is not None,
+                guard_fd=guard_fd,
+                guard_acquired=guard_fd is not None,
+            )
+        except BaseException as exc:
+            self.error(f"Workspace lock cleanup failed: {exc}")

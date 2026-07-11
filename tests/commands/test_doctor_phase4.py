@@ -278,13 +278,16 @@ class TestDoctorCommand:
              patch("ontos.commands.doctor.check_docs_directory") as mock_docs, \
              patch("ontos.commands.doctor.check_context_map") as mock_map, \
              patch("ontos.commands.doctor.check_validation") as mock_valid, \
+             patch("ontos.commands.doctor.check_activation_health") as mock_activation, \
              patch("ontos.commands.doctor.check_cli_availability") as mock_cli, \
              patch("ontos.commands.doctor.check_agents_staleness") as mock_agents, \
              patch("ontos.commands.doctor.check_environment_manifests") as mock_env, \
-             patch("ontos.commands.doctor.check_antigravity_mcp") as mock_antigravity:
+             patch("ontos.commands.doctor.check_antigravity_mcp") as mock_antigravity, \
+             patch("ontos.commands.doctor.check_cursor_mcp") as mock_cursor:
 
             for mock in [mock_hooks, mock_python, mock_docs,
-                        mock_map, mock_valid, mock_cli, mock_agents, mock_env, mock_antigravity]:
+                        mock_map, mock_valid, mock_activation, mock_cli,
+                        mock_agents, mock_env, mock_antigravity, mock_cursor]:
                 mock.return_value = CheckResult(
                     name="test", status="success", message="OK"
                 )

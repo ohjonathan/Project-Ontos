@@ -3,6 +3,7 @@ registry_id: project-ontos-audit-remediation-registry
 source_audit: docs/reviews/2026-07-02-fable-repo-audit.md
 audit_baseline_commit: 589d919
 revalidation_commit: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+integration_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
 revalidation_report: docs/reviews/2026-07-10-codex-audit-revalidation.md
 generated_artifacts:
   - docs/trackers/project-ontos-audit-remediation-release-line.md
@@ -12,7 +13,7 @@ github_snapshot:
   epic_release_line_synced: true
   r2_checklists_synced: true
   original_checklist_policy: merged_and_verified_only
-  uncommitted_original_checklists_remain_unchecked: true
+  uncertified_original_checklists_remain_unchecked: true
   source_issues: [146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157]
   issue_finding_counts:
     146: 1
@@ -60,10 +61,12 @@ shared_tree_integration:
   release_blocking: true
   affected_issues: [146, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157]
   reason: >-
-    Implementations were assembled in one dirty working tree without
-    per-deliverable base-SHA scope receipts. Structural lease parity is valid,
-    but historical simultaneous-lease compliance cannot be reconstructed or
-    certified. Split/review each deliverable from its recorded base before
+    Implementations are committed together at integration snapshot I0
+    b6f89d77e7fb684b8bd9a181a24c773d5777397a, but that shared-tree commit has
+    no historical per-deliverable base-SHA scope receipts. Structural lease
+    parity is valid; historical simultaneous-lease compliance cannot be
+    reconstructed or certified. The umbrella lifecycle does not certify child
+    issues. Split and review each deliverable from its recorded base before
     release.
 
 row_templates:
@@ -100,7 +103,7 @@ programs:
     max_severity: P0
     default_release: v4.7.1
     base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
-    implementation_ref: working_tree_uncommitted_2026-07-10
+    implementation_ref: b6f89d77e7fb684b8bd9a181a24c773d5777397a
     lifecycle_state: code_fixed_evidence_pending
     lease_state: active
     allowed_paths:
@@ -156,9 +159,9 @@ programs:
     max_severity: P1
     default_release: v4.8.0
     base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
-    implementation_ref: working_tree_uncommitted_2026-07-10
-    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
-    lease_state: implementation_uncommitted_integration_pending
+    implementation_ref: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: partial_implementation_committed_lifecycle_pending
+    lease_state: implementation_committed_integration_pending
     allowed_paths:
       - .github/workflows/publish.yml
       - ontos/commands/activate.py
@@ -188,9 +191,9 @@ programs:
     github_severity_observed: P1
     default_release: v4.8.0
     base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
-    implementation_ref: working_tree_uncommitted_2026-07-10
-    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
-    lease_state: implementation_uncommitted_integration_pending
+    implementation_ref: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: partial_implementation_committed_lifecycle_pending
+    lease_state: implementation_committed_integration_pending
     allowed_paths:
       - .ontos.toml
       - .gitignore
@@ -227,9 +230,9 @@ programs:
     max_severity: P2
     default_release: v4.8.0
     base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
-    implementation_ref: working_tree_uncommitted_2026-07-10
-    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
-    lease_state: implementation_uncommitted_integration_pending
+    implementation_ref: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: partial_implementation_committed_lifecycle_pending
+    lease_state: implementation_committed_integration_pending
     allowed_paths:
       - pyproject.toml
       - tests/
@@ -248,9 +251,9 @@ programs:
     max_severity: P1
     default_release: v4.8.0
     base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
-    implementation_ref: working_tree_uncommitted_2026-07-10
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
-    lease_state: implementation_uncommitted_integration_pending
+    implementation_ref: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
+    lease_state: implementation_committed_integration_pending
     allowed_paths:
       - ontos/commands/log.py
       - ontos/commands/promote.py
@@ -284,9 +287,9 @@ programs:
     max_severity: P1
     default_release: v4.8.0
     base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
-    implementation_ref: working_tree_uncommitted_2026-07-10
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
-    lease_state: implementation_uncommitted_integration_pending
+    implementation_ref: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
+    lease_state: implementation_committed_integration_pending
     allowed_paths:
       - ontos/commands/migrate.py
       - ontos/commands/promote.py
@@ -309,20 +312,23 @@ programs:
     max_severity: P1
     default_release: v4.8.0
     base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
-    implementation_ref: working_tree_uncommitted_2026-07-10
-    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
-    lease_state: implementation_uncommitted_integration_pending
+    implementation_ref: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: partial_implementation_committed_lifecycle_pending
+    lease_state: implementation_committed_integration_pending
     allowed_paths:
       - ontos/commands/rename.py
       - ontos/core/context.py
       - ontos/core/locking.py
+      - ontos/mcp/locking.py
       - ontos/mcp/portfolio.py
       - ontos/mcp/rename_tool.py
       - ontos/mcp/server.py
       - ontos/mcp/tools.py
       - ontos/mcp/writes.py
       - tests/mcp/test_export_graph.py
+      - tests/mcp/test_locking.py
       - tests/mcp/test_read_only_registration.py
+      - tests/mcp/test_write_tools.py
       - tests/test_context_contention.py
       - tests/test_session_context.py
   - &p154
@@ -334,9 +340,9 @@ programs:
     max_severity: P1
     default_release: v4.9.0
     base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
-    implementation_ref: working_tree_uncommitted_2026-07-10
-    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
-    lease_state: implementation_uncommitted_integration_pending
+    implementation_ref: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: partial_implementation_committed_lifecycle_pending
+    lease_state: implementation_committed_integration_pending
     allowed_paths:
       - ontos/__init__.py
       - ontos/cli.py
@@ -365,9 +371,9 @@ programs:
     max_severity: P2
     default_release: v4.9.0
     base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
-    implementation_ref: working_tree_uncommitted_2026-07-10
-    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
-    lease_state: implementation_uncommitted_integration_pending
+    implementation_ref: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: partial_implementation_committed_lifecycle_pending
+    lease_state: implementation_committed_integration_pending
     allowed_paths:
       - ontos/command_registry.py
       - ontos/cli.py
@@ -381,9 +387,9 @@ programs:
     max_severity: P1
     default_release: v4.8.0
     base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
-    implementation_ref: working_tree_uncommitted_2026-07-10
-    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
-    lease_state: implementation_uncommitted_integration_pending
+    implementation_ref: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: partial_implementation_committed_lifecycle_pending
+    lease_state: implementation_committed_integration_pending
     allowed_paths:
       - .github/workflows/
       - .ontos/hooks/
@@ -403,9 +409,9 @@ programs:
     max_severity: P2
     default_release: v4.9.0
     base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
-    implementation_ref: working_tree_uncommitted_2026-07-10
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
-    lease_state: implementation_uncommitted_integration_pending
+    implementation_ref: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
+    lease_state: implementation_committed_integration_pending
     allowed_paths:
       - ontos/core/graph.py
       - tests/core/test_graph.py
@@ -450,6 +456,7 @@ findings:
     severity: P0
     release: v4.7.1
     status: code_fixed_evidence_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
     lifecycle_state: code_fixed_evidence_pending
     verification_evidence:
       - tests/core/test_schema.py
@@ -464,32 +471,36 @@ findings:
     id: D2a-write-safety-2
     severity: P1
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/core/test_git_safety.py
   - <<: [*original_open, *p148]
     id: D2b-roundtrip-1
     severity: P1
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - ontos/core/frontmatter_edit.py
   - <<: [*original_open, *p148]
     id: D3b-structure-2
     severity: P1
     release: v4.7.1
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/commands/test_log.py
   - <<: [*original_open, *p148]
     id: D4a-config-2
     severity: P1
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/core/test_config_phase3.py
   - {<<: [*original_open, *p148], id: D7-cli-consistency-1, severity: P1, release: v4.8.0}
@@ -497,8 +508,9 @@ findings:
     id: D2a-write-safety-7
     severity: P2
     release: v4.7.1
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - ontos/core/context.py
       - tests/test_session_context.py
@@ -514,8 +526,9 @@ findings:
     id: D5a-repo-redundancy-3
     severity: P2
     release: v4.8.0
-    status: partial_implementation_uncommitted_verification_pending
-    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    status: partial_implementation_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: partial_implementation_committed_lifecycle_pending
     verification_evidence:
       - ontos/_hooks/pre-commit
       - ontos/_hooks/pre-push
@@ -529,8 +542,9 @@ findings:
     id: D5b-dead-code-7
     severity: P2
     release: v4.7.1
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/commands/test_agentic_activation_resilience.py
       - tests/commands/test_doctor_phase4.py
@@ -551,8 +565,9 @@ findings:
     id: D6a-test-gaps-10
     severity: P2
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - pyproject.toml
       - tests/test_ci_release_workflows.py
@@ -560,16 +575,18 @@ findings:
     id: D6a-test-gaps-2
     severity: P2
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/io/test_git_empty_diff.py
   - <<: [*original_open, *p150]
     id: D6a-test-gaps-4
     severity: P2
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/commands/test_hook_phase4.py
   - {<<: [*original_open, *p150], id: D6a-test-gaps-5, severity: P2, release: v4.8.0}
@@ -577,8 +594,9 @@ findings:
     id: D6a-test-gaps-6
     severity: P2
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/golden/test_golden_master.py
       - tests/golden/compare_golden_master.py
@@ -586,32 +604,36 @@ findings:
     id: D6a-test-gaps-7
     severity: P2
     release: v4.8.0
-    status: partial_implementation_uncommitted_verification_pending
-    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    status: partial_implementation_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: partial_implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/commands/test_query_parity.py
   - <<: [*original_open, *p150]
     id: D6a-test-gaps-8
     severity: P2
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/io/test_toml_roundtrip.py
   - <<: [*original_open, *p150]
     id: D6a-test-gaps-9
     severity: P2
     release: v4.8.0
-    status: partial_implementation_uncommitted_verification_pending
-    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    status: partial_implementation_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: partial_implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/core/test_git_safety.py
   - <<: [*original_open, *p150]
     id: D6b-test-quality-1
     severity: P2
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/commands/test_consolidate_parity.py
   - {<<: [*original_open, *p150], id: D6b-test-quality-2, severity: P2, release: v4.8.0}
@@ -620,8 +642,9 @@ findings:
     id: D6b-test-quality-5
     severity: P2
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/commands/test_query_parity.py
       - tests/commands/test_scaffold_parity.py
@@ -630,8 +653,9 @@ findings:
     id: D6b-test-quality-6
     severity: P2
     release: v4.8.0
-    status: partial_implementation_uncommitted_verification_pending
-    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    status: partial_implementation_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: partial_implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/test_cli_cwd_fix.py
       - tests/test_describes.py
@@ -640,8 +664,9 @@ findings:
     id: D6b-test-quality-9
     severity: P2
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/mcp_helpers.py
       - tests/test_test_isolation.py
@@ -649,8 +674,9 @@ findings:
     id: D3a-parsers-3
     severity: P1
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/core/test_frontmatter_edit_pipeline.py
       - tests/test_frontmatter_roundtrip_regression.py
@@ -658,32 +684,36 @@ findings:
     id: D3b-structure-1
     severity: P1
     release: v4.7.1
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/commands/test_log.py
   - <<: [*original_open, *p151]
     id: D1a-graph-link-2
     severity: P2
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/core/test_body_refs.py
   - <<: [*original_open, *p151]
     id: D1a-graph-link-3
     severity: P2
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/core/test_link_diagnostics.py
   - <<: [*original_open, *p151]
     id: D3a-parsers-2
     severity: P2
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - ontos/core/history.py
       - tests/test_immutable_history.py
@@ -691,8 +721,9 @@ findings:
     id: D1a-graph-link-1
     severity: P1
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/commands/test_rename.py
       - tests/core/test_body_refs.py
@@ -700,16 +731,18 @@ findings:
     id: D1a-graph-link-6
     severity: P1
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/core/test_link_diagnostics.py
   - <<: [*original_open, *p152]
     id: D2b-roundtrip-4
     severity: P1
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - ontos/core/frontmatter_edit.py
       - ontos/commands/migrate.py
@@ -720,16 +753,18 @@ findings:
     id: D1a-graph-link-7
     severity: P2
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/core/test_link_diagnostics.py
   - <<: [*original_open, *p152]
     id: D1a-graph-link-8
     severity: P2
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/core/test_graph.py
       - tests/core/test_link_diagnostics.py
@@ -737,8 +772,9 @@ findings:
     id: D2b-roundtrip-5
     severity: P2
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - ontos/core/frontmatter_edit.py
       - ontos/core/frontmatter_repair.py
@@ -749,8 +785,9 @@ findings:
     id: D2a-write-safety-6
     severity: P2
     release: v4.8.0
-    status: partial_implementation_uncommitted_verification_pending
-    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    status: partial_implementation_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: partial_implementation_committed_lifecycle_pending
     verification_evidence:
       - ontos/core/context.py
       - tests/test_session_context.py
@@ -759,8 +796,9 @@ findings:
     id: D2a-write-safety-9
     severity: P2
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/test_session_context.py
   - {<<: [*original_open, *p153], id: D3b-structure-3, severity: P2, release: v4.8.0}
@@ -771,32 +809,36 @@ findings:
     id: D1c-envelope-4
     severity: P1
     release: v4.9.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/test_cli_contract_v4.py
   - <<: [*original_open, *p154]
     id: D7-cli-consistency-2
     severity: P1
     release: v4.9.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/test_cli_contract_v4.py
   - <<: [*original_open, *p154]
     id: D7-cli-consistency-3
     severity: P1
     release: v4.9.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/test_cli_contract_v4.py
   - <<: [*original_open, *p154]
     id: D7-cli-consistency-4
     severity: P1
     release: v4.9.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/test_cli_contract_v4.py
       - tests/ui/test_json_output.py
@@ -804,8 +846,9 @@ findings:
     id: D1a-graph-link-9
     severity: P2
     release: v4.9.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - ontos/core/graph.py
       - tests/core/test_graph.py
@@ -815,8 +858,9 @@ findings:
     id: D1c-envelope-5
     severity: P2
     release: v4.9.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/test_cli_contract_v4.py
   - {<<: [*original_open, *p154], id: D1c-envelope-7, severity: P2, release: v4.9.0}
@@ -824,16 +868,18 @@ findings:
     id: D7-cli-consistency-10
     severity: P2
     release: v4.9.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/test_cli_contract_v4.py
   - <<: [*original_open, *p154]
     id: D7-cli-consistency-5
     severity: P2
     release: v4.9.0
-    status: partial_implementation_uncommitted_verification_pending
-    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    status: partial_implementation_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: partial_implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/test_cli_contract_v4.py
       - tests/ui/test_json_output.py
@@ -841,32 +887,36 @@ findings:
     id: D7-cli-consistency-6
     severity: P2
     release: v4.9.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/commands/test_verify_portfolio.py
   - <<: [*original_open, *p154]
     id: D7-cli-consistency-7
     severity: P2
     release: v4.9.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/test_cli_contract_v4.py
   - <<: [*original_open, *p154]
     id: D7-cli-consistency-8
     severity: P2
     release: v4.9.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/test_cli_contract_v4.py
   - <<: [*original_open, *p155]
     id: D3b-structure-6
     severity: P2
     release: v4.9.0
-    status: partial_implementation_uncommitted_verification_pending
-    lifecycle_state: partial_implementation_uncommitted_lifecycle_pending
+    status: partial_implementation_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: partial_implementation_committed_lifecycle_pending
     verification_evidence:
       - ontos/command_registry.py
       - tests/test_cli_contract_v4.py
@@ -874,8 +924,9 @@ findings:
     id: D5a-repo-redundancy-1
     severity: P1
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/test_ci_release_workflows.py
       - tests/test_test_isolation.py
@@ -883,8 +934,9 @@ findings:
     id: D5a-repo-redundancy-2
     severity: P1
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/test_ci_release_workflows.py
       - tests/test_test_isolation.py
@@ -895,16 +947,18 @@ findings:
     id: D1a-graph-link-4
     severity: P2
     release: v4.9.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/core/test_graph.py
   - <<: [*original_open, *p157]
     id: D1a-graph-link-5
     severity: P2
     release: v4.9.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/core/test_graph.py
       - tests/core/test_link_diagnostics.py
@@ -913,8 +967,9 @@ findings:
     id: R2-test-hermeticity-1
     severity: P1
     release: v4.7.1
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/test_test_isolation.py
       - tests/conftest.py
@@ -926,21 +981,25 @@ findings:
     id: R2-context-tmp-symlink-1
     severity: P1
     release: v4.7.1
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
+      - tests/mcp/test_write_tools.py
       - tests/test_session_context.py
     allowed_paths:
       - ontos/core/context.py
       - ontos/core/locking.py
+      - tests/mcp/test_write_tools.py
       - tests/test_session_context.py
     summary: "The central writer follows predictable <target>.tmp symlinks outside the workspace."
   - <<: [*r2_open, *p146]
     id: R2-loader-id-type-1
     severity: P1
     release: v4.7.1
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/test_document_loading_contract_a1.py
     allowed_paths:
@@ -953,14 +1012,19 @@ findings:
     id: R2-windows-fcntl-import-1
     severity: P1
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - ontos/core/locking.py
+      - ontos/mcp/locking.py
+      - tests/mcp/test_locking.py
       - tests/test_ci_release_workflows.py
     allowed_paths:
       - ontos/core/context.py
       - ontos/core/locking.py
+      - ontos/mcp/locking.py
+      - tests/mcp/test_locking.py
       - tests/test_session_context.py
       - tests/test_context_contention.py
     summary: "The advertised base package cannot import on Windows because fcntl is unconditional."
@@ -968,8 +1032,9 @@ findings:
     id: R2-lifecycle-type-enumeration-1
     severity: P1
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/commands/test_stub_parity.py
       - tests/mcp/test_workspace_overview.py
@@ -984,8 +1049,9 @@ findings:
     id: R2-testpypi-provenance-1
     severity: P1
     release: v4.7.1
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/test_release_artifact.py
       - tests/test_ci_release_workflows.py
@@ -996,8 +1062,9 @@ findings:
     id: R2-activation-version-skew-1
     severity: P1
     release: v4.7.1
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/commands/test_agentic_activation_resilience.py
       - tests/commands/test_doctor_phase4.py
@@ -1015,8 +1082,9 @@ findings:
     id: R2-mcp-readonly-export-1
     severity: P2
     release: v4.8.0
-    status: implemented_uncommitted_verification_pending
-    lifecycle_state: implementation_uncommitted_lifecycle_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     verification_evidence:
       - tests/mcp/test_read_only_registration.py
     allowed_paths:
@@ -1033,14 +1101,18 @@ findings:
     issue: 158
     release: v4.7.1
     base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
-    status: implemented_uncommitted_parity_verified
-    lifecycle_state: parity_verified_commit_pending
+    status: implemented_committed_verification_pending
+    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
+    lifecycle_state: implementation_committed_lifecycle_pending
     lease_state: active
     allowed_paths:
       - manifests/project-ontos-audit-remediation-registry.yaml
       - docs/reviews/2026-07-10-codex-audit-revalidation.md
       - docs/trackers/project-ontos-audit-remediation-release-line.md
       - docs/handoffs/project-ontos-audit-remediation-2026-07-*.md
+      - scripts/validate-audit-remediation-registry.py
+      - tests/test_audit_remediation_registry_validator.py
     verification_evidence:
       - scripts/validate-audit-remediation-registry.py
+      - tests/test_audit_remediation_registry_validator.py
     summary: "Roadmap, leases, scope checks, GitHub state, and lifecycle evidence can disagree without a blocking parity gate."

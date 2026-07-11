@@ -17,6 +17,7 @@ References: addendum v1.2 §A1/§A2/§A3, C.0 findings Q1+Q3, verdict m-2/m-7/m-
 from __future__ import annotations
 
 import asyncio
+import os
 import subprocess
 import time
 from multiprocessing import Event, Process, Queue
@@ -26,6 +27,7 @@ from typing import Any
 import pytest
 from mcp.types import CallToolResult
 
+from ontos.mcp.locking import workspace_lock
 from ontos.mcp.portfolio import PortfolioIndex
 from tests.mcp_helpers import build_cache, build_server, create_workspace, list_tools
 
@@ -115,6 +117,73 @@ def _build_same_basename_portfolio(tmp_path: Path) -> tuple[Path, Path, Portfoli
 
 def _call(server, name: str, args: dict[str, Any]) -> CallToolResult:
     return asyncio.run(server.call_tool(name, args))
+
+
+@pytest.mark.skipif(not hasattr(os, "symlink"), reason="symlinks unavailable")
+def test_workspace_lock_rejects_external_symlink_without_touching_target(tmp_path):
+    root = tmp_path / "workspace"
+    root.mkdir()
+    outside = tmp_path / "external-lock"
+    outside.write_bytes(b"external sentinel")
+    before = outside.stat()
+    lock_path = root / ".ontos.lock"
+    try:
+        lock_path.symlink_to(outside)
+    except OSError as exc:  # pragma: no cover - Windows policy dependent.
+        pytest.skip(f"symlink creation unavailable: {exc}")
+
+    with pytest.raises(ValueError, match="symbolic link|reparse point"):
+        with workspace_lock(root):
+            pass
+
+    after = outside.stat()
+    assert outside.read_bytes() == b"external sentinel"
+    assert (after.st_dev, after.st_ino) == (before.st_dev, before.st_ino)
+    assert (after.st_size, after.st_mtime_ns) == (
+        before.st_size,
+        before.st_mtime_ns,
+    )
+
+
+@pytest.mark.skipif(not hasattr(os, "symlink"), reason="symlinks unavailable")
+def test_workspace_lock_rejects_symlinked_workspace_root(tmp_path):
+    outside = tmp_path / "outside-workspace"
+    outside.mkdir()
+    sentinel = outside / "sentinel"
+    sentinel.write_bytes(b"external sentinel")
+    before = sentinel.stat()
+    workspace_link = tmp_path / "workspace-link"
+    try:
+        workspace_link.symlink_to(outside, target_is_directory=True)
+    except OSError as exc:  # pragma: no cover - Windows policy dependent.
+        pytest.skip(f"symlink creation unavailable: {exc}")
+
+    with pytest.raises(ValueError, match="symbolic link|reparse point"):
+        with workspace_lock(workspace_link):
+            pass
+
+    after = sentinel.stat()
+    assert not (outside / ".ontos.lock").exists()
+    assert sentinel.read_bytes() == b"external sentinel"
+    assert (after.st_dev, after.st_ino) == (before.st_dev, before.st_ino)
+
+
+@pytest.mark.skipif(not hasattr(os, "symlink"), reason="symlinks unavailable")
+def test_workspace_lock_does_not_create_parent_through_symlink(tmp_path):
+    outside = tmp_path / "outside-parent"
+    outside.mkdir()
+    alias = tmp_path / "alias"
+    try:
+        alias.symlink_to(outside, target_is_directory=True)
+    except OSError as exc:  # pragma: no cover - Windows policy dependent.
+        pytest.skip(f"symlink creation unavailable: {exc}")
+    workspace = alias / "new-workspace"
+
+    with pytest.raises((FileNotFoundError, ValueError)):
+        with workspace_lock(workspace):
+            pass
+
+    assert not (outside / "new-workspace").exists()
 
 
 def test_scaffold_document_creates_file_with_scaffold_frontmatter(tmp_path):

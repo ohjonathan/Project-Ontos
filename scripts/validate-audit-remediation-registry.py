@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter, defaultdict
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import subprocess
 import sys
@@ -22,10 +22,20 @@ LEDGER_PATH = ROOT / "docs/trackers/project-ontos-audit-remediation-release-line
 REVALIDATION_PATH = ROOT / "docs/reviews/2026-07-10-codex-audit-revalidation.md"
 DOCTOR_MANIFEST_PATH = ROOT / "manifests/project-ontos-audit-doctor-rce.yaml"
 SERIALIZER_MANIFEST_PATH = ROOT / "manifests/project-ontos-audit-serializer-corruption.yaml"
+DOCTOR_RECEIPT_INVENTORY_PATH = (
+    ROOT
+    / "docs/reviews/project-ontos-audit-doctor-rce/lifecycle-receipt-inventory.yaml"
+)
 GITHUB_REPOSITORY = "ohjonathan/Project-Ontos"
+AUDIT_BASELINE_COMMIT = "589d919"
+REVALIDATION_COMMIT = "bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95"
+INTEGRATION_COMMIT = "b6f89d77e7fb684b8bd9a181a24c773d5777397a"
+DOCTOR_BASE_COMMIT = "c8672e90f2382f4147ef61b4fba918969483e73e"
+DOCTOR_FIX_COMMIT = "03c36e6ac999d2c411c13252baa2e8fcff60e6ed"
 
 REQUIRED_FINDING_FIELDS = {
     "id",
+    "origin",
     "baseline_commit",
     "severity",
     "root_program",
@@ -38,6 +48,62 @@ REQUIRED_FINDING_FIELDS = {
     "lifecycle_state",
     "base_sha",
 }
+REQUIRED_PROGRAM_FIELDS = {
+    "id",
+    "root_program",
+    "issue",
+    "max_severity",
+    "implementation_ref",
+    "lifecycle_state",
+    "lease_state",
+    "allowed_paths",
+    "base_sha",
+    "default_release",
+    "github_state",
+    "github_milestone",
+}
+REQUIRED_LEASE_FIELDS = {"path", "programs", "order"}
+REQUIRED_INTEGRATION_FIELDS = {
+    "status",
+    "release_blocking",
+    "affected_issues",
+    "reason",
+}
+REQUIRED_PROGRAM_ISSUES = set(range(146, 158))
+FINDING_ORIGINS = {"fable_audit", "codex_revalidation"}
+FINDING_SEVERITIES = {"P0", "P1", "P2"}
+FINDING_STATUSES = {
+    "confirmed_open",
+    "code_fixed",
+    "code_fixed_evidence_pending",
+    "implemented_committed_parity_verified",
+    "implemented_committed_verification_pending",
+    "partial_implementation_committed_verification_pending",
+}
+FINDING_LIFECYCLE_STATES = {
+    "code_fixed_evidence_pending",
+    "implementation_committed_lifecycle_pending",
+    "parity_verified_lifecycle_pending",
+    "partial_implementation_committed_lifecycle_pending",
+}
+PROGRAM_LIFECYCLE_STATES = {
+    "code_fixed_evidence_pending",
+    "implementation_committed_lifecycle_pending",
+    "partial_implementation_committed_lifecycle_pending",
+}
+PROGRAM_LEASE_STATES = {
+    "active",
+    "evidence_only",
+    "implementation_committed_integration_pending",
+}
+REQUIRED_EXTERNAL_DRIFT_FIELDS = {
+    "issue",
+    "field",
+    "observed",
+    "expected",
+    "status",
+    "reason",
+}
 EXPECTED_R2_IDS = {
     "R2-test-hermeticity-1",
     "R2-context-tmp-symlink-1",
@@ -49,7 +115,7 @@ EXPECTED_R2_IDS = {
     "R2-mcp-readonly-export-1",
     "R2-control-plane-parity-1",
 }
-EXPECTED_IMPLEMENTED_UNCOMMITTED_ORIGINAL_IDS = {
+EXPECTED_IMPLEMENTED_COMMITTED_ORIGINAL_IDS = {
     "D1a-graph-link-1",
     "D1a-graph-link-2",
     "D1a-graph-link-3",
@@ -91,7 +157,7 @@ EXPECTED_IMPLEMENTED_UNCOMMITTED_ORIGINAL_IDS = {
     "D7-cli-consistency-7",
     "D7-cli-consistency-8",
 }
-EXPECTED_PARTIAL_UNCOMMITTED_ORIGINAL_IDS = {
+EXPECTED_PARTIAL_COMMITTED_ORIGINAL_IDS = {
     "D2a-write-safety-6",
     "D3b-structure-6",
     "D5a-repo-redundancy-3",
@@ -100,13 +166,53 @@ EXPECTED_PARTIAL_UNCOMMITTED_ORIGINAL_IDS = {
     "D6b-test-quality-6",
     "D7-cli-consistency-5",
 }
+EXPECTED_DEFAULT_RELEASES = {
+    146: "v4.7.1",
+    147: "v4.7.1",
+    148: "v4.8.0",
+    149: "v4.8.0",
+    150: "v4.8.0",
+    151: "v4.8.0",
+    152: "v4.8.0",
+    153: "v4.8.0",
+    154: "v4.9.0",
+    155: "v4.9.0",
+    156: "v4.8.0",
+    157: "v4.9.0",
+}
+EXPECTED_RELEASE_COUNTS = Counter(
+    {
+        (146, "v4.7.1"): 2,
+        (147, "v4.7.1"): 2,
+        (148, "v4.7.1"): 3,
+        (148, "v4.8.0"): 9,
+        (149, "v4.7.1"): 2,
+        (149, "v4.8.0"): 19,
+        (150, "v4.7.1"): 1,
+        (150, "v4.8.0"): 15,
+        (151, "v4.7.1"): 1,
+        (151, "v4.8.0"): 5,
+        (152, "v4.8.0"): 6,
+        (153, "v4.7.1"): 1,
+        (153, "v4.8.0"): 11,
+        (154, "v4.9.0"): 14,
+        (155, "v4.9.0"): 1,
+        (156, "v4.8.0"): 2,
+        (156, "v4.9.0"): 3,
+        (157, "v4.9.0"): 2,
+        (158, "v4.7.1"): 1,
+    }
+)
 
 
-def load_yaml(path: Path) -> dict[str, Any]:
-    data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        raise ValueError(f"{path} must contain a YAML mapping")
-    return data
+def load_yaml(path: Path) -> Any:
+    """Load YAML without imposing a root type on every document.
+
+    Root-shape checks belong to the individual control-plane validators so a
+    malformed registry or child manifest is a normal validation failure
+    (exit 1), not an exception-derived validator error (exit 2).
+    """
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
 def audit_register() -> dict[str, str]:
@@ -151,16 +257,565 @@ def path_scope_covers(parent: str, child: str) -> bool:
     return parent == child or (path_is_directory(parent) and child.startswith(parent))
 
 
-def normalized_manifest_scope(manifest: dict[str, Any]) -> set[str]:
-    scope = manifest.get("scope", {})
-    paths = set(scope.get("allowed_paths", []))
-    for pattern in scope.get("allowed_path_patterns", []):
-        if isinstance(pattern, str) and pattern.endswith("/**"):
+def is_nonempty_string(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def is_string_list(value: Any) -> bool:
+    return (
+        isinstance(value, list)
+        and bool(value)
+        and all(is_nonempty_string(item) for item in value)
+    )
+
+
+def is_canonical_repo_path(value: Any) -> bool:
+    """Return whether *value* is a canonical, non-escaping repo path.
+
+    Directory scopes may retain one trailing slash.  Absolute paths, Windows
+    separators/drives, empty or dot segments, and parent traversal are
+    rejected lexically before any filesystem lookup.
+    """
+    if not is_nonempty_string(value) or value != value.strip():
+        return False
+    if "\x00" in value or "\\" in value or re.match(r"^[A-Za-z]:", value):
+        return False
+    directory_scope = value.endswith("/")
+    core = value[:-1] if directory_scope else value
+    if not core or core.startswith("/"):
+        return False
+    parts = core.split("/")
+    if any(part in {"", ".", ".."} for part in parts):
+        return False
+    return PurePosixPath(core).as_posix() == core
+
+
+def is_issue_number(value: Any, *, include_epic: bool) -> bool:
+    upper_bound = 159 if include_epic else 158
+    return (
+        isinstance(value, int)
+        and not isinstance(value, bool)
+        and value in range(146, upper_bound)
+    )
+
+
+def is_commit_ref(value: Any) -> bool:
+    return bool(
+        isinstance(value, str)
+        and re.fullmatch(r"[0-9a-f]{7,40}", value)
+    )
+
+
+def commit_exists(value: str) -> bool:
+    result = subprocess.run(
+        ["git", "cat-file", "-e", f"{value}^{{commit}}"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.returncode == 0
+
+
+def normalize_snapshot_counts(
+    value: Any,
+    *,
+    field: str,
+    errors: list[str],
+) -> dict[int, int]:
+    if not isinstance(value, dict):
+        errors.append(f"github_snapshot.{field} must be a mapping")
+        return {}
+
+    normalized: dict[int, int] = {}
+    for raw_issue, raw_count in value.items():
+        if isinstance(raw_issue, int) and not isinstance(raw_issue, bool):
+            issue = raw_issue
+        elif isinstance(raw_issue, str) and raw_issue.isdecimal():
+            issue = int(raw_issue)
+        else:
+            errors.append(
+                f"github_snapshot.{field} has invalid issue key: {raw_issue!r}"
+            )
+            continue
+        if issue not in range(146, 159):
+            errors.append(
+                f"github_snapshot.{field} has out-of-range issue key: {raw_issue!r}"
+            )
+            continue
+        if issue in normalized:
+            errors.append(
+                f"github_snapshot.{field} has duplicate normalized issue key: {issue}"
+            )
+            continue
+        if (
+            not isinstance(raw_count, int)
+            or isinstance(raw_count, bool)
+            or raw_count < 0
+        ):
+            errors.append(
+                f"github_snapshot.{field}[{raw_issue!r}] has invalid count: "
+                f"{raw_count!r}"
+            )
+            continue
+        normalized[issue] = raw_count
+    return normalized
+
+
+def normalize_external_drift(value: Any, errors: list[str]) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        errors.append("github_snapshot.external_drift must be a list")
+        return []
+
+    normalized: list[dict[str, Any]] = []
+    scalar_types = (str, int, float, bool, type(None))
+    for index, item in enumerate(value):
+        if not isinstance(item, dict):
+            errors.append(f"github_snapshot.external_drift row {index} is not a mapping")
+            continue
+        item_invalid = False
+        missing = sorted(REQUIRED_EXTERNAL_DRIFT_FIELDS - item.keys())
+        if missing:
+            errors.append(
+                f"github_snapshot.external_drift row {index} missing fields: {missing}"
+            )
+            item_invalid = True
+        if "issue" in item and not is_issue_number(item.get("issue"), include_epic=True):
+            errors.append(
+                f"github_snapshot.external_drift row {index} has invalid issue: "
+                f"{item.get('issue')!r}"
+            )
+            item_invalid = True
+        for field in ("field", "status", "reason"):
+            if field in item and not is_nonempty_string(item.get(field)):
+                errors.append(
+                    f"github_snapshot.external_drift row {index} has invalid {field}: "
+                    f"{item.get(field)!r}"
+                )
+                item_invalid = True
+        for field in ("observed", "expected"):
+            if field in item and not isinstance(item.get(field), scalar_types):
+                errors.append(
+                    f"github_snapshot.external_drift row {index} has invalid {field}: "
+                    f"{item.get(field)!r}"
+                )
+                item_invalid = True
+        if not item_invalid:
+            normalized.append(item)
+    return normalized
+
+
+def normalize_shared_path_leases(
+    value: Any,
+    errors: list[str],
+) -> list[dict[str, Any]]:
+    """Return only structurally safe shared-path lease rows."""
+    if not isinstance(value, list):
+        errors.append("registry shared_path_leases must be a list")
+        return []
+
+    normalized: list[dict[str, Any]] = []
+    for index, item in enumerate(value):
+        if not isinstance(item, dict):
+            errors.append(f"shared_path_leases row {index} is not a mapping")
+            continue
+        item_invalid = False
+        missing = sorted(REQUIRED_LEASE_FIELDS - item.keys())
+        if missing:
+            errors.append(
+                f"shared_path_leases row {index} missing fields: {missing}"
+            )
+            item_invalid = True
+        if "path" in item and not is_canonical_repo_path(item.get("path")):
+            errors.append(
+                f"shared_path_leases row {index} has invalid path: "
+                f"{item.get('path')!r}"
+            )
+            item_invalid = True
+        for field in ("programs", "order"):
+            issue_values = item.get(field)
+            if field in item and (
+                not isinstance(issue_values, list)
+                or not issue_values
+                or not all(
+                    is_issue_number(issue, include_epic=False)
+                    for issue in issue_values
+                )
+            ):
+                errors.append(
+                    f"shared_path_leases row {index} has invalid {field}: "
+                    f"{issue_values!r}"
+                )
+                item_invalid = True
+        if "policy" in item and not is_nonempty_string(item.get("policy")):
+            errors.append(
+                f"shared_path_leases row {index} has invalid policy: "
+                f"{item.get('policy')!r}"
+            )
+            item_invalid = True
+        if not item_invalid:
+            normalized.append(item)
+    return normalized
+
+
+def normalize_shared_tree_integration(
+    value: Any,
+    errors: list[str],
+) -> dict[str, Any] | None:
+    """Validate the shared-tree integration record before any consumer."""
+    if not isinstance(value, dict):
+        errors.append("registry shared_tree_integration must be a mapping")
+        return None
+
+    invalid = False
+    missing = sorted(REQUIRED_INTEGRATION_FIELDS - value.keys())
+    if missing:
+        errors.append(f"shared_tree_integration missing fields: {missing}")
+        invalid = True
+    for field in ("status", "reason"):
+        if field in value and not is_nonempty_string(value.get(field)):
+            errors.append(
+                f"shared_tree_integration has invalid {field}: {value.get(field)!r}"
+            )
+            invalid = True
+    if "release_blocking" in value and not isinstance(
+        value.get("release_blocking"), bool
+    ):
+        errors.append(
+            "shared_tree_integration has invalid release_blocking: "
+            f"{value.get('release_blocking')!r}"
+        )
+        invalid = True
+    affected_issues = value.get("affected_issues")
+    if "affected_issues" in value and (
+        not isinstance(affected_issues, list)
+        or not affected_issues
+        or not all(
+            is_issue_number(issue, include_epic=False)
+            for issue in affected_issues
+        )
+    ):
+        errors.append(
+            "shared_tree_integration has invalid affected_issues: "
+            f"{affected_issues!r}"
+        )
+        invalid = True
+    elif isinstance(affected_issues, list) and len(set(affected_issues)) != len(
+        affected_issues
+    ):
+        errors.append(
+            "shared_tree_integration has duplicate affected_issues: "
+            f"{affected_issues!r}"
+        )
+        invalid = True
+    return None if invalid else value
+
+
+def normalize_live_issue_payload(
+    issue: int,
+    value: Any,
+    errors: list[str],
+) -> tuple[str, str, str, set[str]]:
+    if not isinstance(value, dict):
+        errors.append(f"live GitHub issue #{issue} payload is not a mapping")
+        return "", "", "", set()
+
+    number = value.get("number")
+    if (
+        not isinstance(number, int)
+        or isinstance(number, bool)
+        or number != issue
+    ):
+        errors.append(
+            f"live GitHub issue #{issue} has mismatched number: {number!r}"
+        )
+
+    title = value.get("title")
+    if not is_nonempty_string(title):
+        errors.append(
+            f"live GitHub issue #{issue} has invalid title: {title!r}"
+        )
+
+    body = value.get("body")
+    if not isinstance(body, str):
+        errors.append(
+            f"live GitHub issue #{issue} has invalid body: {body!r}"
+        )
+        body = ""
+
+    state = value.get("state")
+    if not is_nonempty_string(state):
+        errors.append(
+            f"live GitHub issue #{issue} has invalid state: {state!r}"
+        )
+        state = ""
+
+    milestone = value.get("milestone")
+    milestone_title = ""
+    if not isinstance(milestone, dict):
+        errors.append(
+            f"live GitHub issue #{issue} has invalid milestone: {milestone!r}"
+        )
+    elif not is_nonempty_string(milestone.get("title")):
+        errors.append(
+            f"live GitHub issue #{issue} has invalid milestone title: "
+            f"{milestone.get('title')!r}"
+        )
+    else:
+        milestone_title = milestone["title"]
+
+    labels = value.get("labels")
+    label_names: set[str] = set()
+    if not isinstance(labels, list):
+        errors.append(
+            f"live GitHub issue #{issue} has invalid labels: {labels!r}"
+        )
+    else:
+        for index, label in enumerate(labels):
+            if not isinstance(label, dict):
+                errors.append(
+                    f"live GitHub issue #{issue} label {index} is not a mapping"
+                )
+                continue
+            name = label.get("name")
+            if not is_nonempty_string(name):
+                errors.append(
+                    f"live GitHub issue #{issue} label {index} has invalid name: "
+                    f"{name!r}"
+                )
+                continue
+            label_names.add(name)
+
+    return body, state, milestone_title, label_names
+
+
+def normalized_manifest_scope(
+    manifest: Any,
+    *,
+    issue: int,
+    errors: list[str],
+) -> set[str]:
+    """Return a structurally safe child-manifest scope for parity checks."""
+    label = f"#{issue} manifest"
+    if not isinstance(manifest, dict):
+        errors.append(f"{label} root must be a mapping")
+        return set()
+
+    scope = manifest.get("scope")
+    if not isinstance(scope, dict):
+        errors.append(f"{label} scope must be a mapping")
+        return set()
+
+    raw_paths = scope.get("allowed_paths")
+    if not isinstance(raw_paths, list) or not raw_paths:
+        errors.append(f"{label} scope.allowed_paths must be a nonempty list")
+        paths: set[str] = set()
+    else:
+        paths = set()
+        for index, path in enumerate(raw_paths):
+            if not is_canonical_repo_path(path):
+                errors.append(
+                    f"{label} scope.allowed_paths[{index}] is not a canonical "
+                    f"repo-relative path: {path!r}"
+                )
+                continue
+            paths.add(path)
+
+    raw_patterns = scope.get("allowed_path_patterns", [])
+    if not isinstance(raw_patterns, list):
+        errors.append(f"{label} scope.allowed_path_patterns must be a list")
+        return paths
+    for index, pattern in enumerate(raw_patterns):
+        if not is_canonical_repo_path(pattern):
+            errors.append(
+                f"{label} scope.allowed_path_patterns[{index}] is not a canonical "
+                f"repo-relative pattern: {pattern!r}"
+            )
+            continue
+        if pattern.endswith("/**"):
             paths.add(pattern[:-2])
     return paths
 
 
-def live_github_issue(issue: int) -> dict[str, Any]:
+def normalize_child_manifest(
+    manifest: Any,
+    *,
+    issue: int,
+    errors: list[str],
+) -> dict[str, Any]:
+    """Quarantine every child-manifest collection used downstream."""
+    label = f"#{issue} manifest"
+    if not isinstance(manifest, dict):
+        errors.append(f"{label} root must be a mapping")
+        return {}
+
+    normalized = dict(manifest)
+    fallback_mode = manifest.get("fallback_evidence_mode")
+    if not is_nonempty_string(fallback_mode):
+        errors.append(f"{label} fallback_evidence_mode must be a nonempty string")
+        normalized["fallback_evidence_mode"] = ""
+
+    sequencing = manifest.get("implementation_sequencing")
+    if sequencing is None and issue == 146:
+        normalized["implementation_sequencing"] = {}
+    elif not isinstance(sequencing, dict):
+        errors.append(f"{label} implementation_sequencing must be a mapping")
+        normalized["implementation_sequencing"] = {}
+    else:
+        implementation_ref = sequencing.get("implementation_ref")
+        if issue == 147 and not is_nonempty_string(implementation_ref):
+            errors.append(
+                f"{label} implementation_sequencing.implementation_ref must "
+                "be a nonempty string"
+            )
+            sequencing = {**sequencing, "implementation_ref": ""}
+        normalized["implementation_sequencing"] = sequencing
+
+    for field in ("required_dispatch_bundles", "historical_receipt_gaps"):
+        raw_rows = manifest.get(field)
+        if not isinstance(raw_rows, list):
+            errors.append(f"{label} {field} must be a list")
+            normalized[field] = []
+            continue
+        safe_rows: list[dict[str, Any]] = []
+        for index, row in enumerate(raw_rows):
+            if not isinstance(row, dict):
+                errors.append(f"{label} {field}[{index}] must be a mapping")
+                continue
+            if field == "required_dispatch_bundles":
+                required = {"phase", "intent_path", "result_path"}
+                missing = sorted(required - row.keys())
+                if missing:
+                    errors.append(
+                        f"{label} {field}[{index}] missing fields: {missing}"
+                    )
+                    continue
+                if row.get("phase") not in {"B.1", "D.2", "D.5"}:
+                    errors.append(
+                        f"{label} {field}[{index}] has invalid phase: "
+                        f"{row.get('phase')!r}"
+                    )
+                    continue
+                if not all(
+                    is_canonical_repo_path(row.get(path_field))
+                    for path_field in ("intent_path", "result_path")
+                ):
+                    errors.append(
+                        f"{label} {field}[{index}] has invalid bundle paths"
+                    )
+                    continue
+            else:
+                required = {
+                    "id",
+                    "affected_phase",
+                    "artifact_paths",
+                    "disposition",
+                    "strict_p3_certified",
+                }
+                missing = sorted(required - row.keys())
+                if missing:
+                    errors.append(
+                        f"{label} {field}[{index}] missing fields: {missing}"
+                    )
+                    continue
+                if (
+                    not is_nonempty_string(row.get("id"))
+                    or row.get("affected_phase") not in {"B.1", "D.2", "D.5"}
+                    or not is_string_list(row.get("artifact_paths"))
+                    or not all(
+                        is_canonical_repo_path(path)
+                        for path in row.get("artifact_paths", [])
+                    )
+                    or not is_nonempty_string(row.get("disposition"))
+                    or not isinstance(row.get("strict_p3_certified"), bool)
+                ):
+                    errors.append(
+                        f"{label} {field}[{index}] has invalid typed fields"
+                    )
+                    continue
+            safe_rows.append(row)
+        normalized[field] = safe_rows
+
+    raw_gates = manifest.get("gate_prerequisites")
+    if not isinstance(raw_gates, list):
+        errors.append(f"{label} gate_prerequisites must be a list")
+        normalized["gate_prerequisites"] = []
+    else:
+        gates: list[dict[str, Any]] = []
+        for index, gate in enumerate(raw_gates):
+            if not isinstance(gate, dict):
+                errors.append(
+                    f"{label} gate_prerequisites[{index}] must be a mapping"
+                )
+                continue
+            gate_id = gate.get("id")
+            verification = gate.get("verification")
+            if not is_nonempty_string(gate_id):
+                errors.append(
+                    f"{label} gate_prerequisites[{index}].id must be a "
+                    "nonempty string"
+                )
+                continue
+            if not isinstance(verification, dict):
+                errors.append(
+                    f"{label} gate_prerequisites[{index}].verification must "
+                    "be a mapping"
+                )
+                continue
+            command = verification.get("command")
+            if not is_nonempty_string(command):
+                errors.append(
+                    f"{label} gate_prerequisites[{index}].verification.command "
+                    "must be a nonempty string"
+                )
+                continue
+            gates.append(gate)
+        normalized["gate_prerequisites"] = gates
+    return normalized
+
+
+def normalize_receipt_inventory(value: Any, errors: list[str]) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        errors.append("#147 receipt inventory root must be a mapping")
+        return {"receipts": []}
+    receipts = value.get("receipts")
+    if not isinstance(receipts, list):
+        errors.append("#147 receipt inventory receipts must be a list")
+        return {**value, "receipts": []}
+    return value
+
+
+def markdown_table_after_heading(text: str, heading: str) -> list[list[str]]:
+    """Return data cells from the first Markdown table after *heading*."""
+    lines = text.splitlines()
+    try:
+        start = lines.index(heading) + 1
+    except ValueError:
+        return []
+    table_lines: list[str] = []
+    in_table = False
+    for line in lines[start:]:
+        if line.startswith("|"):
+            in_table = True
+            table_lines.append(line)
+        elif in_table:
+            break
+    if len(table_lines) < 2:
+        return []
+    rows: list[list[str]] = []
+    for line in table_lines[2:]:
+        rows.append([cell.strip() for cell in line.strip("|").split("|")])
+    return rows
+
+
+def unquote_code(value: str) -> str:
+    value = value.strip()
+    if len(value) >= 2 and value.startswith("`") and value.endswith("`"):
+        return value[1:-1]
+    return value
+
+
+def live_github_issue(issue: int) -> Any:
     result = subprocess.run(
         [
             "gh",
@@ -183,10 +838,12 @@ def live_github_issue(issue: int) -> dict[str, Any]:
             f"unable to read live GitHub issue #{issue}: "
             f"{(result.stderr or result.stdout).strip()}"
         )
-    payload = json.loads(result.stdout)
-    if not isinstance(payload, dict):
-        raise ValueError(f"live GitHub issue #{issue} did not return an object")
-    return payload
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        # A successful transport with malformed response data is a parity
+        # validation error, not an exception-derived validator failure.
+        return f"invalid JSON response: {exc}"
 
 
 def github_checkbox_states(body: str) -> dict[str, bool]:
@@ -209,40 +866,314 @@ def github_checkbox_states(body: str) -> dict[str, bool]:
 def validate(require_external_parity: bool) -> list[str]:
     errors: list[str] = []
     registry = load_yaml(REGISTRY_PATH)
+    if not isinstance(registry, dict):
+        return ["registry root must be a YAML mapping"]
+    for field, expected in (
+        ("audit_baseline_commit", AUDIT_BASELINE_COMMIT),
+        ("revalidation_commit", REVALIDATION_COMMIT),
+        ("integration_commit", INTEGRATION_COMMIT),
+    ):
+        if registry.get(field) != expected:
+            errors.append(
+                f"registry {field} mismatch: {registry.get(field)!r} != {expected!r}"
+            )
     audit = audit_register()
-    findings = registry.get("findings")
-    programs = registry.get("programs")
-    leases = registry.get("shared_path_leases")
-    if not isinstance(findings, list) or not isinstance(programs, list) or not isinstance(leases, list):
+    raw_findings = registry.get("findings")
+    raw_programs = registry.get("programs")
+    raw_leases = registry.get("shared_path_leases")
+    if (
+        not isinstance(raw_findings, list)
+        or not isinstance(raw_programs, list)
+        or not isinstance(raw_leases, list)
+    ):
         return ["registry findings, programs, and shared_path_leases must be lists"]
 
-    ids = [row.get("id") for row in findings if isinstance(row, dict)]
+    leases = normalize_shared_path_leases(raw_leases, errors)
+    integration = normalize_shared_tree_integration(
+        registry.get("shared_tree_integration"),
+        errors,
+    )
+
+    raw_github_snapshot = registry.get("github_snapshot")
+    if not isinstance(raw_github_snapshot, dict):
+        errors.append("registry github_snapshot must be a mapping")
+        github_snapshot: dict[str, Any] = {}
+    else:
+        github_snapshot = raw_github_snapshot
+    normalized_snapshot_counts = normalize_snapshot_counts(
+        github_snapshot.get("issue_finding_counts"),
+        field="issue_finding_counts",
+        errors=errors,
+    )
+    normalized_registry_counts = normalize_snapshot_counts(
+        github_snapshot.get("registry_finding_counts"),
+        field="registry_finding_counts",
+        errors=errors,
+    )
+    external_drift = normalize_external_drift(
+        github_snapshot.get("external_drift"),
+        errors,
+    )
+
+    findings: list[dict[str, Any]] = []
+    for index, row in enumerate(raw_findings):
+        if not isinstance(row, dict):
+            errors.append(f"finding row {index} is not a mapping")
+            continue
+        row_label = row.get("id", index)
+        row_invalid = False
+        missing = sorted(REQUIRED_FINDING_FIELDS - row.keys())
+        if missing:
+            errors.append(f"{row_label} missing fields: {missing}")
+            row_invalid = True
+
+        for field in (
+            "id",
+            "baseline_commit",
+            "root_program",
+            "release",
+            "base_sha",
+        ):
+            if field in row and not is_nonempty_string(row.get(field)):
+                errors.append(f"{row_label} has invalid {field}: {row.get(field)!r}")
+                row_invalid = True
+        for field in ("baseline_commit", "base_sha"):
+            if field in row and is_nonempty_string(row.get(field)) and not is_commit_ref(
+                row.get(field)
+            ):
+                errors.append(
+                    f"{row_label} has invalid commit reference in {field}: "
+                    f"{row.get(field)!r}"
+                )
+                row_invalid = True
+        if "origin" in row:
+            origin = row.get("origin")
+            if not is_nonempty_string(origin) or origin not in FINDING_ORIGINS:
+                errors.append(f"{row_label} has invalid origin: {origin!r}")
+                row_invalid = True
+        if "severity" in row:
+            severity = row.get("severity")
+            if not is_nonempty_string(severity) or severity not in FINDING_SEVERITIES:
+                errors.append(f"{row_label} has invalid severity: {severity!r}")
+                row_invalid = True
+        if "status" in row:
+            status = row.get("status")
+            if not is_nonempty_string(status) or status not in FINDING_STATUSES:
+                errors.append(f"{row_label} has invalid status: {status!r}")
+                row_invalid = True
+        if "lifecycle_state" in row:
+            lifecycle_state = row.get("lifecycle_state")
+            if (
+                not is_nonempty_string(lifecycle_state)
+                or lifecycle_state not in FINDING_LIFECYCLE_STATES
+            ):
+                errors.append(
+                    f"{row_label} has invalid lifecycle_state: "
+                    f"{lifecycle_state!r}"
+                )
+                row_invalid = True
+        if "issue" in row and not is_issue_number(row.get("issue"), include_epic=True):
+            errors.append(
+                f"{row_label} has invalid issue assignment {row.get('issue')!r}"
+            )
+            row_invalid = True
+        if "fix_commit" in row and row.get("fix_commit") is not None and not is_nonempty_string(
+            row.get("fix_commit")
+        ):
+            errors.append(
+                f"{row_label} has invalid fix_commit: {row.get('fix_commit')!r}"
+            )
+            row_invalid = True
+        elif row.get("fix_commit") is not None and not is_commit_ref(
+            row.get("fix_commit")
+        ):
+            errors.append(
+                f"{row_label} has invalid commit reference in fix_commit: "
+                f"{row.get('fix_commit')!r}"
+            )
+            row_invalid = True
+
+        verification_evidence = row.get("verification_evidence")
+        if "verification_evidence" in row and not is_string_list(verification_evidence):
+            errors.append(
+                f"{row_label} has invalid verification_evidence: "
+                f"{verification_evidence!r}"
+            )
+            row_invalid = True
+        elif is_string_list(verification_evidence):
+            for evidence_path in verification_evidence:
+                if not is_canonical_repo_path(evidence_path):
+                    errors.append(
+                        f"{row_label} evidence path is not a canonical "
+                        f"repo-relative path: {evidence_path!r}"
+                    )
+                    row_invalid = True
+                    continue
+                if not (ROOT / evidence_path).exists():
+                    errors.append(
+                        f"{row_label} evidence path is missing: {evidence_path!r}"
+                    )
+        if "allowed_paths" in row and not is_string_list(row.get("allowed_paths")):
+            errors.append(
+                f"{row_label} has invalid allowed_paths: {row.get('allowed_paths')!r}"
+            )
+            row_invalid = True
+        elif is_string_list(row.get("allowed_paths")):
+            invalid_paths = [
+                path
+                for path in row["allowed_paths"]
+                if not is_canonical_repo_path(path)
+            ]
+            if invalid_paths:
+                errors.append(
+                    f"{row_label} allowed_paths must be canonical repo-relative "
+                    f"paths: {invalid_paths!r}"
+                )
+                row_invalid = True
+
+        if row_invalid:
+            # Quarantine structurally invalid rows before counters, path
+            # calculations, or local/external parity logic consume them.
+            continue
+        findings.append(row)
+
+    ids = [row["id"] for row in findings]
     duplicate_ids = sorted(key for key, count in Counter(ids).items() if count > 1)
     if duplicate_ids:
         errors.append(f"duplicate registry IDs: {duplicate_ids}")
 
-    for index, row in enumerate(findings):
-        if not isinstance(row, dict):
-            errors.append(f"finding row {index} is not a mapping")
+    programs: list[dict[str, Any]] = []
+    program_issues: list[int] = []
+    for index, program in enumerate(raw_programs):
+        if not isinstance(program, dict):
+            errors.append(f"program row {index} is not a mapping")
             continue
-        missing = sorted(REQUIRED_FINDING_FIELDS - row.keys())
+        program_label = program.get("id", index)
+        program_invalid = False
+        missing = sorted(REQUIRED_PROGRAM_FIELDS - program.keys())
         if missing:
-            errors.append(f"{row.get('id', index)} missing fields: {missing}")
-        if not isinstance(row.get("verification_evidence"), list) or not row.get("verification_evidence"):
-            errors.append(f"{row.get('id', index)} has no verification evidence")
-        else:
-            for evidence_path in row["verification_evidence"]:
-                if not isinstance(evidence_path, str) or not (ROOT / evidence_path).exists():
-                    errors.append(
-                        f"{row.get('id', index)} evidence path is missing: {evidence_path!r}"
-                    )
-        if not isinstance(row.get("allowed_paths"), list) or not row.get("allowed_paths"):
-            errors.append(f"{row.get('id', index)} has no allowed paths")
-        if row.get("issue") not in range(146, 159):
-            errors.append(f"{row.get('id', index)} has invalid issue assignment {row.get('issue')!r}")
+            errors.append(f"program {program_label} missing fields: {missing}")
+            program_invalid = True
 
-    original = {row["id"]: row for row in findings if row.get("origin") == "fable_audit"}
-    r2 = {row["id"]: row for row in findings if row.get("origin") == "codex_revalidation"}
+        for field in (
+            "id",
+            "root_program",
+            "implementation_ref",
+            "base_sha",
+            "default_release",
+            "github_state",
+        ):
+            if field in program and not is_nonempty_string(program.get(field)):
+                errors.append(
+                    f"program {program_label} has invalid {field}: {program.get(field)!r}"
+                )
+                program_invalid = True
+        for field in ("implementation_ref", "base_sha"):
+            if field in program and is_nonempty_string(
+                program.get(field)
+            ) and not is_commit_ref(program.get(field)):
+                errors.append(
+                    f"program {program_label} has invalid commit reference in "
+                    f"{field}: {program.get(field)!r}"
+                )
+                program_invalid = True
+        if "lifecycle_state" in program:
+            lifecycle_state = program.get("lifecycle_state")
+            if (
+                not is_nonempty_string(lifecycle_state)
+                or lifecycle_state not in PROGRAM_LIFECYCLE_STATES
+            ):
+                errors.append(
+                    f"program {program_label} has invalid lifecycle_state: "
+                    f"{lifecycle_state!r}"
+                )
+                program_invalid = True
+        if "lease_state" in program:
+            lease_state = program.get("lease_state")
+            if (
+                not is_nonempty_string(lease_state)
+                or lease_state not in PROGRAM_LEASE_STATES
+            ):
+                errors.append(
+                    f"program {program_label} has invalid lease_state: "
+                    f"{lease_state!r}"
+                )
+                program_invalid = True
+        issue = program.get("issue")
+        if "issue" in program and not is_issue_number(issue, include_epic=False):
+            errors.append(f"program {program_label} has invalid issue {issue!r}")
+            program_invalid = True
+        if "max_severity" in program:
+            max_severity = program.get("max_severity")
+            if (
+                not is_nonempty_string(max_severity)
+                or max_severity not in FINDING_SEVERITIES
+            ):
+                errors.append(
+                    f"program {program_label} has invalid max_severity: "
+                    f"{max_severity!r}"
+                )
+                program_invalid = True
+        if "github_milestone" in program:
+            github_milestone = program.get("github_milestone")
+            if (
+                not isinstance(github_milestone, int)
+                or isinstance(github_milestone, bool)
+                or github_milestone not in {1, 2, 3}
+            ):
+                errors.append(
+                    f"program {program_label} has invalid github_milestone: "
+                    f"{github_milestone!r}"
+                )
+                program_invalid = True
+        if "allowed_paths" in program and not is_string_list(program.get("allowed_paths")):
+            errors.append(
+                f"program {program_label} has invalid allowed_paths: "
+                f"{program.get('allowed_paths')!r}"
+            )
+            program_invalid = True
+        elif is_string_list(program.get("allowed_paths")):
+            invalid_paths = [
+                path
+                for path in program["allowed_paths"]
+                if not is_canonical_repo_path(path)
+            ]
+            if invalid_paths:
+                errors.append(
+                    f"program {program_label} allowed_paths must be canonical "
+                    f"repo-relative paths: {invalid_paths!r}"
+                )
+                program_invalid = True
+
+        if program_invalid:
+            # Invalid programs must not reach path overlap checks, hard-coded
+            # child-manifest parity, or GitHub metadata comparisons.
+            continue
+        programs.append(program)
+        program_issues.append(issue)
+    duplicate_program_issues = sorted(
+        issue for issue, count in Counter(program_issues).items() if count > 1
+    )
+    if duplicate_program_issues:
+        errors.append(f"duplicate program issues: {duplicate_program_issues}")
+    observed_program_issues = set(program_issues)
+    if observed_program_issues != REQUIRED_PROGRAM_ISSUES:
+        errors.append(
+            "required program membership mismatch: "
+            f"missing={sorted(REQUIRED_PROGRAM_ISSUES - observed_program_issues)}, "
+            f"extra={sorted(observed_program_issues - REQUIRED_PROGRAM_ISSUES)}"
+        )
+
+    original = {
+        row.get("id"): row
+        for row in findings
+        if row.get("origin") == "fable_audit" and isinstance(row.get("id"), str)
+    }
+    r2 = {
+        row.get("id"): row
+        for row in findings
+        if row.get("origin") == "codex_revalidation" and isinstance(row.get("id"), str)
+    }
     if set(original) != set(audit):
         errors.append(
             "original register mismatch: "
@@ -265,39 +1196,50 @@ def validate(require_external_parity: bool) -> list[str]:
     if "D6a-test-gaps-3" in original:
         errors.append("phantom roadmap ID D6a-test-gaps-3 must not enter the registry")
 
-    fixed_original = {row["id"] for row in original.values() if row.get("status") == "code_fixed"}
+    fixed_original = {
+        row.get("id")
+        for row in original.values()
+        if row.get("status") == "code_fixed"
+    }
     if fixed_original != {"D4b-trust-1", "D4b-trust-2"}:
         errors.append(f"unexpected committed code-fixed original set: {sorted(fixed_original)}")
     serializer_row = original.get("D2b-roundtrip-3", {})
-    if serializer_row.get("status") != "code_fixed_evidence_pending" or serializer_row.get("fix_commit") is not None:
-        errors.append("D2b-roundtrip-3 must be uncommitted code_fixed_evidence_pending")
-    implemented_original = {
-        row["id"]
-        for row in original.values()
-        if row.get("status") == "implemented_uncommitted_verification_pending"
-    }
-    if implemented_original != EXPECTED_IMPLEMENTED_UNCOMMITTED_ORIGINAL_IDS:
+    if (
+        serializer_row.get("status") != "code_fixed_evidence_pending"
+        or serializer_row.get("fix_commit")
+        != "b6f89d77e7fb684b8bd9a181a24c773d5777397a"
+    ):
         errors.append(
-            "implemented-uncommitted original set mismatch: "
-            f"missing={sorted(EXPECTED_IMPLEMENTED_UNCOMMITTED_ORIGINAL_IDS - implemented_original)}, "
-            f"extra={sorted(implemented_original - EXPECTED_IMPLEMENTED_UNCOMMITTED_ORIGINAL_IDS)}"
+            "D2b-roundtrip-3 must be committed at I0 and remain "
+            "code_fixed_evidence_pending"
+        )
+    implemented_original = {
+        row.get("id")
+        for row in original.values()
+        if row.get("status") == "implemented_committed_verification_pending"
+    }
+    if implemented_original != EXPECTED_IMPLEMENTED_COMMITTED_ORIGINAL_IDS:
+        errors.append(
+            "implemented-committed original set mismatch: "
+            f"missing={sorted(EXPECTED_IMPLEMENTED_COMMITTED_ORIGINAL_IDS - implemented_original)}, "
+            f"extra={sorted(implemented_original - EXPECTED_IMPLEMENTED_COMMITTED_ORIGINAL_IDS)}"
         )
     partial_original = {
-        row["id"]
+        row.get("id")
         for row in original.values()
-        if row.get("status") == "partial_implementation_uncommitted_verification_pending"
+        if row.get("status") == "partial_implementation_committed_verification_pending"
     }
-    if partial_original != EXPECTED_PARTIAL_UNCOMMITTED_ORIGINAL_IDS:
+    if partial_original != EXPECTED_PARTIAL_COMMITTED_ORIGINAL_IDS:
         errors.append(
-            "partial-uncommitted original set mismatch: "
-            f"missing={sorted(EXPECTED_PARTIAL_UNCOMMITTED_ORIGINAL_IDS - partial_original)}, "
-            f"extra={sorted(partial_original - EXPECTED_PARTIAL_UNCOMMITTED_ORIGINAL_IDS)}"
+            "partial-committed original set mismatch: "
+            f"missing={sorted(EXPECTED_PARTIAL_COMMITTED_ORIGINAL_IDS - partial_original)}, "
+            f"extra={sorted(partial_original - EXPECTED_PARTIAL_COMMITTED_ORIGINAL_IDS)}"
         )
     expected_status_counts = Counter(
         {
             "confirmed_open": 41,
-            "implemented_uncommitted_verification_pending": 40,
-            "partial_implementation_uncommitted_verification_pending": 7,
+            "implemented_committed_verification_pending": 40,
+            "partial_implementation_committed_verification_pending": 7,
             "code_fixed": 2,
             "code_fixed_evidence_pending": 1,
         }
@@ -305,16 +1247,16 @@ def validate(require_external_parity: bool) -> list[str]:
     status_counts = Counter(row.get("status") for row in original.values())
     if status_counts != expected_status_counts:
         errors.append(
-            f"original working-tree status totals are wrong: {dict(status_counts)}"
+            f"original committed-snapshot status totals are wrong: {dict(status_counts)}"
         )
     for finding_id in sorted(implemented_original | partial_original):
         row = original[finding_id]
-        if row.get("fix_commit") is not None:
-            errors.append(f"{finding_id} must not claim a fix commit for dirty-tree work")
+        if row.get("fix_commit") != "b6f89d77e7fb684b8bd9a181a24c773d5777397a":
+            errors.append(f"{finding_id} must bind its fix commit to I0")
         expected_lifecycle = (
-            "implementation_uncommitted_lifecycle_pending"
+            "implementation_committed_lifecycle_pending"
             if finding_id in implemented_original
-            else "partial_implementation_uncommitted_lifecycle_pending"
+            else "partial_implementation_committed_lifecycle_pending"
         )
         if row.get("lifecycle_state") != expected_lifecycle:
             errors.append(
@@ -322,33 +1264,27 @@ def validate(require_external_parity: bool) -> list[str]:
                 f"!= {expected_lifecycle!r}"
             )
     for finding_id, row in r2.items():
-        expected_status = (
-            "implemented_uncommitted_parity_verified"
-            if finding_id == "R2-control-plane-parity-1"
-            else "implemented_uncommitted_verification_pending"
-        )
+        expected_status = "implemented_committed_verification_pending"
         if row.get("status") != expected_status:
             errors.append(
                 f"{finding_id} status mismatch: {row.get('status')!r} != {expected_status!r}"
             )
-        if row.get("fix_commit") is not None:
-            errors.append(f"{finding_id} must not claim a fix commit for dirty-tree work")
+        if row.get("fix_commit") != "b6f89d77e7fb684b8bd9a181a24c773d5777397a":
+            errors.append(f"{finding_id} must bind its fix commit to I0")
+        expected_lifecycle = "implementation_committed_lifecycle_pending"
+        if row.get("lifecycle_state") != expected_lifecycle:
+            errors.append(
+                f"{finding_id} lifecycle mismatch: {row.get('lifecycle_state')!r} "
+                f"!= {expected_lifecycle!r}"
+            )
 
-    snapshot_counts = registry.get("github_snapshot", {}).get("issue_finding_counts", {})
-    calculated_counts = Counter(row["issue"] for row in original.values())
-    normalized_snapshot_counts = {int(key): int(value) for key, value in snapshot_counts.items()}
+    calculated_counts = Counter(row.get("issue") for row in original.values())
     if dict(sorted(calculated_counts.items())) != dict(sorted(normalized_snapshot_counts.items())):
         errors.append(
             "GitHub issue finding-count snapshot mismatch: "
             f"registry={dict(sorted(calculated_counts.items()))}, snapshot={normalized_snapshot_counts}"
         )
-    registry_snapshot_counts = (
-        registry.get("github_snapshot", {}).get("registry_finding_counts", {})
-    )
-    calculated_registry_counts = Counter(row["issue"] for row in findings)
-    normalized_registry_counts = {
-        int(key): int(value) for key, value in registry_snapshot_counts.items()
-    }
+    calculated_registry_counts = Counter(row.get("issue") for row in findings)
     if dict(sorted(calculated_registry_counts.items())) != dict(
         sorted(normalized_registry_counts.items())
     ):
@@ -366,14 +1302,99 @@ def validate(require_external_parity: bool) -> list[str]:
     severity_rank = {"P0": 0, "P1": 1, "P2": 2}
     by_issue: dict[int, list[dict[str, Any]]] = defaultdict(list)
     for row in original.values():
-        by_issue[row["issue"]].append(row)
-    program_by_issue = {program["issue"]: program for program in programs}
+        issue = row.get("issue")
+        if isinstance(issue, int):
+            by_issue[issue].append(row)
+    program_by_issue = {
+        program.get("issue"): program
+        for program in programs
+        if isinstance(program.get("issue"), int)
+    }
+    for issue, program in sorted(program_by_issue.items()):
+        expected_base = (
+            DOCTOR_BASE_COMMIT if issue == 147 else REVALIDATION_COMMIT
+        )
+        expected_implementation = (
+            DOCTOR_FIX_COMMIT if issue == 147 else INTEGRATION_COMMIT
+        )
+        if program.get("root_program") != program.get("id"):
+            errors.append(
+                f"program #{issue} root_program must equal its id: "
+                f"{program.get('root_program')!r} != {program.get('id')!r}"
+            )
+        if program.get("base_sha") != expected_base:
+            errors.append(
+                f"program #{issue} base_sha mismatch: "
+                f"{program.get('base_sha')!r} != {expected_base!r}"
+            )
+        if program.get("implementation_ref") != expected_implementation:
+            errors.append(
+                f"program #{issue} implementation_ref mismatch: "
+                f"{program.get('implementation_ref')!r} != "
+                f"{expected_implementation!r}"
+            )
+        expected_release = EXPECTED_DEFAULT_RELEASES.get(issue)
+        if program.get("default_release") != expected_release:
+            errors.append(
+                f"program #{issue} default_release mismatch: "
+                f"{program.get('default_release')!r} != {expected_release!r}"
+            )
+
+    release_counts = Counter(
+        (row.get("issue"), row.get("release")) for row in findings
+    )
+    if release_counts != EXPECTED_RELEASE_COUNTS:
+        errors.append(
+            "finding release distribution mismatch: "
+            f"observed={dict(sorted(release_counts.items()))}, "
+            f"expected={dict(sorted(EXPECTED_RELEASE_COUNTS.items()))}"
+        )
+
+    commit_refs: set[str] = {
+        AUDIT_BASELINE_COMMIT,
+        REVALIDATION_COMMIT,
+        INTEGRATION_COMMIT,
+        DOCTOR_BASE_COMMIT,
+        DOCTOR_FIX_COMMIT,
+    }
     for row in findings:
-        program = program_by_issue.get(row["issue"])
+        issue = row.get("issue")
+        finding_id = row.get("id", "<missing-id>")
+        program = program_by_issue.get(issue)
+        expected_baseline = (
+            AUDIT_BASELINE_COMMIT
+            if row.get("origin") == "fable_audit"
+            else REVALIDATION_COMMIT
+        )
+        if row.get("baseline_commit") != expected_baseline:
+            errors.append(
+                f"{finding_id} baseline_commit mismatch: "
+                f"{row.get('baseline_commit')!r} != {expected_baseline!r}"
+            )
+        expected_base = (
+            program.get("base_sha") if program is not None else REVALIDATION_COMMIT
+        )
+        if row.get("base_sha") != expected_base:
+            errors.append(
+                f"{finding_id} base_sha mismatch: "
+                f"{row.get('base_sha')!r} != {expected_base!r}"
+            )
+        if row.get("status") == "confirmed_open" and row.get("fix_commit") is not None:
+            errors.append(f"{finding_id} confirmed_open row must have null fix_commit")
+        for commit_field in ("baseline_commit", "base_sha", "fix_commit"):
+            commit_value = row.get(commit_field)
+            if isinstance(commit_value, str) and is_commit_ref(commit_value):
+                commit_refs.add(commit_value)
         if program is None:
-            if row["issue"] != 158:
-                errors.append(f"{row['id']} has no owning program row")
+            if issue != 158:
+                errors.append(f"{finding_id} has no owning program row")
             continue
+        if row.get("root_program") != program.get("root_program"):
+            errors.append(
+                f"{finding_id} root_program mismatch for issue #{issue}: "
+                f"finding={row.get('root_program')!r}, "
+                f"program={program.get('root_program')!r}"
+            )
         uncovered = [
             path
             for path in row.get("allowed_paths", [])
@@ -384,8 +1405,16 @@ def validate(require_external_parity: bool) -> list[str]:
         ]
         if uncovered:
             errors.append(
-                f"{row['id']} finding scope exceeds program #{row['issue']}: {uncovered}"
+                f"{finding_id} finding scope exceeds program #{issue}: {uncovered}"
             )
+    for program in programs:
+        for commit_field in ("base_sha", "implementation_ref"):
+            commit_value = program.get(commit_field)
+            if isinstance(commit_value, str) and is_commit_ref(commit_value):
+                commit_refs.add(commit_value)
+    for commit_ref in sorted(commit_refs):
+        if not commit_exists(commit_ref):
+            errors.append(f"registry references missing commit: {commit_ref}")
     expected_milestones = {
         146: 1,
         147: 1,
@@ -401,7 +1430,17 @@ def validate(require_external_parity: bool) -> list[str]:
         157: 3,
     }
     for issue, rows in sorted(by_issue.items()):
-        maximum = min((row["severity"] for row in rows), key=severity_rank.__getitem__)
+        severities = [row.get("severity") for row in rows]
+        unknown_severities = sorted(
+            {severity for severity in severities if severity not in severity_rank},
+            key=repr,
+        )
+        if unknown_severities:
+            errors.append(
+                f"issue #{issue} has unknown severities: {unknown_severities}"
+            )
+            continue
+        maximum = min(severities, key=severity_rank.__getitem__)
         if program_by_issue.get(issue, {}).get("max_severity") != maximum:
             errors.append(
                 f"issue #{issue} max severity mismatch: registry rows={maximum}, "
@@ -418,30 +1457,49 @@ def validate(require_external_parity: bool) -> list[str]:
                 f"issue #{issue} milestone mismatch: {program.get('github_milestone')} != {milestone}"
             )
 
-    integration = registry.get("shared_tree_integration", {})
     expected_integration_issues = {
-        program["issue"]
+        program.get("issue")
         for program in programs
-        if program.get("lease_state") == "implementation_uncommitted_integration_pending"
+        if program.get("lease_state") == "implementation_committed_integration_pending"
+        and isinstance(program.get("issue"), int)
     } | {146}
-    observed_integration_issues = set(integration.get("affected_issues", []))
-    if integration.get("status") != "unproven_rebaseline_integration":
-        errors.append("shared-tree integration must remain explicitly unproven")
-    if integration.get("release_blocking") is not True:
-        errors.append("unproven shared-tree integration must remain release-blocking")
-    if observed_integration_issues != expected_integration_issues:
-        errors.append(
-            "shared-tree integration issue set mismatch: "
-            f"expected={sorted(expected_integration_issues)}, "
-            f"observed={sorted(observed_integration_issues)}"
-        )
+    if integration is not None:
+        observed_integration_issues = set(integration["affected_issues"])
+        if integration["status"] != "unproven_rebaseline_integration":
+            errors.append("shared-tree integration must remain explicitly unproven")
+        if integration["release_blocking"] is not True:
+            errors.append("unproven shared-tree integration must remain release-blocking")
+        if observed_integration_issues != expected_integration_issues:
+            errors.append(
+                "shared-tree integration issue set mismatch: "
+                f"expected={sorted(expected_integration_issues)}, "
+                f"observed={sorted(observed_integration_issues)}"
+            )
 
+    child_manifests: dict[int, dict[str, Any]] = {}
     for issue, manifest_path in (
         (146, SERIALIZER_MANIFEST_PATH),
         (147, DOCTOR_MANIFEST_PATH),
     ):
-        manifest_scope = normalized_manifest_scope(load_yaml(manifest_path))
-        registry_scope = set(program_by_issue[issue].get("allowed_paths", []))
+        program = program_by_issue.get(issue)
+        if program is None:
+            errors.append(
+                f"program #{issue} is unavailable for child-manifest scope parity"
+            )
+            continue
+        raw_manifest = load_yaml(manifest_path)
+        manifest = normalize_child_manifest(
+            raw_manifest,
+            issue=issue,
+            errors=errors,
+        )
+        manifest_scope = normalized_manifest_scope(
+            manifest,
+            issue=issue,
+            errors=errors,
+        )
+        child_manifests[issue] = manifest
+        registry_scope = set(program.get("allowed_paths", []))
         if registry_scope != manifest_scope:
             errors.append(
                 f"program #{issue} scope/manifest mismatch: "
@@ -451,11 +1509,17 @@ def validate(require_external_parity: bool) -> list[str]:
 
     lease_rows: list[tuple[str, set[int]]] = []
     for lease in leases:
-        path = lease.get("path")
-        issue_set = set(lease.get("programs", []))
-        order = lease.get("order", [])
+        path = lease["path"]
+        issue_set = set(lease["programs"])
+        order = lease["order"]
         if not path or len(issue_set) < 2:
             errors.append(f"invalid shared-path lease: {lease}")
+            continue
+        missing_programs = issue_set - set(program_by_issue)
+        if missing_programs:
+            errors.append(
+                f"lease {path} references missing programs: {sorted(missing_programs)}"
+            )
             continue
         if set(order) != issue_set or len(order) != len(issue_set):
             errors.append(f"lease order does not enumerate each program once for {path}")
@@ -468,7 +1532,9 @@ def validate(require_external_parity: bool) -> list[str]:
                     overlap = overlapping_path(left_path, right_path)
                     if overlap is None:
                         continue
-                    pair = {left["issue"], right["issue"]}
+                    left_issue = left.get("issue")
+                    right_issue = right.get("issue")
+                    pair = {left_issue, right_issue}
                     matching_leases = [
                         path
                         for path, issues in lease_rows
@@ -476,12 +1542,12 @@ def validate(require_external_parity: bool) -> list[str]:
                     ]
                     if not matching_leases:
                         errors.append(
-                            f"unleased overlap {overlap}: #{left['issue']} and #{right['issue']}"
+                            f"unleased overlap {overlap}: #{left_issue} and #{right_issue}"
                         )
                     elif len(matching_leases) > 1:
                         errors.append(
-                            f"multiply leased overlap {overlap}: #{left['issue']} and "
-                            f"#{right['issue']} via {matching_leases}"
+                            f"multiply leased overlap {overlap}: #{left_issue} and "
+                            f"#{right_issue} via {matching_leases}"
                         )
 
     for lease_path, issues in lease_rows:
@@ -516,7 +1582,7 @@ def validate(require_external_parity: bool) -> list[str]:
                     if overlap is not None:
                         errors.append(
                             f"simultaneously active leases overlap at {overlap}: "
-                            f"#{left['issue']} and #{right['issue']}"
+                            f"#{left.get('issue')} and #{right.get('issue')}"
                         )
 
     ledger_text = LEDGER_PATH.read_text(encoding="utf-8")
@@ -531,23 +1597,106 @@ def validate(require_external_parity: bool) -> list[str]:
     ):
         if marker not in revalidation_text:
             errors.append(f"revalidation addendum is missing status summary marker: {marker!r}")
-    for program in programs:
-        marker = f"#{program['issue']}"
-        state = f"`{program['lifecycle_state']}`"
-        if not any(marker in line and state in line for line in ledger_text.splitlines()):
-            errors.append(f"O4 is missing #{program['issue']} lifecycle state {state}")
-    for path, issues in lease_rows:
-        expected_path = f"`{path}`"
-        matching_lines = [line for line in ledger_text.splitlines() if expected_path in line]
-        if not matching_lines:
-            errors.append(f"O5 is missing shared-path lease {path}")
+    o4_rows = markdown_table_after_heading(
+        ledger_text,
+        "## O4 — Cross-deliverable verification ledger",
+    )
+    rendered_programs: dict[int, list[str]] = {}
+    for row_index, cells in enumerate(o4_rows):
+        if len(cells) != 9:
+            errors.append(f"O4 row {row_index} must have exactly nine cells")
             continue
-        if not any(all(f"#{issue}" in line for issue in issues) for line in matching_lines):
-            errors.append(f"O5 lease {path} is missing one or more program issue IDs")
+        issue_match = re.fullmatch(r"#(\d+)", cells[1])
+        if issue_match is None:
+            errors.append(f"O4 row {row_index} has invalid issue cell: {cells[1]!r}")
+            continue
+        issue = int(issue_match.group(1))
+        if issue in rendered_programs:
+            errors.append(f"O4 has duplicate program row for #{issue}")
+            continue
+        rendered_programs[issue] = cells
+    if set(rendered_programs) != set(program_by_issue):
+        errors.append(
+            "O4 program membership mismatch: "
+            f"missing={sorted(set(program_by_issue) - set(rendered_programs))}, "
+            f"extra={sorted(set(rendered_programs) - set(program_by_issue))}"
+        )
+    for issue, program in sorted(program_by_issue.items()):
+        cells = rendered_programs.get(issue)
+        if cells is None:
+            continue
+        finding_state_counts = Counter(
+            row.get("status") for row in findings if row.get("issue") == issue
+        )
+        finding_states = "; ".join(
+            f"{status}={count}"
+            for status, count in sorted(finding_state_counts.items())
+        )
+        expected_cells = (
+            program.get("id"),
+            program.get("default_release"),
+            program.get("max_severity"),
+            program.get("lifecycle_state"),
+            f"{program.get('github_state')}; M{program.get('github_milestone')}",
+            "base "
+            f"`{program.get('base_sha')}`; implementation "
+            f"`{program.get('implementation_ref')}`",
+            finding_states,
+        )
+        observed_cells = (
+            unquote_code(cells[0]),
+            cells[2],
+            cells[3],
+            unquote_code(cells[4]),
+            cells[5],
+            cells[6],
+            cells[7],
+        )
+        if observed_cells != expected_cells:
+            errors.append(
+                f"O4 row #{issue} differs from registry authority: "
+                f"observed={observed_cells!r}, expected={expected_cells!r}"
+            )
+
+    o5_rows = markdown_table_after_heading(ledger_text, "### Shared-path leases")
+    rendered_leases: dict[str, list[str]] = {}
+    for row_index, cells in enumerate(o5_rows):
+        if len(cells) != 4:
+            errors.append(f"O5 row {row_index} must have exactly four cells")
+            continue
+        path = unquote_code(cells[0])
+        if path in rendered_leases:
+            errors.append(f"O5 has duplicate lease row for {path!r}")
+            continue
+        rendered_leases[path] = cells
+    lease_by_path = {lease["path"]: lease for lease in leases}
+    if set(rendered_leases) != set(lease_by_path):
+        errors.append(
+            "O5 lease membership mismatch: "
+            f"missing={sorted(set(lease_by_path) - set(rendered_leases))}, "
+            f"extra={sorted(set(rendered_leases) - set(lease_by_path))}"
+        )
+    for path, lease in sorted(lease_by_path.items()):
+        cells = rendered_leases.get(path)
+        if cells is None:
+            continue
+        observed_programs = [int(item) for item in re.findall(r"#(\d+)", cells[1])]
+        observed_order = [int(item) for item in re.findall(r"#(\d+)", cells[2])]
+        expected_policy = lease.get("policy", "ordered")
+        if (
+            observed_programs != lease["programs"]
+            or observed_order != lease["order"]
+            or cells[3] != expected_policy
+        ):
+            errors.append(
+                f"O5 lease {path} differs from registry authority: "
+                f"programs={observed_programs!r}, order={observed_order!r}, "
+                f"policy={cells[3]!r}"
+            )
     if not any("#149" in line and "P1-containing" in line for line in ledger_text.splitlines()):
         errors.append("O4 must label #149 P1-containing")
 
-    doctor_manifest = load_yaml(DOCTOR_MANIFEST_PATH)
+    doctor_manifest = child_manifests.get(147, {})
     if doctor_manifest.get("fallback_evidence_mode") != "strict_p3":
         errors.append("#147 manifest must require fresh strict-P3 evidence")
     sequencing = doctor_manifest.get("implementation_sequencing", {})
@@ -557,8 +1706,9 @@ def validate(require_external_parity: bool) -> list[str]:
         errors.append("#147 manifest must declare nine fresh B.1/D.2/D.5 dispatch bundles")
     if len(doctor_manifest.get("historical_receipt_gaps", [])) != 3:
         errors.append("#147 manifest must mark B.1/D.2/D.5 historical prose replay-required")
-    inventory = load_yaml(
-        ROOT / "docs/reviews/project-ontos-audit-doctor-rce/lifecycle-receipt-inventory.yaml"
+    inventory = normalize_receipt_inventory(
+        load_yaml(DOCTOR_RECEIPT_INVENTORY_PATH),
+        errors,
     )
     if inventory.get("receipts") != []:
         errors.append("#147 receipt inventory must stay empty until fresh wrapper dispatch")
@@ -577,10 +1727,13 @@ def validate(require_external_parity: bool) -> list[str]:
     if "is_ontos_managed_serve_argv" not in doctor_spec or "five-case executable contract" not in doctor_spec:
         errors.append("#147 spec does not describe the exact-argv five-test contract")
 
-    serializer_manifest = load_yaml(SERIALIZER_MANIFEST_PATH)
+    serializer_manifest = child_manifests.get(146, {})
     if serializer_manifest.get("fallback_evidence_mode") != "provider_limited_fallback":
         errors.append("#146 manifest must declare its authorized provider-limited mode")
-    serializer_scope = serializer_manifest.get("scope", {})
+    raw_serializer_scope = serializer_manifest.get("scope", {})
+    serializer_scope = (
+        raw_serializer_scope if isinstance(raw_serializer_scope, dict) else {}
+    )
     if not serializer_scope.get("allowed_path_patterns"):
         errors.append("#146 manifest must activate the framework changed-path scope verifier")
     serializer_gates = {gate.get("id"): gate for gate in serializer_manifest.get("gate_prerequisites", [])}
@@ -592,25 +1745,26 @@ def validate(require_external_parity: bool) -> list[str]:
         errors.append("#146 branch gate must use base ancestry, not a literal branch name")
 
     if require_external_parity:
-        github_snapshot = registry.get("github_snapshot", {})
         if github_snapshot.get("epic_release_line_synced") is not True:
             errors.append("external parity drift: epic #158 release line is not synchronized")
         if github_snapshot.get("r2_checklists_synced") is not True:
             errors.append("external parity drift: R2 checklist rows are not synchronized")
         if github_snapshot.get("original_checklist_policy") != "merged_and_verified_only":
             errors.append("external parity drift: original checklist completion policy is not recorded")
-        if github_snapshot.get("uncommitted_original_checklists_remain_unchecked") is not True:
+        if github_snapshot.get("uncertified_original_checklists_remain_unchecked") is not True:
             errors.append(
-                "external parity drift: uncommitted original rows must remain unchecked until merged and verified"
+                "external parity drift: uncertified original rows must remain unchecked "
+                "until merged and verified"
             )
-        drift = github_snapshot.get("external_drift", [])
-        unresolved = [item for item in drift if item.get("status") != "resolved"]
+        unresolved = [
+            item for item in external_drift if item.get("status") != "resolved"
+        ]
         for item in unresolved:
             errors.append(
                 f"external parity drift: issue #{item.get('issue')} {item.get('field')} "
                 f"observed={item.get('observed')} expected={item.get('expected')}"
             )
-        for item in drift:
+        for item in external_drift:
             if item.get("status") == "resolved" and item.get("observed") != item.get("expected"):
                 errors.append(
                     f"external parity drift marked resolved with unequal values: "
@@ -619,18 +1773,32 @@ def validate(require_external_parity: bool) -> list[str]:
 
         rows_by_issue: dict[int, list[dict[str, Any]]] = defaultdict(list)
         for row in findings:
-            rows_by_issue[row["issue"]].append(row)
+            issue = row.get("issue")
+            if isinstance(issue, int):
+                rows_by_issue[issue].append(row)
         milestone_markers = {
             1: "Audit Release N",
             2: "Audit Release N+1",
             3: "Audit Release N+2",
         }
+        live_epic_body = ""
         for issue in range(146, 159):
             live = live_github_issue(issue)
+            body, live_state, milestone_title, label_names = (
+                normalize_live_issue_payload(issue, live, errors)
+            )
             program = program_by_issue.get(issue)
             expected_rows = rows_by_issue.get(issue, [])
-            expected_ids = {row["id"] for row in expected_rows}
-            body = live.get("body") or ""
+            expected_ids = {
+                row.get("id")
+                for row in expected_rows
+                if isinstance(row.get("id"), str)
+            }
+            if issue == 158:
+                # The epic deliberately repeats the complete R2 assignment
+                # checklist; child issues remain the canonical owners.
+                expected_ids = EXPECTED_R2_IDS
+                live_epic_body = body
 
             if issue == 158 and not expected_ids <= set(body.split()):
                 # Epic punctuation/backticks make token equality inconvenient;
@@ -639,8 +1807,14 @@ def validate(require_external_parity: bool) -> list[str]:
                 if missing:
                     errors.append(f"live GitHub epic #158 is missing rows: {missing}")
 
-            checkbox_states = github_checkbox_states(body)
-            if issue <= 157 and set(checkbox_states) != expected_ids:
+            try:
+                checkbox_states = github_checkbox_states(body)
+            except ValueError as exc:
+                errors.append(
+                    f"live GitHub issue #{issue} has invalid checklist body: {exc}"
+                )
+                checkbox_states = {}
+            if set(checkbox_states) != expected_ids:
                 errors.append(
                     f"live GitHub issue #{issue} finding checklist mismatch: "
                     f"missing={sorted(expected_ids - set(checkbox_states))}, "
@@ -653,23 +1827,23 @@ def validate(require_external_parity: bool) -> list[str]:
                     f"{sorted(missing_checkboxes)}"
                 )
             for row in expected_rows:
-                if row["id"] not in checkbox_states:
+                finding_id = row.get("id")
+                if not isinstance(finding_id, str) or finding_id not in checkbox_states:
                     continue
                 expected_checked = row.get("status") == "code_fixed"
-                if checkbox_states[row["id"]] != expected_checked:
+                if checkbox_states[finding_id] != expected_checked:
                     errors.append(
-                        f"live GitHub checklist status mismatch for {row['id']}: "
-                        f"checked={checkbox_states[row['id']]} expected={expected_checked}"
+                        f"live GitHub checklist status mismatch for {finding_id}: "
+                        f"checked={checkbox_states[finding_id]} expected={expected_checked}"
                     )
 
             expected_state = (program or {}).get("github_state", "open").upper()
-            if live.get("state") != expected_state:
+            if live_state != expected_state:
                 errors.append(
                     f"live GitHub issue #{issue} state mismatch: "
-                    f"{live.get('state')!r} != {expected_state!r}"
+                    f"{live_state!r} != {expected_state!r}"
                 )
             expected_milestone = (program or {}).get("github_milestone", 1)
-            milestone_title = (live.get("milestone") or {}).get("title", "")
             marker = milestone_markers[expected_milestone]
             if not milestone_title.startswith(marker):
                 errors.append(
@@ -677,18 +1851,12 @@ def validate(require_external_parity: bool) -> list[str]:
                     f"{milestone_title!r} does not start with {marker!r}"
                 )
             if program is not None:
-                label_names = {
-                    item.get("name", "") for item in live.get("labels", [])
-                }
-                expected_label_prefix = program["max_severity"]
+                expected_label_prefix = program.get("max_severity")
                 if not any(name.startswith(expected_label_prefix) for name in label_names):
                     errors.append(
                         f"live GitHub issue #{issue} lacks {expected_label_prefix} severity label"
                     )
-        live_epic = live_github_issue(158)
-        if "v4.7.1" not in (live_epic.get("body") or "") or "v4.9.0" not in (
-            live_epic.get("body") or ""
-        ):
+        if "v4.7.1" not in live_epic_body or "v4.9.0" not in live_epic_body:
             errors.append("live GitHub epic #158 lacks the revised three-release line")
 
     return errors
@@ -718,7 +1886,8 @@ def main() -> int:
     print("original findings: 91 (P0=1, P1=27, P2=63)")
     print(
         "original status: committed_fixed=2, code_fixed_evidence_pending=1, "
-        "implemented_uncommitted=40, partial_uncommitted=7, confirmed_open=41"
+        "implemented_committed_pending=40, partial_committed_pending=7, "
+        "confirmed_open=41"
     )
     print("revalidation findings: 9")
     return 0

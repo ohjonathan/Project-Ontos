@@ -1,6 +1,7 @@
 
 import pytest
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from ontos.commands.map import (
     _format_critical_path,
@@ -101,6 +102,51 @@ def test_tiered_context_map_has_tier_markers(tmp_path, monkeypatch):
     assert "## Tier 1: Essential Context" in content
     assert "## Tier 2: Document Index" in content
     assert "## Tier 3: Full Graph Details" in content
+
+
+def test_second_identical_map_generation_preserves_bytes_and_mtime(
+    tmp_path,
+    monkeypatch,
+):
+    """A timestamp-only regeneration must be a filesystem no-op."""
+    import ontos.commands.map as map_module
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".ontos.toml").write_text("[project]\nname = 'test'\n")
+    (tmp_path / ".ontos-internal").mkdir()
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    document = docs_dir / "doc.md"
+    document.write_text("---\nid: doc\ntype: atom\nstatus: active\n---\n")
+
+    class FakeDatetime:
+        current = datetime(2026, 7, 10, 12, 0, tzinfo=timezone.utc)
+
+        @classmethod
+        def now(cls, tz=None):  # noqa: ANN001
+            if tz is None:
+                return cls.current.replace(tzinfo=None)
+            return cls.current.astimezone(tz)
+
+    monkeypatch.setattr(map_module, "datetime", FakeDatetime)
+    assert map_command(MapOptions()) == 0
+    output = tmp_path / "Ontos_Context_Map.md"
+    first_content = output.read_bytes()
+    first_mtime = output.stat().st_mtime_ns
+
+    FakeDatetime.current = datetime(2026, 7, 11, 12, 0, tzinfo=timezone.utc)
+    assert map_command(MapOptions()) == 0
+
+    assert output.read_bytes() == first_content
+    assert output.stat().st_mtime_ns == first_mtime
+
+    document.write_text(
+        "---\nid: doc\ntype: atom\nstatus: complete\n---\n",
+        encoding="utf-8",
+    )
+    assert map_command(MapOptions()) == 0
+    assert output.read_bytes() != first_content
+    assert b"generated_at: 2026-07-11 12:00:00" in output.read_bytes()
 
 
 def test_tier1_contains_project_summary(tmp_path, monkeypatch):

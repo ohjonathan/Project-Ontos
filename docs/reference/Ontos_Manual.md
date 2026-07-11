@@ -82,7 +82,7 @@ documents, but they do not participate in the core kernel-to-atom hierarchy.
 
 ```yaml
 ---
-id: unique_snake_case      # Required. Never change.
+id: unique_snake_case      # Required string. Never change.
 type: atom                  # Required. See Document Types above.
 status: active              # Optional. See Status Values below.
 depends_on: [parent_id]     # Optional. List of dependency IDs
@@ -109,7 +109,73 @@ Say **"Ontos"** to your AI agent. It will:
     print("Loaded: [id1, id2]")
 
 `ontos activate --json` returns `usable`, `usable_with_warnings`, or `not_usable`. Warnings are non-blocking when the command can still produce actionable context. Since v4.7 warnings are grouped by rule by default (`warning_groups` with counts and bounded samples); use `--warnings full` for inline records, `--warning-rule <rule_id>` to filter, and `--limit N` to cap inline output. The MCP equivalent pages full records through the `list_validation_warnings` tool.
-    
+
+#### Runtime compatibility, IDs, and machine contracts
+
+Before adding `[ontos].required_version`, upgrade and verify every runtime that
+can touch the repository: the repository virtual environment, the `ontos`
+found on `PATH`, installed hooks, and CI. Older runtimes can reject the key or
+fail before the compatibility fallback is available.
+
+```toml
+[ontos]
+version = "4.4"
+required_version = ">=4.7.0, <5.0.0"
+```
+
+Supported requirements include comma-separated comparisons such as
+`>=4.7.0, <5.0.0`, tilde ranges such as `~4.7`, and wildcards such as `4.7.x`
+or `4.7.*`. On incompatibility, activation exits `1`; JSON output contains
+`error.code: E_ACTIVATION_UNUSABLE`, `data.status: not_usable`, and a reason
+beginning `Incompatible Ontos version`. Invalid ranges instead begin
+`Invalid [ontos].required_version`. Generated activation tries the repository
+runtime first and falls back when a candidate is missing or incompatible. Both
+failure forms point to
+`docs/reference/Migration_v3_to_v4.md#audit-remediation-compatibility-contracts`
+for the stable recovery contract.
+
+Every document ID must be a string matching
+`^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$`. Quote date-like, numeric, and
+null-like YAML values so the YAML loader retains strings:
+
+```yaml
+id: "2026-07-10"
+# id: "123"
+# id: "null"
+```
+
+Non-string values fail with a message beginning `Document id must be a
+string`. The batch loader records invalid documents as `parse_error`; invalid
+IDs supplied directly to CLI commands use `E_USER_INPUT` and exit `2`.
+
+Log creation uses configured `paths.logs_dir` and refuses collisions without
+overwriting. JSON collision errors use `E_LOG_EXISTS` and shell exit `1`. Choose
+a different title/slug, or intentionally move/remove the existing log before
+retrying. Symlinked or outside-workspace destinations are rejected. If the log
+is created but `.ontos/session_archived` cannot be updated safely, human output
+warns, JSON records the warning in `warnings[]`, and the command returns
+warnings-only exit `3` with the created path still in `data`; fix the `.ontos`
+path or permissions before pushing.
+
+The standard JSON command envelope uses `schema_version: "4.0"` and exactly
+the top-level keys `schema_version`, `command`, `status`, `exit_code`,
+`message`, `result`, `data`, `warnings`, and `error`. Public exit codes are:
+
+| Code | Category |
+|---:|---|
+| `0` | clean |
+| `1` | findings |
+| `2` | usage or invalid user input |
+| `3` | warnings |
+| `5` | internal error |
+| `130` | interrupted |
+
+Exit code `4` is reserved and must not be emitted or reassigned without a new
+schema version. Domain outcome, result kind, exit category, and diagnostic
+count basis/completeness are reported separately under `result`. Shell
+automation that treats every non-zero result as a hard failure must distinguish
+warnings-only exit `3` from findings, usage errors, and internal failures.
+
 ### Query Graph
 Say **"Query Ontos"** to find connections:
 ```bash
@@ -872,6 +938,9 @@ When the server runs without `--read-only`, it also registers:
 
 Write-tool contracts:
 - `read_only=True` omits write tools from discovery.
+- In read-only mode, `export_graph` rejects persistent output, usage logging is
+  suppressed, and no MCP call writes to the filesystem; in-memory graph export
+  remains available.
 - `workspace_id` is optional and defaults to the served workspace.
 - In read-only mode, archive with the CLI fallback `ontos log -e "slug"`.
 - Cross-workspace writes are not supported; start a separate `ontos serve` in the target workspace.

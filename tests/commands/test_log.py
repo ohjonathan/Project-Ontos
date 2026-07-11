@@ -117,6 +117,9 @@ class TestLogCommandCLI:
         )
         result = _run_ontos(tmp_path, "log", "--auto")
         assert result.returncode == 0
+        marker = tmp_path / ".ontos" / "session_archived"
+        assert marker.is_file()
+        assert Path(marker.read_text(encoding="utf-8")).is_file()
 
     def test_json_output_has_envelope_keys(self, tmp_path):
         """--json output conforms to v3.3 envelope schema."""
@@ -159,7 +162,12 @@ class TestLogCommandCLI:
         result = log_command(options)
         assert result == 1
 
-    def test_collision_is_refused_without_overwrite(self, tmp_path, monkeypatch):
+    def test_collision_is_refused_without_overwrite(
+        self,
+        tmp_path,
+        monkeypatch,
+        capsys,
+    ):
         _init_git_project(tmp_path)
         subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True)
         subprocess.run(
@@ -172,5 +180,98 @@ class TestLogCommandCLI:
         assert log_command(options) == 0
         path = next((tmp_path / "docs" / "logs").glob("*_same-session.md"))
         original = path.read_bytes()
+        options.json_output = True
         assert log_command(options) == 1
         assert path.read_bytes() == original
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["error"]["code"] == "E_LOG_EXISTS"
+        assert payload["message"].startswith("Session log already exists:")
+        assert "different --title" in payload["message"]
+        assert "move/remove" in payload["message"]
+
+    @pytest.mark.skipif(not hasattr(os, "symlink"), reason="symlinks unavailable")
+    def test_default_logs_dir_symlink_is_rejected_before_resolution(
+        self,
+        tmp_path,
+    ):
+        _init_git_project(tmp_path)
+        subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "--allow-empty", "-m", "init"],
+            cwd=tmp_path,
+            capture_output=True,
+        )
+        (tmp_path / "docs" / "logs").rmdir()
+        (tmp_path / "docs").rmdir()
+
+        outside = tmp_path.parent / f"{tmp_path.name}-outside"
+        outside_logs = outside / "logs"
+        outside_logs.mkdir(parents=True)
+        sentinel = outside / "sentinel.txt"
+        sentinel.write_text("do not change", encoding="utf-8")
+        (tmp_path / "docs").symlink_to(outside, target_is_directory=True)
+
+        # Prove this is the formerly reachable default-path escape, not an
+        # explicitly outside configured path rejected during config loading.
+        assert (tmp_path / "docs" / "logs").resolve() == outside_logs.resolve()
+
+        result = _run_ontos(tmp_path, "log", "--auto")
+
+        assert result.returncode == 1
+        assert sentinel.read_text(encoding="utf-8") == "do not change"
+        assert list(outside_logs.glob("*.md")) == []
+        assert "real directories" in result.stderr or "symlink" in result.stderr
+
+    @pytest.mark.skipif(not hasattr(os, "symlink"), reason="symlinks unavailable")
+    def test_archive_marker_symlink_does_not_overwrite_external_file(
+        self,
+        tmp_path,
+    ):
+        _init_git_project(tmp_path)
+        subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True)
+
+        outside = tmp_path.parent / f"{tmp_path.name}-marker-outside"
+        outside.mkdir()
+        sentinel = outside / "session_archived"
+        sentinel.write_text("do not change", encoding="utf-8")
+        (tmp_path / ".ontos").symlink_to(outside, target_is_directory=True)
+
+        result = _run_ontos(tmp_path, "log", "--auto")
+
+        # The primary log succeeds, but the marker refusal is visible as the
+        # public warnings-only result instead of surfacing later at push time.
+        assert result.returncode == 3
+        created_logs = list((tmp_path / "docs" / "logs").glob("*.md"))
+        assert len(created_logs) == 1
+        assert str(created_logs[0]) in result.stdout
+        assert sentinel.read_text(encoding="utf-8") == "do not change"
+        assert "Session log created, but archive marker was not updated:" in result.stderr
+        assert "before pushing" in result.stderr
+
+    @pytest.mark.skipif(not hasattr(os, "symlink"), reason="symlinks unavailable")
+    def test_archive_marker_symlink_json_reports_warning_and_created_log(
+        self,
+        tmp_path,
+    ):
+        _init_git_project(tmp_path)
+        subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True)
+
+        outside = tmp_path.parent / f"{tmp_path.name}-marker-json-outside"
+        outside.mkdir()
+        sentinel = outside / "session_archived"
+        sentinel.write_text("do not change", encoding="utf-8")
+        (tmp_path / ".ontos").symlink_to(outside, target_is_directory=True)
+
+        result = _run_ontos(tmp_path, "log", "--auto", "--json")
+
+        assert result.returncode == 3
+        payload = json.loads(result.stdout)
+        assert payload["exit_code"] == 3
+        assert payload["status"] == "success"
+        assert payload["result"]["status"] == "warnings"
+        assert payload["warnings"]
+        assert payload["warnings"][0].startswith(
+            "Session log created, but archive marker was not updated:"
+        )
+        assert Path(payload["data"]["path"]).is_file()
+        assert sentinel.read_text(encoding="utf-8") == "do not change"

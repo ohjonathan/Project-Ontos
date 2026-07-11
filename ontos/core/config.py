@@ -236,14 +236,23 @@ def version_satisfies_requirement(running_version: str, requirement: Optional[st
     if not required:
         return True
 
-    running = _parse_version(running_version, label="running Ontos version")
+    running = _parse_version(
+        running_version,
+        label=f"running Ontos version {running_version!r}",
+    )
     clauses = [clause.strip() for clause in required.split(",")]
     if not clauses or any(not clause for clause in clauses):
         raise ConfigError(
             "ontos.required_version must be a valid semver range "
             "(for example '>=4.7.0, <5.0.0')"
         )
-    return all(_version_clause_matches(running, clause) for clause in clauses)
+    # Evaluate every clause before reducing the compatibility result.  A
+    # generator passed directly to ``all`` would stop at the first false
+    # comparison and could therefore hide a malformed later clause.
+    clause_matches = [
+        _version_clause_matches(running, clause) for clause in clauses
+    ]
+    return all(clause_matches)
 
 
 def required_version_incompatibility(
@@ -251,18 +260,23 @@ def required_version_incompatibility(
     running_version: str,
 ) -> Optional[str]:
     """Return an actionable incompatibility message, or ``None`` if valid."""
+    help_path = (
+        "docs/reference/Migration_v3_to_v4.md"
+        "#audit-remediation-compatibility-contracts"
+    )
     required = str(requirement or "").strip()
     if not required:
         return None
     try:
         compatible = version_satisfies_requirement(running_version, required)
     except ConfigError as exc:
-        return f"Invalid [ontos].required_version {required!r}: {exc}"
+        return f"Invalid [ontos].required_version: {exc}. See {help_path}."
     if compatible:
         return None
     return (
         f"Incompatible Ontos version: running {running_version}, but this project "
-        f"requires {required!r}. Use a compatible Ontos installation."
+        f"requires {required!r}. Use a compatible Ontos installation. "
+        f"See {help_path}."
     )
 
 
@@ -270,7 +284,7 @@ def _parse_version(value: str, *, label: str) -> tuple[int, int, int]:
     text = str(value).strip()
     match = _VERSION_PATTERN.fullmatch(text)
     if match is None:
-        raise ConfigError(f"{label} {text!r} is not a valid semantic version")
+        raise ConfigError(f"{label} is not a valid semantic version")
     return tuple(
         int(match.group(name) or 0) for name in ("major", "minor", "patch")
     )

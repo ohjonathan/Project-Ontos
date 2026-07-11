@@ -240,8 +240,62 @@ def test_required_version_incompatibility_is_actionable():
     message = required_version_incompatibility(">=99.0.0", "4.7.0")
 
     assert message is not None
+    assert message.startswith("Incompatible Ontos version:")
     assert "running 4.7.0" in message
     assert ">=99.0.0" in message
+    assert "Migration_v3_to_v4.md#audit-remediation-compatibility-contracts" in message
+
+
+@pytest.mark.parametrize("requirement", ["not-a-range", ">=", "4.x.5"])
+def test_invalid_required_version_clause_is_reported_once(requirement):
+    message = required_version_incompatibility(requirement, "4.7.0")
+
+    assert message is not None
+    assert message.startswith("Invalid [ontos].required_version:")
+    assert message.count(repr(requirement)) == 1
+    assert "Migration_v3_to_v4.md#audit-remediation-compatibility-contracts" in message
+
+
+@pytest.mark.parametrize(
+    ("requirement", "offending_clause"),
+    [
+        (">=4.7.0, not-a-range, <5.0.0", "not-a-range"),
+        (">=4.7.0, >=, <5.0.0", ">="),
+        (">=4.7.0, 4.x.5, <5.0.0", "4.x.5"),
+    ],
+)
+def test_multi_clause_invalid_required_version_identifies_offender_once(
+    requirement,
+    offending_clause,
+):
+    message = required_version_incompatibility(requirement, "4.7.0")
+
+    assert message is not None
+    assert message.startswith("Invalid [ontos].required_version:")
+    assert f"clause {offending_clause!r}" in message
+    assert message.count(repr(offending_clause)) == 1
+    assert "Migration_v3_to_v4.md#audit-remediation-compatibility-contracts" in message
+
+
+def test_incompatible_earlier_clause_does_not_hide_malformed_later_clause():
+    requirement = ">=99.0.0, not-a-range"
+
+    message = required_version_incompatibility(requirement, "4.7.0")
+
+    assert message is not None
+    assert message.startswith("Invalid [ontos].required_version:")
+    assert message.count(repr("not-a-range")) == 1
+
+
+def test_config_validation_does_not_short_circuit_before_malformed_later_clause():
+    # Config-load validation uses 0.0.0 as a parser-only sentinel.  The first
+    # clause is false for that sentinel and previously hid the malformed one.
+    with pytest.raises(ConfigError) as exc_info:
+        _validate_types(
+            {"ontos": {"required_version": ">0.0.0, not-a-range"}}
+        )
+
+    assert str(exc_info.value).count(repr("not-a-range")) == 1
 
 
 @pytest.mark.parametrize(
