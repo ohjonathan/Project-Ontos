@@ -1,0 +1,2287 @@
+[0m
+> build · glm-5.2
+[0m
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>
+[0m
+[0m$ [0mgit log --oneline aa41c3982e21b0e0cff6c3c5486f4af9e5e55e05..311b60b6e86abe6d0b5a7ac61e16d07049387707 2>/dev/null | head -50
+311b60b Use canonical ID validation for rename
+2dede68 Bind control-plane registry evidence to D4 fix
+5c5a9cd Harden audit remediation control-plane validation
+f6d6b77 Fix D3 activation diagnostics
+[0m
+[0m$ [0mls -la .venv/d5-glm-post .venv/d5-glm-pre 2>&1 | head -20
+.venv/d5-glm-post:
+total 440
+drwxr-xr-x@ 35 jonathanoh  wheel   1120 Jul 10 20:31 .
+drwxr-xr-x@ 10 jonathanoh  wheel    320 Jul 10 20:25 ..
+drwxr-xr-x@  3 jonathanoh  wheel     96 Jul 10 20:09 .agent
+-rw-r--r--@  1 jonathanoh  wheel   2207 Jul 10 20:09 .cursorrules
+drwxr-xr-x@  4 jonathanoh  wheel    128 Jul 10 20:09 .gemini
+-rw-r--r--@  1 jonathanoh  wheel    549 Jul 10 20:09 .gitattributes
+drwxr-xr-x@  5 jonathanoh  wheel    160 Jul 10 20:09 .github
+-rw-r--r--@  1 jonathanoh  wheel    468 Jul 10 20:09 .gitignore
+-rw-r--r--@  1 jonathanoh  wheel    119 Jul 10 20:09 .gitmodules
+-rw-r--r--@  1 jonathanoh  wheel    342 Jul 10 20:09 .johnny-os.yaml
+drwxr-xr-x@  5 jonathanoh  wheel    160 Jul 10 20:09 .llm-dev
+drwxr-xr-x@  7 jonathanoh  wheel    224 Jul 10 20:09 .ontos
+drwxr-xr-x@ 12 jonathanoh  wheel    384 Jul 10 20:09 .ontos-internal
+-rw-r--r--@  1 jonathanoh  wheel   1355 Jul 10 20:09 .ontos.toml
+-rw-r--r--@  1 jonathanoh  wheel    773 Jul 10 20:09 .pre-commit-config.yaml
+drwxr-xr-x@  5 jonathanoh  wheel    160 Jul 10 20:09 .project-internal
+drwxr-xr-x@  6 jonathanoh  wheel    192 Jul 10 20:31 .pytest_cache
+-rw-r--r--@  1 jonathanoh  wheel     57 Jul 10 20:09 .trufflehog-exclude-paths.txt
+[0m
+[0m$ [0mgit diff --stat aa41c3982e21b0e0cff6c3c5486f4af9e5e55e05 311b60b6e86abe6d0b5a7ac61e16d07049387707 2>/dev/null
+.../<redacted:secret>  |   2 +-
+ ontos/commands/activate.py                         |  28 ++-
+ ontos/commands/rename.py                           |  69 ++++--
+ ontos/core/config.py                               |  35 ++-
+ ontos/mcp/rename_tool.py                           |  30 ++-
+ <redacted:secret>     |  85 ++++++--
+ .../commands/test_agentic_activation_resilience.py |  88 +++++++-
+ tests/commands/test_rename.py                      | 151 ++++++++++++-
+ tests/core/test_config_phase3.py                   |  27 +++
+ tests/mcp/test_rename_document.py                  |  68 +++++-
+ tests/test_audit_remediation_registry_validator.py | 237 ++++++++++++++++++++-
+ 11 files changed, 735 insertions(+), 85 deletions(-)
+[0m
+[0m✱ [0mGlob "<redacted:secret>/**/*.md"[90m 50 matches[0m
+[0m
+[0m$ [0mgit log --oneline -5 aa41c3982e21b0e0cff6c3c5486f4af9e5e55e05 2>/dev/null; echo "---"; git log --oneline -5 311b60b6e86abe6d0b5a7ac61e16d07049387707 2>/dev/null
+aa41c39 Record canonical D3 remediation verdict
+94eb92c Record independent D2 dispatch attestation
+0bcd0e8 Record fresh strict D2 review bundle
+bfc0ca8 Record fresh strict B2 review bundle
+6aae524 Record fresh strict B1 review bundle
+---
+311b60b Use canonical ID validation for rename
+2dede68 Bind control-plane registry evidence to D4 fix
+5c5a9cd Harden audit remediation control-plane validation
+f6d6b77 Fix D3 activation diagnostics
+aa41c39 Record canonical D3 remediation verdict
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m✱ [0mGlob "manifests/project-ontos-audit-rebaseline-remediation*.yaml"[90m 1 match[0m
+[0m
+[0m$ [0mgit diff aa41c3982e21b0e0cff6c3c5486f4af9e5e55e05 311b60b6e86abe6d0b5a7ac61e16d07049387707 2>/dev/null
+diff --git <redacted:secret> <redacted:secret>
+index 921ae01..7f42df8 100644
+--- <redacted:secret>
++++ <redacted:secret>
+@@ -1102,7 +1102,7 @@ findings:
+     release: v4.7.1
+     base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
+     status: implemented_committed_parity_verified
+-    fix_commit: 05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0
++    fix_commit: 5c5a9cd8eb92df961146a7ffddabee3bc091ab43
+     lifecycle_state: parity_verified_lifecycle_pending
+     lease_state: active
+     allowed_paths:
+diff --git a/ontos/commands/activate.py b/ontos/commands/activate.py
+index c916866..92c4cd8 100644
+--- a/ontos/commands/activate.py
++++ b/ontos/commands/activate.py
+@@ -8,7 +8,11 @@ from typing import Any, Dict, List, Optional, Tuple
+ 
+ import ontos
+ from ontos.commands.map import GenerateMapOptions, generate_context_map
+-from ontos.core.config import required_version_incompatibility
++from ontos.core.config import (
++    InvalidRequiredVersionError,
++    format_invalid_required_version,
++    required_version_incompatibility,
++)
+ from ontos.core.frontmatter_repair import enum_issue_summary
+ from ontos.core.types import DocumentData
+ from ontos.core.warning_groups import (
+@@ -84,6 +88,11 @@ def run_activation(
+ 
+     try:
+         config = load_project_config(repo_root=project_root)
++    except InvalidRequiredVersionError as exc:
++        return 1, _not_usable(
++            format_invalid_required_version(exc.detail),
++            project_root=project_root,
++        )
+     except Exception as exc:
+         return 1, _not_usable(f"Config error: {exc}", project_root=project_root)
+ 
+@@ -218,10 +227,21 @@ def run_activation(
+ def format_activation_output(payload: Dict[str, Any]) -> List[str]:
+     lines = [
+         f"Activation status: {payload['status']}",
+-        f"Map: {'refreshed' if payload['map']['refreshed'] else 'existing'}",
+-        f"Docs scanned: {payload.get('files_scanned', 0)}",
+-        f"Documents loaded: {payload.get('documents', 0)}",
+     ]
++    reason = payload.get("reason")
++    if (
++        payload.get("status") == "not_usable"
++        and isinstance(reason, str)
++        and reason.strip()
++    ):
++        lines.append(f"Reason: {reason.strip()}")
++    lines.extend(
++        [
++            f"Map: {'refreshed' if payload['map']['refreshed'] else 'existing'}",
++            f"Docs scanned: {payload.get('files_scanned', 0)}",
++            f"Documents loaded: {payload.get('documents', 0)}",
++        ]
++    )
+     summary = payload.get("summary", {})
+     if summary:
+         lines.append(
+diff --git a/ontos/commands/rename.py b/ontos/commands/rename.py
+index 12de363..9710153 100644
+--- a/ontos/commands/rename.py
++++ b/ontos/commands/rename.py
+@@ -9,6 +9,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
+ 
+ from ontos.core.body_refs import MatchType, ZoneType, scan_body_references
+ from ontos.core.context import SessionContext
++from ontos.core.errors import OntosUserError
+ from ontos.core.frontmatter_edit import (
+     _DecodedContent,
+     _FrontmatterSplit,
+@@ -18,6 +19,7 @@ from ontos.core.frontmatter_edit import (
+     _read_decoded_content,
+     _split_frontmatter,
+ )
++from ontos.core.schema import validate_document_id
+ from ontos.core.types import DocumentData
+ from ontos.io.config import load_project_config
+ from ontos.io.files import DocumentLoadIssue, find_project_root, load_documents, scan_documents
+@@ -25,7 +27,6 @@ from ontos.io.scan_scope import ScanScope, collect_scoped_documents, resolve_sca
+ from ontos.io.yaml import parse_frontmatter_content
+ from ontos.ui.json_output import emit_command_error, emit_command_success
+ 
+-_ID_PATTERN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$")
+ _RESERVED_YAML_WORDS = {"true", "false", "yes", "no", "null", "on", "off"}
+ _ANCHOR_ALIAS_RE = re.compile(r"(^|[\s,\[\]-])(?:&[A-Za-z0-9_-]+|\*[A-Za-z0-9_-]+)")
+ 
+@@ -154,9 +155,15 @@ class _FrontmatterPatchResult:
+ def rename_command(options: RenameOptions) -> int:
+     """Execute rename command."""
+ 
++    _, _, input_error = validate_rename_ids(options.old_id, options.new_id)
++    if input_error is not None:
++        raise OntosUserError(input_error.message, code="E_USER_INPUT")
++
+     mode = "apply" if options.apply else "dry_run"
+     prepared, error = _prepare_plan(options, mode=mode)
+     if error is not None:
++        if error.code in {"invalid_old_id", "invalid_new_id"}:
++            raise OntosUserError(error.message, code="E_USER_INPUT")
+         _emit_error(
+             options=options,
+             mode=mode,
+@@ -271,21 +278,20 @@ def build_rename_plan(
+     """Shared rename-plan orchestrator used by both the CLI and the MCP tool.
+ 
+     The caller supplies the already-loaded ``docs`` dictionary (and optional
+-    ``load_issues`` sequence). This function performs the 11 validation +
++    ``load_issues`` sequence). This function performs the 10 validation +
+     collision + file-plan steps that used to live inside ``_prepare_plan``:
+ 
+-    1. Strip ``old_id`` / ``new_id``.
++    1. Canonically validate and normalize ``old_id`` / ``new_id``.
+     2. Same-ID no-op → return empty ``RenamePlan``.
+-    3. ``_ID_PATTERN`` regex validation of ``new_id``.
+-    4. ``_RESERVED_YAML_WORDS`` guard.
+-    5. Optional git clean-state check (CLI enforces here; MCP enforces
++    3. ``_RESERVED_YAML_WORDS`` guard.
++    4. Optional git clean-state check (CLI enforces here; MCP enforces
+        before acquiring ``workspace_lock()`` and passes ``check_git=False``).
+-    6. ``old_id`` must exist exactly once as an explicit frontmatter id.
+-    7. ``new_id`` must not already exist in scope.
+-    8. Cross-scope collision check when ``scope == ScanScope.DOCS``.
+-    9. ``load_issues`` parse-failed-sighting check (skipped when ``None``).
+-    10. Per-document ``_build_file_plan`` loop (sorted by filepath).
+-    11. Summary + ``RenamePlan`` assembly.
++    5. ``old_id`` must exist exactly once as an explicit frontmatter id.
++    6. ``new_id`` must not already exist in scope.
++    7. Cross-scope collision check when ``scope == ScanScope.DOCS``.
++    8. ``load_issues`` parse-failed-sighting check (skipped when ``None``).
++    9. Per-document ``_build_file_plan`` loop (sorted by filepath).
++    10. Summary + ``RenamePlan`` assembly.
+ 
+     ``check_git=False`` exists because MCP validates git-clean ex-ante —
+     ``workspace_lock()`` materialises ``.ontos.lock`` as an untracked file,
+@@ -297,8 +303,10 @@ def build_rename_plan(
+     issues. This is a documented limitation, not a regression.
+     """
+ 
+-    old_id = old_id.strip()
+-    new_id = new_id.strip()
++    old_id, new_id, validation_error = validate_rename_ids(old_id, new_id)
++    if validation_error is not None:
++        return None, validation_error
++    assert old_id is not None and new_id is not None
+ 
+     if old_id == new_id:
+         empty_plan = RenamePlan(
+@@ -321,11 +329,6 @@ def build_rename_plan(
+         )
+         return empty_plan, None
+ 
+-    if not _ID_PATTERN.match(new_id):
+-        return None, RenameError(
+-            code="invalid_new_id",
+-            message="new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$",
+-        )
+     if new_id.lower() in _RESERVED_YAML_WORDS:
+         return None, RenameError(
+             code="reserved_new_id",
+@@ -432,6 +435,24 @@ def build_rename_plan(
+     return plan, None
+ 
+ 
++def validate_rename_ids(
++    old_id: object,
++    new_id: object,
++) -> Tuple[Optional[str], Optional[str], Optional[RenameError]]:
++    """Validate both rename operands with the canonical document-ID contract."""
++    try:
++        normalized_old_id = validate_document_id(old_id)
++    except ValueError as exc:
++        return None, None, RenameError(code="invalid_old_id", message=str(exc))
++
++    try:
++        normalized_new_id = validate_document_id(new_id)
++    except ValueError as exc:
++        return None, None, RenameError(code="invalid_new_id", message=str(exc))
++
++    return normalized_old_id, normalized_new_id, None
++
++
+ def _prepare_plan(options: RenameOptions, *, mode: str) -> Tuple[Optional[_PreparedPlan], Optional[RenameError]]:
+     try:
+         repo_root = find_project_root()
+@@ -445,11 +466,17 @@ def _prepare_plan(options: RenameOptions, *, mode: str) -> Tuple[Optional[_Prepa
+ 
+     scope = resolve_scan_scope(options.scope, config.scanning.default_scope)
+ 
++    old_id, new_id, validation_error = validate_rename_ids(
++        options.old_id,
++        options.new_id,
++    )
++    if validation_error is not None:
++        return None, validation_error
++    assert old_id is not None and new_id is not None
++
+     # Same-ID no-op short-circuit — avoid scanning the filesystem entirely.
+     # The orchestrator also handles this, but the CLI wrapper skips the scan
+     # to preserve the prior zero-IO behaviour for no-ops.
+-    old_id = options.old_id.strip()
+-    new_id = options.new_id.strip()
+     if old_id == new_id:
+         plan, error = build_rename_plan(
+             repo_root=repo_root,
+diff --git a/ontos/core/config.py b/ontos/core/config.py
+index 97b7880..b7aa460 100644
+--- a/ontos/core/config.py
++++ b/ontos/core/config.py
+@@ -33,6 +33,20 @@ class ConfigError(Exception):
+     pass
+ 
+ 
++class InvalidRequiredVersionError(ConfigError):
++    """Raised when ``[ontos].required_version`` cannot be parsed eagerly."""
++
++    def __init__(self, detail: str):
++        self.detail = detail
++        super().__init__(detail)
++
++
++REQUIRED_VERSION_MIGRATION_ANCHOR = (
++    "docs/reference/Migration_v3_to_v4.md"
++    "#audit-remediation-compatibility-contracts"
++)
++
++
+ _VERSION_PATTERN = re.compile(
+     r"^v?(?P<major>0|[1-9][0-9]*)"
+     r"(?:\.(?P<minor>0|[1-9][0-9]*))?"
+@@ -181,7 +195,10 @@ def _validate_types(data: dict) -> None:
+     if isinstance(required_version, str) and required_version.strip():
+         # Parse the range at config-load time. The dummy running version is
+         # irrelevant; this call exists to reject malformed clauses early.
+-        version_satisfies_requirement("0.0.0", required_version)
++        try:
++            version_satisfies_requirement("0.0.0", required_version)
++        except ConfigError as exc:
++            raise InvalidRequiredVersionError(str(exc)) from exc
+ 
+     list_of_str_requirements = [
+         ("scanning", "skip_patterns"),
+@@ -260,23 +277,27 @@ def required_version_incompatibility(
+     running_version: str,
+ ) -> Optional[str]:
+     """Return an actionable incompatibility message, or ``None`` if valid."""
+-    help_path = (
+-        "docs/reference/Migration_v3_to_v4.md"
+-        "#audit-remediation-compatibility-contracts"
+-    )
+     required = str(requirement or "").strip()
+     if not required:
+         return None
+     try:
+         compatible = version_satisfies_requirement(running_version, required)
+     except ConfigError as exc:
+-        return f"Invalid [ontos].required_version: {exc}. See {help_path}."
++        return format_invalid_required_version(str(exc))
+     if compatible:
+         return None
+     return (
+         f"Incompatible Ontos version: running {running_version}, but this project "
+         f"requires {required!r}. Use a compatible Ontos installation. "
+-        f"See {help_path}."
++        f"See {REQUIRED_VERSION_MIGRATION_ANCHOR}."
++    )
++
++
++def format_invalid_required_version(detail: str) -> str:
++    """Render the public malformed ``required_version`` diagnostic."""
++    return (
++        f"Invalid [ontos].required_version: {detail}. "
++        f"See {REQUIRED_VERSION_MIGRATION_ANCHOR}."
+     )
+ 
+ 
+diff --git a/ontos/mcp/rename_tool.py b/ontos/mcp/rename_tool.py
+index 6432605..eb9db58 100644
+--- a/ontos/mcp/rename_tool.py
++++ b/ontos/mcp/rename_tool.py
+@@ -47,6 +47,7 @@ from mcp.types import CallToolResult, TextContent
+ from ontos.commands.rename import (
+     RenameError,
+     build_rename_plan,
++    validate_rename_ids,
+ )
+ from ontos.core.context import SessionContext
+ from ontos.core.errors import OntosInternalError, OntosUserError
+@@ -74,7 +75,8 @@ from ontos.mcp.schemas import (
+ # validation + collision logic; this helper preserves the stable MCP
+ # envelope codes the existing tests assert.
+ _RENAME_ERROR_TO_USER_CODE: Dict[str, str] = {
+-    "invalid_new_id": "E_INVALID_ID",
++    "invalid_old_id": "E_USER_INPUT",
++    "invalid_new_id": "E_USER_INPUT",
+     "reserved_new_id": "E_INVALID_ID",
+     "old_id_not_found": "E_DOCUMENT_NOT_FOUND",
+     "new_id_exists": "E_DUPLICATE_ID",
+@@ -354,6 +356,11 @@ def rename_document(
+     Matches ``ontos/commands/rename.py:221`` semantics — ID-only rename,
+     no filesystem moves, all edits flow through ``ctx.buffer_write``.
+     """
++    old_id, target_id, input_error = validate_rename_ids(document_id, new_id)
++    if input_error is not None:
++        return _user_error_result(_rename_error_to_user_exc(input_error))
++    assert old_id is not None and target_id is not None
++
+     try:
+         plan = _preflight(cache, portfolio_index, workspace_id, read_only)
+     except OntosUserError as exc:
+@@ -375,8 +382,8 @@ def rename_document(
+                     cache=cache,
+                     portfolio_index=portfolio_index,
+                     plan=plan,
+-                    document_id=document_id,
+-                    new_id=new_id,
++                    document_id=old_id,
++                    new_id=target_id,
+                 )
+                 result = _success_result("rename_document", payload)
+             except OntosUserError as exc:
+@@ -430,19 +437,8 @@ def _rename_document_impl(
+     document_id: str,
+     new_id: str,
+ ) -> Dict[str, Any]:
+-    old_id = str(document_id).strip() if document_id is not None else ""
+-    target_id = str(new_id).strip() if new_id is not None else ""
+-
+-    if not old_id:
+-        raise OntosUserError(
+-            "document_id must be non-empty.",
+-            code="E_INVALID_DOCUMENT_ID",
+-        )
+-    if not target_id:
+-        raise OntosUserError(
+-            "new_id must be non-empty.",
+-            code="E_INVALID_ID",
+-        )
++    old_id = document_id
++    target_id = new_id
+ 
+     # Route through the shared orchestrator. It performs ID validation,
+     # old/new collision checks, the docs-scope cross-scope guard, and the
+@@ -483,6 +479,8 @@ def _rename_document_impl(
+     if error is not None:
+         raise _rename_error_to_user_exc(error)
+     assert rename_plan is not None
++    old_id = rename_plan.old_id
++    target_id = rename_plan.new_id
+ 
+     # No-op rename: report success without touching files or acquiring any
+     # further write-side state.
+diff --git <redacted:secret> <redacted:secret>
+index 89857f0..9c9fd3c 100644
+--- <redacted:secret>
++++ <redacted:secret>
+@@ -30,9 +30,25 @@ GITHUB_REPOSITORY = "ohjonathan/Project-Ontos"
+ AUDIT_BASELINE_COMMIT = "589d919"
+ REVALIDATION_COMMIT = "bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95"
+ INTEGRATION_COMMIT = "b6f89d77e7fb684b8bd9a181a24c773d5777397a"
+-CONTROL_PLANE_FIX_COMMIT = "05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0"
++CONTROL_PLANE_FIX_COMMIT = "5c5a9cd8eb92df961146a7ffddabee3bc091ab43"
+ DOCTOR_BASE_COMMIT = "c8672e90f2382f4147ef61b4fba918969483e73e"
+ DOCTOR_FIX_COMMIT = "03c36e6ac999d2c411c13252baa2e8fcff60e6ed"
++CONTROL_PLANE_FINDING_ID = "R2-control-plane-parity-1"
++CONTROL_PLANE_ISSUE = 158
++CONTROL_PLANE_OWNER = {
++    "id": "project-ontos-audit-remediation-2026-07",
++    "root_program": "project-ontos-audit-remediation-2026-07",
++    "issue": CONTROL_PLANE_ISSUE,
++    "base_sha": REVALIDATION_COMMIT,
++    "allowed_paths": (
++        "<redacted:secret>",
++        "<redacted:secret>",
++        "docs/trackers/project-ontos-audit-remediation-release-line.md",
++        "<redacted:secret>-*.md",
++        "<redacted:secret>",
++        "tests/test_audit_remediation_registry_validator.py",
++    ),
++}
+ 
+ REQUIRED_FINDING_FIELDS = {
+     "id",
+@@ -206,6 +222,10 @@ EXPECTED_RELEASE_COUNTS = Counter(
+ )
+ 
+ 
++class ControlPlaneInputError(Exception):
++    """A malformed or unreadable operator-controlled YAML input."""
++
++
+ def load_yaml(path: Path) -> Any:
+     """Load YAML without imposing a root type on every document.
+ 
+@@ -213,7 +233,16 @@ def load_yaml(path: Path) -> Any:
+     malformed registry or child manifest is a normal validation failure
+     (exit 1), not an exception-derived validator error (exit 2).
+     """
+-    return yaml.safe_load(path.read_text(encoding="utf-8"))
++    try:
++        text = path.read_text(encoding="utf-8")
++    except (OSError, UnicodeError) as exc:
++        raise ControlPlaneInputError(
++            f"cannot read YAML input {path}: {exc}"
++        ) from exc
++    try:
++        return yaml.safe_load(text)
++    except yaml.YAMLError as exc:
++        raise ControlPlaneInputError(f"invalid YAML in {path}: {exc}") from exc
+ 
+ 
+ def audit_register() -> dict[str, str]:
+@@ -448,6 +477,12 @@ def normalize_shared_path_leases(
+                     f"{issue_values!r}"
+                 )
+                 item_invalid = True
++            elif field in item and len(set(issue_values)) != len(issue_values):
++                errors.append(
++                    f"shared_path_leases row {index} has duplicate {field}: "
++                    f"{issue_values!r}"
++                )
++                item_invalid = True
+         if "policy" in item and not is_nonempty_string(item.get("policy")):
+             errors.append(
+                 f"shared_path_leases row {index} has invalid policy: "
+@@ -1279,7 +1314,7 @@ def validate(require_external_parity: bool) -> list[str]:
+             CONTROL_PLANE_FIX_COMMIT if is_control_plane else INTEGRATION_COMMIT
+         )
+         if row.get("fix_commit") != expected_fix_commit:
+-            checkpoint = "Phase C close I1" if is_control_plane else "I0"
++            checkpoint = "D.4 control-plane fix" if is_control_plane else "I0"
+             errors.append(
+                 f"{finding_id} must bind its fix commit to {checkpoint}"
+             )
+@@ -1326,6 +1361,10 @@ def validate(require_external_parity: bool) -> list[str]:
+         for program in programs
+         if isinstance(program.get("issue"), int)
+     }
++    finding_owner_by_issue = {
++        **program_by_issue,
++        CONTROL_PLANE_ISSUE: CONTROL_PLANE_OWNER,
++    }
+     for issue, program in sorted(program_by_issue.items()):
+         expected_base = (
+             DOCTOR_BASE_COMMIT if issue == 147 else REVALIDATION_COMMIT
+@@ -1376,7 +1415,17 @@ def validate(require_external_parity: bool) -> list[str]:
+     for row in findings:
+         issue = row.get("issue")
+         finding_id = row.get("id", "<missing-id>")
+-        program = program_by_issue.get(issue)
++        if finding_id == CONTROL_PLANE_FINDING_ID and issue != CONTROL_PLANE_ISSUE:
++            errors.append(
++                f"{CONTROL_PLANE_FINDING_ID} must be assigned to issue "
++                f"#{CONTROL_PLANE_ISSUE}, not #{issue}"
++            )
++        if issue == CONTROL_PLANE_ISSUE and finding_id != CONTROL_PLANE_FINDING_ID:
++            errors.append(
++                f"{finding_id} cannot be assigned to reserved issue "
++                f"#{CONTROL_PLANE_ISSUE}"
++            )
++        owner = finding_owner_by_issue.get(issue)
+         expected_baseline = (
+             AUDIT_BASELINE_COMMIT
+             if row.get("origin") == "fable_audit"
+@@ -1387,9 +1436,7 @@ def validate(require_external_parity: bool) -> list[str]:
+                 f"{finding_id} baseline_commit mismatch: "
+                 f"{row.get('baseline_commit')!r} != {expected_baseline!r}"
+             )
+-        expected_base = (
+-            program.get("base_sha") if program is not None else REVALIDATION_COMMIT
+-        )
++        expected_base = owner.get("base_sha") if owner is not None else REVALIDATION_COMMIT
+         if row.get("base_sha") != expected_base:
+             errors.append(
+                 f"{finding_id} base_sha mismatch: "
+@@ -1401,27 +1448,31 @@ def validate(require_external_parity: bool) -> list[str]:
+             commit_value = row.get(commit_field)
+             if isinstance(commit_value, str) and is_commit_ref(commit_value):
+                 commit_refs.add(commit_value)
+-        if program is None:
+-            if issue != 158:
+-                errors.append(f"{finding_id} has no owning program row")
++        if owner is None:
++            errors.append(f"{finding_id} has no owning program row")
+             continue
+-        if row.get("root_program") != program.get("root_program"):
++        if row.get("root_program") != owner.get("root_program"):
+             errors.append(
+                 f"{finding_id} root_program mismatch for issue #{issue}: "
+                 f"finding={row.get('root_program')!r}, "
+-                f"program={program.get('root_program')!r}"
++                f"owner={owner.get('root_program')!r}"
+             )
+         uncovered = [
+             path
+             for path in row.get("allowed_paths", [])
+             if not any(
+-                path_scope_covers(program_path, path)
+-                for program_path in program.get("allowed_paths", [])
++                path_scope_covers(owner_path, path)
++                for owner_path in owner.get("allowed_paths", [])
+             )
+         ]
+         if uncovered:
++            owner_label = (
++                f"owner #{issue}"
++                if issue == CONTROL_PLANE_ISSUE
++                else f"program #{issue}"
++            )
+             errors.append(
+-                f"{finding_id} finding scope exceeds program #{issue}: {uncovered}"
++                f"{finding_id} finding scope exceeds {owner_label}: {uncovered}"
+             )
+     for program in programs:
+         for commit_field in ("base_sha", "implementation_ref"):
+@@ -1888,6 +1939,10 @@ def main() -> int:
+     args = parser.parse_args()
+     try:
+         errors = validate(args.require_external_parity)
++    except ControlPlaneInputError as exc:
++        print("audit-registry: FAILED", file=sys.stderr)
++        print(f"- {exc}", file=sys.stderr)
++        return 1
+     except Exception as exc:  # validation should fail closed with useful context
+         print(f"audit-registry: ERROR: {exc}", file=sys.stderr)
+         return 2
+diff --git a/tests/commands/test_agentic_activation_resilience.py b/tests/commands/test_agentic_activation_resilience.py
+index ed99eab..0ca7277 100644
+--- a/tests/commands/test_agentic_activation_resilience.py
++++ b/tests/commands/test_agentic_activation_resilience.py
+@@ -9,8 +9,14 @@ import sys
+ from pathlib import Path
+ from textwrap import dedent
+ 
++import pytest
++
+ 
+ REPO_ROOT = Path(__file__).resolve().parents[2]
++REQUIRED_VERSION_ANCHOR = (
++    "docs/reference/Migration_v3_to_v4.md"
++    "#audit-remediation-compatibility-contracts"
++)
+ 
+ 
+ def _write(path: Path, content: str) -> None:
+@@ -55,6 +61,17 @@ def _workspace(root: Path) -> Path:
+     return root
+ 
+ 
++def _set_required_version(root: Path, requirement: str) -> None:
++    config_path = root / ".ontos.toml"
++    config_path.write_text(
++        config_path.read_text(encoding="utf-8").replace(
++            'version = "4.4"',
++            f'version = "4.4"\nrequired_version = "{requirement}"',
++        ),
++        encoding="utf-8",
++    )
++
++
+ def test_activate_json_generates_usable_context_map_with_valid_status(tmp_path: Path) -> None:
+     root = _workspace(tmp_path)
+ 
+@@ -66,6 +83,7 @@ def test_activate_json_generates_usable_context_map_with_valid_status(tmp_path:
+     assert payload["data"]["status"] in {"usable", "usable_with_warnings"}
+     assert payload["data"]["map"]["refreshed"] is True
+     assert payload["data"]["loaded_ids"] == ["atom_doc"]
++    assert "Reason:" not in _run(root, "activate").stdout
+ 
+     context_map = root / "Ontos_Context_Map.md"
+     assert context_map.exists()
+@@ -74,14 +92,7 @@ def test_activate_json_generates_usable_context_map_with_valid_status(tmp_path:
+ 
+ def <redacted:secret>(tmp_path: Path) -> None:
+     root = _workspace(tmp_path)
+-    config_path = root / ".ontos.toml"
+-    config_path.write_text(
+-        config_path.read_text(encoding="utf-8").replace(
+-            'version = "4.4"',
+-            'version = "4.4"\nrequired_version = ">=99.0.0"',
+-        ),
+-        encoding="utf-8",
+-    )
++    _set_required_version(root, ">=99.0.0")
+ 
+     result = _run(root, "--json", "activate")
+     payload = json.loads(result.stdout)
+@@ -93,6 +104,67 @@ def <redacted:secret>(tmp_path: P
+     assert not (root / "Ontos_Context_Map.md").exists()
+ 
+ 
++def test_activate_human_renders_incompatible_version_reason_once(tmp_path: Path) -> None:
++    root = _workspace(tmp_path)
++    _set_required_version(root, ">=99.0.0")
++
++    result = _run(root, "activate")
++    reason_lines = [
++        line for line in result.stdout.splitlines() if line.startswith("Reason:")
++    ]
++
++    assert result.returncode == 1
++    assert len(reason_lines) == 1
++    assert reason_lines[0].startswith("Reason: Incompatible Ontos version:")
++    assert reason_lines[0].count(">=99.0.0") == 1
++    assert reason_lines[0].count(REQUIRED_VERSION_ANCHOR) == 1
++
++
++def test_activate_human_renders_malformed_range_contract_once(tmp_path: Path) -> None:
++    root = _workspace(tmp_path)
++    _set_required_version(root, ">=4.7.0, not-a-range, <5.0.0")
++
++    result = _run(root, "activate")
++    reason_lines = [
++        line for line in result.stdout.splitlines() if line.startswith("Reason:")
++    ]
++
++    assert result.returncode == 1
++    assert len(reason_lines) == 1
++    assert reason_lines[0].startswith("Reason: Invalid [ontos].required_version:")
++    assert reason_lines[0].count(repr("not-a-range")) == 1
++    assert reason_lines[0].count(REQUIRED_VERSION_ANCHOR) == 1
++    assert "Config error:" not in reason_lines[0]
++
++
++@pytest.mark.parametrize(
++    ("requirement", "offending_clause"),
++    [
++        ("not-a-range", "not-a-range"),
++        (">=4.7.0, not-a-range, <5.0.0", "not-a-range"),
++    ],
++)
++def test_activate_json_renders_malformed_range_contract_once(
++    tmp_path: Path,
++    requirement: str,
++    offending_clause: str,
++) -> None:
++    root = _workspace(tmp_path)
++    _set_required_version(root, requirement)
++
++    result = _run(root, "--json", "activate")
++    payload = json.loads(result.stdout)
++    reason = payload["data"]["reason"]
++
++    assert result.returncode == 1
++    assert payload["error"]["code"] == "E_ACTIVATION_UNUSABLE"
++    assert payload["data"]["status"] == "not_usable"
++    assert reason.startswith("Invalid [ontos].required_version:")
++    assert reason.count(repr(offending_clause)) == 1
++    assert reason.count(REQUIRED_VERSION_ANCHOR) == 1
++    assert "Config error:" not in reason
++
++
+ def test_doctor_frontmatter_reports_precise_enum_diagnostics(tmp_path: Path) -> None:
+     # (#117) `review` and `completed` are now canonical; use `proposal` and
+     # `done` to exercise the invalid-enum path (proposal → strategy,
+diff --git a/tests/commands/test_rename.py b/tests/commands/test_rename.py
+index 8c0e8a5..29e9ef3 100644
+--- a/tests/commands/test_rename.py
++++ b/tests/commands/test_rename.py
+@@ -9,6 +9,10 @@ import sys
+ from pathlib import Path
+ from typing import Optional
+ 
++import pytest
++
++from ontos.core.schema import validate_document_id
++
+ 
+ PROJECT_ROOT = Path(__file__).resolve().parents[2]
+ 
+@@ -93,12 +97,92 @@ def test_rename_rejects_reserved_new_id(tmp_path: Path):
+     assert "reserved" in result.stdout.lower()
+ 
+ 
+-def test_rename_rejects_invalid_new_id_format(tmp_path: Path):
++@pytest.mark.parametrize(
++    ("old_id", "new_id", "invalid_value"),
++    [
++        ("bad old!", "new_id", "bad old!"),
++        ("old_id", "bad new!", "bad new!"),
++        ("bad same!", "bad same!", "bad same!"),
++    ],
++)
++def test_rename_invalid_ids_use_canonical_human_usage_error(
++    tmp_path: Path,
++    old_id: str,
++    new_id: str,
++    invalid_value: str,
++):
+     _init_repo(tmp_path)
+     _write_doc(tmp_path / "docs" / "a.md", "old_id")
+-    result = _run_ontos(tmp_path, "rename", "old_id", "bad id")
+-    assert result.returncode == 1
+-    assert "invalid_new_id" in result.stdout
++    with pytest.raises(ValueError) as canonical:
++        validate_document_id(invalid_value)
++
++    result = _run_ontos(tmp_path, "rename", old_id, new_id)
++
++    assert result.returncode == 2
++    assert result.stdout == ""
++    assert result.stderr.strip() == f"Error: {canonical.value}"
++
++
++@pytest.mark.parametrize(
++    ("old_id", "new_id", "invalid_value"),
++    [
++        ("bad old!", "new_id", "bad old!"),
++        ("old_id", "bad new!", "bad new!"),
++        ("bad same!", "bad same!", "bad same!"),
++    ],
++)
++def test_rename_invalid_ids_use_canonical_json_usage_error(
++    tmp_path: Path,
++    old_id: str,
++    new_id: str,
++    invalid_value: str,
++):
++    _init_repo(tmp_path)
++    _write_doc(tmp_path / "docs" / "a.md", "old_id")
++    with pytest.raises(ValueError) as canonical:
++        validate_document_id(invalid_value)
++
++    result = _run_ontos(tmp_path, "--json", "rename", old_id, new_id)
++
++    assert result.returncode == 2
++    envelope = json.loads(result.stdout)
++    assert envelope["message"] == str(canonical.value)
++    assert envelope["error"]["code"] == "E_USER_INPUT"
++    assert envelope["result"]["exit_category"] == "usage"
++
++
++@pytest.mark.parametrize(
++    ("old_id", "new_id", "invalid_value"),
++    [
++        ("bad old!", "new_id", "bad old!"),
++        ("old_id", "bad new!", "bad new!"),
++        ("bad same!", "bad same!", "bad same!"),
++        ("   ", "new_id", "   "),
++        ("old_id", "   ", "   "),
++    ],
++)
++def test_rename_invalid_id_is_rejected_before_project_discovery(
++    tmp_path: Path,
++    old_id: str,
++    new_id: str,
++    invalid_value: str,
++):
++    with pytest.raises(ValueError) as canonical:
++        validate_document_id(invalid_value)
++
++    result = _run_ontos(
++        tmp_path,
++        "--json",
++        "rename",
++        old_id,
++        new_id,
++    )
++
++    assert result.returncode == 2
++    envelope = json.loads(result.stdout)
++    assert envelope["message"] == str(canonical.value)
++    assert envelope["error"]["code"] == "E_USER_INPUT"
++    assert envelope["result"]["exit_category"] == "usage"
+ 
+ 
+ def test_rename_aborts_on_duplicate_ids(tmp_path: Path):
+@@ -544,6 +628,65 @@ def test_rename_quiet_mode_suppresses_per_file_details(tmp_path: Path):
+     assert "File:" not in result.stdout
+ 
+ 
++@pytest.mark.parametrize(
++    ("old_id", "new_id", "error_code", "invalid_value"),
++    [
++        ("bad old!", "new_id", "invalid_old_id", "bad old!"),
++        ("old_id", "bad new!", "invalid_new_id", "bad new!"),
++        ("bad same!", "bad same!", "invalid_old_id", "bad same!"),
++    ],
++)
++def test_build_rename_plan_uses_canonical_id_validation_before_noop(
++    tmp_path: Path,
++    old_id: str,
++    new_id: str,
++    error_code: str,
++    invalid_value: str,
++):
++    from ontos.commands.rename import build_rename_plan
++    from ontos.io.scan_scope import ScanScope
++
++    with pytest.raises(ValueError) as canonical:
++        validate_document_id(invalid_value)
++
++    plan, error = build_rename_plan(
++        repo_root=tmp_path,
++        config=None,
++        scope=ScanScope.DOCS,
++        docs={},
++        old_id=old_id,
++        new_id=new_id,
++        mode="dry_run",
++        check_git=False,
++    )
++
++    assert plan is None
++    assert error is not None
++    assert error.code == error_code
++    assert error.message == str(canonical.value)
++
++
++def test_build_rename_plan_preserves_valid_same_id_noop(tmp_path: Path):
++    from ontos.commands.rename import build_rename_plan
++    from ontos.io.scan_scope import ScanScope
++
++    plan, error = build_rename_plan(
++        repo_root=tmp_path,
++        config=None,
++        scope=ScanScope.DOCS,
++        docs={},
++        old_id="same_id",
++        new_id=" same_id ",
++        mode="dry_run",
++        check_git=False,
++    )
++
++    assert error is None
++    assert plan is not None
++    assert plan.no_op is True
++    assert plan.old_id == plan.new_id == "same_id"
++
++
+ def test_build_rename_plan_equivalence_cli_vs_injected_docs(tmp_path: Path):
+     """Regression guard: the CLI path (``_prepare_plan``) and a direct call
+     to ``build_rename_plan`` with the SAME docs dict must produce identical
+diff --git a/tests/core/test_config_phase3.py b/tests/core/test_config_phase3.py
+index b98810e..b148b53 100644
+--- a/tests/core/test_config_phase3.py
++++ b/tests/core/test_config_phase3.py
+@@ -4,12 +4,14 @@ from pathlib import Path
+ 
+ from ontos.core.config import (
+     ConfigError,
++    InvalidRequiredVersionError,
+     OntosConfig,
+     WorkflowConfig,
+     PathsConfig,
+     default_config,
+     config_to_dict,
+     dict_to_config,
++    format_invalid_required_version,
+     required_version_incompatibility,
+     version_satisfies_requirement,
+     _validate_types,
+@@ -298,6 +300,31 @@ def test_config_validation_does_not_short_circuit_before_malformed_later_clause(
+     assert str(exc_info.value).count(repr("not-a-range")) == 1
+ 
+ 
++def test_eager_required_version_validation_preserves_typed_raw_detail():
++    with pytest.raises(ConfigError) as exc_info:
++        _validate_types(
++            {"ontos": {"required_version": ">=4.7.0, not-a-range, <5.0.0"}}
++        )
++
++    error = exc_info.value
++    assert isinstance(error, InvalidRequiredVersionError)
++    assert error.detail == (
++        "version clause 'not-a-range' is not a valid semantic version"
++    )
++
++
++def test_invalid_required_version_public_formatter_adds_contract_once():
++    detail = "version clause 'not-a-range' is not a valid semantic version"
++    message = format_invalid_required_version(detail)
++
++    assert message.startswith("Invalid [ontos].required_version:")
++    assert message.count(repr("not-a-range")) == 1
++    assert message.count(
++        "docs/reference/Migration_v3_to_v4.md"
++        "#audit-remediation-compatibility-contracts"
++    ) == 1
++
++
+ @pytest.mark.parametrize(
+     "data, message",
+     [
+diff --git a/tests/mcp/test_rename_document.py b/tests/mcp/test_rename_document.py
+index afca5b7..c856d3e 100644
+--- a/tests/mcp/test_rename_document.py
++++ b/tests/mcp/test_rename_document.py
+@@ -33,6 +33,7 @@ from typing import Any, List
+ import pytest
+ from mcp.types import CallToolResult
+ 
++from ontos.core.schema import validate_document_id
+ from ontos.mcp.portfolio import PortfolioIndex
+ from tests.mcp_helpers import build_cache, build_server, create_workspace
+ 
+@@ -305,23 +306,40 @@ def test_rename_document_rejects_duplicate_new_id(tmp_path):
+     assert result.structuredContent["error"]["error_code"] == "E_DUPLICATE_ID"
+ 
+ 
+-def test_rename_document_rejects_invalid_new_id_format(tmp_path):
++@pytest.mark.parametrize(
++    ("document_id", "new_id", "invalid_value"),
++    [
++        ("bad old!", "renamed", "bad old!"),
++        ("kernel_doc", "bad new!", "bad new!"),
++        ("bad same!", "bad same!", "bad same!"),
++        ("   ", "renamed", "   "),
++        ("kernel_doc", "   ", "   "),
++    ],
++)
++def test_rename_document_invalid_ids_use_canonical_user_error(
++    tmp_path,
++    document_id,
++    new_id,
++    invalid_value,
++):
+     root = create_workspace(tmp_path)
+     _git_init_clean(root)
+     server = build_server(root)
++    with pytest.raises(ValueError) as canonical:
++        validate_document_id(invalid_value)
+ 
+-    # Contains illegal characters.
+     result = _call(
+         server,
+         "rename_document",
+-        {"document_id": "kernel_doc", "new_id": "has spaces"},
++        {"document_id": document_id, "new_id": new_id},
+     )
+ 
+     assert result.isError is True
+-    assert result.structuredContent["error"]["error_code"] == "E_INVALID_ID"
++    assert result.structuredContent["error"]["error_code"] == "E_USER_INPUT"
++    assert result.structuredContent["error"]["what"] == str(canonical.value)
+ 
+ 
+-def test_rename_document_rejects_empty_old_id(tmp_path):
++def test_rename_document_preserves_reserved_new_id_error_code(tmp_path):
+     root = create_workspace(tmp_path)
+     _git_init_clean(root)
+     server = build_server(root)
+@@ -329,11 +347,47 @@ def test_rename_document_rejects_empty_old_id(tmp_path):
+     result = _call(
+         server,
+         "rename_document",
+-        {"document_id": "   ", "new_id": "renamed"},
++        {"document_id": "kernel_doc", "new_id": "true"},
++    )
++
++    assert result.isError is True
++    assert result.structuredContent["error"]["error_code"] == "E_INVALID_ID"
++
++
++@pytest.mark.parametrize(
++    ("document_id", "new_id", "invalid_value"),
++    [
++        ("bad old!", "new_id", "bad old!"),
++        ("old_id", "bad new!", "bad new!"),
++        ("bad same!", "bad same!", "bad same!"),
++        ("   ", "new_id", "   "),
++        ("old_id", "   ", "   "),
++    ],
++)
++def <redacted:secret>(
++    monkeypatch,
++    document_id,
++    new_id,
++    invalid_value,
++):
++    from ontos.mcp import rename_tool
++
++    def unexpected_preflight(*args, **kwargs):
++        raise AssertionError("preflight must not run for invalid IDs")
++
++    monkeypatch.setattr(rename_tool, "_preflight", unexpected_preflight)
++    with pytest.raises(ValueError) as canonical:
++        validate_document_id(invalid_value)
++
++    result = rename_tool.rename_document(
++        None,
++        document_id=document_id,
++        new_id=new_id,
+     )
+ 
+     assert result.isError is True
+-    assert result.structuredContent["error"]["error_code"] == "E_INVALID_DOCUMENT_ID"
++    assert result.structuredContent["error"]["error_code"] == "E_USER_INPUT"
++    assert result.structuredContent["error"]["what"] == str(canonical.value)
+ 
+ 
+ # ---------------------------------------------------------------------------
+diff --git a/tests/test_audit_remediation_registry_validator.py b/tests/test_audit_remediation_registry_validator.py
+index 0b46f07..8bb1752 100644
+--- a/tests/test_audit_remediation_registry_validator.py
++++ b/tests/test_audit_remediation_registry_validator.py
+@@ -410,7 +410,7 @@ def test_finding_authority_fields_cannot_drift_silently(
+     assert any(expected_fragment in error for error in errors)
+ 
+ 
+-def test_control_plane_row_binds_phase_c_close_snapshot(
++def test_control_plane_row_binds_d4_fix_snapshot(
+     validator_module,
+     monkeypatch,
+     tmp_path,
+@@ -434,7 +434,7 @@ def test_control_plane_row_binds_phase_c_close_snapshot(
+         registry,
+     )
+ 
+-    assert any("must bind its fix commit to Phase C close I1" in e for e in errors)
++    assert any("must bind its fix commit to D.4 control-plane fix" in e for e in errors)
+     assert any("status mismatch" in e for e in errors)
+     assert any("lifecycle mismatch" in e for e in errors)
+ 
+@@ -500,6 +500,97 @@ def test_finding_root_program_must_match_owning_program(
+     assert any("root_program mismatch for issue #146" in error for error in errors)
+ 
+ 
++@pytest.mark.parametrize(
++    ("field", "replacement", "expected_fragment"),
++    [
++        (
++            "root_program",
++            "project-ontos-audit-remediation-wrong-owner",
++            "root_program mismatch for issue #158",
++        ),
++        (
++            "allowed_paths",
++            ["SECURITY.md"],
++            "finding scope exceeds owner #158",
++        ),
++    ],
++)
++def <redacted:secret>(
++    validator_module,
++    monkeypatch,
++    tmp_path,
++    capsys,
++    field,
++    replacement,
++    expected_fragment,
++):
++    registry = copy.deepcopy(
++        validator_module.load_yaml(validator_module.REGISTRY_PATH)
++    )
++    finding = next(
++        row
++        for row in registry["findings"]
++        if row["id"] == "R2-control-plane-parity-1"
++    )
++    finding[field] = replacement
++
++    exit_code = _run_main_with_registry(
++        validator_module,
++        monkeypatch,
++        tmp_path,
++        registry,
++    )
++    captured = capsys.readouterr()
++
++    assert exit_code == 1
++    assert "audit-registry: FAILED" in captured.err
++    assert expected_fragment in captured.err
++    assert "audit-registry: ERROR" not in captured.err
++
++
++@pytest.mark.parametrize(
++    ("control_issue", "other_issue"),
++    [(157, 158)],
++)
++def test_control_plane_finding_id_and_issue_158_are_reserved_as_a_pair(
++    validator_module,
++    monkeypatch,
++    tmp_path,
++    capsys,
++    control_issue,
++    other_issue,
++):
++    registry = copy.deepcopy(
++        validator_module.load_yaml(validator_module.REGISTRY_PATH)
++    )
++    control_finding = next(
++        row
++        for row in registry["findings"]
++        if row["id"] == "R2-control-plane-parity-1"
++    )
++    other_finding = next(
++        row
++        for row in registry["findings"]
++        if row["issue"] == control_issue
++        and row["id"] != "R2-control-plane-parity-1"
++    )
++    control_finding["issue"] = control_issue
++    other_finding["issue"] = other_issue
++
++    exit_code = _run_main_with_registry(
++        validator_module,
++        monkeypatch,
++        tmp_path,
++        registry,
++    )
++    captured = capsys.readouterr()
++
++    assert exit_code == 1
++    assert "R2-control-plane-parity-1 must be assigned to issue #158" in captured.err
++    assert f"{other_finding['id']} cannot be assigned to reserved issue #158" in captured.err
++    assert "audit-registry: ERROR" not in captured.err
++
++
+ @pytest.mark.parametrize(
+     ("collection", "field", "invalid_path", "expected_fragment"),
+     [
+@@ -624,6 +715,61 @@ def test_malformed_shared_path_lease_values_are_quarantined(
+     )
+ 
+ 
++@pytest.mark.parametrize(
++    ("field", "duplicate_values", "rendered_row"),
++    [
++        (
++            "programs",
++            [146, 147, 147],
++            "| `docs/logs/` | #146, #147, #147 | #146 → #147 | ordered |",
++        ),
++        (
++            "order",
++            [146, 147, 147],
++            "| `docs/logs/` | #146, #147 | #146 → #147 → #147 | ordered |",
++        ),
++    ],
++)
++def test_duplicate_lease_lists_fail_even_when_o5_is_synchronized(
++    validator_module,
++    monkeypatch,
++    tmp_path,
++    capsys,
++    field,
++    duplicate_values,
++    rendered_row,
++):
++    registry = copy.deepcopy(
++        validator_module.load_yaml(validator_module.REGISTRY_PATH)
++    )
++    registry["shared_path_leases"][0][field] = duplicate_values
++
++    original_row = (
++        "| `docs/logs/` | #146, #147 | #146 → #147 | ordered |"
++    )
++    ledger = <redacted:secret>(encoding="utf-8")
++    assert original_row in ledger
++    ledger_path = tmp_path / "ledger.md"
++    ledger_path.write_text(
++        ledger.replace(original_row, rendered_row, 1),
++        encoding="utf-8",
++    )
++    monkeypatch.setattr(validator_module, "LEDGER_PATH", ledger_path)
++
++    exit_code = _run_main_with_registry(
++        validator_module,
++        monkeypatch,
++        tmp_path,
++        registry,
++    )
++    captured = capsys.readouterr()
++
++    assert exit_code == 1
++    assert "audit-registry: FAILED" in captured.err
++    assert f"shared_path_leases row 0 has duplicate {field}" in captured.err
++    assert "audit-registry: ERROR" not in captured.err
++
++
+ @pytest.mark.parametrize("missing_field", INTEGRATION_REQUIRED_FIELDS)
+ def test_every_missing_shared_tree_integration_field_is_quarantined(
+     validator_module,
+@@ -769,6 +915,93 @@ def test_malformed_registry_root_returns_exit_one_never_two(
+     assert "audit-registry: ERROR" not in captured.err
+ 
+ 
++def test_malformed_registry_yaml_returns_exit_one_never_two(
++    validator_module,
++    monkeypatch,
++    tmp_path,
++    capsys,
++):
++    registry_path = tmp_path / "registry.yaml"
++    registry_path.write_text("findings: [\n", encoding="utf-8")
++    monkeypatch.setattr(validator_module, "REGISTRY_PATH", registry_path)
++    monkeypatch.setattr(validator_module.sys, "argv", [str(VALIDATOR_PATH)])
++
++    exit_code = validator_module.main()
++    captured = capsys.readouterr()
++
++    assert exit_code == 1
++    assert "audit-registry: FAILED" in captured.err
++    assert f"invalid YAML in {registry_path}" in captured.err
++    assert "audit-registry: ERROR" not in captured.err
++
++
++@pytest.mark.parametrize("issue", [146, 147])
++def test_malformed_child_manifest_yaml_returns_exit_one_never_two(
++    validator_module,
++    monkeypatch,
++    tmp_path,
++    capsys,
++    issue,
++):
++    manifest_path = tmp_path / f"manifest-{issue}.yaml"
++    manifest_path.write_text("scope: [\n", encoding="utf-8")
++    constant = (
++        "SERIALIZER_MANIFEST_PATH" if issue == 146 else "DOCTOR_MANIFEST_PATH"
++    )
++    monkeypatch.setattr(validator_module, constant, manifest_path)
++    monkeypatch.setattr(validator_module.sys, "argv", [str(VALIDATOR_PATH)])
++
++    exit_code = validator_module.main()
++    captured = capsys.readouterr()
++
++    assert exit_code == 1
++    assert "audit-registry: FAILED" in captured.err
++    assert f"invalid YAML in {manifest_path}" in captured.err
++    assert "audit-registry: ERROR" not in captured.err
++
++
++@pytest.mark.parametrize("failure", ["read", "decode"])
++def test_registry_yaml_input_failures_return_exit_one_never_two(
++    validator_module,
++    monkeypatch,
++    tmp_path,
++    capsys,
++    failure,
++):
++    registry_path = tmp_path / "registry.yaml"
++    if failure == "decode":
++        registry_path.write_bytes(b"findings: \xff\n")
++    monkeypatch.setattr(validator_module, "REGISTRY_PATH", registry_path)
++    monkeypatch.setattr(validator_module.sys, "argv", [str(VALIDATOR_PATH)])
++
++    exit_code = validator_module.main()
++    captured = capsys.readouterr()
++
++    assert exit_code == 1
++    assert "audit-registry: FAILED" in captured.err
++    assert f"cannot read YAML input {registry_path}" in captured.err
++    assert "audit-registry: ERROR" not in captured.err
++
++
++def test_unexpected_validator_runtime_error_remains_exit_two(
++    validator_module,
++    monkeypatch,
++    capsys,
++):
++    def raise_unexpected(_require_external_parity):
++        raise RuntimeError("unexpected invariant failure")
++
++    monkeypatch.setattr(validator_module, "validate", raise_unexpected)
++    monkeypatch.setattr(validator_module.sys, "argv", [str(VALIDATOR_PATH)])
++
++    exit_code = validator_module.main()
++    captured = capsys.readouterr()
++
++    assert exit_code == 2
++    assert "audit-registry: ERROR: unexpected invariant failure" in captured.err
++    assert "audit-registry: FAILED" not in captured.err
++
++
+ @pytest.mark.parametrize("issue", [146, 147])
+ @pytest.mark.parametrize(
+     "case",
+[0m
+[0m$ [0mls -la .venv/d5-glm-post/bin/python .venv/d5-glm-pre/bin/python 2>&1
+ls: .venv/d5-glm-post/bin/python: No such file or directory
+ls: .venv/d5-glm-pre/bin/python: No such file or directory
+[0m
+[0m$ [0mgit log --oneline aa41c39..311b60b --format='%H %s' 2>/dev/null
+311b60b6e86abe6d0b5a7ac61e16d07049387707 Use canonical ID validation for rename
+2dede68677fddc26f8a1c2d5b64896563b23e6b7 Bind control-plane registry evidence to D4 fix
+5c5a9cd8eb92df961146a7ffddabee3bc091ab43 Harden audit remediation control-plane validation
+f6d6b77e3918b5d65effde3d6681e13323ba10c1 Fix D3 activation diagnostics
+[0m
+[0m$ [0mls -la .venv/bin/python .venv/d5-glm-post/ ../bin/python 2>&1; echo "==="; ls .venv/bin/ 2>&1 | head -20
+ls: ../bin/python: No such file or directory
+lrwxr-xr-x@ 1 jonathanoh  wheel  10 Jul 10 10:25 .venv/bin/python -> python3.14
+
+.venv/d5-glm-post/:
+total 440
+drwxr-xr-x@ 35 jonathanoh  wheel   1120 Jul 10 20:31 .
+drwxr-xr-x@ 10 jonathanoh  wheel    320 Jul 10 20:25 ..
+drwxr-xr-x@  3 jonathanoh  wheel     96 Jul 10 20:09 .agent
+-rw-r--r--@  1 jonathanoh  wheel   2207 Jul 10 20:09 .cursorrules
+drwxr-xr-x@  4 jonathanoh  wheel    128 Jul 10 20:09 .gemini
+-rw-r--r--@  1 jonathanoh  wheel    549 Jul 10 20:09 .gitattributes
+drwxr-xr-x@  5 jonathanoh  wheel    160 Jul 10 20:09 .github
+-rw-r--r--@  1 jonathanoh  wheel    468 Jul 10 20:09 .gitignore
+-rw-r--r--@  1 jonathanoh  wheel    119 Jul 10 20:09 .gitmodules
+-rw-r--r--@  1 jonathanoh  wheel    342 Jul 10 20:09 .johnny-os.yaml
+drwxr-xr-x@  5 jonathanoh  wheel    160 Jul 10 20:09 .llm-dev
+drwxr-xr-x@  7 jonathanoh  wheel    224 Jul 10 20:09 .ontos
+drwxr-xr-x@ 12 jonathanoh  wheel    384 Jul 10 20:09 .ontos-internal
+-rw-r--r--@  1 jonathanoh  wheel   1355 Jul 10 20:09 .ontos.toml
+-rw-r--r--@  1 jonathanoh  wheel    773 Jul 10 20:09 .pre-commit-config.yaml
+drwxr-xr-x@  5 jonathanoh  wheel    160 Jul 10 20:09 .project-internal
+drwxr-xr-x@  6 jonathanoh  wheel    192 Jul 10 20:31 .pytest_cache
+-rw-r--r--@  1 jonathanoh  wheel     57 Jul 10 20:09 .trufflehog-exclude-paths.txt
+drwxr-xr-x@  3 jonathanoh  wheel     96 Jul 10 20:09 .vscode
+-rw-r--r--@  1 jonathanoh  wheel   4890 Jul 10 20:09 AGENTS.md
+-rw-r--r--@  1 jonathanoh  wheel  26656 Jul 10 20:09 CHANGELOG.md
+-rw-r--r--@  1 jonathanoh  wheel    620 Jul 10 20:09 CLAUDE.md
+-rw-r--r--@  1 jonathanoh  wheel  11351 Jul 10 20:09 LICENSE
+-rw-r--r--@  1 jonathanoh  wheel  55719 Jul 10 20:09 Ontos_CHANGELOG.md
+-rw-r--r--@  1 jonathanoh  wheel  35282 Jul 10 20:09 Ontos_Context_Map.md
+-rw-r--r--@  1 jonathanoh  wheel  29233 Jul 10 20:09 README.md
+-rw-r--r--@  1 jonathanoh  wheel   4052 Jul 10 20:09 SECURITY.md
+drwxr-xr-x@ 12 jonathanoh  wheel    384 Jul 10 20:09 docs
+drwxr-xr-x@  3 jonathanoh  wheel     96 Jul 10 20:09 examples
+drwxr-xr-x@  9 jonathanoh  wheel    288 Jul 10 20:09 manifests
+drwxr-xr-x@ 14 jonathanoh  wheel    448 Jul 10 20:25 ontos
+-rw-r--r--@  1 jonathanoh  wheel   2086 Jul 10 20:09 pyproject.toml
+-rw-r--r--@  1 jonathanoh  wheel    170 Jul 10 20:09 requirements.txt
+drwxr-xr-x@  6 jonathanoh  wheel    192 Jul 10 20:33 scripts
+drwxr-xr-x@ 38 jonathanoh  wheel   1216 Jul 10 20:32 tests
+===
+Activate.ps1
+activate
+activate.csh
+activate.fish
+cffi-gen-src
+coverage
+coverage-3.14
+coverage3
+dotenv
+httpx
+identify-cli
+idna
+jsonschema
+mcp
+nodeenv
+ontos
+pip
+pip3
+pip3.14
+pre-commit
+[0m
+[0m$ [0mls -la .venv/d5-glm-post/.ontos 2>&1; echo "==="; ls -la .venv/d5-glm-pre/.ontos 2>&1; echo "==="; ls .venv/d5-glm-pre/ 2>&1 | head -40
+total 8
+drwxr-xr-x@  7 jonathanoh  wheel   224 Jul 10 20:09 .
+drwxr-xr-x@ 35 jonathanoh  wheel  1120 Jul 10 20:31 ..
+drwxr-xr-x@ 13 jonathanoh  wheel   416 Jul 10 20:09 backups
+-rw-r--r--@  1 jonathanoh  wheel   900 Jul 10 20:09 environment.md
+drwxr-xr-x@  4 jonathanoh  wheel   128 Jul 10 20:09 hooks
+drwxr-xr-x@ 26 jonathanoh  wheel   832 Jul 10 20:09 scripts
+drwxr-xr-x@  5 jonathanoh  wheel   160 Jul 10 20:09 templates
+===
+total 8
+drwxr-xr-x@  7 jonathanoh  wheel   224 Jul 10 20:09 .
+drwxr-xr-x@ 35 jonathanoh  wheel  1120 Jul 10 20:31 ..
+drwxr-xr-x@ 13 jonathanoh  wheel   416 Jul 10 20:09 backups
+-rw-r--r--@  1 jonathanoh  wheel   900 Jul 10 20:09 environment.md
+drwxr-xr-x@  4 jonathanoh  wheel   128 Jul 10 20:09 hooks
+drwxr-xr-x@ 26 jonathanoh  wheel   832 Jul 10 20:09 scripts
+drwxr-xr-x@  5 jonathanoh  wheel   160 Jul 10 20:09 templates
+===
+AGENTS.md
+CHANGELOG.md
+CLAUDE.md
+LICENSE
+Ontos_CHANGELOG.md
+Ontos_Context_Map.md
+README.md
+SECURITY.md
+docs
+examples
+manifests
+ontos
+pyproject.toml
+requirements.txt
+scripts
+tests
+[0m
+[0m$ [0mcd .venv/d5-glm-post && ../bin/python -c "import ontos; print(ontos.__file__)" 2>&1
+/<redacted:secret>
+[0m
+[0m$ [0mcd .venv/d5-glm-pre && ../bin/python -c "import ontos; print(ontos.__file__)" 2>&1
+/<redacted:secret>
+[0m
+[0m$ [0mcd .venv/d5-glm-post && ../bin/python -m pytest --version 2>&1
+pytest 8.4.2
+[0m
+[0m$ [0mecho "=== POST (d5-glm-post) ==="; cd .venv/d5-glm-post && echo "activate: Reason line:"; grep -c "Reason:" ontos/commands/activate.py 2>&1; echo "config: InvalidRequiredVersionError:"; grep -c "InvalidRequiredVersionError" ontos/core/config.py 2>&1; echo "rename: _ID_PATTERN removed:"; grep -c "_ID_PATTERN" ontos/commands/rename.py 2>&1; echo "rename: validate_rename_ids:"; grep -c "validate_rename_ids" ontos/commands/rename.py 2>&1; echo "mcp: validate_rename_ids:"; grep -c "validate_rename_ids" ontos/mcp/rename_tool.py 2>&1; echo "validator: ControlPlaneInputError:"; grep -c "ControlPlaneInputError" <redacted:secret> 2>&1; echo "validator: CONTROL_PLANE_OWNER:"; grep -c "CONTROL_PLANE_OWNER" <redacted:secret> 2>&1
+=== POST (d5-glm-post) ===
+activate: Reason line:
+1
+config: InvalidRequiredVersionError:
+2
+rename: _ID_PATTERN removed:
+0
+rename: validate_rename_ids:
+4
+mcp: validate_rename_ids:
+2
+validator: ControlPlaneInputError:
+4
+validator: CONTROL_PLANE_OWNER:
+2
+[0m
+[0m$ [0mecho "=== PRE (d5-glm-pre) ==="; cd .venv/d5-glm-pre && echo "activate: Reason line:"; grep -c "Reason:" ontos/commands/activate.py 2>&1; echo "config: InvalidRequiredVersionError:"; grep -c "InvalidRequiredVersionError" ontos/core/config.py 2>&1; echo "rename: _ID_PATTERN present:"; grep -c "_ID_PATTERN" ontos/commands/rename.py 2>&1; echo "rename: validate_rename_ids:"; grep -c "validate_rename_ids" ontos/commands/rename.py 2>&1; echo "mcp: validate_rename_ids:"; grep -c "validate_rename_ids" ontos/mcp/rename_tool.py 2>&1; echo "validator: ControlPlaneInputError:"; grep -c "ControlPlaneInputError" <redacted:secret> 2>&1; echo "validator: CONTROL_PLANE_OWNER:"; grep -c "CONTROL_PLANE_OWNER" <redacted:secret> 2>&1
+=== PRE (d5-glm-pre) ===
+activate: Reason line:
+0
+config: InvalidRequiredVersionError:
+0
+rename: _ID_PATTERN present:
+3
+rename: validate_rename_ids:
+0
+mcp: validate_rename_ids:
+0
+validator: ControlPlaneInputError:
+0
+validator: CONTROL_PLANE_OWNER:
+0
+[0m
+[0m$ [0mcd .venv/d5-glm-post && ../bin/python -B -m pytest tests/commands/test_agentic_activation_resilience.py -k 'human_renders_incompatible or human_renders_malformed or json_renders_malformed' --cache-clear -v 2>&1
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0 -- /<redacted:secret>
+cachedir: .pytest_cache
+rootdir: /<redacted:secret>
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.14.1
+collecting ... collected 11 items / 7 deselected / 4 selected
+
+tests/commands/test_agentic_activation_resilience.py::test_activate_human_renders_incompatible_version_reason_once PASSED [ 25%]
+tests/commands/test_agentic_activation_resilience.py::test_activate_human_renders_malformed_range_contract_once PASSED [ 50%]
+tests/commands/test_agentic_activation_resilience.py::test_activate_json_renders_malformed_range_contract_once[not-a-range-not-a-range] PASSED [ 75%]
+tests/commands/test_agentic_activation_resilience.py::test_activate_json_renders_malformed_range_contract_once[>=4.7.0, not-a-range, <5.0.0-not-a-range] PASSED [100%]
+
+======================= 4 passed, 7 deselected in 0.38s ========================
+[0m
+[0m$ [0mcd .venv/d5-glm-pre && ../bin/python -B -m pytest tests/commands/test_agentic_activation_resilience.py -k 'human_renders_incompatible or human_renders_malformed or json_renders_malformed' --cache-clear -v 2>&1; echo "EXIT=$?"
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0 -- /<redacted:secret>
+cachedir: .pytest_cache
+rootdir: /<redacted:secret>
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.14.1
+collecting ... collected 11 items / 7 deselected / 4 selected
+
+tests/commands/test_agentic_activation_resilience.py::test_activate_human_renders_incompatible_version_reason_once FAILED [ 25%]
+tests/commands/test_agentic_activation_resilience.py::test_activate_human_renders_malformed_range_contract_once FAILED [ 50%]
+tests/commands/test_agentic_activation_resilience.py::test_activate_json_renders_malformed_range_contract_once[not-a-range-not-a-range] FAILED [ 75%]
+tests/commands/test_agentic_activation_resilience.py::test_activate_json_renders_malformed_range_contract_once[>=4.7.0, not-a-range, <5.0.0-not-a-range] FAILED [100%]
+
+=================================== FAILURES ===================================
+_________ test_activate_human_renders_incompatible_version_reason_once _________
+tests/commands/test_agentic_activation_resilience.py:117: in test_activate_human_renders_incompatible_version_reason_once
+    assert len(reason_lines) == 1
+E   assert 0 == 1
+E    +  where 0 = len([])
+__________ test_activate_human_renders_malformed_range_contract_once ___________
+tests/commands/test_agentic_activation_resilience.py:133: in test_activate_human_renders_malformed_range_contract_once
+    assert len(reason_lines) == 1
+E   assert 0 == 1
+E    +  where 0 = len([])
+_ test_activate_json_renders_malformed_range_contract_once[not-a-range-not-a-range] _
+tests/commands/test_agentic_activation_resilience.py:162: in test_activate_json_renders_malformed_range_contract_once
+    assert reason.startswith("Invalid [ontos].required_version:")
+E   assert False
+E    +  where False = <built-in method startswith of str object at 0x109de5230>('Invalid [ontos].required_version:')
+E    +    where <built-in method startswith of str object at 0x109de5230> = "Config error: version clause 'not-a-range' is not a valid semantic version".startswith
+_ test_activate_json_renders_malformed_range_contract_once[>=4.7.0, not-a-range, <5.0.0-not-a-range] _
+tests/commands/test_agentic_activation_resilience.py:162: in test_activate_json_renders_malformed_range_contract_once
+    assert reason.startswith("Invalid [ontos].required_version:")
+E   assert False
+E    +  where False = <built-in method startswith of str object at 0x109de7030>('Invalid [ontos].required_version:')
+E    +    where <built-in method startswith of str object at 0x109de7030> = "Config error: version clause 'not-a-range' is not a valid semantic version".startswith
+=========================== short test summary info ============================
+FAILED tests/commands/test_agentic_activation_resilience.py::test_activate_human_renders_incompatible_version_reason_once - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/commands/test_agentic_activation_resilience.py::test_activate_human_renders_malformed_range_contract_once - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/commands/test_agentic_activation_resilience.py::test_activate_json_renders_malformed_range_contract_once[not-a-range-not-a-range] - assert False
+ +  where False = <built-in method startswith of str object at 0x109de5230>('Invalid [ontos].required_version:')
+ +    where <built-in method startswith of str object at 0x109de5230> = "Config error: version clause 'not-a-range' is not a valid semantic version".startswith
+FAILED tests/commands/test_agentic_activation_resilience.py::test_activate_json_renders_malformed_range_contract_once[>=4.7.0, not-a-range, <5.0.0-not-a-range] - assert False
+ +  where False = <built-in method startswith of str object at 0x109de7030>('Invalid [ontos].required_version:')
+ +    where <built-in method startswith of str object at 0x109de7030> = "Config error: version clause 'not-a-range' is not a valid semantic version".startswith
+======================= 4 failed, 7 deselected in 0.39s ========================
+EXIT=1
+[0m
+[0m$ [0mcd .venv/d5-glm-post && ../bin/python -B -m pytest tests/test_audit_remediation_registry_validator.py -k 'issue_158_control_plane or control_plane_finding_id_and_issue_158 or duplicate_lease_lists or malformed_registry_yaml or malformed_child_manifest_yaml' --cache-clear -v 2>&1
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0 -- /<redacted:secret>
+cachedir: .pytest_cache
+rootdir: /<redacted:secret>
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.14.1
+collecting ... collected 205 items / 197 deselected / 8 selected
+
+tests/test_audit_remediation_registry_validator.py::<redacted:secret>[root_program-project-ontos-audit-remediation-wrong-owner-root_program mismatch for issue #158] PASSED [ 12%]
+tests/test_audit_remediation_registry_validator.py::<redacted:secret>[allowed_paths-replacement1-finding scope exceeds owner #158] PASSED [ 25%]
+tests/test_audit_remediation_registry_validator.py::test_control_plane_finding_id_and_issue_158_are_reserved_as_a_pair[157-158] PASSED [ 37%]
+tests/test_audit_remediation_registry_validator.py::test_duplicate_lease_lists_fail_even_when_o5_is_synchronized[programs-duplicate_values0-| `docs/logs/` | #146, #147, #147 | #146 \u2192 #147 | ordered |] PASSED [ 50%]
+tests/test_audit_remediation_registry_validator.py::test_duplicate_lease_lists_fail_even_when_o5_is_synchronized[order-duplicate_values1-| `docs/logs/` | #146, #147 | #146 \u2192 #147 \u2192 #147 | ordered |] PASSED [ 62%]
+tests/test_audit_remediation_registry_validator.py::test_malformed_registry_yaml_returns_exit_one_never_two PASSED [ 75%]
+tests/test_audit_remediation_registry_validator.py::test_malformed_child_manifest_yaml_returns_exit_one_never_two[146] PASSED [ 87%]
+tests/test_audit_remediation_registry_validator.py::test_malformed_child_manifest_yaml_returns_exit_one_never_two[147] PASSED [100%]
+
+====================== 8 passed, 197 deselected in 0.95s =======================
+[0m
+[0m$ [0mcd .venv/d5-glm-pre && ../bin/python -B -m pytest tests/test_audit_remediation_registry_validator.py -k 'issue_158_control_plane or control_plane_finding_id_and_issue_158 or duplicate_lease_lists or malformed_registry_yaml or malformed_child_manifest_yaml' --cache-clear -v 2>&1; echo "EXIT=$?"
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0 -- /<redacted:secret>
+cachedir: .pytest_cache
+rootdir: /<redacted:secret>
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.14.1
+collecting ... collected 205 items / 197 deselected / 8 selected
+
+tests/test_audit_remediation_registry_validator.py::<redacted:secret>[root_program-project-ontos-audit-remediation-wrong-owner-root_program mismatch for issue #158] FAILED [ 12%]
+tests/test_audit_remediation_registry_validator.py::<redacted:secret>[allowed_paths-replacement1-finding scope exceeds owner #158] FAILED [ 25%]
+tests/test_audit_remediation_registry_validator.py::test_control_plane_finding_id_and_issue_158_are_reserved_as_a_pair[157-158] FAILED [ 37%]
+tests/test_audit_remediation_registry_validator.py::test_duplicate_lease_lists_fail_even_when_o5_is_synchronized[programs-duplicate_values0-| `docs/logs/` | #146, #147, #147 | #146 \u2192 #147 | ordered |] FAILED [ 50%]
+tests/test_audit_remediation_registry_validator.py::test_duplicate_lease_lists_fail_even_when_o5_is_synchronized[order-duplicate_values1-| `docs/logs/` | #146, #147 | #146 \u2192 #147 \u2192 #147 | ordered |] FAILED [ 62%]
+tests/test_audit_remediation_registry_validator.py::test_malformed_registry_yaml_returns_exit_one_never_two FAILED [ 75%]
+tests/test_audit_remediation_registry_validator.py::test_malformed_child_manifest_yaml_returns_exit_one_never_two[146] FAILED [ 87%]
+tests/test_audit_remediation_registry_validator.py::test_malformed_child_manifest_yaml_returns_exit_one_never_two[147] FAILED [100%]
+
+=================================== FAILURES ===================================
+_ <redacted:secret>[root_program-project-ontos-audit-remediation-wrong-owner-root_program mismatch for issue #158] _
+tests/test_audit_remediation_registry_validator.py:547: in <redacted:secret>
+    assert expected_fragment in captured.err
+E   AssertionError: assert 'root_program mismatch for issue #158' in 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n'
+E    +  where 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n' = CaptureResult(out='', err='audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n').err
+_ <redacted:secret>[allowed_paths-replacement1-finding scope exceeds owner #158] _
+tests/test_audit_remediation_registry_validator.py:547: in <redacted:secret>
+    assert expected_fragment in captured.err
+E   AssertionError: assert 'finding scope exceeds owner #158' in 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n'
+E    +  where 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n' = CaptureResult(out='', err='audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n').err
+_ test_control_plane_finding_id_and_issue_158_are_reserved_as_a_pair[157-158] __
+tests/test_audit_remediation_registry_validator.py:589: in test_control_plane_finding_id_and_issue_158_are_reserved_as_a_pair
+    assert "R2-control-plane-parity-1 must be assigned to issue #158" in captured.err
+E   assert 'R2-control-plane-parity-1 must be assigned to issue #158' in "audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- GitHub issue finding-count snapshot mismatch: registry={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 1, 158: 1}, snapshot={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 2}\n- finding release distribution mismatch: observed={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.7.1'): 1, (157, 'v4.9.0'): 1, (158, 'v4.9.0'): 1}, expected={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.9.0'): 2, (158, 'v4.7.1'): 1}\n- R2-control-plane-parity-1 root_program mismatch for issue #157: finding='project-ontos-audit-remediation-2026-07', program='project-ontos-audit-graph-traversal'\n- R2-control-plane-parity-1 finding scope exceeds program #157: ['<redacted:secret>', '<redacted:secret>', 'docs/trackers/project-ontos-audit-remediation-release-line.md', '<redacted:secret>-*.md', '<redacted:secret>', 'tests/test_audit_remediation_registry_validator.py']\n- issue #158 max severity mismatch: registry rows=P2, program=None\n- O4 row #157 differs from registry authority: observed=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_verification_pending=2'), expected=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_parity_verified=1; implemented_committed_verification_pending=1')\n"
+E    +  where "audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- GitHub issue finding-count snapshot mismatch: registry={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 1, 158: 1}, snapshot={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 2}\n- finding release distribution mismatch: observed={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.7.1'): 1, (157, 'v4.9.0'): 1, (158, 'v4.9.0'): 1}, expected={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.9.0'): 2, (158, 'v4.7.1'): 1}\n- R2-control-plane-parity-1 root_program mismatch for issue #157: finding='project-ontos-audit-remediation-2026-07', program='project-ontos-audit-graph-traversal'\n- R2-control-plane-parity-1 finding scope exceeds program #157: ['<redacted:secret>', '<redacted:secret>', 'docs/trackers/project-ontos-audit-remediation-release-line.md', '<redacted:secret>-*.md', '<redacted:secret>', 'tests/test_audit_remediation_registry_validator.py']\n- issue #158 max severity mismatch: registry rows=P2, program=None\n- O4 row #157 differs from registry authority: observed=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_verification_pending=2'), expected=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_parity_verified=1; implemented_committed_verification_pending=1')\n" = CaptureResult(out='', err="audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- GitHub issue finding-count snapshot mismatch: registry={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 1, 158: 1}, snapshot={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 2}\n- finding release distribution mismatch: observed={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.7.1'): 1, (157, 'v4.9.0'): 1, (158, 'v4.9.0'): 1}, expected={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.9.0'): 2, (158, 'v4.7.1'): 1}\n- R2-control-plane-parity-1 root_program mismatch for issue #157: finding='project-ontos-audit-remediation-2026-07', program='project-ontos-audit-graph-traversal'\n- R2-control-plane-parity-1 finding scope exceeds program #157: ['<redacted:secret>', '<redacted:secret>', 'docs/trackers/project-ontos-audit-remediation-release-line.md', '<redacted:secret>-*.md', '<redacted:secret>', 'tests/test_audit_remediation_registry_validator.py']\n- issue #158 max severity mismatch: registry rows=P2, program=None\n- O4 row #157 differs from registry authority: observed=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_verification_pending=2'), expected=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_parity_verified=1; implemented_committed_verification_pending=1')\n").err
+_ test_duplicate_lease_lists_fail_even_when_o5_is_synchronized[programs-duplicate_values0-| `docs/logs/` | #146, #147, #147 | #146 \u2192 #147 | ordered |] _
+tests/test_audit_remediation_registry_validator.py:769: in test_duplicate_lease_lists_fail_even_when_o5_is_synchronized
+    assert f"shared_path_leases row 0 has duplicate {field}" in captured.err
+E   AssertionError: assert 'shared_path_leases row 0 has duplicate programs' in 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n'
+E    +  where 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n' = CaptureResult(out='', err='audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n').err
+_ test_duplicate_lease_lists_fail_even_when_o5_is_synchronized[order-duplicate_values1-| `docs/logs/` | #146, #147 | #146 \u2192 #147 \u2192 #147 | ordered |] _
+tests/test_audit_remediation_registry_validator.py:769: in test_duplicate_lease_lists_fail_even_when_o5_is_synchronized
+    assert f"shared_path_leases row 0 has duplicate {field}" in captured.err
+E   AssertionError: assert 'shared_path_leases row 0 has duplicate order' in 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- lease order does not enumerate each program once for docs/logs/\n'
+E    +  where 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- lease order does not enumerate each program once for docs/logs/\n' = CaptureResult(out='', err='audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- lease order does not enumerate each program once for docs/logs/\n').err
+___________ test_malformed_registry_yaml_returns_exit_one_never_two ____________
+tests/test_audit_remediation_registry_validator.py:932: in test_malformed_registry_yaml_returns_exit_one_never_two
+    assert exit_code == 1
+E   assert 2 == 1
+______ test_malformed_child_manifest_yaml_returns_exit_one_never_two[146] ______
+tests/test_audit_remediation_registry_validator.py:957: in test_malformed_child_manifest_yaml_returns_exit_one_never_two
+    assert exit_code == 1
+E   assert 2 == 1
+______ test_malformed_child_manifest_yaml_returns_exit_one_never_two[147] ______
+tests/test_audit_remediation_registry_validator.py:957: in test_malformed_child_manifest_yaml_returns_exit_one_never_two
+    assert exit_code == 1
+E   assert 2 == 1
+=========================== short test summary info ============================
+FAILED tests/test_audit_remediation_registry_validator.py::<redacted:secret>[root_program-project-ontos-audit-remediation-wrong-owner-root_program mismatch for issue #158] - AssertionError: assert 'root_program mismatch for issue #158' in 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n'
+ +  where 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n' = CaptureResult(out='', err='audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n').err
+FAILED tests/test_audit_remediation_registry_validator.py::<redacted:secret>[allowed_paths-replacement1-finding scope exceeds owner #158] - AssertionError: assert 'finding scope exceeds owner #158' in 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n'
+ +  where 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n' = CaptureResult(out='', err='audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n').err
+FAILED tests/test_audit_remediation_registry_validator.py::test_control_plane_finding_id_and_issue_158_are_reserved_as_a_pair[157-158] - assert 'R2-control-plane-parity-1 must be assigned to issue #158' in "audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- GitHub issue finding-count snapshot mismatch: registry={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 1, 158: 1}, snapshot={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 2}\n- finding release distribution mismatch: observed={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.7.1'): 1, (157, 'v4.9.0'): 1, (158, 'v4.9.0'): 1}, expected={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.9.0'): 2, (158, 'v4.7.1'): 1}\n- R2-control-plane-parity-1 root_program mismatch for issue #157: finding='project-ontos-audit-remediation-2026-07', program='project-ontos-audit-graph-traversal'\n- R2-control-plane-parity-1 finding scope exceeds program #157: ['<redacted:secret>', '<redacted:secret>', 'docs/trackers/project-ontos-audit-remediation-release-line.md', '<redacted:secret>-*.md', '<redacted:secret>', 'tests/test_audit_remediation_registry_validator.py']\n- issue #158 max severity mismatch: registry rows=P2, program=None\n- O4 row #157 differs from registry authority: observed=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_verification_pending=2'), expected=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_parity_verified=1; implemented_committed_verification_pending=1')\n"
+ +  where "audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- GitHub issue finding-count snapshot mismatch: registry={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 1, 158: 1}, snapshot={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 2}\n- finding release distribution mismatch: observed={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.7.1'): 1, (157, 'v4.9.0'): 1, (158, 'v4.9.0'): 1}, expected={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.9.0'): 2, (158, 'v4.7.1'): 1}\n- R2-control-plane-parity-1 root_program mismatch for issue #157: finding='project-ontos-audit-remediation-2026-07', program='project-ontos-audit-graph-traversal'\n- R2-control-plane-parity-1 finding scope exceeds program #157: ['<redacted:secret>', '<redacted:secret>', 'docs/trackers/project-ontos-audit-remediation-release-line.md', '<redacted:secret>-*.md', '<redacted:secret>', 'tests/test_audit_remediation_registry_validator.py']\n- issue #158 max severity mismatch: registry rows=P2, program=None\n- O4 row #157 differs from registry authority: observed=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_verification_pending=2'), expected=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_parity_verified=1; implemented_committed_verification_pending=1')\n" = CaptureResult(out='', err="audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- GitHub issue finding-count snapshot mismatch: registry={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 1, 158: 1}, snapshot={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 2}\n- finding release distribution mismatch: observed={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.7.1'): 1, (157, 'v4.9.0'): 1, (158, 'v4.9.0'): 1}, expected={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.9.0'): 2, (158, 'v4.7.1'): 1}\n- R2-control-plane-parity-1 root_program mismatch for issue #157: finding='project-ontos-audit-remediation-2026-07', program='project-ontos-audit-graph-traversal'\n- R2-control-plane-parity-1 finding scope exceeds program #157: ['<redacted:secret>', '<redacted:secret>', 'docs/trackers/project-ontos-audit-remediation-release-line.md', '<redacted:secret>-*.md', '<redacted:secret>', 'tests/test_audit_remediation_registry_validator.py']\n- issue #158 max severity mismatch: registry rows=P2, program=None\n- O4 row #157 differs from registry authority: observed=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_verification_pending=2'), expected=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_parity_verified=1; implemented_committed_verification_pending=1')\n").err
+FAILED tests/test_audit_remediation_registry_validator.py::test_duplicate_lease_lists_fail_even_when_o5_is_synchronized[programs-duplicate_values0-| `docs/logs/` | #146, #147, #147 | #146 \u2192 #147 | ordered |] - AssertionError: assert 'shared_path_leases row 0 has duplicate programs' in 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n'
+ +  where 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n' = CaptureResult(out='', err='audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n').err
+FAILED tests/test_audit_remediation_registry_validator.py::test_duplicate_lease_lists_fail_even_when_o5_is_synchronized[order-duplicate_values1-| `docs/logs/` | #146, #147 | #146 \u2192 #147 \u2192 #147 | ordered |] - AssertionError: assert 'shared_path_leases row 0 has duplicate order' in 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- lease order does not enumerate each program once for docs/logs/\n'
+ +  where 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- lease order does not enumerate each program once for docs/logs/\n' = CaptureResult(out='', err='audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- lease order does not enumerate each program once for docs/logs/\n').err
+FAILED tests/test_audit_remediation_registry_validator.py::test_malformed_registry_yaml_returns_exit_one_never_two - assert 2 == 1
+FAILED tests/test_audit_remediation_registry_validator.py::test_malformed_child_manifest_yaml_returns_exit_one_never_two[146] - assert 2 == 1
+FAILED tests/test_audit_remediation_registry_validator.py::test_malformed_child_manifest_yaml_returns_exit_one_never_two[147] - assert 2 == 1
+====================== 8 failed, 197 deselected in 1.10s =======================
+EXIT=1
+[0m
+[0m$ [0mcd .venv/d5-glm-post && ../bin/python -B -m pytest tests/commands/test_rename.py tests/mcp/test_rename_document.py -k 'rename_invalid_ids_use_canonical or rename_invalid_id_is_rejected_before_project_discovery or build_rename_plan_uses_canonical or rename_document_invalid_ids_use_canonical or rejects_invalid_id_before_preflight' --cache-clear -v 2>&1
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0 -- /<redacted:secret>
+cachedir: .pytest_cache
+rootdir: /<redacted:secret>
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.14.1
+collecting ... collected 75 items / 51 deselected / 24 selected
+
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_human_usage_error[bad old!-new_id-bad old!] PASSED [  4%]
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_human_usage_error[old_id-bad new!-bad new!] PASSED [  8%]
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_human_usage_error[bad same!-bad same!-bad same!] PASSED [ 12%]
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[bad old!-new_id-bad old!] PASSED [ 16%]
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[old_id-bad new!-bad new!] PASSED [ 20%]
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[bad same!-bad same!-bad same!] PASSED [ 25%]
+tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[bad old!-new_id-bad old!] PASSED [ 29%]
+tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[old_id-bad new!-bad new!] PASSED [ 33%]
+tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[bad same!-bad same!-bad same!] PASSED [ 37%]
+tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[   -new_id-   ] PASSED [ 41%]
+tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[old_id-   -   ] PASSED [ 45%]
+tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[bad old!-new_id-invalid_old_id-bad old!] PASSED [ 50%]
+tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[old_id-bad new!-invalid_new_id-bad new!] PASSED [ 54%]
+tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[bad same!-bad same!-invalid_old_id-bad same!] PASSED [ 58%]
+tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[bad old!-renamed-bad old!] PASSED [ 62%]
+tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[kernel_doc-bad new!-bad new!] PASSED [ 66%]
+tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[bad same!-bad same!-bad same!] PASSED [ 70%]
+tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[   -renamed-   ] PASSED [ 75%]
+tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[kernel_doc-   -   ] PASSED [ 79%]
+tests/mcp/test_rename_document.py::<redacted:secret>[bad old!-new_id-bad old!] PASSED [ 83%]
+tests/mcp/test_rename_document.py::<redacted:secret>[old_id-bad new!-bad new!] PASSED [ 87%]
+tests/mcp/test_rename_document.py::<redacted:secret>[bad same!-bad same!-bad same!] PASSED [ 91%]
+tests/mcp/test_rename_document.py::<redacted:secret>[   -new_id-   ] PASSED [ 95%]
+tests/mcp/test_rename_document.py::<redacted:secret>[old_id-   -   ] PASSED [100%]
+
+====================== 24 passed, 51 deselected in 1.45s =======================
+[0m
+[0m$ [0mcd .venv/d5-glm-pre && ../bin/python -B -m pytest tests/commands/test_rename.py tests/mcp/test_rename_document.py -k 'rename_invalid_ids_use_canonical or rename_invalid_id_is_rejected_before_project_discovery or build_rename_plan_uses_canonical or rename_document_invalid_ids_use_canonical or rejects_invalid_id_before_preflight' --cache-clear -v 2>&1; echo "EXIT=$?"
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0 -- /<redacted:secret>
+cachedir: .pytest_cache
+rootdir: /<redacted:secret>
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.14.1
+collecting ... collected 75 items / 51 deselected / 24 selected
+
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_human_usage_error[bad old!-new_id-bad old!] FAILED [  4%]
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_human_usage_error[old_id-bad new!-bad new!] FAILED [  8%]
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_human_usage_error[bad same!-bad same!-bad same!] FAILED [ 12%]
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[bad old!-new_id-bad old!] FAILED [ 16%]
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[old_id-bad new!-bad new!] FAILED [ 20%]
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[bad same!-bad same!-bad same!] FAILED [ 25%]
+tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[bad old!-new_id-bad old!] FAILED [ 29%]
+tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[old_id-bad new!-bad new!] FAILED [ 33%]
+tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[bad same!-bad same!-bad same!] FAILED [ 37%]
+tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[   -new_id-   ] FAILED [ 41%]
+tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[old_id-   -   ] FAILED [ 45%]
+tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[bad old!-new_id-invalid_old_id-bad old!] FAILED [ 50%]
+tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[old_id-bad new!-invalid_new_id-bad new!] FAILED [ 54%]
+tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[bad same!-bad same!-invalid_old_id-bad same!] FAILED [ 58%]
+tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[bad old!-renamed-bad old!] FAILED [ 62%]
+tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[kernel_doc-bad new!-bad new!] FAILED [ 66%]
+tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[bad same!-bad same!-bad same!] FAILED [ 70%]
+tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[   -renamed-   ] FAILED [ 75%]
+tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[kernel_doc-   -   ] FAILED [ 79%]
+tests/mcp/test_rename_document.py::<redacted:secret>[bad old!-new_id-bad old!] FAILED [ 83%]
+tests/mcp/test_rename_document.py::<redacted:secret>[old_id-bad new!-bad new!] FAILED [ 87%]
+tests/mcp/test_rename_document.py::<redacted:secret>[bad same!-bad same!-bad same!] FAILED [ 91%]
+tests/mcp/test_rename_document.py::<redacted:secret>[   -new_id-   ] FAILED [ 95%]
+tests/mcp/test_rename_document.py::<redacted:secret>[old_id-   -   ] FAILED [100%]
+
+=================================== FAILURES ===================================
+_ test_rename_invalid_ids_use_canonical_human_usage_error[bad old!-new_id-bad old!] _
+tests/commands/test_rename.py:121: in test_rename_invalid_ids_use_canonical_human_usage_error
+    assert result.returncode == 2
+E   assert 1 == 2
+E    +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', 'rename', 'bad old!', 'new_id'], returncode=1, stdout="Error [old_id_not_found]: old_id 'bad old!' must exist exactly once as an explicit frontmatter id. Found 0.\n", stderr='').returncode
+_ test_rename_invalid_ids_use_canonical_human_usage_error[old_id-bad new!-bad new!] _
+tests/commands/test_rename.py:121: in test_rename_invalid_ids_use_canonical_human_usage_error
+    assert result.returncode == 2
+E   AssertionError: assert 1 == 2
+E    +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', 'rename', 'old_id', 'bad new!'], returncode=1, stdout='Error [invalid_new_id]: new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$\n', stderr='').returncode
+_ test_rename_invalid_ids_use_canonical_human_usage_error[bad same!-bad same!-bad same!] _
+tests/commands/test_rename.py:121: in test_rename_invalid_ids_use_canonical_human_usage_error
+    assert result.returncode == 2
+E   AssertionError: assert 0 == 2
+E    +  where 0 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', 'rename', 'bad same!', 'bad same!'], returncode=0, stdout='Rename no-op: old_id and new_id are identical (nothing_to_do).\n', stderr='').returncode
+_ test_rename_invalid_ids_use_canonical_json_usage_error[bad old!-new_id-bad old!] _
+tests/commands/test_rename.py:147: in test_rename_invalid_ids_use_canonical_json_usage_error
+    assert result.returncode == 2
+E   assert 1 == 2
+E    +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'bad old!', 'new_id'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "old_id \'bad old!\' must exist exactly once as an explicit frontmatter id. Found 0.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "bad old!", "new_id": "new_id", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "old_id_not_found"}}\n', stderr='').returncode
+_ test_rename_invalid_ids_use_canonical_json_usage_error[old_id-bad new!-bad new!] _
+tests/commands/test_rename.py:147: in test_rename_invalid_ids_use_canonical_json_usage_error
+    assert result.returncode == 2
+E   assert 1 == 2
+E    +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'old_id', 'bad new!'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "old_id", "new_id": "bad new!", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "invalid_new_id"}}\n', stderr='').returncode
+_ test_rename_invalid_ids_use_canonical_json_usage_error[bad same!-bad same!-bad same!] _
+tests/commands/test_rename.py:147: in test_rename_invalid_ids_use_canonical_json_usage_error
+    assert result.returncode == 2
+E   assert 0 == 2
+E    +  where 0 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'bad same!', 'bad same!'], returncode=0, stdout='{"schema_version": "4.0", "command": "rename", "status": "success", "exit_code": 0, "message": "nothing_to_do", "result": {"status": "clean", "kind": "diagnostic", "exit_category": "clean", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "bad same!", "new_id": "bad same!", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": []}, "warnings": [], "error": null}\n', stderr='').returncode
+_ test_rename_invalid_id_is_rejected_before_project_discovery[bad old!-new_id-bad old!] _
+tests/commands/test_rename.py:181: in test_rename_invalid_id_is_rejected_before_project_discovery
+    assert result.returncode == 2
+E   assert 1 == 2
+E    +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'bad old!', 'new_id'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "bad old!", "new_id": "new_id", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
+_ test_rename_invalid_id_is_rejected_before_project_discovery[old_id-bad new!-bad new!] _
+tests/commands/test_rename.py:181: in test_rename_invalid_id_is_rejected_before_project_discovery
+    assert result.returncode == 2
+E   assert 1 == 2
+E    +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'old_id', 'bad new!'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "old_id", "new_id": "bad new!", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
+_ test_rename_invalid_id_is_rejected_before_project_discovery[bad same!-bad same!-bad same!] _
+tests/commands/test_rename.py:181: in test_rename_invalid_id_is_rejected_before_project_discovery
+    assert result.returncode == 2
+E   assert 1 == 2
+E    +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'bad same!', 'bad same!'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "bad same!", "new_id": "bad same!", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
+_ test_rename_invalid_id_is_rejected_before_project_discovery[   -new_id-   ] __
+tests/commands/test_rename.py:181: in test_rename_invalid_id_is_rejected_before_project_discovery
+    assert result.returncode == 2
+E   assert 1 == 2
+E    +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', '   ', 'new_id'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "   ", "new_id": "new_id", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
+_ test_rename_invalid_id_is_rejected_before_project_discovery[old_id-   -   ] __
+tests/commands/test_rename.py:181: in test_rename_invalid_id_is_rejected_before_project_discovery
+    assert result.returncode == 2
+E   assert 1 == 2
+E    +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'old_id', '   '], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "old_id", "new_id": "   ", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
+_ test_build_rename_plan_uses_canonical_id_validation_before_noop[bad old!-new_id-invalid_old_id-bad old!] _
+tests/commands/test_rename.py:665: in test_build_rename_plan_uses_canonical_id_validation_before_noop
+    assert error.code == error_code
+E   AssertionError: assert 'old_id_not_found' == 'invalid_old_id'
+E     
+E     - invalid_old_id
+E     + old_id_not_found
+_ test_build_rename_plan_uses_canonical_id_validation_before_noop[old_id-bad new!-invalid_new_id-bad new!] _
+tests/commands/test_rename.py:666: in test_build_rename_plan_uses_canonical_id_validation_before_noop
+    assert error.message == str(canonical.value)
+E   assert 'new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$' == "Document id must start and end with an alphanumeric character and contain only letters, numbers, '_', '-', or '.'"
+E     
+E     - Document id must start and end with an alphanumeric character and contain only letters, numbers, '_', '-', or '.'
+E     + new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$
+_ test_build_rename_plan_uses_canonical_id_validation_before_noop[bad same!-bad same!-invalid_old_id-bad same!] _
+tests/commands/test_rename.py:663: in test_build_rename_plan_uses_canonical_id_validation_before_noop
+    assert plan is None
+E   AssertionError: assert RenamePlan(mode='dry_run', scope=<ScanScope.DOCS: 'docs'>, old_id='bad same!', new_id='bad same!', summary=RenameSummary(files_scanned=0, documents_loaded=0, planned_files=0, frontmatter_edits=0, body_edits=0, skipped_zone_sightings=0, warnings=0), files=[], warnings=[], no_op=True) is None
+_ test_rename_document_invalid_ids_use_canonical_user_error[bad old!-renamed-bad old!] _
+tests/mcp/test_rename_document.py:338: in test_rename_document_invalid_ids_use_canonical_user_error
+    assert result.structuredContent["error"]["error_code"] == "E_USER_INPUT"
+E   AssertionError: assert 'E_DOCUMENT_NOT_FOUND' == 'E_USER_INPUT'
+E     
+E     - E_USER_INPUT
+E     + E_DOCUMENT_NOT_FOUND
+_ test_rename_document_invalid_ids_use_canonical_user_error[kernel_doc-bad new!-bad new!] _
+tests/mcp/test_rename_document.py:338: in test_rename_document_invalid_ids_use_canonical_user_error
+    assert result.structuredContent["error"]["error_code"] == "E_USER_INPUT"
+E   AssertionError: assert 'E_INVALID_ID' == 'E_USER_INPUT'
+E     
+E     - E_USER_INPUT
+E     + E_INVALID_ID
+_ test_rename_document_invalid_ids_use_canonical_user_error[bad same!-bad same!-bad same!] _
+tests/mcp/test_rename_document.py:337: in test_rename_document_invalid_ids_use_canonical_user_error
+    assert result.isError is True
+E   assert False is True
+E    +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{"success": true, "old_id": "bad same!", "new_id": "bad same!", "path": "", "references_updated": 0, "updated_files": []}', annotations=None, meta=None)], structuredContent={'success': True, 'old_id': 'bad same!', 'new_id': 'bad same!', 'path': '', 'references_updated': 0, 'updated_files': []}, isError=False).isError
+__ test_rename_document_invalid_ids_use_canonical_user_error[   -renamed-   ] __
+tests/mcp/test_rename_document.py:338: in test_rename_document_invalid_ids_use_canonical_user_error
+    assert result.structuredContent["error"]["error_code"] == "E_USER_INPUT"
+E   AssertionError: assert 'E_INVALID_DOCUMENT_ID' == 'E_USER_INPUT'
+E     
+E     - E_USER_INPUT
+E     + E_INVALID_DOCUMENT_ID
+_ test_rename_document_invalid_ids_use_canonical_user_error[kernel_doc-   -   ] _
+tests/mcp/test_rename_document.py:338: in test_rename_document_invalid_ids_use_canonical_user_error
+    assert result.structuredContent["error"]["error_code"] == "E_USER_INPUT"
+E   AssertionError: assert 'E_INVALID_ID' == 'E_USER_INPUT'
+E     
+E     - E_USER_INPUT
+E     + E_INVALID_ID
+_ <redacted:secret>[bad old!-new_id-bad old!] _
+tests/mcp/test_rename_document.py:382: in <redacted:secret>
+    result = rename_tool.rename_document(
+ontos/mcp/rename_tool.py:358: in rename_document
+    plan = _preflight(cache, portfolio_index, workspace_id, read_only)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/mcp/test_rename_document.py:376: in unexpected_preflight
+    raise AssertionError("preflight must not run for invalid IDs")
+E   AssertionError: preflight must not run for invalid IDs
+_ <redacted:secret>[old_id-bad new!-bad new!] _
+tests/mcp/test_rename_document.py:382: in <redacted:secret>
+    result = rename_tool.rename_document(
+ontos/mcp/rename_tool.py:358: in rename_document
+    plan = _preflight(cache, portfolio_index, workspace_id, read_only)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/mcp/test_rename_document.py:376: in unexpected_preflight
+    raise AssertionError("preflight must not run for invalid IDs")
+E   AssertionError: preflight must not run for invalid IDs
+_ <redacted:secret>[bad same!-bad same!-bad same!] _
+tests/mcp/test_rename_document.py:382: in <redacted:secret>
+    result = rename_tool.rename_document(
+ontos/mcp/rename_tool.py:358: in rename_document
+    plan = _preflight(cache, portfolio_index, workspace_id, read_only)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/mcp/test_rename_document.py:376: in unexpected_preflight
+    raise AssertionError("preflight must not run for invalid IDs")
+E   AssertionError: preflight must not run for invalid IDs
+___ <redacted:secret>[   -new_id-   ] ___
+tests/mcp/test_rename_document.py:382: in <redacted:secret>
+    result = rename_tool.rename_document(
+ontos/mcp/rename_tool.py:358: in rename_document
+    plan = _preflight(cache, portfolio_index, workspace_id, read_only)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/mcp/test_rename_document.py:376: in unexpected_preflight
+    raise AssertionError("preflight must not run for invalid IDs")
+E   AssertionError: preflight must not run for invalid IDs
+___ <redacted:secret>[old_id-   -   ] ___
+tests/mcp/test_rename_document.py:382: in <redacted:secret>
+    result = rename_tool.rename_document(
+ontos/mcp/rename_tool.py:358: in rename_document
+    plan = _preflight(cache, portfolio_index, workspace_id, read_only)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/mcp/test_rename_document.py:376: in unexpected_preflight
+    raise AssertionError("preflight must not run for invalid IDs")
+E   AssertionError: preflight must not run for invalid IDs
+=========================== short test summary info ============================
+FAILED tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_human_usage_error[bad old!-new_id-bad old!] - assert 1 == 2
+ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', 'rename', 'bad old!', 'new_id'], returncode=1, stdout="Error [old_id_not_found]: old_id 'bad old!' must exist exactly once as an explicit frontmatter id. Found 0.\n", stderr='').returncode
+FAILED tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_human_usage_error[old_id-bad new!-bad new!] - AssertionError: assert 1 == 2
+ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', 'rename', 'old_id', 'bad new!'], returncode=1, stdout='Error [invalid_new_id]: new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$\n', stderr='').returncode
+FAILED tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_human_usage_error[bad same!-bad same!-bad same!] - AssertionError: assert 0 == 2
+ +  where 0 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', 'rename', 'bad same!', 'bad same!'], returncode=0, stdout='Rename no-op: old_id and new_id are identical (nothing_to_do).\n', stderr='').returncode
+FAILED tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[bad old!-new_id-bad old!] - assert 1 == 2
+ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'bad old!', 'new_id'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "old_id \'bad old!\' must exist exactly once as an explicit frontmatter id. Found 0.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "bad old!", "new_id": "new_id", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "old_id_not_found"}}\n', stderr='').returncode
+FAILED tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[old_id-bad new!-bad new!] - assert 1 == 2
+ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'old_id', 'bad new!'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "old_id", "new_id": "bad new!", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "invalid_new_id"}}\n', stderr='').returncode
+FAILED tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[bad same!-bad same!-bad same!] - assert 0 == 2
+ +  where 0 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'bad same!', 'bad same!'], returncode=0, stdout='{"schema_version": "4.0", "command": "rename", "status": "success", "exit_code": 0, "message": "nothing_to_do", "result": {"status": "clean", "kind": "diagnostic", "exit_category": "clean", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "bad same!", "new_id": "bad same!", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": []}, "warnings": [], "error": null}\n', stderr='').returncode
+FAILED tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[bad old!-new_id-bad old!] - assert 1 == 2
+ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'bad old!', 'new_id'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "bad old!", "new_id": "new_id", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
+FAILED tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[old_id-bad new!-bad new!] - assert 1 == 2
+ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'old_id', 'bad new!'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "old_id", "new_id": "bad new!", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
+FAILED tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[bad same!-bad same!-bad same!] - assert 1 == 2
+ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'bad same!', 'bad same!'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "bad same!", "new_id": "bad same!", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
+FAILED tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[   -new_id-   ] - assert 1 == 2
+ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', '   ', 'new_id'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "   ", "new_id": "new_id", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
+FAILED tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[old_id-   -   ] - assert 1 == 2
+ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'old_id', '   '], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "old_id", "new_id": "   ", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
+FAILED tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[bad old!-new_id-invalid_old_id-bad old!] - AssertionError: assert 'old_id_not_found' == 'invalid_old_id'
+  
+  - invalid_old_id
+  + old_id_not_found
+FAILED tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[old_id-bad new!-invalid_new_id-bad new!] - assert 'new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$' == "Document id must start and end with an alphanumeric character and contain only letters, numbers, '_', '-', or '.'"
+  
+  - Document id must start and end with an alphanumeric character and contain only letters, numbers, '_', '-', or '.'
+  + new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$
+FAILED tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[bad same!-bad same!-invalid_old_id-bad same!] - AssertionError: assert RenamePlan(mode='dry_run', scope=<ScanScope.DOCS: 'docs'>, old_id='bad same!', new_id='bad same!', summary=RenameSummary(files_scanned=0, documents_loaded=0, planned_files=0, frontmatter_edits=0, body_edits=0, skipped_zone_sightings=0, warnings=0), files=[], warnings=[], no_op=True) is None
+FAILED tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[bad old!-renamed-bad old!] - AssertionError: assert 'E_DOCUMENT_NOT_FOUND' == 'E_USER_INPUT'
+  
+  - E_USER_INPUT
+  + E_DOCUMENT_NOT_FOUND
+FAILED tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[kernel_doc-bad new!-bad new!] - AssertionError: assert 'E_INVALID_ID' == 'E_USER_INPUT'
+  
+  - E_USER_INPUT
+  + E_INVALID_ID
+FAILED tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[bad same!-bad same!-bad same!] - assert False is True
+ +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{"success": true, "old_id": "bad same!", "new_id": "bad same!", "path": "", "references_updated": 0, "updated_files": []}', annotations=None, meta=None)], structuredContent={'success': True, 'old_id': 'bad same!', 'new_id': 'bad same!', 'path': '', 'references_updated': 0, 'updated_files': []}, isError=False).isError
+FAILED tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[   -renamed-   ] - AssertionError: assert 'E_INVALID_DOCUMENT_ID' == 'E_USER_INPUT'
+  
+  - E_USER_INPUT
+  + E_INVALID_DOCUMENT_ID
+FAILED tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[kernel_doc-   -   ] - AssertionError: assert 'E_INVALID_ID' == 'E_USER_INPUT'
+  
+  - E_USER_INPUT
+  + E_INVALID_ID
+FAILED tests/mcp/test_rename_document.py::<redacted:secret>[bad old!-new_id-bad old!] - AssertionError: preflight must not run for invalid IDs
+FAILED tests/mcp/test_rename_document.py::<redacted:secret>[old_id-bad new!-bad new!] - AssertionError: preflight must not run for invalid IDs
+FAILED tests/mcp/test_rename_document.py::<redacted:secret>[bad same!-bad same!-bad same!] - AssertionError: preflight must not run for invalid IDs
+FAILED tests/mcp/test_rename_document.py::<redacted:secret>[   -new_id-   ] - AssertionError: preflight must not run for invalid IDs
+FAILED tests/mcp/test_rename_document.py::<redacted:secret>[old_id-   -   ] - AssertionError: preflight must not run for invalid IDs
+====================== 24 failed, 51 deselected in 1.66s =======================
+EXIT=1
+[0m
+[0m$ [0mcd .venv/d5-glm-post && ../bin/python -m pytest tests/ -q -p no:cacheprovider 2>&1; echo "EXIT=$?"
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0
+rootdir: /<redacted:secret>
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.14.1
+collected 1720 items
+
+tests/commands/test_activate_json_warning_metadata.py .................. [  1%]
+....                                                                     [  1%]
+tests/commands/test_agentic_activation_resilience.py ...........         [  1%]
+tests/commands/test_agents.py ................................           [  3%]
+tests/commands/test_antigravity_mcp_docs.py .....                        [  4%]
+<redacted:secret> .                            [  4%]
+tests/commands/test_b2_promote_absolute_path.py .                        [  4%]
+tests/commands/test_consolidate_parity.py ...                            [  4%]
+tests/commands/test_consolidate_root_regression.py .......               [  4%]
+tests/commands/test_doctor_hooks.py ..........                           [  5%]
+tests/commands/test_doctor_phase4.py ................................... [  7%]
+..                                                                       [  7%]
+tests/commands/test_env.py .............                                 [  8%]
+tests/commands/test_export_all.py ..                                     [  8%]
+tests/commands/test_export_data_parity.py .......                        [  8%]
+tests/commands/test_export_phase4.py ......................              [ 10%]
+tests/commands/test_health_count_consistency.py .......                  [ 10%]
+tests/commands/test_hook_phase4.py ...........                           [ 11%]
+tests/commands/test_init_phase3.py ....................                  [ 12%]
+tests/commands/test_init_scaffold.py .........................           [ 13%]
+tests/commands/test_instruction_protocol.py ..........                   [ 14%]
+tests/commands/test_json_contract_a3.py .                                [ 14%]
+tests/commands/test_link_check.py ...............................        [ 16%]
+tests/commands/test_log.py .............                                 [ 16%]
+tests/commands/test_maintain.py ..........................               [ 18%]
+tests/commands/test_map.py ...........................                   [ 20%]
+tests/commands/test_map_obsidian.py ........                             [ 20%]
+tests/commands/test_map_resilience.py .....                              [ 20%]
+tests/commands/test_map_tier1_key_documents.py .......                   [ 21%]
+tests/commands/test_mcp_command.py ..........................            [ 22%]
+tests/commands/test_mcp_write_tool_docs.py ..                            [ 22%]
+tests/commands/test_migrate_parity.py ........                           [ 23%]
+tests/commands/test_migration_report_parity.py .....                     [ 23%]
+tests/commands/test_promote_parity.py ...                                [ 23%]
+tests/commands/test_query_parity.py ....                                 [ 23%]
+tests/commands/test_rename.py ........................................   [ 26%]
+tests/commands/test_retrofit.py ......................                   [ 27%]
+tests/commands/test_s2_yaml_warnings.py .                                [ 27%]
+tests/commands/test_scaffold_parity.py ...                               [ 27%]
+tests/commands/test_scan_scope_integration.py .......................... [ 29%]
+...                                                                      [ 29%]
+tests/commands/test_stub_parity.py .....................                 [ 30%]
+tests/commands/test_verify_parity.py ...                                 [ 30%]
+tests/commands/test_verify_portfolio.py .............                    [ 31%]
+tests/core/test_body_refs.py ........................................... [ 34%]
+.......................................................                  [ 37%]
+tests/core/test_cache.py ...                                             [ 37%]
+tests/core/test_config_phase3.py ....................................... [ 39%]
+..................                                                       [ 40%]
+tests/core/test_cursor_mcp.py .............                              [ 41%]
+tests/core/test_frontmatter_edit_pipeline.py .....                       [ 41%]
+tests/core/test_frontmatter_repair.py .....                              [ 42%]
+tests/core/test_git_safety.py ...                                        [ 42%]
+tests/core/test_graph.py .........................................       [ 44%]
+tests/core/test_legacy_config_compat.py .....                            [ 45%]
+tests/core/test_link_diagnostics.py .........................            [ 46%]
+tests/core/test_migration.py ......                                      [ 46%]
+tests/core/test_ontology.py ..                                           [ 46%]
+tests/core/test_paths_runtime_root.py ....                               [ 47%]
+tests/core/test_proposals_runtime_paths.py ....                          [ 47%]
+tests/core/test_schema.py .......................................        [ 49%]
+tests/core/test_snapshot.py ........                                     [ 50%]
+tests/core/test_warning_groups.py .................                      [ 51%]
+tests/golden/test_golden_master.py ..                                    [ 51%]
+tests/io/test_config_phase3.py ................                          [ 52%]
+tests/io/test_files_status_parsing.py .                                  [ 52%]
+tests/io/test_git_empty_diff.py ...                                      [ 52%]
+tests/io/test_load_frontmatter_contract.py .                             [ 52%]
+tests/io/test_scan_scope.py .............                                [ 53%]
+tests/io/test_toml_roundtrip.py ...                                      [ 53%]
+tests/mcp/test_activation.py ...................                         [ 54%]
+tests/mcp/test_bundler.py ................                               [ 55%]
+tests/mcp/test_cache.py ......                                           [ 55%]
+tests/mcp/test_context_bundle.py ......                                  [ 56%]
+tests/mcp/test_context_bundle_config.py .......                          [ 56%]
+tests/mcp/test_context_map.py ..                                         [ 56%]
+tests/mcp/test_error_paths.py ..........                                 [ 57%]
+tests/mcp/test_export_graph.py ..                                        [ 57%]
+tests/mcp/test_get_document.py ...                                       [ 57%]
+tests/mcp/test_health.py ..                                              [ 57%]
+tests/mcp/test_list_documents.py ..                                      [ 57%]
+tests/mcp/test_locking.py ......                                         [ 58%]
+tests/mcp/test_module_exports.py ....                                    [ 58%]
+tests/mcp/test_parity.py ..                                              [ 58%]
+tests/mcp/test_portfolio.py ............................................ [ 60%]
+.....                                                                    [ 61%]
+tests/mcp/test_portfolio_config.py ...................                   [ 62%]
+tests/mcp/test_portfolio_integration.py ..                               [ 62%]
+tests/mcp/test_project_registry.py ..                                    [ 62%]
+tests/mcp/test_query.py .                                                [ 62%]
+tests/mcp/test_read_only_registration.py .......                         [ 63%]
+tests/mcp/test_refresh.py ..                                             [ 63%]
+tests/mcp/test_rename_document.py ...................................    [ 65%]
+<redacted:secret> .                          [ 65%]
+tests/mcp/test_scanner.py .................                              [ 66%]
+tests/mcp/test_schemas.py .....                                          [ 66%]
+tests/mcp/test_search.py ........                                        [ 67%]
+tests/mcp/test_server_integration.py ........                            [ 67%]
+tests/mcp/test_server_portfolio_mode.py ...                              [ 67%]
+tests/mcp/test_stream_routing.py ...                                     [ 67%]
+tests/mcp/test_validation_helpers.py ..                                  [ 67%]
+tests/mcp/test_workspace_overview.py ..                                  [ 68%]
+tests/mcp/test_write_tools.py ..............................             [ 69%]
+tests/test_audit_remediation_registry_validator.py ..................... [ 71%]
+........................................................................ [ 75%]
+........................................................................ [ 79%]
+........................................                                 [ 81%]
+tests/test_ci_release_workflows.py ....                                  [ 81%]
+tests/test_cli.py .............................................          [ 84%]
+tests/test_cli_contract_v4.py ...........                                [ 85%]
+tests/test_cli_cwd_fix.py ..                                             [ 85%]
+tests/test_cli_phase4.py ......................                          [ 86%]
+tests/test_context_contention.py ..........                              [ 87%]
+tests/test_describes.py .............................                    [ 88%]
+tests/test_doctor_mcp_probe_regression.py .....                          [ 89%]
+<redacted:secret> ............                  [ 89%]
+tests/test_dual_mode.py ...                                              [ 90%]
+tests/test_env_cli.py .....                                              [ 90%]
+tests/test_frontmatter_parsing.py .....                                  [ 90%]
+tests/test_frontmatter_roundtrip_regression.py ...........               [ 91%]
+tests/test_frontmatter_tags.py ..                                        [ 91%]
+tests/test_immutable_history.py ...............                          [ 92%]
+tests/test_lib.py ...............                                        [ 93%]
+tests/test_map_compact.py ....................                           [ 94%]
+tests/test_map_filter.py ...                                             [ 94%]
+tests/test_release_artifact.py ...                                       [ 94%]
+tests/test_session_context.py .......................................... [ 97%]
+..........                                                               [ 97%]
+tests/test_suggestions.py ..........                                     [ 98%]
+tests/test_test_isolation.py ....                                        [ 98%]
+tests/test_validation_concepts_a1.py .....                               [ 98%]
+tests/ui/test_json_output.py .....................                       [100%]
+
+=============================== warnings summary ===============================
+tests/ui/test_json_output.py::TestConvenienceFunctions::test_emit_error
+  /<redacted:secret>:148: DeprecationWarning: emit_error() is deprecated; use emit_command_error().
+    emit_error("Failed", "E999")
+
+-- Docs: https://<redacted:secret>
+================== 1720 passed, 1 warning in 96.60s (0:01:36) ==================
+EXIT=0
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m
+[0m$ [0mgit status --short --branch 2>&1
+## codex/audit-rebaseline-remediation-lifecycle
+ M Ontos_Context_Map.md
+ M <redacted:secret>
+ D <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+[0m
+[0m$ [0mgit diff --check HEAD 2>&1; echo "EXIT=$?"
+EXIT=0
+[0m
+[0m$ [0mpython3 <redacted:secret> 2>&1; echo "EXIT=$?"
+audit-registry: PASS
+mode: local
+original findings: 91 (P0=1, P1=27, P2=63)
+original status: committed_fixed=2, code_fixed_evidence_pending=1, implemented_committed_pending=40, partial_committed_pending=7, confirmed_open=41
+revalidation findings: 9
+EXIT=0
+[0m
+[0m$ [0mgit diff --check <redacted:secret> 2>&1; echo "EXIT=$?"
+EXIT=0
+[0m
+[0m$ [0mscripts/llm-dev verify 2>&1; echo "EXIT=$?"
+llm-dev: verify requires <manifest-path>
+EXIT=1
+[0m
+[0m$ [0mbash .<redacted:secret> --manifest <redacted:secret> --base bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95 2>&1; echo "EXIT=$?"
+verify-changed-path-scope: OK (598 changed path(s) within scope)
+EXIT=0
+[0m
+[0m$ [0mpython3 <redacted:secret> --require-external-parity 2>&1; echo "EXIT=$?"
+audit-registry: PASS
+mode: local+external
+original findings: 91 (P0=1, P1=27, P2=63)
+original status: committed_fixed=2, code_fixed_evidence_pending=1, implemented_committed_pending=40, partial_committed_pending=7, confirmed_open=41
+revalidation findings: 9
+EXIT=0
+[0m
+[0m$ [0mscripts/llm-dev verify <redacted:secret> 2>&1; echo "EXIT=$?"
+verify-adopter: validating /<redacted:secret> against 4 checks
+verify-adopter: NOTE — manifest conformance only; does NOT prove
+                lifecycle execution. For strict-P3 receipt verification,
+                run: scripts/llm-dev verify-lifecycle <manifest>
+
+::: verify-schema.sh --manifest <manifest> :::
+verify-schema: validating /<redacted:secret> against /<redacted:secret>
+ok -- validation done
+verify-schema: OK (1 manifests validated)
+
+::: verify-p3.sh --manifest <manifest> :::
+verify-p3: OK — all manifests satisfy strict P3 (user-facing extension checked on 1 of 1 manifests)
+verify-p3: project-ontos-audit-rebaseline-remediation: user_facing=true -> Product seats required on B.1 + B.2 + D.2 (BOTH design rounds); run scripts/review-seats.sh /<redacted:secret> for the full seat table
+
+::: verify-gate-categories.sh --manifest <manifest> :::
+verify-gate-categories: OK (all six categories covered)
+
+::: verify-artifact-paths.sh --manifest <manifest> :::
+verify-artifact-paths: OK (canonical_verdict / family_verdict / verification / product_verdict placeholders valid across 1 manifests)
+
+-----------------------------------------------------------------
+verify-adopter: PASSED manifest-conformance (4/4 checks against /<redacted:secret>)
+                manifest-only — does NOT prove lifecycle execution.
+                Run: scripts/llm-dev verify-lifecycle <manifest> for strict-P3 proof.
+EXIT=0
+[0m
+[0m$ [0mbash .<redacted:secret> --manifest "$<redacted:secret>" 2>&1; echo "EXIT=$?"
+verify-fix-summary-regressions: OK (no D.4 fix-summary exists at <redacted:secret>)
+EXIT=0
+[0m
+[0m$ [0mbash .<redacted:secret> --help 2>&1 || bash .<redacted:secret> 2>&1; echo "EXIT=$?"
+usage: bash <redacted:secret> [--manifest <path>] [fix-summary.md ...]
+
+Validates EH-15-A Regression Coverage rows in D.4 fix summaries.
+EXIT=0
+[0m
+[0m$ [0mbash .<redacted:secret> <redacted:secret> 2>&1; echo "EXIT=$?"
+verify-fix-summary-regressions: cannot read <redacted:secret>
+EXIT=2
+[0m
+[0m$ [0mbash .<redacted:secret> "$<redacted:secret>" 2>&1; echo "EXIT=$?"
+verify-fix-summary-regressions: FAILED
+  - /<redacted:secret>: row 1 finding 'CAN-ACT-1': fixture 'tests/commands/test_agentic_activation_resilience.py' does not exist
+  - /<redacted:secret>: row 1 finding 'CAN-ACT-1': fixture 'tests/commands/test_agentic_activation_resilience.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 2 finding 'CAN-ACT-2': fixture 'tests/commands/test_agentic_activation_resilience.py' does not exist
+  - /<redacted:secret>: row 2 finding 'CAN-ACT-2': fixture 'tests/commands/test_agentic_activation_resilience.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 2 finding 'CAN-ACT-2': fixture 'tests/core/test_config_phase3.py' does not exist
+  - /<redacted:secret>: row 2 finding 'CAN-ACT-2': fixture 'tests/core/test_config_phase3.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 3 finding 'CAN-CP-1': fixture 'tests/test_audit_remediation_registry_validator.py' does not exist
+  - /<redacted:secret>: row 3 finding 'CAN-CP-1': fixture 'tests/test_audit_remediation_registry_validator.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 4 finding 'CAN-CP-2': fixture 'tests/test_audit_remediation_registry_validator.py' does not exist
+  - /<redacted:secret>: row 4 finding 'CAN-CP-2': fixture 'tests/test_audit_remediation_registry_validator.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 5 finding 'CAN-CP-3': fixture 'tests/test_audit_remediation_registry_validator.py' does not exist
+  - /<redacted:secret>: row 5 finding 'CAN-CP-3': fixture 'tests/test_audit_remediation_registry_validator.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 6 finding 'CAN-ID-1': fixture 'tests/commands/test_rename.py' does not exist
+  - /<redacted:secret>: row 6 finding 'CAN-ID-1': fixture 'tests/commands/test_rename.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 6 finding 'CAN-ID-1': fixture 'tests/mcp/test_rename_document.py' does not exist
+  - /<redacted:secret>: row 6 finding 'CAN-ID-1': fixture 'tests/mcp/test_rename_document.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+EXIT=1
+[0m
+[0m$ [0mpython3 -c "import yaml; print(len(yaml.safe_load(open('<redacted:secret>'))['findings']))" 2>&1
+100
+[0m
+[0m$ [0mgit cat-file -e b6f89d77e7fb684b8bd9a181a24c773d5777397a^{commit} 2>&1; echo "I0_EXIT=$?"; git cat-file -e 05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0^{commit} 2>&1; echo "I1_EXIT=$?"; git cat-file -e 311b60b6e86abe6d0b5a7ac61e16d07049387707^{commit} 2>&1; echo "I2_EXIT=$?"; test ! -e docs/specs/project-ontos-rationale-capture-template-proposal.md && test ! -e docs/zeta.md; echo "FORBIDDEN_ABSENT_EXIT=$?"
+I0_EXIT=0
+I1_EXIT=0
+I2_EXIT=0
+FORBIDDEN_ABSENT_EXIT=0
+[0m
+[0m$ [0mgit log --oneline -10 HEAD 2>&1; echo "---"; git cat-file -e 737fe27^{commit} 2>&1; echo "SCOPE_RECOVERY_EXIT=$?"; echo "---"; git log --oneline 311b60b..HEAD 2>&1
+6b36973 Preserve initial D5 GLM verification evidence
+599ae90 Preserve final Gemini failure and refine GLM sandbox path
+016735f Preserve D5 provider failures and prepare GLM snapshots
+8e58cc7 Authorize same-family Gemini D5 CLI rollback
+2910a14 Preserve initial D5 attempts and Claude verification
+0941d2f Prepare strict D5 verification dispatch
+8d5096e Record D4 functional fixes and framework halt
+737fe27 Correct D4 rename scope omission
+311b60b Use canonical ID validation for rename
+2dede68 Bind control-plane registry evidence to D4 fix
+---
+SCOPE_RECOVERY_EXIT=0
+---
+6b36973 Preserve initial D5 GLM verification evidence
+599ae90 Preserve final Gemini failure and refine GLM sandbox path
+016735f Preserve D5 provider failures and prepare GLM snapshots
+8e58cc7 Authorize same-family Gemini D5 CLI rollback
+2910a14 Preserve initial D5 attempts and Claude verification
+0941d2f Prepare strict D5 verification dispatch
+8d5096e Record D4 functional fixes and framework halt
+737fe27 Correct D4 rename scope omission
+[0m
+[0m$ [0mls -la <redacted:secret>/ 2>&1 | head -20
+total 3192
+drwxr-xr-x@ 175 jonathanoh  wheel    5600 Jul 10 20:42 .
+drwxr-xr-x@  87 jonathanoh  wheel    2784 Jul 10 20:41 ..
+-rw-r--r--@   1 jonathanoh  wheel     150 Jul 10 16:29 B.3-gemini-dispatch-attestation.txt
+-rw-r--r--@   1 jonathanoh  wheel    8792 Jul 10 19:35 D.2-strict-dispatch-attestation-gemini.raw.txt
+-rw-r--r--@   1 jonathanoh  wheel    2199 Jul 10 19:05 <redacted:secret>
+-rw-r--r--@   1 jonathanoh  wheel       0 Jul 10 18:59 <redacted:secret>
+-rw-r--r--@   1 jonathanoh  wheel    1678 Jul 10 19:05 <redacted:secret>
+-rw-r--r--@   1 jonathanoh  wheel       0 Jul 10 18:59 <redacted:secret>
+-rw-r--r--@   1 jonathanoh  wheel    8156 Jul 10 18:59 <redacted:secret>
+-rw-r--r--@   1 jonathanoh  wheel       0 Jul 10 18:59 <redacted:secret>
+-rw-r--r--@   1 jonathanoh  wheel    5744 Jul 10 19:06 <redacted:secret>
+-rw-r--r--@   1 jonathanoh  wheel      75 Jul 10 19:06 <redacted:secret>
+-rw-r--r--@   1 jonathanoh  wheel   13240 Jul 10 19:05 audit-rb-B1-gp.review.md
+-rw-r--r--@   1 jonathanoh  wheel    2156 Jul 10 19:16 <redacted:secret>
+-rw-r--r--@   1 jonathanoh  wheel       0 Jul 10 19:07 <redacted:secret>
+-rw-r--r--@   1 jonathanoh  wheel    2158 Jul 10 19:12 <redacted:secret>
+-rw-r--r--@   1 jonathanoh  wheel       0 Jul 10 19:07 <redacted:secret>
+-rw-r--r--@   1 jonathanoh  wheel    6632 Jul 10 19:08 <redacted:secret>
+-rw-r--r--@   1 jonathanoh  wheel       0 Jul 10 19:07 <redacted:secret>
+[0m
+[0m$ [0mgit ls-files <redacted:secret> <redacted:secret> <redacted:secret> 2>&1
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+[0m
+[0m→ [0mRead <redacted:secret>[90m [limit=50][0m
+[0m→ [0mRead <redacted:secret>[90m [limit=80][0m
+[0m
+[0m← [0mWrite <redacted:secret>
+Wrote file successfully.
+[0m
+[0m$ [0mgit ls-files <redacted:secret> 2>&1; echo "---tracked?---"; test -f <redacted:secret> && echo "FILE EXISTS" || echo "MISSING"
+---tracked?---
+FILE EXISTS
+[0m
+[0m$ [0mscripts/llm-dev lint-artifact <redacted:secret> 2>&1; echo "EXIT=$?"
+verify-dispatch-shape: OK — verdict_shaped (verdict: request_changes)
+EXIT=0
+[0m
+[0m$ [0mecho "=== Canonical artifact (must be unmodified by me) ==="; git diff --name-only HEAD -- <redacted:secret> 2>&1; echo "=== Sibling file verdict line ==="; grep -A1 '^## Verdict' <redacted:secret> 2>&1 | head -3; echo "=== Frontmatter id/phase/role/family/status ==="; grep -E '^(id|phase|role|family|evidence_mode|status|verdict):' <redacted:secret> 2>&1
+=== Canonical artifact (must be unmodified by me) ===
+<redacted:secret>
+=== Sibling file verdict line ===
+## Verdict
+
+=== Frontmatter id/phase/role/family/status ===
+id: audit-rb-D5-glv
+role: verifier
+family: glm
+phase: D.5
+evidence_mode: direct-run
+status: completed
+verdict: Request Further Fixes
+[0m
+[0m→ [0mRead <redacted:secret>[90m [offset=180, limit=20][0m
+[0m
+[0m$ [0mgit diff --stat HEAD -- <redacted:secret> 2>&1
+.../D.5-glm-verifier.md                            | 231 ---------------------
+ 1 file changed, 231 deletions(-)
+[0m
+[0m→ [0mRead <redacted:secret>[90m [limit=20, offset=258][0m
+[0m→ [0mRead <redacted:secret>[90m [limit=20, offset=295][0m
+[0m→ [0mRead <redacted:secret>[90m [limit=25, offset=310][0m

@@ -13,8 +13,8 @@ strict_p3_required_phases: ["B.1", "D.2", "D.5"]
 implementation_sequencing:
   mode: code-first-user-gated
   user_gate_ref: "decision:codex-task-2026-07-10-user-directive-run-full-lifecycle-through-d5-and-falsification-review"
-  implementation_ref: "311b60b6e86abe6d0b5a7ac61e16d07049387707"
-  rationale: "I0 preserves integrated product-row provenance; I1 closed Phase C falsification; I2 is the D.4 successor that addresses all six canonical D.3 findings without changing child-row provenance."
+  implementation_ref: "859ecf778389aaa67f69146d7ae8cd2564445af5"
+  rationale: "I0 preserves integrated product-row provenance; I1 closed Phase C falsification; I2 addresses the six canonical D.3 findings; I3 closes the two reproducible loose-falsification regressions without changing child-row provenance."
 
 owners:
   - "Project Ontos Maintainers"
@@ -246,6 +246,9 @@ scope:
       expect: "exit-0"
     - name: "D.4 functional-fix snapshot I2 exists"
       command: "git cat-file -e 311b60b6e86abe6d0b5a7ac61e16d07049387707^{commit}"
+      expect: "exit-0"
+    - name: "Post-falsification functional-fix snapshot I3 exists"
+      command: "git cat-file -e 859ecf778389aaa67f69146d7ae8cd2564445af5^{commit}"
       expect: "exit-0"
     - name: "User-owned documents remain absent from the isolated lifecycle worktree"
       command: "test ! -e docs/specs/project-ontos-rationale-capture-template-proposal.md && test ! -e docs/zeta.md"

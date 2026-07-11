@@ -18,6 +18,18 @@ regression fixtures under EH-15-A. The product fixes, test-first evidence, and
 all passing repository gates remain preserved; no emergency waiver or false
 certification is inferred.
 
+The post-D.5 loose falsification pass then reproduced two additional defects.
+Both are fixed at I3 `859ecf778389aaa67f69146d7ae8cd2564445af5`:
+
+| Finding | Fix | Regression evidence |
+|---|---|---|
+| LF-ID-1 | Unquoted rename replacements now use the canonical PyYAML-backed serializer, so numeric-, date-, and float-like IDs reload as exact strings in target and reference fields. | Three cases failed before the fix and pass in `test_rename_yaml_like_ids_remain_strings_in_all_frontmatter_shapes`. |
+| LF-CP-1 | Program IDs and roots share one normalized ownership namespace, including the synthetic issue-158 owner, before issue-keyed/O4 consumers run. | Two synchronized collisions failed open before the fix and now return `FAILED`/exit 1 in `test_program_identity_collision_fails_when_findings_and_o4_are_synchronized`. |
+
+At I3 the focused falsification set is `5 passed` and the complete suite is
+`1725 passed, 1 warning`. D.4 remains halted on D4-INFRA-1; fixing product code
+does not convert the unavailable framework gate into certification.
+
 Pre-fix implementation: `aa41c3982e21b0e0cff6c3c5486f4af9e5e55e05`.
 Post-fix implementation (I2): `311b60b6e86abe6d0b5a7ac61e16d07049387707`.
 Scope-recovery checkpoint: `737fe27`.
@@ -174,10 +186,12 @@ broaden the product contract.
 | `2dede68` | CAN-CP-1, CAN-CP-2, CAN-CP-3 | Bind control-plane registry evidence to D4 fix |
 | `311b60b` | CAN-ID-1 | Use canonical ID validation for rename |
 | `737fe27` | CAN-ID-1 scope custody | Correct D4 rename scope omission |
+| `859ecf7` | LF-ID-1, LF-CP-1 | Close loose falsification regressions |
 
 ## D.4 verdict
 
-**Halted on D4-INFRA-1.** Functional fixes and repository verification pass;
+**Halted on D4-INFRA-1.** All eight reproduced product/control-plane findings
+are functionally fixed and repository verification passes;
 EH-15-A adopter regression certification is unavailable in the pinned
 framework. D.5 may independently reproduce the product fixes, but it must
 preserve this infrastructure blocker and cannot approve lifecycle closure.

@@ -1,0 +1,30 @@
+I'll start by reading both template files completely and exploring the environment in parallel.
+Let me find the D.3 verdict, D.4 fix summary, D.4 scope recovery, manifest, and understand the code diff.
+Let me read the D.3 verdict, D.4 fix summary, D.4 scope recovery, and the manifest in parallel.
+Now let me find and read the manifest, and look at the actual code diff in detail.
+Let me check the snapshot directory structure and the python interpreter location.
+Let me verify the snapshot environments and that `ontos.__file__` resolves correctly under each.
+Good - `ontos.__file__` resolves under each snapshot. Let me verify the pre/post-fix file state for the five target implementation files.
+Snapshots confirmed: pre-fix has `_ID_PATTERN` and no fixes; post-fix has all fixes. Now let me run the three test groups. Starting with Group 1 in `d5-glm-post` (expect pass).
+Group 1 post: 4 passed. Now Group 1 in `d5-glm-pre` (expect fail).
+Group 1 confirmed: post passes (4/4), pre fails (4/4, exit 1). Now Group 2 in post.
+Group 2 post: 8 passed. Now Group 2 in `d5-glm-pre` (expect fail).
+Group 2 confirmed: post passes (8/8), pre fails (8/8, exit 1). Now Group 3 in post.
+Group 3 post: 24 passed. Now Group 3 in `d5-glm-pre` (expect fail).
+All three groups confirmed. Summary: Group 1 (ACT-1/2) post 4 passed / pre 4 failed exit 1; Group 2 (CP-1/2/3) post 8 passed / pre 8 failed exit 1; Group 3 (ID-1) post 24 passed / pre 24 failed exit 1. Now running the full test suite in `d5-glm-post`.
+Full suite: 1720 passed, 1 warning, exit 0. Now running the lifecycle worktree checks. Let me read the manifest's smoke checks and find the relevant scripts.
+Now running the lifecycle worktree checks. Let me run registry local validation, external parity, `git diff --check`, and changed-path scope in parallel.
+Registry local: PASS (exit 0). `git diff --check HEAD`: PASS (exit 0). `git diff --check bf91b42..HEAD`: PASS (exit 0). Now running external parity, changed-path scope, and manifest conformance.
+External parity: PASS. Changed-path scope: OK (598 paths). Let me fix the manifest conformance command and run the EH-15-A probes.
+Manifest conformance: PASSED (4/4). The EH-15-A manifest-mode probe returned exit 0 with "no D.4 fix-summary exists" despite the file existing — confirming D4-INFRA-1 (fail-open path resolution). Let me check the script's options for the explicit-path probe.
+Both EH-15-A probes confirm D4-INFRA-1: manifest-mode returns exit 0 (fail-open: "no D.4 fix-summary exists" despite the file existing), and the absolute explicit-path probe returns exit 1 (all fixtures reported as non-existent despite being runnable from the adopter root). Let me run the cardinality assertions.
+Cardinality assertions all pass. Let me verify the scope-recovery commit and confirm the current HEAD aligns with the fix summary's expectations.
+All cardinality assertions pass. Let me verify the `.raw` directory exists and check the existing D.5 artifacts for format reference.
+Let me look at an existing `.review.md` sibling and one of the existing D.5 verifiers for structure reference.
+I have all the evidence. Let me now compose the review document and write it to the sibling file.
+The review file is written. Let me validate it — verify the file exists, check the frontmatter and verdict line, and run the artifact linter if available.
+Artifact linter passes: `verdict_shaped (verdict: request_changes)`. Let me do a final structural validation of the verdict line and confirm I did not touch the canonical artifact.
+Let me verify the verdict line content and confirm the canonical artifact was already deleted before my session (not by me).
+The review is complete and validated. The frontmatter carries `id: audit-rb-D5-glv`, `phase: D.5`, `role: verifier`, `family: glm`, `evidence_mode: direct-run`, `status: completed`, `verdict: Request Further Fixes`. The H1 precedes six finding rows, full smoke and scope results, D4-INFRA-1 required action, and `## Verdict` followed by bare `Request changes`. The artifact linter passed (`verdict_shaped`). I wrote only to the sibling `.raw` file and did not touch the canonical artifact.
+
+Wrote `docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-D5-glv.review.md`
