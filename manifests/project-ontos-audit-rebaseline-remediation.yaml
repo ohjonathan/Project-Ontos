@@ -13,8 +13,8 @@ strict_p3_required_phases: ["B.1", "D.2", "D.5"]
 implementation_sequencing:
   mode: code-first-user-gated
   user_gate_ref: "decision:codex-task-2026-07-10-user-directive-run-full-lifecycle-through-d5-and-falsification-review"
-  implementation_ref: "05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0"
-  rationale: "I0 preserves the integrated product-row provenance; I1 is the Phase C successor that closes umbrella falsification findings and is the exact target for D review."
+  implementation_ref: "311b60b6e86abe6d0b5a7ac61e16d07049387707"
+  rationale: "I0 preserves integrated product-row provenance; I1 closed Phase C falsification; I2 is the D.4 successor that addresses all six canonical D.3 findings without changing child-row provenance."
 
 owners:
   - "Project Ontos Maintainers"
@@ -83,6 +83,7 @@ scope:
     - "ontos/commands/map.py"
     - "ontos/commands/migrate.py"
     - "ontos/commands/promote.py"
+    - "ontos/commands/rename.py"
     - "ontos/commands/retrofit.py"
     - "ontos/commands/scaffold.py"
     - "ontos/commands/stub.py"
@@ -242,6 +243,9 @@ scope:
       expect: "exit-0"
     - name: "Phase C close snapshot I1 exists"
       command: "git cat-file -e 05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0^{commit}"
+      expect: "exit-0"
+    - name: "D.4 functional-fix snapshot I2 exists"
+      command: "git cat-file -e 311b60b6e86abe6d0b5a7ac61e16d07049387707^{commit}"
       expect: "exit-0"
     - name: "User-owned documents remain absent from the isolated lifecycle worktree"
       command: "test ! -e docs/specs/project-ontos-rationale-capture-template-proposal.md && test ! -e docs/zeta.md"

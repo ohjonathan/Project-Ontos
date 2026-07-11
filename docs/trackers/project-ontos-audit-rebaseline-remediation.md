@@ -21,6 +21,7 @@ reuse or broaden the narrower #146 or #147 deliverable lifecycles.
 | Historical implementation base | `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95` |
 | Immutable implementation snapshot (I0) | `b6f89d77e7fb684b8bd9a181a24c773d5777397a` |
 | Phase C close snapshot (I1) | `05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0` |
+| D.4 functional-fix snapshot (I2) | `311b60b6e86abe6d0b5a7ac61e16d07049387707` |
 | Integration target branch | `codex/audit-rebaseline-remediation` |
 | Lifecycle worktree branch | `codex/audit-rebaseline-remediation-lifecycle` |
 | Dedicated worktree | `/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation` |
@@ -79,6 +80,22 @@ I0 is immutable product-row provenance. Any successor implementation snapshot
 must advance explicitly, the affected reviewed diff must be re-dispatched, and
 this tracker must record the transition. Evidence may never be rebound silently
 to a different tree.
+
+### Phase-0 scope-audit recovery — D.4
+
+The first post-fix changed-path gate found one manifest omission:
+`ontos/commands/rename.py`. Approved spec §4.2 already governs every
+CLI-supplied ID, strict D.2 Claude P-1 identifies `rename` as the violating
+mutation command, and canonical D.3 CAN-ID-1 requires that exact file's repair.
+The path is not excluded or forbidden, and the companion MCP and rename-test
+paths were already allowlisted. The manifest therefore adds only this exact
+file—no directory pattern or adjacent surface. This is a Phase-0 control-plane
+correction, not a spec deviation or product-scope expansion.
+
+Commit `311b60b` preceded the scope-gate discovery. Its history is preserved;
+no receipt or commit was rewritten. The recovery record is
+`docs/reviews/project-ontos-audit-rebaseline-remediation/D.4-scope-audit-recovery.md`.
+Changed-path scope and manifest conformance must pass again before D.5.
 
 ## Certifying route roster and role rotation
 
