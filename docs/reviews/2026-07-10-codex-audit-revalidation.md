@@ -20,6 +20,12 @@ post-baseline work for review; it does not supply historical per-deliverable
 lease receipts, strict-P3 child certification, merge evidence, or release
 authority.
 
+Umbrella Phase C successor I1 is
+`05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0`. It closes lifecycle-local
+`C-FZ-1`–`C-FZ-10`, passes a detached clean replay (`1679 passed`, empty
+porcelain before and after), and is the exact D-review target. I1 does not
+rewrite product-row I0 provenance or certify any child issue.
+
 ## Executive verdict
 
 The Fable audit is a useful, high-signal defect baseline for `589d919`; it is not
@@ -45,13 +51,15 @@ leaves a clean tracked and untracked workspace.
 
 The shared post-baseline integration snapshot I0 contains a code fix for
 `D2b-roundtrip-3`, complete implementations for 40 other original findings,
-partial implementations for seven, and implementations for all nine R2
-findings. Those 57 I0-backed rows bind their fix reference to `b6f89d7`. The
-91-row original register therefore currently partitions into 2 historical
+partial implementations for seven, and initial implementations for all nine R2
+findings. The 56 product rows retain their I0 fix reference; Phase C proved the
+control-plane implementation incomplete and binds that meta-cycle row to I1.
+The 91-row original register therefore currently partitions into 2 historical
 code-fixed, 1 code-fixed/evidence-pending, 40 implemented-committed pending, 7
 partial-committed pending, and 41 confirmed-open rows. Product rows remain
 verification/lifecycle pending; the control-plane row alone is
-`implemented_committed_verification_pending`. These states do not revise the
+`implemented_committed_parity_verified` with lifecycle review still pending.
+These states do not revise the
 historical `bf91b42` verdict or imply lifecycle certification, historical lease
 proof, merge, release, or per-issue completion.
 
@@ -115,7 +123,7 @@ and its concrete evidence paths per finding.
 | `R2-testpypi-provenance-1` | `implemented_committed_verification_pending` | `tests/test_release_artifact.py`; `tests/test_ci_release_workflows.py` |
 | `R2-activation-version-skew-1` | `implemented_committed_verification_pending` | `tests/commands/test_agentic_activation_resilience.py`; `tests/commands/test_doctor_phase4.py`; `tests/commands/test_instruction_protocol.py` |
 | `R2-mcp-readonly-export-1` | `implemented_committed_verification_pending` | `ontos/mcp/portfolio.py`; `tests/mcp/test_read_only_registration.py` |
-| `R2-control-plane-parity-1` | `implemented_committed_verification_pending` | `scripts/validate-audit-remediation-registry.py`; `tests/test_audit_remediation_registry_validator.py`. I0 added the parity validator, but Phase C falsification proved that provenance, rendered O4/O5 order, and malformed child-manifest roots were not yet fail-closed. Promotion waits for the C-close fix commit and fresh local/external evidence. |
+| `R2-control-plane-parity-1` | `implemented_committed_parity_verified` | `scripts/validate-audit-remediation-registry.py`; `tests/test_audit_remediation_registry_validator.py`. I0 added the first parity validator; Phase C closed provenance, rendered O4/O5 order, malformed child-manifest, and authority gaps at I1. Local and live parity pass; umbrella D review remains pending. |
 
 A reconciliation-focused cross-section passed `354` tests; the MCP import-
 cleanup suite separately passed `268`, and the final CLI-contract follow-up

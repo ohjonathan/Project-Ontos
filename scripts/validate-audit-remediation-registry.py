@@ -30,6 +30,7 @@ GITHUB_REPOSITORY = "ohjonathan/Project-Ontos"
 AUDIT_BASELINE_COMMIT = "589d919"
 REVALIDATION_COMMIT = "bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95"
 INTEGRATION_COMMIT = "b6f89d77e7fb684b8bd9a181a24c773d5777397a"
+CONTROL_PLANE_FIX_COMMIT = "05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0"
 DOCTOR_BASE_COMMIT = "c8672e90f2382f4147ef61b4fba918969483e73e"
 DOCTOR_FIX_COMMIT = "03c36e6ac999d2c411c13252baa2e8fcff60e6ed"
 
@@ -1264,14 +1265,29 @@ def validate(require_external_parity: bool) -> list[str]:
                 f"!= {expected_lifecycle!r}"
             )
     for finding_id, row in r2.items():
-        expected_status = "implemented_committed_verification_pending"
+        is_control_plane = finding_id == "R2-control-plane-parity-1"
+        expected_status = (
+            "implemented_committed_parity_verified"
+            if is_control_plane
+            else "implemented_committed_verification_pending"
+        )
         if row.get("status") != expected_status:
             errors.append(
                 f"{finding_id} status mismatch: {row.get('status')!r} != {expected_status!r}"
             )
-        if row.get("fix_commit") != "b6f89d77e7fb684b8bd9a181a24c773d5777397a":
-            errors.append(f"{finding_id} must bind its fix commit to I0")
-        expected_lifecycle = "implementation_committed_lifecycle_pending"
+        expected_fix_commit = (
+            CONTROL_PLANE_FIX_COMMIT if is_control_plane else INTEGRATION_COMMIT
+        )
+        if row.get("fix_commit") != expected_fix_commit:
+            checkpoint = "Phase C close I1" if is_control_plane else "I0"
+            errors.append(
+                f"{finding_id} must bind its fix commit to {checkpoint}"
+            )
+        expected_lifecycle = (
+            "parity_verified_lifecycle_pending"
+            if is_control_plane
+            else "implementation_committed_lifecycle_pending"
+        )
         if row.get("lifecycle_state") != expected_lifecycle:
             errors.append(
                 f"{finding_id} lifecycle mismatch: {row.get('lifecycle_state')!r} "

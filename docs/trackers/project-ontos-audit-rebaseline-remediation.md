@@ -20,6 +20,7 @@ reuse or broaden the narrower #146 or #147 deliverable lifecycles.
 | Deliverable | `project-ontos-audit-rebaseline-remediation` |
 | Historical implementation base | `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95` |
 | Immutable implementation snapshot (I0) | `b6f89d77e7fb684b8bd9a181a24c773d5777397a` |
+| Phase C close snapshot (I1) | `05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0` |
 | Integration target branch | `codex/audit-rebaseline-remediation` |
 | Lifecycle worktree branch | `codex/audit-rebaseline-remediation-lifecycle` |
 | Dedicated worktree | `/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation` |
@@ -43,8 +44,8 @@ spec; and the complete D review chain runs through D.5.
 
 In scope for this lifecycle:
 
-- review the exact `bf91b42...b6f89d7` integration snapshot and subsequent
-  lifecycle-authorized fixes;
+- review the exact `bf91b42...b6f89d7` integration snapshot and the
+  lifecycle-authorized Phase C successor frozen at `05b090d`;
 - verify that the audit addendum, 100-row registry, ledger, implementation,
   tests, and status claims agree;
 - preserve open and partial findings as open or partial rather than rounding
@@ -74,9 +75,10 @@ the immutable base SHA and must account for committed, staged, unstaged, and
 untracked paths. Generated prompts, raw captures, dispatch bundles, verdicts,
 and receipts stay under the deliverable-specific review directory.
 
-If I0 changes, the implementation reference must advance explicitly, the
-affected reviewed diff must be re-dispatched, and this tracker must record the
-transition. Evidence may never be rebound silently to a different tree.
+I0 is immutable product-row provenance. Any successor implementation snapshot
+must advance explicitly, the affected reviewed diff must be re-dispatched, and
+this tracker must record the transition. Evidence may never be rebound silently
+to a different tree.
 
 ## Certifying route roster and role rotation
 
@@ -111,7 +113,7 @@ and requires fresh D.5 verification.
 | B.1 — first design board | Claude adversarial; Gemini alignment; GLM peer; Claude Product (separate session) | **complete; final inventory verified 4/4** | Complete hash-bound dispatch bundle and four verdicts | Fresh final-inventory board against spec v1.4: Claude adversarial `Approve`, Gemini alignment `Concur`, GLM peer `Approve`, Claude Product `Approve`; bundle verification passes. The malformed first Gemini verdict and GLM evidence-cap attempt are preserved as failed captures without receipts. |
 | B.2 — corrected-spec board | Same engineering seats; Claude Product (separate session) | **complete; final inventory verified 4/4** | Re-review corrected spec and I0 | Final v1.5 board: Claude adversarial `Approve`, Gemini alignment `Concur`, GLM peer `Approve`, Claude Product `Approve`; receipt-bound bundle verification passes and lifecycle verification now reports only the expected D.2/D.5 gaps. |
 | B.3 — design consolidation | Codex fast-path under unanimous external board | **complete** | Canonical approved design verdict with every accepted finding and no hidden blocker | `B.3-verdict.md` consolidates the final B.1/B.2 artifacts, records zero preserved blockers, and carries independent Gemini dispatch verification; committed at `eeddf0f`. |
-| C — code-first reconciliation | Independent Codex implementation-author worker | **in progress — layered falsification fixes green** | I0 and authorized deltas reconcile exactly to spec v1.5 | Independent attacks found and closed destination-recreation/rollback races, ambiguous recovery, root/lock rebinding, untyped outer-lock bypass, cleanup leaks, unsafe stub parent creation, symlinked workspace-root acceptance, the Windows post-open hardlink window, map timestamp churn, and shape-only provenance/O4/O5/child-manifest parity. The final targeted matrices (`461`, `124`, and `36` tests) and dirty-tree full suite (`1679 passed`) are green with byte-identical status; detached clean-snapshot replay and the C-close commit remain required. |
+| C — code-first reconciliation | Independent Codex implementation-author worker | **complete at I1** | I0 and authorized deltas reconcile exactly to spec v1.5 | I1 `05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0`; independent attacks closed C-FZ-1–10. Targeted matrices: `461`, `124`, and `36` passed. Full suite: `1679 passed`; detached I1 replay: `1679 passed`, with porcelain empty before and after. Registry local/live parity, 433-path base-SHA scope, Python 3.9 grammar, map double-generation, and `git diff --check` pass. |
 | D.1 — pre-review | Claude peer worker | pending | Non-certifying, non-author implementation/spec alignment review | — |
 | D.2 — implementation board | Claude peer; Gemini adversarial; GLM alignment; Product if declared | pending | Complete hash-bound code-review bundles and verdicts, including Template-05 falsification | — |
 | D.3 — code-review consolidation | Non-author consolidator selected by manifest | pending | Canonical blocker disposition | — |

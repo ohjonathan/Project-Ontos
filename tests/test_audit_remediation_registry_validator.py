@@ -410,6 +410,35 @@ def test_finding_authority_fields_cannot_drift_silently(
     assert any(expected_fragment in error for error in errors)
 
 
+def test_control_plane_row_binds_phase_c_close_snapshot(
+    validator_module,
+    monkeypatch,
+    tmp_path,
+):
+    registry = copy.deepcopy(
+        validator_module.load_yaml(validator_module.REGISTRY_PATH)
+    )
+    finding = next(
+        row
+        for row in registry["findings"]
+        if row["id"] == "R2-control-plane-parity-1"
+    )
+    finding["fix_commit"] = validator_module.INTEGRATION_COMMIT
+    finding["status"] = "implemented_committed_verification_pending"
+    finding["lifecycle_state"] = "implementation_committed_lifecycle_pending"
+
+    errors = _validate_registry(
+        validator_module,
+        monkeypatch,
+        tmp_path,
+        registry,
+    )
+
+    assert any("must bind its fix commit to Phase C close I1" in e for e in errors)
+    assert any("status mismatch" in e for e in errors)
+    assert any("lifecycle mismatch" in e for e in errors)
+
+
 @pytest.mark.parametrize(
     ("field", "replacement", "expected_fragment"),
     [

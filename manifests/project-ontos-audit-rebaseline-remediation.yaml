@@ -13,8 +13,8 @@ strict_p3_required_phases: ["B.1", "D.2", "D.5"]
 implementation_sequencing:
   mode: code-first-user-gated
   user_gate_ref: "decision:codex-task-2026-07-10-user-directive-run-full-lifecycle-through-d5-and-falsification-review"
-  implementation_ref: "b6f89d77e7fb684b8bd9a181a24c773d5777397a"
-  rationale: "The user explicitly requested a full lifecycle review of the already implemented and verified integration snapshot."
+  implementation_ref: "05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0"
+  rationale: "I0 preserves the integrated product-row provenance; I1 is the Phase C successor that closes umbrella falsification findings and is the exact target for D review."
 
 owners:
   - "Project Ontos Maintainers"
@@ -237,8 +237,11 @@ scope:
       command: >-
         python3 -c "import yaml; print(len(yaml.safe_load(open('manifests/project-ontos-audit-remediation-registry.yaml'))['findings']))"
       expect: "eq:100"
-    - name: "Frozen implementation snapshot exists"
+    - name: "Immutable implementation snapshot I0 exists"
       command: "git cat-file -e b6f89d77e7fb684b8bd9a181a24c773d5777397a^{commit}"
+      expect: "exit-0"
+    - name: "Phase C close snapshot I1 exists"
+      command: "git cat-file -e 05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0^{commit}"
       expect: "exit-0"
     - name: "User-owned documents remain absent from the isolated lifecycle worktree"
       command: "test ! -e docs/specs/project-ontos-rationale-capture-template-proposal.md && test ! -e docs/zeta.md"
@@ -452,10 +455,10 @@ gate_prerequisites:
       expect: "exit-0"
   - id: G-branch-1
     category: branch
-    description: "The frozen implementation snapshot remains an ancestor and the isolated lifecycle worktree is clean."
+    description: "The Phase C close snapshot remains an ancestor and the isolated lifecycle worktree is clean."
     verification:
       command: >-
-        git merge-base --is-ancestor b6f89d77e7fb684b8bd9a181a24c773d5777397a HEAD &&
+        git merge-base --is-ancestor 05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0 HEAD &&
         test -z "$(git status --porcelain=v1 --untracked-files=all)"
       expect: "exit-0"
 

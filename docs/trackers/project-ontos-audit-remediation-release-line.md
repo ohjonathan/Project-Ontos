@@ -48,10 +48,11 @@ non-certified terminal state and must never be relabeled as strict P3.
 - #147 is code-fixed but not release-certified. The old B.1/D.2/D.5 prose was
   not wrapper-dispatched, the receipt inventory is empty, and no receipt may be
   reconstructed. Run a fresh review chain over `c8672e9..03c36e6`.
-- Tests were not hermetic at the revalidation baseline. Isolation and clean-
-  tree gates are now implemented, but a green suite is not a release signal
-  until a clean-clone full run proves both tracked and untracked state remain
-  clean.
+- Tests were not hermetic at the revalidation baseline. Umbrella I1
+  (`05b090d`) now passes a detached full replay (`1679 passed`) with empty
+  porcelain before and after, and unchanged map bytes/mtime on a second
+  generation. This closes the umbrella clean-snapshot gate, not the remaining
+  Windows, publishing, child-lifecycle, or shared-tree release gates.
 - Seven original rows remain only partially implemented. In particular,
   exception rollback is not durable crash recovery and the command registry is
   substrate rather than a completed boilerplate removal.
@@ -199,3 +200,8 @@ their own tracker and report state back without directly editing this file.
   remain open; bound the 57 I0-backed rows to `b6f89d7`, added the previously
   omitted activation/doctor collisions, and preserved the noncertified
   shared-tree and per-issue lifecycle states.
+- 2026-07-10 — froze umbrella Phase C successor I1 at `05b090d`; closed
+  lifecycle-local C-FZ-1–10; passed local/live registry parity, the 433-path
+  base-SHA scope gate, stable double map generation, and a detached clean full
+  replay (`1679 passed`). Product O4 rows remain I0-pinned, and
+  `shared_tree_integration` remains release-blocking.

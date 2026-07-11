@@ -1101,9 +1101,9 @@ findings:
     issue: 158
     release: v4.7.1
     base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
-    status: implemented_committed_verification_pending
-    fix_commit: b6f89d77e7fb684b8bd9a181a24c773d5777397a
-    lifecycle_state: implementation_committed_lifecycle_pending
+    status: implemented_committed_parity_verified
+    fix_commit: 05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0
+    lifecycle_state: parity_verified_lifecycle_pending
     lease_state: active
     allowed_paths:
       - manifests/project-ontos-audit-remediation-registry.yaml
