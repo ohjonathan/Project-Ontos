@@ -12,8 +12,6 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      COVERAGE_FILE: ${{ runner.temp }}/.coverage
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
@@ -60,6 +58,8 @@ jobs:
       #     python tests/golden/compare_golden_master.py --fixture all
 
       - name: Check coverage
+        env:
+          COVERAGE_FILE: ${{ runner.temp }}/.coverage
         run: |
           if [ "${{ matrix.python-version }}" = "3.9" ]; then
             pytest tests/ --ignore=tests/mcp --cov=ontos --cov-fail-under=70 --cov-report=xml:${RUNNER_TEMP}/coverage.xml

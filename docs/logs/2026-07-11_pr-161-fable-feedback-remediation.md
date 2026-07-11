@@ -28,6 +28,8 @@ Make PR #161 safer and more reviewable while preserving its draft,
 - The secure staging path overrode umask-derived modes for new files.
 - Local coverage outputs were not ignored, coverage was advisory, and the audit
   registry validator was absent from CI.
+- Coverage storage used the step-only `runner.temp` context at job scope, so
+  GitHub rejected the workflow before creating jobs.
 
 ## Fix Applied
 
@@ -36,7 +38,7 @@ Make PR #161 safer and more reviewable while preserving its draft,
 - Apply process umask to new staged files and preserve existing-file modes.
 - Keep invalid UTF-8 fail-closed with explicit tests and policy comments.
 - Gate coverage at measured floors, ignore local coverage artifacts, and run
-  local registry validation in CI.
+  local registry validation in CI; keep runner context usage step-scoped.
 - Add a migration note and a complete PR-feedback disposition/status record.
 
 ## Key Decisions

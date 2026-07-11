@@ -40,6 +40,8 @@ def test_ci_gates_measured_coverage_and_validates_audit_registry():
     assert checkout["with"]["fetch-depth"] == 0
 
     coverage = _step(test_job, "Check coverage")
+    assert "COVERAGE_FILE" not in test_job.get("env", {})
+    assert coverage["env"]["COVERAGE_FILE"] == "${{ runner.temp }}/.coverage"
     assert coverage.get("continue-on-error") is not True
     assert "--cov-fail-under=70" in coverage["run"]
     assert "--cov-fail-under=82" in coverage["run"]

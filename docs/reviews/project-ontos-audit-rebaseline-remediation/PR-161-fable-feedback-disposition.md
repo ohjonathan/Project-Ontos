@@ -39,7 +39,7 @@ establish it), and **out of scope** (not authorized for this PR follow-up).
 | 6. The registry validator is 1,996 lines | confirmed | `wc -l` reports `1996`; local and live parity pass and its focused suite has 207 tests. Its size is a reasonable maintainability note, not evidence that the validator is theater or currently incorrect. Decomposition is deferred rather than mixed into this repair. |
 | Symlink safety does not cover every repository writer | partially valid | The hardened no-follow/atomic substrate covers the scoped context and MCP mutation paths. Other legacy writers still use direct writes, so the global phrase “all writes are symlink-safe” would be too broad. Expanding every writer belongs to the remaining remediation programs, not this bounded feedback fix. |
 | The PR's 602-path scope result lacks matching committed evidence | confirmed | The exact head count and scope pass were reproduced below. Earlier lifecycle artifacts record 559/578/594/598 because they bind earlier snapshots. This is a committed-evidence gap, not a scope failure; this section records the result plainly without inventing a receipt. |
-| Existing CI hardening is sound | confirmed | The clean-tree gate, coverage redirection to runner temporary storage, retirement of legacy injected tests, Windows boundary job, and non-editable smoke are present and exercised by static workflow regressions. |
+| Existing CI hardening is sound | partially valid | The clean-tree gate, retirement of legacy injected tests, Windows boundary job, and non-editable smoke are sound. The reviewed workflow placed `runner.temp` in job-level `env`, where that context is unavailable; pushes failed before creating any job. The coverage-file environment is now step-scoped and regression-locked. |
 | Coverage is still advisory | confirmed | The reviewed coverage step used `continue-on-error: true`. Direct measurements were 82.73% for the full/MCP suite and 70.33% without MCP; CI now gates at conservative floors of 82 and 70 respectively. |
 | Coverage artifacts should be ignored | confirmed | Add `.coverage` and `coverage.xml` to the repository ignore contract and cover it with workflow/hermeticity regression tests. |
 | The audit registry validator should run in CI | confirmed | The validator is the local registry/ledger/lease parity gate but was not invoked by `ci.yml`. A local, non-networked validation step is justified. Live GitHub parity remains a separately credentialed check. |
@@ -74,7 +74,8 @@ This proof is deliberately not represented as a strict-P3 receipt.
 - Ignore conventional local coverage artifacts, gate measured coverage at 70%
   for the Python 3.9 non-MCP job and 82% for MCP-capable jobs, and run local
   audit-registry validation once in CI from a full-history checkout so its
-  historical commit-provenance checks are meaningful.
+  historical commit-provenance checks are meaningful. Keep `runner.temp`
+  references step-scoped so workflow validation can resolve them.
 - Document physical-file body-reference line numbers as a schema-v4 migration
   behavior. No broad legacy-writer symlink refactor was attempted.
 
