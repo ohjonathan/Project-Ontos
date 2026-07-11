@@ -1,0 +1,79 @@
+results:
+- dispatch_id: project-ontos-audit-rebaseline-remediation-D.1-claude-peer
+  capture_id: project-ontos-audit-rebaseline-remediation-D.1-claude-peer.r1.c20260711T004335Z.19519.b515bc29d4d1c1588530c477c6e83289
+  round: 1
+  family: claude
+  actual_executed_family: claude
+  role: peer
+  execution_provider: claude
+  execution_cli: claude
+  resolved_executable: /Users/jonathanoh/.local/bin/claude
+  resolved_executable_realpath: /Users/jonathanoh/.local/share/claude/versions/2.1.206
+  cli_version: 2.1.206 (Claude Code)
+  provider_probe_hash: sha256:a864a7e725ad523d54c9040b841e68009b1857543196058b8a805223f8137cdd
+  model_id: auto
+  resolved_model: opus
+  model_probe_command: claude --help 2>&1 | grep -oE "'(opus|sonnet|haiku)'" | sort
+    -u
+  model_candidate_list:
+  - opus
+  - sonnet
+  model_selection_rule: claude-cli-alias-strongest
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - claude
+  - --permission-mode
+  - bypassPermissions
+  - --add-dir
+  - .
+  - -p
+  - <prompt-body-redacted>
+  - --model
+  - opus
+  prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/project-ontos-audit-rebaseline-remediation-D.1-claude-peer.r1.c20260711T004335Z.19519.b515bc29d4d1c1588530c477c6e83289.md
+  prompt_sha256: sha256:0512a9b1506c649bf4886404d50ae52a997d0f569f5b61e907b57e46b56982d1
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-07-11T00:43:36Z'
+  ended_at: '2026-07-11T00:52:52Z'
+  raw_output_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/project-ontos-audit-rebaseline-remediation-D.1-claude-peer.r1.c20260711T004335Z.19519.b515bc29d4d1c1588530c477c6e83289.raw.txt
+  raw_output_hash: sha256:069c830170142a6ce2bdf47609198f3de2400540a267724f434bb0caec97e498
+  stderr_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/project-ontos-audit-rebaseline-remediation-D.1-claude-peer.r1.c20260711T004335Z.19519.b515bc29d4d1c1588530c477c6e83289.stderr.txt
+  stderr_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  evidence_cap: direct-run
+  evidence_labels_used:
+  - direct-run
+  - not-run
+  - static-inspection
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-audit-rebaseline-remediation/D.1-claude-peer.md
+  artifact_sha256: sha256:e95493df56e7b64269019332ae7958910ef282fbb4cb07af3a8da95d82644988
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: opus
+  model_used: opus
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: opus
+    exit_code: 0
+    started_at: '2026-07-11T00:43:36Z'
+    ended_at: '2026-07-11T00:52:52Z'
+    detected_429: false
+    stderr_tail_200: ''
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: worker_file
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  dispatch_batch_id: audit-rebaseline-D1-r1
+  intent_model_restrictions:
+    family: claude
+    execution_cli: claude
+    denied_models: []
+    allowed_models: []
+    active: false

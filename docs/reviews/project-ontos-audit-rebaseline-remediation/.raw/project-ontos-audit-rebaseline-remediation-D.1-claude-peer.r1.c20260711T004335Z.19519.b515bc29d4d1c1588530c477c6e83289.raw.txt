@@ -1,0 +1,21 @@
+The review is complete and the artifact passes all six shape requirements.
+
+## Summary
+
+I completed a fresh, independent, non-certifying D.1 peer pre-review of spec v1.5 against frozen Phase C implementation I1 (`05b090d`) and the HEAD evidence checkpoint (`7467a73`), and wrote the single artifact:
+
+`docs/reviews/project-ontos-audit-rebaseline-remediation/D.1-claude-peer.md`
+
+**Verdict: Approve** (0 blocking, 0 should-fix, 2 minor).
+
+**What I verified with direct-run evidence:**
+- **§4.1 control plane** — 18 malformed-registry constructions run through `main()` all return exit `1`/`FAILED`, never `2`/`ERROR` (non-mapping roots, wrong collection types, `None`/absolute/escaping/nested paths, unhashable IDs, invalid enums, ownership drift, dropped `#146`, malformed snapshot metadata, duplicate `affected_issues`). The quarantine-before-consumers boundary is real, not a finite subscript list.
+- **§4.4 required-version** — eager clause parsing proven (`>4.7.0, ~bad`@4.6.0 still reports the later malformed clause), singular literal count, clause identification, and the exact `#audit-remediation-compatibility-contracts` anchor which resolves to a real heading.
+- **§4.4 exit taxonomy** — reserved code `4` absent from `ExitCode` and emitted nowhere; nine-key envelope; schema `4.0`.
+- Template 03 D-phase blessing-test greps: **no hits**.
+
+**What I verified by static inspection:** §4.2 ID contract + CLI canonical-copy routing; §4.3 `_EntryBinding` before/after rechecks, shared no-follow/single-link lock across both CLI and MCP entry points, lexical `logs_dir`, archive-marker warnings-exit-`3`; §4.4 doctor PATH probe, read-only MCP write-tool omission + export guard; migration-doc sync (satisfying the §7 doc-drift-blocks-D.1 gate); diagram–prose alignment (no mismatch).
+
+**Honestly labeled scope limits:** full pytest/clean-tree (not run per instruction), and Windows/TestPyPI/live-GitHub parity (external-pending by spec design) — recorded as pending, not certified.
+
+Repo state preserved: only the one review file was written (temp registries went to `/tmp`); no commit, no nested agents, no other files touched.

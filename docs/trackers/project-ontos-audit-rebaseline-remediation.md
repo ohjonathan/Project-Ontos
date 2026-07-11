@@ -114,7 +114,7 @@ and requires fresh D.5 verification.
 | B.2 — corrected-spec board | Same engineering seats; Claude Product (separate session) | **complete; final inventory verified 4/4** | Re-review corrected spec and I0 | Final v1.5 board: Claude adversarial `Approve`, Gemini alignment `Concur`, GLM peer `Approve`, Claude Product `Approve`; receipt-bound bundle verification passes and lifecycle verification now reports only the expected D.2/D.5 gaps. |
 | B.3 — design consolidation | Codex fast-path under unanimous external board | **complete** | Canonical approved design verdict with every accepted finding and no hidden blocker | `B.3-verdict.md` consolidates the final B.1/B.2 artifacts, records zero preserved blockers, and carries independent Gemini dispatch verification; committed at `eeddf0f`. |
 | C — code-first reconciliation | Independent Codex implementation-author worker | **complete at I1** | I0 and authorized deltas reconcile exactly to spec v1.5 | I1 `05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0`; independent attacks closed C-FZ-1–10. Targeted matrices: `461`, `124`, and `36` passed. Full suite: `1679 passed`; detached I1 replay: `1679 passed`, with porcelain empty before and after. Registry local/live parity, 433-path base-SHA scope, Python 3.9 grammar, map double-generation, and `git diff --check` pass. |
-| D.1 — pre-review | Claude peer worker | pending | Non-certifying, non-author implementation/spec alignment review | — |
+| D.1 — pre-review | Claude peer worker | **complete — Approve** | Non-certifying, non-author implementation/spec alignment review | Wrapper-dispatched Claude peer review at `D.1-claude-peer.md`; verified bundle 1/1; zero blocking and zero should-fix findings. |
 | D.2 — implementation board | Claude peer; Gemini adversarial; GLM alignment; Product if declared | pending | Complete hash-bound code-review bundles and verdicts, including Template-05 falsification | — |
 | D.3 — code-review consolidation | Non-author consolidator selected by manifest | pending | Canonical blocker disposition | — |
 | D.4 — fixes | Codex fix-author worker | pending | Per-blocker fix summary and regression evidence, or an explicit zero-blocker summary | — |
@@ -122,6 +122,15 @@ and requires fresh D.5 verification.
 | Loose falsification review | Fresh, unbriefed model sessions | pending | Reproduce-and-loop any valid catch; report discovery result without certification language | Must run after final D.5 and before any later D.6 decision |
 | D.6 — final approval | Maintainer/orchestrator | **not authorized in this run** | Requires a separate decision after D.5 and falsification | Out of requested scope |
 | E — retrospective | Assigned only after D.6/merge authority | **not authorized in this run** | Post-approval lifecycle closeout | Out of requested scope |
+
+### D.1 minor dispositions
+
+- `P-1` is an acknowledged taxonomy-fit nit: `E_LOG_EXISTS` continues to map
+  to exit `1` by the approved public compatibility contract; no Phase C code
+  change is warranted.
+- `P-2` requests an optional concurrency comment. The exclusive-create
+  docstring, O_EXCL implementation, and collision regressions already bind the
+  safety mechanism; no implementation change or preserved blocker is needed.
 
 ## Halt rules
 
