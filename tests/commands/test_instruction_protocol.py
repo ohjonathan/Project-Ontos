@@ -74,7 +74,7 @@ def test_activation_candidates_prefer_working_repo_venv_over_stale_path(
         check=False,
     )
     assert result.returncode == 0
-    assert "4.7.0" in result.stdout
+    assert "4.7.1" in result.stdout
 
 
 def test_render_activation_protocol_head_omits_map_sync_row_when_unset():

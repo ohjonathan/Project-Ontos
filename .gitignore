@@ -49,4 +49,5 @@ build/
 
 # Coverage artifacts
 .coverage
+.coverage.*
 coverage.xml
