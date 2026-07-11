@@ -1,0 +1,97 @@
+manifest_version: "2.0.0"
+authoring_session_family: codex
+meta_orchestrator_family: codex
+deliverable_author_family: codex
+deliverable_author_families: [codex]
+artifact_root: docs/reviews/project-ontos-audit-rebaseline-remediation
+deliverable_id: project-ontos-audit-rebaseline-remediation
+strict_p3_claim: true
+review_board_classification:
+  mode: strict_p3_implementation_review
+  strict_p3_capable_evidence: true
+  strict_p3_certified: false
+  merge_authority: recommendation_only
+  rationale: "Fresh four-seat implementation board over exact Phase C implementation I1."
+dispatches:
+  - dispatch_id: audit-rb-D2-cp
+    family: claude
+    role: peer
+    review_mode: code-review
+    expected_provider: claude
+    expected_cli: claude
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-strict-claude-peer.md
+    prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/D.2-strict-claude-peer.prompt.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    fallback_models: []
+    scope: "Independent quality/completeness review of spec v1.5 against exact I1."
+    status: pending
+  - dispatch_id: audit-rb-D2-gadv
+    family: gemini
+    role: adversarial
+    review_mode: code-review
+    expected_provider: gemini
+    expected_cli: agy
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-strict-gemini-adversarial.md
+    prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/D.2-strict-gemini-adversarial.prompt.md
+    evidence_cap: static-inspection
+    dispatch_method: external-cli
+    fallback_models: []
+    scope: "Blind static falsification of the full base-to-I1 diff and evidence delta."
+    status: pending
+    prompt_inputs:
+      - kind: task_instruction
+        template_id: "05"
+        sha256: a6293e097773aff2a20e1be7c60f923fcec964de8832765618e4934c8a7f6ca5
+      - kind: task_instruction
+        path: docs/reviews/project-ontos-audit-rebaseline-remediation/.packets/D.2-strict-gemini-operational-preflight.txt
+        sha256: 30bfb4d0a14da9e4f197ae4f7b50c2a29b1b9b10ab46113d3dd7a0759775dcf0
+      - kind: review_input
+        path: docs/specs/project-ontos-audit-rebaseline-remediation-spec.md
+        sha256: 222c8c7a768b3f364d1b4c96f7083840a9fdde843b27e81101b5929c280a3ef7
+      - kind: review_input
+        path: docs/reviews/project-ontos-audit-rebaseline-remediation/.packets/D.2-base-to-I1.patch
+        sha256: 175ec79376661115c0445ff124d8d17c4bcd21cba528304adf861d158ce9bd5c
+      - kind: review_input
+        path: docs/reviews/project-ontos-audit-rebaseline-remediation/.packets/D.2-I1-to-evidence.patch
+        sha256: f282178c263d7cdf50106d24195c27649834c5cb780d020b511cc73dadd14c39
+  - dispatch_id: audit-rb-D2-gla
+    family: glm
+    role: alignment
+    review_mode: code-review
+    expected_provider: glm
+    expected_cli: opencode
+    expected_model: glm-5.2
+    expected_artifact: docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-strict-glm-alignment.md
+    prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/D.2-strict-glm-alignment.prompt.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    serving_provider: neuralwatt
+    wire_protocol: openai-compatible
+    opencode_provider_id: neuralwatt
+    opencode_model_ref: neuralwatt/glm-5.2
+    opencode_base_url_env: NEURALWATT_BASE_URL
+    opencode_api_key_env: NEURALWATT_API_KEY
+    endpoint_origin_label: neuralwatt
+    evidence_trust_tier: attested-third-party
+    route_attestation_profile_id: neuralwatt-opencode-glm-5-2-v1
+    advisory_only: false
+    fallback_models: []
+    scope: "Independent alignment review of spec v1.5 constraints against exact I1."
+    status: pending
+  - dispatch_id: audit-rb-D2-cprod
+    family: claude
+    role: product
+    review_mode: code-review
+    expected_provider: claude
+    expected_cli: claude
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-strict-claude-product.md
+    prompt_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.prompts/D.2-strict-claude-product.prompt.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    fallback_models: []
+    scope: "Separate-session Product review of user-visible compatibility, recovery, and release messaging."
+    status: pending

@@ -1,0 +1,31 @@
+D.2 OPERATIONAL PREFLIGHT — NO CORRECTNESS CLAIMS
+
+Deliverable: project-ontos-audit-rebaseline-remediation
+Phase: D.2
+Reviewer family: gemini (executed through AGY)
+Role/lens: adversarial
+Evidence cap: static-inspection
+Output path: docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-strict-gemini-adversarial.md
+
+Review only the attached Template 05 rubric, spec v1.5 bytes, and raw diff packet.
+The diff packet contains an unedited git diff from historical base bf91b42 to
+Phase C implementation I1 05b090d, followed by the unedited I1-to-1acd232
+committed control-plane evidence delta. Do not rely on prior verdicts, tracker
+conclusions, test summaries, author reasoning, or correctness claims. Do not
+call tools or inspect the workspace. Falsify rather than confirm; derive attack
+surfaces from the spec and diff. No reproduction means no blocker.
+
+Emit only the complete artifact bytes, beginning with `---` and no code fence.
+Use literal frontmatter:
+
+id: audit-rb-D2-gadv
+deliverable_id: project-ontos-audit-rebaseline-remediation
+phase: D.2
+role: adversarial
+family: gemini
+evidence_labels_used: [static-inspection]
+status: completed
+
+Follow every mandatory Template 05 section. Under `## Verdict`, the first
+nonblank line must be exactly one bare canonical verdict token. Because the
+evidence cap is static-inspection, do not claim direct-run or tool execution.

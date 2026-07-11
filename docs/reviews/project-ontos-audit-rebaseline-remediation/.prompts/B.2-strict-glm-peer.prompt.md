@@ -1,0 +1,11 @@
+# B.2 final GLM peer corrected-spec review
+
+Read `.llm-dev/framework/templates/01-worker-session-contract.md`, `02-phase-dispatch-handoff.md`, and `03-review-board-peer.md` completely. You are GLM 5.2 Peer for `project-ontos-audit-rebaseline-remediation`, phase `B.2`, on the named Neuralwatt/OpenCode attested route.
+
+Independently review committed spec v1.5 and frozen I0 `b6f89d7` for completeness, clarity, diagram/prose consistency, accurate I0-versus-Phase-C anchors, implementability, test strategy, and honest state/external/nonrelease boundaries. Concentrate on the v1.5 corrections: eager clause parsing; binding checks around every name-based writer mutation; multi-link lock refusal; control-plane root/child/enum/owner/path quarantine; exact GitHub identity/checklists; archive warning/exit-3 JSON semantics; exact guidance anchor; and final B.1 clarity fixes. You may read `C-phase-falsification-findings.md` for reproduction statements but no reviewer verdict/result/receipt. Inspect I0 only with bounded `git show`/`git diff`; do not use current Phase C as proof, create a worktree, run the full suite, invoke agents, edit implementation, or commit.
+
+Before analysis, overwrite `docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-strict-glm-peer.md` with the single line `pending wrapper F38 promotion`. Write the completed artifact to `docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-B2-gp.review.md`, then stdout only `Created` plus that backticked path. Follow Template 03; omit optional `id`; use literal `deliverable_id: project-ontos-audit-rebaseline-remediation`, `phase: B.2`, `role: peer`, `family: glm`, `evidence_labels_used: [static-inspection]`, `status: completed`; include one H1, mandatory sections, and exact unnumbered `## Verdict` with a bare canonical token. Use short SHAs only, emit no high-entropy strings, edit no other file.
+
+Route-redaction constraint: describe workflow identity-token permissions as
+"OIDC permission" in prose. Do not quote secret-shaped configuration keys
+followed by literal values.

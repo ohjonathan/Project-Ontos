@@ -83,7 +83,8 @@ defect plus the not-yet-run D.5 seats.
 The same immutable-receipt rule applies. No D.2 receipt is edited, copied,
 reconstructed, or restamped. `lifecycle-receipt-inventory-final.yaml` and all
 of its prompts, transcripts, failed attempts, route attestations, and verdicts
-remain non-certifying attempt history. The manifest rolls to a new inventory,
+remain non-certifying attempt history. The manifest rolls to
+`lifecycle-receipt-inventory-strict-final.yaml`,
 and every B.1, B.2, and D.2 engineering/Product seat is dispatched again as a
 fresh round-1 wrapper capture with new intent, result, prompt, raw-output, and
 verdict paths. D.3 remains blocked until those three fresh bundles and strict

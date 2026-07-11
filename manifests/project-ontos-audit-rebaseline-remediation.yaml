@@ -373,23 +373,23 @@ review_rounds:
     round: 1
     preserved_blocker_ids: []
 reviewer_family_substitutes: []
-consolidation_mode: fast-path
+consolidation_mode: external
 self_review_caveats:
   - family: codex
     phases: ["D.3"]
-    rationale: "Codex authored the frozen implementation snapshot and performs structural fast-path consolidation only after three non-author D.2 engineering reviews plus the Product review; D.5 remains fully external."
+    rationale: "Codex authored the frozen implementation snapshot; a separate Codex meta-consolidator adjudicates the split D.2 board only after fresh external-family dispatch verification and direct reproductions, while D.5 remains fully external."
 
-lifecycle_receipt_inventory_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/lifecycle-receipt-inventory-final.yaml"
+lifecycle_receipt_inventory_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/lifecycle-receipt-inventory-strict-final.yaml"
 required_dispatch_bundles:
   - phase: "B.1"
-    intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-final-dispatch-intent.yaml"
-    result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-final-dispatch-result.yaml"
+    intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-strict-final-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-strict-final-dispatch-result.yaml"
   - phase: "B.2"
-    intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-final-dispatch-intent.yaml"
-    result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-final-dispatch-result.yaml"
+    intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-strict-final-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-strict-final-dispatch-result.yaml"
   - phase: "D.2"
-    intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-dispatch-intent.yaml"
-    result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-dispatch-result.yaml"
+    intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-strict-final-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-strict-final-dispatch-result.yaml"
   - phase: "D.5"
     intent_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-dispatch-intent.yaml"
     result_path: "docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-dispatch-result.yaml"
@@ -433,9 +433,9 @@ gate_prerequisites:
     description: "The user-facing Product verdict exists for B.1, B.2, and D.2."
     verification:
       command: >-
-        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-final-claude-product.md &&
-        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-final-claude-product.md &&
-        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-claude-product.md
+        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/B.1-strict-claude-product.md &&
+        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/B.2-strict-claude-product.md &&
+        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-strict-claude-product.md
       expect: "exit-0"
   - id: G-blocker-1
     category: blocker-closure
