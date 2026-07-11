@@ -1,0 +1,59 @@
+I'll start by reading the two required framework templates completely, and exploring the repository structure to understand the setup.
+I've read both templates completely. Now let me locate the relevant artifacts: the D.3 verdict, D.4 fix summary, scope recovery, manifest, and the existing lifecycle worktree. I'll explore in parallel.
+Let me look at the full diff and locate the D.3 verdict, D.4 fix summary, scope recovery, manifest, and the wrapper configuration that designates my output artifact.
+Let me read the manifest for this deliverable and find the review artifact paths.
+Now I understand the manifest. My artifact output path is `docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-glm-verifier.md`. Let me locate the D.3 verdict, D.4 fix summary, scope recovery, and the dispatch intent/result to confirm the wrapper-designated path and probes.
+Now let me read the key artifacts: the D.3 verdict, D.4 fix summary, scope recovery, and the D.5 dispatch intent/result to confirm the wrapper-designated path and probes.
+Let me read the D.3 verdict and D.4 fix summary in full.
+Now let me read the D.4 fix summary in full.
+Now I have all the key inputs. Let me set up the todo list and begin verification. First, let me confirm the git state, the snapshot interpreters, ontos module resolution, and which files differ between the two snapshots.
+The `ontos.__file__` resolved to the parent repo because I ran from the worktree root. I need to run from inside each snapshot directory using a relative `workdir` (the task warns against absolute `.venv` paths). Let me confirm `ontos.__file__` resolves under each snapshot.
+`ontos.__file__` resolves correctly under each snapshot. Now let me confirm exactly 5 implementation files differ between the two snapshots (and tests are identical).
+The source files that differ are exactly the 5 target implementation files (`.pyc` bytecode caches will be invalidated by `-B`/`--cache-clear`). Let me verify that `d5-glm-pre` files match pre-fix `aa41c39` and `d5-glm-post` files match post-fix `311b60b` via git object hashes.
+All 5 target files verified: `d5-glm-pre` matches pre-fix `aa41c39` and `d5-glm-post` matches post-fix `311b60b` exactly. Now let me begin the verification runs.
+
+**Group 1 (CAN-ACT-1, CAN-ACT-2)** — post-fix snapshot, expect pass.
+Group 1 post-fix: **4 passed, EXIT=0** (pass as required). Now the pre-fix snapshot, expecting nonzero.
+Group 1 pre-fix: **4 failed, EXIT=1** (nonzero as required). Failures match D.3 findings precisely — missing `Reason:` line (CAN-ACT-1) and `Config error:` instead of canonical `Invalid [ontos].required_version:` prefix (CAN-ACT-2).
+**Group 2 (CAN-CP-1, CAN-CP-2, CAN-CP-3)** — post-fix snapshot first, expect pass.
+Group 2 post-fix: **8 passed, EXIT=0** (pass as required). Now the pre-fix snapshot, expecting nonzero.
+Group 2 pre-fix: **8 failed, EXIT=1** (nonzero as required). Failures match D.3 — CP-1 mutations not checked (false green), CP-2 duplicates not rejected, CP-3 returns exit 2 instead of 1 (`assert 2 == 1`). Now Group 3.
+**Group 3 (CAN-ID-1)** — post-fix snapshot, expect pass.
+Group 3 post-fix: **24 passed, EXIT=0** (pass as required). Now the pre-fix snapshot, expecting nonzero.
+Group 3 pre-fix: **24 failed, EXIT=1** (nonzero as required). Failures match D.3 — divergent `old_id_not_found`/`invalid_new_id` codes, regex copy vs canonical, false-green same-ID no-op (exit 0), MCP `E_INVALID_ID` instead of `E_USER_INPUT`, preflight running before validation. All six should-fixes confirmed.
+
+Now the full `tests/` suite in `d5-glm-post` with `-q -p no:cacheprovider`.
+Full suite in `d5-glm-post`: **1720 passed, 1 warning, EXIT=0**. No regressions. Now the lifecycle worktree checks. Let me run registry local validation, changed-path scope, `git diff --check HEAD`, and the EH-15-A manifest-mode probe.
+Registry local/external parity, changed-path scope, and `git diff --check HEAD` all pass (EXIT=0). Now let me run manifest conformance, cardinality assertions, and the two EH-15-A probes (D4-INFRA-1 verification).
+Manifest conformance (4/4), cardinality assertions (100 findings, I0/I1/I2 exist, forbidden docs absent) all pass. The EH-15-A manifest-mode probe with a relative path returned "manifest not found" (EXIT=2) — the script resolves relative to the framework bundle, not the adopter root. Let me run both EH-15-A probes matching the D.4 summary's exact `$PWD`-prefixed commands.
+The manifest-mode probe returns EXIT=0 with "no D.4 fix-summary exists" even though the file clearly exists — this is the **fail-open** behavior. The `--fix-summary` flag isn't supported; the script takes positional args. Let me run the absolute explicit-path probe as a positional argument, matching the usage string.
+The script rejects combining `--manifest` with explicit summaries. Let me run the absolute explicit-path probe with just the fix-summary path (no `--manifest`).
+D4-INFRA-1 **confirmed as holding**: the manifest-mode probe is fail-open (EXIT=0 with false "no fix-summary exists" message despite the file existing), and the absolute explicit-path probe FAILS (EXIT=1) with 14 diagnostics — all adopter fixtures reported as "does not exist" and "not registered as an exercised regression fixture in scripts/verify-all.sh."
+
+Let me also run the scoped `git diff --check` from the manifest's D.2 smoke check, then write the verdict.
+All checks complete. The scoped `git diff --check` (bf91b42..HEAD) also passes (EXIT=0). Let me quickly review the sibling verifier artifacts for format precedent before writing mine.
+The Gemini verifier artifact is an unrelated AGY CLI-help capture (not a valid verdict). Let me check the Claude verifier for format precedent.
+I have all evidence. The Gemini artifact is an invalid AGY CLI-help capture (matches the dispatch intent's noted failure). The Claude verifier gives good format precedent. Now I'll write my verdict artifact.
+Let me verify the artifact structure — frontmatter, H1, and the exact `## Verdict` line.
+Frontmatter, H1, and `## Verdict` → `Request changes` all correctly placed. Let me run the framework's artifact linter if available and verify I haven't touched the snapshots.
+Artifact linter passes (`verdict_shaped: request_changes`, EXIT=0). The artifact is untracked (not committed — correct per worker contract). No git-tracked snapshot changes. Let me do a final verification that the 5 snapshot source files remain unchanged after all test runs.
+All 5 snapshot source files remain unchanged (pre=OK post=OK for all). The `-B`/`--cache-clear` flags prevented any bytecode contamination.
+Verification complete. The D.5 GLM verifier artifact is written to `docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-glm-verifier.md` (untracked, not committed — per worker contract the orchestrator commits).
+
+**Summary of findings:**
+
+All six canonical should-fixes verified with `direct-run` evidence via the two orchestrator-prepared snapshots (`-B --cache-clear` on every focused run):
+
+| Finding | Post-fix (d5-glm-post) | Pre-fix (d5-glm-pre) |
+|---|---|---|
+| CAN-ACT-1/2 | 4 passed, exit 0 | 4 failed, exit 1 |
+| CAN-CP-1/2/3 | 8 passed, exit 0 | 8 failed, exit 1 |
+| CAN-ID-1 | 24 passed, exit 0 | 24 failed, exit 1 |
+
+**Full suite:** 1720 passed, 1 warning, EXIT=0 (no regressions).
+
+**D4-INFRA-1 holds** — verified with both EH-15-A probes:
+- Manifest-mode: EXIT=0 false PASS ("no fix-summary exists" despite the 12KB file existing) — fail-open
+- Absolute explicit-path: EXIT=1 FAILED (14 diagnostics — adopter fixtures "do not exist" and "not registered")
+
+**Verdict:** `Request changes` — D4-INFRA-1 holds, so lifecycle closure is blocked even though product tests pass. The required further action is upstream framework support for an adopter-owned fixture registry plus a pinned framework upgrade.

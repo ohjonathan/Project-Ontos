@@ -1,0 +1,1093 @@
+[0m
+> build · glm-5.2
+[0m
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>
+[0m
+[0m$ [0mgit log --oneline aa41c3982e21b0e0cff6c3c5486f4af9e5e55e05..311b60b6e86abe6d0b5a7ac61e16d07049387707 2>&1 | head -50
+311b60b Use canonical ID validation for rename
+2dede68 Bind control-plane registry evidence to D4 fix
+5c5a9cd Harden audit remediation control-plane validation
+f6d6b77 Fix D3 activation diagnostics
+[0m
+[0m$ [0mgit rev-parse --abbrev-ref HEAD && git rev-parse HEAD
+codex/audit-rebaseline-remediation-lifecycle
+599ae90723aaad5b83eca3bbe075dc83afd8c980
+[0m
+[0m$ [0mls -la .venv/d5-glm-post .venv/d5-glm-pre 2>&1
+.venv/d5-glm-post:
+total 440
+drwxr-xr-x@ 34 jonathanoh  wheel   1088 Jul 10 20:25 .
+drwxr-xr-x@ 10 jonathanoh  wheel    320 Jul 10 20:25 ..
+drwxr-xr-x@  3 jonathanoh  wheel     96 Jul 10 20:09 .agent
+-rw-r--r--@  1 jonathanoh  wheel   2207 Jul 10 20:09 .cursorrules
+drwxr-xr-x@  4 jonathanoh  wheel    128 Jul 10 20:09 .gemini
+-rw-r--r--@  1 jonathanoh  wheel    549 Jul 10 20:09 .gitattributes
+drwxr-xr-x@  5 jonathanoh  wheel    160 Jul 10 20:09 .github
+-rw-r--r--@  1 jonathanoh  wheel    468 Jul 10 20:09 .gitignore
+-rw-r--r--@  1 jonathanoh  wheel    119 Jul 10 20:09 .gitmodules
+-rw-r--r--@  1 jonathanoh  wheel    342 Jul 10 20:09 .johnny-os.yaml
+drwxr-xr-x@  5 jonathanoh  wheel    160 Jul 10 20:09 .llm-dev
+drwxr-xr-x@  7 jonathanoh  wheel    224 Jul 10 20:09 .ontos
+drwxr-xr-x@ 12 jonathanoh  wheel    384 Jul 10 20:09 .ontos-internal
+-rw-r--r--@  1 jonathanoh  wheel   1355 Jul 10 20:09 .ontos.toml
+-rw-r--r--@  1 jonathanoh  wheel    773 Jul 10 20:09 .pre-commit-config.yaml
+drwxr-xr-x@  5 jonathanoh  wheel    160 Jul 10 20:09 .project-internal
+-rw-r--r--@  1 jonathanoh  wheel     57 Jul 10 20:09 .trufflehog-exclude-paths.txt
+drwxr-xr-x@  3 jonathanoh  wheel     96 Jul 10 20:09 .vscode
+-rw-r--r--@  1 jonathanoh  wheel   4890 Jul 10 20:09 AGENTS.md
+-rw-r--r--@  1 jonathanoh  wheel  26656 Jul 10 20:09 CHANGELOG.md
+-rw-r--r--@  1 jonathanoh  wheel    620 Jul 10 20:09 CLAUDE.md
+-rw-r--r--@  1 jonathanoh  wheel  11351 Jul 10 20:09 LICENSE
+-rw-r--r--@  1 jonathanoh  wheel  55719 Jul 10 20:09 Ontos_CHANGELOG.md
+-rw-r--r--@  1 jonathanoh  wheel  35282 Jul 10 20:09 Ontos_Context_Map.md
+-rw-r--r--@  1 jonathanoh  wheel  29233 Jul 10 20:09 README.md
+-rw-r--r--@  1 jonathanoh  wheel   4052 Jul 10 20:09 SECURITY.md
+drwxr-xr-x@ 12 jonathanoh  wheel    384 Jul 10 20:09 docs
+drwxr-xr-x@  3 jonathanoh  wheel     96 Jul 10 20:09 examples
+drwxr-xr-x@  9 jonathanoh  wheel    288 Jul 10 20:09 manifests
+drwxr-xr-x@ 14 jonathanoh  wheel    448 Jul 10 20:25 ontos
+-rw-r--r--@  1 jonathanoh  wheel   2086 Jul 10 20:09 pyproject.toml
+-rw-r--r--@  1 jonathanoh  wheel    170 Jul 10 20:09 requirements.txt
+drwxr-xr-x@  5 jonathanoh  wheel    160 Jul 10 20:09 scripts
+drwxr-xr-x@ 37 jonathanoh  wheel   1184 Jul 10 20:09 tests
+
+.venv/d5-glm-pre:
+total 440
+drwxr-xr-x@ 34 jonathanoh  wheel   1088 Jul 10 20:25 .
+drwxr-xr-x@ 10 jonathanoh  wheel    320 Jul 10 20:25 ..
+drwxr-xr-x@  3 jonathanoh  wheel     96 Jul 10 20:09 .agent
+-rw-r--r--@  1 jonathanoh  wheel   2207 Jul 10 20:09 .cursorrules
+drwxr-xr-x@  4 jonathanoh  wheel    128 Jul 10 20:09 .gemini
+-rw-r--r--@  1 jonathanoh  wheel    549 Jul 10 20:09 .gitattributes
+drwxr-xr-x@  5 jonathanoh  wheel    160 Jul 10 20:09 .github
+-rw-r--r--@  1 jonathanoh  wheel    468 Jul 10 20:09 .gitignore
+-rw-r--r--@  1 jonathanoh  wheel    119 Jul 10 20:09 .gitmodules
+-rw-r--r--@  1 jonathanoh  wheel    342 Jul 10 20:09 .johnny-os.yaml
+drwxr-xr-x@  5 jonathanoh  wheel    160 Jul 10 20:09 .llm-dev
+drwxr-xr-x@  7 jonathanoh  wheel    224 Jul 10 20:09 .ontos
+drwxr-xr-x@ 12 jonathanoh  wheel    384 Jul 10 20:09 .ontos-internal
+-rw-r--r--@  1 jonathanoh  wheel   1355 Jul 10 20:09 .ontos.toml
+-rw-r--r--@  1 jonathanoh  wheel    773 Jul 10 20:09 .pre-commit-config.yaml
+drwxr-xr-x@  5 jonathanoh  wheel    160 Jul 10 20:09 .project-internal
+-rw-r--r--@  1 jonathanoh  wheel     57 Jul 10 20:09 .trufflehog-exclude-paths.txt
+drwxr-xr-x@  3 jonathanoh  wheel     96 Jul 10 20:09 .vscode
+-rw-r--r--@  1 jonathanoh  wheel   4890 Jul 10 20:09 AGENTS.md
+-rw-r--r--@  1 jonathanoh  wheel  26656 Jul 10 20:09 CHANGELOG.md
+-rw-r--r--@  1 jonathanoh  wheel    620 Jul 10 20:09 CLAUDE.md
+-rw-r--r--@  1 jonathanoh  wheel  11351 Jul 10 20:09 LICENSE
+-rw-r--r--@  1 jonathanoh  wheel  55719 Jul 10 20:09 Ontos_CHANGELOG.md
+-rw-r--r--@  1 jonathanoh  wheel  35282 Jul 10 20:09 Ontos_Context_Map.md
+-rw-r--r--@  1 jonathanoh  wheel  29233 Jul 10 20:09 README.md
+-rw-r--r--@  1 jonathanoh  wheel   4052 Jul 10 20:09 SECURITY.md
+drwxr-xr-x@ 12 jonathanoh  wheel    384 Jul 10 20:09 docs
+drwxr-xr-x@  3 jonathanoh  wheel     96 Jul 10 20:09 examples
+drwxr-xr-x@  9 jonathanoh  wheel    288 Jul 10 20:09 manifests
+drwxr-xr-x@ 13 jonathanoh  wheel    416 Jul 10 19:50 ontos
+-rw-r--r--@  1 jonathanoh  wheel   2086 Jul 10 20:09 pyproject.toml
+-rw-r--r--@  1 jonathanoh  wheel    170 Jul 10 20:09 requirements.txt
+drwxr-xr-x@  5 jonathanoh  wheel    160 Jul 10 20:25 scripts
+drwxr-xr-x@ 37 jonathanoh  wheel   1184 Jul 10 20:09 tests
+[0m
+[0m$ [0mgit diff --stat aa41c3982e21b0e0cff6c3c5486f4af9e5e55e05..311b60b6e86abe6d0b5a7ac61e16d07049387707 2>&1
+.../<redacted:secret>  |   2 +-
+ ontos/commands/activate.py                         |  28 ++-
+ ontos/commands/rename.py                           |  69 ++++--
+ ontos/core/config.py                               |  35 ++-
+ ontos/mcp/rename_tool.py                           |  30 ++-
+ <redacted:secret>     |  85 ++++++--
+ .../commands/test_agentic_activation_resilience.py |  88 +++++++-
+ tests/commands/test_rename.py                      | 151 ++++++++++++-
+ tests/core/test_config_phase3.py                   |  27 +++
+ tests/mcp/test_rename_document.py                  |  68 +++++-
+ tests/test_audit_remediation_registry_validator.py | 237 ++++++++++++++++++++-
+ 11 files changed, 735 insertions(+), 85 deletions(-)
+[0m
+[0m$ [0mls -la docs/.project-internal/reviews/ 2>&1 | head -60
+ls: docs/.project-internal/reviews/: No such file or directory
+[0m
+[0m$ [0mls -la manifests/ 2>&1
+total 264
+drwxr-xr-x@  9 jonathanoh  wheel    288 Jul 10 16:31 .
+drwxr-xr-x@ 39 jonathanoh  wheel   1248 Jul 10 20:29 ..
+-rw-r--r--@  1 jonathanoh  wheel  15938 Jul 10 10:23 project-ontos-audit-doctor-rce.yaml
+-rw-r--r--@  1 jonathanoh  wheel  21207 Jul 10 20:06 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  44913 Jul 10 19:57 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  15426 Jul 10 10:23 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   9372 Jul 10 10:23 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   9940 Jul 10 10:23 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   7338 Jul 10 10:23 project-ontos-v44-agentic-activation-resilience.yaml
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m
+[0m$ [0mls -la <redacted:secret>/ 2>&1
+total 2480
+drwxr-xr-x@  87 jonathanoh  wheel   2784 Jul 10 20:28 .
+drwxr-xr-x@  10 jonathanoh  wheel    320 Jul 10 16:31 ..
+drwxr-xr-x@   6 jonathanoh  wheel    192 Jul 10 18:57 .packets
+drwxr-xr-x@ 130 jonathanoh  wheel   4160 Jul 10 20:29 .prompts
+drwxr-xr-x@ 173 jonathanoh  wheel   5536 Jul 10 20:29 .raw
+drwxr-xr-x@  15 jonathanoh  wheel    480 Jul 10 19:27 .route-attestation
+-rw-r--r--@   1 jonathanoh  wheel  13188 Jul 10 10:52 B.1-claude-adversarial.md
+-rw-r--r--@   1 jonathanoh  wheel  16852 Jul 10 10:52 B.1-claude-product.md
+-rw-r--r--@   1 jonathanoh  wheel   3812 Jul 10 10:35 B.1-dispatch-intent.yaml
+-rw-r--r--@   1 jonathanoh  wheel  67628 Jul 10 11:46 B.1-dispatch-result.yaml
+-rw-r--r--@   1 jonathanoh  wheel   1019 Jul 10 16:28 B.1-dispatch-verification.txt
+-rw-r--r--@   1 jonathanoh  wheel  15331 Jul 10 14:17 B.1-final-claude-adversarial.md
+-rw-r--r--@   1 jonathanoh  wheel  15662 Jul 10 14:15 B.1-final-claude-product.md
+-rw-r--r--@   1 jonathanoh  wheel   3802 Jul 10 14:23 B.1-final-dispatch-intent.yaml
+-rw-r--r--@   1 jonathanoh  wheel  24013 Jul 10 14:34 B.1-final-dispatch-result.yaml
+-rw-r--r--@   1 jonathanoh  wheel   6561 Jul 10 14:10 B.1-final-gemini-alignment.md
+-rw-r--r--@   1 jonathanoh  wheel  14187 Jul 10 14:34 B.1-final-glm-peer.md
+-rw-r--r--@   1 jonathanoh  wheel   1991 Jul 10 11:21 B.1-gemini-alignment.md
+-rw-r--r--@   1 jonathanoh  wheel  16970 Jul 10 11:46 B.1-glm-peer.md
+-rw-r--r--@   1 jonathanoh  wheel  14464 Jul 10 12:44 B.1-recert-claude-adversarial.md
+-rw-r--r--@   1 jonathanoh  wheel  20225 Jul 10 13:25 B.1-recert-claude-product.md
+-rw-r--r--@   1 jonathanoh  wheel  11161 Jul 10 13:19 B.1-recert-gemini-alignment.md
+-rw-r--r--@   1 jonathanoh  wheel  12064 Jul 10 12:49 B.1-recert-glm-peer.md
+-rw-r--r--@   1 jonathanoh  wheel   3794 Jul 10 12:49 <redacted:secret>
+-rw-r--r--@   1 jonathanoh  wheel  31215 Jul 10 13:25 <redacted:secret>
+-rw-r--r--@   1 jonathanoh  wheel  13477 Jul 10 19:04 B.1-strict-claude-adversarial.md
+-rw-r--r--@   1 jonathanoh  wheel  19144 Jul 10 19:04 B.1-strict-claude-product.md
+-rw-r--r--@   1 jonathanoh  wheel   3598 Jul 10 18:55 B.1-strict-final-dispatch-intent.yaml
+-rw-r--r--@   1 jonathanoh  wheel  13985 Jul 10 19:06 B.1-strict-final-dispatch-result.yaml
+-rw-r--r--@   1 jonathanoh  wheel   8156 Jul 10 18:59 B.1-strict-gemini-alignment.md
+-rw-r--r--@   1 jonathanoh  wheel  13240 Jul 10 19:06 B.1-strict-glm-peer.md
+-rw-r--r--@   1 jonathanoh  wheel  12801 Jul 10 11:59 B.2-claude-adversarial.md
+-rw-r--r--@   1 jonathanoh  wheel  20395 Jul 10 12:07 B.2-claude-product.md
+-rw-r--r--@   1 jonathanoh  wheel   3685 Jul 10 11:14 B.2-dispatch-intent.yaml
+-rw-r--r--@   1 jonathanoh  wheel  22494 Jul 10 12:07 B.2-dispatch-result.yaml
+-rw-r--r--@   1 jonathanoh  wheel   1019 Jul 10 16:28 B.2-dispatch-verification.txt
+-rw-r--r--@   1 jonathanoh  wheel  19132 Jul 10 16:23 B.2-final-claude-adversarial.md
+-rw-r--r--@   1 jonathanoh  wheel  17618 Jul 10 16:21 B.2-final-claude-product.md
+-rw-r--r--@   1 jonathanoh  wheel   3771 Jul 10 16:16 B.2-final-dispatch-intent.yaml
+-rw-r--r--@   1 jonathanoh  wheel  15189 Jul 10 16:25 B.2-final-dispatch-result.yaml
+-rw-r--r--@   1 jonathanoh  wheel   6454 Jul 10 16:16 B.2-final-gemini-alignment.md
+-rw-r--r--@   1 jonathanoh  wheel  15270 Jul 10 16:25 B.2-final-glm-peer.md
+-rw-r--r--@   1 jonathanoh  wheel   1698 Jul 10 12:01 B.2-gemini-alignment.md
+-rw-r--r--@   1 jonathanoh  wheel  11080 Jul 10 11:58 B.2-glm-peer.md
+-rw-r--r--@   1 jonathanoh  wheel  14747 Jul 10 13:59 B.2-recert-claude-adversarial.md
+-rw-r--r--@   1 jonathanoh  wheel  19616 Jul 10 13:54 B.2-recert-claude-product.md
+-rw-r--r--@   1 jonathanoh  wheel   9486 Jul 10 13:48 B.2-recert-gemini-alignment.md
+-rw-r--r--@   1 jonathanoh  wheel  12720 Jul 10 14:01 B.2-recert-glm-peer.md
+-rw-r--r--@   1 jonathanoh  wheel   3814 Jul 10 13:44 <redacted:secret>
+-rw-r--r--@   1 jonathanoh  wheel  30249 Jul 10 14:01 <redacted:secret>
+-rw-r--r--@   1 jonathanoh  wheel  15855 Jul 10 19:15 B.2-strict-claude-adversarial.md
+-rw-r--r--@   1 jonathanoh  wheel  19515 Jul 10 19:12 B.2-strict-claude-product.md
+-rw-r--r--@   1 jonathanoh  wheel   3567 Jul 10 18:55 B.2-strict-final-dispatch-intent.yaml
+-rw-r--r--@   1 jonathanoh  wheel  14025 Jul 10 19:16 B.2-strict-final-dispatch-result.yaml
+-rw-r--r--@   1 jonathanoh  wheel   6632 Jul 10 19:08 B.2-strict-gemini-alignment.md
+-rw-r--r--@   1 jonathanoh  wheel  16215 Jul 10 19:15 B.2-strict-glm-peer.md
+-rw-r--r--@   1 jonathanoh  wheel   9774 Jul 10 16:30 B.3-verdict.md
+-rw-r--r--@   1 jonathanoh  wheel   6953 Jul 10 17:38 C-phase-falsification-findings.md
+-rw-r--r--@   1 jonathanoh  wheel  16634 Jul 10 17:52 D.1-claude-peer.md
+-rw-r--r--@   1 jonathanoh  wheel   1241 Jul 10 17:43 D.1-dispatch-intent.yaml
+-rw-r--r--@   1 jonathanoh  wheel   3102 Jul 10 17:52 D.1-dispatch-result.yaml
+-rw-r--r--@   1 jonathanoh  wheel  15171 Jul 10 18:09 D.2-claude-peer.md
+-rw-r--r--@   1 jonathanoh  wheel  21571 Jul 10 18:11 D.2-claude-product.md
+-rw-r--r--@   1 jonathanoh  wheel   4539 Jul 10 17:57 D.2-dispatch-intent.yaml
+-rw-r--r--@   1 jonathanoh  wheel  30551 Jul 10 18:47 D.2-dispatch-result.yaml
+-rw-r--r--@   1 jonathanoh  wheel  10723 Jul 10 18:01 D.2-gemini-adversarial.md
+-rw-r--r--@   1 jonathanoh  wheel  19628 Jul 10 18:47 D.2-glm-alignment.md
+-rw-r--r--@   1 jonathanoh  wheel  15503 Jul 10 19:30 D.2-strict-claude-peer.md
+-rw-r--r--@   1 jonathanoh  wheel  18581 Jul 10 19:28 D.2-strict-claude-product.md
+-rw-r--r--@   1 jonathanoh  wheel   3303 Jul 10 19:36 D.2-strict-dispatch-attestation-gemini.md
+-rw-r--r--@   1 jonathanoh  wheel    831 Jul 10 19:32 D.2-strict-family-verification.txt
+-rw-r--r--@   1 jonathanoh  wheel   4420 Jul 10 18:57 D.2-strict-final-dispatch-intent.yaml
+-rw-r--r--@   1 jonathanoh  wheel  13970 Jul 10 19:30 D.2-strict-final-dispatch-result.yaml
+-rw-r--r--@   1 jonathanoh  wheel  11280 Jul 10 19:17 D.2-strict-gemini-adversarial.md
+-rw-r--r--@   1 jonathanoh  wheel  17472 Jul 10 19:27 D.2-strict-glm-alignment.md
+-rw-r--r--@   1 jonathanoh  wheel  22160 Jul 10 19:48 D.3-verdict.md
+-rw-r--r--@   1 jonathanoh  wheel  12148 Jul 10 20:08 D.4-fix-summary.md
+-rw-r--r--@   1 jonathanoh  wheel   1953 Jul 10 20:06 D.4-scope-audit-recovery.md
+-rw-r--r--@   1 jonathanoh  wheel  16799 Jul 10 20:19 D.5-claude-verifier.md
+-rw-r--r--@   1 jonathanoh  wheel   3113 Jul 10 20:23 D.5-dispatch-intent.yaml
+-rw-r--r--@   1 jonathanoh  wheel  28781 Jul 10 20:28 D.5-dispatch-result.yaml
+-rw-r--r--@   1 jonathanoh  wheel   1616 Jul 10 20:27 D.5-gemini-verifier.md
+-rw-r--r--@   1 jonathanoh  wheel  34228 Jul 10 18:47 lifecycle-receipt-inventory-final.yaml
+-rw-r--r--@   1 jonathanoh  wheel  32632 Jul 10 14:01 lifecycle-receipt-inventory-recertification.yaml
+-rw-r--r--@   1 jonathanoh  wheel  28311 Jul 10 20:20 lifecycle-receipt-inventory-strict-final.yaml
+-rw-r--r--@   1 jonathanoh  wheel  30638 Jul 10 12:07 lifecycle-receipt-inventory.yaml
+-rw-r--r--@   1 jonathanoh  wheel   4562 Jul 10 18:58 receipt-recovery.md
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m
+[0m# [0mTodos
+[•] Confirm git state, snapshot interpreters, ontos.__file__ resolution, and 5-file diff between d5-glm-pre and d5-glm-post
+[ ] Verify CAN-ACT-1/CAN-ACT-2: run activation focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[ ] Verify CAN-CP-1/2/3: run registry validator focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[ ] Verify CAN-ID-1: run rename focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[ ] Run full tests/ suite in d5-glm-post with -q -p no:cacheprovider
+[ ] From lifecycle worktree: registry local/external parity, changed-path scope, manifest conformance, git diff --check HEAD
+[ ] Verify D4-INFRA-1: run manifest-mode and absolute explicit-path EH-15-A probes
+[ ] Write verdict artifact to D.5-glm-verifier.md with Template 15 frontmatter
+[0m
+[0m$ [0mgit status --short --branch && echo "---HEAD---" && git rev-parse HEAD
+## codex/audit-rebaseline-remediation-lifecycle
+ M Ontos_Context_Map.md
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+---HEAD---
+599ae90723aaad5b83eca3bbe075dc83afd8c980
+[0m
+[0m$ [0mls -la .venv/bin/python && echo "---post---" && .venv/d5-glm-post/../bin/python -c "import ontos; print(ontos.__file__)" 2>&1 && echo "---pre---" && .venv/d5-glm-pre/../bin/python -c "import ontos; print(ontos.__file__)" 2>&1
+lrwxr-xr-x@ 1 jonathanoh  wheel  10 Jul 10 10:25 .venv/bin/python -> python3.14
+---post---
+/<redacted:secret>
+---pre---
+/<redacted:secret>
+[0m
+[0m$ [0m../bin/python -c "import ontos; print(ontos.__file__)"
+/<redacted:secret>
+[0m
+[0m$ [0m../bin/python -c "import ontos; print(ontos.__file__)"
+/<redacted:secret>
+[0m
+[0m$ [0mdiff -rq .venv/d5-glm-post .venv/d5-glm-pre 2>&1 | head -40
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .venv/d5-glm-post/ontos/core/config.py and .venv/d5-glm-pre/ontos/core/config.py differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+Files .<redacted:secret> and .<redacted:secret> differ
+[0m
+[0m$ [0mfor f in ontos/commands/activate.py ontos/core/config.py ontos/commands/rename.py ontos/mcp/rename_tool.py <redacted:secret>; do
+  pre_g=$(git rev-parse aa41c3982e21b0e0cff6c3c5486f4af9e5e55e05:"$f")
+  post_g=$(git rev-parse 311b60b6e86abe6d0b5a7ac61e16d07049387707:"$f")
+  pre_s=$(git hash-object ".venv/d5-glm-pre/$f")
+  post_s=$(git hash-object ".venv/d5-glm-post/$f")
+  echo "$f"
+  echo "  pre  git=$pre_g snap=$pre_s  $([ "$pre_g" = "$pre_s" ] && echo MATCH || echo MISMATCH)"
+  echo "  post git=$post_g snap=$post_s  $([ "$post_g" = "$post_s" ] && echo MATCH || echo MISMATCH)"
+done
+ontos/commands/activate.py
+  pre  <redacted:secret> <redacted:secret>  MATCH
+  post git=92c4cd8609944cb594a5fe34c250bea97e092453 snap=92c4cd8609944cb594a5fe34c250bea97e092453  MATCH
+ontos/core/config.py
+  pre  git=97b78803dcbbfa52fda1de774b1c195e7ce8badd snap=97b78803dcbbfa52fda1de774b1c195e7ce8badd  MATCH
+  post <redacted:secret> <redacted:secret>  MATCH
+ontos/commands/rename.py
+  pre  <redacted:secret> <redacted:secret>  MATCH
+  post git=97101530695c75454c797156f9a33de472836019 snap=97101530695c75454c797156f9a33de472836019  MATCH
+ontos/mcp/rename_tool.py
+  pre  <redacted:secret> <redacted:secret>  MATCH
+  post <redacted:secret> <redacted:secret>  MATCH
+<redacted:secret>
+  pre  git=89857f0eb233fa10ed79300bb032f00d262c78ee snap=89857f0eb233fa10ed79300bb032f00d262c78ee  MATCH
+  post git=9c9fd3c34fd3d15721adaa6d2ce72c194c17b12e snap=9c9fd3c34fd3d15721adaa6d2ce72c194c17b12e  MATCH
+[0m
+[0m$ [0m../bin/python -B -m pytest tests/commands/test_agentic_activation_resilience.py -k 'human_renders_incompatible or human_renders_malformed or json_renders_malformed' --cache-clear -v 2>&1; echo "EXIT=$?"
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0 -- /<redacted:secret>
+cachedir: .pytest_cache
+rootdir: /<redacted:secret>
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.14.1
+collecting ... collected 11 items / 7 deselected / 4 selected
+
+tests/commands/test_agentic_activation_resilience.py::test_activate_human_renders_incompatible_version_reason_once PASSED [ 25%]
+tests/commands/test_agentic_activation_resilience.py::test_activate_human_renders_malformed_range_contract_once PASSED [ 50%]
+tests/commands/test_agentic_activation_resilience.py::test_activate_json_renders_malformed_range_contract_once[not-a-range-not-a-range] PASSED [ 75%]
+tests/commands/test_agentic_activation_resilience.py::test_activate_json_renders_malformed_range_contract_once[>=4.7.0, not-a-range, <5.0.0-not-a-range] PASSED [100%]
+
+======================= 4 passed, 7 deselected in 0.43s ========================
+EXIT=0
+[0m
+[0m$ [0m../bin/python -B -m pytest tests/commands/test_agentic_activation_resilience.py -k 'human_renders_incompatible or human_renders_malformed or json_renders_malformed' --cache-clear -v 2>&1; echo "EXIT=$?"
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0 -- /<redacted:secret>
+cachedir: .pytest_cache
+rootdir: /<redacted:secret>
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.14.1
+collecting ... collected 11 items / 7 deselected / 4 selected
+
+tests/commands/test_agentic_activation_resilience.py::test_activate_human_renders_incompatible_version_reason_once FAILED [ 25%]
+tests/commands/test_agentic_activation_resilience.py::test_activate_human_renders_malformed_range_contract_once FAILED [ 50%]
+tests/commands/test_agentic_activation_resilience.py::test_activate_json_renders_malformed_range_contract_once[not-a-range-not-a-range] FAILED [ 75%]
+tests/commands/test_agentic_activation_resilience.py::test_activate_json_renders_malformed_range_contract_once[>=4.7.0, not-a-range, <5.0.0-not-a-range] FAILED [100%]
+
+=================================== FAILURES ===================================
+_________ test_activate_human_renders_incompatible_version_reason_once _________
+tests/commands/test_agentic_activation_resilience.py:117: in test_activate_human_renders_incompatible_version_reason_once
+    assert len(reason_lines) == 1
+E   assert 0 == 1
+E    +  where 0 = len([])
+__________ test_activate_human_renders_malformed_range_contract_once ___________
+tests/commands/test_agentic_activation_resilience.py:133: in test_activate_human_renders_malformed_range_contract_once
+    assert len(reason_lines) == 1
+E   assert 0 == 1
+E    +  where 0 = len([])
+_ test_activate_json_renders_malformed_range_contract_once[not-a-range-not-a-range] _
+tests/commands/test_agentic_activation_resilience.py:162: in test_activate_json_renders_malformed_range_contract_once
+    assert reason.startswith("Invalid [ontos].required_version:")
+E   assert False
+E    +  where False = <built-in method startswith of str object at 0x10c1c60b0>('Invalid [ontos].required_version:')
+E    +    where <built-in method startswith of str object at 0x10c1c60b0> = "Config error: version clause 'not-a-range' is not a valid semantic version".startswith
+_ test_activate_json_renders_malformed_range_contract_once[>=4.7.0, not-a-range, <5.0.0-not-a-range] _
+tests/commands/test_agentic_activation_resilience.py:162: in test_activate_json_renders_malformed_range_contract_once
+    assert reason.startswith("Invalid [ontos].required_version:")
+E   assert False
+E    +  where False = <built-in method startswith of str object at 0x10c1c79b0>('Invalid [ontos].required_version:')
+E    +    where <built-in method startswith of str object at 0x10c1c79b0> = "Config error: version clause 'not-a-range' is not a valid semantic version".startswith
+=========================== short test summary info ============================
+FAILED tests/commands/test_agentic_activation_resilience.py::test_activate_human_renders_incompatible_version_reason_once - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/commands/test_agentic_activation_resilience.py::test_activate_human_renders_malformed_range_contract_once - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/commands/test_agentic_activation_resilience.py::test_activate_json_renders_malformed_range_contract_once[not-a-range-not-a-range] - assert False
+ +  where False = <built-in method startswith of str object at 0x10c1c60b0>('Invalid [ontos].required_version:')
+ +    where <built-in method startswith of str object at 0x10c1c60b0> = "Config error: version clause 'not-a-range' is not a valid semantic version".startswith
+FAILED tests/commands/test_agentic_activation_resilience.py::test_activate_json_renders_malformed_range_contract_once[>=4.7.0, not-a-range, <5.0.0-not-a-range] - assert False
+ +  where False = <built-in method startswith of str object at 0x10c1c79b0>('Invalid [ontos].required_version:')
+ +    where <built-in method startswith of str object at 0x10c1c79b0> = "Config error: version clause 'not-a-range' is not a valid semantic version".startswith
+======================= 4 failed, 7 deselected in 0.42s ========================
+EXIT=1
+[0m
+[0m# [0mTodos
+[✓] Confirm git state, snapshot interpreters, ontos.__file__ resolution, and 5-file diff between d5-glm-pre and d5-glm-post
+[✓] Verify CAN-ACT-1/CAN-ACT-2: run activation focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[•] Verify CAN-CP-1/2/3: run registry validator focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[ ] Verify CAN-ID-1: run rename focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[ ] Run full tests/ suite in d5-glm-post with -q -p no:cacheprovider
+[ ] From lifecycle worktree: registry local/external parity, changed-path scope, manifest conformance, git diff --check HEAD
+[ ] Verify D4-INFRA-1: run manifest-mode and absolute explicit-path EH-15-A probes
+[ ] Write verdict artifact to D.5-glm-verifier.md with Template 15 frontmatter
+[0m
+[0m$ [0m../bin/python -B -m pytest tests/test_audit_remediation_registry_validator.py -k 'issue_158_control_plane or control_plane_finding_id_and_issue_158 or duplicate_lease_lists or malformed_registry_yaml or malformed_child_manifest_yaml' --cache-clear -v 2>&1; echo "EXIT=$?"
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0 -- /<redacted:secret>
+cachedir: .pytest_cache
+rootdir: /<redacted:secret>
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.14.1
+collecting ... collected 205 items / 197 deselected / 8 selected
+
+tests/test_audit_remediation_registry_validator.py::<redacted:secret>[root_program-project-ontos-audit-remediation-wrong-owner-root_program mismatch for issue #158] PASSED [ 12%]
+tests/test_audit_remediation_registry_validator.py::<redacted:secret>[allowed_paths-replacement1-finding scope exceeds owner #158] PASSED [ 25%]
+tests/test_audit_remediation_registry_validator.py::test_control_plane_finding_id_and_issue_158_are_reserved_as_a_pair[157-158] PASSED [ 37%]
+tests/test_audit_remediation_registry_validator.py::test_duplicate_lease_lists_fail_even_when_o5_is_synchronized[programs-duplicate_values0-| `docs/logs/` | #146, #147, #147 | #146 \u2192 #147 | ordered |] PASSED [ 50%]
+tests/test_audit_remediation_registry_validator.py::test_duplicate_lease_lists_fail_even_when_o5_is_synchronized[order-duplicate_values1-| `docs/logs/` | #146, #147 | #146 \u2192 #147 \u2192 #147 | ordered |] PASSED [ 62%]
+tests/test_audit_remediation_registry_validator.py::test_malformed_registry_yaml_returns_exit_one_never_two PASSED [ 75%]
+tests/test_audit_remediation_registry_validator.py::test_malformed_child_manifest_yaml_returns_exit_one_never_two[146] PASSED [ 87%]
+tests/test_audit_remediation_registry_validator.py::test_malformed_child_manifest_yaml_returns_exit_one_never_two[147] PASSED [100%]
+
+====================== 8 passed, 197 deselected in 1.09s =======================
+EXIT=0
+[0m
+[0m$ [0m../bin/python -B -m pytest tests/test_audit_remediation_registry_validator.py -k 'issue_158_control_plane or control_plane_finding_id_and_issue_158 or duplicate_lease_lists or malformed_registry_yaml or malformed_child_manifest_yaml' --cache-clear -v 2>&1; echo "EXIT=$?"
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0 -- /<redacted:secret>
+cachedir: .pytest_cache
+rootdir: /<redacted:secret>
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.14.1
+collecting ... collected 205 items / 197 deselected / 8 selected
+
+tests/test_audit_remediation_registry_validator.py::<redacted:secret>[root_program-project-ontos-audit-remediation-wrong-owner-root_program mismatch for issue #158] FAILED [ 12%]
+tests/test_audit_remediation_registry_validator.py::<redacted:secret>[allowed_paths-replacement1-finding scope exceeds owner #158] FAILED [ 25%]
+tests/test_audit_remediation_registry_validator.py::test_control_plane_finding_id_and_issue_158_are_reserved_as_a_pair[157-158] FAILED [ 37%]
+tests/test_audit_remediation_registry_validator.py::test_duplicate_lease_lists_fail_even_when_o5_is_synchronized[programs-duplicate_values0-| `docs/logs/` | #146, #147, #147 | #146 \u2192 #147 | ordered |] FAILED [ 50%]
+tests/test_audit_remediation_registry_validator.py::test_duplicate_lease_lists_fail_even_when_o5_is_synchronized[order-duplicate_values1-| `docs/logs/` | #146, #147 | #146 \u2192 #147 \u2192 #147 | ordered |] FAILED [ 62%]
+tests/test_audit_remediation_registry_validator.py::test_malformed_registry_yaml_returns_exit_one_never_two FAILED [ 75%]
+tests/test_audit_remediation_registry_validator.py::test_malformed_child_manifest_yaml_returns_exit_one_never_two[146] FAILED [ 87%]
+tests/test_audit_remediation_registry_validator.py::test_malformed_child_manifest_yaml_returns_exit_one_never_two[147] FAILED [100%]
+
+=================================== FAILURES ===================================
+_ <redacted:secret>[root_program-project-ontos-audit-remediation-wrong-owner-root_program mismatch for issue #158] _
+tests/test_audit_remediation_registry_validator.py:547: in <redacted:secret>
+    assert expected_fragment in captured.err
+E   AssertionError: assert 'root_program mismatch for issue #158' in 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n'
+E    +  where 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n' = CaptureResult(out='', err='audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n').err
+_ <redacted:secret>[allowed_paths-replacement1-finding scope exceeds owner #158] _
+tests/test_audit_remediation_registry_validator.py:547: in <redacted:secret>
+    assert expected_fragment in captured.err
+E   AssertionError: assert 'finding scope exceeds owner #158' in 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n'
+E    +  where 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n' = CaptureResult(out='', err='audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n').err
+_ test_control_plane_finding_id_and_issue_158_are_reserved_as_a_pair[157-158] __
+tests/test_audit_remediation_registry_validator.py:589: in test_control_plane_finding_id_and_issue_158_are_reserved_as_a_pair
+    assert "R2-control-plane-parity-1 must be assigned to issue #158" in captured.err
+E   assert 'R2-control-plane-parity-1 must be assigned to issue #158' in "audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- GitHub issue finding-count snapshot mismatch: registry={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 1, 158: 1}, snapshot={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 2}\n- finding release distribution mismatch: observed={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.7.1'): 1, (157, 'v4.9.0'): 1, (158, 'v4.9.0'): 1}, expected={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.9.0'): 2, (158, 'v4.7.1'): 1}\n- R2-control-plane-parity-1 root_program mismatch for issue #157: finding='project-ontos-audit-remediation-2026-07', program='project-ontos-audit-graph-traversal'\n- R2-control-plane-parity-1 finding scope exceeds program #157: ['<redacted:secret>', '<redacted:secret>', 'docs/trackers/project-ontos-audit-remediation-release-line.md', '<redacted:secret>-*.md', '<redacted:secret>', 'tests/test_audit_remediation_registry_validator.py']\n- issue #158 max severity mismatch: registry rows=P2, program=None\n- O4 row #157 differs from registry authority: observed=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_verification_pending=2'), expected=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_parity_verified=1; implemented_committed_verification_pending=1')\n"
+E    +  where "audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- GitHub issue finding-count snapshot mismatch: registry={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 1, 158: 1}, snapshot={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 2}\n- finding release distribution mismatch: observed={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.7.1'): 1, (157, 'v4.9.0'): 1, (158, 'v4.9.0'): 1}, expected={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.9.0'): 2, (158, 'v4.7.1'): 1}\n- R2-control-plane-parity-1 root_program mismatch for issue #157: finding='project-ontos-audit-remediation-2026-07', program='project-ontos-audit-graph-traversal'\n- R2-control-plane-parity-1 finding scope exceeds program #157: ['<redacted:secret>', '<redacted:secret>', 'docs/trackers/project-ontos-audit-remediation-release-line.md', '<redacted:secret>-*.md', '<redacted:secret>', 'tests/test_audit_remediation_registry_validator.py']\n- issue #158 max severity mismatch: registry rows=P2, program=None\n- O4 row #157 differs from registry authority: observed=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_verification_pending=2'), expected=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_parity_verified=1; implemented_committed_verification_pending=1')\n" = CaptureResult(out='', err="audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- GitHub issue finding-count snapshot mismatch: registry={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 1, 158: 1}, snapshot={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 2}\n- finding release distribution mismatch: observed={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.7.1'): 1, (157, 'v4.9.0'): 1, (158, 'v4.9.0'): 1}, expected={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.9.0'): 2, (158, 'v4.7.1'): 1}\n- R2-control-plane-parity-1 root_program mismatch for issue #157: finding='project-ontos-audit-remediation-2026-07', program='project-ontos-audit-graph-traversal'\n- R2-control-plane-parity-1 finding scope exceeds program #157: ['<redacted:secret>', '<redacted:secret>', 'docs/trackers/project-ontos-audit-remediation-release-line.md', '<redacted:secret>-*.md', '<redacted:secret>', 'tests/test_audit_remediation_registry_validator.py']\n- issue #158 max severity mismatch: registry rows=P2, program=None\n- O4 row #157 differs from registry authority: observed=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_verification_pending=2'), expected=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_parity_verified=1; implemented_committed_verification_pending=1')\n").err
+_ test_duplicate_lease_lists_fail_even_when_o5_is_synchronized[programs-duplicate_values0-| `docs/logs/` | #146, #147, #147 | #146 \u2192 #147 | ordered |] _
+tests/test_audit_remediation_registry_validator.py:769: in test_duplicate_lease_lists_fail_even_when_o5_is_synchronized
+    assert f"shared_path_leases row 0 has duplicate {field}" in captured.err
+E   AssertionError: assert 'shared_path_leases row 0 has duplicate programs' in 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n'
+E    +  where 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n' = CaptureResult(out='', err='audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n').err
+_ test_duplicate_lease_lists_fail_even_when_o5_is_synchronized[order-duplicate_values1-| `docs/logs/` | #146, #147 | #146 \u2192 #147 \u2192 #147 | ordered |] _
+tests/test_audit_remediation_registry_validator.py:769: in test_duplicate_lease_lists_fail_even_when_o5_is_synchronized
+    assert f"shared_path_leases row 0 has duplicate {field}" in captured.err
+E   AssertionError: assert 'shared_path_leases row 0 has duplicate order' in 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- lease order does not enumerate each program once for docs/logs/\n'
+E    +  where 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- lease order does not enumerate each program once for docs/logs/\n' = CaptureResult(out='', err='audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- lease order does not enumerate each program once for docs/logs/\n').err
+___________ test_malformed_registry_yaml_returns_exit_one_never_two ____________
+tests/test_audit_remediation_registry_validator.py:932: in test_malformed_registry_yaml_returns_exit_one_never_two
+    assert exit_code == 1
+E   assert 2 == 1
+______ test_malformed_child_manifest_yaml_returns_exit_one_never_two[146] ______
+tests/test_audit_remediation_registry_validator.py:957: in test_malformed_child_manifest_yaml_returns_exit_one_never_two
+    assert exit_code == 1
+E   assert 2 == 1
+______ test_malformed_child_manifest_yaml_returns_exit_one_never_two[147] ______
+tests/test_audit_remediation_registry_validator.py:957: in test_malformed_child_manifest_yaml_returns_exit_one_never_two
+    assert exit_code == 1
+E   assert 2 == 1
+=========================== short test summary info ============================
+FAILED tests/test_audit_remediation_registry_validator.py::<redacted:secret>[root_program-project-ontos-audit-remediation-wrong-owner-root_program mismatch for issue #158] - AssertionError: assert 'root_program mismatch for issue #158' in 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n'
+ +  where 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n' = CaptureResult(out='', err='audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n').err
+FAILED tests/test_audit_remediation_registry_validator.py::<redacted:secret>[allowed_paths-replacement1-finding scope exceeds owner #158] - AssertionError: assert 'finding scope exceeds owner #158' in 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n'
+ +  where 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n' = CaptureResult(out='', err='audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n').err
+FAILED tests/test_audit_remediation_registry_validator.py::test_control_plane_finding_id_and_issue_158_are_reserved_as_a_pair[157-158] - assert 'R2-control-plane-parity-1 must be assigned to issue #158' in "audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- GitHub issue finding-count snapshot mismatch: registry={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 1, 158: 1}, snapshot={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 2}\n- finding release distribution mismatch: observed={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.7.1'): 1, (157, 'v4.9.0'): 1, (158, 'v4.9.0'): 1}, expected={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.9.0'): 2, (158, 'v4.7.1'): 1}\n- R2-control-plane-parity-1 root_program mismatch for issue #157: finding='project-ontos-audit-remediation-2026-07', program='project-ontos-audit-graph-traversal'\n- R2-control-plane-parity-1 finding scope exceeds program #157: ['<redacted:secret>', '<redacted:secret>', 'docs/trackers/project-ontos-audit-remediation-release-line.md', '<redacted:secret>-*.md', '<redacted:secret>', 'tests/test_audit_remediation_registry_validator.py']\n- issue #158 max severity mismatch: registry rows=P2, program=None\n- O4 row #157 differs from registry authority: observed=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_verification_pending=2'), expected=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_parity_verified=1; implemented_committed_verification_pending=1')\n"
+ +  where "audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- GitHub issue finding-count snapshot mismatch: registry={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 1, 158: 1}, snapshot={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 2}\n- finding release distribution mismatch: observed={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.7.1'): 1, (157, 'v4.9.0'): 1, (158, 'v4.9.0'): 1}, expected={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.9.0'): 2, (158, 'v4.7.1'): 1}\n- R2-control-plane-parity-1 root_program mismatch for issue #157: finding='project-ontos-audit-remediation-2026-07', program='project-ontos-audit-graph-traversal'\n- R2-control-plane-parity-1 finding scope exceeds program #157: ['<redacted:secret>', '<redacted:secret>', 'docs/trackers/project-ontos-audit-remediation-release-line.md', '<redacted:secret>-*.md', '<redacted:secret>', 'tests/test_audit_remediation_registry_validator.py']\n- issue #158 max severity mismatch: registry rows=P2, program=None\n- O4 row #157 differs from registry authority: observed=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_verification_pending=2'), expected=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_parity_verified=1; implemented_committed_verification_pending=1')\n" = CaptureResult(out='', err="audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- GitHub issue finding-count snapshot mismatch: registry={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 1, 158: 1}, snapshot={146: 1, 147: 2, 148: 11, 149: 20, 150: 15, 151: 5, 152: 6, 153: 9, 154: 14, 155: 1, 156: 5, 157: 2}\n- finding release distribution mismatch: observed={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.7.1'): 1, (157, 'v4.9.0'): 1, (158, 'v4.9.0'): 1}, expected={(146, 'v4.7.1'): 2, (147, 'v4.7.1'): 2, (148, 'v4.7.1'): 3, (148, 'v4.8.0'): 9, (149, 'v4.7.1'): 2, (149, 'v4.8.0'): 19, (150, 'v4.7.1'): 1, (150, 'v4.8.0'): 15, (151, 'v4.7.1'): 1, (151, 'v4.8.0'): 5, (152, 'v4.8.0'): 6, (153, 'v4.7.1'): 1, (153, 'v4.8.0'): 11, (154, 'v4.9.0'): 14, (155, 'v4.9.0'): 1, (156, 'v4.8.0'): 2, (156, 'v4.9.0'): 3, (157, 'v4.9.0'): 2, (158, 'v4.7.1'): 1}\n- R2-control-plane-parity-1 root_program mismatch for issue #157: finding='project-ontos-audit-remediation-2026-07', program='project-ontos-audit-graph-traversal'\n- R2-control-plane-parity-1 finding scope exceeds program #157: ['<redacted:secret>', '<redacted:secret>', 'docs/trackers/project-ontos-audit-remediation-release-line.md', '<redacted:secret>-*.md', '<redacted:secret>', 'tests/test_audit_remediation_registry_validator.py']\n- issue #158 max severity mismatch: registry rows=P2, program=None\n- O4 row #157 differs from registry authority: observed=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_verification_pending=2'), expected=('project-ontos-audit-graph-traversal', 'v4.9.0', 'P2', 'implementation_committed_lifecycle_pending', 'open; M3', 'base `bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95`; implementation `b6f89d77e7fb684b8bd9a181a24c773d5777397a`', 'implemented_committed_parity_verified=1; implemented_committed_verification_pending=1')\n").err
+FAILED tests/test_audit_remediation_registry_validator.py::test_duplicate_lease_lists_fail_even_when_o5_is_synchronized[programs-duplicate_values0-| `docs/logs/` | #146, #147, #147 | #146 \u2192 #147 | ordered |] - AssertionError: assert 'shared_path_leases row 0 has duplicate programs' in 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n'
+ +  where 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n' = CaptureResult(out='', err='audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n').err
+FAILED tests/test_audit_remediation_registry_validator.py::test_duplicate_lease_lists_fail_even_when_o5_is_synchronized[order-duplicate_values1-| `docs/logs/` | #146, #147 | #146 \u2192 #147 \u2192 #147 | ordered |] - AssertionError: assert 'shared_path_leases row 0 has duplicate order' in 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- lease order does not enumerate each program once for docs/logs/\n'
+ +  where 'audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- lease order does not enumerate each program once for docs/logs/\n' = CaptureResult(out='', err='audit-registry: FAILED\n- R2-control-plane-parity-1 must bind its fix commit to Phase C close I1\n- lease order does not enumerate each program once for docs/logs/\n').err
+FAILED tests/test_audit_remediation_registry_validator.py::test_malformed_registry_yaml_returns_exit_one_never_two - assert 2 == 1
+FAILED tests/test_audit_remediation_registry_validator.py::test_malformed_child_manifest_yaml_returns_exit_one_never_two[146] - assert 2 == 1
+FAILED tests/test_audit_remediation_registry_validator.py::test_malformed_child_manifest_yaml_returns_exit_one_never_two[147] - assert 2 == 1
+====================== 8 failed, 197 deselected in 1.12s =======================
+EXIT=1
+[0m
+[0m# [0mTodos
+[✓] Confirm git state, snapshot interpreters, ontos.__file__ resolution, and 5-file diff between d5-glm-pre and d5-glm-post
+[✓] Verify CAN-ACT-1/CAN-ACT-2: run activation focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[✓] Verify CAN-CP-1/2/3: run registry validator focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[•] Verify CAN-ID-1: run rename focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[ ] Run full tests/ suite in d5-glm-post with -q -p no:cacheprovider
+[ ] From lifecycle worktree: registry local/external parity, changed-path scope, manifest conformance, git diff --check HEAD
+[ ] Verify D4-INFRA-1: run manifest-mode and absolute explicit-path EH-15-A probes
+[ ] Write verdict artifact to D.5-glm-verifier.md with Template 15 frontmatter
+[0m
+[0m$ [0m../bin/python -B -m pytest tests/commands/test_rename.py tests/mcp/test_rename_document.py -k 'rename_invalid_ids_use_canonical or rename_invalid_id_is_rejected_before_project_discovery or build_rename_plan_uses_canonical or rename_document_invalid_ids_use_canonical or <redacted:secret>' --cache-clear -v 2>&1; echo "EXIT=$?"
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0 -- /<redacted:secret>
+cachedir: .pytest_cache
+rootdir: /<redacted:secret>
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.14.1
+collecting ... collected 75 items / 51 deselected / 24 selected
+
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_human_usage_error[bad old!-new_id-bad old!] PASSED [  4%]
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_human_usage_error[old_id-bad new!-bad new!] PASSED [  8%]
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_human_usage_error[bad same!-bad same!-bad same!] PASSED [ 12%]
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[bad old!-new_id-bad old!] PASSED [ 16%]
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[old_id-bad new!-bad new!] PASSED [ 20%]
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[bad same!-bad same!-bad same!] PASSED [ 25%]
+tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[bad old!-new_id-bad old!] PASSED [ 29%]
+tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[old_id-bad new!-bad new!] PASSED [ 33%]
+tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[bad same!-bad same!-bad same!] PASSED [ 37%]
+tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[   -new_id-   ] PASSED [ 41%]
+tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[old_id-   -   ] PASSED [ 45%]
+tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[bad old!-new_id-invalid_old_id-bad old!] PASSED [ 50%]
+tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[old_id-bad new!-invalid_new_id-bad new!] PASSED [ 54%]
+tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[bad same!-bad same!-invalid_old_id-bad same!] PASSED [ 58%]
+tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[bad old!-renamed-bad old!] PASSED [ 62%]
+tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[kernel_doc-bad new!-bad new!] PASSED [ 66%]
+tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[bad same!-bad same!-bad same!] PASSED [ 70%]
+tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[   -renamed-   ] PASSED [ 75%]
+tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[kernel_doc-   -   ] PASSED [ 79%]
+tests/mcp/test_rename_document.py::<redacted:secret>[bad old!-new_id-bad old!] PASSED [ 83%]
+tests/mcp/test_rename_document.py::<redacted:secret>[old_id-bad new!-bad new!] PASSED [ 87%]
+tests/mcp/test_rename_document.py::<redacted:secret>[bad same!-bad same!-bad same!] PASSED [ 91%]
+tests/mcp/test_rename_document.py::<redacted:secret>[   -new_id-   ] PASSED [ 95%]
+tests/mcp/test_rename_document.py::<redacted:secret>[old_id-   -   ] PASSED [100%]
+
+====================== 24 passed, 51 deselected in 1.76s =======================
+EXIT=0
+[0m
+[0m$ [0m../bin/python -B -m pytest tests/commands/test_rename.py tests/mcp/test_rename_document.py -k 'rename_invalid_ids_use_canonical or rename_invalid_id_is_rejected_before_project_discovery or build_rename_plan_uses_canonical or rename_document_invalid_ids_use_canonical or <redacted:secret>' --cache-clear -v 2>&1; echo "EXIT=$?"
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0 -- /<redacted:secret>
+cachedir: .pytest_cache
+rootdir: /<redacted:secret>
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.14.1
+collecting ... collected 75 items / 51 deselected / 24 selected
+
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_human_usage_error[bad old!-new_id-bad old!] FAILED [  4%]
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_human_usage_error[old_id-bad new!-bad new!] FAILED [  8%]
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_human_usage_error[bad same!-bad same!-bad same!] FAILED [ 12%]
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[bad old!-new_id-bad old!] FAILED [ 16%]
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[old_id-bad new!-bad new!] FAILED [ 20%]
+tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[bad same!-bad same!-bad same!] FAILED [ 25%]
+tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[bad old!-new_id-bad old!] FAILED [ 29%]
+tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[old_id-bad new!-bad new!] FAILED [ 33%]
+tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[bad same!-bad same!-bad same!] FAILED [ 37%]
+tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[   -new_id-   ] FAILED [ 41%]
+tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[old_id-   -   ] FAILED [ 45%]
+tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[bad old!-new_id-invalid_old_id-bad old!] FAILED [ 50%]
+tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[old_id-bad new!-invalid_new_id-bad new!] FAILED [ 54%]
+tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[bad same!-bad same!-invalid_old_id-bad same!] FAILED [ 58%]
+tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[bad old!-renamed-bad old!] FAILED [ 62%]
+tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[kernel_doc-bad new!-bad new!] FAILED [ 66%]
+tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[bad same!-bad same!-bad same!] FAILED [ 70%]
+tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[   -renamed-   ] FAILED [ 75%]
+tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[kernel_doc-   -   ] FAILED [ 79%]
+tests/mcp/test_rename_document.py::<redacted:secret>[bad old!-new_id-bad old!] FAILED [ 83%]
+tests/mcp/test_rename_document.py::<redacted:secret>[old_id-bad new!-bad new!] FAILED [ 87%]
+tests/mcp/test_rename_document.py::<redacted:secret>[bad same!-bad same!-bad same!] FAILED [ 91%]
+tests/mcp/test_rename_document.py::<redacted:secret>[   -new_id-   ] FAILED [ 95%]
+tests/mcp/test_rename_document.py::<redacted:secret>[old_id-   -   ] FAILED [100%]
+
+=================================== FAILURES ===================================
+_ test_rename_invalid_ids_use_canonical_human_usage_error[bad old!-new_id-bad old!] _
+tests/commands/test_rename.py:121: in test_rename_invalid_ids_use_canonical_human_usage_error
+    assert result.returncode == 2
+E   assert 1 == 2
+E    +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', 'rename', 'bad old!', 'new_id'], returncode=1, stdout="Error [old_id_not_found]: old_id 'bad old!' must exist exactly once as an explicit frontmatter id. Found 0.\n", stderr='').returncode
+_ test_rename_invalid_ids_use_canonical_human_usage_error[old_id-bad new!-bad new!] _
+tests/commands/test_rename.py:121: in test_rename_invalid_ids_use_canonical_human_usage_error
+    assert result.returncode == 2
+E   AssertionError: assert 1 == 2
+E    +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', 'rename', 'old_id', 'bad new!'], returncode=1, stdout='Error [invalid_new_id]: new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$\n', stderr='').returncode
+_ test_rename_invalid_ids_use_canonical_human_usage_error[bad same!-bad same!-bad same!] _
+tests/commands/test_rename.py:121: in test_rename_invalid_ids_use_canonical_human_usage_error
+    assert result.returncode == 2
+E   AssertionError: assert 0 == 2
+E    +  where 0 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', 'rename', 'bad same!', 'bad same!'], returncode=0, stdout='Rename no-op: old_id and new_id are identical (nothing_to_do).\n', stderr='').returncode
+_ test_rename_invalid_ids_use_canonical_json_usage_error[bad old!-new_id-bad old!] _
+tests/commands/test_rename.py:147: in test_rename_invalid_ids_use_canonical_json_usage_error
+    assert result.returncode == 2
+E   assert 1 == 2
+E    +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'bad old!', 'new_id'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "old_id \'bad old!\' must exist exactly once as an explicit frontmatter id. Found 0.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "bad old!", "new_id": "new_id", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "old_id_not_found"}}\n', stderr='').returncode
+_ test_rename_invalid_ids_use_canonical_json_usage_error[old_id-bad new!-bad new!] _
+tests/commands/test_rename.py:147: in test_rename_invalid_ids_use_canonical_json_usage_error
+    assert result.returncode == 2
+E   assert 1 == 2
+E    +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'old_id', 'bad new!'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "old_id", "new_id": "bad new!", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "invalid_new_id"}}\n', stderr='').returncode
+_ test_rename_invalid_ids_use_canonical_json_usage_error[bad same!-bad same!-bad same!] _
+tests/commands/test_rename.py:147: in test_rename_invalid_ids_use_canonical_json_usage_error
+    assert result.returncode == 2
+E   assert 0 == 2
+E    +  where 0 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'bad same!', 'bad same!'], returncode=0, stdout='{"schema_version": "4.0", "command": "rename", "status": "success", "exit_code": 0, "message": "nothing_to_do", "result": {"status": "clean", "kind": "diagnostic", "exit_category": "clean", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "bad same!", "new_id": "bad same!", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": []}, "warnings": [], "error": null}\n', stderr='').returncode
+_ test_rename_invalid_id_is_rejected_before_project_discovery[bad old!-new_id-bad old!] _
+tests/commands/test_rename.py:181: in test_rename_invalid_id_is_rejected_before_project_discovery
+    assert result.returncode == 2
+E   assert 1 == 2
+E    +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'bad old!', 'new_id'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "bad old!", "new_id": "new_id", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
+_ test_rename_invalid_id_is_rejected_before_project_discovery[old_id-bad new!-bad new!] _
+tests/commands/test_rename.py:181: in test_rename_invalid_id_is_rejected_before_project_discovery
+    assert result.returncode == 2
+E   assert 1 == 2
+E    +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'old_id', 'bad new!'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "old_id", "new_id": "bad new!", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
+_ test_rename_invalid_id_is_rejected_before_project_discovery[bad same!-bad same!-bad same!] _
+tests/commands/test_rename.py:181: in test_rename_invalid_id_is_rejected_before_project_discovery
+    assert result.returncode == 2
+E   assert 1 == 2
+E    +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'bad same!', 'bad same!'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "bad same!", "new_id": "bad same!", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
+_ test_rename_invalid_id_is_rejected_before_project_discovery[   -new_id-   ] __
+tests/commands/test_rename.py:181: in test_rename_invalid_id_is_rejected_before_project_discovery
+    assert result.returncode == 2
+E   assert 1 == 2
+E    +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', '   ', 'new_id'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "   ", "new_id": "new_id", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
+_ test_rename_invalid_id_is_rejected_before_project_discovery[old_id-   -   ] __
+tests/commands/test_rename.py:181: in test_rename_invalid_id_is_rejected_before_project_discovery
+    assert result.returncode == 2
+E   assert 1 == 2
+E    +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'old_id', '   '], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "old_id", "new_id": "   ", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
+_ test_build_rename_plan_uses_canonical_id_validation_before_noop[bad old!-new_id-invalid_old_id-bad old!] _
+tests/commands/test_rename.py:665: in test_build_rename_plan_uses_canonical_id_validation_before_noop
+    assert error.code == error_code
+E   AssertionError: assert 'old_id_not_found' == 'invalid_old_id'
+E     
+E     - invalid_old_id
+E     + old_id_not_found
+_ test_build_rename_plan_uses_canonical_id_validation_before_noop[old_id-bad new!-invalid_new_id-bad new!] _
+tests/commands/test_rename.py:666: in test_build_rename_plan_uses_canonical_id_validation_before_noop
+    assert error.message == str(canonical.value)
+E   assert 'new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$' == "Document id must start and end with an alphanumeric character and contain only letters, numbers, '_', '-', or '.'"
+E     
+E     - Document id must start and end with an alphanumeric character and contain only letters, numbers, '_', '-', or '.'
+E     + new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$
+_ test_build_rename_plan_uses_canonical_id_validation_before_noop[bad same!-bad same!-invalid_old_id-bad same!] _
+tests/commands/test_rename.py:663: in test_build_rename_plan_uses_canonical_id_validation_before_noop
+    assert plan is None
+E   AssertionError: assert RenamePlan(mode='dry_run', scope=<ScanScope.DOCS: 'docs'>, old_id='bad same!', new_id='bad same!', summary=RenameSummary(files_scanned=0, documents_loaded=0, planned_files=0, frontmatter_edits=0, body_edits=0, skipped_zone_sightings=0, warnings=0), files=[], warnings=[], no_op=True) is None
+_ test_rename_document_invalid_ids_use_canonical_user_error[bad old!-renamed-bad old!] _
+tests/mcp/test_rename_document.py:338: in test_rename_document_invalid_ids_use_canonical_user_error
+    assert result.structuredContent["error"]["error_code"] == "E_USER_INPUT"
+E   AssertionError: assert 'E_DOCUMENT_NOT_FOUND' == 'E_USER_INPUT'
+E     
+E     - E_USER_INPUT
+E     + E_DOCUMENT_NOT_FOUND
+_ test_rename_document_invalid_ids_use_canonical_user_error[kernel_doc-bad new!-bad new!] _
+tests/mcp/test_rename_document.py:338: in test_rename_document_invalid_ids_use_canonical_user_error
+    assert result.structuredContent["error"]["error_code"] == "E_USER_INPUT"
+E   AssertionError: assert 'E_INVALID_ID' == 'E_USER_INPUT'
+E     
+E     - E_USER_INPUT
+E     + E_INVALID_ID
+_ test_rename_document_invalid_ids_use_canonical_user_error[bad same!-bad same!-bad same!] _
+tests/mcp/test_rename_document.py:337: in test_rename_document_invalid_ids_use_canonical_user_error
+    assert result.isError is True
+E   assert False is True
+E    +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{"success": true, "old_id": "bad same!", "new_id": "bad same!", "path": "", "references_updated": 0, "updated_files": []}', annotations=None, meta=None)], structuredContent={'success': True, 'old_id': 'bad same!', 'new_id': 'bad same!', 'path': '', 'references_updated': 0, 'updated_files': []}, isError=False).isError
+__ test_rename_document_invalid_ids_use_canonical_user_error[   -renamed-   ] __
+tests/mcp/test_rename_document.py:338: in test_rename_document_invalid_ids_use_canonical_user_error
+    assert result.structuredContent["error"]["error_code"] == "E_USER_INPUT"
+E   AssertionError: assert 'E_INVALID_DOCUMENT_ID' == 'E_USER_INPUT'
+E     
+E     - E_USER_INPUT
+E     + E_INVALID_DOCUMENT_ID
+_ test_rename_document_invalid_ids_use_canonical_user_error[kernel_doc-   -   ] _
+tests/mcp/test_rename_document.py:338: in test_rename_document_invalid_ids_use_canonical_user_error
+    assert result.structuredContent["error"]["error_code"] == "E_USER_INPUT"
+E   AssertionError: assert 'E_INVALID_ID' == 'E_USER_INPUT'
+E     
+E     - E_USER_INPUT
+E     + E_INVALID_ID
+_ <redacted:secret>[bad old!-new_id-bad old!] _
+tests/mcp/test_rename_document.py:382: in <redacted:secret>
+    result = rename_tool.rename_document(
+ontos/mcp/rename_tool.py:358: in rename_document
+    plan = _preflight(cache, portfolio_index, workspace_id, read_only)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/mcp/test_rename_document.py:376: in unexpected_preflight
+    raise AssertionError("preflight must not run for invalid IDs")
+E   AssertionError: preflight must not run for invalid IDs
+_ <redacted:secret>[old_id-bad new!-bad new!] _
+tests/mcp/test_rename_document.py:382: in <redacted:secret>
+    result = rename_tool.rename_document(
+ontos/mcp/rename_tool.py:358: in rename_document
+    plan = _preflight(cache, portfolio_index, workspace_id, read_only)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/mcp/test_rename_document.py:376: in unexpected_preflight
+    raise AssertionError("preflight must not run for invalid IDs")
+E   AssertionError: preflight must not run for invalid IDs
+_ <redacted:secret>[bad same!-bad same!-bad same!] _
+tests/mcp/test_rename_document.py:382: in <redacted:secret>
+    result = rename_tool.rename_document(
+ontos/mcp/rename_tool.py:358: in rename_document
+    plan = _preflight(cache, portfolio_index, workspace_id, read_only)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/mcp/test_rename_document.py:376: in unexpected_preflight
+    raise AssertionError("preflight must not run for invalid IDs")
+E   AssertionError: preflight must not run for invalid IDs
+___ <redacted:secret>[   -new_id-   ] ___
+tests/mcp/test_rename_document.py:382: in <redacted:secret>
+    result = rename_tool.rename_document(
+ontos/mcp/rename_tool.py:358: in rename_document
+    plan = _preflight(cache, portfolio_index, workspace_id, read_only)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/mcp/test_rename_document.py:376: in unexpected_preflight
+    raise AssertionError("preflight must not run for invalid IDs")
+E   AssertionError: preflight must not run for invalid IDs
+___ <redacted:secret>[old_id-   -   ] ___
+tests/mcp/test_rename_document.py:382: in <redacted:secret>
+    result = rename_tool.rename_document(
+ontos/mcp/rename_tool.py:358: in rename_document
+    plan = _preflight(cache, portfolio_index, workspace_id, read_only)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/mcp/test_rename_document.py:376: in unexpected_preflight
+    raise AssertionError("preflight must not run for invalid IDs")
+E   AssertionError: preflight must not run for invalid IDs
+=========================== short test summary info ============================
+FAILED tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_human_usage_error[bad old!-new_id-bad old!] - assert 1 == 2
+ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', 'rename', 'bad old!', 'new_id'], returncode=1, stdout="Error [old_id_not_found]: old_id 'bad old!' must exist exactly once as an explicit frontmatter id. Found 0.\n", stderr='').returncode
+FAILED tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_human_usage_error[old_id-bad new!-bad new!] - AssertionError: assert 1 == 2
+ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', 'rename', 'old_id', 'bad new!'], returncode=1, stdout='Error [invalid_new_id]: new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$\n', stderr='').returncode
+FAILED tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_human_usage_error[bad same!-bad same!-bad same!] - AssertionError: assert 0 == 2
+ +  where 0 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', 'rename', 'bad same!', 'bad same!'], returncode=0, stdout='Rename no-op: old_id and new_id are identical (nothing_to_do).\n', stderr='').returncode
+FAILED tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[bad old!-new_id-bad old!] - assert 1 == 2
+ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'bad old!', 'new_id'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "old_id \'bad old!\' must exist exactly once as an explicit frontmatter id. Found 0.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "bad old!", "new_id": "new_id", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "old_id_not_found"}}\n', stderr='').returncode
+FAILED tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[old_id-bad new!-bad new!] - assert 1 == 2
+ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'old_id', 'bad new!'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "old_id", "new_id": "bad new!", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "invalid_new_id"}}\n', stderr='').returncode
+FAILED tests/commands/test_rename.py::test_rename_invalid_ids_use_canonical_json_usage_error[bad same!-bad same!-bad same!] - assert 0 == 2
+ +  where 0 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'bad same!', 'bad same!'], returncode=0, stdout='{"schema_version": "4.0", "command": "rename", "status": "success", "exit_code": 0, "message": "nothing_to_do", "result": {"status": "clean", "kind": "diagnostic", "exit_category": "clean", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "bad same!", "new_id": "bad same!", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": []}, "warnings": [], "error": null}\n', stderr='').returncode
+FAILED tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[bad old!-new_id-bad old!] - assert 1 == 2
+ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'bad old!', 'new_id'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "bad old!", "new_id": "new_id", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
+FAILED tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[old_id-bad new!-bad new!] - assert 1 == 2
+ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'old_id', 'bad new!'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "old_id", "new_id": "bad new!", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
+FAILED tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[bad same!-bad same!-bad same!] - assert 1 == 2
+ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'bad same!', 'bad same!'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "bad same!", "new_id": "bad same!", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
+FAILED tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[   -new_id-   ] - assert 1 == 2
+ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', '   ', 'new_id'], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "   ", "new_id": "new_id", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
+FAILED tests/commands/test_rename.py::test_rename_invalid_id_is_rejected_before_project_discovery[old_id-   -   ] - assert 1 == 2
+ +  where 1 = CompletedProcess(args=['/<redacted:secret>', '-m', 'ontos', '--json', 'rename', 'old_id', '   '], returncode=1, stdout='{"schema_version": "4.0", "command": "rename", "status": "error", "exit_code": 1, "message": "No Ontos project found. Run \'ontos init\' to initialize, or ensure you\'re in a git repository.", "result": {"status": "error", "kind": "diagnostic", "exit_category": "error", "diagnostics": {"basis": "data.summary", "complete": true, "counts": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}}}, "data": {"mode": "dry_run", "scope": "docs", "old_id": "old_id", "new_id": "   ", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "frontmatter_edits": 0, "body_edits": 0, "skipped_zone_sightings": 0, "warnings": 0}, "files": [], "applied_paths": [], "post_apply_warning": null, "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "project_root_not_found"}}\n', stderr='').returncode
+FAILED tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[bad old!-new_id-invalid_old_id-bad old!] - AssertionError: assert 'old_id_not_found' == 'invalid_old_id'
+  
+  - invalid_old_id
+  + old_id_not_found
+FAILED tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[old_id-bad new!-invalid_new_id-bad new!] - assert 'new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$' == "Document id must start and end with an alphanumeric character and contain only letters, numbers, '_', '-', or '.'"
+  
+  - Document id must start and end with an alphanumeric character and contain only letters, numbers, '_', '-', or '.'
+  + new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$
+FAILED tests/commands/test_rename.py::test_build_rename_plan_uses_canonical_id_validation_before_noop[bad same!-bad same!-invalid_old_id-bad same!] - AssertionError: assert RenamePlan(mode='dry_run', scope=<ScanScope.DOCS: 'docs'>, old_id='bad same!', new_id='bad same!', summary=RenameSummary(files_scanned=0, documents_loaded=0, planned_files=0, frontmatter_edits=0, body_edits=0, skipped_zone_sightings=0, warnings=0), files=[], warnings=[], no_op=True) is None
+FAILED tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[bad old!-renamed-bad old!] - AssertionError: assert 'E_DOCUMENT_NOT_FOUND' == 'E_USER_INPUT'
+  
+  - E_USER_INPUT
+  + E_DOCUMENT_NOT_FOUND
+FAILED tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[kernel_doc-bad new!-bad new!] - AssertionError: assert 'E_INVALID_ID' == 'E_USER_INPUT'
+  
+  - E_USER_INPUT
+  + E_INVALID_ID
+FAILED tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[bad same!-bad same!-bad same!] - assert False is True
+ +  where False = CallToolResult(meta=None, content=[TextContent(type='text', text='{"success": true, "old_id": "bad same!", "new_id": "bad same!", "path": "", "references_updated": 0, "updated_files": []}', annotations=None, meta=None)], structuredContent={'success': True, 'old_id': 'bad same!', 'new_id': 'bad same!', 'path': '', 'references_updated': 0, 'updated_files': []}, isError=False).isError
+FAILED tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[   -renamed-   ] - AssertionError: assert 'E_INVALID_DOCUMENT_ID' == 'E_USER_INPUT'
+  
+  - E_USER_INPUT
+  + E_INVALID_DOCUMENT_ID
+FAILED tests/mcp/test_rename_document.py::test_rename_document_invalid_ids_use_canonical_user_error[kernel_doc-   -   ] - AssertionError: assert 'E_INVALID_ID' == 'E_USER_INPUT'
+  
+  - E_USER_INPUT
+  + E_INVALID_ID
+FAILED tests/mcp/test_rename_document.py::<redacted:secret>[bad old!-new_id-bad old!] - AssertionError: preflight must not run for invalid IDs
+FAILED tests/mcp/test_rename_document.py::<redacted:secret>[old_id-bad new!-bad new!] - AssertionError: preflight must not run for invalid IDs
+FAILED tests/mcp/test_rename_document.py::<redacted:secret>[bad same!-bad same!-bad same!] - AssertionError: preflight must not run for invalid IDs
+FAILED tests/mcp/test_rename_document.py::<redacted:secret>[   -new_id-   ] - AssertionError: preflight must not run for invalid IDs
+FAILED tests/mcp/test_rename_document.py::<redacted:secret>[old_id-   -   ] - AssertionError: preflight must not run for invalid IDs
+====================== 24 failed, 51 deselected in 1.71s =======================
+EXIT=1
+[0m
+[0m# [0mTodos
+[✓] Confirm git state, snapshot interpreters, ontos.__file__ resolution, and 5-file diff between d5-glm-pre and d5-glm-post
+[✓] Verify CAN-ACT-1/CAN-ACT-2: run activation focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[✓] Verify CAN-CP-1/2/3: run registry validator focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[✓] Verify CAN-ID-1: run rename focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[•] Run full tests/ suite in d5-glm-post with -q -p no:cacheprovider
+[ ] From lifecycle worktree: registry local/external parity, changed-path scope, manifest conformance, git diff --check HEAD
+[ ] Verify D4-INFRA-1: run manifest-mode and absolute explicit-path EH-15-A probes
+[ ] Write verdict artifact to D.5-glm-verifier.md with Template 15 frontmatter
+[0m
+[0m$ [0m../bin/python -m pytest tests/ -q -p no:cacheprovider 2>&1; echo "EXIT=$?"
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0
+rootdir: /<redacted:secret>
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.14.1
+collected 1720 items
+
+tests/commands/test_activate_json_warning_metadata.py .................. [  1%]
+....                                                                     [  1%]
+tests/commands/test_agentic_activation_resilience.py ...........         [  1%]
+tests/commands/test_agents.py ................................           [  3%]
+tests/commands/test_antigravity_mcp_docs.py .....                        [  4%]
+<redacted:secret> .                            [  4%]
+tests/commands/test_b2_promote_absolute_path.py .                        [  4%]
+tests/commands/test_consolidate_parity.py ...                            [  4%]
+tests/commands/test_consolidate_root_regression.py .......               [  4%]
+tests/commands/test_doctor_hooks.py ..........                           [  5%]
+tests/commands/test_doctor_phase4.py ................................... [  7%]
+..                                                                       [  7%]
+tests/commands/test_env.py .............                                 [  8%]
+tests/commands/test_export_all.py ..                                     [  8%]
+tests/commands/test_export_data_parity.py .......                        [  8%]
+tests/commands/test_export_phase4.py ......................              [ 10%]
+tests/commands/test_health_count_consistency.py .......                  [ 10%]
+tests/commands/test_hook_phase4.py ...........                           [ 11%]
+tests/commands/test_init_phase3.py ....................                  [ 12%]
+tests/commands/test_init_scaffold.py .........................           [ 13%]
+tests/commands/test_instruction_protocol.py ..........                   [ 14%]
+tests/commands/test_json_contract_a3.py .                                [ 14%]
+tests/commands/test_link_check.py ...............................        [ 16%]
+tests/commands/test_log.py .............                                 [ 16%]
+tests/commands/test_maintain.py ..........................               [ 18%]
+tests/commands/test_map.py ...........................                   [ 20%]
+tests/commands/test_map_obsidian.py ........                             [ 20%]
+tests/commands/test_map_resilience.py .....                              [ 20%]
+tests/commands/test_map_tier1_key_documents.py .......                   [ 21%]
+tests/commands/test_mcp_command.py ..........................            [ 22%]
+tests/commands/test_mcp_write_tool_docs.py ..                            [ 22%]
+tests/commands/test_migrate_parity.py ........                           [ 23%]
+tests/commands/test_migration_report_parity.py .....                     [ 23%]
+tests/commands/test_promote_parity.py ...                                [ 23%]
+tests/commands/test_query_parity.py ....                                 [ 23%]
+tests/commands/test_rename.py ........................................   [ 26%]
+tests/commands/test_retrofit.py ......................                   [ 27%]
+tests/commands/test_s2_yaml_warnings.py .                                [ 27%]
+tests/commands/test_scaffold_parity.py ...                               [ 27%]
+tests/commands/test_scan_scope_integration.py .......................... [ 29%]
+...                                                                      [ 29%]
+tests/commands/test_stub_parity.py .....................                 [ 30%]
+tests/commands/test_verify_parity.py ...                                 [ 30%]
+tests/commands/test_verify_portfolio.py .............                    [ 31%]
+tests/core/test_body_refs.py ........................................... [ 34%]
+.......................................................                  [ 37%]
+tests/core/test_cache.py ...                                             [ 37%]
+tests/core/test_config_phase3.py ....................................... [ 39%]
+..................                                                       [ 40%]
+tests/core/test_cursor_mcp.py .............                              [ 41%]
+tests/core/test_frontmatter_edit_pipeline.py .....                       [ 41%]
+tests/core/test_frontmatter_repair.py .....                              [ 42%]
+tests/core/test_git_safety.py ...                                        [ 42%]
+tests/core/test_graph.py .........................................       [ 44%]
+tests/core/test_legacy_config_compat.py .....                            [ 45%]
+tests/core/test_link_diagnostics.py .........................            [ 46%]
+tests/core/test_migration.py ......                                      [ 46%]
+tests/core/test_ontology.py ..                                           [ 46%]
+tests/core/test_paths_runtime_root.py ....                               [ 47%]
+tests/core/test_proposals_runtime_paths.py ....                          [ 47%]
+tests/core/test_schema.py .......................................        [ 49%]
+tests/core/test_snapshot.py ........                                     [ 50%]
+tests/core/test_warning_groups.py .................                      [ 51%]
+tests/golden/test_golden_master.py ..                                    [ 51%]
+tests/io/test_config_phase3.py ................                          [ 52%]
+tests/io/test_files_status_parsing.py .                                  [ 52%]
+tests/io/test_git_empty_diff.py ...                                      [ 52%]
+tests/io/test_load_frontmatter_contract.py .                             [ 52%]
+tests/io/test_scan_scope.py .............                                [ 53%]
+tests/io/test_toml_roundtrip.py ...                                      [ 53%]
+tests/mcp/test_activation.py ...................                         [ 54%]
+tests/mcp/test_bundler.py ................                               [ 55%]
+tests/mcp/test_cache.py ......                                           [ 55%]
+tests/mcp/test_context_bundle.py ......                                  [ 56%]
+tests/mcp/test_context_bundle_config.py .......                          [ 56%]
+tests/mcp/test_context_map.py ..                                         [ 56%]
+tests/mcp/test_error_paths.py ..........                                 [ 57%]
+tests/mcp/test_export_graph.py ..                                        [ 57%]
+tests/mcp/test_get_document.py ...                                       [ 57%]
+tests/mcp/test_health.py ..                                              [ 57%]
+tests/mcp/test_list_documents.py ..                                      [ 57%]
+tests/mcp/test_locking.py ......                                         [ 58%]
+tests/mcp/test_module_exports.py ....                                    [ 58%]
+tests/mcp/test_parity.py ..                                              [ 58%]
+tests/mcp/test_portfolio.py ............................................ [ 60%]
+.....                                                                    [ 61%]
+tests/mcp/test_portfolio_config.py ...................                   [ 62%]
+tests/mcp/test_portfolio_integration.py ..                               [ 62%]
+tests/mcp/test_project_registry.py ..                                    [ 62%]
+tests/mcp/test_query.py .                                                [ 62%]
+tests/mcp/test_read_only_registration.py .......                         [ 63%]
+tests/mcp/test_refresh.py ..                                             [ 63%]
+tests/mcp/test_rename_document.py ...................................    [ 65%]
+<redacted:secret> .                          [ 65%]
+tests/mcp/test_scanner.py .................                              [ 66%]
+tests/mcp/test_schemas.py .....                                          [ 66%]
+tests/mcp/test_search.py ........                                        [ 67%]
+tests/mcp/test_server_integration.py ........                            [ 67%]
+tests/mcp/test_server_portfolio_mode.py ...                              [ 67%]
+tests/mcp/test_stream_routing.py ...                                     [ 67%]
+tests/mcp/test_validation_helpers.py ..                                  [ 67%]
+tests/mcp/test_workspace_overview.py ..                                  [ 68%]
+tests/mcp/test_write_tools.py ..............................             [ 69%]
+tests/test_audit_remediation_registry_validator.py ..................... [ 71%]
+........................................................................ [ 75%]
+........................................................................ [ 79%]
+........................................                                 [ 81%]
+tests/test_ci_release_workflows.py ....                                  [ 81%]
+tests/test_cli.py .............................................          [ 84%]
+tests/test_cli_contract_v4.py ...........                                [ 85%]
+tests/test_cli_cwd_fix.py ..                                             [ 85%]
+tests/test_cli_phase4.py ......................                          [ 86%]
+tests/test_context_contention.py ..........                              [ 87%]
+tests/test_describes.py .............................                    [ 88%]
+tests/test_doctor_mcp_probe_regression.py .....                          [ 89%]
+<redacted:secret> ............                  [ 89%]
+tests/test_dual_mode.py ...                                              [ 90%]
+tests/test_env_cli.py .....                                              [ 90%]
+tests/test_frontmatter_parsing.py .....                                  [ 90%]
+tests/test_frontmatter_roundtrip_regression.py ...........               [ 91%]
+tests/test_frontmatter_tags.py ..                                        [ 91%]
+tests/test_immutable_history.py ...............                          [ 92%]
+tests/test_lib.py ...............                                        [ 93%]
+tests/test_map_compact.py ....................                           [ 94%]
+tests/test_map_filter.py ...                                             [ 94%]
+tests/test_release_artifact.py ...                                       [ 94%]
+tests/test_session_context.py .......................................... [ 97%]
+..........                                                               [ 97%]
+tests/test_suggestions.py ..........                                     [ 98%]
+tests/test_test_isolation.py ....                                        [ 98%]
+tests/test_validation_concepts_a1.py .....                               [ 98%]
+tests/ui/test_json_output.py .....................                       [100%]
+
+=============================== warnings summary ===============================
+tests/ui/test_json_output.py::TestConvenienceFunctions::test_emit_error
+  /<redacted:secret>:148: DeprecationWarning: emit_error() is deprecated; use emit_command_error().
+    emit_error("Failed", "E999")
+
+-- Docs: https://<redacted:secret>
+================== 1720 passed, 1 warning in 97.77s (0:01:37) ==================
+EXIT=0
+[0m
+[0m# [0mTodos
+[✓] Confirm git state, snapshot interpreters, ontos.__file__ resolution, and 5-file diff between d5-glm-pre and d5-glm-post
+[✓] Verify CAN-ACT-1/CAN-ACT-2: run activation focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[✓] Verify CAN-CP-1/2/3: run registry validator focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[✓] Verify CAN-ID-1: run rename focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[✓] Run full tests/ suite in d5-glm-post with -q -p no:cacheprovider
+[•] From lifecycle worktree: registry local/external parity, changed-path scope, manifest conformance, git diff --check HEAD
+[ ] Verify D4-INFRA-1: run manifest-mode and absolute explicit-path EH-15-A probes
+[ ] Write verdict artifact to D.5-glm-verifier.md with Template 15 frontmatter
+[0m
+[0m$ [0mpython3 <redacted:secret> 2>&1; echo "EXIT=$?"
+audit-registry: PASS
+mode: local
+original findings: 91 (P0=1, P1=27, P2=63)
+original status: committed_fixed=2, code_fixed_evidence_pending=1, implemented_committed_pending=40, partial_committed_pending=7, confirmed_open=41
+revalidation findings: 9
+EXIT=0
+[0m
+[0m$ [0mbash .<redacted:secret> --manifest <redacted:secret> --base bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95 2>&1; echo "EXIT=$?"
+verify-changed-path-scope: OK (594 changed path(s) within scope)
+EXIT=0
+[0m
+[0m$ [0mgit diff --check HEAD 2>&1; echo "EXIT=$?"
+EXIT=0
+[0m
+[0m$ [0mpython3 <redacted:secret> --require-external-parity 2>&1; echo "EXIT=$?"
+audit-registry: PASS
+mode: local+external
+original findings: 91 (P0=1, P1=27, P2=63)
+original status: committed_fixed=2, code_fixed_evidence_pending=1, implemented_committed_pending=40, partial_committed_pending=7, confirmed_open=41
+revalidation findings: 9
+EXIT=0
+[0m
+[0m$ [0mscripts/llm-dev verify <redacted:secret> 2>&1; echo "EXIT=$?"
+verify-adopter: validating /<redacted:secret> against 4 checks
+verify-adopter: NOTE — manifest conformance only; does NOT prove
+                lifecycle execution. For strict-P3 receipt verification,
+                run: scripts/llm-dev verify-lifecycle <manifest>
+
+::: verify-schema.sh --manifest <manifest> :::
+verify-schema: validating /<redacted:secret> against /<redacted:secret>
+ok -- validation done
+verify-schema: OK (1 manifests validated)
+
+::: verify-p3.sh --manifest <manifest> :::
+verify-p3: OK — all manifests satisfy strict P3 (user-facing extension checked on 1 of 1 manifests)
+verify-p3: project-ontos-audit-rebaseline-remediation: user_facing=true -> Product seats required on B.1 + B.2 + D.2 (BOTH design rounds); run scripts/review-seats.sh /<redacted:secret> for the full seat table
+
+::: verify-gate-categories.sh --manifest <manifest> :::
+verify-gate-categories: OK (all six categories covered)
+
+::: verify-artifact-paths.sh --manifest <manifest> :::
+verify-artifact-paths: OK (canonical_verdict / family_verdict / verification / product_verdict placeholders valid across 1 manifests)
+
+-----------------------------------------------------------------
+verify-adopter: PASSED manifest-conformance (4/4 checks against /<redacted:secret>)
+                manifest-only — does NOT prove lifecycle execution.
+                Run: scripts/llm-dev verify-lifecycle <manifest> for strict-P3 proof.
+EXIT=0
+[0m
+[0m$ [0mbash .<redacted:secret> --manifest <redacted:secret> 2>&1; echo "EXIT=$?"
+verify-fix-summary-regressions: manifest not found: <redacted:secret>
+EXIT=2
+[0m
+[0m$ [0mpython3 -c "import yaml; print(len(yaml.safe_load(open('<redacted:secret>'))['findings']))" && git cat-file -e b6f89d77e7fb684b8bd9a181a24c773d5777397a^{commit} && echo "I0 exists" && git cat-file -e 05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0^{commit} && echo "I1 exists" && git cat-file -e 311b60b6e86abe6d0b5a7ac61e16d07049387707^{commit} && echo "I2 exists" && test ! -e docs/specs/project-ontos-rationale-capture-template-proposal.md && test ! -e docs/zeta.md && echo "forbidden docs absent"; echo "EXIT=$?"
+100
+I0 exists
+I1 exists
+I2 exists
+forbidden docs absent
+EXIT=0
+[0m
+[0m$ [0mbash .<redacted:secret> --manifest "$<redacted:secret>" 2>&1; echo "EXIT=$?"
+verify-fix-summary-regressions: OK (no D.4 fix-summary exists at <redacted:secret>)
+EXIT=0
+[0m
+[0m$ [0mbash .<redacted:secret> --manifest "$<redacted:secret>" --fix-summary "$<redacted:secret>" 2>&1; echo "EXIT=$?"
+verify-fix-summary-regressions: unknown flag: --fix-summary
+usage: bash <redacted:secret> [--manifest <path>] [fix-summary.md ...]
+
+Validates EH-15-A Regression Coverage rows in D.4 fix summaries.
+EXIT=64
+[0m
+[0m$ [0mbash .<redacted:secret> --manifest "$<redacted:secret>" "$<redacted:secret>" 2>&1; echo "EXIT=$?"
+verify-fix-summary-regressions: pass either --manifest or explicit summaries, not both
+EXIT=64
+[0m
+[0m$ [0mbash .<redacted:secret> "$<redacted:secret>" 2>&1; echo "EXIT=$?"
+verify-fix-summary-regressions: FAILED
+  - /<redacted:secret>: row 1 finding 'CAN-ACT-1': fixture 'tests/commands/test_agentic_activation_resilience.py' does not exist
+  - /<redacted:secret>: row 1 finding 'CAN-ACT-1': fixture 'tests/commands/test_agentic_activation_resilience.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 2 finding 'CAN-ACT-2': fixture 'tests/commands/test_agentic_activation_resilience.py' does not exist
+  - /<redacted:secret>: row 2 finding 'CAN-ACT-2': fixture 'tests/commands/test_agentic_activation_resilience.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 2 finding 'CAN-ACT-2': fixture 'tests/core/test_config_phase3.py' does not exist
+  - /<redacted:secret>: row 2 finding 'CAN-ACT-2': fixture 'tests/core/test_config_phase3.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 3 finding 'CAN-CP-1': fixture 'tests/test_audit_remediation_registry_validator.py' does not exist
+  - /<redacted:secret>: row 3 finding 'CAN-CP-1': fixture 'tests/test_audit_remediation_registry_validator.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 4 finding 'CAN-CP-2': fixture 'tests/test_audit_remediation_registry_validator.py' does not exist
+  - /<redacted:secret>: row 4 finding 'CAN-CP-2': fixture 'tests/test_audit_remediation_registry_validator.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 5 finding 'CAN-CP-3': fixture 'tests/test_audit_remediation_registry_validator.py' does not exist
+  - /<redacted:secret>: row 5 finding 'CAN-CP-3': fixture 'tests/test_audit_remediation_registry_validator.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 6 finding 'CAN-ID-1': fixture 'tests/commands/test_rename.py' does not exist
+  - /<redacted:secret>: row 6 finding 'CAN-ID-1': fixture 'tests/commands/test_rename.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+  - /<redacted:secret>: row 6 finding 'CAN-ID-1': fixture 'tests/mcp/test_rename_document.py' does not exist
+  - /<redacted:secret>: row 6 finding 'CAN-ID-1': fixture 'tests/mcp/test_rename_document.py' is not registered as an exercised regression fixture in scripts/verify-all.sh (not listed in eh15a_regression_fixtures)
+EXIT=1
+[0m
+[0m$ [0mgit diff --check <redacted:secret> 2>&1; echo "EXIT=$?"
+EXIT=0
+[0m
+[0m# [0mTodos
+[✓] Confirm git state, snapshot interpreters, ontos.__file__ resolution, and 5-file diff between d5-glm-pre and d5-glm-post
+[✓] Verify CAN-ACT-1/CAN-ACT-2: run activation focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[✓] Verify CAN-CP-1/2/3: run registry validator focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[✓] Verify CAN-ID-1: run rename focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[✓] Run full tests/ suite in d5-glm-post with -q -p no:cacheprovider
+[✓] From lifecycle worktree: registry local/external parity, changed-path scope, manifest conformance, git diff --check HEAD
+[✓] Verify D4-INFRA-1: run manifest-mode and absolute explicit-path EH-15-A probes
+[•] Write verdict artifact to D.5-glm-verifier.md with Template 15 frontmatter
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>[90m [limit=80][0m
+[0m
+[0m← [0mWrite <redacted:secret>
+Wrote file successfully.
+[0m
+[0m→ [0mRead <redacted:secret>[90m [limit=30][0m
+[0m
+[0m$ [0mgrep -n '^## Verdict' <redacted:secret> && grep -n '^Request changes' <redacted:secret>
+208:## Verdict
+210:Request changes
+[0m
+[0m$ [0mscripts/llm-dev lint-artifact <redacted:secret> 2>&1; echo "EXIT=$?"
+verify-dispatch-shape: OK — verdict_shaped (verdict: request_changes)
+EXIT=0
+[0m
+[0m$ [0mgit status --short <redacted:secret> && echo "---snapshot-check---" && git status --short .venv/d5-glm-post .venv/d5-glm-pre 2>&1 | head -5
+?? <redacted:secret>
+---snapshot-check---
+[0m
+[0m$ [0mfor f in ontos/commands/activate.py ontos/core/config.py ontos/commands/rename.py ontos/mcp/rename_tool.py <redacted:secret>; do
+  pre_s=$(git hash-object ".venv/d5-glm-pre/$f")
+  post_s=$(git hash-object ".venv/d5-glm-post/$f")
+  pre_g=$(git rev-parse aa41c3982e21b0e0cff6c3c5486f4af9e5e55e05:"$f")
+  post_g=$(git rev-parse 311b60b6e86abe6d0b5a7ac61e16d07049387707:"$f")
+  echo "$f pre=$([ "$pre_g" = "$pre_s" ] && echo OK || echo CHANGED) post=$([ "$post_g" = "$post_s" ] && echo OK || echo CHANGED)"
+done
+ontos/commands/activate.py pre=OK post=OK
+ontos/core/config.py pre=OK post=OK
+ontos/commands/rename.py pre=OK post=OK
+ontos/mcp/rename_tool.py pre=OK post=OK
+<redacted:secret> pre=OK post=OK
+[0m
+[0m# [0mTodos
+[✓] Confirm git state, snapshot interpreters, ontos.__file__ resolution, and 5-file diff between d5-glm-pre and d5-glm-post
+[✓] Verify CAN-ACT-1/CAN-ACT-2: run activation focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[✓] Verify CAN-CP-1/2/3: run registry validator focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[✓] Verify CAN-ID-1: run rename focused tests in d5-glm-post (pass) and d5-glm-pre (nonzero)
+[✓] Run full tests/ suite in d5-glm-post with -q -p no:cacheprovider
+[✓] From lifecycle worktree: registry local/external parity, changed-path scope, manifest conformance, git diff --check HEAD
+[✓] Verify D4-INFRA-1: run manifest-mode and absolute explicit-path EH-15-A probes
+[✓] Write verdict artifact to D.5-glm-verifier.md with Template 15 frontmatter
+[0m

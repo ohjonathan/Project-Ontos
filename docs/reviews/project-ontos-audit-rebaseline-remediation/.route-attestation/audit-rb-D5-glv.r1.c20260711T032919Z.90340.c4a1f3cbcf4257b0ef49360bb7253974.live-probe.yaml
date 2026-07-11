@@ -1,0 +1,10 @@
+schema_version: 1
+producer: dispatch-family-review.sh
+status: passed
+profile_id: neuralwatt-opencode-glm-5-2-v1
+family: glm
+model_id: glm-5.2
+artifact_source: worker_file
+captured_at: '2026-07-11T03:38:20Z'
+prompt_sha256: sha256:b7e1a0e9ecc8ba14693d357e40f3447e160a34171a9d07080d78f7a1dc7664ff
+artifact_sha256: sha256:9b1a3295510dfba71fd140b3c481df7fe05cb230d5b547463332e9dcb5ab3549
