@@ -1,0 +1,9 @@
+=== verify-family-dispatch (require-complete) ===
+Intent:  /private/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation/docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-strict-final-dispatch-intent.yaml (4 dispatches)
+Result:  /private/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation/docs/reviews/project-ontos-audit-rebaseline-remediation/D.2-strict-final-dispatch-result.yaml (4 completed, 0 pending)
+PASS audit-rb-D2-cp: claude/peer — artifact D.2-strict-claude-peer.md
+PASS audit-rb-D2-gadv: gemini/adversarial — artifact D.2-strict-gemini-adversarial.md
+PASS audit-rb-D2-gla: glm/alignment — artifact D.2-strict-glm-alignment.md
+PASS audit-rb-D2-cprod: claude/product — artifact D.2-strict-claude-product.md
+---
+verify-family-dispatch: OK — 4 dispatches verified
