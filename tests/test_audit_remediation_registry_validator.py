@@ -410,7 +410,7 @@ def test_finding_authority_fields_cannot_drift_silently(
     assert any(expected_fragment in error for error in errors)
 
 
-def test_control_plane_row_binds_phase_c_close_snapshot(
+def test_control_plane_row_binds_d4_fix_snapshot(
     validator_module,
     monkeypatch,
     tmp_path,
@@ -434,7 +434,7 @@ def test_control_plane_row_binds_phase_c_close_snapshot(
         registry,
     )
 
-    assert any("must bind its fix commit to Phase C close I1" in e for e in errors)
+    assert any("must bind its fix commit to D.4 control-plane fix" in e for e in errors)
     assert any("status mismatch" in e for e in errors)
     assert any("lifecycle mismatch" in e for e in errors)
 

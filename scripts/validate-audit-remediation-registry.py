@@ -30,7 +30,7 @@ GITHUB_REPOSITORY = "ohjonathan/Project-Ontos"
 AUDIT_BASELINE_COMMIT = "589d919"
 REVALIDATION_COMMIT = "bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95"
 INTEGRATION_COMMIT = "b6f89d77e7fb684b8bd9a181a24c773d5777397a"
-CONTROL_PLANE_FIX_COMMIT = "05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0"
+CONTROL_PLANE_FIX_COMMIT = "5c5a9cd8eb92df961146a7ffddabee3bc091ab43"
 DOCTOR_BASE_COMMIT = "c8672e90f2382f4147ef61b4fba918969483e73e"
 DOCTOR_FIX_COMMIT = "03c36e6ac999d2c411c13252baa2e8fcff60e6ed"
 CONTROL_PLANE_FINDING_ID = "R2-control-plane-parity-1"
@@ -1314,7 +1314,7 @@ def validate(require_external_parity: bool) -> list[str]:
             CONTROL_PLANE_FIX_COMMIT if is_control_plane else INTEGRATION_COMMIT
         )
         if row.get("fix_commit") != expected_fix_commit:
-            checkpoint = "Phase C close I1" if is_control_plane else "I0"
+            checkpoint = "D.4 control-plane fix" if is_control_plane else "I0"
             errors.append(
                 f"{finding_id} must bind its fix commit to {checkpoint}"
             )

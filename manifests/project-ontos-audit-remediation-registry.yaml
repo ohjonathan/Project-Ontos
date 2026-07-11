@@ -1102,7 +1102,7 @@ findings:
     release: v4.7.1
     base_sha: bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95
     status: implemented_committed_parity_verified
-    fix_commit: 05b090d53f7b0c9c4afdbb5fb23ab58cdfa01fa0
+    fix_commit: 5c5a9cd8eb92df961146a7ffddabee3bc091ab43
     lifecycle_state: parity_verified_lifecycle_pending
     lease_state: active
     allowed_paths:
