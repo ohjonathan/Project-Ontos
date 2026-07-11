@@ -372,6 +372,9 @@ review_rounds:
   - phase: "B.2"
     round: 1
     preserved_blocker_ids: []
+  - phase: "D.3"
+    round: 1
+    preserved_blocker_ids: []
 reviewer_family_substitutes: []
 consolidation_mode: external
 self_review_caveats:
