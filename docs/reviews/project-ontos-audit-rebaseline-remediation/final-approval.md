@@ -27,6 +27,17 @@ checks are green, but strict lifecycle evidence is not mechanically admissible.
 | EH-15-A | Manifest mode returns false-green exit `0`; explicit adopter summary mode fails registered-fixture resolution | `D.5-current-claude.md` |
 | Receipt schema | The manifest inventory fails the pinned framework schema on six framework-emitted Product/OpenCode values; `verify-lifecycle` does not apply that schema | receipt-schema command output recorded in the D.5 status |
 
+## Mechanical closeout checks
+
+| Check | Result |
+|---|---|
+| Product review snapshot | D.5 dispatched against exact requested head `388845c` |
+| Package metadata | Bumped from `4.7.0` to `4.7.1` after the D.5 snapshot; no claim that this mechanical follow-up was part of the reviewed tree |
+| Complete local suite | `1740 passed, 1 warning` |
+| Manifest conformance | PASS, `4/4` |
+| Closeout-proof metadata | PASS; proof-test, product-code-scope, and live-doc reconciliation gates are explicit |
+| D.6 shape | `verify-d6-gate --allow-gated` PASS; strict-P3 mode intentionally fails |
+
 ## Certification statement
 
 `provider_limited_fallback_complete; strict P3 not certified; maintainer release actions deferred`

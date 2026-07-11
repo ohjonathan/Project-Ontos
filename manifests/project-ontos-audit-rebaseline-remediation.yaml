@@ -445,19 +445,19 @@ required_dispatch_bundles:
 gate_prerequisites:
   - id: G-test-1
     category: test
-    description: "The complete Ontos test suite passes from the isolated lifecycle worktree."
+    description: "Proof test: the complete Ontos test suite passes from the isolated lifecycle worktree."
     verification:
       command: "if [ -x .venv/bin/python ]; then .venv/bin/python -m pytest tests/ -q; else python3 -m pytest tests/ -q; fi"
       expect: "exit-0"
   - id: G-test-2
     category: test
-    description: "Registry state still matches the live GitHub tracker and milestones."
+    description: "Live-doc reconciliation: the registry, rendered control-plane documents, and live GitHub tracker and milestones agree."
     verification:
       command: "python3 scripts/validate-audit-remediation-registry.py --require-external-parity"
       expect: "exit-0"
   - id: G-scope-1
     category: scope
-    description: "Every committed, staged, unstaged, and untracked lifecycle path since main is within this exact snapshot scope and outside all hard-forbidden paths."
+    description: "Product-code-scope gate: every committed, staged, unstaged, and untracked lifecycle path since main is within this exact snapshot scope and outside all hard-forbidden paths."
     verification:
       command: "bash .llm-dev/framework/scripts/verify-changed-path-scope.sh --manifest manifests/project-ontos-audit-rebaseline-remediation.yaml --base bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95"
       expect: "exit-0"
@@ -469,14 +469,14 @@ gate_prerequisites:
       expect: "exit-0"
   - id: G-verdict-1
     category: verdict-presence
-    description: "B.3 and D.3 canonical verdicts and all three current-head D.5 verifier artifacts exist."
+    description: "B.3 and D.3 canonical verdicts, the nonempty current-head Claude and GLM D.5 artifacts, and Gemini's hash-bound failed-dispatch evidence exist."
     verification:
       command: >-
-        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/B.3-verdict.md &&
-        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/D.3-verdict.md &&
-        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-claude.md &&
-        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-gemini.md &&
-        test -f docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-glm.md
+        test -s docs/reviews/project-ontos-audit-rebaseline-remediation/B.3-verdict.md &&
+        test -s docs/reviews/project-ontos-audit-rebaseline-remediation/D.3-verdict.md &&
+        test -s docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-claude.md &&
+        test -s docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-glm.md &&
+        python3 -c "from pathlib import Path; import hashlib,yaml; p=Path('docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-current-dispatch-result.yaml'); rows=yaml.safe_load(p.read_text())['results']; r=next(x for x in rows if x['capture_id']=='audit-rb-D5-current-gv.r2.c20260711T181904Z.15040.4f6b3ae8e1bd84cf814c460a5ca9950d'); a=Path(r['artifact_path']); e=Path(r['stderr_path']); assert r['family']=='gemini' and r['status']=='failed' and r['exit_code']==55 and (not a.exists() or a.stat().st_size==0) and e.is_file() and 'sha256:'+hashlib.sha256(e.read_bytes()).hexdigest()==r['stderr_hash']"
       expect: "exit-0"
   - id: G-verdict-2
     category: verdict-presence

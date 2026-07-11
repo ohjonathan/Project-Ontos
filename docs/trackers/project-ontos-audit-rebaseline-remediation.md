@@ -155,8 +155,9 @@ and requires fresh D.5 verification.
 
 ## Merge and rollback recommendation
 
-Recommend **split before release/merge**. The branch contains 55 commits and
-605 committed paths across the registry's v4.7.1, v4.8.0, and v4.9.0 programs;
+Recommend **split before release/merge**. Including the final lifecycle-metadata
+commit, the closeout head contains 58 commits and 636 committed paths across the
+registry's v4.7.1, v4.8.0, and v4.9.0 programs;
 13 implementation paths have multi-release ownership. There is no honest
 whole-file cherry-pick for the hotfix, so extraction requires hunk-level
 decomposition plus fresh tests and lifecycle review. Put the `4.7.1` release
