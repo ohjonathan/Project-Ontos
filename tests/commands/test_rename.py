@@ -9,6 +9,10 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+import pytest
+
+from ontos.core.schema import validate_document_id
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -93,12 +97,92 @@ def test_rename_rejects_reserved_new_id(tmp_path: Path):
     assert "reserved" in result.stdout.lower()
 
 
-def test_rename_rejects_invalid_new_id_format(tmp_path: Path):
+@pytest.mark.parametrize(
+    ("old_id", "new_id", "invalid_value"),
+    [
+        ("bad old!", "new_id", "bad old!"),
+        ("old_id", "bad new!", "bad new!"),
+        ("bad same!", "bad same!", "bad same!"),
+    ],
+)
+def test_rename_invalid_ids_use_canonical_human_usage_error(
+    tmp_path: Path,
+    old_id: str,
+    new_id: str,
+    invalid_value: str,
+):
     _init_repo(tmp_path)
     _write_doc(tmp_path / "docs" / "a.md", "old_id")
-    result = _run_ontos(tmp_path, "rename", "old_id", "bad id")
-    assert result.returncode == 1
-    assert "invalid_new_id" in result.stdout
+    with pytest.raises(ValueError) as canonical:
+        validate_document_id(invalid_value)
+
+    result = _run_ontos(tmp_path, "rename", old_id, new_id)
+
+    assert result.returncode == 2
+    assert result.stdout == ""
+    assert result.stderr.strip() == f"Error: {canonical.value}"
+
+
+@pytest.mark.parametrize(
+    ("old_id", "new_id", "invalid_value"),
+    [
+        ("bad old!", "new_id", "bad old!"),
+        ("old_id", "bad new!", "bad new!"),
+        ("bad same!", "bad same!", "bad same!"),
+    ],
+)
+def test_rename_invalid_ids_use_canonical_json_usage_error(
+    tmp_path: Path,
+    old_id: str,
+    new_id: str,
+    invalid_value: str,
+):
+    _init_repo(tmp_path)
+    _write_doc(tmp_path / "docs" / "a.md", "old_id")
+    with pytest.raises(ValueError) as canonical:
+        validate_document_id(invalid_value)
+
+    result = _run_ontos(tmp_path, "--json", "rename", old_id, new_id)
+
+    assert result.returncode == 2
+    envelope = json.loads(result.stdout)
+    assert envelope["message"] == str(canonical.value)
+    assert envelope["error"]["code"] == "E_USER_INPUT"
+    assert envelope["result"]["exit_category"] == "usage"
+
+
+@pytest.mark.parametrize(
+    ("old_id", "new_id", "invalid_value"),
+    [
+        ("bad old!", "new_id", "bad old!"),
+        ("old_id", "bad new!", "bad new!"),
+        ("bad same!", "bad same!", "bad same!"),
+        ("   ", "new_id", "   "),
+        ("old_id", "   ", "   "),
+    ],
+)
+def test_rename_invalid_id_is_rejected_before_project_discovery(
+    tmp_path: Path,
+    old_id: str,
+    new_id: str,
+    invalid_value: str,
+):
+    with pytest.raises(ValueError) as canonical:
+        validate_document_id(invalid_value)
+
+    result = _run_ontos(
+        tmp_path,
+        "--json",
+        "rename",
+        old_id,
+        new_id,
+    )
+
+    assert result.returncode == 2
+    envelope = json.loads(result.stdout)
+    assert envelope["message"] == str(canonical.value)
+    assert envelope["error"]["code"] == "E_USER_INPUT"
+    assert envelope["result"]["exit_category"] == "usage"
 
 
 def test_rename_aborts_on_duplicate_ids(tmp_path: Path):
@@ -542,6 +626,65 @@ def test_rename_quiet_mode_suppresses_per_file_details(tmp_path: Path):
     assert result.returncode == 0
     assert "Summary" in result.stdout
     assert "File:" not in result.stdout
+
+
+@pytest.mark.parametrize(
+    ("old_id", "new_id", "error_code", "invalid_value"),
+    [
+        ("bad old!", "new_id", "invalid_old_id", "bad old!"),
+        ("old_id", "bad new!", "invalid_new_id", "bad new!"),
+        ("bad same!", "bad same!", "invalid_old_id", "bad same!"),
+    ],
+)
+def test_build_rename_plan_uses_canonical_id_validation_before_noop(
+    tmp_path: Path,
+    old_id: str,
+    new_id: str,
+    error_code: str,
+    invalid_value: str,
+):
+    from ontos.commands.rename import build_rename_plan
+    from ontos.io.scan_scope import ScanScope
+
+    with pytest.raises(ValueError) as canonical:
+        validate_document_id(invalid_value)
+
+    plan, error = build_rename_plan(
+        repo_root=tmp_path,
+        config=None,
+        scope=ScanScope.DOCS,
+        docs={},
+        old_id=old_id,
+        new_id=new_id,
+        mode="dry_run",
+        check_git=False,
+    )
+
+    assert plan is None
+    assert error is not None
+    assert error.code == error_code
+    assert error.message == str(canonical.value)
+
+
+def test_build_rename_plan_preserves_valid_same_id_noop(tmp_path: Path):
+    from ontos.commands.rename import build_rename_plan
+    from ontos.io.scan_scope import ScanScope
+
+    plan, error = build_rename_plan(
+        repo_root=tmp_path,
+        config=None,
+        scope=ScanScope.DOCS,
+        docs={},
+        old_id="same_id",
+        new_id=" same_id ",
+        mode="dry_run",
+        check_git=False,
+    )
+
+    assert error is None
+    assert plan is not None
+    assert plan.no_op is True
+    assert plan.old_id == plan.new_id == "same_id"
 
 
 def test_build_rename_plan_equivalence_cli_vs_injected_docs(tmp_path: Path):

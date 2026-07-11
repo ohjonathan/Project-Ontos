@@ -47,6 +47,7 @@ from mcp.types import CallToolResult, TextContent
 from ontos.commands.rename import (
     RenameError,
     build_rename_plan,
+    validate_rename_ids,
 )
 from ontos.core.context import SessionContext
 from ontos.core.errors import OntosInternalError, OntosUserError
@@ -74,7 +75,8 @@ from ontos.mcp.schemas import (
 # validation + collision logic; this helper preserves the stable MCP
 # envelope codes the existing tests assert.
 _RENAME_ERROR_TO_USER_CODE: Dict[str, str] = {
-    "invalid_new_id": "E_INVALID_ID",
+    "invalid_old_id": "E_USER_INPUT",
+    "invalid_new_id": "E_USER_INPUT",
     "reserved_new_id": "E_INVALID_ID",
     "old_id_not_found": "E_DOCUMENT_NOT_FOUND",
     "new_id_exists": "E_DUPLICATE_ID",
@@ -354,6 +356,11 @@ def rename_document(
     Matches ``ontos/commands/rename.py:221`` semantics — ID-only rename,
     no filesystem moves, all edits flow through ``ctx.buffer_write``.
     """
+    old_id, target_id, input_error = validate_rename_ids(document_id, new_id)
+    if input_error is not None:
+        return _user_error_result(_rename_error_to_user_exc(input_error))
+    assert old_id is not None and target_id is not None
+
     try:
         plan = _preflight(cache, portfolio_index, workspace_id, read_only)
     except OntosUserError as exc:
@@ -375,8 +382,8 @@ def rename_document(
                     cache=cache,
                     portfolio_index=portfolio_index,
                     plan=plan,
-                    document_id=document_id,
-                    new_id=new_id,
+                    document_id=old_id,
+                    new_id=target_id,
                 )
                 result = _success_result("rename_document", payload)
             except OntosUserError as exc:
@@ -430,19 +437,8 @@ def _rename_document_impl(
     document_id: str,
     new_id: str,
 ) -> Dict[str, Any]:
-    old_id = str(document_id).strip() if document_id is not None else ""
-    target_id = str(new_id).strip() if new_id is not None else ""
-
-    if not old_id:
-        raise OntosUserError(
-            "document_id must be non-empty.",
-            code="E_INVALID_DOCUMENT_ID",
-        )
-    if not target_id:
-        raise OntosUserError(
-            "new_id must be non-empty.",
-            code="E_INVALID_ID",
-        )
+    old_id = document_id
+    target_id = new_id
 
     # Route through the shared orchestrator. It performs ID validation,
     # old/new collision checks, the docs-scope cross-scope guard, and the
@@ -483,6 +479,8 @@ def _rename_document_impl(
     if error is not None:
         raise _rename_error_to_user_exc(error)
     assert rename_plan is not None
+    old_id = rename_plan.old_id
+    target_id = rename_plan.new_id
 
     # No-op rename: report success without touching files or acquiring any
     # further write-side state.

@@ -33,6 +33,7 @@ from typing import Any, List
 import pytest
 from mcp.types import CallToolResult
 
+from ontos.core.schema import validate_document_id
 from ontos.mcp.portfolio import PortfolioIndex
 from tests.mcp_helpers import build_cache, build_server, create_workspace
 
@@ -305,35 +306,88 @@ def test_rename_document_rejects_duplicate_new_id(tmp_path):
     assert result.structuredContent["error"]["error_code"] == "E_DUPLICATE_ID"
 
 
-def test_rename_document_rejects_invalid_new_id_format(tmp_path):
+@pytest.mark.parametrize(
+    ("document_id", "new_id", "invalid_value"),
+    [
+        ("bad old!", "renamed", "bad old!"),
+        ("kernel_doc", "bad new!", "bad new!"),
+        ("bad same!", "bad same!", "bad same!"),
+        ("   ", "renamed", "   "),
+        ("kernel_doc", "   ", "   "),
+    ],
+)
+def test_rename_document_invalid_ids_use_canonical_user_error(
+    tmp_path,
+    document_id,
+    new_id,
+    invalid_value,
+):
+    root = create_workspace(tmp_path)
+    _git_init_clean(root)
+    server = build_server(root)
+    with pytest.raises(ValueError) as canonical:
+        validate_document_id(invalid_value)
+
+    result = _call(
+        server,
+        "rename_document",
+        {"document_id": document_id, "new_id": new_id},
+    )
+
+    assert result.isError is True
+    assert result.structuredContent["error"]["error_code"] == "E_USER_INPUT"
+    assert result.structuredContent["error"]["what"] == str(canonical.value)
+
+
+def test_rename_document_preserves_reserved_new_id_error_code(tmp_path):
     root = create_workspace(tmp_path)
     _git_init_clean(root)
     server = build_server(root)
 
-    # Contains illegal characters.
     result = _call(
         server,
         "rename_document",
-        {"document_id": "kernel_doc", "new_id": "has spaces"},
+        {"document_id": "kernel_doc", "new_id": "true"},
     )
 
     assert result.isError is True
     assert result.structuredContent["error"]["error_code"] == "E_INVALID_ID"
 
 
-def test_rename_document_rejects_empty_old_id(tmp_path):
-    root = create_workspace(tmp_path)
-    _git_init_clean(root)
-    server = build_server(root)
+@pytest.mark.parametrize(
+    ("document_id", "new_id", "invalid_value"),
+    [
+        ("bad old!", "new_id", "bad old!"),
+        ("old_id", "bad new!", "bad new!"),
+        ("bad same!", "bad same!", "bad same!"),
+        ("   ", "new_id", "   "),
+        ("old_id", "   ", "   "),
+    ],
+)
+def test_rename_document_rejects_invalid_id_before_preflight(
+    monkeypatch,
+    document_id,
+    new_id,
+    invalid_value,
+):
+    from ontos.mcp import rename_tool
 
-    result = _call(
-        server,
-        "rename_document",
-        {"document_id": "   ", "new_id": "renamed"},
+    def unexpected_preflight(*args, **kwargs):
+        raise AssertionError("preflight must not run for invalid IDs")
+
+    monkeypatch.setattr(rename_tool, "_preflight", unexpected_preflight)
+    with pytest.raises(ValueError) as canonical:
+        validate_document_id(invalid_value)
+
+    result = rename_tool.rename_document(
+        None,
+        document_id=document_id,
+        new_id=new_id,
     )
 
     assert result.isError is True
-    assert result.structuredContent["error"]["error_code"] == "E_INVALID_DOCUMENT_ID"
+    assert result.structuredContent["error"]["error_code"] == "E_USER_INPUT"
+    assert result.structuredContent["error"]["what"] == str(canonical.value)
 
 
 # ---------------------------------------------------------------------------

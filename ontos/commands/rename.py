@@ -9,6 +9,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 from ontos.core.body_refs import MatchType, ZoneType, scan_body_references
 from ontos.core.context import SessionContext
+from ontos.core.errors import OntosUserError
 from ontos.core.frontmatter_edit import (
     _DecodedContent,
     _FrontmatterSplit,
@@ -18,6 +19,7 @@ from ontos.core.frontmatter_edit import (
     _read_decoded_content,
     _split_frontmatter,
 )
+from ontos.core.schema import validate_document_id
 from ontos.core.types import DocumentData
 from ontos.io.config import load_project_config
 from ontos.io.files import DocumentLoadIssue, find_project_root, load_documents, scan_documents
@@ -25,7 +27,6 @@ from ontos.io.scan_scope import ScanScope, collect_scoped_documents, resolve_sca
 from ontos.io.yaml import parse_frontmatter_content
 from ontos.ui.json_output import emit_command_error, emit_command_success
 
-_ID_PATTERN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$")
 _RESERVED_YAML_WORDS = {"true", "false", "yes", "no", "null", "on", "off"}
 _ANCHOR_ALIAS_RE = re.compile(r"(^|[\s,\[\]-])(?:&[A-Za-z0-9_-]+|\*[A-Za-z0-9_-]+)")
 
@@ -154,9 +155,15 @@ class _FrontmatterPatchResult:
 def rename_command(options: RenameOptions) -> int:
     """Execute rename command."""
 
+    _, _, input_error = validate_rename_ids(options.old_id, options.new_id)
+    if input_error is not None:
+        raise OntosUserError(input_error.message, code="E_USER_INPUT")
+
     mode = "apply" if options.apply else "dry_run"
     prepared, error = _prepare_plan(options, mode=mode)
     if error is not None:
+        if error.code in {"invalid_old_id", "invalid_new_id"}:
+            raise OntosUserError(error.message, code="E_USER_INPUT")
         _emit_error(
             options=options,
             mode=mode,
@@ -271,21 +278,20 @@ def build_rename_plan(
     """Shared rename-plan orchestrator used by both the CLI and the MCP tool.
 
     The caller supplies the already-loaded ``docs`` dictionary (and optional
-    ``load_issues`` sequence). This function performs the 11 validation +
+    ``load_issues`` sequence). This function performs the 10 validation +
     collision + file-plan steps that used to live inside ``_prepare_plan``:
 
-    1. Strip ``old_id`` / ``new_id``.
+    1. Canonically validate and normalize ``old_id`` / ``new_id``.
     2. Same-ID no-op → return empty ``RenamePlan``.
-    3. ``_ID_PATTERN`` regex validation of ``new_id``.
-    4. ``_RESERVED_YAML_WORDS`` guard.
-    5. Optional git clean-state check (CLI enforces here; MCP enforces
+    3. ``_RESERVED_YAML_WORDS`` guard.
+    4. Optional git clean-state check (CLI enforces here; MCP enforces
        before acquiring ``workspace_lock()`` and passes ``check_git=False``).
-    6. ``old_id`` must exist exactly once as an explicit frontmatter id.
-    7. ``new_id`` must not already exist in scope.
-    8. Cross-scope collision check when ``scope == ScanScope.DOCS``.
-    9. ``load_issues`` parse-failed-sighting check (skipped when ``None``).
-    10. Per-document ``_build_file_plan`` loop (sorted by filepath).
-    11. Summary + ``RenamePlan`` assembly.
+    5. ``old_id`` must exist exactly once as an explicit frontmatter id.
+    6. ``new_id`` must not already exist in scope.
+    7. Cross-scope collision check when ``scope == ScanScope.DOCS``.
+    8. ``load_issues`` parse-failed-sighting check (skipped when ``None``).
+    9. Per-document ``_build_file_plan`` loop (sorted by filepath).
+    10. Summary + ``RenamePlan`` assembly.
 
     ``check_git=False`` exists because MCP validates git-clean ex-ante —
     ``workspace_lock()`` materialises ``.ontos.lock`` as an untracked file,
@@ -297,8 +303,10 @@ def build_rename_plan(
     issues. This is a documented limitation, not a regression.
     """
 
-    old_id = old_id.strip()
-    new_id = new_id.strip()
+    old_id, new_id, validation_error = validate_rename_ids(old_id, new_id)
+    if validation_error is not None:
+        return None, validation_error
+    assert old_id is not None and new_id is not None
 
     if old_id == new_id:
         empty_plan = RenamePlan(
@@ -321,11 +329,6 @@ def build_rename_plan(
         )
         return empty_plan, None
 
-    if not _ID_PATTERN.match(new_id):
-        return None, RenameError(
-            code="invalid_new_id",
-            message="new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$",
-        )
     if new_id.lower() in _RESERVED_YAML_WORDS:
         return None, RenameError(
             code="reserved_new_id",
@@ -432,6 +435,24 @@ def build_rename_plan(
     return plan, None
 
 
+def validate_rename_ids(
+    old_id: object,
+    new_id: object,
+) -> Tuple[Optional[str], Optional[str], Optional[RenameError]]:
+    """Validate both rename operands with the canonical document-ID contract."""
+    try:
+        normalized_old_id = validate_document_id(old_id)
+    except ValueError as exc:
+        return None, None, RenameError(code="invalid_old_id", message=str(exc))
+
+    try:
+        normalized_new_id = validate_document_id(new_id)
+    except ValueError as exc:
+        return None, None, RenameError(code="invalid_new_id", message=str(exc))
+
+    return normalized_old_id, normalized_new_id, None
+
+
 def _prepare_plan(options: RenameOptions, *, mode: str) -> Tuple[Optional[_PreparedPlan], Optional[RenameError]]:
     try:
         repo_root = find_project_root()
@@ -445,11 +466,17 @@ def _prepare_plan(options: RenameOptions, *, mode: str) -> Tuple[Optional[_Prepa
 
     scope = resolve_scan_scope(options.scope, config.scanning.default_scope)
 
+    old_id, new_id, validation_error = validate_rename_ids(
+        options.old_id,
+        options.new_id,
+    )
+    if validation_error is not None:
+        return None, validation_error
+    assert old_id is not None and new_id is not None
+
     # Same-ID no-op short-circuit — avoid scanning the filesystem entirely.
     # The orchestrator also handles this, but the CLI wrapper skips the scan
     # to preserve the prior zero-IO behaviour for no-ops.
-    old_id = options.old_id.strip()
-    new_id = options.new_id.strip()
     if old_id == new_id:
         plan, error = build_rename_plan(
             repo_root=repo_root,
