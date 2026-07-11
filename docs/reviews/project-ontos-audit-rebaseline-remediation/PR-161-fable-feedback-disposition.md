@@ -32,7 +32,7 @@ establish it), and **out of scope** (not authorized for this PR follow-up).
 | The lifecycle is strict and complete through D.5 | partially valid | Fresh, hash-bound B.1, B.2, and D.2 boards verify `4/4` each. D.5 contains real attempts, but Gemini has no valid receipt, the active GLM promotion failed, the I3 fixes postdate the I2 verifier runs, and strict lifecycle verification fails. D.5 remains `review_pending`, not certified. |
 | The PR body is honest | confirmed | The PR is a draft and explicitly says D.5 is pending, D.6 was not run, strict-P3 certification is not claimed, and the framework/provider gaps remain open. The summary phrase “through D.5” should be read as attempted through D.5, not completed. |
 | 1. `patch_frontmatter_fields()` breaks id-less documents | confirmed | The failure is broader than the cited fail-soft commands: any caller patching a valid document whose ID is derived from its filename can reach unconditional ID validation. The reviewed default scope contained 166 id-less paths, including 10 with nonempty lifecycle frontmatter, so the claim that no real repository document omits `id` is false. Focused regressions now preserve filename-derived IDs while validating explicit or newly added IDs. |
-| 2. New staged files ignore a restrictive umask | confirmed | `_stage_text` hard-codes `0o644` for a new file; under umask `0o077` that widens the result compared with normal creation semantics. A focused regression was reproduced and the new-file mode calculation is being fixed while preserving existing-file modes. |
+| 2. New staged files ignore a restrictive umask | confirmed | `_stage_text` hard-codes `0o644` for a new file; under umask `0o077` that widens the result compared with normal creation semantics. A focused regression was reproduced and the new-file mode calculation was fixed while preserving existing-file modes. |
 | 3. `link-check --json` changed line numbering and envelope shape | confirmed | The physical-file line numbers, top-level `result`, and schema `4.0` are intentional, version-signaled public contract changes. They require consumer migration awareness but are not a silent defect to revert in this follow-up. |
 | 4. The hermeticity gate rejects local coverage artifacts | confirmed | A local coverage run can leave `.coverage` or `coverage.xml`, which the clean-tree gate treats as repository mutation. Those conventional local artifacts should be ignored; CI already redirects its artifacts to runner temporary storage. |
 | 5. UTF-8 reads changed from replacement to strict decoding | partially valid | The strict-decoding behavior change is real and is being retained deliberately so corrupt documents fail visibly. The alleged stale adjacent comment was not reproduced as stated; the BOM comment does not promise replacement decoding. Contract tests/documentation, not a return to `errors='replace'`, are the justified response. |
@@ -41,7 +41,7 @@ establish it), and **out of scope** (not authorized for this PR follow-up).
 | The PR's 602-path scope result lacks matching committed evidence | confirmed | The exact head count and scope pass were reproduced below. Earlier lifecycle artifacts record 559/578/594/598 because they bind earlier snapshots. This is a committed-evidence gap, not a scope failure; this section records the result plainly without inventing a receipt. |
 | Existing CI hardening is sound | partially valid | The clean-tree gate, retirement of legacy injected tests, Windows boundary job, and non-editable smoke are sound. The reviewed workflow placed `runner.temp` in job-level `env`, where that context is unavailable; pushes failed before creating any job. The coverage-file environment is now step-scoped and regression-locked. |
 | Coverage is still advisory | confirmed | The reviewed coverage step used `continue-on-error: true`. Direct measurements were 82.73% for the full/MCP suite and 70.33% without MCP; CI now gates at conservative floors of 82 and 70 respectively. |
-| Coverage artifacts should be ignored | confirmed | Add `.coverage` and `coverage.xml` to the repository ignore contract and cover it with workflow/hermeticity regression tests. |
+| Coverage artifacts should be ignored | confirmed | Added `.coverage` and `coverage.xml` to the repository ignore contract and covered it with workflow/hermeticity regression tests. |
 | The audit registry validator should run in CI | confirmed | The validator is the local registry/ledger/lease parity gate but was not invoked by `ci.yml`. A local, non-networked validation step is justified. Live GitHub parity remains a separately credentialed check. |
 | The registry validator would itself prevent PR-body/scope-receipt drift | unsupported | It validates registry structure, evidence paths, leases, child-manifest parity, rendered ledger state, and optional GitHub issue parity. It does not validate the PR body, the current changed-path count, or this deliverable's receipt inventory. Those need their own evidence/gates. |
 | Land all six findings as code changes | partially valid | Items 1, 2, and 4 justify fixes. Item 3 is an intentional versioned contract, item 5 retains strict decoding with clarified tests, and item 6 is a follow-up maintainability note. |
@@ -84,19 +84,24 @@ This proof is deliberately not represented as a strict-P3 receipt.
 | Check | Result |
 |---|---|
 | Focused frontmatter/loading/writer/CI/serializer/link diagnostics | PASS — `123 passed` |
+| Cross-version help-parity regressions, Python 3.14 and 3.12 | PASS — `11 passed` on each interpreter; normalization is limited to stdlib-controlled usage wrapping, the Python 3.9 section label, and repeated alias metavars |
 | Complete suite with coverage gate | PASS — `1739 passed, 1 warning`; `82.76%` coverage; required `82%` reached |
 | Python 3.9 non-MCP coverage-floor calibration | PASS — `1442 passed`; `70.33%` measured at reviewed head; CI floor `70%` |
 | Audit registry, local | PASS — 91 original + 9 revalidation findings |
 | Audit registry, live GitHub parity | PASS — 91 original + 9 revalidation findings |
 | llm-dev manifest conformance | PASS — `4/4` |
 | Changed-path scope after follow-up | PASS — `605` paths from `bf91b42`, including exact `.gitignore` and session-log lease additions |
-| `git diff --check HEAD` | PASS |
+| `git diff --check bf91b42..HEAD` | PASS |
+| First executable GitHub Actions matrix, run `29154665641` | DISCOVERY FAILURE — Python 3.10 completed with `1737 passed, 2 failed`; Python 3.9 also recorded the same presentation-only help-golden drift in `scaffold` before fail-fast cancellation. Windows 3.9/3.14 and non-editable smoke passed. The cross-version golden canonicalizer above is the focused follow-up; its head rerun is pending at this commit. |
 | Strict lifecycle | EXPECTED BLOCK — exit `1`, `status=review_pending`; Gemini receipt missing and GLM/dispatch evidence invalid |
 | Strict receipt-inventory schema | EXPECTED BLOCK — exit `1`, six v2.0.1 producer/schema mismatches (three Product roles, three OpenCode promotion sources) |
 
 ## Certification boundary
 
-Follow-up code and CI verification passes. `D4-INFRA-1` and `D5-INFRA-2`
-remain open, D.5 remains `review_pending`, strict-P3 certification is not
-claimed, and D.6 has not been run. No receipt or prior D.5 artifact is modified
-or reinterpreted by this disposition.
+Follow-up code verification passes locally. The first executable remote matrix
+exposed and reproduced cross-version `argparse` presentation drift in three
+exact help snapshots; the narrow test-contract fix is included and its head
+rerun is pending. `D4-INFRA-1` and `D5-INFRA-2` remain open, D.5 remains
+`review_pending`, strict-P3 certification is not claimed, and D.6 has not been
+run. No receipt or prior D.5 artifact is modified or reinterpreted by this
+disposition.

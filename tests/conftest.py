@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -25,6 +26,57 @@ def _repository_status() -> str:
 
 
 _SESSION_STARTED_CLEAN = _repository_status() == ""
+
+
+_ALIASED_VALUE_OPTION = re.compile(
+    r"^(?P<indent>\s+)(?P<first>--?[A-Za-z0-9][\w-]*)"
+    r"(?: (?P<first_metavar>[A-Z][A-Z0-9_-]*))?, "
+    r"(?P<second>--?[A-Za-z0-9][\w-]*) "
+    r"(?P<metavar>[A-Z][A-Z0-9_-]*)"
+    r"(?P<spacing>\s{2,})(?P<description>.*)$"
+)
+
+
+def _canonicalize_argparse_help(output: str) -> str:
+    """Normalize presentation-only argparse drift across supported Python versions."""
+    lines = output.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+
+    # Python versions wrap mutually-exclusive usage groups differently.
+    if lines and lines[0].startswith("usage: "):
+        usage_end = 1
+        while (
+            usage_end < len(lines)
+            and lines[usage_end].strip()
+            and lines[usage_end][:1].isspace()
+        ):
+            usage_end += 1
+        lines[:usage_end] = [" ".join(line.strip() for line in lines[:usage_end])]
+
+    for index, line in enumerate(lines):
+        # Python 3.9 uses the older section label.
+        if line == "optional arguments:":
+            lines[index] = "options:"
+            continue
+
+        # Python <=3.12 repeats a metavar for every alias; 3.13+ prints it once.
+        match = _ALIASED_VALUE_OPTION.match(line)
+        if match and match.group("first_metavar") in (None, match.group("metavar")):
+            lines[index] = (
+                f"{match.group('indent')}{match.group('first')}, "
+                f"{match.group('second')} {match.group('metavar')}"
+                f"  {match.group('description')}"
+            )
+
+    return "\n".join(lines)
+
+
+@pytest.fixture
+def assert_help_parity():
+    """Compare CLI help while preserving all non-stdlib-controlled content."""
+    def _assert_help_parity(actual: str, golden: str) -> None:
+        assert _canonicalize_argparse_help(actual) == _canonicalize_argparse_help(golden)
+
+    return _assert_help_parity
 
 
 def pytest_sessionfinish(session, exitstatus):

@@ -19,7 +19,7 @@ def golden_help():
     return golden_path.read_text()
 
 
-def test_query_help_parity(golden_help):
+def test_query_help_parity(golden_help, assert_help_parity):
     """Native --help matches legacy."""
     result = subprocess.run(
         [sys.executable, "-m", "ontos.cli", "query", "--help"],
@@ -27,11 +27,27 @@ def test_query_help_parity(golden_help):
         text=True,
         env=os.environ.copy()
     )
-    assert result.stdout == golden_help
+    assert_help_parity(result.stdout, golden_help)
     assert "--depends-on" in result.stdout
     assert "--depended-by" in result.stdout
     assert "--health" in result.stdout
     assert "query" in result.stdout.lower()
+
+
+def test_help_parity_normalizes_supported_argparse_presentation(assert_help_parity):
+    """Supported Python versions may wrap usage and render aliases differently."""
+    legacy = (
+        "usage: ontos verify [-h] [--date DATE]\n"
+        "                    [path]\n\n"
+        "optional arguments:\n"
+        "  --date DATE, -d DATE  Verification date\n"
+    )
+    canonical = (
+        "usage: ontos verify [-h] [--date DATE] [path]\n\n"
+        "options:\n"
+        "  --date, -d DATE       Verification date\n"
+    )
+    assert_help_parity(legacy, canonical)
 
 
 def test_query_health_parity(tmp_path):
