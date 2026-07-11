@@ -36,6 +36,9 @@ Make PR #161 safer and more reviewable while preserving its draft,
 - The advisory Codecov action downloads its uploader and checksum files into
   the checkout. A clean-tree assertion placed after that action misclassified
   the third-party download as a test-suite mutation.
+- Context-map alias parity compared two independently generated timestamped
+  maps byte-for-byte. A slow Python 3.12 coverage run crossed a one-second
+  boundary and failed despite identical nonvolatile content.
 
 ## Fix Applied
 
@@ -50,6 +53,9 @@ Make PR #161 safer and more reviewable while preserving its draft,
   metavars, and command behavior.
 - Use Codecov's documented `working-directory` input to keep its uploader and
   checksums under `runner.temp`, preserving the final clean-tree assertion.
+- Compare context-map alias output with the generator's existing normalizer for
+  its three declared volatile timestamp fields; retain exact comparison for all
+  other bytes.
 - Add a migration note and a complete PR-feedback disposition/status record.
 
 ## Key Decisions
@@ -85,6 +91,11 @@ drift. Existing public schema-v4 semantics and lifecycle evidence remain intact.
 - GitHub Actions run `29155102929`: ordinary suites passed on Python 3.9-3.12
   and the 3.11 coverage gate passed; its clean-tree step then found only the
   Codecov uploader and checksum downloads. The temp-directory follow-up is
+  pending.
+- GitHub Actions run `29155457389`: Python 3.9, 3.10, and 3.11 passed ordinary,
+  coverage, and clean-tree checks; Python 3.12 ordinary passed, while coverage
+  ended at `1739 passed, 1 failed` on a one-second-only context-map timestamp
+  difference (`82.64%` coverage passed). The timestamp-normalized rerun is
   pending.
 - Registry local and live GitHub parity: PASS.
 - Manifest conformance: `4/4`; changed-path scope: PASS.

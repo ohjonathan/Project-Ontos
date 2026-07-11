@@ -85,7 +85,7 @@ This proof is deliberately not represented as a strict-P3 receipt.
 |---|---|
 | Focused frontmatter/loading/writer/CI/serializer/link diagnostics | PASS — `123 passed` |
 | Cross-version help-parity regressions, Python 3.14 and 3.12 | PASS — `11 passed` on each interpreter; normalization is limited to stdlib-controlled usage wrapping, the Python 3.9 section label, and repeated alias metavars |
-| Complete suite with coverage gate | PASS — `1739 passed, 1 warning`; `82.76%` coverage; required `82%` reached |
+| Complete suite with coverage gate | PASS — `1740 passed, 1 warning`; `82.76%` coverage; required `82%` reached |
 | Python 3.9 non-MCP coverage-floor calibration | PASS — `1442 passed`; `70.33%` measured at reviewed head; CI floor `70%` |
 | Audit registry, local | PASS — 91 original + 9 revalidation findings |
 | Audit registry, live GitHub parity | PASS — 91 original + 9 revalidation findings |
@@ -94,6 +94,7 @@ This proof is deliberately not represented as a strict-P3 receipt.
 | `git diff --check bf91b42..HEAD` | PASS |
 | First executable GitHub Actions matrix, run `29154665641` | DISCOVERY FAILURE — Python 3.10 completed with `1737 passed, 2 failed`; Python 3.9 also recorded the same presentation-only help-golden drift in `scaffold` before fail-fast cancellation. Windows 3.9/3.14 and non-editable smoke passed. The cross-version golden canonicalizer above is the focused follow-up; its head rerun is pending at this commit. |
 | Cross-version follow-up matrix, run `29155102929` | DISCOVERY FAILURE — the ordinary suite passed on Python 3.9, 3.10, 3.11, and 3.12, proving the help fix. The 3.11 coverage gate passed, then `codecov-action` downloaded `codecov` and two checksum files into the checkout before the clean-tree assertion, creating a false test-hermeticity failure; matrix fail-fast canceled the other coverage jobs. The action's documented `working-directory` input now redirects those downloads to `runner.temp` while preserving the final clean-tree assertion. |
+| Coverage/hermeticity follow-up matrix, run `29155457389` | DISCOVERY FAILURE — Python 3.9, 3.10, and 3.11 passed their ordinary suites, coverage gates, and clean-tree assertions; Python 3.11 also proved the redirected Codecov upload clean. Python 3.12's ordinary suite passed, but its much slower coverage rerun crossed a one-second boundary between two context-map renders, exposing a volatile-timestamp equality assertion (`1739 passed, 1 failed`; coverage itself `82.64%`). The alias-parity test now uses the map generator's existing timestamp normalizer and still compares every nonvolatile byte. |
 | Strict lifecycle | EXPECTED BLOCK — exit `1`, `status=review_pending`; Gemini receipt missing and GLM/dispatch evidence invalid |
 | Strict receipt-inventory schema | EXPECTED BLOCK — exit `1`, six v2.0.1 producer/schema mismatches (three Product roles, three OpenCode promotion sources) |
 
@@ -105,7 +106,9 @@ exact help snapshots; the narrow test-contract fix passed on every supported
 Linux interpreter. That run then exposed a third-party Codecov checkout side
 effect after the coverage gate, so the advisory upload is now redirected to
 `runner.temp` while the final hermeticity assertion is preserved; the
-replacement head rerun is pending.
+replacement run then exposed a timestamp-only test race under slow Python 3.12
+coverage. That comparison now ignores only the generator's three declared
+volatile timestamp fields, and the replacement head rerun is pending.
 `D4-INFRA-1` and `D5-INFRA-2` remain open, D.5 remains `review_pending`,
 strict-P3 certification is not claimed, and D.6 has not been run. No receipt or
 prior D.5 artifact is modified or reinterpreted by this disposition.

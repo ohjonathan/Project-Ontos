@@ -1,4 +1,9 @@
-from ontos.commands.map import CompactMode, GenerateMapOptions, generate_context_map
+from ontos.commands.map import (
+    CompactMode,
+    GenerateMapOptions,
+    _without_generated_timestamps,
+    generate_context_map,
+)
 from ontos.mcp import tools
 
 from tests.mcp_helpers import build_cache, create_empty_workspace, create_workspace
@@ -28,7 +33,9 @@ def test_context_map_full_alias_matches_off_mode(tmp_path):
         GenerateMapOptions(compact=CompactMode.OFF),
     )
 
-    assert payload["markdown"] == expected_markdown
+    assert _without_generated_timestamps(
+        payload["markdown"]
+    ) == _without_generated_timestamps(expected_markdown)
     assert payload["validation"]["errors"] == []
 
 
