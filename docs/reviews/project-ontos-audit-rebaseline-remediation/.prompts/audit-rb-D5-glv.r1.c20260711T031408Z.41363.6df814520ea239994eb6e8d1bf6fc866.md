@@ -14,10 +14,7 @@ should-fixes CAN-ACT-1/2, CAN-CP-1/2/3, and CAN-ID-1; the empty D.3 blocker list
 does not waive them. Verify D4-INFRA-1 directly. If it holds, return
 `Request changes` even when product tests pass.
 
-Use only
-`/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation/.venv/d5-glm-worktree`
-for source swaps/tests. This disposable worktree is deliberately nested inside
-the served repository so the OpenCode sandbox can access it. Confirm its HEAD is
+Use only `/tmp/project-ontos-d5-glm` for source swaps/tests. Confirm its HEAD is
 `8d5096eba940aafe1e8b86bdd3a8852961bab815` and its entry state is clean. Use
 `/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation/.venv/bin/python`;
 confirm imports resolve from the disposable worktree. For each group, run the

@@ -1,0 +1,3 @@
+I'll start by reading the required framework templates and understanding the environment setup.
+Let me set up a todo list to track this complex verification workflow, then begin environment verification.
+Let me verify the disposable worktree state and the lifecycle worktree in parallel.

@@ -1,0 +1,28 @@
+Done. Artifact lints clean (`verdict_shaped (verdict: request_changes)`), verdict line is bare `Request changes`, H1 is the first body line, and my only write is `D.5-claude-verifier.md` — nothing staged, nothing committed, HEAD unchanged at `0941d2f`. Both disposable worktrees restored clean.
+
+## Verdict: Request changes
+
+**All six canonical findings are genuinely fixed.** Each reproduces as broken pre-fix and closed post-fix via source swap, and the full suite is green at 1720 passed (matching D.4's claim exactly):
+
+| Group | Post-fix | Pre-fix swap | Restored |
+|---|---|---|---|
+| CAN-ACT-1/2 | 0 (4 passed) | **1** (4 failed) | 0 |
+| CAN-CP-1/2/3 | 0 (8 passed) | **1** (8 failed) | 0 |
+| CAN-ID-1 | 0 (24 passed) | **1** (24 failed) | 0 |
+
+Failure text matches the D.3 modes verbatim — not incidental breakage (`len([])==0` for the missing `Reason:` line; `assert 2 == 1` for the exit-2 fail-open; the `bad same!-bad same!` same-ID false-green). All repo gates pass: local + external registry parity, changed-path scope, manifest conformance 4/4, `git diff --check`.
+
+**But D4-INFRA-1 holds, and it's worse than D.4 reported.** I verified the claim directly rather than trusting it, and confirmed the mechanism in framework source:
+
+- **Probe 1 returns exit `0` / `OK` asserting "no D.4 fix-summary exists"** at a path where a tracked 12,148-byte file plainly does exist. `repo_path()` (`:175-187`) only resolves against `[manifests/, BUNDLE]` — never the adopter root — then `:443-445` grades the not-found summary as success. **A gate that can't find the artifact it's gating and reports pass is fail-open.** To any automated caller, that exit `0` is indistinguishable from a real pass.
+- **Adopter fixtures are unregisterable**: the registry is `BUNDLE/scripts/verify-all.sh` and every ref is containment-checked with `.relative_to(BUNDLE)` (`:91,349-351`), so `tests/commands/test_rename.py` resolves under `.llm-dev/framework/` and is rejected. No adopter-root base exists.
+
+D.4 was right to halt rather than cite an unrelated fixture or waive the gate — either would have manufactured a green EH-15-A result on regressions that are real and passing. Approving here would launder that fail-open into a certification, so functional success does not get rounded up into certification.
+
+Three things worth flagging as judgment calls I made and recorded in the artifact rather than burying:
+
+1. **The prescribed `--cache-clear` is mutually exclusive with `-p no:cacheprovider`** (exits 4). I resolved toward *stronger* evidence: dropped `no:cacheprovider`, kept `--cache-clear`, added `-B`, and purged `__pycache__` before each swap. `--cache-clear` alone only clears `.pytest_cache` — `-B` is what actually defeats the stale-`.pyc` false PASS.
+2. **The venv lives in the lifecycle worktree**, so I verified `ontos.__file__` resolves to the *disposable* worktree before swapping. Had it not, every swap would have been a silent no-op producing false PASSes.
+3. **CAN-CP-1/2 pre-fix nonzero exit is weak evidence on its own** — restoring only the script (as scoped) leaves an unrelated `must bind its fix commit to Phase C close I1` error from `2dede68`, so those runs would fail anyway. The load-bearing proof is that the tests assert on *specific canonical error strings* that are demonstrably absent pre-fix. They do cover the failure modes; CAN-CP-3 needs no such caveat.
+
+Scope note: the scope gate reports 578 paths vs D.4's 559 — not a discrepancy, just the two later doc commits. All within scope.

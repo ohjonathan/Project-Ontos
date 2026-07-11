@@ -478,3 +478,32 @@ receipts:
   meta_orchestrator_family: codex
   deliverable_author_family: codex
   dispatch_batch_id: audit-rb-strict-D2-r1
+- run_id: audit-rb-D5-cv.r1.c20260711T031309Z.38581.1154bf89c0d4283015dc2fb5d5971f6e-verifier
+  dispatch_id: audit-rb-D5-cv
+  capture_id: audit-rb-D5-cv.r1.c20260711T031309Z.38581.1154bf89c0d4283015dc2fb5d5971f6e
+  deliverable_id: project-ontos-audit-rebaseline-remediation
+  phase: D.5
+  round: 1
+  role: verifier
+  family: claude
+  actual_executed_family: claude
+  provider: claude
+  template_id: 15-verifier
+  template_version: 1.0.0
+  prompt_sha256: fca26f7496f0a0f2e97b6bbc1f1ccc83ba8c505bd3566007091828ba15d5c9dd
+  input_artifact_sha256: fca26f7496f0a0f2e97b6bbc1f1ccc83ba8c505bd3566007091828ba15d5c9dd
+  output_artifact_path: docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-claude-verifier.md
+  output_artifact_sha256: 157f3590c8451dff7d03f8990269d97b62890d869cf9640a8537b7c9e8776e79
+  transcript_or_log_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-D5-cv.r1.c20260711T031309Z.38581.1154bf89c0d4283015dc2fb5d5971f6e.raw.txt
+  stderr_path: docs/reviews/project-ontos-audit-rebaseline-remediation/.raw/audit-rb-D5-cv.r1.c20260711T031309Z.38581.1154bf89c0d4283015dc2fb5d5971f6e.stderr.txt
+  stderr_sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  started_at: '2026-07-11T03:13:10Z'
+  ended_at: '2026-07-11T03:20:13Z'
+  exit_code: 0
+  strict_p3_candidate: true
+  provider_limited_fallback: false
+  dispatch_intent_path: docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-dispatch-intent.yaml
+  dispatch_result_path: docs/reviews/project-ontos-audit-rebaseline-remediation/D.5-dispatch-result.yaml
+  meta_orchestrator_family: codex
+  deliverable_author_family: codex
+  dispatch_batch_id: audit-rb-D5-final-20260711

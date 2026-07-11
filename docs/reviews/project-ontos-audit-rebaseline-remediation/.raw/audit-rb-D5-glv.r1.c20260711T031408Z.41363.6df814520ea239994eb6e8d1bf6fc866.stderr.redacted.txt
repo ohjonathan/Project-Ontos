@@ -1,0 +1,30 @@
+[0m
+> build · glm-5.2
+[0m
+[0m→ [0mRead .<redacted:secret>
+[0m→ [0mRead .<redacted:secret>
+[0m
+[0m# [0mTodos
+[✓] Read both framework templates completely (DONE)
+[•] Verify disposable worktree /tmp/project-ontos-d5-glm HEAD=8d5096e and clean state
+[ ] Confirm venv python imports resolve from disposable worktree
+[ ] Consume D.3 verdict, D.4 fix summary, D.4 scope recovery, manifest, code/test diff from aa41c39 to 311b60b
+[ ] Group 1: activate.py + config.py with agentic_activation_resilience tests (post-fix pass, pre-fix fail nonzero, restore, pass)
+[ ] Group 2: validate-audit-remediation-registry.py with audit_remediation_registry tests
+[ ] Group 3: rename.py + rename_tool.py with rename tests
+[ ] Verify all six canonical should-fixes CAN-ACT-1/2, CAN-CP-1/2/3, CAN-ID-1
+[ ] Verify D4-INFRA-1 directly
+[ ] Run full tests/ suite in disposable worktree with -q -p no:cacheprovider
+[ ] From lifecycle worktree: registry parity, changed-path scope, manifest conformance, git diff --check, EH-15-A probes
+[ ] Write wrapper-designated artifact with Template 15 frontmatter + verdict Request changes
+[ ] Restore clean HEAD at end of disposable worktree
+[0m
+[93m[1m! [0mpermission requested: external_directory (/tmp/project-ontos-d5-glm/*); auto-rejecting
+[0m✗ [0mgit rev-parse HEAD && git status --short --branch failed
+[91m[1mError: [0mThe user rejected permission to use this specific tool call.
+[93m[1m! [0mpermission requested: external_directory (/tmp/project-ontos-worktrees/project-ontos-audit-rebaseline-remediation/*); auto-rejecting
+[0m✗ [0mgit rev-parse HEAD && git status --short --branch failed
+[91m[1mError: [0mThe user rejected permission to use this specific tool call.
+[93m[1m! [0mpermission requested: external_directory (/tmp/project-ontos-d5-glm/*); auto-rejecting
+[0m✗ [<redacted:secret> -c "import ontos; print('ontos import OK', ontos.__file__)" failed
+[91m[1mError: [0mThe user rejected permission to use this specific tool call.
