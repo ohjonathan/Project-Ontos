@@ -60,6 +60,7 @@ scope:
     - "ontos/mcp/writes.py"
     - "pyproject.toml"
     - "tests/commands/test_log.py"
+    - "tests/commands/test_env.py"
     - "tests/commands/test_rename.py"
     - "tests/commands/test_retrofit.py"
     - "tests/commands/test_stub_parity.py"
