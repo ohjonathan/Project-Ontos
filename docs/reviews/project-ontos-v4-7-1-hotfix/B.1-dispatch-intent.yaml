@@ -12,6 +12,11 @@ review_board_classification:
   strict_p3_certified: false
   merge_authority: recommendation_only
   rationale: "Fresh B.1 review of focused hotfix implementation e33a31d and its contract-first split spec."
+  audit_only_failed_dispatches:
+    - ontos-471-B1-ca
+    - ontos-471-B1-cp
+    - ontos-471-B1-ga
+    - ontos-471-B1-gp
 dispatches:
   - dispatch_id: ontos-471-B1-ca
     family: claude
@@ -87,4 +92,78 @@ dispatches:
     template_id: 19-review-board-product
     template_version: 1.1.0
     scope: "Independent Product review of the hotfix user-visible contract."
+    status: pending
+  - dispatch_id: ontos-471-B1-ca-r2
+    family: claude
+    role: adversarial
+    review_mode: code-first-spec-review
+    expected_provider: claude
+    expected_cli: claude
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-v4-7-1-hotfix/B.1-claude-adversarial-r2.md
+    prompt_path: docs/reviews/project-ontos-v4-7-1-hotfix/.prompts/B.1-claude-adversarial-r2.prompt.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    fallback_models: []
+    template_id: 05-review-board-adversarial
+    template_version: 1.1.0
+    scope: "Timeboxed genuine redispatch after an interactive reviewer probe stalled."
+    status: pending
+  - dispatch_id: ontos-471-B1-cp-r2
+    family: claude
+    role: product
+    review_mode: code-first-spec-review
+    expected_provider: claude
+    expected_cli: claude
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-v4-7-1-hotfix/B.1-claude-product-r2.md
+    prompt_path: docs/reviews/project-ontos-v4-7-1-hotfix/.prompts/B.1-claude-product-r2.prompt.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    fallback_models: []
+    template_id: 19-review-board-product
+    template_version: 1.1.0
+    scope: "Timeboxed genuine redispatch correcting the framework's exact Verdict-heading requirement."
+    status: pending
+  - dispatch_id: ontos-471-B1-gp-r2
+    family: glm
+    role: peer
+    review_mode: code-first-spec-review
+    expected_provider: glm
+    expected_cli: opencode
+    expected_model: glm-5.2
+    expected_artifact: docs/reviews/project-ontos-v4-7-1-hotfix/B.1-glm-peer-r2.md
+    prompt_path: docs/reviews/project-ontos-v4-7-1-hotfix/.prompts/B.1-glm-peer-r2.prompt.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    serving_provider: neuralwatt
+    wire_protocol: openai-compatible
+    opencode_provider_id: neuralwatt
+    opencode_model_ref: neuralwatt/glm-5.2
+    opencode_base_url_env: NEURALWATT_BASE_URL
+    opencode_api_key_env: NEURALWATT_API_KEY
+    endpoint_origin_label: neuralwatt
+    evidence_trust_tier: attested-third-party
+    route_attestation_profile_id: neuralwatt-opencode-glm-5-2-v1
+    advisory_only: false
+    fallback_models: []
+    template_id: 03-review-board-peer
+    template_version: 1.0.0
+    scope: "Timeboxed genuine redispatch correcting the framework's exact Verdict-heading requirement."
+    status: pending
+  - dispatch_id: ontos-471-B1-ga-agy
+    family: gemini
+    role: alignment
+    review_mode: code-first-spec-review
+    expected_provider: gemini
+    expected_cli: agy
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-v4-7-1-hotfix/B.1-gemini-alignment-agy.md
+    prompt_path: docs/reviews/project-ontos-v4-7-1-hotfix/.prompts/B.1-gemini-alignment-agy.prompt.md
+    evidence_cap: static-inspection
+    dispatch_method: external-cli
+    fallback_models: []
+    template_id: 04-review-board-alignment
+    template_version: 1.0.0
+    scope: "Gemini-family AGY substrate retry after direct Gemini rejected the retired individual client."
     status: pending

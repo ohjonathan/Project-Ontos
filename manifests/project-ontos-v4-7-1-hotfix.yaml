@@ -25,6 +25,7 @@ authorship:
 
 scope:
   allowed_paths:
+    - ".gitattributes"
     - "CHANGELOG.md"
     - "AGENTS.md"
     - "Ontos_Context_Map.md"

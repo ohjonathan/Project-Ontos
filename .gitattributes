@@ -1,0 +1,6 @@
+# Hash-bound lifecycle captures must remain byte-identical to provider output.
+docs/reviews/project-ontos-v4-7-1-hotfix/.raw/* -whitespace
+docs/reviews/project-ontos-v4-7-1-hotfix/.prompts/* -whitespace
+docs/reviews/project-ontos-v4-7-1-hotfix/.route-attestation/* -whitespace
+docs/reviews/project-ontos-v4-7-1-hotfix/*.md -whitespace
+docs/reviews/project-ontos-v4-7-1-hotfix/*.yaml -whitespace

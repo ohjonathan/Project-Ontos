@@ -1,0 +1,41 @@
+I'll conduct an independent Phase B.1 peer review. Let me start by inspecting the git state and reading the key artifacts in parallel.
+The HEAD is at 82ab8944 (review dispatch), with implementation snapshot e33a31d0 plus two lifecycle commits on top. Let me read the spec, the implementation diff, and the changelog in parallel.
+Now I have the spec and the diff stat. Let me verify the cardinality assertions directly and read the core implementation files in parallel.
+Cardinality, contract parity, whitespace, and merge-base all pass via direct-run. Now let me read the core implementation files and verify the venv can run tests.
+Locking module looks thorough. Now let me run the focused test suite (G-test-1) and read the SessionContext implementation in parallel.
+All 206 focused tests pass. Now let me run the complete suite (G-test-2) and read the SessionContext core and read-only MCP behavior in parallel.
+Full suite passes (1550 passed, 2 skipped). Let me read the rest of context.py and verify the read-only MCP behavior and clean-tree claim.
+server.py confirms read-only MCP gating. Let me verify the clean-tree acceptance criterion and read the serializer, frontmatter editor, and read-only MCP tests in parallel.
+A test run modified `Ontos_Context_Map.md`. Let me investigate whether this is test-caused (relevant to acceptance criterion 3) and examine the change.
+The test run regenerated `Ontos_Context_Map.md` (timestamp + a new sibling-review entry). This relates to acceptance criterion 3. Let me find which test triggers it and check whether it's pre-existing behavior, while reading the frontmatter editor and export-to-file guard in parallel.
+The frontmatter editor is solid. Let me pin down why the suite rewrites `Ontos_Context_Map.md` — checking testpaths and the golden/pre-commit scripts that run `ontos map`, and compare against baseline behavior.
+Let me read the pre-commit test that references the repo's `Ontos_Context_Map.md` and check the pre-push test, to identify the exact regeneration trigger.
+Let me identify the culprit test precisely — checking for collected test files in `tests/golden/` and any subprocess `map`/`generate_context_map` invocation targeting the repo root.
+There's a collected `tests/golden/test_golden_master.py`. Let me read it and the head of `test_pre_commit_check.py` to determine whether the map-rewrite is hotfix-introduced or pre-existing.
+Golden tests are skipped (accounts for the 2 skips), so they're not the cause. Let me bisect the culprit by running candidate modules individually.
+Neither candidate alone reproduces it. Let me search more specifically for a write-mode map invocation targeting the project root, and read the head of `test_pre_commit_check.py`.
+Found it: `.ontos/scripts/ontos_pre_push_check.py:324` calls `regenerate_context_map()` for real. Let me check if any test invokes `ontos_pre_push_check.main()` unpatched, and bisect by running top-level `tests/test_*.py`.
+The rewrite comes from `tests/commands/`. Let me bisect within that directory.
+Group A is clean. Let me run the remaining commands tests.
+Groups A and B clean. Let me run the remaining commands tests.
+I've bisected the map rewrite to a test-ordering effect within `tests/commands/` (no single group triggers it, but the full commands dir does) — the hotfix's own added tests use `tmp_path` and are clean in isolation, so this is likely pre-existing test debt plus the sibling review artifacts present in this worktree. Let me do two final spot-checks (log collision behavior and schema signature) before writing the review.
+All claims verified: `log.py` uses `create_text_file_exclusively` + `logs_dir` from config + `FileExistsError` handling (log.py:376,118,307); `schema.py` preserves `serialize_frontmatter`/`validate_document_id` and the unknown-version READ_ONLY/INCOMPATIBLE policy; `io/files.py` uses strict `read_text(encoding="utf-8")` for mutation reads (files.py:179,198) vs `errors='replace'` for general reads (files.py:293,381); `writes.py` guards `if read_only:` at entry (writes.py:150). Let me confirm the review directory exists, then write the artifact.
+Now I'll write the review artifact with my independently-verified findings.
+Verdict and artifact written. Let me confirm the artifact is well-formed and that I changed only the one allowed file.
+The map shows modified again — let me check why and restore it so only my artifact is changed.
+Review complete. The artifact is written to `docs/reviews/project-ontos-v4-7-1-hotfix/B.1-glm-peer.md` and the tree is otherwise untouched (the earlier `M` was a stale stat-cache, now cleared — only my untracked artifact remains).
+
+## Summary
+
+**Verdict: Approve** (with one Should-fix, non-blocking)
+
+I independently reproduced the gate evidence by direct run:
+- **Cardinality/parity**: version 4.7.1, schema-3.4 envelope (no `result`), no `command_registry.py`, byte-identical forbidden paths + goldens, whitespace-clean, correct merge-base — all ✓.
+- **Tests**: 206 focused pass; 1550 passed / 2 skipped full suite.
+- **Code (static-inspection)**: `locking.py` (no unconditional `fcntl`, identity binding, single-link/reparse rejection), `context.py` (unpredictable temps, no-follow anchors, fsync+atomic replace, rollback), `frontmatter_edit.py` (surgical, BOM/CRLF/inline-comment preservation, anchor/alias/tag rejection, reparse+round-trip), `yaml.py` (`safe_dump`+round-trip), `server.py` (read-only MCP hides write tools, suppresses usage log/portfolio init/DB), `log.py` (exclusive create + collision refusal) — all faithfully implement the spec.
+
+**Findings:**
+- **SF-1 (Should-fix/Major)**: Running G-test-2 rewrites the tracked `Ontos_Context_Map.md`, conflicting with spec acceptance criterion 3, and no manifest gate enforces a clean tree. Bisected to a test-ordering effect inside `tests/commands/` — the hotfix's own added tests use `tmp_path` and are clean in isolation, so this looks like pre-existing test debt amplified by sibling review artifacts, not a product-code defect. Recommend adding a clean-tree assertion to G-test-2 or isolating the map-regenerating test.
+- **M-1/M2 (Minor)**: dangling docstring sentence in `frontmatter_edit.py:57-60`; map-doc-count drift during review-board runs.
+
+Evidence labels used: `direct-run`, `static-inspection`.

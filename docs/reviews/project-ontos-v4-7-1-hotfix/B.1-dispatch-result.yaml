@@ -1,0 +1,390 @@
+results:
+- dispatch_id: ontos-471-B1-ga
+  capture_id: ontos-471-B1-ga.r1.c20260712T013915Z.71910.b7f278df35e361defbd01233ce63d3d4
+  round: 1
+  family: gemini
+  actual_executed_family: gemini
+  role: alignment
+  execution_provider: gemini
+  execution_cli: gemini
+  resolved_executable: /opt/homebrew/bin/gemini
+  resolved_executable_realpath: /opt/homebrew/Cellar/gemini-cli/0.44.0/libexec/lib/node_modules/@google/gemini-cli/bundle/gemini.js
+  cli_version: 0.44.0
+  provider_probe_hash: sha256:99baa89c145382ab7fe63b66e7aa650d76f8293fde6ce8c3d6c486a7dc45ceca
+  model_id: auto
+  resolved_model: cli-default-unknown
+  model_probe_command: (post-dispatch) grep -iE 'model:' <raw_stderr> | head -1
+  model_candidate_list:
+  - cli-config-default
+  model_selection_rule: cli-config-default+post-dispatch-best-effort
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - gemini
+  - -p
+  - <prompt-body-redacted>
+  prompt_path: docs/reviews/project-ontos-v4-7-1-hotfix/.prompts/ontos-471-B1-ga.r1.c20260712T013915Z.71910.b7f278df35e361defbd01233ce63d3d4.md
+  prompt_sha256: sha256:c2fefc33ce12094bf9afefe54ed47ca7e58ef111b4a8bfe9fb45f71ef992f10c
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 55
+  started_at: '2026-07-12T01:39:17Z'
+  ended_at: '2026-07-12T01:39:19Z'
+  raw_output_path: docs/reviews/project-ontos-v4-7-1-hotfix/.raw/ontos-471-B1-ga.r1.c20260712T013915Z.71910.b7f278df35e361defbd01233ce63d3d4.raw.txt
+  raw_output_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  stderr_path: docs/reviews/project-ontos-v4-7-1-hotfix/.raw/ontos-471-B1-ga.r1.c20260712T013915Z.71910.b7f278df35e361defbd01233ce63d3d4.stderr.txt
+  stderr_hash: sha256:a679000b7c760893a6990750b02ccb92d4fffc5adbce5330a46127921813e656
+  evidence_cap: static-inspection
+  evidence_labels_used: []
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-v4-7-1-hotfix/B.1-gemini-alignment.md
+  artifact_sha256: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  status: failed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: null
+  model_used: cli-default-unknown
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: ''
+    exit_code: 55
+    started_at: '2026-07-12T01:39:17Z'
+    ended_at: '2026-07-12T01:39:19Z'
+    detected_429: false
+    stderr_tail_200: _CLI_TRUST_WORKSPACE=true` environment variable, or trust this
+      directory in interactive mode. For more details, see https://geminicli.com/docs/cli/trusted-folders/#headless-and-automated-environments
+    stdout_substantive: false
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: raw_stdout
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  dispatch_batch_id: ontos-471-B1-r1
+  intent_model_restrictions:
+    family: gemini
+    execution_cli: gemini
+    denied_models: []
+    allowed_models: []
+    active: false
+  superseded_by_capture_id: ontos-471-B1-ga.r1.c20260712T014118Z.78732.b104fe16a97d9ffcaa597b1d7fed089a
+  superseded_at: '2026-07-12T01:41:21Z'
+  supersession_reason: redispatch round 1
+- dispatch_id: ontos-471-B1-ga
+  capture_id: ontos-471-B1-ga.r1.c20260712T014118Z.78732.b104fe16a97d9ffcaa597b1d7fed089a
+  round: 1
+  family: gemini
+  actual_executed_family: gemini
+  role: alignment
+  execution_provider: gemini
+  execution_cli: gemini
+  resolved_executable: /opt/homebrew/bin/gemini
+  resolved_executable_realpath: /opt/homebrew/Cellar/gemini-cli/0.44.0/libexec/lib/node_modules/@google/gemini-cli/bundle/gemini.js
+  cli_version: 0.44.0
+  provider_probe_hash: sha256:99baa89c145382ab7fe63b66e7aa650d76f8293fde6ce8c3d6c486a7dc45ceca
+  model_id: auto
+  resolved_model: cli-default-unknown
+  model_probe_command: (post-dispatch) grep -iE 'model:' <raw_stderr> | head -1
+  model_candidate_list:
+  - cli-config-default
+  model_selection_rule: cli-config-default+post-dispatch-best-effort
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - gemini
+  - -p
+  - <prompt-body-redacted>
+  prompt_path: docs/reviews/project-ontos-v4-7-1-hotfix/.prompts/ontos-471-B1-ga.r1.c20260712T014118Z.78732.b104fe16a97d9ffcaa597b1d7fed089a.md
+  prompt_sha256: sha256:c2fefc33ce12094bf9afefe54ed47ca7e58ef111b4a8bfe9fb45f71ef992f10c
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 1
+  started_at: '2026-07-12T01:41:19Z'
+  ended_at: '2026-07-12T01:41:21Z'
+  raw_output_path: docs/reviews/project-ontos-v4-7-1-hotfix/.raw/ontos-471-B1-ga.r1.c20260712T014118Z.78732.b104fe16a97d9ffcaa597b1d7fed089a.raw.txt
+  raw_output_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  stderr_path: docs/reviews/project-ontos-v4-7-1-hotfix/.raw/ontos-471-B1-ga.r1.c20260712T014118Z.78732.b104fe16a97d9ffcaa597b1d7fed089a.stderr.txt
+  stderr_hash: sha256:0ff9b8b82d0c1bb8a1b8a6b13db60aa95b91a988d9a184178e4a0f391affebdf
+  evidence_cap: static-inspection
+  evidence_labels_used: []
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-v4-7-1-hotfix/B.1-gemini-alignment.md
+  artifact_sha256: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  status: failed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: null
+  model_used: cli-default-unknown
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: ''
+    exit_code: 1
+    started_at: '2026-07-12T01:41:19Z'
+    ended_at: '2026-07-12T01:41:21Z'
+    detected_429: false
+    stderr_tail_200: "opt/homebrew/Cellar/gemini-cli/0.44.0/libexec/lib/node_modules/@google/gemini-cli/bundle/chunk-BE42OOYM.js:307452:5)\n\
+      \    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+    stdout_substantive: false
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: raw_stdout
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  dispatch_batch_id: ontos-471-B1-r1
+  intent_model_restrictions:
+    family: gemini
+    execution_cli: gemini
+    denied_models: []
+    allowed_models: []
+    active: false
+  supersedes_capture_ids:
+  - ontos-471-B1-ga.r1.c20260712T013915Z.71910.b7f278df35e361defbd01233ce63d3d4
+- dispatch_id: ontos-471-B1-gp
+  capture_id: ontos-471-B1-gp.r1.c20260712T013915Z.71897.3ab4100db2af9cba36d3284c05935d13
+  round: 1
+  family: glm
+  actual_executed_family: glm
+  role: peer
+  execution_provider: glm
+  execution_cli: opencode
+  resolved_executable: /Users/jonathanoh/.opencode/bin/opencode
+  resolved_executable_realpath: /Users/jonathanoh/.opencode/bin/opencode
+  cli_version: 1.17.18
+  provider_probe_hash: sha256:2d1776e670484c41da86c59f688f0559b0b1413bf75d2e05dd69548918e18ea0
+  model_id: glm-5.2
+  resolved_model: glm-5.2
+  model_probe_command: (intent) OpenCode advisory route logical model_id with opencode_model_ref
+  model_candidate_list:
+  - glm-5.2
+  model_selection_rule: operator-declared-advisory-route
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - opencode
+  - run
+  - --model
+  - neuralwatt/glm-5.2
+  - --dir
+  - <repo-root>
+  - <prompt-body-redacted>
+  prompt_path: docs/reviews/project-ontos-v4-7-1-hotfix/.prompts/ontos-471-B1-gp.r1.c20260712T013915Z.71897.3ab4100db2af9cba36d3284c05935d13.md
+  prompt_sha256: sha256:e68f0c2cb37f551d21cea3b87774b755e8ad1c1764ea4e4c895fbf4cc3d00fa5
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-07-12T01:39:16Z'
+  ended_at: '2026-07-12T01:48:55Z'
+  raw_output_path: docs/reviews/project-ontos-v4-7-1-hotfix/.raw/ontos-471-B1-gp.r1.c20260712T013915Z.71897.3ab4100db2af9cba36d3284c05935d13.raw.txt
+  raw_output_hash: sha256:2db0a22cbf62d2d4bbd08b2cf3dfd678042257c33c8e2adec7e994797e0e4c03
+  stderr_path: docs/reviews/project-ontos-v4-7-1-hotfix/.raw/ontos-471-B1-gp.r1.c20260712T013915Z.71897.3ab4100db2af9cba36d3284c05935d13.stderr.redacted.txt
+  stderr_hash: sha256:ad286941df1236a48c5717a24aa96bd45991c328062f3e1019278b0846f9d5d7
+  evidence_cap: direct-run
+  evidence_labels_used: []
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-v4-7-1-hotfix/B.1-glm-peer.md
+  artifact_sha256: sha256:d7676385f109df6345d07eafda2753e2ff710945c7a602c40532a75e92b16f09
+  status: shape_invalid
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: glm-5.2
+  model_used: glm-5.2
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: glm-5.2
+    exit_code: 0
+    started_at: '2026-07-12T01:39:16Z'
+    ended_at: '2026-07-12T01:48:55Z'
+    detected_429: false
+    stderr_tail_200: "otfix/B.1-glm-peer.md\n=== what changed in the map ===\n===\
+      \ restoring map to HEAD ===\n=== final status (only artifact should appear)\
+      \ ===\n?? <redacted:secret>\n\e[0m"
+    stdout_substantive: false
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: worker_file
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  dispatch_batch_id: ontos-471-B1-r1
+  intent_model_restrictions:
+    family: glm
+    execution_cli: opencode
+    denied_models: []
+    allowed_models: []
+    active: false
+  opencode_model_ref: neuralwatt/glm-5.2
+  opencode_provider_id: neuralwatt
+  opencode_base_url_env: NEURALWATT_BASE_URL
+  opencode_api_key_env: NEURALWATT_API_KEY
+  serving_provider: neuralwatt
+  wire_protocol: openai-compatible
+  evidence_trust_tier: attested-third-party
+  endpoint_origin_redacted: true
+  endpoint_origin_hash: sha256:c0029dc16c79fb52971abbf65f3d94c7dcbdc7ebf8d7b1a8ab454f05fa17f95f
+  endpoint_origin_label: neuralwatt
+  command_env_redacted:
+    NEURALWATT_API_KEY: <redacted:env>
+    NEURALWATT_BASE_URL: <redacted:env>
+    OPENCODE_CONFIG_CONTENT: <redacted>
+  provider_config_redacted:
+    model_ref: neuralwatt/glm-5.2
+    npm: '@ai-sdk/openai-compatible'
+    options:
+      apiKey: <redacted:env>
+      apiKey_env: NEURALWATT_API_KEY
+      baseURL: <redacted>
+      baseURL_env: NEURALWATT_BASE_URL
+    provider_id: neuralwatt
+  opencode_dispatch_failure_class: auth-401-403
+  route_attestation_profile_id: neuralwatt-opencode-glm-5-2-v1
+- dispatch_id: ontos-471-B1-cp
+  capture_id: ontos-471-B1-cp.r1.c20260712T013915Z.71896.51b316e0c59b3233d60b332ebad06926
+  round: 1
+  family: claude
+  actual_executed_family: claude
+  role: product
+  execution_provider: claude
+  execution_cli: claude
+  resolved_executable: /Users/jonathanoh/.local/bin/claude
+  resolved_executable_realpath: /Users/jonathanoh/.local/share/claude/versions/2.1.207
+  cli_version: 2.1.207 (Claude Code)
+  provider_probe_hash: sha256:1c63f5d67f9b934efa74db6f1e8864843aa2bf776ca30d0bca012c042208f120
+  model_id: auto
+  resolved_model: opus
+  model_probe_command: claude --help 2>&1 | grep -oE "'(opus|sonnet|haiku)'" | sort
+    -u
+  model_candidate_list:
+  - opus
+  - sonnet
+  model_selection_rule: claude-cli-alias-strongest
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - claude
+  - --permission-mode
+  - bypassPermissions
+  - --add-dir
+  - .
+  - -p
+  - <prompt-body-redacted>
+  - --model
+  - opus
+  prompt_path: docs/reviews/project-ontos-v4-7-1-hotfix/.prompts/ontos-471-B1-cp.r1.c20260712T013915Z.71896.51b316e0c59b3233d60b332ebad06926.md
+  prompt_sha256: sha256:db13b1d7d91a7c7494bcb592b26034c9096373ae7178dced165b30c5cb31761d
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-07-12T01:39:16Z'
+  ended_at: '2026-07-12T01:50:29Z'
+  raw_output_path: docs/reviews/project-ontos-v4-7-1-hotfix/.raw/ontos-471-B1-cp.r1.c20260712T013915Z.71896.51b316e0c59b3233d60b332ebad06926.raw.txt
+  raw_output_hash: sha256:791c04d59cabee34f03c51d396baaa497bdc7c7333a1a39864584b4145a022ef
+  stderr_path: docs/reviews/project-ontos-v4-7-1-hotfix/.raw/ontos-471-B1-cp.r1.c20260712T013915Z.71896.51b316e0c59b3233d60b332ebad06926.stderr.txt
+  stderr_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  evidence_cap: direct-run
+  evidence_labels_used: []
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-v4-7-1-hotfix/B.1-claude-product.md
+  artifact_sha256: sha256:7aa2546e68bcdd5d3cfaadff1402f70ad5d325bf2615b43f6b073a0c89bb1cd3
+  status: shape_invalid
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: opus
+  model_used: opus
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: opus
+    exit_code: 0
+    started_at: '2026-07-12T01:39:16Z'
+    ended_at: '2026-07-12T01:50:29Z'
+    detected_429: false
+    stderr_tail_200: ''
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: worker_file
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  dispatch_batch_id: ontos-471-B1-r1
+  intent_model_restrictions:
+    family: claude
+    execution_cli: claude
+    denied_models: []
+    allowed_models: []
+    active: false
+- dispatch_id: ontos-471-B1-ca
+  capture_id: ontos-471-B1-ca.r1.c20260712T013915Z.71901.add9810abbc9ba67456e2909dedd8712
+  round: 1
+  family: claude
+  actual_executed_family: claude
+  role: adversarial
+  execution_provider: claude
+  execution_cli: claude
+  resolved_executable: /Users/jonathanoh/.local/bin/claude
+  resolved_executable_realpath: /Users/jonathanoh/.local/share/claude/versions/2.1.207
+  cli_version: 2.1.207 (Claude Code)
+  provider_probe_hash: sha256:1c63f5d67f9b934efa74db6f1e8864843aa2bf776ca30d0bca012c042208f120
+  model_id: auto
+  resolved_model: opus
+  model_probe_command: claude --help 2>&1 | grep -oE "'(opus|sonnet|haiku)'" | sort
+    -u
+  model_candidate_list:
+  - opus
+  - sonnet
+  model_selection_rule: claude-cli-alias-strongest
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - claude
+  - --permission-mode
+  - bypassPermissions
+  - --add-dir
+  - .
+  - -p
+  - <prompt-body-redacted>
+  - --model
+  - opus
+  prompt_path: docs/reviews/project-ontos-v4-7-1-hotfix/.prompts/ontos-471-B1-ca.r1.c20260712T013915Z.71901.add9810abbc9ba67456e2909dedd8712.md
+  prompt_sha256: sha256:560427c6a6bb1104210e7efcda6cc4f402fd23481b8b4e4330951b6b04939521
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 143
+  started_at: '2026-07-12T01:39:16Z'
+  ended_at: '2026-07-12T01:52:21Z'
+  raw_output_path: docs/reviews/project-ontos-v4-7-1-hotfix/.raw/ontos-471-B1-ca.r1.c20260712T013915Z.71901.add9810abbc9ba67456e2909dedd8712.raw.txt
+  raw_output_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  stderr_path: docs/reviews/project-ontos-v4-7-1-hotfix/.raw/ontos-471-B1-ca.r1.c20260712T013915Z.71901.add9810abbc9ba67456e2909dedd8712.stderr.txt
+  stderr_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  evidence_cap: direct-run
+  evidence_labels_used: []
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-v4-7-1-hotfix/B.1-claude-adversarial.md
+  artifact_sha256: sha256:missing
+  status: failed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: opus
+  model_used: opus
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: opus
+    exit_code: 143
+    started_at: '2026-07-12T01:39:16Z'
+    ended_at: '2026-07-12T01:52:21Z'
+    detected_429: false
+    stderr_tail_200: ''
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: worker_file
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  dispatch_batch_id: ontos-471-B1-r1
+  intent_model_restrictions:
+    family: claude
+    execution_cli: claude
+    denied_models: []
+    allowed_models: []
+    active: false

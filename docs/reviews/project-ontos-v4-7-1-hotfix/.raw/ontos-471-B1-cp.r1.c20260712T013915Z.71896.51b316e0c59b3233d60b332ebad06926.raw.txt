@@ -1,0 +1,21 @@
+Artifact written to `docs/reviews/project-ontos-v4-7-1-hotfix/B.1-claude-product.md`. I touched no other file.
+
+## Verdict: Request changes
+
+The hotfix does what it set out to do, and I verified it rather than taking the author's word. Corruption stops, both previously-silent destructive operations now refuse, and — the thing this release lives or dies on — the compatibility boundary is real: `ontos/ui/json_output.py` is byte-identical to baseline, the envelope is still schema 3.4 with the same eight keys and no v4 `result` object, goldens are unchanged, and every file on the spec's exclusion list is untouched. Full suite is 1550 passed, 2 skipped.
+
+**The one blocking finding:** the release's third headline safeguard — refusing to rewrite malformed UTF-8 — reaches the user as an internal crash.
+
+```
+$ ontos retrofit --obsidian --apply --json    # one doc has raw 0xff bytes
+{"exit_code": 5, "message": "Internal error: 'utf-8' codec can't decode byte 0xff in position 53...",
+ "data": {}, "error": {"code": "E_INTERNAL"}}
+```
+
+The bytes are correctly preserved, so data integrity holds. But `E_INTERNAL`/exit 5 is the "Ontos has a bug" taxonomy being used for Ontos's own designed safety behavior; the message names a byte offset into a file it refuses to name (`"data": {}` — the JSON surface is as unactionable as the human one); the whole mutation run aborts; and **no test in the suite exercises malformed UTF-8 at all**, even though the spec's risk table claims mitigation by "byte-unchanged failure tests." A release meant to make users trust Ontos with their files shouldn't present its own safeguard as a crash they can't act on. The fix — catch `UnicodeDecodeError` at the mutation boundaries, exit 1 with the path in `data` — fits entirely inside the patch boundary.
+
+Contrast that with the log-collision refusal, which is a model error: right exit code, structured `data.path`, and a message naming the file plus two real recovery paths. That's the standard the UTF-8 path should meet.
+
+Four should-fixes: `E_LOG_EXISTS` (CLI) vs `E_FILE_EXISTS` (MCP) for the same condition; bare `ontos log` now hard-fails on a second session the same day — which is exactly what `CLAUDE.md` tells agents to run, with no `--force` escape and no doc update; `logs_dir` is now honored for the first time (the old `ontos_config` import was dead), silently relocating logs for anyone who set it, while spec §7 claims "No migration is required"; and the release comms undersell a patch that replaces the entire write transaction.
+
+Two notes on things that are **not** implementation defects: the modified `Ontos_Context_Map.md` in the worktree came from a concurrent sibling reviewer running `ontos map`, not from me or the tests. And an initial 3 test failures were my environment — those tests shell out to a hardcoded `python3` instead of `sys.executable`; with a correct interpreter everything passes.
