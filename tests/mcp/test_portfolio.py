@@ -75,6 +75,68 @@ def test_rebuild_workspace_indexes_documents_and_projects(tmp_path):
     assert any(row["doc_id"] == "atom_doc" for row in search["results"])
 
 
+def test_rebuild_workspace_publishes_snapshot_after_concurrent_reader(tmp_path):
+    workspace_root = create_workspace(tmp_path)
+    db_path = tmp_path / "portfolio.db"
+    index = PortfolioIndex(db_path)
+    index.rebuild_workspace("workspace", workspace_root)
+
+    reader = sqlite3.connect(db_path)
+    reader.execute("BEGIN")
+    reader.execute(
+        "SELECT body FROM documents WHERE workspace = ? AND id = ?",
+        ("workspace", "atom_doc"),
+    ).fetchone()
+    write_file(
+        workspace_root / "docs/atom.md",
+        """
+        ---
+        id: atom_doc
+        type: atom
+        status: active
+        title: Published snapshot
+        depends_on: [product_doc]
+        ---
+        Atom body published after a concurrent reader.
+        """,
+    )
+
+    errors: list[BaseException] = []
+
+    def rebuild() -> None:
+        try:
+            index.rebuild_workspace("workspace", workspace_root)
+        except BaseException as exc:  # pragma: no cover - asserted below
+            errors.append(exc)
+
+    worker = threading.Thread(target=rebuild)
+    worker.start()
+    wal_path = db_path.with_name(f"{db_path.name}-wal")
+    deadline = time.monotonic() + 2
+    while time.monotonic() < deadline:
+        if wal_path.exists() and wal_path.stat().st_size > 0:
+            break
+        time.sleep(0.01)
+    saw_pending_wal = wal_path.exists() and wal_path.stat().st_size > 0
+    blocked_until_reader_released = worker.is_alive()
+
+    reader.rollback()
+    reader.close()
+    worker.join(timeout=3)
+
+    assert saw_pending_wal
+    assert blocked_until_reader_released
+    assert not worker.is_alive()
+    assert errors == []
+    assert not wal_path.exists() or wal_path.stat().st_size == 0
+
+    read_only = PortfolioIndex(db_path, read_only=True)
+    documents = read_only.get_workspace_documents("workspace")
+    atom = next(row for row in documents if row["id"] == "atom_doc")
+    assert atom["title"] == "Published snapshot"
+    read_only.close()
+
+
 def test_workspace_staleness_detection(tmp_path):
     workspace_root = create_workspace(tmp_path)
     index = PortfolioIndex(tmp_path / "portfolio.db")

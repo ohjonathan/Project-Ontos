@@ -1,5 +1,6 @@
 """Parity tests for verify command."""
 
+import json
 import subprocess
 import os
 import sys
@@ -7,6 +8,8 @@ from pathlib import Path
 from datetime import date
 
 import pytest
+
+from ontos.io.yaml import parse_frontmatter_content
 
 
 @pytest.fixture
@@ -32,6 +35,7 @@ def test_verify_help_parity(golden_help):
 
 def test_verify_single_file_parity(tmp_path):
     """Verify single file updates describes_verified."""
+    (tmp_path / ".ontos").mkdir()
     # Create test file with frontmatter and describes
     test_file = tmp_path / "test_verify.md"
     test_file.write_text("""---
@@ -47,7 +51,8 @@ Content""")
         [sys.executable, "-m", "ontos.cli", "verify", str(test_file)],
         capture_output=True,
         text=True,
-        env=os.environ.copy()
+        env=os.environ.copy(),
+        cwd=tmp_path,
     )
 
     assert result.returncode == 0
@@ -55,7 +60,8 @@ Content""")
     
     # Check file content
     content = test_file.read_text()
-    assert f"describes_verified: {today}" in content
+    frontmatter, _ = parse_frontmatter_content(content)
+    assert frontmatter["describes_verified"] == today
 
 def test_verify_all_fails_on_duplicates(tmp_path):
     """VUL-03: verify --all command must fail on duplicate IDs."""
@@ -79,3 +85,28 @@ def test_verify_all_fails_on_duplicates(tmp_path):
     
     assert result.returncode != 0
     assert "Duplicate ID 'collision' found" in result.stderr
+
+
+def test_verify_invalid_utf8_refuses_without_rewrite(tmp_path):
+    (tmp_path / ".ontos").mkdir()
+    target = tmp_path / "bad.md"
+    original = (
+        b"---\nid: bad_doc\ntype: atom\nstatus: active\n"
+        b"describes: [something]\n---\n\ninvalid: \xff\n"
+    )
+    target.write_bytes(original)
+
+    result = subprocess.run(
+        [sys.executable, "-m", "ontos.cli", "--json", "verify", str(target)],
+        capture_output=True,
+        text=True,
+        env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[2])},
+        cwd=tmp_path,
+    )
+
+    assert result.returncode == 1
+    payload = json.loads(result.stdout)
+    assert payload["error"]["code"] == "E_COMMAND_FAILED"
+    assert str(target) in payload["message"]
+    assert "Re-save the file as UTF-8" in payload["message"]
+    assert target.read_bytes() == original

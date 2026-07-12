@@ -7,10 +7,10 @@ import subprocess
 import warnings
 import pytest
 
-# Add bundled scripts directory to path for legacy imports
-# (Tests import directly from script names like ontos_generate_context_map)
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), '.ontos', 'scripts'))
-
+# Import the packaged namespace before exposing legacy script modules. Without
+# this pin, test collection order can make `.ontos/scripts/ontos` shadow the
+# real package and silently exercise a different implementation.
+import ontos as _ontos_package  # noqa: F401
 
 # v2.9.2: Configure warning filters for deprecation warnings
 def pytest_configure(config):

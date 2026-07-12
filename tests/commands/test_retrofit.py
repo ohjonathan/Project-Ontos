@@ -331,13 +331,32 @@ def test_retrofit_apply_quotes_date_like_tag_values(tmp_path: Path):
     assert result.returncode == 0, result.stdout + result.stderr
 
     updated = path.read_text(encoding="utf-8")
-    assert '  - "2026-01-01"' in updated
+    assert "2026-01-01" in updated
 
     from ontos.io.yaml import parse_frontmatter_content
 
     parsed, _ = parse_frontmatter_content(updated)
     assert parsed["tags"] == ["2026-01-01"]
     assert isinstance(parsed["tags"][0], str)
+
+
+def test_retrofit_apply_round_trips_multiline_alias(tmp_path: Path):
+    _init_repo(tmp_path)
+    path = tmp_path / "docs" / "multiline.md"
+    _write_doc(
+        path,
+        "multiline_doc",
+        extra_lines=["aliases:", "  - |", "    first line", "    second line"],
+    )
+    _init_git_repo(tmp_path)
+
+    result = _run_ontos(tmp_path, "retrofit", "--obsidian", "--apply")
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    from ontos.io.yaml import parse_frontmatter_content
+
+    parsed, _ = parse_frontmatter_content(path.read_text(encoding="utf-8"))
+    assert "first line\nsecond line" in parsed["aliases"]
 
 
 # ---------------------------------------------------------------------------
@@ -579,6 +598,34 @@ def test_retrofit_apply_surfaces_loader_issues_without_blocking_valid_files(
 
     updated = valid.read_text(encoding="utf-8")
     assert "tags:" in updated
+
+
+def test_retrofit_invalid_utf8_is_actionable_and_byte_unchanged(tmp_path: Path):
+    _init_repo(tmp_path)
+    path = tmp_path / "docs" / "bad-encoding.md"
+    original = (
+        b"---\nid: bad_encoding\ntype: atom\nstatus: active\n"
+        b"concepts: [safe]\n---\n\ninvalid: \xff\n"
+    )
+    path.write_bytes(original)
+    _init_git_repo(tmp_path)
+
+    result = _run_ontos(
+        tmp_path,
+        "--json",
+        "retrofit",
+        "--obsidian",
+        "--apply",
+    )
+
+    assert result.returncode == 1
+    payload = json.loads(result.stdout)
+    assert payload["schema_version"] == "3.4"
+    assert payload["error"]["code"] == "E_COMMAND_FAILED"
+    assert payload["data"]["path"] == str(path)
+    assert str(path) in payload["message"]
+    assert "Re-save the file as UTF-8" in payload["message"]
+    assert path.read_bytes() == original
 
 
 # ---------------------------------------------------------------------------

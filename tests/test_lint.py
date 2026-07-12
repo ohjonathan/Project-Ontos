@@ -6,10 +6,12 @@ from unittest.mock import patch
 import sys
 import os
 
-# Add scripts dir to path to import modules
-sys.path.append(os.path.join(os.path.dirname(__file__), '../.ontos/scripts'))
-
-from ontos_generate_context_map import lint_data_quality
+_LEGACY_SCRIPTS = os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts'))
+sys.path.insert(0, _LEGACY_SCRIPTS)
+try:
+    from ontos_generate_context_map import lint_data_quality
+finally:
+    sys.path.remove(_LEGACY_SCRIPTS)
 
 class TestLintDataQuality:
     """Tests for lint_data_quality function."""

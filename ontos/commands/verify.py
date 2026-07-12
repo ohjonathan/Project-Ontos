@@ -1,7 +1,6 @@
 """Native verify command implementation."""
 
 import json
-import re
 import sqlite3
 from dataclasses import dataclass
 from datetime import date
@@ -13,6 +12,11 @@ from ontos.core.staleness import (
     check_staleness,
 )
 from ontos.core.context import SessionContext
+from ontos.core.frontmatter_edit import (
+    InvalidDocumentEncodingError,
+    patch_frontmatter_fields,
+    read_utf8_for_mutation,
+)
 from ontos.io.config import load_project_config
 from ontos.io.files import find_project_root, load_documents, load_frontmatter
 from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
@@ -87,44 +91,17 @@ def update_describes_verified(
     Matches exact regex replacement logic from legacy script.
     """
     try:
-        content = filepath.read_text(encoding='utf-8')
+        content = read_utf8_for_mutation(filepath)
         
-        if not content.startswith('---'):
-            output.error(f"{filepath} has no frontmatter")
-            return False
-        
-        parts = content.split('---', 2)
-        if len(parts) < 3:
-            output.error(f"Invalid frontmatter in {filepath}")
-            return False
-        
-        frontmatter = parts[1]
-        body = parts[2]
         date_str = new_date.isoformat()
-        
-        # Check if describes_verified already exists
-        if re.search(r'^describes_verified:', frontmatter, re.MULTILINE):
-            new_frontmatter = re.sub(
-                r'^describes_verified:.*$',
-                f'describes_verified: {date_str}',
-                frontmatter,
-                flags=re.MULTILINE
-            )
-        else:
-            # Add after describes field
-            if re.search(r'^describes:', frontmatter, re.MULTILINE):
-                new_frontmatter = re.sub(
-                    r'^(describes:.*(?:\n  - .*)*)$',
-                    f'\\1\ndescribes_verified: {date_str}',
-                    frontmatter,
-                    flags=re.MULTILINE
-                )
-            else:
-                new_frontmatter = frontmatter.rstrip() + f'\ndescribes_verified: {date_str}\n'
-        
-        new_content = f'---{new_frontmatter}---{body}'
+        new_content = patch_frontmatter_fields(
+            content,
+            {"describes_verified": date_str},
+        )
         ctx.buffer_write(filepath, new_content)
         return True
+    except InvalidDocumentEncodingError:
+        raise
     except Exception as e:
         output.error(f"Error updating {filepath}: {e}")
         return False
@@ -240,8 +217,16 @@ def _run_verify_command(options: VerifyOptions) -> Tuple[int, str]:
         root = find_project_root()
         ctx = SessionContext.from_repo(root)
         
-        # Check if doc has describes
-        fm, _ = load_frontmatter(options.path, parse_frontmatter_content)
+        # A single-file verify mutates this document. Decode strictly before
+        # parsing so malformed bytes are a visible refusal, not a parse skip.
+        try:
+            content = read_utf8_for_mutation(options.path)
+            fm, _ = parse_frontmatter_content(content)
+        except InvalidDocumentEncodingError as exc:
+            output.error(str(exc))
+            return 1, str(exc)
+        except ValueError:
+            fm = None
         if not fm:
             output.error(f"Failed to parse frontmatter in {options.path}")
             return 1, "Parse failure"
@@ -251,7 +236,17 @@ def _run_verify_command(options: VerifyOptions) -> Tuple[int, str]:
             output.warning(f"{options.path} has no describes field, nothing to verify")
             return 0, "Nothing to verify"
             
-        if update_describes_verified(options.path, verify_date, ctx, output):
+        try:
+            updated = update_describes_verified(
+                options.path,
+                verify_date,
+                ctx,
+                output,
+            )
+        except InvalidDocumentEncodingError as exc:
+            output.error(str(exc))
+            return 1, str(exc)
+        if updated:
             try:
                 ctx.commit()
             except Exception as exc:
@@ -264,7 +259,15 @@ def _run_verify_command(options: VerifyOptions) -> Tuple[int, str]:
 
     elif options.all:
         # Interactive all mode
-        result = verify_all_interactive(verify_date, output, scope=options.scope)
+        try:
+            result = verify_all_interactive(
+                verify_date,
+                output,
+                scope=options.scope,
+            )
+        except InvalidDocumentEncodingError as exc:
+            output.error(str(exc))
+            return 1, str(exc)
         return result, "Interactive session ended"
         
     else:

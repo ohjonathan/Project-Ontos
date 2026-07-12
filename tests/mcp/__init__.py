@@ -299,7 +299,7 @@ def run_base_cli(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     env = dict(os.environ)
     env["PYTHONPATH"] = str(REPO_ROOT)
     return subprocess.run(
-        ["python3", "-m", "ontos", *args],
+        [sys.executable, "-m", "ontos", *args],
         cwd=root,
         text=True,
         capture_output=True,

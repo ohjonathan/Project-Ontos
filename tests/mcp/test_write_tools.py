@@ -27,6 +27,7 @@ import pytest
 from mcp.types import CallToolResult
 
 from ontos.mcp.portfolio import PortfolioIndex
+from ontos.io.yaml import parse_frontmatter_content
 from tests.mcp import build_cache, build_server, create_workspace, list_tools
 
 
@@ -234,6 +235,35 @@ def test_log_session_creates_dated_log_at_logs_dir(tmp_path):
     assert "# Refactor cache layer" in content
 
 
+def test_log_session_round_trips_adversarial_frontmatter_values(tmp_path):
+    root = create_workspace(tmp_path)
+    server = build_server(root)
+    values = {
+        "event_type": 'fix: "quoted" # hash',
+        "source": "mcp, local",
+        "branch": "release/2026-07-10",
+    }
+
+    result = _call(
+        server,
+        "log_session",
+        {
+            "title": "Safe YAML surface",
+            **values,
+            "body": "Unicode café and phase --- two.",
+        },
+    )
+
+    assert result.isError is False, result.content[0].text
+    log_file = root / result.structuredContent["path"]
+    frontmatter, body = parse_frontmatter_content(
+        log_file.read_text(encoding="utf-8")
+    )
+    for key, value in values.items():
+        assert frontmatter[key] == value
+    assert "phase --- two" in body
+
+
 def test_log_session_rejects_empty_title(tmp_path):
     root = create_workspace(tmp_path)
     server = build_server(root)
@@ -357,6 +387,29 @@ def test_promote_document_rejects_invalid_level(tmp_path):
 
     assert result.isError is True
     assert result.structuredContent["error"]["error_code"] == "E_INVALID_LEVEL"
+
+
+def test_promote_document_invalid_utf8_is_actionable_and_unchanged(tmp_path):
+    root = create_workspace(tmp_path)
+    kernel_path = root / "docs" / "kernel.md"
+    original = (
+        b"---\nid: kernel_doc\ntype: kernel\nstatus: active\n"
+        b"curation_level: 0\n---\n\ninvalid: \xff\n"
+    )
+    kernel_path.write_bytes(original)
+    server = build_server(root)
+
+    result = _call(
+        server,
+        "promote_document",
+        {"document_id": "kernel_doc", "new_level": 2},
+    )
+
+    assert result.isError is True
+    assert result.structuredContent["error"]["error_code"] == "E_COMMAND_FAILED"
+    assert str(kernel_path) in result.content[0].text
+    assert "Re-save the file as UTF-8" in result.content[0].text
+    assert kernel_path.read_bytes() == original
 
 
 # ---------------------------------------------------------------------------

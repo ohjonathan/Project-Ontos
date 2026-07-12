@@ -51,11 +51,16 @@ from ontos.commands.rename import (
 from ontos.core.context import SessionContext
 from ontos.core.errors import OntosInternalError, OntosUserError
 from ontos.core.git import is_workspace_clean
+from ontos.core.locking import (
+    WorkspaceBinding,
+    capture_workspace_binding,
+    verify_workspace_binding,
+)
 from ontos.io.config import load_project_config
 from ontos.io.scan_scope import ScanScope
 from ontos.mcp._validation import resolve_workspace_slug, validate_workspace_id
 from ontos.mcp.cache import SnapshotCache
-from ontos.mcp.locking import workspace_lock
+from ontos.mcp.locking import WorkspaceLockGuard, workspace_lock
 from ontos.mcp.schemas import (
     ToolErrorTextItem,
     WriteToolError,
@@ -158,6 +163,8 @@ def _user_error_result(exc: OntosUserError) -> CallToolResult:
 class _Preflight:
     slug: str
     workspace_root: Path
+    workspace_binding: WorkspaceBinding
+    lock_guard: Optional[WorkspaceLockGuard] = None
 
 
 def _preflight(
@@ -177,6 +184,13 @@ def _preflight(
     validate_workspace_id(portfolio_index, workspace_id)
 
     workspace_root = cache.workspace_root
+    try:
+        workspace_binding = capture_workspace_binding(workspace_root)
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise OntosUserError(
+            f"Workspace root is unsafe or unavailable: {exc}",
+            code="E_UNSAFE_WORKSPACE",
+        ) from exc
     slug = resolve_workspace_slug(workspace_root, portfolio_index)
     if workspace_id is not None and workspace_id != slug:
         raise OntosUserError(
@@ -205,7 +219,18 @@ def _preflight(
             code="E_DIRTY_WORKSPACE",
         )
 
-    return _Preflight(slug=slug, workspace_root=workspace_root)
+    try:
+        verify_workspace_binding(workspace_root, workspace_binding)
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise OntosUserError(
+            f"Workspace root changed during preflight: {exc}",
+            code="E_UNSAFE_WORKSPACE",
+        ) from exc
+    return _Preflight(
+        slug=slug,
+        workspace_root=workspace_root,
+        workspace_binding=workspace_binding,
+    )
 
 
 def _rebuild_with_m13_retry(
@@ -335,12 +360,15 @@ def rename_document(
         return _user_error_result(exc)
 
     # Result holder so we can shape error returns outside the lock while
-    # keeping OntosUserError/OntosInternalError caught INSIDE the lock
-    # (Python 3.14 frozen-dataclass __traceback__ gotcha documented in
-    # writes.py dispatcher comments).
+    # keeping OntosUserError/OntosInternalError caught INSIDE the lock so
+    # error shaping remains local to this operation.
     result: Optional[CallToolResult] = None
     try:
-        with workspace_lock(plan.workspace_root):
+        with workspace_lock(
+            plan.workspace_root,
+            expected_workspace_binding=plan.workspace_binding,
+        ) as lock_guard:
+            plan.lock_guard = lock_guard
             try:
                 payload = _rename_document_impl(
                     cache=cache,
@@ -375,6 +403,14 @@ def rename_document(
     except OntosUserError as exc:
         # workspace_lock E_WORKSPACE_BUSY escapes as documented.
         return _user_error_result(exc)
+    except Exception as exc:
+        traceback.print_exc(file=sys.stderr)
+        return _write_error_result(
+            error_code="E_INTERNAL",
+            what=f"Workspace safety check failed: {exc}",
+            why="The workspace identity changed while acquiring its lock.",
+            fix="Retry after confirming the workspace path is stable.",
+        )
 
     assert result is not None  # for type-checkers
     return result
@@ -501,6 +537,8 @@ def _rename_document_impl(
         repo_root=plan.workspace_root,
         config={},
         owns_lock=False,  # addendum v1.2 §A1
+        expected_workspace_binding=plan.workspace_binding,
+        external_lock_guard=plan.lock_guard,
     )
     for fp in files_to_apply:
         ctx.buffer_write(fp.path, fp.new_content)

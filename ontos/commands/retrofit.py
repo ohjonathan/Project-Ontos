@@ -16,7 +16,6 @@ Structure mirrors ``ontos/commands/rename.py``:
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -24,6 +23,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 from ontos.core.context import SessionContext
 from ontos.core.frontmatter import normalize_aliases, normalize_tags
 from ontos.core.frontmatter_edit import (
+    InvalidDocumentEncodingError,
     _check_clean_git_state,
     _index_top_level_fields,
     _read_decoded_content,
@@ -33,7 +33,7 @@ from ontos.core.types import DocumentData
 from ontos.io.config import load_project_config
 from ontos.io.files import DocumentLoadIssue, find_project_root, load_documents
 from ontos.io.scan_scope import ScanScope, collect_scoped_documents, resolve_scan_scope
-from ontos.io.yaml import parse_frontmatter_content
+from ontos.io.yaml import assert_frontmatter_roundtrip, dump_yaml, parse_frontmatter_content
 from ontos.ui.json_output import emit_command_error, emit_command_success
 
 
@@ -45,7 +45,6 @@ REASON_UNPATCHABLE_FORMAT = "unpatchable_field_format"
 POST_APPLY_WARNING = "Run 'ontos map' to regenerate derived artifacts."
 
 _TARGET_FIELDS: Tuple[str, ...] = ("tags", "aliases")
-_DATE_LIKE_RE = re.compile(r"^\d{4}-\d{2}(-\d{2})?")
 
 
 @dataclass
@@ -116,6 +115,7 @@ class RetrofitPlan:
 class RetrofitError:
     code: str
     message: str
+    path: Optional[Path] = None
 
 
 @dataclass
@@ -252,7 +252,14 @@ def _prepare_plan(
     file_plans: List[FilePlan] = []
     all_warnings: List[RetrofitWarning] = _loader_issues_to_warnings(load_result.issues)
     for doc in sorted(docs.values(), key=lambda item: str(item.filepath)):
-        file_plan = _build_file_plan(doc)
+        try:
+            file_plan = _build_file_plan(doc)
+        except InvalidDocumentEncodingError as exc:
+            return None, RetrofitError(
+                code=exc.code,
+                message=str(exc),
+                path=exc.path,
+            )
         if file_plan is None:
             continue
         file_plans.append(file_plan)
@@ -493,6 +500,34 @@ def _build_file_plan(doc: DocumentData) -> Optional[FilePlan]:
 
     if not edits:
         new_content = decoded.original
+    else:
+        try:
+            reparsed, _ = parse_frontmatter_content(new_content)
+            for edit in edits:
+                if edit.action == "remove":
+                    if reparsed.get(edit.field) not in (None, [], ""):
+                        raise ValueError(f"field {edit.field!r} was not removed")
+                elif reparsed.get(edit.field) != edit.new_value:
+                    raise ValueError(f"field {edit.field!r} failed semantic round trip")
+        except (TypeError, ValueError) as exc:
+            return FilePlan(
+                path=path,
+                new_content=decoded.original,
+                edits=[],
+                warnings=[
+                    *warnings,
+                    RetrofitWarning(
+                        path=path,
+                        field=None,
+                        reason_code=REASON_UNPATCHABLE_FORMAT,
+                        reason_message=(
+                            "Safe serializer verification failed for the complete document: "
+                            f"{exc}"
+                        ),
+                        blocking=True,
+                    ),
+                ],
+            )
 
     return FilePlan(
         path=path,
@@ -579,32 +614,25 @@ def _detect_dominant_line_ending(lines: Sequence[str]) -> str:
 
 
 def _format_field_block(field_name: str, values: Sequence[str], line_ending: str) -> List[str]:
-    out = [f"{field_name}:{line_ending}"]
-    for value in values:
-        out.append(f"  - {_serialize_item(value)}{line_ending}")
-    return out
+    """Serialize one list field through PyYAML and preserve block indentation."""
+    expected = {field_name: list(values)}
+    canonical = dump_yaml(
+        expected,
+        default_flow_style=False,
+        sort_keys=False,
+    ).rstrip("\n")
+    assert_frontmatter_roundtrip(expected, canonical)
 
-
-def _serialize_item(value: str) -> str:
-    needs_quote = False
-    if value == "" or value != value.strip():
-        needs_quote = True
-    elif any(ch in value for ch in ":#&*!|>%@`,[]{}"):
-        needs_quote = True
-    elif value.lower() in {"true", "false", "yes", "no", "null", "on", "off", "~"}:
-        needs_quote = True
-    elif _DATE_LIKE_RE.match(value):
-        needs_quote = True
-    else:
-        try:
-            float(value)
-            needs_quote = True
-        except ValueError:
-            pass
-    if not needs_quote:
-        return value
-    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
-    return f'"{escaped}"'
+    lines = canonical.splitlines()
+    if not lines:
+        return []
+    # PyYAML emits block-sequence dashes at column zero. Retrofit historically
+    # uses two-space indentation, so indent the sequence and scalar continuation
+    # lines together; the semantic check below guards multiline scalars.
+    rendered = [lines[0], *(f"  {line}" for line in lines[1:])]
+    rendered_text = "\n".join(rendered)
+    assert_frontmatter_roundtrip(expected, rendered_text)
+    return [f"{line}{line_ending}" for line in rendered]
 
 
 def _ensure_trailing_newline(frontmatter_text: str, line_ending: str) -> str:
@@ -787,34 +815,37 @@ def _emit_error(
     partial_commit: bool,
 ) -> None:
     if options.json_output:
+        data = {
+            "mode": mode,
+            "scope": scope.value,
+            "summary": _summary_to_json(
+                RetrofitSummary(
+                    files_scanned=0,
+                    documents_loaded=0,
+                    planned_files=0,
+                    inserts=0,
+                    replaces=0,
+                    removes=0,
+                    warnings=len(warnings),
+                )
+            ),
+            "files": [],
+            "warnings": [_warning_to_json(item) for item in warnings],
+            "applied_paths": [],
+            "post_apply_warning": POST_APPLY_WARNING if mode == "apply" else None,
+            "partial_commit": {
+                "detected": partial_commit,
+                "message": error.message if partial_commit else None,
+            },
+        }
+        if error.path is not None:
+            data["path"] = str(error.path)
         emit_command_error(
             command="retrofit",
             exit_code=1,
             code=error.code,
             message=error.message,
-            data={
-                "mode": mode,
-                "scope": scope.value,
-                "summary": _summary_to_json(
-                    RetrofitSummary(
-                        files_scanned=0,
-                        documents_loaded=0,
-                        planned_files=0,
-                        inserts=0,
-                        replaces=0,
-                        removes=0,
-                        warnings=len(warnings),
-                    )
-                ),
-                "files": [],
-                "warnings": [_warning_to_json(item) for item in warnings],
-                "applied_paths": [],
-                "post_apply_warning": POST_APPLY_WARNING if mode == "apply" else None,
-                "partial_commit": {
-                    "detected": partial_commit,
-                    "message": error.message if partial_commit else None,
-                },
-            },
+            data=data,
             warnings=[_warning_to_json(item) for item in warnings],
         )
         return

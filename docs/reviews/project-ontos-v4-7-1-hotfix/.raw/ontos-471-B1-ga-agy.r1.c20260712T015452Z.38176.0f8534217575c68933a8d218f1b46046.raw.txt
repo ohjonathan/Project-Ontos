@@ -1,0 +1,11 @@
+In the Antigravity CLI (`agy`), the **`--print-timeout`** flag is used to specify the maximum duration the CLI will wait for a response when running in non-interactive mode.
+
+### Details:
+* **Purpose:** Sets a timeout for non-interactive execution triggered by `--print` (or `--prompt` / `-p`). If the agent does not finish and return a response within this duration, the command will time out.
+* **Default Value:** `5m0s` (5 minutes)
+* **Accepted Formats:** A duration string parsed by standard Go duration parser (e.g., `30s`, `5m`, `1h`).
+
+### Example Usage:
+```bash
+agy --print-timeout 10m --print "Write a script to list files"
+```

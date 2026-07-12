@@ -9,7 +9,9 @@ At the start of every session:
 2. Read `Ontos_Context_Map.md` to understand the project documentation structure
 
 When ending a session:
-3. Run `ontos log` to record your work
+3. Run `ontos log --title "unique-session-title"` to record your work. If
+   that date-and-title slug exists, choose another title; Ontos will not
+   overwrite the earlier log.
 
 ## What is Ontos?
 

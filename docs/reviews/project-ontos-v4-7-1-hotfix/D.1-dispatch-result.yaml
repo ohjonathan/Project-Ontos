@@ -1,0 +1,80 @@
+results:
+- dispatch_id: ontos-471-D1-cp
+  capture_id: ontos-471-D1-cp.r1.c20260712T024844Z.87164.92e08bcd1cbb8cf87f545ba6a576eaa5
+  round: 1
+  family: claude
+  actual_executed_family: claude
+  role: peer
+  execution_provider: claude
+  execution_cli: claude
+  resolved_executable: /Users/jonathanoh/.local/bin/claude
+  resolved_executable_realpath: /Users/jonathanoh/.local/share/claude/versions/2.1.207
+  cli_version: 2.1.207 (Claude Code)
+  provider_probe_hash: sha256:1c63f5d67f9b934efa74db6f1e8864843aa2bf776ca30d0bca012c042208f120
+  model_id: auto
+  resolved_model: opus
+  model_probe_command: claude --help 2>&1 | grep -oE "'(opus|sonnet|haiku)'" | sort
+    -u
+  model_candidate_list:
+  - opus
+  - sonnet
+  model_selection_rule: claude-cli-alias-strongest
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - claude
+  - --permission-mode
+  - bypassPermissions
+  - --add-dir
+  - .
+  - -p
+  - <prompt-body-redacted>
+  - --model
+  - opus
+  prompt_path: docs/reviews/project-ontos-v4-7-1-hotfix/.prompts/ontos-471-D1-cp.r1.c20260712T024844Z.87164.92e08bcd1cbb8cf87f545ba6a576eaa5.md
+  prompt_sha256: sha256:6c1070a4102af0c408e5eee90df5a45d385b53eb22339809dc97c9b0d83dec6f
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-07-12T02:48:44Z'
+  ended_at: '2026-07-12T02:53:14Z'
+  raw_output_path: docs/reviews/project-ontos-v4-7-1-hotfix/.raw/ontos-471-D1-cp.r1.c20260712T024844Z.87164.92e08bcd1cbb8cf87f545ba6a576eaa5.raw.txt
+  raw_output_hash: sha256:7d125c51ab80d53b9c23f8088daf4fd743273330eb4ea399841cb347682ea365
+  stderr_path: docs/reviews/project-ontos-v4-7-1-hotfix/.raw/ontos-471-D1-cp.r1.c20260712T024844Z.87164.92e08bcd1cbb8cf87f545ba6a576eaa5.stderr.txt
+  stderr_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  evidence_cap: direct-run
+  evidence_labels_used:
+  - direct-run
+  - static-inspection
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-v4-7-1-hotfix/D.1-claude-peer.md
+  artifact_sha256: sha256:f60d9818dee023060831323df985ddd71238d2a1473becd8562e3ed1b3fe380f
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: opus
+  model_used: opus
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: opus
+    exit_code: 0
+    started_at: '2026-07-12T02:48:44Z'
+    ended_at: '2026-07-12T02:53:14Z'
+    detected_429: false
+    stderr_tail_200: ''
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: worker_file
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  sequential_dispatch_caveat:
+    reason: D.1 standalone retry after missing prompt preflight
+    timestamp: '2026-07-12T02:48:43Z'
+  intent_model_restrictions:
+    family: claude
+    execution_cli: claude
+    denied_models: []
+    allowed_models: []
+    active: false

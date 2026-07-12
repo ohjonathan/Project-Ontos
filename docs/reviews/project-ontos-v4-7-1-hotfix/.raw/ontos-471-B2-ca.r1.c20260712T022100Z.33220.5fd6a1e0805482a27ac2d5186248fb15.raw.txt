@@ -1,0 +1,109 @@
+Root cause confirmed at `tests/mcp/__init__.py:302`. Here is the complete artifact.
+
+---
+
+```yaml
+---
+id: project-ontos-v4-7-1-hotfix-B.2-claude-alignment
+deliverable_id: project-ontos-v4-7-1-hotfix
+phase: B.2
+role: alignment
+family: claude
+evidence_labels_used:
+  - spec-read
+  - manifest-read
+  - changelog-read
+  - b1-artifacts-read
+  - working-tree-diff-vs-bf91b42
+  - focused-command-execution
+  - full-suite-execution
+  - hermeticity-check
+status: completed
+---
+```
+
+# Phase B.2 Alignment Review — project-ontos-v4-7-1-hotfix (Claude family)
+
+## Input attestation
+
+Reviewed read-only in `/tmp/project-ontos-worktrees/project-ontos-v4.7.1-hotfix` at `HEAD = 6168267`, working tree diffed against baseline `bf91b42`. Inputs read: the revised spec (`docs/specs/project-ontos-v4-7-1-hotfix-spec.md`, all 9 sections plus diagrams), `manifests/project-ontos-v4-7-1-hotfix.yaml`, `CHANGELOG.md`, the B.1 dispatch and lifecycle-receipt artifacts, and the full 97-file / +8917-−627 working diff. Commands run were read-only: `git diff`/`git show`/`git status`, targeted `grep`/`sed`, and two `pytest` invocations. I did not edit any file, run Ontos activation/map/log, commit, push, merge, tag, release, or touch lifecycle evidence. The tree is unchanged from the state I received it in.
+
+## Requirements cross-reference
+
+| Spec requirement | Evidence | Status |
+|---|---|---|
+| Contract-first split; no v5 behavior imported | `git diff bf91b42 --stat` over all ten §9 exclusion paths returns empty | Met |
+| Envelope stays schema 3.4, no `result` object | `ontos/ui/json_output.py` byte-identical to `main`; `schema_version: str = "3.4"` at lines 138, 164 | Met |
+| Explicit IDs validated; filename fallback verbatim | `ontos/io/files.py:451` — `validate_document_id(fm['id']) if 'id' in fm else path.stem`; grammar at `ontos/core/schema.py:78-97` | Met |
+| Malformed explicit ID degrades, does not crash | Batch loader catches `(ValueError, UnicodeDecodeError)` → `parse_error` issue; covered by `test_batch_loader_reports_non_string_id_as_parse_error` | Met |
+| Fallback preserves spaces / leading underscore / Unicode | `test_loader_preserves_filename_stem_fallback_contract` parametrized over `My Notes.md`, `_draft.md`, `café-doc.md` | Met |
+| README/template exclusion precedes validation | `_content_has_explicit_id` gate added ahead of the canonical validator (`ontos/io/files.py:295-301`) | Met |
+| Legacy `LOGS_DIR` precedence retained, `[paths].logs_dir` honored otherwise | `ontos/commands/log.py` — `_load_legacy_logs_dir` checked first, `load_project_config` only on `None`; path kept lexical for the no-follow writer | Met |
+| Strict mutation UTF-8, replacement decoding on general read | `errors='replace'` retained at `ontos/io/files.py:293,381` for read-only loading; mutation readers strict | Met |
+| Public helper/exception compatibility | `OntosUserError`/`OntosInternalError` keep `message`/`code`/`details`, `__str__`, equality and hash | Met |
+| Both version sources report 4.7.1 | `pyproject.toml:7` and `ontos/__init__.py:10` | Met |
+| Full suite passes from the hotfix environment (AC 2) | 3 failed, 1557 passed | **Not met** — see Issue 1 |
+| Test run leaves no repository changes (AC 3) | Pre/post `git status --porcelain` diff empty | Met |
+
+## Compatibility analysis
+
+The `frozen=True` → `unsafe_hash=True` + `_FieldImmutableException` rework is the most delicate compatibility move in the diff, and it lands correctly. The public field-immutability and hash contract from v4.7.0 is preserved (assignment to `message`/`code`/`details` still raises `FrozenInstanceError`), while `BaseException`-owned metadata (`__traceback__`, `__cause__`, `__context__`, `__suppress_context__`, `__notes__`) is now assignable. This is a genuine correctness fix, not a contract break: under Python 3.14, `contextlib` assigns `__traceback__` when propagating through a generator context manager, and a frozen dataclass would have swapped the real error for a spurious `FrozenInstanceError`. The allowlist is narrow enough that it cannot be used to mutate the public fields.
+
+The intentional behavior changes are all in-scope and documented in CHANGELOG §Compatibility (lines 34, 50-53): log-slug collisions now error instead of overwriting, unsafe mutation paths fail before touching external data, and mutation of invalid UTF-8 refuses with exit 1 / `E_COMMAND_FAILED` while read-only loading keeps replacement decoding.
+
+One consequence deserves an explicit callout that I did not find in §7. A document carrying a YAML-coerced non-string ID — `id: 2026-07-10` (date) or `id: 123` (int) — previously loaded and now drops out of the canonical document set with a `parse_error` issue. This is squarely within the spec's scope bullet ("Reject non-string or malformed document IDs before a document is written or admitted to the canonical loader") and is the correct fix, but it is a visible change to the loadable document set in a patch release, and §7's "Existing valid documents … keep their format and envelope contracts" reads as if nothing disappears. Such documents were never *valid*, so the sentence is technically true — I'd still add one line to §7/CHANGELOG naming the symptom operators will actually see, because the failure mode is "my doc vanished from the map," not "my doc was rejected."
+
+`tomli_w` is correctly declared as a hard runtime dependency at baseline (`pyproject.toml` dependencies, unchanged by this hotfix — the only pyproject edit is the 4.7.0 → 4.7.1 bump). Installed users are unaffected by Issue 1.
+
+## Issues
+
+### Issue 1 — Full suite does not pass; acceptance criterion 2 fails (blocking, test-only)
+
+Three tests fail in the current working tree:
+
+```
+FAILED tests/mcp/test_error_paths.py::test_help_and_stdout_safety_paths
+FAILED tests/mcp/test_error_paths.py::test_json_serve_startup_error_stays_on_stdout
+FAILED tests/mcp/test_parity.py::test_count_parity_and_cli_loader_parity
+3 failed, 1557 passed, 2 skipped in 62.78s
+```
+
+Reproduction:
+
+```
+$ .venv/bin/python -m pytest tests/mcp/test_error_paths.py tests/mcp/test_parity.py -q
+...
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['python3', '-m', 'ontos', 'serve', '--help'],
+     returncode=1, stderr="...ontos/io/toml.py", line 12, in <module>
+     import tomli_w
+     ModuleNotFoundError: No module named 'tomli_w'")
+```
+
+Single root cause. `tests/mcp/__init__.py:302` spawns the CLI as `["python3", "-m", "ontos", ...]` — a bare interpreter resolved from `PATH` (here Homebrew's system Python 3.14), not `sys.executable`, so the subprocess runs outside the venv where Ontos's dependencies live. This latent non-hermeticity was harmless at `bf91b42` and is newly surfaced by this hotfix: `ontos/io/toml.py` now imports `tomli_w` at module top level (line 12, added by this diff when `write_config` was rewritten to emit standards-compliant TOML). Any `ontos` subprocess launched under an interpreter without `tomli_w` now dies at import.
+
+This is a test defect, not a product defect — `tomli_w>=1.2,<2.0` is a declared runtime dependency, so a real install is fine. But spec §6 AC 2 states "The complete suite passes from the hotfix environment," and it currently does not. That gate is failing on its own terms, and §7 of the manifest cannot honestly report green.
+
+Fix is mechanical: replace `"python3"` with `sys.executable` in `run_base_cli`/`run_mcp_cli` (`tests/mcp/__init__.py:298-315`). Two other files hardcode the same string (`tests/test_doctor_mcp_probe_regression.py`, `tests/commands/test_consolidate_parity.py`) and should be swept in the same pass before they fail for the same reason.
+
+### Issue 2 — Legacy `LOGS_DIR` discovery narrowed from import-path to two fixed locations (non-blocking, needs a §7 line)
+
+Baseline resolved the legacy config via `from ontos_config import LOGS_DIR`, i.e. anything importable on `sys.path`. `_load_legacy_logs_dir` now probes exactly `<root>/ontos_config.py` and `<root>/.ontos/scripts/ontos_config.py`. Removing the CWD/`sys.path` dependence is the right call and the module-state save/restore around `ontos_config_defaults` is careful work. But a project that today gets `ontos_config` from an installed package or a `PYTHONPATH` entry will silently fall through to `[paths].logs_dir` and begin writing logs to a different directory. Spec §7 claims legacy precedence is "retained"; it is retained only for project-local configs. Worth one sentence in §7 naming the narrowed discovery, since the failure is silent and relocates data.
+
+## Positives
+
+The contract-first split is the strongest part of this deliverable and it holds up under direct verification. All ten §9 exclusion paths — including `ontos/cli.py`, `ontos/ui/json_output.py`, `ontos/core/graph.py`, and `ontos/mcp/schemas.py` — are byte-identical to baseline, and `json_output.py` is byte-identical to `main`, so the schema-3.4 envelope claim is mechanically true rather than asserted. The maintainer resisted the obvious temptation to let the serializer rewrite pull `graph.py` or the MCP schemas along with it.
+
+The explicit-ID-versus-fallback asymmetry is exactly right and is the subtlest judgment call in the patch. Applying the ID grammar to filename stems would have silently deleted `My Notes.md` and `café-doc.md` from the canonical loader; the code comment at `ontos/io/files.py:449-452` states that reasoning, and the parametrized fallback test pins it. Ordering the README/template exclusion *ahead* of the validator so `_template` stems never reach the grammar shows the author traced the interaction rather than bolting validation onto the front.
+
+Hermeticity (AC 3) is genuinely clean: a full suite run produced zero tracked or untracked repository changes, verified by pre/post `git status --porcelain` comparison. The `_FieldImmutableException` docstring correctly identifies a real Python 3.14 `contextlib` interaction, which is the kind of root-causing that usually gets papered over with a blanket unfreeze.
+
+## Verdict
+
+Request changes
+
+The product code is sound and I found no defect in the shipped behavior. The single blocking item is that the deliverable's own acceptance criterion 2 is failing: the suite does not pass in the hotfix environment. The fix is one line in a shared test helper (`sys.executable` for `"python3"` at `tests/mcp/__init__.py:302`, plus the two other files carrying the same hardcode). Once the suite is green and §7 gains the two clarifying sentences from Issues 1 and 2, this is an Approve — I do not need to re-review the implementation.
+
+## Notes
+
+Timeboxed to six minutes; I prioritized mechanical verification of the exclusion list, envelope parity, ID semantics, and suite/hermeticity status over reading the 1322-line `context.py` transaction rewrite and the 596-line `locking.py` in full. The transaction/locking envelope, rollback semantics, and outer-lock identity binding are therefore **not** independently verified by this review and I am relying on B.1 coverage there; if no other B.2 reviewer has read those two files line-by-line, that is the gap to close before merge. My confidence on Issue 1's root cause is high (reproduced directly, single shared helper, `import tomli_w` provenance confirmed as new in this diff via `git show bf91b42:ontos/io/toml.py`). I did not attempt to run the suite at baseline to confirm the three tests passed there, so "newly surfaced" is inferred from the import's provenance rather than measured.

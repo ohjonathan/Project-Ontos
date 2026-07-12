@@ -1,0 +1,1560 @@
+[0m
+> build · glm-5.2
+[0m
+[0m$ [0mcd /<redacted:secret> && git log --oneline -15
+6168267 chore: preserve and retry B.1 review evidence
+82ab894 chore: dispatch v4.7.1 B.1 review board
+b9c81f0 chore: bind hotfix lifecycle to implementation snapshot
+e33a31d fix: isolate v4.7.1 integrity hotfix
+bf91b42 fix(logs): add required `concepts` to the two logs that broke main
+6d7934f chore(ontos): archive session logs and regenerate context artifacts
+e259ee7 Merge pull request #160 from <redacted:secret>
+3ccc75a fix(ontos): treat docs/handoffs/** as intentional root artifacts
+a6a1ce8 docs(audit): preserve in-progress #146 serializer-corruption lifecycle
+41c008b docs(meta): open the audit-remediation meta-cycle coordination artifacts
+4cec473 docs(audit): #147 doctor-rce lifecycle packet, with its evidence gaps stated
+03c36e6 fix(security): validate the whole MCP probe argv, not just the launcher
+c8672e9 Merge pull request #159 from <redacted:secret>
+a423c34 Update llm-dev-framework to v2.0.1
+a848770 Update llm-dev-framework to v2.0.0
+[0m
+[0m$ [0mcd /<redacted:secret> && git diff --stat bf91b42
+.gitattributes                                     |    6 +
+ AGENTS.md                                          |   12 +-
+ CHANGELOG.md                                       |   58 +
+ CLAUDE.md                                          |    4 +-
+ Ontos_Context_Map.md                               |   39 +-
+ README.md                                          |    2 +-
+ docs/reference/Ontos_Manual.md                     |   11 +-
+ .../.<redacted:secret>   |    5 +
+ .../.<redacted:secret>      |   46 +
+ .../.prompts/B.1-claude-product-r2.prompt.md       |    5 +
+ .../.prompts/B.1-claude-product.prompt.md          |   48 +
+ .../.<redacted:secret>    |    5 +
+ .../.prompts/B.1-gemini-alignment.prompt.md        |   47 +
+ .../.prompts/B.1-glm-peer-r2.prompt.md             |    5 +
+ .../.prompts/B.1-glm-peer.prompt.md                |   44 +
+ ...3915Z.71901.add9810abbc9ba67456e2909dedd8712.md |   46 +
+ ...3915Z.71896.51b316e0c59b3233d60b332ebad06926.md |   48 +
+ ...3915Z.71910.b7f278df35e361defbd01233ce63d3d4.md |   47 +
+ ...<redacted:secret> |   47 +
+ ...3915Z.71897.3ab4100db2af9cba36d3284c05935d13.md |   44 +
+ ....<redacted:secret> |    0
+ ...<redacted:secret> |    0
+ ....<redacted:secret> |   21 +
+ ...896.51b316e0c59b3233d60b332ebad06926.stderr.txt |    0
+ ....<redacted:secret> |    0
+ ...<redacted:secret> |   14 +
+ ....<redacted:secret> |    0
+ ...<redacted:secret> |   19 +
+ ....<redacted:secret> |   41 +
+ ...<redacted:secret> |  830 ++++++++++++
+ .../B.1-claude-product.md                          |  339 +++++
+ .../B.1-dispatch-intent.yaml                       |  169 +++
+ .../B.1-dispatch-result.yaml                       |  734 +++++++++++
+ .../B.1-gemini-alignment.md                        |    0
+ .../<redacted:secret>    |  219 ++++
+ .../lifecycle-receipt-inventory.yaml               |  130 ++
+ <redacted:secret>     |  308 +++++
+ <redacted:secret>       |   51 +
+ <redacted:secret>         |  393 ++++++
+ ontos/__init__.py                                  |    2 +-
+ ontos/commands/init.py                             |    1 +
+ ontos/commands/log.py                              |  194 ++-
+ ontos/commands/migrate.py                          |   12 +-
+ ontos/commands/promote.py                          |   20 +-
+ ontos/commands/rename.py                           |   99 +-
+ ontos/commands/retrofit.py                         |  137 +-
+ ontos/commands/scaffold.py                         |   42 +-
+ ontos/commands/verify.py                           |   41 +-
+ ontos/core/context.py                              | 1322 +++++++++++++++++++-
+ ontos/core/errors.py                               |   51 +-
+ ontos/core/frontmatter_edit.py                     |  239 +++-
+ ontos/core/frontmatter_repair.py                   |   47 +-
+ ontos/core/git.py                                  |   51 +-
+ ontos/core/instruction_protocol.py                 |    6 +-
+ ontos/core/locking.py                              |  596 +++++++++
+ ontos/core/schema.py                               |  108 +-
+ ontos/io/files.py                                  |   29 +-
+ ontos/io/git.py                                    |    6 +-
+ ontos/io/toml.py                                   |   53 +-
+ ontos/io/yaml.py                                   |   79 +-
+ ontos/mcp/locking.py                               |   90 +-
+ ontos/mcp/portfolio.py                             |   41 +-
+ ontos/mcp/rename_tool.py                           |   50 +-
+ ontos/mcp/server.py                                |   45 +-
+ ontos/mcp/tools.py                                 |    6 +
+ ontos/mcp/writes.py                                |   68 +-
+ pyproject.toml                                     |    2 +-
+ tests/commands/test_log.py                         |  140 +++
+ tests/commands/test_rename.py                      |   28 +
+ tests/commands/test_retrofit.py                    |   49 +-
+ tests/commands/test_stub_parity.py                 |    7 +-
+ tests/commands/test_verify_parity.py               |    9 +-
+ tests/conftest.py                                  |    8 +-
+ tests/core/test_frontmatter_edit_pipeline.py       |  121 ++
+ tests/core/test_git_safety.py                      |   41 +
+ tests/core/test_schema.py                          |   31 +
+ tests/io/test_git_empty_diff.py                    |   29 +
+ tests/io/test_toml_roundtrip.py                    |   38 +
+ tests/mcp/test_locking.py                          |  106 ++
+ tests/mcp/test_read_only_registration.py           |   89 ++
+ tests/mcp/test_write_tools.py                      |   53 +
+ tests/test_cli.py                                  |   13 +-
+ tests/test_config.py                               |   13 +-
+ tests/test_consolidate.py                          |   18 +-
+ tests/test_context_contention.py                   |   72 +-
+ tests/test_cycle_detection.py                      |   10 +-
+ <redacted:secret>         |   35 +
+ tests/test_end_session.py                          |   18 +-
+ tests/test_frontmatter_roundtrip_regression.py     |   90 ++
+ tests/test_lint.py                                 |   10 +-
+ tests/test_maintain.py                             |    9 +-
+ tests/test_orphan_detection.py                     |   10 +-
+ tests/test_pre_push_check.py                       |   28 +-
+ tests/test_query.py                                |   21 +-
+ tests/test_session_context.py                      | 1131 +++++++++++++++++
+ tests/test_validation.py                           |   23 +-
+ tests/test_yaml_edge_cases.py                      |   20 +-
+ 97 files changed, 8917 insertions(+), 627 deletions(-)
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m✗ [0mRead <redacted:secret> failed
+[91m[1mError: [0mFile not found: /<redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead ontos/io/yaml.py
+[0m
+[0m$ [0mcd /<redacted:secret> && ls <redacted:secret>/
+B.1-claude-adversarial-r2.md
+B.1-claude-product-r2.md
+B.1-claude-product.md
+B.1-dispatch-intent.yaml
+B.1-dispatch-result.yaml
+B.1-gemini-alignment-agy.md
+B.1-gemini-alignment.md
+B.1-glm-peer-r2.md
+B.1-glm-peer.md
+B.2-dispatch-intent.yaml
+B.2-dispatch-result.yaml
+B.2-gemini-peer.md
+lifecycle-receipt-inventory-final.yaml
+lifecycle-receipt-inventory.yaml
+[0m
+[0m→ [0mRead ontos/core/errors.py
+[0m→ [0mRead ontos/io/files.py
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead ontos/core/schema.py
+[0m→ [0mRead ontos/core/frontmatter_edit.py
+[0m→ [0mRead ontos/commands/log.py
+[0m✱ [0mGrep "read_utf8_for_mutation|read_text|read_bytes"[90m 8 matches[0m
+[0m✱ [0mGrep "E_FILE_EXISTS|E_LOG_EXISTS"[90m 5 matches[0m
+[0m
+[0m$ [0mcd /<redacted:secret> && python3 -c "
+from ontos.core.errors import OntosUserError, OntosInternalError
+# Test immutability
+e = OntosUserError('test', code='E_TEST')
+# Hash
+h = hash(e)
+print(f'hash ok: {h}')
+# Field immutability
+try:
+    e.message = 'mutated'
+    print('IMMUTABILITY FAIL: field was mutated')
+except Exception as exc:
+    print(f'immutability ok: {type(exc).__name__}: {exc}')
+# Runtime attributes allowed (Python 3.14 contextlib compat)
+e.__traceback__ = None
+e.__cause__ = None
+e.__context__ = None
+e.__suppress_context__ = False
+e.__notes__ = []
+print('runtime attrs set ok')
+"
+
+hash ok: 9161830903280781822
+immutability ok: FrozenInstanceError: cannot assign to field 'message'
+runtime attrs set ok
+[0m
+[0m→ [0mRead ontos/commands/rename.py[90m [offset=600, limit=50][0m
+[0m→ [0mRead ontos/commands/retrofit.py[90m [offset=1, limit=40][0m
+[0m→ [0mRead <redacted:secret>
+[0m
+[0m$ [0mcd /<redacted:secret> && git diff --stat e33a31d..6168267 -- ontos/ tests/
+(no output)
+[0m
+[0m$ [0mcd /<redacted:secret> && git log --oneline e33a31d..6168267
+6168267 chore: preserve and retry B.1 review evidence
+82ab894 chore: dispatch v4.7.1 B.1 review board
+b9c81f0 chore: bind hotfix lifecycle to implementation snapshot
+[0m
+[0m✱ [0mGrep "read_utf8_for_mutation|_read_decoded_content|read_bytes|read_text"[90m 3 matches[0m
+[0m
+[0m$ [0mcd /<redacted:secret> && git show e33a31d:ontos/io/files.py | grep -n 'doc_id\|validate_document_id\|path.stem'
+27:    doc_id: Optional[str] = None
+53:            "doc_id": self.doc_id,
+233:    # dict; the loader fills doc.id from path.stem as a fallback, so we
+332:                    doc_id=doc.id
+409:    from ontos.core.schema import validate_document_id
+420:            doc_id=fm.get('id', path.stem),
+436:                doc_id=fm.get('id', path.stem),
+451:    doc_id = validate_document_id(fm.get('id', path.stem))
+463:    aliases = normalize_aliases(fm, doc_id)
+470:        id=doc_id,
+[0m
+[0m$ [0mcd /<redacted:secret> && git show e33a31d:ontos/core/errors.py | grep -n 'dataclass\|frozen\|unsafe_hash\|class Ontos'
+5:from dataclasses import dataclass
+9:@dataclass
+10:class OntosUserError(Exception):
+21:@dataclass
+22:class OntosInternalError(Exception):
+[0m
+[0m$ [0mcd /<redacted:secret> && git show e33a31d:ontos/io/yaml.py | grep -n 'sort_keys\|safe_dump\|def dump_yaml'
+32:def dump_yaml(
+45:    return yaml.safe_dump(
+49:        sort_keys=False,
+[0m
+[0m$ [0mcd /<redacted:secret> && git status --short
+M CHANGELOG.md
+ M CLAUDE.md
+ M Ontos_Context_Map.md
+ M README.md
+ M docs/reference/Ontos_Manual.md
+ M <redacted:secret>
+ M <redacted:secret>
+ M <redacted:secret>
+ M <redacted:secret>
+ M ontos/commands/log.py
+ M ontos/commands/migrate.py
+ M ontos/commands/promote.py
+ M ontos/commands/rename.py
+ M ontos/commands/retrofit.py
+ M ontos/commands/verify.py
+ M ontos/core/errors.py
+ M ontos/core/frontmatter_edit.py
+ M ontos/core/frontmatter_repair.py
+ M ontos/core/instruction_protocol.py
+ M ontos/io/files.py
+ M ontos/io/yaml.py
+ M ontos/mcp/rename_tool.py
+ M ontos/mcp/writes.py
+ M tests/commands/test_log.py
+ M tests/commands/test_rename.py
+ M tests/commands/test_retrofit.py
+ M tests/conftest.py
+ M tests/core/test_schema.py
+ M tests/mcp/test_locking.py
+ M tests/mcp/test_write_tools.py
+ M tests/test_config.py
+ M tests/test_consolidate.py
+ M tests/test_cycle_detection.py
+ M <redacted:secret>
+ M tests/test_end_session.py
+ M tests/test_lint.py
+ M tests/test_maintain.py
+ M tests/test_orphan_detection.py
+ M tests/test_pre_push_check.py
+ M tests/test_query.py
+ M tests/test_validation.py
+ M tests/test_yaml_edge_cases.py
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>/
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+[0m
+[0m$ [0mcd /<redacted:secret> && git diff --stat -- ontos/ tests/
+ontos/commands/log.py                      | 79 ++++++++++++++++++++++++++++--
+ ontos/commands/migrate.py                  |  4 +-
+ ontos/commands/promote.py                  |  4 +-
+ ontos/commands/rename.py                   | 74 ++++++++++++++++------------
+ ontos/commands/retrofit.py                 | 66 +++++++++++++++----------
+ ontos/commands/verify.py                   |  4 +-
+ ontos/core/errors.py                       | 51 +++++++++++++++++--
+ ontos/core/frontmatter_edit.py             | 24 ++++++++-
+ ontos/core/frontmatter_repair.py           |  4 +-
+ ontos/core/instruction_protocol.py         |  6 ++-
+ ontos/io/files.py                          |  6 ++-
+ ontos/io/yaml.py                           |  6 ++-
+ ontos/mcp/rename_tool.py                   |  5 +-
+ ontos/mcp/writes.py                        | 12 ++---
+ tests/commands/test_log.py                 | 31 +++++++++++-
+ tests/commands/test_rename.py              | 28 +++++++++++
+ tests/commands/test_retrofit.py            | 28 +++++++++++
+ tests/conftest.py                          |  5 --
+ tests/core/test_schema.py                  |  6 +++
+ tests/mcp/test_locking.py                  | 20 ++++++++
+ tests/mcp/test_write_tools.py              | 23 +++++++++
+ tests/test_config.py                       | 13 ++---
+ tests/test_consolidate.py                  | 18 ++++---
+ tests/test_cycle_detection.py              | 10 +++-
+ <redacted:secret> | 14 ++++++
+ tests/test_end_session.py                  | 18 +++++--
+ tests/test_lint.py                         | 10 ++--
+ tests/test_maintain.py                     |  9 ++--
+ tests/test_orphan_detection.py             | 10 +++-
+ tests/test_pre_push_check.py               | 19 ++++---
+ tests/test_query.py                        | 21 ++++----
+ tests/test_validation.py                   | 23 +++++----
+ tests/test_yaml_edge_cases.py              | 20 +++++---
+ 33 files changed, 514 insertions(+), 157 deletions(-)
+[0m
+[0m$ [0mcd /<redacted:secret> && git diff -- ontos/core/frontmatter_edit.py
+diff --git a/ontos/core/frontmatter_edit.py b/ontos/core/frontmatter_edit.py
+index 1362820..dfe0251 100644
+--- a/ontos/core/frontmatter_edit.py
++++ b/ontos/core/frontmatter_edit.py
+@@ -14,6 +14,7 @@ from dataclasses import dataclass
+ from pathlib import Path
+ from typing import Any, List, Mapping, Optional, Sequence, Tuple
+ 
++from ontos.core.errors import OntosUserError
+ from ontos.io.yaml import (
+     assert_frontmatter_roundtrip,
+     parse_frontmatter_content,
+@@ -215,9 +216,28 @@ def _append_before_line_ending(line: str, suffix: str) -> str:
+     return line + suffix
+ 
+ 
++class InvalidDocumentEncodingError(OntosUserError):
++    """A mutation target cannot be decoded without changing its bytes."""
++
++    def __init__(self, path: Path):
++        object.__setattr__(self, "path", path)
++        super().__init__(
++            f"{path} is not valid UTF-8 and was not modified. "
++            "Re-save the file as UTF-8, then retry.",
++            code="E_COMMAND_FAILED",
++        )
++
++
++def read_utf8_for_mutation(path: Path) -> str:
++    """Decode a mutation target strictly and attach an actionable path."""
++    try:
++        return path.read_bytes().decode("utf-8")
++    except UnicodeDecodeError as exc:
++        raise InvalidDocumentEncodingError(path) from exc
++
++
+ def _read_decoded_content(path: Path) -> _DecodedContent:
+-    raw = path.read_bytes()
+-    decoded = raw.decode("utf-8")
++    decoded = read_utf8_for_mutation(path)
+     bom = "\ufeff" if decoded.startswith("\ufeff") else ""
+     without_bom = decoded[len(bom) :]
+     prefix_len = len(without_bom) - len(without_bom.lstrip())
+[0m
+[0m$ [0mcd /<redacted:secret> && git diff -- ontos/io/files.py ontos/io/yaml.py ontos/core/errors.py
+diff --git a/ontos/core/errors.py b/ontos/core/errors.py
+index 9bab842..e2f1120 100644
+--- a/ontos/core/errors.py
++++ b/ontos/core/errors.py
+@@ -2,29 +2,70 @@
+ 
+ from __future__ import annotations
+ 
+-from dataclasses import dataclass
++from dataclasses import FrozenInstanceError, dataclass
+ from typing import Optional
+ 
+ 
+-@dataclass
+-class OntosUserError(Exception):
++class _FieldImmutableException(Exception):
++    """Preserve frozen public fields while allowing exception runtime state.
++
++    Python 3.14's ``contextlib`` assigns ``__traceback__`` while propagating an
++    exception through a generator context manager.  A frozen dataclass rejects
++    that assignment and replaces the real error with ``FrozenInstanceError``.
++    Keep the v4.7.0 field-immutability/hash contract while permitting only the
++    metadata attributes owned by ``BaseException``.
++    """
++
++    _ontos_fields_locked = False
++    _runtime_attributes = frozenset(
++        {
++            "__traceback__",
++            "__cause__",
++            "__context__",
++            "__suppress_context__",
++            "__notes__",
++        }
++    )
++
++    def _lock_public_fields(self) -> None:
++        object.__setattr__(self, "_ontos_fields_locked", True)
++
++    def __setattr__(self, name: str, value: object) -> None:
++        if self._ontos_fields_locked and name not in self._runtime_attributes:
++            raise FrozenInstanceError(f"cannot assign to field {name!r}")
++        object.__setattr__(self, name, value)
++
++    def __delattr__(self, name: str) -> None:
++        if self._ontos_fields_locked and name not in self._runtime_attributes:
++            raise FrozenInstanceError(f"cannot delete field {name!r}")
++        object.__delattr__(self, name)
++
++
++@dataclass(unsafe_hash=True)
++class OntosUserError(_FieldImmutableException):
+     """User-facing error caused by invalid input or usage."""
+ 
+     message: str
+     code: str = "E_USER_INPUT"
+     details: Optional[str] = None
+ 
++    def __post_init__(self) -> None:
++        self._lock_public_fields()
++
+     def __str__(self) -> str:
+         return self.message
+ 
+ 
+-@dataclass
+-class OntosInternalError(Exception):
++@dataclass(unsafe_hash=True)
++class OntosInternalError(_FieldImmutableException):
+     """Internal command/runtime error with optional machine-readable code."""
+ 
+     message: str
+     code: str = "E_INTERNAL"
+     details: Optional[str] = None
+ 
++    def __post_init__(self) -> None:
++        self._lock_public_fields()
++
+     def __str__(self) -> str:
+         return self.message
+diff --git a/ontos/io/files.py b/ontos/io/files.py
+index d1c200b..c826051 100644
+--- a/ontos/io/files.py
++++ b/ontos/io/files.py
+@@ -448,7 +448,11 @@ def load_document_from_content(
+         return inner
+ 
+     # Core fields (B1 Canonical Mapping)
+-    doc_id = validate_document_id(fm.get('id', path.stem))
++    # Explicit IDs are a document contract and must obey the documented
++    # grammar.  A missing ID keeps the historical filename-stem fallback:
++    # applying the explicit-ID grammar to an existing filename would make
++    # documents such as ``My Notes.md`` disappear from the canonical loader.
++    doc_id = validate_document_id(fm['id']) if 'id' in fm else path.stem
+     doc_type = normalize_type(fm.get('type'), on_error=report_enum_error("type"))
+     doc_status = normalize_status(fm.get('status'), on_error=report_enum_error("status"))
+     depends_on = normalize_depends_on(
+diff --git a/ontos/io/yaml.py b/ontos/io/yaml.py
+index 402a160..a168447 100644
+--- a/ontos/io/yaml.py
++++ b/ontos/io/yaml.py
+@@ -32,12 +32,16 @@ def parse_yaml(content: str) -> Dict[str, Any]:
+ def dump_yaml(
+     data: Dict[str, Any],
+     default_flow_style: Optional[bool] = False,
++    *,
++    sort_keys: bool = True,
+ ) -> str:
+     """Dump dictionary to YAML string.
+ 
+     Args:
+         data: Dictionary to serialize
+         default_flow_style: If True, use flow style (inline) for collections
++        sort_keys: Preserve the historical public helper default when true.
++            Callers that control field order may opt out explicitly.
+ 
+     Returns:
+         YAML string representation
+@@ -46,7 +50,7 @@ def dump_yaml(
+         data,
+         default_flow_style=default_flow_style,
+         allow_unicode=True,
+-        sort_keys=False,
++        sort_keys=sort_keys,
+     )
+[0m
+[0m$ [0mcd /<redacted:secret> && git diff -- ontos/commands/log.py ontos/commands/retrofit.py ontos/commands/rename.py ontos/mcp/writes.py
+diff --git a/ontos/commands/log.py b/ontos/commands/log.py
+index cc962de..57fe6c4 100644
+--- a/ontos/commands/log.py
++++ b/ontos/commands/log.py
+@@ -8,7 +8,9 @@ Phase 2 Decomposition - Created from Phase2-Implementation-Spec.md Section 4.11
+ """
+ 
+ from __future__ import annotations
++import importlib.util
+ import re
++import sys
+ from dataclasses import dataclass, field
+ from datetime import datetime
+ from pathlib import Path
+@@ -65,6 +67,42 @@ class LogOptions:
+     quiet: bool = False
+ 
+ 
++def _load_legacy_logs_dir(project_root: Path) -> Optional[Path]:
++    """Load the project-local legacy LOGS_DIR without leaking import state."""
++    candidates = (
++        project_root / "ontos_config.py",
++        project_root / ".ontos" / "scripts" / "ontos_config.py",
++    )
++    config_path = next((path for path in candidates if path.is_file()), None)
++    if config_path is None:
++        return None
++
++    module_name = "_ontos_project_legacy_config"
++    spec = importlib.util.spec_from_file_location(module_name, config_path)
++    if spec is None or spec.loader is None:
++        return None
++
++    module = importlib.util.module_from_spec(spec)
++    scripts_dir = str(config_path.parent)
++    previous_defaults = sys.modules.pop("ontos_config_defaults", None)
++    sys.path.insert(0, scripts_dir)
++    try:
++        try:
++            spec.loader.exec_module(module)
++        except ImportError:
++            return None
++        value = getattr(module, "LOGS_DIR", None)
++        return Path(value) if value is not None else None
++    finally:
++        try:
++            sys.path.remove(scripts_dir)
++        except ValueError:  # pragma: no cover - defensive against import hooks
++            pass
++        sys.modules.pop("ontos_config_defaults", None)
++        if previous_defaults is not None:
++            sys.modules["ontos_config_defaults"] = previous_defaults
++
++
+ def create_session_log(
+     project_root: Path,
+     options: EndSessionOptions,
+@@ -112,10 +150,23 @@ def create_session_log(
+     # Combine content
+     content = f"---\n{frontmatter}\n---\n\n{body}"
+     
+-    config = load_project_config(repo_root=project_root)
++    # Preserve the legacy LOGS_DIR precedence from v4.7.0 while adding the
++    # modern .ontos.toml path that the command previously ignored.  Existing
++    # projects with both configurations therefore keep their current archive.
++    legacy_logs_dir = _load_legacy_logs_dir(project_root)
++    if legacy_logs_dir is None:
++        config = load_project_config(repo_root=project_root)
++        configured_logs_dir = Path(config.paths.logs_dir)
++    else:
++        configured_logs_dir = legacy_logs_dir
++
+     # Keep the configured path lexical so the no-follow writer can reject
+     # symlinked path components instead of resolving through them.
+-    logs_dir = project_root / config.paths.logs_dir
++    logs_dir = (
++        configured_logs_dir
++        if configured_logs_dir.is_absolute()
++        else project_root / configured_logs_dir
++    )
+     
+     filename = f"{date_str}_{topic_slug}.md"
+     output_path = logs_dir / filename
+@@ -290,7 +341,14 @@ def log_command(options: LogOptions) -> int:
+             git_info,
+         )
+     except (ConfigError, OSError, ValueError) as exc:
+-        message = f"Unable to prepare session log: {exc}"
++        if isinstance(exc, ConfigError) and "logs_dir" in str(exc):
++            message = (
++                f"Refusing unsafe paths.logs_dir configuration: {exc}. "
++                "Configure [paths].logs_dir as a real directory inside the "
++                "workspace, then retry."
++            )
++        else:
++            message = f"Unable to prepare session log: {exc}"
+         if options.json_output:
+             emit_command_error(
+                 command="log",
+@@ -314,7 +372,7 @@ def log_command(options: LogOptions) -> int:
+             emit_command_error(
+                 command="log",
+                 exit_code=1,
+-                code="E_LOG_EXISTS",
++                code="E_FILE_EXISTS",
+                 message=message,
+                 data={"path": str(output_path)},
+             )
+@@ -322,7 +380,18 @@ def log_command(options: LogOptions) -> int:
+             output.error(message)
+         return 1
+     except (OSError, ValueError, RuntimeError) as exc:
+-        message = f"Unable to create session log {output_path}: {exc}"
++        unsafe_path_failure = any(
++            marker in str(exc).lower()
++            for marker in ("outside the workspace", "symlink", "reparse point")
++        )
++        if unsafe_path_failure:
++            message = (
++                f"Refusing unsafe logs_dir for {output_path}: {exc}. "
++                "Configure LOGS_DIR or [paths].logs_dir as a real directory "
++                "inside the workspace, then retry."
++            )
++        else:
++            message = f"Unable to create session log {output_path}: {exc}"
+         if options.json_output:
+             emit_command_error(
+                 command="log",
+diff --git a/ontos/commands/rename.py b/ontos/commands/rename.py
+index 01a3d69..26c374b 100644
+--- a/ontos/commands/rename.py
++++ b/ontos/commands/rename.py
+@@ -10,6 +10,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
+ from ontos.core.body_refs import MatchType, ZoneType, scan_body_references
+ from ontos.core.context import SessionContext
+ from ontos.core.frontmatter_edit import (
++    InvalidDocumentEncodingError,
+     _DecodedContent,
+     _FrontmatterSplit,
+     _TopLevelField,
+@@ -126,6 +127,7 @@ class RenamePlan:
+ class RenameError:
+     code: str
+     message: str
++    path: Optional[Path] = None
+ 
+ 
+ @dataclass
+@@ -394,11 +396,18 @@ def build_rename_plan(
+     file_plans: List[FilePlan] = []
+     all_warnings: List[RenameWarning] = []
+     for doc in sorted(docs.values(), key=lambda item: str(item.filepath)):
+-        file_plan = _build_file_plan(
+-            path=doc.filepath,
+-            old_id=old_id,
+-            new_id=new_id,
+-        )
++        try:
++            file_plan = _build_file_plan(
++                path=doc.filepath,
++                old_id=old_id,
++                new_id=new_id,
++            )
++        except InvalidDocumentEncodingError as exc:
++            return None, RenameError(
++                code=exc.code,
++                message=str(exc),
++                path=exc.path,
++            )
+         if file_plan is None:
+             continue
+         file_plans.append(file_plan)
+@@ -1273,37 +1282,40 @@ def _emit_error(
+     summary: Optional[RenameSummary] = None,
+ ) -> None:
+     if options.json_output:
++        data = {
++            "mode": mode,
++            "scope": scope.value,
++            "old_id": old_id,
++            "new_id": new_id,
++            "summary": _summary_to_json(
++                summary
++                or RenameSummary(
++                    files_scanned=0,
++                    documents_loaded=0,
++                    planned_files=0,
++                    frontmatter_edits=0,
++                    body_edits=0,
++                    skipped_zone_sightings=0,
++                    warnings=len(warnings),
++                ),
++                applied_files=len(applied_paths or []),
++            ),
++            "files": [],
++            "applied_paths": list(applied_paths or []),
++            "post_apply_warning": POST_APPLY_WARNING if mode == "apply" else None,
++            "partial_commit": {
++                "detected": partial_commit,
++                "message": error.message if partial_commit else None,
++            },
++        }
++        if error.path is not None:
++            data["path"] = str(error.path)
+         emit_command_error(
+             command="rename",
+             exit_code=1,
+             code=error.code,
+             message=error.message,
+-            data={
+-                "mode": mode,
+-                "scope": scope.value,
+-                "old_id": old_id,
+-                "new_id": new_id,
+-                "summary": _summary_to_json(
+-                    summary
+-                    or RenameSummary(
+-                        files_scanned=0,
+-                        documents_loaded=0,
+-                        planned_files=0,
+-                        frontmatter_edits=0,
+-                        body_edits=0,
+-                        skipped_zone_sightings=0,
+-                        warnings=len(warnings),
+-                    ),
+-                    applied_files=len(applied_paths or []),
+-                ),
+-                "files": [],
+-                "applied_paths": list(applied_paths or []),
+-                "post_apply_warning": POST_APPLY_WARNING if mode == "apply" else None,
+-                "partial_commit": {
+-                    "detected": partial_commit,
+-                    "message": error.message if partial_commit else None,
+-                },
+-            },
++            data=data,
+             warnings=[_warning_to_json(item) for item in warnings],
+         )
+         return
+diff --git a/ontos/commands/retrofit.py b/ontos/commands/retrofit.py
+index 66c091d..e9ba7d5 100644
+--- a/ontos/commands/retrofit.py
++++ b/ontos/commands/retrofit.py
+@@ -23,6 +23,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
+ from ontos.core.context import SessionContext
+ from ontos.core.frontmatter import normalize_aliases, normalize_tags
+ from ontos.core.frontmatter_edit import (
++    InvalidDocumentEncodingError,
+     _check_clean_git_state,
+     _index_top_level_fields,
+     _read_decoded_content,
+@@ -114,6 +115,7 @@ class RetrofitPlan:
+ class RetrofitError:
+     code: str
+     message: str
++    path: Optional[Path] = None
+ 
+ 
+ @dataclass
+@@ -250,7 +252,14 @@ def _prepare_plan(
+     file_plans: List[FilePlan] = []
+     all_warnings: List[RetrofitWarning] = _loader_issues_to_warnings(load_result.issues)
+     for doc in sorted(docs.values(), key=lambda item: str(item.filepath)):
+-        file_plan = _build_file_plan(doc)
++        try:
++            file_plan = _build_file_plan(doc)
++        except InvalidDocumentEncodingError as exc:
++            return None, RetrofitError(
++                code=exc.code,
++                message=str(exc),
++                path=exc.path,
++            )
+         if file_plan is None:
+             continue
+         file_plans.append(file_plan)
+@@ -607,7 +616,11 @@ def _detect_dominant_line_ending(lines: Sequence[str]) -> str:
+ def _format_field_block(field_name: str, values: Sequence[str], line_ending: str) -> List[str]:
+     """Serialize one list field through PyYAML and preserve block indentation."""
+     expected = {field_name: list(values)}
+-    canonical = dump_yaml(expected, default_flow_style=False).rstrip("\n")
++    canonical = dump_yaml(
++        expected,
++        default_flow_style=False,
++        sort_keys=False,
++    ).rstrip("\n")
+     assert_frontmatter_roundtrip(expected, canonical)
+ 
+     lines = canonical.splitlines()
+@@ -802,34 +815,37 @@ def _emit_error(
+     partial_commit: bool,
+ ) -> None:
+     if options.json_output:
++        data = {
++            "mode": mode,
++            "scope": scope.value,
++            "summary": _summary_to_json(
++                RetrofitSummary(
++                    files_scanned=0,
++                    documents_loaded=0,
++                    planned_files=0,
++                    inserts=0,
++                    replaces=0,
++                    removes=0,
++                    warnings=len(warnings),
++                )
++            ),
++            "files": [],
++            "warnings": [_warning_to_json(item) for item in warnings],
++            "applied_paths": [],
++            "post_apply_warning": POST_APPLY_WARNING if mode == "apply" else None,
++            "partial_commit": {
++                "detected": partial_commit,
++                "message": error.message if partial_commit else None,
++            },
++        }
++        if error.path is not None:
++            data["path"] = str(error.path)
+         emit_command_error(
+             command="retrofit",
+             exit_code=1,
+             code=error.code,
+             message=error.message,
+-            data={
+-                "mode": mode,
+-                "scope": scope.value,
+-                "summary": _summary_to_json(
+-                    RetrofitSummary(
+-                        files_scanned=0,
+-                        documents_loaded=0,
+-                        planned_files=0,
+-                        inserts=0,
+-                        replaces=0,
+-                        removes=0,
+-                        warnings=len(warnings),
+-                    )
+-                ),
+-                "files": [],
+-                "warnings": [_warning_to_json(item) for item in warnings],
+-                "applied_paths": [],
+-                "post_apply_warning": POST_APPLY_WARNING if mode == "apply" else None,
+-                "partial_commit": {
+-                    "detected": partial_commit,
+-                    "message": error.message if partial_commit else None,
+-                },
+-            },
++            data=data,
+             warnings=[_warning_to_json(item) for item in warnings],
+         )
+         return
+diff --git a/ontos/mcp/writes.py b/ontos/mcp/writes.py
+index 66f1195..543d47f 100644
+--- a/ontos/mcp/writes.py
++++ b/ontos/mcp/writes.py
+@@ -51,7 +51,7 @@ from ontos.core.context import SessionContext
+ from ontos.core.curation import create_scaffold
+ from ontos.core.errors import OntosInternalError, OntosUserError
+ from ontos.core.git import rollback_path
+-from ontos.core.frontmatter_edit import patch_frontmatter_fields
++from ontos.core.frontmatter_edit import patch_frontmatter_fields, read_utf8_for_mutation
+ from ontos.core.locking import (
+     WorkspaceBinding,
+     capture_workspace_binding,
+@@ -368,11 +368,9 @@ def _dispatch(
+         return _user_error_result(exc)
+ 
+     # NOTE on exception flow:
+-    # OntosUserError / OntosInternalError are frozen dataclasses, which on
+-    # Python 3.14+ can't have ``__traceback__`` reassigned by the stdlib
+-    # contextlib machinery. Catching them INSIDE the lock prevents
+-    # ``workspace_lock()`` from re-raising and tripping that assignment.
+-    # See https://github.com/python/cpython (contextmanager __exit__).
++    # Catch domain exceptions inside the lock so error shaping stays local to
++    # the tool operation.  Their public fields remain immutable, while the
++    # exception classes permit BaseException traceback metadata on Python 3.14.
+     result: Optional[CallToolResult] = None
+     try:
+         with workspace_lock(
+@@ -651,7 +649,7 @@ def _promote_document_impl(
+         )
+ 
+     target = Path(doc.filepath)
+-    original = target.read_bytes().decode("utf-8")
++    original = read_utf8_for_mutation(target)
+     frontmatter, body = parse_frontmatter_content(original)
+     if not frontmatter:
+         raise OntosUserError(
+[0m
+[0m$ [0mcd /<redacted:secret> && git diff -- <redacted:secret> | head -80
+diff --git <redacted:secret> <redacted:secret>
+index 0c30df8..bd81ea2 100644
+--- <redacted:secret>
++++ <redacted:secret>
+@@ -27,6 +27,8 @@ scope:
+   allowed_paths:
+     - ".gitattributes"
+     - "CHANGELOG.md"
++    - "CLAUDE.md"
++    - "README.md"
+     - "AGENTS.md"
+     - "Ontos_Context_Map.md"
+     - "ontos/__init__.py"
+@@ -42,6 +44,7 @@ scope:
+     - "ontos/core/errors.py"
+     - "ontos/core/frontmatter_edit.py"
+     - "ontos/core/frontmatter_repair.py"
++    - "ontos/core/instruction_protocol.py"
+     - "ontos/core/git.py"
+     - "ontos/core/locking.py"
+     - "ontos/core/schema.py"
+@@ -57,11 +60,20 @@ scope:
+     - "ontos/mcp/writes.py"
+     - "pyproject.toml"
+     - "tests/commands/test_log.py"
++    - "tests/commands/test_rename.py"
+     - "tests/commands/test_retrofit.py"
+     - "tests/commands/test_stub_parity.py"
+     - "tests/commands/test_verify_parity.py"
+     - "tests/conftest.py"
+     - "tests/test_cli.py"
++    - "tests/test_config.py"
++    - "tests/test_consolidate.py"
++    - "tests/test_cycle_detection.py"
++    - "tests/test_end_session.py"
++    - "tests/test_lint.py"
++    - "tests/test_maintain.py"
++    - "tests/test_orphan_detection.py"
++    - "tests/test_query.py"
+     - "tests/core/test_frontmatter_edit_pipeline.py"
+     - "tests/core/test_git_safety.py"
+     - "tests/core/test_schema.py"
+@@ -75,9 +87,12 @@ scope:
+     - "tests/test_frontmatter_roundtrip_regression.py"
+     - "tests/test_pre_push_check.py"
+     - "tests/test_session_context.py"
++    - "tests/test_validation.py"
++    - "tests/test_yaml_edge_cases.py"
+     - "tests/test_doctor_mcp_probe_regression.py"
+     - "<redacted:secret>"
+     - "<redacted:secret>"
++    - "docs/reference/Ontos_Manual.md"
+     - "<redacted:secret>"
+     - "<redacted:secret>"
+     - "<redacted:secret>"
+[0m
+[0m$ [0mcd /<redacted:secret> && python3 -c "
+from pathlib import Path; import tempfile
+from ontos.io.files import load_documents
+from ontos.io.yaml import parse_frontmatter_content
+
+d = Path(tempfile.mkdtemp())
+for name in ['My Notes.md', '_draft.md', 'café-doc.md', 'good-doc.md']:
+    (d / name).write_text('---\ntype: atom\nstatus: active\n---\n\n# hi\n', encoding='utf-8')
+
+r = load_documents(sorted(d.glob('*.md')), parse_frontmatter_content)
+print('LOADED IDS:', sorted(r.documents.keys()))
+for i in r.issues:
+    print(f'ISSUE code={i.code} path={i.path.name} msg={i.message[:70]}')
+"
+
+Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    from ontos.io.files import load_documents
+  File "/<redacted:secret>", line 26, in <module>
+    from ontos.io.toml import (
+    ...<4 lines>...
+    )
+  File "/<redacted:secret>", line 12, in <module>
+    import tomli_w
+ModuleNotFoundError: No module named 'tomli_w'
+[0m
+[0m$ [0mcd /<redacted:secret> && git diff --exit-code -- ontos/ui/json_output.py; echo "json_output exit: $?"
+json_output exit: 0
+[0m
+[0m$ [0mcd /<redacted:secret> && grep -n 'read_utf8_for_mutation\|read_bytes\|read_text' ontos/core/frontmatter_repair.py ontos/mcp/rename_tool.py ontos/commands/scaffold.py 2>/dev/null
+ontos/core/frontmatter_repair.py:10:from ontos.core.frontmatter_edit import patch_frontmatter_fields, read_utf8_for_mutation
+ontos/core/frontmatter_repair.py:188:    original = read_utf8_for_mutation(path)
+ontos/commands/scaffold.py:147:        content = path.read_text(encoding="utf-8")
+[0m
+[0m$ [0mcd /<redacted:secret> && git diff -- <redacted:secret> | grep -A5 'G-test-2\|clean'
+(no output)
+[0m
+[0m$ [0mcd /<redacted:secret> && PATH="$PWD/.venv/bin:$PATH" .venv/bin/python -c "
+from pathlib import Path; import tempfile
+from ontos.io.files import load_documents
+from ontos.io.yaml import parse_frontmatter_content
+
+d = Path(tempfile.mkdtemp())
+for name in ['My Notes.md', '_draft.md', 'café-doc.md', 'good-doc.md']:
+    (d / name).write_text('---\ntype: atom\nstatus: active\n---\n\n# hi\n', encoding='utf-8')
+
+r = load_documents(sorted(d.glob('*.md')), parse_frontmatter_content)
+print('LOADED IDS:', sorted(r.documents.keys()))
+for i in r.issues:
+    print(f'ISSUE code={i.code} path={i.path.name} msg={i.message[:70]}')
+print('doc count:', len(r.documents))
+"
+
+LOADED IDS: ['My Notes', '_draft', 'café-doc', 'good-doc']
+doc count: 4
+[0m
+[0m$ [0mcd /<redacted:secret> && grep -n '_decode_file_lenient\|_build_file_plan' ontos/commands/rename.py | head -20
+290:    10. Per-document ``_build_file_plan`` loop (sorted by filepath).
+400:            file_plan = _build_file_plan(
+589:        content = _decode_file_lenient(path)
+609:def _decode_file_lenient(path: Path) -> Optional[str]:
+619:def _build_file_plan(*, path: Path, old_id: str, new_id: str) -> Optional[FilePlan]:
+[0m
+[0m→ [0mRead ontos/commands/scaffold.py[90m [offset=135, limit=30][0m
+[0m
+[0m$ [0mcd /<redacted:secret> && git diff -- <redacted:secret> | grep -B2 -A10 'G-test-2\|clean_tree\|git diff --exit-code'
+(no output)
+[0m
+[0m$ [0mcd /<redacted:secret> && grep -n 'read_bytes\|read_text\|read_utf8_for_mutation\|\.decode' ontos/mcp/writes.py ontos/mcp/rename_tool.py
+ontos/mcp/writes.py:54:from ontos.core.frontmatter_edit import patch_frontmatter_fields, read_utf8_for_mutation
+ontos/mcp/writes.py:652:    original = read_utf8_for_mutation(target)
+[0m
+[0m$ [0mcd /<redacted:secret> && git diff -- <redacted:secret> | grep -B3 -A15 'gate_prerequisites\|G-test-2'
+(no output)
+[0m
+[0m$ [0mcd /<redacted:secret> && PATH="$PWD/.venv/bin:$PATH" .venv/bin/python -m pytest -q tests/core/test_schema.py tests/core/test_frontmatter_edit_pipeline.py tests/test_frontmatter_roundtrip_regression.py <redacted:secret> tests/commands/test_log.py tests/commands/test_retrofit.py tests/commands/test_rename.py tests/mcp/test_write_tools.py tests/mcp/test_locking.py 2>&1 | tail -20
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0
+rootdir: /<redacted:secret>
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.14.1
+collected 179 items
+
+tests/core/test_schema.py ........................................       [ 22%]
+tests/core/test_frontmatter_edit_pipeline.py ..............              [ 30%]
+tests/test_frontmatter_roundtrip_regression.py ...........               [ 36%]
+<redacted:secret> ...............               [ 44%]
+tests/commands/test_log.py ..............                                [ 52%]
+tests/commands/test_retrofit.py .......................                  [ 65%]
+tests/commands/test_rename.py ..........................                 [ 79%]
+tests/mcp/test_write_tools.py .............................              [ 96%]
+tests/mcp/test_locking.py .......                                        [100%]
+
+============================= 179 passed in 13.87s =============================
+[0m
+[0m$ [0mcd /<redacted:secret> && git diff -- ontos/mcp/rename_tool.py
+diff --git a/ontos/mcp/rename_tool.py b/ontos/mcp/rename_tool.py
+index 6432605..97c0853 100644
+--- a/ontos/mcp/rename_tool.py
++++ b/ontos/mcp/rename_tool.py
+@@ -360,9 +360,8 @@ def rename_document(
+         return _user_error_result(exc)
+ 
+     # Result holder so we can shape error returns outside the lock while
+-    # keeping OntosUserError/OntosInternalError caught INSIDE the lock
+-    # (Python 3.14 frozen-dataclass __traceback__ gotcha documented in
+-    # writes.py dispatcher comments).
++    # keeping OntosUserError/OntosInternalError caught INSIDE the lock so
++    # error shaping remains local to this operation.
+     result: Optional[CallToolResult] = None
+     try:
+         with workspace_lock(
+[0m
+[0m$ [0mcd /<redacted:secret> && git status --short -- ontos/ tests/ docs/specs/ | head -20
+M <redacted:secret>
+ M ontos/commands/log.py
+ M ontos/commands/migrate.py
+ M ontos/commands/promote.py
+ M ontos/commands/rename.py
+ M ontos/commands/retrofit.py
+ M ontos/commands/verify.py
+ M ontos/core/errors.py
+ M ontos/core/frontmatter_edit.py
+ M ontos/core/frontmatter_repair.py
+ M ontos/core/instruction_protocol.py
+ M ontos/io/files.py
+ M ontos/io/yaml.py
+ M ontos/mcp/rename_tool.py
+ M ontos/mcp/writes.py
+ M tests/commands/test_log.py
+ M tests/commands/test_rename.py
+ M tests/commands/test_retrofit.py
+ M tests/conftest.py
+ M tests/core/test_schema.py
+[0m
+[0m$ [0mcd /<redacted:secret> && git diff -- <redacted:secret> | head -120
+diff --git <redacted:secret> <redacted:secret>
+index f8759be..cca8a6f 100644
+--- <redacted:secret>
++++ <redacted:secret>
+@@ -92,11 +92,12 @@ serializer signature and field order but delegates scalar representation to
+ that foundation. Its compatibility policy for unknown/future schema versions
+ remains identical to the baseline.
+ 
+-The canonical loader validates explicit and filename-derived IDs as strings
+-matching the documented ID grammar. README and template exclusions run before
+-fallback-ID validation. General reads retain replacement decoding for invalid
+-UTF-8; all mutation readers use strict decoding and fail before buffering a
+-write.
++The canonical loader validates explicit IDs as strings matching the documented
++ID grammar. A missing ID retains the baseline filename-stem fallback verbatim,
++including spaces, leading underscores, and Unicode. README and template
++exclusions retain their baseline behavior. General reads keep replacement
++decoding for invalid UTF-8; mutation readers use strict decoding and report the
++affected path and recovery step before buffering a write.
+ 
+ ### Format-preserving mutation
+ 
+@@ -164,7 +165,7 @@ Unit and focused integration tests cover:
+   values, date-like IDs, multiline values, Unicode, and line-delimiter text;
+ - each serializer or mutation consumer, including CLI and MCP log creation;
+ - comments, BOM, CRLF, inline comments, unsupported YAML features, id-less
+-  documents, and duplicate fields;
++  documents, legacy filename-derived IDs, and duplicate fields;
+ - regular predictable temp files, temp symlinks, destination symlinks,
+   outside-root paths, duplicate pending writes, interrupted commits, rollback,
+   mode/umask, and unchanged external files;
+@@ -202,9 +203,16 @@ could appear to succeed:
+   path fails before changing external data.
+ 
+ Malformed UTF-8 continues to load through the baseline read-only loader, but a
+-mutation refuses it. This prevents replacement characters from being written
++mutation refuses it with exit 1 / `E_COMMAND_FAILED`, the affected path, and a
++UTF-8 recovery step. This prevents replacement characters from being written
+ back while avoiding a patch-release change to the visible document set.
+ 
++Legacy project-local `ontos_config.py` `LOGS_DIR` retains its v4.7.0
++precedence. In its absence, `log` now honors `[paths].logs_dir`; existing logs
++are not moved, and custom directories must remain inside the workspace. A
++custom log directory outside the configured scan scope is writable but is not
++automatically added to map/query scope.
++
+ Rollback is a single revert of the hotfix PR. No schema migration or generated
+ artifact rewrite is required. The transaction pipeline itself restores
+ already-applied paths on commit failure.
+@@ -213,7 +221,7 @@ already-applied paths on commit failure.
+ 
+ | Risk | Severity | Mitigation |
+ |---|---|---|
+-| Central writer rejects a legitimate filesystem layout | High | Characterization tests for regular files, modes, umask, nested paths, moves, deletes, POSIX/macOS aliases, and Windows backend seams |
++| Central writer rejects a legitimate filesystem layout | High | Characterization tests for regular files, modes, umask, nested paths, moves, deletes, POSIX/macOS aliases, and Windows backend seams; validate bulk mutations in a scratch clone before rollout |
+ | Serializer changes scalar style | Medium | Semantic equality is the contract; existing simple-list and field-order assertions remain, while golden command outputs stay at baseline |
+ | Selective split accidentally imports v5 behavior | High | Exact-source parity gates for CLI, envelope, link/graph, MCP schemas, stub, and golden paths |
+ | MCP outer and inner locks diverge | High | Typed guard identity, focused rename/write-tool regressions, and contention tests |
+[0m
+[0m→ [0mRead ontos/commands/scaffold.py[90m [limit=60, offset=160][0m
+[0m
+[0m$ [0mcd /<redacted:secret> && PATH="$PWD/.venv/bin:$PATH" .venv/bin/python -c "
+from pathlib import Path; import tempfile, subprocess, sys, os
+
+d = Path(tempfile.mkdtemp())
+(d / '.ontos.toml').write_text('[paths]\ndocs_dir = \"docs\"\n', encoding='utf-8')
+docs = d / 'docs'; docs.mkdir()
+bad = docs / 'bad.md'
+bad.write_bytes(b'---\ntype: atom\nstatus: active\n---\n\n# bad \xff\xfe doc\n')
+good = docs / 'good.md'; good.write_text('---\ntype: atom\nstatus: active\n---\n\n# good\n', encoding='utf-8')
+
+env = dict(os.environ, PATH=f'{d}/.venv/bin:' + os.environ.get('PATH',''))
+r = subprocess.run(
+    [sys.executable, '-m', 'ontos', 'retrofit', '--obsidian', '--apply', '--json'],
+    cwd=str(d), capture_output=True, text=True, timeout=30,
+    env=env,
+)
+print('exit:', r.returncode)
+print('stdout:', r.stdout[:600])
+print('stderr:', r.stderr[:300] if r.stderr else '(empty)')
+print('bad bytes unchanged:', bad.read_bytes() == b'---\ntype: atom\nstatus: active\n---\n\n# bad \xff\xfe doc\n')
+"
+
+exit: 1
+stdout: {"schema_version": "3.4", "command": "retrofit", "status": "error", "exit_code": 1, "message": "Git working tree must be clean for --apply.", "data": {"mode": "apply", "scope": "docs", "summary": {"files_scanned": 0, "documents_loaded": 0, "planned_files": 0, "applied_files": 0, "inserts": 0, "replaces": 0, "removes": 0, "warnings": 0}, "files": [], "warnings": [], "applied_paths": [], "post_apply_warning": "Run 'ontos map' to regenerate derived artifacts.", "partial_commit": {"detected": false, "message": null}}, "warnings": [], "error": {"code": "dirty_git_state"}}
+
+stderr: (empty)
+bad bytes unchanged: True
+[0m
+[0m$ [0mcd /<redacted:secret> && PATH="$PWD/.venv/bin:$PATH" .venv/bin/python -c "
+from pathlib import Path; import tempfile, subprocess, sys, os
+
+d = Path(tempfile.mkdtemp())
+subprocess.run(['git','init','-q'], cwd=str(d), check=True)
+subprocess.run(['git','config','user.email','t@t.com'], cwd=str(d), check=True)
+subprocess.run(['git','config','user.name','t'], cwd=str(d), check=True)
+(d / '.ontos.toml').write_text('[paths]\ndocs_dir = \"docs\"\n', encoding='utf-8')
+docs = d / 'docs'; docs.mkdir()
+bad = docs / 'bad.md'
+bad.write_bytes(b'---\ntype: atom\nstatus: active\n---\n\n# bad \xff\xfe doc\n')
+good = docs / 'good.md'; good.write_text('---\ntype: atom\nstatus: active\n---\n\n# good doc\n', encoding='utf-8')
+subprocess.run(['git','add','.'], cwd=str(d), check=True)
+subprocess.run(['git','commit','-q','-m','init'], cwd=str(d), check=True)
+
+env = dict(os.environ, PATH=f'{d}/.venv/bin:' + os.environ.get('PATH',''))
+r = subprocess.run(
+    [sys.executable, '-m', 'ontos', 'retrofit', '--obsidian', '--apply', '--json'],
+    cwd=str(d), capture_output=True, text=True, timeout=30, env=env,
+)
+print('exit:', r.returncode)
+import json
+try:
+    j = json.loads(r.stdout.strip().splitlines()[-1])
+    print('code:', j.get('error',{}).get('code'))
+    print('msg:', j.get('message','')[:120])
+    print('data.path:', j.get('data',{}).get('path'))
+    print('schema:', j.get('schema_version'))
+    print('has result key:', 'result' in j)
+except Exception as e:
+    print('parse err:', e)
+    print('raw:', r.stdout[:400])
+print('bad bytes unchanged:', bad.read_bytes() == b'---\ntype: atom\nstatus: active\n---\n\n# bad \xff\xfe doc\n')
+"
+
+exit: 1
+code: E_COMMAND_FAILED
+msg: /<redacted:secret> is not valid UTF-8 and was not modified
+data.path: /<redacted:secret>
+schema: 3.4
+has result key: False
+bad bytes unchanged: True
+[0m
+[0m$ [0mcd /<redacted:secret> && grep -rn 'InvalidDocumentEncodingError\|malformed\|invalid.*utf\|0xff\|UnicodeDecodeError\|encoding.*refuse' tests/ 2>/dev/null | head -20
+tests/test_env_cli.py:76:        (tmp_path / "package.json").write_text("{ malformed }")
+Binary file <redacted:secret> matches
+Binary file <redacted:secret> matches
+tests/core/test_cursor_mcp.py:71:def test_inspect_cursor_ontos_config_warns_on_malformed_json(tmp_path: Path) -> None:
+tests/core/test_cursor_mcp.py:76:    config_path.write_text("{ invalid json\n", encoding="utf-8")
+tests/io/test_toml_roundtrip.py:25:    malformed = tmp_path / "bad.toml"
+tests/io/test_toml_roundtrip.py:26:    malformed.write_text("not = [valid", encoding="utf-8")
+tests/io/test_toml_roundtrip.py:28:    assert load_config_if_exists(malformed) is None
+tests/io/test_config_phase3.py:97:    def test_load_project_config_raises_on_malformed_toml(self, tmp_path):
+tests/io/test_load_frontmatter_contract.py:9:def test_load_frontmatter_malformed_yaml_returns_none_and_records_issue(tmp_path: Path):
+Binary file <redacted:secret> matches
+Binary file <redacted:secret> matches
+Binary file <redacted:secret> matches
+Binary file <redacted:secret> matches
+Binary file <redacted:secret> matches
+Binary file <redacted:secret> matches
+tests/mcp/test_search.py:23:            raise sqlite3.OperationalError("malformed MATCH expression")
+tests/mcp/test_portfolio.py:170:def test_search_fts_rejects_malformed_queries(tmp_path):
+tests/mcp/test_portfolio.py:215:        "FTS5: malformed thing",
+tests/mcp/test_portfolio.py:216:        "malformed match expression near \"alpha\"",
+[0m
+[0m$ [0mcd /<redacted:secret> && git diff -- tests/commands/test_retrofit.py tests/commands/test_rename.py tests/commands/test_log.py <redacted:secret>
+diff --git a/tests/commands/test_log.py b/tests/commands/test_log.py
+index 2b731b4..c9a9a09 100644
+--- a/tests/commands/test_log.py
++++ b/tests/commands/test_log.py
+@@ -84,6 +84,21 @@ class TestCreateSessionLog:
+         )
+         assert path.parent == (tmp_path / "var" / "audit-logs")
+ 
++    def test_preserves_legacy_logs_dir_precedence(self, tmp_path, monkeypatch):
++        _init_git_project(tmp_path)
++        (tmp_path / "ontos_config.py").write_text(
++            "LOGS_DIR = 'legacy/session-logs'\n",
++            encoding="utf-8",
++        )
++
++        _, path = create_session_log(
++            tmp_path,
++            EndSessionOptions(topic="legacy"),
++            {"branch": "main"},
++        )
++
++        assert path.parent == tmp_path / "legacy" / "session-logs"
++
+     def test_frontmatter_round_trips_adversarial_values(self, tmp_path):
+         _init_git_project(tmp_path)
+         options = EndSessionOptions(
+@@ -189,7 +204,7 @@ class TestLogCommandCLI:
+         payload = json.loads(capsys.readouterr().out)
+         assert payload["schema_version"] == "3.4"
+         assert "result" not in payload
+-        assert payload["error"]["code"] == "E_LOG_EXISTS"
++        assert payload["error"]["code"] == "E_FILE_EXISTS"
+ 
+     @pytest.mark.skipif(not hasattr(os, "symlink"), reason="symlinks unavailable")
+     def test_default_logs_dir_symlink_is_rejected_before_resolution(
+@@ -215,9 +230,23 @@ class TestLogCommandCLI:
+         result = _run_ontos(tmp_path, "log", "--auto")
+ 
+         assert result.returncode == 1
++        assert "Configure LOGS_DIR or [paths].logs_dir" in result.stderr
+         assert sentinel.read_text(encoding="utf-8") == "do not change"
+         assert list(outside_logs.glob("*.md")) == []
+ 
++    def test_outside_configured_logs_dir_has_actionable_error(self, tmp_path):
++        _init_git_project(tmp_path)
++        subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True)
++        (tmp_path / ".ontos.toml").write_text(
++            "[ontos]\nversion = '3.0'\n[paths]\nlogs_dir = '../outside'\n",
++            encoding="utf-8",
++        )
++        result = _run_ontos(tmp_path, "log", "--auto")
++
++        assert result.returncode == 1
++        assert "Refusing unsafe paths.logs_dir configuration" in result.stderr
++        assert "inside the workspace" in result.stderr
++
+     @pytest.mark.skipif(not hasattr(os, "symlink"), reason="symlinks unavailable")
+     def test_archive_marker_symlink_preserves_legacy_success_contract(
+         self,
+diff --git a/tests/commands/test_rename.py b/tests/commands/test_rename.py
+index bfffbce..84fa8b1 100644
+--- a/tests/commands/test_rename.py
++++ b/tests/commands/test_rename.py
+@@ -169,6 +169,34 @@ def test_rename_dirty_git_apply_rejected_but_dry_run_allowed(tmp_path: Path):
+     assert "DRY RUN" in dry_run_result.stdout
+ 
+ 
++def test_rename_invalid_utf8_is_actionable_and_byte_unchanged(tmp_path: Path):
++    _init_repo(tmp_path)
++    path = tmp_path / "docs" / "bad-encoding.md"
++    original = (
++        b"---\nid: old_id\ntype: atom\nstatus: active\n---\n\n"
++        b"See old_id and invalid byte \xff.\n"
++    )
++    path.write_bytes(original)
++    _init_git_repo(tmp_path)
++
++    result = _run_ontos(
++        tmp_path,
++        "--json",
++        "rename",
++        "old_id",
++        "new_id",
++        "--apply",
++    )
++
++    assert result.returncode == 1
++    payload = json.loads(result.stdout)
++    assert payload["schema_version"] == "3.4"
++    assert payload["error"]["code"] == "E_COMMAND_FAILED"
++    assert payload["data"]["path"] == str(path)
++    assert "Re-save the file as UTF-8" in payload["message"]
++    assert path.read_bytes() == original
++
++
+ def test_rename_dry_run_json_includes_line_context_and_skipped_zones(tmp_path: Path):
+     _init_repo(tmp_path)
+     _write_doc(tmp_path / "docs" / "target.md", "old_id")
+diff --git a/tests/commands/test_retrofit.py b/tests/commands/test_retrofit.py
+index a413d2a..9255e59 100644
+--- a/tests/commands/test_retrofit.py
++++ b/tests/commands/test_retrofit.py
+@@ -600,6 +600,34 @@ def <redacted:secret>(
+     assert "tags:" in updated
+ 
+ 
++def <redacted:secret>(tmp_path: Path):
++    _init_repo(tmp_path)
++    path = tmp_path / "docs" / "bad-encoding.md"
++    original = (
++        b"---\nid: bad_encoding\ntype: atom\nstatus: active\n"
++        b"concepts: [safe]\n---\n\ninvalid: \xff\n"
++    )
++    path.write_bytes(original)
++    _init_git_repo(tmp_path)
++
++    result = _run_ontos(
++        tmp_path,
++        "--json",
++        "retrofit",
++        "--obsidian",
++        "--apply",
++    )
++
++    assert result.returncode == 1
++    payload = json.loads(result.stdout)
++    assert payload["schema_version"] == "3.4"
++    assert payload["error"]["code"] == "E_COMMAND_FAILED"
++    assert payload["data"]["path"] == str(path)
++    assert str(path) in payload["message"]
++    assert "Re-save the file as UTF-8" in payload["message"]
++    assert path.read_bytes() == original
++
++
+ # ---------------------------------------------------------------------------
+ # Scope
+ # ---------------------------------------------------------------------------
+diff --git <redacted:secret> <redacted:secret>
+index 8437e71..4837f78 100644
+--- <redacted:secret>
++++ <redacted:secret>
+@@ -81,6 +81,20 @@ def test_batch_loader_reports_non_string_id_as_parse_error(tmp_path):
+     assert result.issues[0].code == "parse_error"
+     assert "Document id must be a string" in result.issues[0].message
+ 
++
++@pytest.mark.parametrize("filename", ["My Notes.md", "_draft.md", "café-doc.md"])
++def test_loader_preserves_filename_stem_fallback_contract(tmp_path, filename):
++    path = tmp_path / filename
++    path.write_text(
++        "---\ntype: atom\nstatus: active\n---\nBody",
++        encoding="utf-8",
++    )
++
++    result = load_documents([path], parse_frontmatter_content)
++
++    assert list(result.documents) == [path.stem]
++    assert result.issues == []
++
+ def test_loader_duplicate_contract_deterministic_first_wins(tmp_path):
+     """Verify that lexicographically first path wins for collisions."""
+     docs_dir = tmp_path / "docs"
+[0m
+[0m→ [0mRead ontos/commands/scaffold.py[90m [limit=50, offset=220][0m
+[0m
+[0m$ [0mcd /<redacted:secret> && PATH="$PWD/.venv/bin:$PATH" .venv/bin/python -c "
+from ontos.core.errors import OntosUserError, OntosInternalError
+import pickle, copy
+# Test pickling
+e = OntosUserError('test', code='E_TEST')
+try:
+    data = pickle.dumps(e)
+    e2 = pickle.loads(data)
+    print(f'pickle ok: {e2.message}, code={e2.code}')
+except Exception as exc:
+    print(f'pickle FAIL: {type(exc).__name__}: {exc}')
+# Test copy
+e3 = copy.deepcopy(e)
+print(f'deepcopy ok: {e3.message}')
+# Test with InvalidDocumentEncodingError
+from pathlib import Path
+from ontos.core.frontmatter_edit import InvalidDocumentEncodingError
+ie = InvalidDocumentEncodingError(Path('/tmp/bad.md'))
+print(f'code: {ie.code}, hash: {hash(ie)}, path: {ie.path}')
+print(f'msg: {ie}')
+try:
+    ie.path = Path('/other')
+    print('IMMUT FAIL: path was changed')
+except Exception as exc:
+    print(f'path immutability ok: {type(exc).__name__}')
+# Equality/hash consistency
+e4 = OntosUserError('test', code='E_TEST')
+print(f'eq: {e == e4}, hash_eq: {hash(e) == hash(e4)}')
+"
+
+Traceback (most recent call last):
+  File "<string>", line 13, in <module>
+    e3 = copy.deepcopy(e)
+  File "/opt/homebrew/Cellar/python@<redacted:secret>", line 157, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/opt/homebrew/Cellar/python@<redacted:secret>", line 242, in _reconstruct
+    y.__setstate__(state)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/<redacted:secret>", line 35, in __setattr__
+    raise FrozenInstanceError(f"cannot assign to field {name!r}")
+dataclasses.FrozenInstanceError: cannot assign to field 'message'
+pickle FAIL: FrozenInstanceError: cannot assign to field 'message'
+[0m
+[0m$ [0mcd /<redacted:secret> && PATH="$PWD/.venv/bin:$PATH" .venv/bin/python -c "
+from dataclasses import dataclass, FrozenInstanceError
+import pickle, copy, sys
+print(f'Python {sys.version}')
+
+# Test 1: Baseline-style frozen dataclass
+@dataclass(frozen=True)
+class FrozenErr(Exception):
+    message: str = 'test'
+    code: str = 'E_TEST'
+
+fe = FrozenErr('hello')
+try:
+    fe2 = pickle.loads(pickle.dumps(fe))
+    print(f'frozen pickle: OK ({fe2.message})')
+except Exception as exc:
+    print(f'frozen pickle: FAIL ({type(exc).__name__}: {exc})')
+try:
+    fe3 = copy.deepcopy(fe)
+    print(f'frozen deepcopy: OK ({fe3.message})')
+except Exception as exc:
+    print(f'frozen deepcopy: FAIL ({type(exc).__name__}: {exc})')
+
+# Test 2: Working-tree OntosUserError
+from ontos.core.errors import OntosUserError
+ue = OntosUserError('hello', code='E_TEST')
+try:
+    ue2 = pickle.loads(pickle.dumps(ue))
+    print(f'ONTOS pickle: OK ({ue2.message})')
+except Exception as exc:
+    print(f'ONTOS pickle: FAIL ({type(exc).__name__}: {exc})')
+try:
+    ue3 = copy.deepcopy(ue)
+    print(f'ONTOS deepcopy: OK ({ue3.message})')
+except Exception as exc:
+    print(f'ONTOS deepcopy: FAIL ({type(exc).__name__}: {exc})')
+"
+
+Python 3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]
+frozen pickle: FAIL (FrozenInstanceError: cannot assign to field 'message')
+frozen deepcopy: FAIL (FrozenInstanceError: cannot assign to field 'message')
+ONTOS pickle: FAIL (FrozenInstanceError: cannot assign to field 'message')
+ONTOS deepcopy: FAIL (FrozenInstanceError: cannot assign to field 'message')
+[0m
+[0m$ [0mcd /<redacted:secret> && git show bf91b42:ontos/core/errors.py 2>/dev/null | head -25
+"""Shared error taxonomy for CLI command routing."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Optional
+
+
+@dataclass(frozen=True)
+class OntosUserError(Exception):
+    """User-facing error caused by invalid input or usage."""
+
+    message: str
+    code: str = "E_USER_INPUT"
+    details: Optional[str] = None
+
+    def __str__(self) -> str:
+        return self.message
+
+
+@dataclass(frozen=True)
+class OntosInternalError(Exception):
+    """Internal command/runtime error with optional machine-readable code."""
+
+    message: str
+[0m
+[0m$ [0mcd /<redacted:secret> && git diff -- CHANGELOG.md | head -60
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 4517683..7d7216b 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -32,7 +32,11 @@ taxonomy.
+   changes.
+ - **Session logs** — logs use the configured `logs_dir`, safe YAML
+   serialization, and exclusive creation. A same-day slug collision returns an
+-  error instead of overwriting the existing log.
++  existing `E_FILE_EXISTS` error instead of overwriting the earlier log.
++  Legacy project-local `ontos_config.py` `LOGS_DIR` keeps precedence; when no
++  legacy override exists, `[paths].logs_dir` is honored. Existing logs are not
++  moved automatically. Keep a custom directory inside the configured scan
++  scope if its logs should appear in maps and queries.
+ - **Doctor command execution (#147)** — repository-controlled Cursor MCP
+   configuration is inspected without executing an arbitrary configured
+   command; managed Ontos launchers continue to receive the initialize probe.
+@@ -45,7 +49,16 @@ taxonomy.
+   `result` object or new exit-code taxonomy is included.
+ - Invalid UTF-8 remains replacement-decoded on general read-only loading for
+   patch compatibility. Every mutation path decodes strictly and refuses to
+-  rewrite malformed input; broad loader rejection is deferred to v5.0.0.
++  rewrite malformed input with exit 1 / `E_COMMAND_FAILED`, the affected path,
++  and a UTF-8 recovery step; broad loader rejection is deferred to v5.0.0.
++- Filename-derived fallback IDs remain verbatim for compatibility. Only an
++  explicit `id:` is required to be a string matching the documented grammar.
++- Public exception fields retain their immutable/hashable behavior while
++  permitting Python 3.14 traceback metadata, so context-manager propagation
++  no longer masks the original domain error.
++- The central transaction and serializer-backed mutation paths changed in this
++  hotfix. Validate high-value bulk mutations in a scratch clone before release
++  rollout, especially on unusual network or linked filesystem layouts.
+ - Generated-map timestamp behavior, CLI flag semantics, graph/link output,
+   MCP `graph_stats.by_type`, and the accepted stub type set are unchanged.
+[0m

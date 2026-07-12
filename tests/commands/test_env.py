@@ -181,9 +181,19 @@ def test_invalid_workspace_path(temp_workspace):
     assert "not a directory" in output
 
 
-def test_cli_aliases_parity_and_warning(capsys):
+def test_cli_aliases_parity_and_warning(capsys, tmp_path, monkeypatch):
     """Test X-R2: tree and validate aliases work and warn."""
     from ontos.cli import create_parser
+
+    # Both legacy aliases execute map handlers. Keep their generated output in
+    # a disposable project instead of rewriting this repository's tracked map.
+    (tmp_path / ".ontos.toml").write_text(
+        "[ontos]\nversion = '3.0'\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "docs").mkdir()
+    monkeypatch.chdir(tmp_path)
+
     parser = create_parser()
 
     # Test 'tree' alias

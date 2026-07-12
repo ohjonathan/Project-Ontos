@@ -1,0 +1,15 @@
+**Verdict: Request changes.** Artifact written to `docs/reviews/project-ontos-v4-7-1-hotfix/B.1-claude-product-r2.md`.
+
+The core of the hotfix is good product work. The frontmatter corruption fix lands without touching the user's visible contract — `ontos/ui/json_output.py` is byte-identical to baseline, so the schema-3.4 envelope and exit codes that scripts depend on all survive. The exclusion list is fully respected across all nine named files, and the `E_LOG_EXISTS` error copy is genuinely exemplary: it names the conflicting path and offers two concrete recoveries.
+
+What blocks it is that the log-directory resolution got rewritten without carrying the baseline's configuration contract along with it, and this shows up as two related defects:
+
+**The silent one (the real problem).** Baseline `log.py` read `LOGS_DIR` from the legacy `ontos_config.py` module. The new code replaces that with `load_project_config(...).paths.logs_dir`, which reads only `.ontos.toml` and does *not* bridge the legacy module — even though `ontos/core/paths.py` still implements that legacy precedence chain for other surfaces, and the changelog states legacy config is "still supported with deprecation notice." So a user on legacy config with a custom `LOGS_DIR` has their logs quietly written to `docs/logs` instead, with no warning and exit 0, while their prior logs sit in the old directory. Their archive splits in two and the command looks like it worked. That's the exact class of quiet data outcome this hotfix exists to eliminate, and the spec's §7 still claims "No migration is required."
+
+**The loud one.** Baseline explicitly supported an absolute logs directory; now an absolute or symlinked `logs_dir` hits the workspace-containment guard and surfaces internal invariant language ("operation path is outside the workspace") through a generic `E_COMMAND_FAILED` wrapper. The rejection itself is defensible and the spec arguably covers it — the copy is what needs fixing.
+
+I also flagged as non-blocking that `errors.py` drops `frozen=True` on both public exception types with no mention in the spec or changelog, which is worth a word from the author in a release whose stated boundary is contract parity.
+
+Both blocking issues live in roughly six lines of `create_session_log` plus a changelog/spec disclosure, so I'd expect this to clear on one revision.
+
+On evidence: I ran 115 focused tests (log, schema, session context, roundtrip regression) via the worktree venv and all passed. Per the timebox I did not run the full suite, so spec acceptance criteria 2, 3, 4, and 7 — clean-tree verification, golden-baseline byte comparison, full-suite pass — are unverified by this review and need confirmation elsewhere.

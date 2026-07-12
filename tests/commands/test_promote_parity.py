@@ -1,4 +1,5 @@
 """Parity tests for promote command."""
+import json
 import sys
 
 import subprocess
@@ -68,3 +69,60 @@ def test_promote_fails_on_duplicates(tmp_path):
     
     assert result.returncode != 0
     assert "Duplicate ID 'collision' found" in result.stderr
+
+
+def test_promote_invalid_utf8_refuses_without_rewrite(tmp_path):
+    (tmp_path / ".ontos").mkdir()
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    target = docs_dir / "bad.md"
+    original = (
+        b"---\nid: bad_doc\ntype: atom\nstatus: scaffold\n"
+        b"curation_level: 0\n---\n\ninvalid: \xff\n"
+    )
+    target.write_bytes(original)
+
+    result = subprocess.run(
+        [sys.executable, "-m", "ontos.cli", "--json", "promote", "--all-ready"],
+        capture_output=True,
+        text=True,
+        env={**os.environ, "PYTHONPATH": os.getcwd()},
+        cwd=tmp_path,
+    )
+
+    assert result.returncode == 1
+    payload = json.loads(result.stdout)
+    assert payload["error"]["code"] == "E_COMMAND_FAILED"
+    assert str(target) in payload["message"]
+    assert "Re-save the file as UTF-8" in payload["message"]
+    assert target.read_bytes() == original
+
+
+def test_promote_updates_quoted_curation_key_without_duplicate(tmp_path):
+    (tmp_path / ".ontos").mkdir()
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    target = docs_dir / "quoted.md"
+    target.write_text(
+        "---\n"
+        "id: quoted_promotion\n"
+        "type: atom\n"
+        "status: scaffold\n"
+        "'curation_level': 0\n"
+        "ontos_schema: '2.2'\n"
+        "---\n",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [sys.executable, "-m", "ontos.cli", "promote", "--all-ready"],
+        capture_output=True,
+        text=True,
+        env={**os.environ, "PYTHONPATH": os.getcwd()},
+        cwd=tmp_path,
+    )
+
+    assert result.returncode == 0, result.stderr
+    updated = target.read_text(encoding="utf-8")
+    assert "'curation_level': 0" not in updated
+    assert updated.count("curation_level:") == 1

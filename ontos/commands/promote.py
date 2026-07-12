@@ -3,7 +3,11 @@
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple
-from ontos.core.schema import serialize_frontmatter
+from ontos.core.frontmatter_edit import (
+    InvalidDocumentEncodingError,
+    patch_frontmatter_fields,
+    read_utf8_for_mutation,
+)
 from ontos.core.types import DocumentData, DocumentType
 from ontos.core.curation import (
     CurationLevel,
@@ -123,27 +127,25 @@ def apply_promotion(
 ) -> bool:
     """Apply promotion to a document."""
     try:
-        content = filepath.read_text(encoding='utf-8')
-        # Splitting logic to get body
-        parts = content.split('---', 2)
-        if len(parts) < 3:
-            output.error(f"Invalid format in {filepath}")
-            return False
-            
-        body = parts[2]
-        
+        content = read_utf8_for_mutation(filepath)
         new_fm, summary_seed = promote_to_full(
             frontmatter,
             depends_on=depends_on,
             concepts=concepts
         )
         
-        fm_yaml = serialize_frontmatter(new_fm)
-        new_content = f"---\n{fm_yaml}\n---{body}"
+        updates = {
+            key: value
+            for key, value in new_fm.items()
+            if key not in frontmatter or frontmatter[key] != value
+        }
+        new_content = patch_frontmatter_fields(content, updates)
         
         ctx.buffer_write(filepath, new_content)
         output.success(f"Promoted: {frontmatter.get('id')} → Level 2")
         return True
+    except InvalidDocumentEncodingError:
+        raise
     except Exception as e:
         output.error(f"Failed to promote {filepath}: {e}")
         return False
@@ -229,7 +231,19 @@ def _run_promote_command(options: PromoteOptions) -> Tuple[int, str]:
             
         output.info(f"Batch promoting {len(ready_docs)} ready document(s)...")
         for f, fm, info in ready_docs:
-            if apply_promotion(f, fm, fm.get('depends_on'), fm.get('concepts'), ctx, output):
+            try:
+                promoted = apply_promotion(
+                    f,
+                    fm,
+                    fm.get('depends_on'),
+                    fm.get('concepts'),
+                    ctx,
+                    output,
+                )
+            except InvalidDocumentEncodingError as exc:
+                output.error(str(exc))
+                return 1, str(exc)
+            if promoted:
                 success_count += 1
         if success_count > 0:
             try:
@@ -287,7 +301,19 @@ def _run_promote_command(options: PromoteOptions) -> Tuple[int, str]:
             output.info("  Skipped.")
             continue
             
-        if apply_promotion(f, fm, depends_on, concepts, ctx, output):
+        try:
+            promoted = apply_promotion(
+                f,
+                fm,
+                depends_on,
+                concepts,
+                ctx,
+                output,
+            )
+        except InvalidDocumentEncodingError as exc:
+            output.error(str(exc))
+            return 1, str(exc)
+        if promoted:
             success_count += 1
 
     if success_count > 0:

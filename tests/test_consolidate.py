@@ -4,13 +4,16 @@ import os
 import pytest
 from unittest.mock import patch, mock_open
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts')))
-
-from ontos_consolidate import (
-    extract_summary,
-    append_to_decision_history,
-    HISTORY_LEDGER_HEADER
-)
+_LEGACY_SCRIPTS = os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts'))
+sys.path.insert(0, _LEGACY_SCRIPTS)
+try:
+    from ontos_consolidate import (
+        extract_summary,
+        append_to_decision_history,
+        HISTORY_LEDGER_HEADER,
+    )
+finally:
+    sys.path.remove(_LEGACY_SCRIPTS)
 
 def test_extract_summary_from_goal_section():
     content = "## Goal\nSummary line.\n\n## Next"
@@ -85,4 +88,3 @@ def test_append_targets_history_ledger_not_consolidation_log():
         
         # Verify commit was NOT called (we passed ctx, so it's not owned)
         mock_ctx.commit.assert_not_called()
-

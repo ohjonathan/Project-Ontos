@@ -1,0 +1,1 @@
+I'll start by examining the repository state, the commits in question, and locating the relevant documentation (spec, B.3 verdict, B.2 raw findings, focused tests).

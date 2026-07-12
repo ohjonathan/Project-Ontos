@@ -24,6 +24,10 @@ def test_stub_help_parity():
 
 def test_stub_file_creation_parity(tmp_path):
     """Stub command creates file with correct frontmatter."""
+    (tmp_path / ".ontos.toml").write_text(
+        "[ontos]\nversion = '3.0'\n",
+        encoding="utf-8",
+    )
     output_file = tmp_path / "test_stub.md"
     
     # Run native command
@@ -35,7 +39,8 @@ def test_stub_file_creation_parity(tmp_path):
          "--output", str(output_file)],
         capture_output=True,
         text=True,
-        env=os.environ.copy()
+        env=os.environ.copy(),
+        cwd=tmp_path,
     )
 
     assert result.returncode == 0

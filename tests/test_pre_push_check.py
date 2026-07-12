@@ -4,18 +4,22 @@ import os
 import pytest
 from unittest.mock import patch, MagicMock
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts')))
-
-from ontos_pre_push_check import (
-    MARKER_FILE,
-    get_change_stats,
-    suggest_related_docs,
-    main
-)
+_LEGACY_SCRIPTS = os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts'))
+sys.path.insert(0, _LEGACY_SCRIPTS)
+try:
+    from ontos_pre_push_check import (
+        MARKER_FILE,
+        get_change_stats,
+        suggest_related_docs,
+        main,
+    )
+finally:
+    sys.path.remove(_LEGACY_SCRIPTS)
 
 def test_marker_exists_allows_push():
     with patch("os.path.exists", return_value=True), \
-         patch("os.remove") as mock_remove:
+         patch("os.remove") as mock_remove, \
+         patch("ontos_pre_push_check.regenerate_context_map"):
         assert main() == 0
         mock_remove.assert_called_with(MARKER_FILE)
 
@@ -49,7 +53,8 @@ def test_small_change_shows_soft_message():
     # So it should return 1.
     with patch("os.path.exists", return_value=False), \
          patch("ontos_pre_push_check.get_change_stats", return_value=(1, 5, ["file"])), \
-         patch("ontos_pre_push_check.SMALL_CHANGE_THRESHOLD", 20):
+         patch("ontos_pre_push_check.SMALL_CHANGE_THRESHOLD", 20), \
+         patch("ontos_pre_push_check.regenerate_context_map"):
         # We also need to patch open or such if main does print? 
         # main calls print functions. We don't need to assert output, just return code.
         assert main() == 1
@@ -57,5 +62,6 @@ def test_small_change_shows_soft_message():
 def test_advisory_mode_always_allows():
     with patch("os.path.exists", return_value=False), \
          patch("ontos_pre_push_check.get_change_stats", return_value=(1, 100, ["file"])), \
-         patch("ontos_pre_push_check.ENFORCE_ARCHIVE_BEFORE_PUSH", False):
+         patch("ontos_pre_push_check.ENFORCE_ARCHIVE_BEFORE_PUSH", False), \
+         patch("ontos_pre_push_check.regenerate_context_map"):
         assert main() == 0

@@ -5,11 +5,19 @@ import pytest
 from unittest.mock import patch, MagicMock, mock_open
 from datetime import datetime
 
-# Add scripts directory to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts')))
-
-import ontos_end_session
-from ontos_end_session import TEMPLATES, generate_auto_slug, validate_topic_slug, create_log_file, validate_concepts
+_LEGACY_SCRIPTS = os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts'))
+sys.path.insert(0, _LEGACY_SCRIPTS)
+try:
+    import ontos_end_session
+    from ontos_end_session import (
+        TEMPLATES,
+        generate_auto_slug,
+        validate_topic_slug,
+        create_log_file,
+        validate_concepts,
+    )
+finally:
+    sys.path.remove(_LEGACY_SCRIPTS)
 
 def test_adaptive_template_chore_has_two_sections():
     assert len(TEMPLATES['chore']['sections']) == 2

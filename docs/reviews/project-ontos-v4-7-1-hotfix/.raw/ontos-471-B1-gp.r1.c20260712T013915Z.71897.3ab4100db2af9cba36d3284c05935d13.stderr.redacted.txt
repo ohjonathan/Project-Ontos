@@ -1,0 +1,830 @@
+[0m
+> build · glm-5.2
+[0m
+[0m$ [0mgit status --short --branch && echo "---HEAD---" && git rev-parse HEAD && echo "---BRANCH---" && git rev-parse --abbrev-ref HEAD
+## audit/v4.7.1-hotfix...origin/main [ahead 3]
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>/
+?? <redacted:secret>
+?? <redacted:secret>
+---HEAD---
+82ab8944cd44b8cbe5d3fd9b3e0397577b4de493
+---BRANCH---
+audit/v4.7.1-hotfix
+[0m
+[0m$ [0mgit log --oneline -15
+82ab894 chore: dispatch v4.7.1 B.1 review board
+b9c81f0 chore: bind hotfix lifecycle to implementation snapshot
+e33a31d fix: isolate v4.7.1 integrity hotfix
+bf91b42 fix(logs): add required `concepts` to the two logs that broke main
+6d7934f chore(ontos): archive session logs and regenerate context artifacts
+e259ee7 Merge pull request #160 from <redacted:secret>
+3ccc75a fix(ontos): treat docs/handoffs/** as intentional root artifacts
+a6a1ce8 docs(audit): preserve in-progress #146 serializer-corruption lifecycle
+41c008b docs(meta): open the audit-remediation meta-cycle coordination artifacts
+4cec473 docs(audit): #147 doctor-rce lifecycle packet, with its evidence gaps stated
+03c36e6 fix(security): validate the whole MCP probe argv, not just the launcher
+c8672e9 Merge pull request #159 from <redacted:secret>
+a423c34 Update llm-dev-framework to v2.0.1
+a848770 Update llm-dev-framework to v2.0.0
+0b4186a Merge pull request #145 from <redacted:secret>
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m
+[0m$ [0mgit diff --stat bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95..e33a31d0c0040de9afa1f8efe22246c798534edd
+AGENTS.md                                      |   12 +-
+ CHANGELOG.md                                   |   45 +
+ Ontos_Context_Map.md                           |   52 +-
+ <redacted:secret> |  300 ++++++
+ <redacted:secret>   |   51 +
+ <redacted:secret>     |  377 +++++++
+ ontos/__init__.py                              |    2 +-
+ ontos/commands/init.py                         |    1 +
+ ontos/commands/log.py                          |  125 ++-
+ ontos/commands/migrate.py                      |   12 +-
+ ontos/commands/promote.py                      |   20 +-
+ ontos/commands/rename.py                       |   25 +-
+ ontos/commands/retrofit.py                     |   73 +-
+ ontos/commands/scaffold.py                     |   42 +-
+ ontos/commands/verify.py                       |   41 +-
+ ontos/core/context.py                          | 1322 +++++++++++++++++++++++-
+ ontos/core/errors.py                           |    4 +-
+ ontos/core/frontmatter_edit.py                 |  217 +++-
+ ontos/core/frontmatter_repair.py               |   47 +-
+ ontos/core/git.py                              |   51 +-
+ ontos/core/locking.py                          |  596 +++++++++++
+ ontos/core/schema.py                           |  108 +-
+ ontos/io/files.py                              |   25 +-
+ ontos/io/git.py                                |    6 +-
+ ontos/io/toml.py                               |   53 +-
+ ontos/io/yaml.py                               |   75 +-
+ ontos/mcp/locking.py                           |   90 +-
+ ontos/mcp/portfolio.py                         |   41 +-
+ ontos/mcp/rename_tool.py                       |   45 +-
+ ontos/mcp/server.py                            |   45 +-
+ ontos/mcp/tools.py                             |    6 +
+ ontos/mcp/writes.py                            |   60 +-
+ pyproject.toml                                 |    2 +-
+ tests/commands/test_log.py                     |  111 ++
+ tests/commands/test_retrofit.py                |   21 +-
+ tests/commands/test_stub_parity.py             |    7 +-
+ tests/commands/test_verify_parity.py           |    9 +-
+ tests/conftest.py                              |    5 +
+ tests/core/test_frontmatter_edit_pipeline.py   |  121 +++
+ tests/core/test_git_safety.py                  |   41 +
+ tests/core/test_schema.py                      |   25 +
+ tests/io/test_git_empty_diff.py                |   29 +
+ tests/io/test_toml_roundtrip.py                |   38 +
+ tests/mcp/test_locking.py                      |   86 ++
+ tests/mcp/test_read_only_registration.py       |   89 ++
+ tests/mcp/test_write_tools.py                  |   30 +
+ tests/test_cli.py                              |   13 +-
+ tests/test_context_contention.py               |   72 +-
+ <redacted:secret>     |   21 +
+ tests/test_frontmatter_roundtrip_regression.py |   90 ++
+ tests/test_pre_push_check.py                   |    9 +-
+ tests/test_session_context.py                  | 1131 ++++++++++++++++++++
+ 52 files changed, 5436 insertions(+), 483 deletions(-)
+[0m
+[0m→ [0mRead CHANGELOG.md
+[0m
+[0m$ [0mpython3 -c "import ontos; print('version:', ontos.__version__)"; python3 -c "from pathlib import Path; import ontos; assert ontos.__version__=='4.7.1'; assert 'version = \"4.7.1\"' in Path('pyproject.toml').read_text(); assert '__version__ = \"4.7.1\"' in Path('ontos/__init__.py').read_text(); print('version sources OK 4.7.1')"; test ! -e ontos/command_registry.py && echo "no command_registry.py OK"
+version: 4.7.1
+version sources OK 4.7.1
+no command_registry.py OK
+[0m
+[0m$ [0mpython3 -c "import io,json,sys; from ontos.ui.json_output import emit_command_success,emit_command_error; b=io.StringIO(); old=sys.stdout; sys.stdout=b; emit_command_success(command='gate',exit_code=0,message='ok'); emit_command_error(command='gate',exit_code=1,code='E',message='bad'); sys.stdout=old; expected={'schema_version','command','status','exit_code','message','data','warnings','error'}; rows=[json.loads(x) for x in b.getvalue().splitlines()]; assert all(set(r)==expected and r['schema_version']=='3.4' and 'result' not in r for r in rows); print('schema 3.4 OK')"
+schema 3.4 OK
+[0m
+[0m$ [0mecho "=== contract parity (should exit 0, no output) ==="; git diff --exit-code bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95 -- ontos/cli.py ontos/ui/json_output.py ontos/commands/link_check.py ontos/commands/map.py ontos/commands/stub.py ontos/commands/activate.py ontos/core/body_refs.py ontos/core/graph.py ontos/core/link_diagnostics.py ontos/mcp/schemas.py tests/golden tests/commands/golden tests/ui/test_json_output.py tests/commands/test_link_check.py tests/core/test_graph.py tests/core/test_link_diagnostics.py tests/mcp/test_workspace_overview.py && echo "EXIT $?: contract parity OK"; echo "=== whitespace check ==="; git diff --check bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95 && echo "EXIT $?: whitespace OK"; echo "=== merge-base ==="; test "$(git merge-base bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95 HEAD)" = "bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95" && echo "merge-base OK"
+=== contract parity (should exit 0, no output) ===
+EXIT 0: contract parity OK
+=== whitespace check ===
+EXIT 0: whitespace OK
+=== merge-base ===
+merge-base OK
+[0m
+[0m$ [0mls -la .venv/bin/python 2>/dev/null && echo "venv python OK" || echo "NO VENV"; python3 -c "import ontos; print('ontime import OK, path:', ontos.__file__)"
+lrwxr-xr-x@ 1 jonathanoh  wheel  10 Jul 11 18:14 .venv/bin/python -> python3.14
+venv python OK
+ontime import OK, path: /<redacted:secret>
+[0m
+[0m→ [0mRead ontos/core/locking.py
+[0m
+[0m$ [0mPATH="$PWD/.venv/bin:$PATH" .venv/bin/python -m pytest -q tests/core/test_schema.py tests/core/test_frontmatter_edit_pipeline.py tests/test_frontmatter_roundtrip_regression.py tests/test_session_context.py tests/test_context_contention.py tests/mcp/test_locking.py tests/mcp/test_write_tools.py tests/mcp/test_read_only_registration.py tests/commands/test_log.py tests/commands/test_retrofit.py tests/test_doctor_mcp_probe_regression.py 2>&1 | tail -20
+platform darwin -- Python 3.14.6, pytest-8.4.2, pluggy-1.6.0
+rootdir: /<redacted:secret>
+configfile: pyproject.toml
+plugins: cov-5.0.0, anyio-4.14.1
+collected 206 items
+
+tests/core/test_schema.py .......................................        [ 18%]
+tests/core/test_frontmatter_edit_pipeline.py ..............              [ 25%]
+tests/test_frontmatter_roundtrip_regression.py ...........               [ 31%]
+tests/test_session_context.py .......................................... [ 51%]
+...........                                                              [ 56%]
+tests/test_context_contention.py ..........                              [ 61%]
+tests/mcp/test_locking.py ......                                         [ 64%]
+tests/mcp/test_write_tools.py ............................               [ 78%]
+tests/mcp/test_read_only_registration.py ......                          [ 81%]
+tests/commands/test_log.py ............                                  [ 86%]
+tests/commands/test_retrofit.py ......................                   [ 97%]
+tests/test_doctor_mcp_probe_regression.py .....                          [100%]
+
+============================= 206 passed in 19.08s =============================
+[0m
+[0m→ [0mRead ontos/core/context.py
+[0m
+[0m$ [0mPATH="$PWD/.venv/bin:$PATH" .venv/bin/python -m pytest -q 2>&1 | tail -25
+tests/test_map_filter.py ...                                             [ 87%]
+tests/test_orphan_detection.py ............                              [ 88%]
+tests/test_pre_commit_check.py .......................                   [ 89%]
+tests/test_pre_push_check.py ......                                      [ 90%]
+tests/test_query.py .......                                              [ 90%]
+tests/test_session_context.py .......................................... [ 93%]
+...........                                                              [ 93%]
+tests/test_suggestions.py ..........                                     [ 94%]
+tests/test_v284_refactor.py .....                                        [ 94%]
+tests/test_validation.py ..............................                  [ 96%]
+tests/test_validation_concepts_a1.py .....                               [ 97%]
+tests/test_yaml_edge_cases.py ........................                   [ 98%]
+tests/ui/test_json_output.py .....................                       [100%]
+
+=============================== warnings summary ===============================
+.ontos/scripts/ontos_end_session.py:25
+  /<redacted:secret>:25: FutureWarning: Legacy ontos_config.py detected; this path is deprecated and will be removed in a future release. Use .ontos.toml.
+    REQUIRE_SOURCE_IN_LOGS = resolve_config('REQUIRE_SOURCE_IN_LOGS', True)
+
+tests/ui/test_json_output.py::TestConvenienceFunctions::test_emit_error
+  /<redacted:secret>:148: DeprecationWarning: emit_error() is deprecated; use emit_command_error().
+    emit_error("Failed", "E999")
+
+-- Docs: https://<redacted:secret>
+============ 1550 passed, 2 skipped, 2 warnings in 63.55s (0:01:03) ============
+[0m
+[0m→ [0mRead ontos/core/context.py[90m [offset=1284][0m
+[0m→ [0mRead ontos/mcp/server.py
+[0m
+[0m$ [0mecho "=== git status after full test run (tracked changes?) ==="; git status --porcelain --untracked-files=no; echo "EXIT $? (empty = clean tree, criterion 3)"; echo "=== golden baselines unchanged vs main ==="; git diff --exit-code bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95 -- tests/golden/baselines tests/commands/golden && echo "EXIT $?: goldens unchanged"
+=== git status after full test run (tracked changes?) ===
+ M Ontos_Context_Map.md
+EXIT 0 (empty = clean tree, criterion 3)
+=== golden baselines unchanged vs main ===
+EXIT 0: goldens unchanged
+[0m
+[0m→ [0mRead ontos/io/yaml.py
+[0m→ [0mRead tests/mcp/test_read_only_registration.py
+[0m
+[0m$ [0mecho "=== diff of Ontos_Context_Map.md after test run ==="; git diff -- Ontos_Context_Map.md | head -60; echo "=== was it clean at HEAD before tests? checking diff HEAD ==="; git diff --exit-code HEAD -- Ontos_Context_Map.md > /dev/null 2>&1 && echo "clean at HEAD" || echo "MODIFIED vs HEAD"
+=== diff of Ontos_Context_Map.md after test run ===
+diff --git a/Ontos_Context_Map.md b/Ontos_Context_Map.md
+index f57a8b9..856806e 100644
+--- a/Ontos_Context_Map.md
++++ b/Ontos_Context_Map.md
+@@ -5,15 +5,15 @@ status: complete
+ ontos_map_version: 2
+ generated_by: ontos map
+ generator_version: 4.7.1
+-generated_at: 2026-07-11 18:33:59
++generated_at: 2026-07-11 18:40:28
+ scope: docs
+-documents_loaded: 177
++documents_loaded: 178
+ ---
+ 
+ # project-ontos-v4.7.1-hotfix Tiered Context Map
+ 
+ > Auto-generated by Ontos 4.7.1
+-> Last updated: 2026-07-11 18:33:59
++> Last updated: 2026-07-11 18:40:28
+ 
+ This document provides a tiered index of the knowledge graph for AI orientation.
+ - **Tier 1: Essential Context**: (~2k tokens) Project summary, recent work, and architecture.
+@@ -24,8 +24,8 @@ This document provides a tiered index of the knowledge graph for AI orientation.
+ 
+ ### Project Summary
+ - **Name:** project-ontos-v4.7.1-hotfix
+-- **Doc Count:** 177
+-- **Last Updated:** 2026-07-12 01:33:59 UTC
++- **Doc Count:** 178
++- **Last Updated:** 2026-07-12 01:40:28 UTC
+ 
+ ### Recent Activity
+ | Log | Status | Summary |
+@@ -214,6 +214,7 @@ This document provides a tiered index of the knowledge graph for AI orientation.
+ | <redacted:secret> | `project-ontos-issue-119-triage-input` | review | active |
+ | <redacted:secret> | `project-ontos-issue-119-triage-report` | review | complete |
+ | <redacted:secret> | `project-ontos-issue-119-triage-verdict` | review | complete |
++| <redacted:secret> | `B.1-gemini-alignment` | unknown | unknown |
+ | <redacted:secret> | `project_ontos_v44_b3_verdict` | log | archived |
+ | <redacted:secret> | `project_ontos_v44_d3_verdict` | log | archived |
+ | <redacted:secret> | `project_ontos_v44_d4_fix_summary` | log | archived |
+@@ -272,6 +273,7 @@ This document provides a tiered index of the knowledge graph for AI orientation.
+ 
+ ## Dependency Tree
+ 
++- **B.1-gemini-alignment**
+ - **<redacted:secret>**
+ - **<redacted:secret>**
+ - **<redacted:secret>**
+@@ -281,7 +283,6 @@ This document provides a tiered index of the knowledge graph for AI orientation.
+ - **<redacted:secret>**
+ - **<redacted:secret>**
+ - **<redacted:secret>**
+-- **<redacted:secret>**
+ 
+ ## Recent Activity
+ 
+=== was it clean at HEAD before tests? checking diff HEAD ===
+MODIFIED vs HEAD
+[0m
+[0m✱ [0mGrep "Ontos_Context_Map"[90m in . · 30 matches[0m
+[0m✱ [0mGrep "run_command|subprocess.*map|ontos.*map|generate.*map|context_map.*write|write.*Ontos_Context"[90m in . · 86 matches[0m
+[0m→ [0mRead ontos/core/frontmatter_edit.py
+[0m
+[0m$ [0mecho "=== pyproject pytest config ==="; grep -n -A12 "tool.pytest\|testpaths\|\[tool.pytest" pyproject.toml; echo "=== conftest.py ==="; cat tests/conftest.py
+=== pyproject pytest config ===
+63:[tool.pytest.ini_options]
+64:testpaths = ["tests"]
+65-python_files = ["test_*.py"]
+66-python_functions = ["test_*"]
+67-addopts = "-v --tb=short"
+68-markers = [
+69-    "legacy: tests for pre-v3.0 legacy script compatibility layer (.ontos/scripts/tests/)",
+70-]
+71-
+72-[tool.coverage.run]
+73-source = ["ontos"]
+74-omit = ["tests/*", ".ontos/scripts/tests/*"]
+75-
+76-[tool.coverage.report]
+=== conftest.py ===
+"""Pytest configuration and shared fixtures."""
+
+import os
+import sys
+import shutil
+import subprocess
+import warnings
+import pytest
+
+# Import the packaged namespace before exposing legacy script modules. Without
+# this pin, test collection order can make `.ontos/scripts/ontos` shadow the
+# real package and silently exercise a different implementation.
+import ontos as _ontos_package  # noqa: F401
+
+# Add bundled scripts directory to path for legacy imports
+# (Tests import directly from script names like ontos_generate_context_map)
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), '.ontos', 'scripts'))
+
+
+# v2.9.2: Configure warning filters for deprecation warnings
+def pytest_configure(config):
+    """Configure pytest warning filters."""
+    # Show FutureWarnings from ontos modules
+    warnings.filterwarnings(
+        "always",
+        category=FutureWarning,
+        module=r"ontos.*"
+    )
+    
+    # Suppress the ontos_lib deprecation warning in tests
+    # (tests may intentionally import from ontos_lib to test the shim)
+    warnings.filterwarnings(
+        "ignore",
+        message="Importing from 'ontos_lib' is deprecated",
+        category=FutureWarning,
+    )
+
+
+# =============================================================================
+# DUAL-MODE TESTING INFRASTRUCTURE (v2.5.2+)
+# =============================================================================
+
+
+def pytest_addoption(parser):
+    """Add --mode option to pytest CLI."""
+    parser.addoption(
+        "--mode",
+        action="store",
+        default="contributor",
+        choices=["contributor", "user"],
+        help="Run tests in 'contributor' or 'user' mode"
+    )
+
+
+@pytest.fixture
+def project_mode(request):
+    """Get the current test mode."""
+    return request.config.getoption("--mode")
+
+
+@pytest.fixture
+def mode_aware_project(request, tmp_path):
+    """
+    Create a project fixture based on the current mode.
+    - contributor: Uses .ontos-internal/ structure
+    - user: Uses docs/ structure (simulates user installation)
+    """
+    mode = request.config.getoption("--mode")
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    if mode == "contributor":
+        # Contributor mode: copy full project structure
+        shutil.copytree(
+            os.path.join(project_root, '.ontos-internal'),
+            tmp_path / '.ontos-internal'
+        )
+        shutil.copytree(
+            os.path.join(project_root, '.ontos'),
+            tmp_path / '.ontos'
+        )
+    else:
+        # User mode: simulate fresh installation
+        shutil.copytree(
+            os.path.join(project_root, '.ontos'),
+            tmp_path / '.ontos'
+        )
+        shutil.copy(
+            os.path.join(project_root, 'ontos_init.py'),
+            tmp_path
+        )
+        # Run init to create user structure
+        result = subprocess.run(
+            [sys.executable, 'ontos_init.py', '--non-interactive'],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True
+        )
+        
+        # Explicit assertions on ALL expected directories (per Codex review)
+        assert (tmp_path / 'docs' / 'logs').exists(), "Missing docs/logs/"
+        assert (tmp_path / 'docs' / 'strategy').exists(), "Missing docs/strategy/"
+        assert (tmp_path / 'docs' / 'strategy' / 'proposals').exists(), "Missing docs/strategy/proposals/"
+        assert (tmp_path / 'docs' / 'archive').exists(), "Missing docs/archive/"
+        assert (tmp_path / 'docs' / 'archive' / 'logs').exists(), "Missing docs/archive/logs/"
+        assert (tmp_path / 'docs' / 'archive' / 'proposals').exists(), "Missing docs/archive/proposals/"
+        assert (tmp_path / 'docs' / 'reference').exists(), "Missing docs/reference/"
+        
+        # Assert starter files
+        assert (tmp_path / 'docs' / 'strategy' / 'decision_history.md').exists(), "Missing decision_history.md"
+        assert (tmp_path / 'docs' / 'reference' / 'Common_Concepts.md').exists(), "Missing Common_Concepts.md"
+
+    return tmp_path
+
+
+@pytest.fixture
+def docs_dir(project_mode):
+    """Get the docs directory based on mode."""
+    if project_mode == "contributor":
+        return ".ontos-internal"
+    return "docs"
+
+
+@pytest.fixture
+def temp_docs_dir(tmp_path):
+    """Create a temporary docs directory."""
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    return docs_dir
+
+
+@pytest.fixture
+def valid_kernel_doc(temp_docs_dir):
+    """Create a valid kernel document."""
+    doc = temp_docs_dir / "mission.md"
+    doc.write_text("""---
+id: mission
+type: kernel
+status: active
+depends_on: []
+---
+# Mission Statement
+
+Our mission is to build great software.
+""")
+    return doc
+
+
+@pytest.fixture
+def valid_atom_doc(temp_docs_dir):
+    """Create a valid atom document."""
+    doc = temp_docs_dir / "api_spec.md"
+    doc.write_text("""---
+id: api_spec
+type: atom
+status: active
+depends_on: [mission]
+---
+# API Specification
+
+Technical details here.
+""")
+    return doc
+
+
+@pytest.fixture
+def doc_without_frontmatter(temp_docs_dir):
+    """Create a document without frontmatter."""
+    doc = temp_docs_dir / "no_frontmatter.md"
+    doc.write_text("""# Just a Title
+
+No YAML frontmatter here.
+""")
+    return doc
+
+
+@pytest.fixture
+def circular_docs(temp_docs_dir):
+    """Create documents with circular dependencies."""
+    doc_a = temp_docs_dir / "doc_a.md"
+    doc_a.write_text("""---
+id: doc_a
+type: atom
+depends_on: [doc_b]
+---
+# Document A
+""")
+
+    doc_b = temp_docs_dir / "doc_b.md"
+    doc_b.write_text("""---
+id: doc_b
+type: atom
+depends_on: [doc_a]
+---
+# Document B
+""")
+    return doc_a, doc_b
+
+
+@pytest.fixture
+def broken_link_doc(temp_docs_dir):
+    """Create a document with a broken link."""
+    doc = temp_docs_dir / "broken.md"
+    doc.write_text("""---
+id: broken
+type: atom
+depends_on: [nonexistent_doc]
+---
+# Broken Link Document
+""")
+    return doc
+
+
+@pytest.fixture
+def architecture_violation_docs(temp_docs_dir):
+    """Create documents with architectural violation."""
+    # Kernel depending on atom (violation)
+    kernel = temp_docs_dir / "bad_kernel.md"
+    kernel.write_text("""---
+id: bad_kernel
+type: kernel
+depends_on: [some_atom]
+---
+# Bad Kernel
+""")
+
+    atom = temp_docs_dir / "some_atom.md"
+    atom.write_text("""---
+id: some_atom
+type: atom
+depends_on: []
+---
+# Some Atom
+""")
+    return kernel, atom
+
+
+@pytest.fixture
+def template_doc(temp_docs_dir):
+    """Create a template document (should be skipped)."""
+    doc = temp_docs_dir / "_template.md"
+    doc.write_text("""---
+id: _template
+type: atom
+---
+# Template
+""")
+    return doc
+
+
+@pytest.fixture
+def log_doc(temp_docs_dir):
+    """Create a log document in logs directory."""
+    logs_dir = temp_docs_dir / "logs"
+    logs_dir.mkdir()
+    doc = logs_dir / "2025-01-01_session.md"
+    doc.write_text("""---
+id: log_20250101_session
+type: log
+status: active
+depends_on: []
+---
+# Session Log
+""")
+    return doc
+[0m
+[0m→ [0mRead tests/golden/compare_golden_master.py[90m [offset=90, limit=70][0m
+[0m→ [0mRead tests/test_pre_commit_check.py[90m [limit=75, offset=225][0m
+[0m→ [0mRead tests/test_pre_push_check.py
+[0m
+[0m$ [0mecho "=== files in tests/golden (collected test_*.py?) ==="; ls tests/golden/ 2>/dev/null; echo "=== reset map to HEAD to reproduce cleanly ==="; git checkout -- Ontos_Context_Map.md && echo "reset OK"; echo "=== grep: subprocess map/generate against repo root ==="; rg -n "ontos_generate_context_map|regenerate_context_map|'map'|\"map\"" tests/ -g '*.py' | rg -v "tmp_path|fixture|cwd=tmp|cwd=tmp_path|compare_golden|capture_golden|test_pre_commit_check" | head -40
+=== files in tests/golden (collected test_*.py?) ===
+README.md
+__init__.py
+__pycache__
+baselines
+capture_golden_master.py
+compare_golden_master.py
+fixtures
+test_golden_master.py
+=== reset map to HEAD to reproduce cleanly ===
+reset OK
+=== grep: subprocess map/generate against repo root ===
+tests/test_cli_phase4.py:69:            [sys.executable, "-m", "ontos", "map", "--help"],
+tests/test_cli.py:33:        assert 'map' in result.stdout
+tests/test_cli.py:79:        'init', 'map', 'log', 'doctor', 'maintain', 'link-check', 'agents', 'export', 'mcp', 'hook', 'agent-export',
+tests/test_cli.py:123:        result = self.run_cli('--quiet', 'map', '--help')
+tests/test_cli.py:169:            'init', 'map', 'log', 'doctor', 'maintain', 'link-check', 'agents', 'export', 'mcp',
+tests/test_map_compact.py:311:    args = parser.parse_args(["map", "--compact"])
+tests/test_map_compact.py:319:    args = parser.parse_args(["map", "--compact", "tiered"])
+tests/test_lint.py:12:from ontos_generate_context_map import lint_data_quality
+tests/test_lint.py:188:        from ontos_generate_context_map import load_common_concepts
+tests/test_pre_push_check.py:19:         patch("ontos_pre_push_check.regenerate_context_map"):
+tests/test_pre_push_check.py:54:         patch("ontos_pre_push_check.regenerate_context_map"):
+tests/test_pre_push_check.py:63:         patch("ontos_pre_push_check.regenerate_context_map"):
+tests/test_yaml_edge_cases.py:5:from ontos_generate_context_map import (
+tests/test_yaml_edge_cases.py:175:    @patch('<redacted:secret>', DEFAULT_ALLOWED_ORPHAN_TYPES)
+tests/test_orphan_detection.py:5:from ontos_generate_context_map import validate_dependencies
+tests/test_orphan_detection.py:14:    @patch('<redacted:secret>', DEFAULT_ALLOWED_ORPHAN_TYPES)
+tests/test_orphan_detection.py:112:    @patch('<redacted:secret>', DEFAULT_ALLOWED_ORPHAN_TYPES)
+tests/test_orphan_detection.py:221:        with patch('<redacted:secret>', 5):
+tests/test_cycle_detection.py:4:from ontos_generate_context_map import validate_dependencies
+tests/conftest.py:16:# (Tests import directly from script names like ontos_generate_context_map)
+tests/commands/test_json_contract_a3.py:64:        ("--json", "map"),
+tests/test_validation.py:29:from ontos_generate_context_map import validate_v26_status, get_status_indicator
+tests/test_validation.py:148:        with patch('ontos_generate_context_map.get_git_last_modified', return_value=old_date):
+tests/test_validation.py:163:        with patch('ontos_generate_context_map.get_git_last_modified', return_value=fresh_date):
+tests/test_validation.py:232:        with patch('ontos_generate_context_map.load_decision_history_entries', return_value={
+tests/test_validation.py:283:        with patch('ontos_generate_context_map.load_decision_history_entries', return_value={
+tests/test_validation.py:304:        with patch('ontos_generate_context_map.load_decision_history_entries', return_value={
+tests/test_validation.py:336:        with patch('ontos_generate_context_map.load_decision_history_entries', return_value={
+tests/test_validation.py:358:        with patch('ontos_generate_context_map.load_decision_history_entries', return_value={
+tests/test_maintain.py:18:            assert mock_run.call_args_list[1][0][0] == 'ontos_generate_context_map.py'
+tests/commands/test_agentic_activation_resilience.py:67:    assert payload["data"]["map"]["refreshed"] is True
+tests/commands/test_agentic_activation_resilience.py:91:    assert _run(root, "map").returncode == 0
+tests/commands/test_scan_scope_integration.py:51:        ("map", "--help"),
+tests/commands/test_map.py:17:        [sys.executable, "-m", "ontos", "map", "--help"],
+tests/commands/test_map.py:383:        [sys.executable, "-m", "ontos", "--json", "map", *extra],
+[0m
+[0m→ [0mRead tests/golden/test_golden_master.py
+[0m
+[0m$ [0mcd /<redacted:secret>
+git checkout -- Ontos_Context_Map.md 2>/dev/null
+echo "### running tests/test_pre_commit_check.py alone"
+.venv/bin/python -m pytest -q tests/test_pre_commit_check.py 2>&1 | tail -3
+echo "status after pre_commit:"; git status --porcelain -- Ontos_Context_Map.md | head -1 || true
+git checkout -- Ontos_Context_Map.md 2>/dev/null
+echo "### running tests/commands/test_map.py alone"
+.venv/bin/python -m pytest -q tests/commands/test_map.py 2>&1 | tail -3
+echo "status after test_map:"; git status --porcelain -- Ontos_Context_Map.md | head -1 || true
+git checkout -- Ontos_Context_Map.md 2>/dev/null
+### running tests/test_pre_commit_check.py alone
+tests/test_pre_commit_check.py .......................                   [100%]
+
+============================== 23 passed in 0.62s ==============================
+status after pre_commit:
+### running tests/commands/test_map.py alone
+tests/commands/test_map.py ..........................                    [100%]
+
+============================== 26 passed in 0.52s ==============================
+status after test_map:
+[0m
+[0m$ [0mcd /<redacted:secret>
+echo "=== broad grep: map/generate run as subprocess, look for cwd REPO/project root ==="
+rg -n "subprocess.run\(|Popen\(" tests/ -g '*.py' | rg "map|generate_context" | rg -v "tmp_path|fixture|cwd=tmp" | head -30
+echo "=== grep for regenerate_context_map real (non-patched) call sites in scripts ==="
+rg -n "regenerate_context_map|write_context_map|context_map.*write|Ontos_Context_Map" .ontos/scripts/ -g '*.py' | head -30
+=== broad grep: map/generate run as subprocess, look for cwd REPO/project root ===
+tests/commands/test_map.py:16:    result = subprocess.run(
+tests/commands/test_map.py:382:    result = subprocess.run(
+=== grep for regenerate_context_map real (non-patched) call sites in scripts ===
+.ontos/scripts/ontos_config.py:109:    SKIP_PATTERNS = ['**/_template.md', '**/Ontos_Context_Map.md', '**/archive/**']
+.ontos/scripts/ontos_generate_context_map.py:926:    """Main function to generate the Ontos_Context_Map.md file.
+.ontos/scripts/ontos_generate_context_map.py:934:        check: Validate only; skip writing Ontos_Context_Map.md and
+.ontos/scripts/ontos_generate_context_map.py:1255:                        help='Validate only; do not write Ontos_Context_Map.md or '
+.ontos/scripts/ontos_config_defaults.py:57:DEFAULT_CONTEXT_MAP_FILE = 'Ontos_Context_Map.md'
+.ontos/scripts/ontos_pre_push_check.py:142:def regenerate_context_map() -> None:
+.ontos/scripts/ontos_pre_push_check.py:160:            ['git', 'diff', '--name-only', 'Ontos_Context_Map.md'],
+.ontos/scripts/ontos_pre_push_check.py:324:    regenerate_context_map()
+[0m
+[0m→ [0mRead tests/test_pre_commit_check.py[90m [limit=120][0m
+[0m
+[0m$ [0mcd /<redacted:secret>
+git checkout -- Ontos_Context_Map.md 2>/dev/null
+echo "### top-level tests/test_*.py"
+.venv/bin/python -m pytest -q tests/test_*.py 2>&1 | tail -4
+echo "status after top-level:"; git status --porcelain -- Ontos_Context_Map.md
+git checkout -- Ontos_Context_Map.md 2>/dev/null
+echo "### tests/commands/"
+.venv/bin/python -m pytest -q tests/commands/ 2>&1 | tail -4
+echo "status after commands:"; git status --porcelain -- Ontos_Context_Map.md
+git checkout -- Ontos_Context_Map.md 2>/dev/null
+### top-level tests/test_*.py
+    REQUIRE_SOURCE_IN_LOGS = resolve_config('REQUIRE_SOURCE_IN_LOGS', True)
+
+-- Docs: https://<redacted:secret>
+======================= 433 passed, 1 warning in 14.36s ========================
+status after top-level:
+### tests/commands/
+tests/commands/test_verify_parity.py ...                                 [ 97%]
+tests/commands/test_verify_portfolio.py .............                    [100%]
+
+============================= 496 passed in 31.93s =============================
+status after commands:
+ M Ontos_Context_Map.md
+[0m
+[0m$ [0mcd /<redacted:secret>
+ls tests/commands/*.py | xargs -n1 basename
+echo "=== bisect group A (agents/activate/agentic/doctor/init) ==="
+git checkout -- Ontos_Context_Map.md 2>/dev/null
+.venv/bin/python -m pytest -q tests/commands/test_agents.py tests/commands/test_activate_json_warning_metadata.py tests/commands/test_agentic_activation_resilience.py tests/commands/test_doctor_phase4.py tests/commands/test_init_phase3.py 2>&1 | tail -3
+echo "status A:"; git status --porcelain -- Ontos_Context_Map.md
+git checkout -- Ontos_Context_Map.md 2>/dev/null
+__init__.py
+test_activate_json_warning_metadata.py
+test_agentic_activation_resilience.py
+test_agents.py
+test_antigravity_mcp_docs.py
+test_b1_consolidate_crash.py
+test_b2_promote_absolute_path.py
+test_consolidate_parity.py
+test_consolidate_root_regression.py
+test_doctor_hooks.py
+test_doctor_phase4.py
+test_env.py
+test_export_all.py
+test_export_data_parity.py
+test_export_phase4.py
+test_health_count_consistency.py
+test_hook_phase4.py
+test_init_phase3.py
+test_init_scaffold.py
+test_instruction_protocol.py
+test_json_contract_a3.py
+test_link_check.py
+test_log.py
+test_maintain.py
+test_map.py
+test_map_obsidian.py
+test_map_resilience.py
+test_map_tier1_key_documents.py
+test_mcp_command.py
+test_mcp_write_tool_docs.py
+test_migrate_parity.py
+test_migration_report_parity.py
+test_promote_parity.py
+test_query_parity.py
+test_rename.py
+test_retrofit.py
+test_s2_yaml_warnings.py
+test_scaffold_parity.py
+test_scan_scope_integration.py
+test_stub_parity.py
+test_verify_parity.py
+test_verify_portfolio.py
+=== bisect group A (agents/activate/agentic/doctor/init) ===
+tests/commands/test_init_phase3.py ....................                  [100%]
+
+============================= 114 passed in 5.59s ==============================
+status A:
+[0m
+[0m$ [0mcd /<redacted:secret>
+git checkout -- Ontos_Context_Map.md 2>/dev/null
+echo "=== group B ==="
+.venv/bin/python -m pytest -q tests/commands/test_maintain.py tests/commands/test_instruction_protocol.py tests/commands/test_map_resilience.py tests/commands/test_hook_phase4.py tests/commands/test_doctor_hooks.py tests/commands/test_mcp_command.py tests/commands/test_json_contract_a3.py tests/commands/test_map_tier1_key_documents.py tests/commands/test_map_obsidian.py 2>&1 | tail -3
+echo "status B:"; git status --porcelain -- Ontos_Context_Map.md
+git checkout -- Ontos_Context_Map.md 2>/dev/null
+=== group B ===
+tests/commands/test_map_obsidian.py ........                             [100%]
+
+============================= 101 passed in 5.18s ==============================
+status B:
+[0m
+[0m$ [0mcd /<redacted:secret>
+git checkout -- Ontos_Context_Map.md 2>/dev/null
+echo "=== group C (rest) ==="
+.venv/bin/python -m pytest -q tests/commands/test_antigravity_mcp_docs.py <redacted:secret> tests/commands/test_b2_promote_absolute_path.py tests/commands/test_consolidate_parity.py tests/commands/test_consolidate_root_regression.py tests/commands/test_env.py tests/commands/test_export_all.py tests/commands/test_export_data_parity.py tests/commands/test_export_phase4.py tests/commands/test_health_count_consistency.py tests/commands/test_init_scaffold.py tests/commands/test_link_check.py tests/commands/test_log.py tests/commands/test_mcp_write_tool_docs.py tests/commands/test_migrate_parity.py tests/commands/test_migration_report_parity.py tests/commands/test_promote_parity.py tests/commands/test_query_parity.py tests/commands/test_rename.py tests/commands/test_retrofit.py tests/commands/test_s2_yaml_warnings.py tests/commands/test_scaffold_parity.py tests/commands/test_scan_scope_integration.py tests/commands/test_stub_parity.py tests/commands/test_verify_parity.py tests/commands/test_verify_portfolio.py 2>&1 | tail -4
+echo "status C:"; git status --porcelain -- Ontos_Context_Map.md
+git checkout -- Ontos_Context_Map.md 2>/dev/null
+=== group C (rest) ===
+tests/commands/test_verify_parity.py ...                                 [ 94%]
+tests/commands/test_verify_portfolio.py .............                    [100%]
+
+============================= 255 passed in 22.74s =============================
+status C:
+[0m
+[0m$ [0mcd /<redacted:secret>
+echo "=== log.py: exclusive create + collision refusal ==="
+rg -n "create_text_file_exclusively|FileExistsError|collision|logs_dir|O_EXCL" ontos/commands/log.py | head -20
+echo "=== schema.py public signature preserved + unknown-version policy ==="
+rg -n "def serialize_frontmatter|def validate_document_id|compatib|unknown|default_flow_style|sort_keys" ontos/core/schema.py | head -20
+echo "=== io/files.py strict decode for mutation ==="
+rg -n "decode\(|utf-8|errors=|strict|replacement" ontos/io/files.py | head -15
+echo "=== mcp writes: read_only guard ==="
+rg -n "read_only" ontos/mcp/writes.py | head -10
+=== log.py: exclusive create + collision refusal ===
+118:    logs_dir = project_root / config.paths.logs_dir
+121:    output_path = logs_dir / filename
+307:    except FileExistsError:
+376:    context.create_text_file_exclusively(output_path, content)
+=== schema.py public signature preserved + unknown-version policy ===
+3:This module provides schema version detection, validation, and compatibility
+4:checking for Ontos frontmatter. It enables forward compatibility for V3
+22:    """Result of schema compatibility check."""
+23:    COMPATIBLE = "compatible"           # Tool can fully read/write document
+25:    INCOMPATIBLE = "incompatible"       # Tool cannot handle this document
+30:    """Result of checking schema compatibility."""
+31:    compatibility: SchemaCompatibility
+83:def validate_document_id(value: Any) -> str:
+195:def check_compatibility(
+206:        SchemaCheckResult with compatibility status and message.
+209:        >>> result = check_compatibility("2.1", "2.9.0")
+210:        >>> result.compatibility == SchemaCompatibility.COMPATIBLE
+212:        >>> result = check_compatibility("3.0", "2.9.0")
+213:        >>> result.compatibility == SchemaCompatibility.READ_ONLY
+220:            <redacted:secret>,
+233:            <redacted:secret>,
+239:    # Check for future major version (incompatible)
+242:            <redacted:secret>,
+251:            <redacted:secret>,
+259:        # Unknown but compatible major version - treat as read-only
+=== io/files.py strict decode for mutation ===
+43:                    self.path.resolve(strict=False)
+44:                    .relative_to(root.resolve(strict=False))
+179:    return path.read_text(encoding="utf-8")
+198:        content = path.read_text(encoding="utf-8")
+293:                content = raw_bytes.decode('utf-8', errors='replace').lstrip()
+381:    content = raw_bytes.decode('utf-8', errors='replace').lstrip()
+523:    encoding: str = "utf-8"
+=== mcp writes: read_only guard ===
+30:* **read_only enforcement.** Every write tool checks the server-level
+31:  ``read_only`` flag and returns a structured
+33:  m-2 (``_ = read_only``).
+147:    read_only: bool,
+149:    """Run read_only + workspace_id checks and resolve the target workspace."""
+150:    if read_only:
+250:    read_only: bool = False,
+261:        read_only=read_only,
+272:    read_only: bool = False,
+286:        read_only=read_only,
+[0m
+[0m$ [0mls -d <redacted:secret>/ 2>/dev/null && echo "dir exists"; git checkout -- Ontos_Context_Map.md 2>/dev/null; echo "restored map to HEAD (clean)"
+<redacted:secret>/
+dir exists
+restored map to HEAD (clean)
+[0m
+[0m← [0mWrite <redacted:secret>
+Wrote file successfully.
+[0m
+[0m$ [0mcd /<redacted:secret>
+echo "=== first nonblank line under Verdict ==="
+awk '/^## 7. Verdict/{f=1;next} f && NF{print; exit}' <redacted:secret>
+echo "=== files changed by this session (should be only the artifact) ==="
+git status --short -- <redacted:secret> Ontos_Context_Map.md
+echo "=== frontmatter head ==="
+sed -n '1,11p' <redacted:secret>
+=== first nonblank line under Verdict ===
+Approve
+=== files changed by this session (should be only the artifact) ===
+ M Ontos_Context_Map.md
+?? <redacted:secret>
+=== frontmatter head ===
+---
+id: <redacted:secret>
+deliverable_id: project-ontos-v4-7-1-hotfix
+phase: B.1
+role: peer
+family: glm
+evidence_labels_used: [direct-run, static-inspection]
+status: completed
+---
+
+# Peer Review — project-ontos-v4-7-1-hotfix / B.1 / glm
+[0m
+[0m$ [0mcd /<redacted:secret>
+echo "=== what changed in the map ==="
+git diff -- Ontos_Context_Map.md | head -20
+echo "=== restoring map to HEAD ==="
+git checkout -- Ontos_Context_Map.md
+echo "=== final status (only artifact should appear) ==="
+git status --short -- Ontos_Context_Map.md <redacted:secret>
+=== what changed in the map ===
+=== restoring map to HEAD ===
+=== final status (only artifact should appear) ===
+?? <redacted:secret>
+[0m

@@ -5,11 +5,13 @@ import os
 import pytest
 from unittest.mock import patch
 
-# Add scripts directory to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts')))
-
-from ontos_config import PROJECT_ROOT, SKIP_PATTERNS, MAX_DEPENDENCY_DEPTH
-from ontos_config_defaults import is_ontos_repo, DEFAULT_MAX_DEPENDENCY_DEPTH
+_LEGACY_SCRIPTS = os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts'))
+sys.path.insert(0, _LEGACY_SCRIPTS)
+try:
+    from ontos_config import PROJECT_ROOT, SKIP_PATTERNS, MAX_DEPENDENCY_DEPTH
+    from ontos_config_defaults import is_ontos_repo, DEFAULT_MAX_DEPENDENCY_DEPTH
+finally:
+    sys.path.remove(_LEGACY_SCRIPTS)
 
 def test_is_ontos_repo_contributor_mode():
     with patch("os.path.exists") as mock_exists:
@@ -110,4 +112,3 @@ class TestResolveConfig:
         assert 'automated' in VALID_MODES
         assert 'prompted' in VALID_MODES
         assert 'advisory' in VALID_MODES
-

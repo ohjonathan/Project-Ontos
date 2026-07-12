@@ -235,6 +235,18 @@ def _has_explicit_id(doc: DocumentData) -> bool:
     return isinstance(doc.frontmatter, dict) and "id" in doc.frontmatter
 
 
+def _content_has_explicit_id(
+    content: str,
+    frontmatter_parser: Callable[[str], Tuple[Dict[str, Any], str]],
+) -> bool:
+    """Check the template/README opt-in before validating a fallback ID."""
+    try:
+        frontmatter, _ = frontmatter_parser(content)
+    except (TypeError, ValueError):
+        return False
+    return isinstance(frontmatter, dict) and "id" in frontmatter
+
+
 def load_documents(
     paths: List[Path],
     frontmatter_parser: Callable[[str], Tuple[Dict[str, Any], str]],
@@ -279,6 +291,14 @@ def load_documents(
                 # content.startswith('---') with no leading whitespace. The leniency handles BOM
                 # artifacts and minor formatting issues in imported/external files.
                 content = raw_bytes.decode('utf-8', errors='replace').lstrip()
+
+                # Apply the existing README/template exclusion before the
+                # canonical validator sees fallback stems such as `_template`.
+                if (
+                    _is_validation_excluded_by_name(path)
+                    and not _content_has_explicit_id(content, frontmatter_parser)
+                ):
+                    continue
 
                 doc, doc_issues = load_document_from_content(path, content, frontmatter_parser)
 
@@ -384,8 +404,9 @@ def load_document_from_content(
     normalize_status, 
     normalize_tags, 
     normalize_aliases
-)
+    )
     from ontos.core.staleness import normalize_describes
+    from ontos.core.schema import validate_document_id
     from ontos.core.cache import DocumentCache # This import is not used in this function, but kept as per instruction.
     
     fm, body = frontmatter_parser(content)
@@ -427,7 +448,11 @@ def load_document_from_content(
         return inner
 
     # Core fields (B1 Canonical Mapping)
-    doc_id = fm.get('id', path.stem)
+    # Explicit IDs are a document contract and must obey the documented
+    # grammar.  A missing ID keeps the historical filename-stem fallback:
+    # applying the explicit-ID grammar to an existing filename would make
+    # documents such as ``My Notes.md`` disappear from the canonical loader.
+    doc_id = validate_document_id(fm['id']) if 'id' in fm else path.stem
     doc_type = normalize_type(fm.get('type'), on_error=report_enum_error("type"))
     doc_status = normalize_status(fm.get('status'), on_error=report_enum_error("status"))
     depends_on = normalize_depends_on(

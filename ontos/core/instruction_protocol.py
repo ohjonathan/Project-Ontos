@@ -56,8 +56,10 @@ If you notice any of these, re-run activation:
 If you just regained context after compaction, re-read this file ({instruction_file}). If any Re-Activation Trigger applies, execute Ontos Activation.
 
 ## Session End
-1. Run `ontos log -e "slug"` to archive session work.
+1. Run `ontos log --title "unique-session-title"` to archive session work.
 2. Fill in Goal, Key Decisions, Alternatives Considered, Impacts, and Testing.
+3. If that date-and-title slug already exists, choose a different `--title`;
+   Ontos will not overwrite the earlier session.
 
 ## Quick Reference
 | Command | Purpose |
@@ -66,7 +68,7 @@ If you just regained context after compaction, re-read this file ({instruction_f
 | `ontos map` | Regenerate context map |
 {map_sync_row}| `{regenerate_command}` | {regenerate_purpose} |
 | `ontos doctor` | Health check and validation |
-| `ontos log -e "slug"` | Archive session work |
+| `ontos log --title "unique-session-title"` | Archive session work without overwriting an earlier log |
 | `ontos query <id>` | Find document by ID |"""
 
 

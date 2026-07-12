@@ -1,0 +1,486 @@
+manifest_version: "2.0.0"
+id: project-ontos-v4-7-1-hotfix
+slug: project-ontos-v4-7-1-hotfix
+summary: "Contract-preserving v4.7.1 hotfix for frontmatter corruption, filesystem safety, doctor RCE, and read-only MCP writes."
+
+lifecycle_mode: framework lifecycle
+deliverable_type: standard
+user_facing: true
+fallback_evidence_mode: provider_limited_fallback
+require_lifecycle_dispatch_bundles: true
+strict_p3_required_phases: ["B.1", "D.2", "D.5"]
+
+harness_blocked_families:
+  - family: claude
+    provider: anthropic
+    affected_phases: ["D.5"]
+    affected_role: verifier
+    blockage_category: harness_blocked
+    blockage_evidence_path: "docs/reviews/project-ontos-v4-7-1-hotfix/D.5-dispatch-result.yaml"
+    blockage_evidence_sha256: "4d8ca089881c01bf9fd3ec06198f61d7129690c8adc282b3593776008f507a19"
+    first_observed: "2026-07-12T03:09:02Z"
+    retry_policy: "The verifier was allowed one bounded run and was terminated after it exceeded the declared timebox without producing an artifact."
+    fallback_route: "Orchestrator direct reproductions and the complete test suite are warning-only evidence, not a Claude receipt."
+    re_adjudication_owner: "Project Ontos Maintainers"
+    re_adjudication_ref: "ra-v471-claude-d5"
+  - family: gemini
+    provider: google
+    affected_phases: ["B.1", "B.2", "D.2", "D.5"]
+    blockage_category: provider_policy
+    blockage_evidence_path: "docs/reviews/project-ontos-v4-7-1-hotfix/.raw/ontos-471-D5-gv-r2.r2.c20260712T031936Z.95652.529518c198c9d80b4403afff241847c2.stderr.txt"
+    blockage_evidence_sha256: "0ff9b8b82d0c1bb8a1b8a6b13db60aa95b91a988d9a184178e4a0f391affebdf"
+    first_observed: "2026-07-12T01:39:15Z"
+    retry_policy: "Direct Gemini and AGY were retried during B.1; D.5 retried once after satisfying the workspace-trust prerequisite."
+    fallback_route: "No substitute is labeled Gemini; the gap remains warning-only."
+    re_adjudication_owner: "Project Ontos Maintainers"
+    re_adjudication_ref: "ra-v471-gemini"
+  - family: glm
+    provider: neuralwatt
+    affected_phases: ["B.2", "D.2", "D.5"]
+    blockage_category: sandbox_blocked
+    blockage_evidence_path: "docs/reviews/project-ontos-v4-7-1-hotfix/.raw/ontos-471-D5-glv.r1.c20260712T031543Z.60181.028920e20d52c390f9936da839e7c72f.stderr.redacted.txt"
+    blockage_evidence_sha256: "bdca1ccc1722483cf9a329421c388a0a4934179d84e289eb12f785cec53fa061"
+    first_observed: "2026-07-12T02:48:45Z"
+    retry_policy: "The D.5 OpenCode route was retried once after the D.2 failure and again rejected required repository commands."
+    fallback_route: "Orchestrator direct reproductions and the complete test suite are warning-only evidence, not a GLM receipt."
+    re_adjudication_owner: "Project Ontos Maintainers"
+    re_adjudication_ref: "ra-v471-glm-d5"
+
+provider_limited_review_exception:
+  scope: "Incomplete B.1, B.2, D.2, and D.5 external-family dispatch/receipt evidence for the focused v4.7.1 hotfix."
+  strict_p3_roles_unsatisfied: [peer, alignment, adversarial, verifier]
+  fallback_roles_used: [claude-adversarial, claude-product, glm-peer, codex-orchestrator-preflight]
+  evidence_type: framework_fallback_evidence
+  strict_p3_certified: false
+  authorization_ref: "Maintainer split directive in this task"
+  caveat_text: "provider_limited_fallback_complete; strict P3 not certified; maintainer release actions deferred"
+
+re_adjudication_queue:
+  - id: "ra-v471-claude-d5"
+    artifact_under_judgment: "docs/reviews/project-ontos-v4-7-1-hotfix/D.3-verdict.md"
+    blocked_family_ref: claude
+    reason: "The Claude D.5 verifier exceeded the bounded run and produced no admissible artifact."
+    rerun_trigger: "A bounded Claude verifier run can complete and produce a wrapper-valid artifact."
+    owner: "Project Ontos Maintainers"
+    priority: blocking
+    expected_rerun_command: "Re-run ontos-471-D5-cv through dispatch-family-review.sh against a0062ae."
+    status: pending
+  - id: "ra-v471-gemini"
+    artifact_under_judgment: "docs/reviews/project-ontos-v4-7-1-hotfix/D.3-verdict.md"
+    blocked_family_ref: gemini
+    reason: "Gemini review and verifier seats require rerun when a supported provider route is available."
+    rerun_trigger: "Supported Gemini or AGY entitlement produces wrapper-verifiable artifacts."
+    owner: "Project Ontos Maintainers"
+    priority: blocking
+    expected_rerun_command: "Re-dispatch the missing Gemini tuples through dispatch-family-review.sh and append real receipts."
+    status: pending
+  - id: "ra-v471-glm-d5"
+    artifact_under_judgment: "docs/reviews/project-ontos-v4-7-1-hotfix/D.3-verdict.md"
+    blocked_family_ref: glm
+    reason: "The GLM OpenCode route could not execute the commands required for direct-run D.5 evidence."
+    rerun_trigger: "The attested GLM route permits the required read-only shell and test commands."
+    owner: "Project Ontos Maintainers"
+    priority: blocking
+    expected_rerun_command: "Re-run ontos-471-D5-glv through dispatch-family-review.sh and append a real receipt."
+    status: pending
+
+implementation_sequencing:
+  mode: code-first-user-gated
+  user_gate_ref: "maintainer decision in Codex task: split PR #161 by observable contract and prioritize v4.7.1"
+  implementation_ref: "30d8dcd811f2d03552f8a24bc6f05b57e4d19e13"
+  rationale: "The maintainer explicitly authorized reconstructing the urgent P0 hotfix from the already-reviewed PR #161 tree; Phase A and all review evidence are regenerated against this focused branch and are not inherited from PR #161."
+
+owners:
+  - "Project Ontos Maintainers"
+
+authorship:
+  deliverable_author_families: [codex]
+  structural_orchestrator_families: [codex]
+
+scope:
+  allowed_paths:
+    - ".gitattributes"
+    - "CHANGELOG.md"
+    - "CLAUDE.md"
+    - "README.md"
+    - "AGENTS.md"
+    - "Ontos_Context_Map.md"
+    - "ontos/__init__.py"
+    - "ontos/commands/init.py"
+    - "ontos/commands/log.py"
+    - "ontos/commands/migrate.py"
+    - "ontos/commands/promote.py"
+    - "ontos/commands/rename.py"
+    - "ontos/commands/retrofit.py"
+    - "ontos/commands/scaffold.py"
+    - "ontos/commands/verify.py"
+    - "ontos/core/context.py"
+    - "ontos/core/errors.py"
+    - "ontos/core/frontmatter_edit.py"
+    - "ontos/core/frontmatter_repair.py"
+    - "ontos/core/instruction_protocol.py"
+    - "ontos/core/git.py"
+    - "ontos/core/locking.py"
+    - "ontos/core/schema.py"
+    - "ontos/io/files.py"
+    - "ontos/io/git.py"
+    - "ontos/io/toml.py"
+    - "ontos/io/yaml.py"
+    - "ontos/mcp/locking.py"
+    - "ontos/mcp/portfolio.py"
+    - "ontos/mcp/rename_tool.py"
+    - "ontos/mcp/server.py"
+    - "ontos/mcp/tools.py"
+    - "ontos/mcp/writes.py"
+    - "pyproject.toml"
+    - ".ontos/scripts/tests/test_context.py"
+    - ".ontos/scripts/tests/test_schema.py"
+    - "tests/commands/test_log.py"
+    - "tests/commands/test_env.py"
+    - "tests/commands/test_consolidate_parity.py"
+    - "tests/commands/test_doctor_phase4.py"
+    - "tests/commands/test_migrate_parity.py"
+    - "tests/commands/test_promote_parity.py"
+    - "tests/commands/test_rename.py"
+    - "tests/commands/test_retrofit.py"
+    - "tests/commands/test_stub_parity.py"
+    - "tests/commands/test_verify_parity.py"
+    - "tests/conftest.py"
+    - "tests/test_cli.py"
+    - "tests/test_config.py"
+    - "tests/test_consolidate.py"
+    - "tests/test_cycle_detection.py"
+    - "tests/test_end_session.py"
+    - "tests/test_lint.py"
+    - "tests/test_maintain.py"
+    - "tests/test_orphan_detection.py"
+    - "tests/test_query.py"
+    - "tests/core/test_frontmatter_edit_pipeline.py"
+    - "tests/core/test_git_safety.py"
+    - "tests/core/test_schema.py"
+    - "tests/io/test_git_empty_diff.py"
+    - "tests/io/test_toml_roundtrip.py"
+    - "tests/mcp/test_locking.py"
+    - "tests/mcp/test_portfolio.py"
+    - "tests/mcp/__init__.py"
+    - "tests/mcp/test_read_only_registration.py"
+    - "tests/mcp/test_write_tools.py"
+    - "tests/test_context_contention.py"
+    - "tests/test_document_loading_contract_a1.py"
+    - "tests/test_frontmatter_roundtrip_regression.py"
+    - "tests/test_pre_push_check.py"
+    - "tests/test_session_context.py"
+    - "tests/test_validation.py"
+    - "tests/test_yaml_edge_cases.py"
+    - "tests/test_doctor_mcp_probe_regression.py"
+    - "manifests/project-ontos-v4-7-1-hotfix.yaml"
+    - "docs/specs/project-ontos-v4-7-1-hotfix-spec.md"
+    - "docs/reference/Ontos_Manual.md"
+    - "docs/trackers/project-ontos-v4-7-1-hotfix.md"
+    - "docs/retros/project-ontos-v4-7-1-hotfix-retro.md"
+    - "docs/logs/2026-07-11_project-ontos-v4-7-1-hotfix.md"
+    - ".ontos-internal/logs/2026-07-11_project-ontos-v4-7-1-hotfix.md"
+    - ".ontos-internal/logs/2026-07-12_pr-162-merge-and-cleanup.md"
+  allowed_path_patterns:
+    - "docs/reviews/project-ontos-v4-7-1-hotfix/**"
+  composition_targets:
+    - path: "ontos/commands/doctor.py"
+      rationale: "The #147 code fix is already in the main base and is verified but not modified by this focused branch."
+      shares_with_deliverable_id: "project-ontos-audit-doctor-rce"
+    - path: "ontos/core/cursor_mcp.py"
+      rationale: "The #147 exact-argv inspection fix is inherited from main and is verified without relabeling its evidence."
+      shares_with_deliverable_id: "project-ontos-audit-doctor-rce"
+    - path: "ontos/core/mcp_shared.py"
+      rationale: "The managed-launcher probe primitive is inherited from main."
+      shares_with_deliverable_id: "project-ontos-audit-doctor-rce"
+  forbidden_paths:
+    - "ontos/cli.py"
+    - "ontos/command_registry.py"
+    - "ontos/ui/json_output.py"
+    - "ontos/commands/link_check.py"
+    - "ontos/commands/map.py"
+    - "ontos/commands/stub.py"
+    - "ontos/commands/activate.py"
+    - "ontos/core/body_refs.py"
+    - "ontos/core/graph.py"
+    - "ontos/core/link_diagnostics.py"
+    - "ontos/mcp/schemas.py"
+    - "tests/golden/"
+    - "tests/commands/golden/"
+    - ".github/workflows/publish.yml"
+    - ".pre-commit-config.yaml"
+    - ".ontos/hooks/"
+    - "ontos/_hooks/"
+    - "docs/reviews/project-ontos-audit-rebaseline-remediation/"
+    - "manifests/project-ontos-audit-rebaseline-remediation.yaml"
+    - ".llm-dev/framework/"
+    - ".venv/"
+    - ".git/"
+  forbidden_symbols: []
+  cardinality_assertions:
+    - name: "Package version is exactly 4.7.1"
+      command: "PATH=\"$PWD/.venv/bin:$PATH\" python -c \"import ontos; print(ontos.__version__)\""
+      expect: "literal:4.7.1"
+    - name: "Command envelope remains schema 3.4"
+      command: "PATH=\"$PWD/.venv/bin:$PATH\" python -c \"import io,json,sys; from ontos.ui.json_output import emit_command_success,emit_command_error; b=io.StringIO(); old=sys.stdout; sys.stdout=b; emit_command_success(command='gate',exit_code=0,message='ok'); emit_command_error(command='gate',exit_code=1,code='E',message='bad'); sys.stdout=old; expected={'schema_version','command','status','exit_code','message','data','warnings','error'}; rows=[json.loads(x) for x in b.getvalue().splitlines()]; assert all(set(r)==expected and r['schema_version']=='3.4' and 'result' not in r for r in rows); print('3.4')\""
+      expect: "literal:3.4"
+    - name: "No v5 command registry exists"
+      command: "test ! -e ontos/command_registry.py"
+      expect: "exit-0"
+  cleanliness:
+    pathspecs: []
+    exclude_pathspecs: []
+
+artifacts:
+  spec: "docs/specs/project-ontos-v4-7-1-hotfix-spec.md"
+  family_verdict: "docs/reviews/project-ontos-v4-7-1-hotfix/<phase>-<family>-<role>.md"
+  canonical_verdict: "docs/reviews/project-ontos-v4-7-1-hotfix/<phase>-verdict.md"
+  product_verdict: "docs/reviews/project-ontos-v4-7-1-hotfix/<phase>-<family>-product.md"
+  fix_summary: "docs/reviews/project-ontos-v4-7-1-hotfix/D.4-fix-summary.md"
+  verification: "docs/reviews/project-ontos-v4-7-1-hotfix/D.5-<family>-verifier.md"
+  final_approval: "docs/reviews/project-ontos-v4-7-1-hotfix/final-approval.md"
+  retro: "docs/retros/project-ontos-v4-7-1-hotfix-retro.md"
+
+model_assignments:
+  - phase: "A"
+    assignments:
+      codex: spec-author
+  - phase: "B.1"
+    assignments:
+      claude: adversarial
+      gemini: alignment
+      glm: peer
+  - phase: "B.1"
+    assignments:
+      claude: product
+  - phase: "B.2"
+    assignments:
+      claude: alignment
+      gemini: peer
+      glm: adversarial
+  - phase: "B.2"
+    assignments:
+      claude: product
+  - phase: "B.3"
+    assignments:
+      codex: meta-consolidator
+  - phase: "C"
+    assignments:
+      codex: implementation-author
+  - phase: "D.1"
+    assignments:
+      claude: peer
+  - phase: "D.2"
+    assignments:
+      claude: peer
+      gemini: adversarial
+      glm: alignment
+  - phase: "D.2"
+    assignments:
+      claude: product
+  - phase: "D.3"
+    assignments:
+      codex: meta-consolidator
+  - phase: "D.4"
+    assignments:
+      codex: fix-author
+  - phase: "D.5"
+    assignments:
+      claude: verifier
+      gemini: verifier
+      glm: verifier
+  - phase: "D.6"
+    assignments:
+      codex: final-approval
+  - phase: "E"
+    assignments:
+      codex: retro
+
+cli_capability_matrix:
+  codex:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+  claude:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+  gemini:
+    shell: false
+    git: false
+    test_runner: false
+    doc_index: true
+    evidence_cap: static-inspection
+    writes_files_non_interactively: false
+    execution_clis:
+      agy:
+        expected_version_regex: "^[0-9]+[.][0-9]+[.][0-9]+"
+        writes_files_non_interactively: false
+  glm:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+
+smoke_checks:
+  - phase: "C"
+    checks:
+      - name: "Focused serializer, writer, and MCP security regressions"
+        command: "PATH=\"$PWD/.venv/bin:$PATH\" .venv/bin/python -m pytest -q tests/core/test_schema.py tests/core/test_frontmatter_edit_pipeline.py tests/test_frontmatter_roundtrip_regression.py tests/test_session_context.py tests/test_context_contention.py tests/mcp/test_locking.py tests/mcp/test_write_tools.py tests/mcp/test_read_only_registration.py tests/commands/test_log.py tests/commands/test_retrofit.py tests/test_doctor_mcp_probe_regression.py"
+        expect: "exit-0"
+  - phase: "D.2"
+    checks:
+      - name: "Complete hotfix test suite"
+        command: "PATH=\"$PWD/.venv/bin:$PATH\" .venv/bin/python -m pytest -q"
+        expect: "exit-0"
+  - phase: "D.5"
+    checks:
+      - name: "Post-review complete suite"
+        command: "PATH=\"$PWD/.venv/bin:$PATH\" .venv/bin/python -m pytest -q"
+        expect: "exit-0"
+
+regression_guards: []
+sibling_deliverable_ids: []
+review_rounds:
+  - phase: "B.1"
+    round: 1
+    preserved_blocker_ids: []
+  - phase: "B.2"
+    round: 1
+    preserved_blocker_ids: []
+  - phase: "D.3"
+    round: 1
+    preserved_blocker_ids:
+      - "D1-FM-QUOTED-KEY-BOUNDARY"
+      - "D1-PORTFOLIO-WAL-SNAPSHOT"
+reviewer_family_substitutes: []
+consolidation_mode: external
+self_review_caveats:
+  - family: codex
+    phases: ["D.3"]
+    rationale: "Codex authored and assembled the hotfix. D.3 is limited to consolidating fresh external-family findings; D.5 remains assigned exclusively to three non-author families."
+
+lifecycle_receipt_inventory_path: "docs/reviews/project-ontos-v4-7-1-hotfix/lifecycle-receipt-inventory.yaml"
+required_dispatch_bundles:
+  - phase: "B.1"
+    intent_path: "docs/reviews/project-ontos-v4-7-1-hotfix/B.1-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-v4-7-1-hotfix/B.1-dispatch-result.yaml"
+  - phase: "B.2"
+    intent_path: "docs/reviews/project-ontos-v4-7-1-hotfix/B.2-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-v4-7-1-hotfix/B.2-dispatch-result.yaml"
+  - phase: "D.2"
+    intent_path: "docs/reviews/project-ontos-v4-7-1-hotfix/D.2-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-v4-7-1-hotfix/D.2-dispatch-result.yaml"
+  - phase: "D.5"
+    intent_path: "docs/reviews/project-ontos-v4-7-1-hotfix/D.5-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-v4-7-1-hotfix/D.5-dispatch-result.yaml"
+
+gate_prerequisites:
+  - id: G-test-1
+    category: test
+    description: "Focused serializer, secure-writer, locking, MCP, log, and doctor regressions pass."
+    verification:
+      command: "PATH=\"$PWD/.venv/bin:$PATH\" .venv/bin/python -m pytest -q tests/core/test_schema.py tests/core/test_frontmatter_edit_pipeline.py tests/test_frontmatter_roundtrip_regression.py tests/test_session_context.py tests/test_context_contention.py tests/mcp/test_locking.py tests/mcp/test_write_tools.py tests/mcp/test_read_only_registration.py tests/commands/test_log.py tests/commands/test_retrofit.py tests/test_doctor_mcp_probe_regression.py"
+      expect: "exit-0"
+  - id: G-test-2
+    category: test
+    description: "The complete suite passes from a clean tree and leaves tracked and untracked status unchanged."
+    verification:
+      command: "test -z \"$(git status --porcelain=v1 --untracked-files=all)\" && PATH=\"$PWD/.venv/bin:$PATH\" .venv/bin/python -m pytest -q && test -z \"$(git status --porcelain=v1 --untracked-files=all)\""
+      expect: "exit-0"
+  - id: G-test-legacy-1
+    category: test
+    description: "The retained compatibility suite agrees with the safe serializer and secure writer seams."
+    verification:
+      command: "PATH=\"$PWD/.venv/bin:$PATH\" .venv/bin/python -m pytest -q .ontos/scripts/tests/"
+      expect: "exit-0"
+  - id: G-contract-1
+    category: test
+    description: "All major-only command, envelope, graph, schema, and golden paths are byte-identical to main."
+    verification:
+      command: "git diff --exit-code bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95 -- ontos/cli.py ontos/ui/json_output.py ontos/commands/link_check.py ontos/commands/map.py ontos/commands/stub.py ontos/commands/activate.py ontos/core/body_refs.py ontos/core/graph.py ontos/core/link_diagnostics.py ontos/mcp/schemas.py tests/golden tests/commands/golden tests/ui/test_json_output.py tests/commands/test_link_check.py tests/core/test_graph.py tests/core/test_link_diagnostics.py tests/mcp/test_workspace_overview.py"
+      expect: "exit-0"
+  - id: G-contract-2
+    category: cardinality
+    description: "Schema-3.4 envelopes retain the baseline key set and contain no v5 result object."
+    verification:
+      command: >-
+        PATH="$PWD/.venv/bin:$PATH" python -c "import io,json,sys; from ontos.ui.json_output import emit_command_success,emit_command_error; b=io.StringIO(); old=sys.stdout; sys.stdout=b; emit_command_success(command='gate',exit_code=0,message='ok'); emit_command_error(command='gate',exit_code=1,code='E',message='bad'); sys.stdout=old; expected={'schema_version','command','status','exit_code','message','data','warnings','error'}; rows=[json.loads(x) for x in b.getvalue().splitlines()]; assert all(set(r)==expected and r['schema_version']=='3.4' and 'result' not in r for r in rows); print('3.4')"
+      expect: "exit-0"
+  - id: G-golden-1
+    category: scope
+    description: "Tracked golden baselines and command goldens are unchanged from main."
+    verification:
+      command: "git diff --exit-code bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95 -- tests/golden/baselines tests/commands/golden"
+      expect: "exit-0"
+  - id: G-scope-1
+    category: scope
+    description: "Every committed, staged, unstaged, and untracked deliverable path is within the focused manifest."
+    verification:
+      command: "bash .llm-dev/framework/scripts/verify-changed-path-scope.sh --manifest manifests/project-ontos-v4-7-1-hotfix.yaml --base bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95"
+      expect: "exit-0"
+  - id: G-version-1
+    category: cardinality
+    description: "Both version sources and the imported package report 4.7.1."
+    verification:
+      command: >-
+        PATH="$PWD/.venv/bin:$PATH" python -c "from pathlib import Path; import ontos; assert ontos.__version__=='4.7.1'; assert 'version = \"4.7.1\"' in Path('pyproject.toml').read_text(); assert '__version__ = \"4.7.1\"' in Path('ontos/__init__.py').read_text()"
+      expect: "exit-0"
+  - id: G-doctor-1
+    category: test
+    description: "The inherited #147 exact-argv remediation remains green."
+    verification:
+      command: "PATH=\"$PWD/.venv/bin:$PATH\" .venv/bin/python -m pytest -q tests/test_doctor_mcp_probe_regression.py"
+      expect: "exit-0"
+  - id: G-diff-1
+    category: scope
+    description: "The hotfix diff has no whitespace errors."
+    verification:
+      command: "git diff --check bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95"
+      expect: "exit-0"
+  - id: G-branch-1
+    category: branch
+    description: "The focused branch is based on the declared main baseline."
+    verification:
+      command: "test \"$(git merge-base bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95 HEAD)\" = bf91b42f4eb5ba2ed6e0e3ea5e76d22ec6d7ec95"
+      expect: "exit-0"
+  - id: G-verdict-1
+    category: verdict-presence
+    description: "Canonical design and implementation verdicts plus all three current-head verifier artifacts exist."
+    verification:
+      command: >-
+        test -s docs/reviews/project-ontos-v4-7-1-hotfix/B.3-verdict.md &&
+        test -s docs/reviews/project-ontos-v4-7-1-hotfix/D.3-verdict.md &&
+        test -s docs/reviews/project-ontos-v4-7-1-hotfix/D.5-claude-verifier.md &&
+        test -s docs/reviews/project-ontos-v4-7-1-hotfix/D.5-gemini-verifier.md &&
+        test -s docs/reviews/project-ontos-v4-7-1-hotfix/D.5-glm-verifier.md
+      expect: "exit-0"
+  - id: G-blocker-1
+    category: blocker-closure
+    description: "D.3 contains no unresolved implementation blocker before verifier dispatch."
+    verification:
+      command: >-
+        test -s docs/reviews/project-ontos-v4-7-1-hotfix/D.3-verdict.md &&
+        ! awk '/^## Preserved blockers/{f=1;next} /^## /{f=0} f' docs/reviews/project-ontos-v4-7-1-hotfix/D.3-verdict.md |
+        grep -E '^- \*\*ID:\*\*'
+      expect: "exit-0"
+
+tracker:
+  path: "docs/trackers/project-ontos-v4-7-1-hotfix.md"
+  columns: [phase, owner, status, artifact, evidence, timestamp]
+
+branch_map:
+  default: "codex/project-ontos-v4-7-1-hotfix-<PHASE_ID>-<ROLE>-<FAMILY>"
+
+merge_authority:
+  mode: recommendation_only
+
+references:
+  - path: "docs/reviews/2026-07-02-fable-repo-audit.md"
+    relevance: "Historical defect baseline containing the serializer P0 and doctor trust findings."
+  - path: "docs/specs/project-ontos-audit-serializer-corruption-spec.md"
+    relevance: "Earlier narrow serializer lifecycle artifact; this split extends its verified consumer surface without inheriting receipts."
+  - path: "docs/specs/project-ontos-audit-doctor-rce-spec.md"
+    relevance: "The inherited #147 code contract already present in main."

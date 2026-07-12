@@ -121,14 +121,24 @@ ontos query --health
 ### Archive Session
 Say **"Archive Ontos"** at end of session:
 ```bash
-# Basic (interactive)
-ontos log
+# Basic (interactive; choose a session-unique title)
+ontos log --title "session summary"
 
 # Advanced (one-liner)
 ontos log -e feature -t "Session summary"
 ```
 
-**Automated Mode:** Sessions are auto-archived on push. One log per branch per day—subsequent pushes append to the same log.
+Log creation is exclusive: if the same date-and-title slug already exists,
+choose a different `-t`/`--title`. Ontos does not overwrite the earlier log.
+
+**Automated Mode:** Push hooks attempt exclusive log creation. If the derived
+date-and-slug path already exists, the hook refuses the collision rather than
+appending or overwriting; archive the next session with a unique `--title`.
+
+When `[paths].logs_dir` first takes effect after upgrading, new logs may be in
+that directory while older logs remain under `docs/logs`; Ontos does not move
+history automatically. Keep the configured directory in scan scope if those
+logs should appear in maps and queries.
 
 **Auto-generated logs:** Logs created by `--auto` are marked `status: auto-generated`.
 
@@ -307,7 +317,7 @@ Direct script execution is deprecated. Use the unified CLI:
 # python3 .ontos/scripts/ontos_end_session.py
 
 # Preferred
-ontos log
+ontos log --title "session summary"
 ```
 
 **Note:** v3.0 no longer supports legacy script paths.
@@ -613,7 +623,7 @@ ontos <command> [options]
 
 ```bash
 # Archive a feature session
-ontos log -e feature
+ontos log -e feature --title "feature-session-summary"
 
 # Generate context map with strict validation
 ontos map --strict

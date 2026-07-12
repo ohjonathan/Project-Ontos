@@ -4,15 +4,18 @@ import os
 import pytest
 from unittest.mock import patch, MagicMock
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts')))
-
-from ontos_query import (
-    query_depends_on,
-    query_depended_by,
-    query_concept,
-    query_stale,
-    query_health
-)
+_LEGACY_SCRIPTS = os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts'))
+sys.path.insert(0, _LEGACY_SCRIPTS)
+try:
+    from ontos_query import (
+        query_depends_on,
+        query_depended_by,
+        query_concept,
+        query_stale,
+        query_health,
+    )
+finally:
+    sys.path.remove(_LEGACY_SCRIPTS)
 
 @pytest.fixture
 def sample_data():

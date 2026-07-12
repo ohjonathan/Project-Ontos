@@ -1,0 +1,17 @@
+**Verdict: Request changes.** The artifact is written to `docs/reviews/project-ontos-v4-7-1-hotfix/B.1-claude-adversarial-r2.md`. No code, commits, or logs were touched.
+
+## The blocker
+
+The hotfix applies its new strict ID grammar (`^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$`) not just to explicit `id:` frontmatter values but to **filename-derived fallback IDs** (`ontos/io/files.py:451`). Any document without an explicit `id:` whose filename stem has a space, a leading underscore, or a non-ASCII character now raises `ValueError`, gets swallowed by the loader's `except (ValueError, UnicodeDecodeError)` handler, and is **silently dropped** from the canonical document set — logged under the misleading code `parse_error`, when nothing failed to parse.
+
+I reproduced this directly in a temp directory: of four documents, `My Notes.md`, `_draft.md`, and `café-doc.md` all vanish on `e33a31d` while loading fine on baseline `bf91b42`. That contradicts the spec's own §7 claim of "avoiding a patch-release change to the visible document set," in a release whose entire boundary is defined by observable contract parity. Absence is the worst failure mode here — the docs disappear from the map, graph, and queries, and any `depends_on` edge into them degrades into a dangling reference blaming the wrong file.
+
+Calibration matters, so I scanned this repo's own `docs/` tree: **zero** documents would be newly dropped. It's a latent break for downstream workspaces, not a self-inflicted one, which is why I rated it High rather than Critical. The fix is small — scope the validator to explicit IDs at the loader, or at minimum make the loss loud with an accurate issue code.
+
+## What's genuinely good
+
+The P0 is fixed at the root, not the call site: `log.py` no longer f-strings YAML together, so every serializer consumer inherits the fix. More interestingly, `rollback_path` closes a data-destruction bug nobody seems to have filed — the baseline unlinked **tracked** files whenever `git checkout --` returned nonzero for any reason. And the locking design guards the stable directory inode alongside the lockfile, which is the correct defense against the POSIX unlink-and-recreate race that plain `flock` can't survive. I found no v5 contract bleed: none of the spec §9 exclusion-list files appear in the diff. 82 focused tests pass.
+
+## The gap you should staff
+
+I could not cover `ontos/core/context.py` — **1322 changed lines**, the single largest and highest-risk file in the diff, holding all the transaction staging, containment, fsync, atomic-replace, and rollback logic. The MCP surfaces and the Windows `msvcrt` lock backend are likewise unreviewed. My approval scope explicitly excludes them; another reviewer needs to own that file before this ships.

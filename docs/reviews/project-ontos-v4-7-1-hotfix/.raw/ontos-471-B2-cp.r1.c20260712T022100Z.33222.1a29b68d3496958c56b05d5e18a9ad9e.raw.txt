@@ -1,0 +1,189 @@
+Review complete. Here is the complete artifact.
+
+```markdown
+---
+id: project-ontos-v4-7-1-hotfix-B.2-claude-product
+deliverable_id: project-ontos-v4-7-1-hotfix
+phase: B.2
+role: product
+family: claude
+evidence_labels_used: [static-inspection]
+status: completed
+---
+
+# Product Review — project-ontos-v4-7-1-hotfix / B.2 / claude
+
+Environment: worktree `/tmp/project-ontos-worktrees/project-ontos-v4.7.1-hotfix`, branch
+`audit/v4.7.1-hotfix`, diffed against baseline `bf91b42`. Per the B.2 constraints I did not
+execute Ontos commands, edit files, or run activation/map/log; all evidence is
+static-inspection of the revised spec, CHANGELOG, guidance surfaces, B.1 product feedback,
+and the current diff. Where B.1 recorded direct-run results I treat them as prior-round
+evidence and re-check the underlying code rather than re-asserting the run.
+
+## 1. User-value assessment
+
+The revision closes B.1's blocking finding and the release now delivers what it promises. The
+P0 — hand-built YAML corrupting frontmatter on write — is fixed at the serializer, and the
+three "we protected you instead of destroying your data" refusals (log collision, unsafe path,
+malformed UTF-8) are all reachable, all recoverable, and all now name the offending file.
+
+B.1's blocking issue B-1 was that the malformed-UTF-8 refusal reached the user as
+`exit 5 / E_INTERNAL / "Internal error: 'utf-8' codec can't decode byte 0xff in position 53"` —
+a Python exception string that named a byte offset but not a file, and blamed Ontos for the
+user's document. That is fixed. `InvalidDocumentEncodingError`
+(`ontos/core/frontmatter_edit.py:219-227`) is now a typed `OntosUserError` carrying the path
+and the message `"<path> is not valid UTF-8 and was not modified. Re-save the file as UTF-8,
+then retry."` — it names the file, states that nothing was written, and gives the remedy.
+`tests/commands/test_retrofit.py:605-630` pins exit 1, `E_COMMAND_FAILED`, `data.path`, the
+recovery sentence, and byte-identical file contents. That is the right shape.
+
+B.1's F1 (guidance prescribed a command that now hard-fails) is also addressed: `CLAUDE.md`,
+`README.md`, `docs/reference/Ontos_Manual.md`, and `ontos/core/instruction_protocol.py` all now
+prescribe `ontos log --title "unique-session-title"` and state that Ontos will not overwrite an
+earlier log. Updating the agent-facing instruction protocol, not just the human docs, is the
+detail that makes this actually stick.
+
+The collision error code also changed since B.1 (`E_LOG_EXISTS` → `E_FILE_EXISTS`,
+`ontos/commands/log.py:371`), reusing the code already emitted by `ontos/mcp/writes.py:454,527`.
+That is the correct call: it keeps the promise of no new error taxonomy in a patch release, and
+it matches what the CHANGELOG advertises.
+
+What remains is a narrower version of the same class of problem B.1 found: the refusals are
+correct, but the *contract described for them* is not uniformly true, and one guidance surface
+still contradicts itself.
+
+## 2. Product surfaces reviewed
+
+| # | Surface | Status |
+|---|---|---|
+| S1 | Same-day slug collision refuses instead of overwriting | Correct; best copy in the release |
+| S2 | Unsafe / symlinked / outside-workspace `logs_dir` fails closed | Correct; remedy present |
+| S3 | Malformed UTF-8 loads on read, refuses on mutation | Integrity correct; **exit code not as documented** — I-1 |
+| S4 | Envelope stays schema 3.4, no v4 `result` object | Correct — `ontos/ui/json_output.py:138,164` still default `schema_version="3.4"`; file is untouched in the diff |
+| S5 | Legacy `LOGS_DIR` precedence; `[paths].logs_dir` honored; no relocation | Correct; disclosure gap — I-3 |
+| S6 | Unique-session-title guidance | Correct across all four surfaces; one stale contradiction — I-2 |
+
+### Schema 3.4 and legacy-log relocation (explicitly requested checks)
+
+**Schema 3.4 is still advertised.** `emit_command_success` and `emit_command_error` both still
+default to `schema_version: "3.4"` (`ontos/ui/json_output.py:138,164`), and `json_output.py`
+does not appear in the diff against `bf91b42` at all. No `result` object, no new exit-code
+taxonomy. The new log errors emit through the existing `emit_command_error` envelope with
+existing codes.
+
+**Legacy logs are not silently relocated.** `_load_legacy_logs_dir` (`ontos/commands/log.py:70`)
+checks `ontos_config.py` and `.ontos/scripts/ontos_config.py`, and legacy `LOGS_DIR` keeps
+precedence over `[paths].logs_dir`. There is no move, copy, or migration code anywhere in the
+log path — existing logs stay where they are. The CHANGELOG states this plainly ("Existing logs
+are not moved"). The residual risk is a *split archive* rather than a relocation, covered in I-3.
+
+## 3. Issues
+
+**I-1 (P1, blocking) — The documented "exit 1" contract for the UTF-8 refusal is false for
+`promote`, `migrate`, and `verify`.**
+
+Both the spec (§7) and the CHANGELOG ("Compatibility notes") promise that a mutation against
+malformed UTF-8 fails with **"exit 1 / `E_COMMAND_FAILED`, the affected path, and a UTF-8
+recovery step."** That is true for exactly two of the five mutation commands. `retrofit`
+(`ontos/commands/retrofit.py:257`) and `rename` (`ontos/commands/rename.py:405`) catch
+`InvalidDocumentEncodingError` and return exit 1 with `data.path`. But `promote.py:126`,
+`migrate.py:203`, and `verify.py:90` all call `read_utf8_for_mutation` **without catching it**,
+so the error propagates to the generic handler at `ontos/cli.py:1838`, which emits
+**exit 2** — not exit 1 — and omits `data.path`.
+
+The message is still good in that path (it names the file and the remedy, because it rides on
+the exception string), and exit 2 is the baseline user-error code, so this is not a taxonomy
+break. The defect is that the release documents a single machine-checkable contract for a
+failure that in practice returns two different exit codes depending on which command you ran.
+Agents and CI scripts key on exit codes; the CHANGELOG is what they will be written against.
+
+Fix is cheap in either direction: catch `InvalidDocumentEncodingError` in the three commands to
+match `retrofit`/`rename` (preferred — it also restores `data.path` for the JSON consumer), or
+correct the spec and CHANGELOG to state exit 2 for those paths. I would not ship the sentence
+as currently written.
+
+**I-2 (P1, blocking) — The Manual contradicts itself about log collisions, ten lines apart.**
+
+`docs/reference/Ontos_Manual.md` now correctly says (Archive Session): *"Log creation is
+exclusive: if the same date-and-title slug already exists, choose a different `-t`/`--title`.
+Ontos does not overwrite the earlier log."* But line 134, in the same section, still reads:
+*"**Automated Mode:** Sessions are auto-archived on push. One log per branch per day—subsequent
+pushes append to the same log."*
+
+There is no append logic in `ontos/commands/log.py` — creation is exclusive
+(`_write_log_exclusively` → `create_text_file_exclusively`) and a same-day, same-slug write now
+raises `FileExistsError` → exit 1. So the sentence describes behavior the release specifically
+removed, in the one surface a user consults to understand automated pushes. Whether the
+automated push flow now surfaces a nonzero exit on the second push of a day is precisely the
+question this sentence causes a user to get wrong. Delete or rewrite it to match the exclusive
+behavior.
+
+**I-3 (P2, non-blocking) — The `logs_dir` fix can split an existing project's archive, and the
+disclosure lives only in the CHANGELOG.**
+
+B.1's SF-3 is partly addressed: the CHANGELOG now explicitly calls out that `[paths].logs_dir`
+is honored when no legacy override exists, that existing logs are not moved, and that a custom
+directory must stay inside the scan scope to appear in maps and queries. Good.
+
+The residual product risk: for an existing project that has `[paths].logs_dir` set to a
+non-default value, the baseline forced `docs/logs` (the legacy import was dead), so upgrading
+means *new* logs start landing in the configured directory while the entire historical archive
+stays in `docs/logs`. Nothing is destroyed and nothing is relocated, but the archive silently
+splits across two directories, and if the configured directory is outside the scan scope those
+new logs quietly stop appearing in maps and queries. This is disclosed in the CHANGELOG but not
+in the Manual or README, which is where someone configuring `logs_dir` is actually reading. One
+sentence in the Manual's log section would close it.
+
+**I-4 (P2, non-blocking) — Collision copy still does not explain *why* the name collided.**
+
+B.1 asked for this and it was not taken up. The message
+(`ontos/commands/log.py:366-370`) remains: *"Session log already exists: <path>. Choose a
+different --title, or intentionally move/remove the existing log before retrying."* It is still
+the strongest copy in the release — condition, exact file, two real recovery paths — but
+"intentionally" reads oddly and the message never states that logs are keyed `<date>_<slug>`.
+That single fact is what lets a user predict the behavior (the same title tomorrow is fine)
+instead of being surprised by it again. B.1's suggested wording is still the better text.
+
+## 4. Positives
+
+- **B-1 is genuinely fixed, not papered over.** The typed error carries the path, the "was not
+  modified" reassurance, and the remedy, and the test pins byte-identical file contents — so the
+  user learns both what is wrong and that nothing was damaged.
+- **The agent instruction protocol was updated, not just the human docs.** `instruction_protocol.py`
+  is what agents actually read; updating it is what prevents the "documented workflow hard-fails
+  every second session" failure B.1 found.
+- **No new error taxonomy.** Reusing the existing `E_FILE_EXISTS` rather than minting
+  `E_LOG_EXISTS` respects the patch-release contract, and schema 3.4 is untouched.
+- **Recovery is possible in all five scenarios I was asked to test** — collision (`--title`),
+  unsafe logs_dir (reconfigure inside the workspace), invalid UTF-8 (re-save as UTF-8), legacy
+  LOGS_DIR (precedence preserved, no action needed), unique-title guidance (now prescribed in
+  four places). None of them leave the user stuck, and none of them destroy data.
+- **Failure visibility is good**: every refusal names the offending path, and no refusal
+  half-writes.
+
+## 5. Verdict
+
+Request changes
+
+The integrity work is sound and B.1's blocking finding is properly closed — I would not send
+this back over the fixes themselves. The two blocking items are documentation-accuracy defects
+in exactly the surfaces this release is selling: the CHANGELOG and spec promise a uniform
+"exit 1" UTF-8 refusal that three of five mutation commands do not honor (I-1), and the Manual
+still tells users that pushes append to the same log, which this release specifically made
+impossible (I-2). Both are cheap — three `except` clauses or one corrected sentence, plus one
+deleted line. Neither requires redesign, and I expect a fast turnaround to Approve.
+
+## 6. Notes
+
+- Evidence is static-inspection only, per the B.2 read-only constraint; I did not run the CLI,
+  Ontos activation/map/log, or the test suite. Where I cite behavior (exit codes, envelope
+  keys), I cite the code path and the test that pins it rather than a run I did not perform.
+- I did not re-verify B.1's full-suite result (1550 passed, 2 skipped) or its golden/exclusion-list
+  parity checks; those were direct-run in B.1 and the corresponding files remain absent from the
+  diff.
+- I-1 is stated as a documentation-vs-code mismatch rather than a data-integrity bug on purpose:
+  the refusal itself is correct and safe in all five commands, and no file is rewritten in any of
+  them. Only the advertised exit code and the JSON `data.path` differ.
+```
+
+**TLDR for the maintainer:** Request changes, but narrowly. The hotfix's integrity work holds up and B.1's blocking UTF-8 finding is properly fixed — the refusal now names the file, says nothing was modified, and gives the remedy. Two documentation-accuracy defects block: the spec and CHANGELOG promise a uniform "exit 1 / `E_COMMAND_FAILED`" for the UTF-8 refusal, but `promote`, `migrate`, and `verify` don't catch the error so they exit 2 via the generic CLI handler; and the Manual still says pushes "append to the same log" ten lines after correctly explaining that log creation is now exclusive. Schema 3.4 is intact and legacy logs are not relocated, both as claimed.
