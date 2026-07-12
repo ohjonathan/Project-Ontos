@@ -17,10 +17,10 @@ tag, publish, release, or close issues.
 | Phase | Owner | Status | Artifact | Evidence | Timestamp |
 |---|---|---|---|---|---|
 | A | codex | completed | `docs/specs/project-ontos-v4-7-1-hotfix-spec.md` | Ten-section contract split spec with two diagrams; manifest conformance passes | 2026-07-11 |
-| B.1 | claude / gemini / glm / product | pending | `docs/reviews/project-ontos-v4-7-1-hotfix/B.1-*` | Fresh family dispatch required | — |
-| B.2 | claude / gemini / glm / product | pending | `docs/reviews/project-ontos-v4-7-1-hotfix/B.2-*` | Fresh second design round required | — |
-| B.3 | codex | pending | `docs/reviews/project-ontos-v4-7-1-hotfix/B.3-verdict.md` | Awaiting B.1/B.2 evidence | — |
-| C | codex | preimplemented-user-gated | branch working tree | Focused regressions: 290 passed; full pre-lifecycle run: 1536 passed, 4 failed, 2 skipped; three failures were environment-path selection and pass with hotfix venv on PATH, one unsafe outside-workspace fixture was corrected | 2026-07-11 |
+| B.1 | claude / gemini / glm / product | completed-with-provider-gap | `docs/reviews/project-ontos-v4-7-1-hotfix/B.1-*` | Claude adversarial/Product and GLM peer artifacts captured; Gemini direct and AGY routes failed with provider-policy evidence | 2026-07-11 |
+| B.2 | claude / gemini / glm / product | attempted-no-admissible-board | `docs/reviews/project-ontos-v4-7-1-hotfix/B.2-*` | Gemini provider failure repeated; Claude artifacts were not promoted by wrapper; GLM stopped at declared timebox | 2026-07-11 |
+| B.3 | codex | completed | `docs/reviews/project-ontos-v4-7-1-hotfix/B.3-verdict.md` | Eight accepted B.1 actions reconciled; lifecycle gap explicitly preserved | 2026-07-11 |
+| C | codex | completed | `ca1d08932b4e99b958157a118768f40fc152ad64` | 287 focused tests passed after B.1 fixes; exact schema-3.4 source parity and manifest/scope checks passed | 2026-07-11 |
 | D.1 | claude | pending | `docs/reviews/project-ontos-v4-7-1-hotfix/D.1-claude-peer.md` | Fresh implementation inspection required | — |
 | D.2 | claude / gemini / glm / product | pending | `docs/reviews/project-ontos-v4-7-1-hotfix/D.2-*` | Must target the Phase C commit | — |
 | D.3 | codex | pending | `docs/reviews/project-ontos-v4-7-1-hotfix/D.3-verdict.md` | Awaiting D.2 board | — |
