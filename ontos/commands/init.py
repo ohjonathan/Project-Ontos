@@ -188,6 +188,7 @@ def _run_scaffold(project_root: Path, paths) -> None:
             apply=True,
             dry_run=False,
             quiet=True,
+            repo_root=project_root,
         )
         exit_code, message = _run_scaffold_command(options)
 

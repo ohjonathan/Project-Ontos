@@ -371,6 +371,12 @@ def export_graph(
     ordered_payload = _ordered_export_payload(raw_payload, cache.snapshot)
 
     if export_to_file:
+        if getattr(cache, "read_only", False):
+            raise OntosUserError(
+                "Persistent graph export is unavailable in read-only mode; "
+                "omit export_to_file to receive the export in memory.",
+                code="E_READ_ONLY",
+            )
         resolved_path, rel_path = _resolve_workspace_path(cache.workspace_root, export_to_file)
         resolved_path.parent.mkdir(parents=True, exist_ok=True)
         resolved_path.write_text(json.dumps(ordered_payload, indent=2), encoding="utf-8")

@@ -16,6 +16,7 @@ from ontos.commands.log import (
     create_session_log,
     log_command,
 )
+from ontos.io.yaml import parse_frontmatter_content
 
 
 def _init_git_project(tmp_path: Path) -> None:
@@ -70,6 +71,37 @@ class TestCreateSessionLog:
         content, _ = create_session_log(tmp_path, options, git_info)
         assert "event_type: feature" in content
 
+    def test_uses_configured_logs_directory(self, tmp_path):
+        _init_git_project(tmp_path)
+        (tmp_path / ".ontos.toml").write_text(
+            "[ontos]\nversion = '3.0'\n[paths]\nlogs_dir = 'var/audit-logs'\n",
+            encoding="utf-8",
+        )
+        _, path = create_session_log(
+            tmp_path,
+            EndSessionOptions(topic="configured"),
+            {"branch": "main"},
+        )
+        assert path.parent == (tmp_path / "var" / "audit-logs")
+
+    def test_frontmatter_round_trips_adversarial_values(self, tmp_path):
+        _init_git_project(tmp_path)
+        options = EndSessionOptions(
+            event_type="fix: quoted # value",
+            topic="safe yaml",
+            source="agent, local",
+            branch='feature/"quoted"',
+            concepts=["alpha, beta", "#hash", "2026-07-10"],
+            impacts=["depends: value"],
+        )
+        content, _ = create_session_log(tmp_path, options, {"branch": "ignored"})
+        frontmatter, _ = parse_frontmatter_content(content)
+        assert frontmatter["event_type"] == options.event_type
+        assert frontmatter["source"] == options.source
+        assert frontmatter["branch"] == options.branch
+        assert frontmatter["concepts"] == options.concepts
+        assert frontmatter["impacts"] == options.impacts
+
 
 # ---------------------------------------------------------------------------
 # log_command (integration via subprocess)
@@ -88,6 +120,9 @@ class TestLogCommandCLI:
         )
         result = _run_ontos(tmp_path, "log", "--auto")
         assert result.returncode == 0
+        marker = tmp_path / ".ontos" / "session_archived"
+        assert marker.is_file()
+        assert Path(marker.read_text(encoding="utf-8")).is_file()
 
     def test_json_output_has_envelope_keys(self, tmp_path):
         """--json output conforms to v3.3 envelope schema."""
@@ -129,3 +164,79 @@ class TestLogCommandCLI:
         options = LogOptions(auto=True, quiet=True)
         result = log_command(options)
         assert result == 1
+
+    def test_collision_is_refused_without_overwrite(
+        self,
+        tmp_path,
+        monkeypatch,
+        capsys,
+    ):
+        _init_git_project(tmp_path)
+        subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "--allow-empty", "-m", "init"],
+            cwd=tmp_path,
+            capture_output=True,
+        )
+        monkeypatch.chdir(tmp_path)
+        options = LogOptions(auto=True, quiet=True, title="same session")
+        assert log_command(options) == 0
+        path = next((tmp_path / "docs" / "logs").glob("*_same-session.md"))
+        original = path.read_bytes()
+        options.json_output = True
+        assert log_command(options) == 1
+        assert path.read_bytes() == original
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["schema_version"] == "3.4"
+        assert "result" not in payload
+        assert payload["error"]["code"] == "E_LOG_EXISTS"
+
+    @pytest.mark.skipif(not hasattr(os, "symlink"), reason="symlinks unavailable")
+    def test_default_logs_dir_symlink_is_rejected_before_resolution(
+        self,
+        tmp_path,
+    ):
+        _init_git_project(tmp_path)
+        subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "--allow-empty", "-m", "init"],
+            cwd=tmp_path,
+            capture_output=True,
+        )
+        (tmp_path / "docs" / "logs").rmdir()
+        (tmp_path / "docs").rmdir()
+        outside = tmp_path.parent / f"{tmp_path.name}-outside"
+        outside_logs = outside / "logs"
+        outside_logs.mkdir(parents=True)
+        sentinel = outside / "sentinel.txt"
+        sentinel.write_text("do not change", encoding="utf-8")
+        (tmp_path / "docs").symlink_to(outside, target_is_directory=True)
+
+        result = _run_ontos(tmp_path, "log", "--auto")
+
+        assert result.returncode == 1
+        assert sentinel.read_text(encoding="utf-8") == "do not change"
+        assert list(outside_logs.glob("*.md")) == []
+
+    @pytest.mark.skipif(not hasattr(os, "symlink"), reason="symlinks unavailable")
+    def test_archive_marker_symlink_preserves_legacy_success_contract(
+        self,
+        tmp_path,
+    ):
+        _init_git_project(tmp_path)
+        subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True)
+        outside = tmp_path.parent / f"{tmp_path.name}-marker-outside"
+        outside.mkdir()
+        sentinel = outside / "session_archived"
+        sentinel.write_text("do not change", encoding="utf-8")
+        (tmp_path / ".ontos").symlink_to(outside, target_is_directory=True)
+
+        result = _run_ontos(tmp_path, "log", "--auto", "--json")
+
+        assert result.returncode == 0
+        payload = json.loads(result.stdout)
+        assert payload["schema_version"] == "3.4"
+        assert payload["exit_code"] == 0
+        assert "result" not in payload
+        assert Path(payload["data"]["path"]).is_file()
+        assert sentinel.read_text(encoding="utf-8") == "do not change"

@@ -7,11 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 from ontos.core.context import SessionContext
-from ontos.core.frontmatter_edit import (
-    _index_top_level_fields,
-    _read_decoded_content,
-    _split_frontmatter,
-)
+from ontos.core.frontmatter_edit import patch_frontmatter_fields
 from ontos.core.types import DocumentStatus, DocumentType
 from ontos.io.files import DocumentLoadIssue, load_documents
 from ontos.io.yaml import parse_frontmatter_content
@@ -160,9 +156,10 @@ def enum_issue_summary(
 
 def _issue_to_edit(issue: DocumentLoadIssue) -> EnumRepairEdit:
     field = issue.field or ""
-    old_value = str(issue.value).strip().lower()
+    old_value = str(issue.value).strip()
+    normalized_value = old_value.lower()
     mapping = TYPE_REPAIRS if field == "type" else STATUS_REPAIRS if field == "status" else {}
-    new_value = mapping.get(old_value)
+    new_value = mapping.get(normalized_value)
     allowed = [item.value for item in DocumentType] if field == "type" else [item.value for item in DocumentStatus]
     if new_value is None:
         return EnumRepairEdit(
@@ -188,32 +185,16 @@ def _issue_to_edit(issue: DocumentLoadIssue) -> EnumRepairEdit:
 
 
 def _apply_file_edits(path: Path, edits: Sequence[EnumRepairEdit]) -> str:
-    decoded = _read_decoded_content(path)
-    split = _split_frontmatter(decoded.normalized)
-    if not split.has_frontmatter:
-        return decoded.original
+    original = path.read_bytes().decode("utf-8")
+    parsed, _ = parse_frontmatter_content(original.removeprefix("\ufeff"))
+    if not parsed:
+        return original
 
-    lines = split.frontmatter.splitlines(keepends=True)
-    line_ending = "\r\n" if sum(1 for line in lines if line.endswith("\r\n")) > sum(1 for line in lines if line.endswith("\n") and not line.endswith("\r\n")) else "\n"
-
+    updates: Dict[str, Any] = {}
     for edit in sorted(edits, key=lambda item: item.field):
-        top_level = _index_top_level_fields(lines)
-        fields = {item.key: item for item in top_level}
-        target = fields.get(edit.field)
-        if target is None or edit.new_value is None:
+        if edit.new_value is None:
             continue
-
-        original_field = fields.get(edit.original_field)
-        if original_field is None:
-            insert_at = target.line_index + 1
-            lines.insert(insert_at, f"{edit.original_field}: {edit.old_value}{line_ending}")
-
-        top_level = _index_top_level_fields(lines)
-        target = next((item for item in top_level if item.key == edit.field), None)
-        if target is None:
-            continue
-        lines[target.line_index] = f"{edit.field}: {edit.new_value}{line_ending}"
-
-    new_frontmatter = "".join(lines)
-    normalized_new = f"---{new_frontmatter}---{split.body}"
-    return decoded.leading_prefix + normalized_new
+        if edit.original_field not in parsed:
+            updates[edit.original_field] = edit.old_value
+        updates[edit.field] = edit.new_value
+    return patch_frontmatter_fields(original, updates) if updates else original

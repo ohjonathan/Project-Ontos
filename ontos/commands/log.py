@@ -15,7 +15,11 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any, Set, Tuple
 
 from ontos.core.suggestions import suggest_impacts, load_document_index, validate_concepts
+from ontos.core.config import ConfigError
+from ontos.core.context import SessionContext
+from ontos.core.schema import serialize_frontmatter
 from ontos.core.types import TEMPLATES, SECTION_TEMPLATES
+from ontos.io.config import load_project_config
 from ontos.ui.json_output import emit_command_error, emit_command_success
 from ontos.ui.output import OutputHandler
 
@@ -106,17 +110,12 @@ def create_session_log(
         body = body.replace(f"## {section}\n\n", f"## {section}\n\n{placeholder}\n\n")
     
     # Combine content
-    content = f"---\n{frontmatter}---\n\n{body}"
+    content = f"---\n{frontmatter}\n---\n\n{body}"
     
-    # Determine output path (Bug 4 fix: use config if available)
-    try:
-        from ontos_config import LOGS_DIR
-        logs_dir = Path(LOGS_DIR)
-        # Align relative path with project_root to prevent CWD-dependent output
-        if not logs_dir.is_absolute():
-            logs_dir = project_root / logs_dir
-    except ImportError:
-        logs_dir = project_root / "docs" / "logs"
+    config = load_project_config(repo_root=project_root)
+    # Keep the configured path lexical so the no-follow writer can reject
+    # symlinked path components instead of resolving through them.
+    logs_dir = project_root / config.paths.logs_dir
     
     filename = f"{date_str}_{topic_slug}.md"
     output_path = logs_dir / filename
@@ -179,26 +178,21 @@ def _build_frontmatter(
     concepts: List[str],
     impacts: List[str]
 ) -> str:
-    """Build YAML frontmatter for session log."""
-    lines = [
-        f"id: {log_id}",
-        "type: log",
-        "status: active",
-        f"event_type: {event_type}",
-        f"source: {source}",
-        f"branch: {branch}",
-        f"created: {datetime.now().strftime('%Y-%m-%d')}",
-    ]
-    
+    """Build safely quoted YAML frontmatter for a session log."""
+    frontmatter: Dict[str, Any] = {
+        "id": log_id,
+        "type": "log",
+        "status": "active",
+        "event_type": event_type,
+        "source": source,
+        "branch": branch,
+        "created": datetime.now().strftime("%Y-%m-%d"),
+    }
     if concepts:
-        concepts_str = ", ".join(concepts)
-        lines.append(f"concepts: [{concepts_str}]")
-    
+        frontmatter["concepts"] = list(concepts)
     if impacts:
-        impacts_str = ", ".join(impacts)
-        lines.append(f"impacts: [{impacts_str}]")
-    
-    return "\n".join(lines) + "\n"
+        frontmatter["impacts"] = list(impacts)
+    return serialize_frontmatter(frontmatter)
 
 
 def _slugify(text: str) -> str:
@@ -289,14 +283,56 @@ def log_command(options: LogOptions) -> int:
         source=options.source or "cli",
     )
 
-    # Create the log content
-    content, output_path = create_session_log(project_root, session_options, git_info)
+    try:
+        content, output_path = create_session_log(
+            project_root,
+            session_options,
+            git_info,
+        )
+    except (ConfigError, OSError, ValueError) as exc:
+        message = f"Unable to prepare session log: {exc}"
+        if options.json_output:
+            emit_command_error(
+                command="log",
+                exit_code=1,
+                code="E_COMMAND_FAILED",
+                message=message,
+            )
+        else:
+            output.error(message)
+        return 1
 
-    # Ensure directory exists
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Write the file
-    output_path.write_text(content, encoding="utf-8")
+    try:
+        _write_log_exclusively(project_root, output_path, content)
+    except FileExistsError:
+        message = (
+            f"Session log already exists: {output_path}. "
+            "Choose a different --title, or intentionally move/remove the "
+            "existing log before retrying."
+        )
+        if options.json_output:
+            emit_command_error(
+                command="log",
+                exit_code=1,
+                code="E_LOG_EXISTS",
+                message=message,
+                data={"path": str(output_path)},
+            )
+        else:
+            output.error(message)
+        return 1
+    except (OSError, ValueError, RuntimeError) as exc:
+        message = f"Unable to create session log {output_path}: {exc}"
+        if options.json_output:
+            emit_command_error(
+                command="log",
+                exit_code=1,
+                code="E_COMMAND_FAILED",
+                message=message,
+            )
+        else:
+            output.error(message)
+        return 1
 
     # Create marker for pre-push enforcement (best effort)
     _create_archive_marker(project_root, output_path)
@@ -319,11 +355,22 @@ def log_command(options: LogOptions) -> int:
 
 
 def _create_archive_marker(project_root: Path, log_path: Path) -> None:
-    """Create marker file to signal that a session was archived."""
+    """Create the marker safely; failure remains non-fatal for compatibility."""
     marker_path = project_root / ".ontos" / "session_archived"
     try:
-        marker_path.parent.mkdir(parents=True, exist_ok=True)
-        marker_path.write_text(str(log_path), encoding="utf-8")
-    except OSError:
+        context = SessionContext(repo_root=project_root, config={})
+        context.buffer_write(marker_path, str(log_path))
+        context.commit()
+    except (OSError, RuntimeError, ValueError):
         # Non-fatal: marker creation failure shouldn't break logging
         pass
+
+
+def _write_log_exclusively(
+    project_root: Path,
+    output_path: Path,
+    content: str,
+) -> None:
+    """Create a UTF-8 log through the workspace-safe exclusive writer."""
+    context = SessionContext(repo_root=project_root, config={})
+    context.create_text_file_exclusively(output_path, content)

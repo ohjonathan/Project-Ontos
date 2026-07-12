@@ -8,6 +8,8 @@ from datetime import date
 
 import pytest
 
+from ontos.io.yaml import parse_frontmatter_content
+
 
 @pytest.fixture
 def golden_help():
@@ -32,6 +34,7 @@ def test_verify_help_parity(golden_help):
 
 def test_verify_single_file_parity(tmp_path):
     """Verify single file updates describes_verified."""
+    (tmp_path / ".ontos").mkdir()
     # Create test file with frontmatter and describes
     test_file = tmp_path / "test_verify.md"
     test_file.write_text("""---
@@ -47,7 +50,8 @@ Content""")
         [sys.executable, "-m", "ontos.cli", "verify", str(test_file)],
         capture_output=True,
         text=True,
-        env=os.environ.copy()
+        env=os.environ.copy(),
+        cwd=tmp_path,
     )
 
     assert result.returncode == 0
@@ -55,7 +59,8 @@ Content""")
     
     # Check file content
     content = test_file.read_text()
-    assert f"describes_verified: {today}" in content
+    frontmatter, _ = parse_frontmatter_content(content)
+    assert frontmatter["describes_verified"] == today
 
 def test_verify_all_fails_on_duplicates(tmp_path):
     """VUL-03: verify --all command must fail on duplicate IDs."""

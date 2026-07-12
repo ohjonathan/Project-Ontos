@@ -96,20 +96,25 @@ class TestUnifiedCLI:
 class TestCLIArgumentPassthrough:
     """Test that arguments are passed through to subcommands correctly."""
 
-    def run_cli(self, *args):
+    def run_cli(self, *args, cwd=None):
         """Helper to run ontos CLI with given arguments."""
         result = subprocess.run(
             [sys.executable, '-m', 'ontos'] + list(args),
-            cwd=Path(__file__).parent.parent,
+            cwd=cwd or Path(__file__).parent.parent,
             capture_output=True,
             text=True,
             timeout=30
         )
         return result
 
-    def test_map_quiet_flag_passthrough(self):
+    def test_map_quiet_flag_passthrough(self, tmp_path):
         """--quiet flag should pass through to map command."""
-        result = self.run_cli('map', '--quiet')
+        (tmp_path / ".ontos.toml").write_text(
+            "[ontos]\nversion = '3.0'\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "docs").mkdir()
+        result = self.run_cli('map', '--quiet', cwd=tmp_path)
         # Should not error on the flag (may fail for other reasons like no git repo)
         assert 'unrecognized arguments: --quiet' not in result.stderr.lower()
 

@@ -15,11 +15,10 @@ Semantics (v4.1 Track B):
 * ``is_workspace_clean`` returns ``False`` (with a reason string) when git
   is unavailable or the repository cannot be inspected — the tool is a
   precondition for destructive multi-file edits, so we fail closed.
-* ``rollback_path`` reverts a single path to its state at git HEAD. It is
-  used by single-file write tools (scaffold/log/promote) in their A3
-  recovery path per addendum v1.2 §A3 (SF-B7). Tracked paths are restored
-  via ``git checkout --``; untracked paths (i.e. a new file that a failed
-  commit partially created) are unlinked from disk. This is the scoped
+* ``rollback_path`` proves trackedness before taking action. Tracked paths
+  are restored via ``git checkout --`` and a checkout failure never falls
+  through to deletion; only proven-untracked partial files are unlinked.
+  It is the scoped
   counterpart to the multi-file ``rename_tool`` rollback, which runs
   ``git checkout -- .`` over the whole workspace.
 """
@@ -78,8 +77,8 @@ def rollback_path(
 ) -> Optional[str]:
     """Revert a single path to its state at git HEAD.
 
-    If the path is tracked in HEAD, ``git checkout -- <path>`` restores the
-    HEAD version. If the path is NOT tracked (e.g. a new file that a failed
+    If the path is tracked, ``git checkout -- <path>`` restores the index/HEAD
+    version. If the path is NOT tracked (e.g. a new file that a failed
     commit partially created), the path is unlinked from disk if present.
     A missing path after the rollback is a valid final state — the caller's
     intent is "undo the write", and nothing-to-undo is success.
@@ -99,8 +98,8 @@ def rollback_path(
         return f"path is outside workspace root: {path}"
 
     try:
-        result = subprocess.run(
-            ["git", "checkout", "--", str(rel)],
+        tracked = subprocess.run(
+            ["git", "ls-files", "--error-unmatch", "--", str(rel)],
             cwd=str(root),
             capture_output=True,
             text=True,
@@ -110,15 +109,37 @@ def rollback_path(
     except FileNotFoundError:
         return "git executable not found on PATH"
     except (OSError, subprocess.TimeoutExpired) as exc:
-        return f"Unable to run git checkout: {exc}"
+        return f"Unable to determine trackedness: {exc}"
 
-    if result.returncode == 0:
-        return None
+    if tracked.returncode not in (0, 1):
+        stderr = (tracked.stderr or "").strip()
+        return stderr or "git ls-files failed"
 
-    # git checkout failed. Most common reason: path not in HEAD — an
-    # untracked new file from a partial write. Unlink it if present.
+    if tracked.returncode == 0:
+        try:
+            result = subprocess.run(
+                ["git", "checkout", "--", str(rel)],
+                cwd=str(root),
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                check=False,
+            )
+        except FileNotFoundError:
+            return "git executable not found on PATH"
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            return f"Unable to run git checkout: {exc}"
+        if result.returncode == 0:
+            return None
+        stderr = (result.stderr or "").strip()
+        return stderr or "git checkout failed for tracked path"
+
+    # Only a proven-untracked path may be removed. A checkout failure for a
+    # tracked path is never reinterpreted as permission to delete user data.
     abs_path = root / rel
-    if abs_path.exists():
+    if abs_path.exists() or abs_path.is_symlink():
+        if abs_path.is_dir() and not abs_path.is_symlink():
+            return f"Refusing to unlink untracked directory: {abs_path}"
         try:
             abs_path.unlink()
         except OSError as exc:

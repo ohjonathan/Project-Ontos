@@ -158,3 +158,28 @@ class TestSerializeFrontmatter:
         fm = {"id": "test", "extra": None}
         result = serialize_frontmatter(fm)
         assert "extra: null" in result
+
+    @pytest.mark.parametrize(
+        "frontmatter",
+        [
+            {"id": "test", "title": 'Q3 plan: "final" version'},
+            {"id": "test", "depends_on": ["design_v1,final"]},
+            {"id": "test", "version": "4.10", "build": "007", "flag": "no"},
+            {"id": "test", "note": "#42 follow-up"},
+            {"id": "2026-07-10", "title": "Date-like ID remains text"},
+            {"id": "test", "note": "phase --- two"},
+            {"id": "test", "note": "line one\nline two"},
+            {"id": "test", "title": "Unicode café 日本語"},
+        ],
+    )
+    def test_adversarial_values_roundtrip_exactly(self, frontmatter):
+        from ontos.io.yaml import parse_frontmatter_content
+
+        serialized = serialize_frontmatter(frontmatter)
+        parsed, _ = parse_frontmatter_content(f"---\n{serialized}\n---\n")
+        assert parsed == frontmatter
+
+    @pytest.mark.parametrize("bad_id", [None, 123, "", "has spaces", "-bad"])
+    def test_invalid_document_ids_fail_closed(self, bad_id):
+        with pytest.raises(ValueError, match="Document id"):
+            serialize_frontmatter({"id": bad_id, "type": "atom"})

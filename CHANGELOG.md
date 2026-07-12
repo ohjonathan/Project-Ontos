@@ -4,6 +4,51 @@ All notable changes to this project will be documented in this file.
 
 > For the full historical changelog with Ontos frontmatter (from v0.1.0), see [`Ontos_CHANGELOG.md`](Ontos_CHANGELOG.md).
 
+## [4.7.1] - Unreleased
+
+Patch release stopping active frontmatter corruption and hardening local
+write paths without changing the command-envelope schema or exit-code
+taxonomy.
+
+### Fixed
+
+- **Safe frontmatter serialization (#146)** — all serializer-backed document
+  writers now use PyYAML-safe scalar quoting, preserve field order, and verify
+  semantic round trips before committing. Date-like IDs, quoted text,
+  comma-bearing list items, hash-leading values, multiline strings, and
+  Unicode no longer change type or corrupt YAML.
+- **Format-preserving mutations** — promote, migrate, verify, retrofit,
+  frontmatter repair, rename scalar emission, and MCP write tools preserve
+  comments, BOMs, line endings, quoting outside changed fields, and document
+  bodies while reparsing changed frontmatter before commit.
+- **Secure transactional writes** — temporary files are unpredictable and
+  exclusive; symlinks, hard links, path swaps, duplicate pending
+  destinations, and paths outside the workspace fail closed. Existing file
+  modes and the process umask are respected, and commits use durable atomic
+  replacement with rollback.
+- **Cross-platform locking** — the base package no longer depends on an
+  unconditional `fcntl` import. CLI and MCP mutations share a bound
+  workspace-lock abstraction and reject lock-file or workspace identity
+  changes.
+- **Session logs** — logs use the configured `logs_dir`, safe YAML
+  serialization, and exclusive creation. A same-day slug collision returns an
+  error instead of overwriting the existing log.
+- **Doctor command execution (#147)** — repository-controlled Cursor MCP
+  configuration is inspected without executing an arbitrary configured
+  command; managed Ontos launchers continue to receive the initialize probe.
+- **Read-only MCP** — persistent graph export, usage-log writes, portfolio
+  initialization, and SQLite sidecars are suppressed in read-only mode.
+
+### Compatibility notes
+
+- The standard command envelope remains schema version **3.4**; no v4.0
+  `result` object or new exit-code taxonomy is included.
+- Invalid UTF-8 remains replacement-decoded on general read-only loading for
+  patch compatibility. Every mutation path decodes strictly and refuses to
+  rewrite malformed input; broad loader rejection is deferred to v5.0.0.
+- Generated-map timestamp behavior, CLI flag semantics, graph/link output,
+  MCP `graph_stats.by_type`, and the accepted stub type set are unchanged.
+
 ## [4.7.0] - 2026-06-11
 
 Minor release closing Issues #131–#136 — the "Ontos feels unstable" RCA

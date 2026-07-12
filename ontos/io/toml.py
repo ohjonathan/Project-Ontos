@@ -9,6 +9,8 @@ Phase 2 Decomposition - Created from Phase2-Implementation-Spec.md Section 4.8
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+import tomli_w
+
 # Python 3.11+ has tomllib in stdlib
 try:
     import tomllib
@@ -64,49 +66,30 @@ def load_config_if_exists(path: Path) -> Optional[Dict[str, Any]]:
 
 
 def write_config(path: Path, config: Dict[str, Any]) -> None:
-    """Write configuration to TOML file.
-
-    Note: This is a simple implementation. For complex TOML writing,
-    consider using the tomlkit package.
+    """Write configuration as standards-compliant TOML.
 
     Args:
         path: Destination path
         config: Configuration dictionary
     """
-    def _format_value(v: Any) -> str:
-        """Format a value for TOML output."""
-        if v is None:
-            return '""'  # TOML doesn't have null, use empty string
-        elif isinstance(v, bool):
-            return str(v).lower()
-        elif isinstance(v, str):
-            # Escape quotes and backslashes
-            escaped = v.replace('\\', '\\\\').replace('"', '\\"')
-            return f'"{escaped}"'
-        elif isinstance(v, (int, float)):
-            return str(v)
-        elif isinstance(v, list):
-            items = ", ".join(_format_value(item) for item in v)
-            return f'[{items}]'
-        else:
-            return str(v)
+    if not isinstance(config, dict):
+        raise TypeError("TOML configuration must be a dictionary")
 
-    lines = []
-    for key, value in config.items():
+    def without_none(value: Any) -> Any:
         if isinstance(value, dict):
-            lines.append(f'[{key}]')
-            for k, v in value.items():
-                if v is None:
-                    continue
-                lines.append(f'{k} = {_format_value(v)}')
-            lines.append('')
-        else:
-            if value is None:
-                continue
-            lines.append(f'{key} = {_format_value(value)}')
+            return {
+                key: without_none(item)
+                for key, item in value.items()
+                if item is not None
+            }
+        if isinstance(value, list):
+            if any(item is None for item in value):
+                raise ValueError("TOML arrays cannot contain null values")
+            return [without_none(item) for item in value]
+        return value
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+    path.write_text(tomli_w.dumps(without_none(config)), encoding='utf-8')
 
 
 def merge_configs(*configs: Dict[str, Any]) -> Dict[str, Any]:

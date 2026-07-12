@@ -1,7 +1,6 @@
 """Native verify command implementation."""
 
 import json
-import re
 import sqlite3
 from dataclasses import dataclass
 from datetime import date
@@ -13,6 +12,7 @@ from ontos.core.staleness import (
     check_staleness,
 )
 from ontos.core.context import SessionContext
+from ontos.core.frontmatter_edit import patch_frontmatter_fields
 from ontos.io.config import load_project_config
 from ontos.io.files import find_project_root, load_documents, load_frontmatter
 from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
@@ -87,42 +87,13 @@ def update_describes_verified(
     Matches exact regex replacement logic from legacy script.
     """
     try:
-        content = filepath.read_text(encoding='utf-8')
+        content = filepath.read_bytes().decode("utf-8")
         
-        if not content.startswith('---'):
-            output.error(f"{filepath} has no frontmatter")
-            return False
-        
-        parts = content.split('---', 2)
-        if len(parts) < 3:
-            output.error(f"Invalid frontmatter in {filepath}")
-            return False
-        
-        frontmatter = parts[1]
-        body = parts[2]
         date_str = new_date.isoformat()
-        
-        # Check if describes_verified already exists
-        if re.search(r'^describes_verified:', frontmatter, re.MULTILINE):
-            new_frontmatter = re.sub(
-                r'^describes_verified:.*$',
-                f'describes_verified: {date_str}',
-                frontmatter,
-                flags=re.MULTILINE
-            )
-        else:
-            # Add after describes field
-            if re.search(r'^describes:', frontmatter, re.MULTILINE):
-                new_frontmatter = re.sub(
-                    r'^(describes:.*(?:\n  - .*)*)$',
-                    f'\\1\ndescribes_verified: {date_str}',
-                    frontmatter,
-                    flags=re.MULTILINE
-                )
-            else:
-                new_frontmatter = frontmatter.rstrip() + f'\ndescribes_verified: {date_str}\n'
-        
-        new_content = f'---{new_frontmatter}---{body}'
+        new_content = patch_frontmatter_fields(
+            content,
+            {"describes_verified": date_str},
+        )
         ctx.buffer_write(filepath, new_content)
         return True
     except Exception as e:

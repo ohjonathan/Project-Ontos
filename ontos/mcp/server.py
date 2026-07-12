@@ -122,7 +122,7 @@ def serve(
     portfolio_index: Optional[PortfolioIndexLike] = None
     try:
         if portfolio:
-            portfolio_index = _build_portfolio_index()
+            portfolio_index = _build_portfolio_index(read_only=read_only)
         server = create_server(
             cache,
             portfolio_index=portfolio_index,
@@ -323,6 +323,7 @@ def _register_core_tools(
             "export_graph",
             cache,
             tool_impl.export_graph,
+            use_live_cache=True,
             summary_only=summary_only,
             export_to_file=export_to_file,
             workspace_id=workspace_id,
@@ -417,11 +418,15 @@ def _register_core_tools(
         title="Export Graph",
         description=f"Exports the canonical Ontos graph for the {workspace_name} workspace.",
         handler=handle_export_graph,
-        annotations=ToolAnnotations(
-            readOnlyHint=False,
-            destructiveHint=False,
-            idempotentHint=True,
-            openWorldHint=False,
+        annotations=(
+            _readonly_annotations()
+            if getattr(cache, "read_only", False)
+            else ToolAnnotations(
+                readOnlyHint=False,
+                destructiveHint=False,
+                idempotentHint=True,
+                openWorldHint=False,
+            )
         ),
         meta={"anthropic/maxResultSizeChars": 200000},
     )
@@ -967,7 +972,9 @@ def _render_instructions(
         )
     if getattr(cache, "read_only", False):
         instructions += (
-            " This server is read-only; at session end use the CLI fallback "
+            " This server is read-only: persistent graph export is disabled, "
+            "so omit `export_to_file` to receive exports in memory. At session "
+            "end use the CLI fallback "
             "`ontos log -e \"slug\"` if you need to archive work."
         )
     else:
@@ -993,7 +1000,7 @@ def _relative_time(value: datetime) -> str:
 
 
 def _log_usage(cache: SnapshotCache, tool_name: str) -> None:
-    if not cache.config.mcp.usage_logging:
+    if getattr(cache, "read_only", False) or not cache.config.mcp.usage_logging:
         return
 
     raw_path = cache.config.mcp.usage_log_path or DEFAULT_USAGE_LOG_PATH
@@ -1045,13 +1052,14 @@ def _build_cache(workspace_root: Path) -> SnapshotCache:
     )
 
 
-def _build_portfolio_index() -> PortfolioIndexLike:
+def _build_portfolio_index(*, read_only: bool = False) -> PortfolioIndexLike:
     from ontos.mcp.portfolio import PortfolioIndex
     from ontos.mcp.portfolio_config import ensure_portfolio_config, load_portfolio_config
 
-    # Initialize the on-disk config if absent (side-effectful write), then load
-    # it with the pure read path. See m-9 in Track A/D verdict.
-    ensure_portfolio_config()
+    # Read-only servers consume an existing snapshot and never initialize
+    # config, create a DB, rebuild, or open WAL/SHM sidecars.
+    if not read_only:
+        ensure_portfolio_config()
     config = load_portfolio_config()
     scan_roots = [Path(path).expanduser() for path in config.scan_roots]
     registry_path = (
@@ -1059,13 +1067,14 @@ def _build_portfolio_index() -> PortfolioIndexLike:
         if config.registry_path
         else None
     )
-    index = PortfolioIndex(DEFAULT_PORTFOLIO_DB_PATH)
+    index = PortfolioIndex(DEFAULT_PORTFOLIO_DB_PATH, read_only=read_only)
     index.open()
-    index.rebuild_all(
-        scan_roots=scan_roots,
-        exclude=list(config.exclude),
-        registry_path=registry_path,
-    )
+    if not read_only:
+        index.rebuild_all(
+            scan_roots=scan_roots,
+            exclude=list(config.exclude),
+            registry_path=registry_path,
+        )
     return index
 
 
