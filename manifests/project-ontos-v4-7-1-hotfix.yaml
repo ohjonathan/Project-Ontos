@@ -13,7 +13,7 @@ strict_p3_required_phases: ["B.1", "D.2", "D.5"]
 implementation_sequencing:
   mode: code-first-user-gated
   user_gate_ref: "maintainer decision in Codex task: split PR #161 by observable contract and prioritize v4.7.1"
-  implementation_ref: "audit/v4.7.1-hotfix working tree based on bf91b42; replace with the Phase C commit before D.2 dispatch"
+  implementation_ref: "e33a31d0c0040de9afa1f8efe22246c798534edd"
   rationale: "The maintainer explicitly authorized reconstructing the urgent P0 hotfix from the already-reviewed PR #161 tree; Phase A and all review evidence are regenerated against this focused branch and are not inherited from PR #161."
 
 owners:
