@@ -61,7 +61,7 @@ the stronger follow-up design.
 | Manifest conformance | PASS, 4/4 |
 | Re-adjudication queue | PASS, 3 open items |
 | D.5 family dispatch completeness | FAIL, 4 violations / 0 completed |
-| Strict lifecycle | FAIL, 12 issues; `status=review_pending` |
+| Strict lifecycle | FAIL fast because the manifest honestly declares `fallback_evidence_mode=provider_limited_fallback`; `status=manifest_valid`, not certified |
 | Provider-limited lifecycle | FAIL, 12 issues; `status=provider_limited_fallback_incomplete` |
 | Primary receipt inventory schema | FAIL: wrapper-emitted Product role is forbidden by the v2.0.1 receipt schema |
 | Final receipt inventory schema | FAIL: empty `receipts` is forbidden |

@@ -67,7 +67,8 @@ holding schema, exit-code, CLI, and graph contract changes for v5.0.0.
 - Inherited doctor RCE regressions: 5 passed.
 - Manifest conformance: 4/4; re-adjudication queue: 3/3 valid.
 - Envelope remains schema 3.4; v5 paths and tracked goldens match `bf91b42`.
-- Strict lifecycle: `review_pending` (12 issues).
+- Strict lifecycle: rejected because the manifest declares provider-limited
+  fallback mode; `status=manifest_valid`, not certified.
 - Provider-limited lifecycle: `provider_limited_fallback_incomplete` (12 issues).
 - PR-feedback focus: 10 passed; retained compatibility suite: 153 passed.
 
