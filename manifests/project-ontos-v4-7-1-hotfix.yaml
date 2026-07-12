@@ -136,6 +136,7 @@ scope:
     - "tests/commands/test_log.py"
     - "tests/commands/test_env.py"
     - "tests/commands/test_consolidate_parity.py"
+    - "tests/commands/test_doctor_phase4.py"
     - "tests/commands/test_migrate_parity.py"
     - "tests/commands/test_promote_parity.py"
     - "tests/commands/test_rename.py"
