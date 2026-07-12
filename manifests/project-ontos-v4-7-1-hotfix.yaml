@@ -6,9 +6,83 @@ summary: "Contract-preserving v4.7.1 hotfix for frontmatter corruption, filesyst
 lifecycle_mode: framework lifecycle
 deliverable_type: standard
 user_facing: true
-fallback_evidence_mode: strict_p3
+fallback_evidence_mode: provider_limited_fallback
 require_lifecycle_dispatch_bundles: true
 strict_p3_required_phases: ["B.1", "D.2", "D.5"]
+
+harness_blocked_families:
+  - family: claude
+    provider: anthropic
+    affected_phases: ["D.5"]
+    affected_role: verifier
+    blockage_category: harness_blocked
+    blockage_evidence_path: "docs/reviews/project-ontos-v4-7-1-hotfix/D.5-dispatch-result.yaml"
+    blockage_evidence_sha256: "4d8ca089881c01bf9fd3ec06198f61d7129690c8adc282b3593776008f507a19"
+    first_observed: "2026-07-12T03:09:02Z"
+    retry_policy: "The verifier was allowed one bounded run and was terminated after it exceeded the declared timebox without producing an artifact."
+    fallback_route: "Orchestrator direct reproductions and the complete test suite are warning-only evidence, not a Claude receipt."
+    re_adjudication_owner: "Project Ontos Maintainers"
+    re_adjudication_ref: "ra-v471-claude-d5"
+  - family: gemini
+    provider: google
+    affected_phases: ["B.1", "B.2", "D.2", "D.5"]
+    blockage_category: provider_policy
+    blockage_evidence_path: "docs/reviews/project-ontos-v4-7-1-hotfix/.raw/ontos-471-D5-gv-r2.r2.c20260712T031936Z.95652.529518c198c9d80b4403afff241847c2.stderr.txt"
+    blockage_evidence_sha256: "0ff9b8b82d0c1bb8a1b8a6b13db60aa95b91a988d9a184178e4a0f391affebdf"
+    first_observed: "2026-07-12T01:39:15Z"
+    retry_policy: "Direct Gemini and AGY were retried during B.1; D.5 retried once after satisfying the workspace-trust prerequisite."
+    fallback_route: "No substitute is labeled Gemini; the gap remains warning-only."
+    re_adjudication_owner: "Project Ontos Maintainers"
+    re_adjudication_ref: "ra-v471-gemini"
+  - family: glm
+    provider: neuralwatt
+    affected_phases: ["B.2", "D.2", "D.5"]
+    blockage_category: sandbox_blocked
+    blockage_evidence_path: "docs/reviews/project-ontos-v4-7-1-hotfix/.raw/ontos-471-D5-glv.r1.c20260712T031543Z.60181.028920e20d52c390f9936da839e7c72f.stderr.redacted.txt"
+    blockage_evidence_sha256: "bdca1ccc1722483cf9a329421c388a0a4934179d84e289eb12f785cec53fa061"
+    first_observed: "2026-07-12T02:48:45Z"
+    retry_policy: "The D.5 OpenCode route was retried once after the D.2 failure and again rejected required repository commands."
+    fallback_route: "Orchestrator direct reproductions and the complete test suite are warning-only evidence, not a GLM receipt."
+    re_adjudication_owner: "Project Ontos Maintainers"
+    re_adjudication_ref: "ra-v471-glm-d5"
+
+provider_limited_review_exception:
+  scope: "Incomplete B.1, B.2, D.2, and D.5 external-family dispatch/receipt evidence for the focused v4.7.1 hotfix."
+  strict_p3_roles_unsatisfied: [peer, alignment, adversarial, verifier]
+  fallback_roles_used: [claude-adversarial, claude-product, glm-peer, codex-orchestrator-preflight]
+  evidence_type: framework_fallback_evidence
+  strict_p3_certified: false
+  authorization_ref: "Maintainer split directive in this task"
+  caveat_text: "provider_limited_fallback_complete; strict P3 not certified; maintainer release actions deferred"
+
+re_adjudication_queue:
+  - id: "ra-v471-claude-d5"
+    artifact_under_judgment: "docs/reviews/project-ontos-v4-7-1-hotfix/D.3-verdict.md"
+    blocked_family_ref: claude
+    reason: "The Claude D.5 verifier exceeded the bounded run and produced no admissible artifact."
+    rerun_trigger: "A bounded Claude verifier run can complete and produce a wrapper-valid artifact."
+    owner: "Project Ontos Maintainers"
+    priority: blocking
+    expected_rerun_command: "Re-run ontos-471-D5-cv through dispatch-family-review.sh against a0062ae."
+    status: pending
+  - id: "ra-v471-gemini"
+    artifact_under_judgment: "docs/reviews/project-ontos-v4-7-1-hotfix/D.3-verdict.md"
+    blocked_family_ref: gemini
+    reason: "Gemini review and verifier seats require rerun when a supported provider route is available."
+    rerun_trigger: "Supported Gemini or AGY entitlement produces wrapper-verifiable artifacts."
+    owner: "Project Ontos Maintainers"
+    priority: blocking
+    expected_rerun_command: "Re-dispatch the missing Gemini tuples through dispatch-family-review.sh and append real receipts."
+    status: pending
+  - id: "ra-v471-glm-d5"
+    artifact_under_judgment: "docs/reviews/project-ontos-v4-7-1-hotfix/D.3-verdict.md"
+    blocked_family_ref: glm
+    reason: "The GLM OpenCode route could not execute the commands required for direct-run D.5 evidence."
+    rerun_trigger: "The attested GLM route permits the required read-only shell and test commands."
+    owner: "Project Ontos Maintainers"
+    priority: blocking
+    expected_rerun_command: "Re-run ontos-471-D5-glv through dispatch-family-review.sh and append a real receipt."
+    status: pending
 
 implementation_sequencing:
   mode: code-first-user-gated
@@ -102,6 +176,7 @@ scope:
     - "docs/trackers/project-ontos-v4-7-1-hotfix.md"
     - "docs/retros/project-ontos-v4-7-1-hotfix-retro.md"
     - "docs/logs/2026-07-11_project-ontos-v4-7-1-hotfix.md"
+    - ".ontos-internal/logs/2026-07-11_project-ontos-v4-7-1-hotfix.md"
   allowed_path_patterns:
     - "docs/reviews/project-ontos-v4-7-1-hotfix/**"
   composition_targets:

@@ -25,9 +25,9 @@ tag, publish, release, or close issues.
 | D.2 | claude / gemini / glm / product | attempted-provider-limited | `docs/reviews/project-ontos-v4-7-1-hotfix/D.2-*` | Product artifact was substantive but shape-invalid; Gemini provider failed; GLM sandbox failed; Claude peer did not complete | 2026-07-11 |
 | D.3 | codex | completed-provider-limited | `docs/reviews/project-ontos-v4-7-1-hotfix/D.3-verdict.md` | Two supported blockers preserved; artifact explicitly warning-only and non-canonical P3 evidence | 2026-07-11 |
 | D.4 | codex | completed | `docs/reviews/project-ontos-v4-7-1-hotfix/D.4-fix-summary.md` | Both blockers closed in `a0062ae`; EH-15-A adopter-verifier defect recorded | 2026-07-11 |
-| D.5 | claude / gemini / glm | pending | `docs/reviews/project-ontos-v4-7-1-hotfix/D.5-*-verifier.md` | Must target final reviewed commit | — |
-| D.6 | codex | withheld | `docs/reviews/project-ontos-v4-7-1-hotfix/final-approval.md` | May run only after admissible strict-P3 evidence; provider-limited fallback keeps D.6 withheld | — |
-| E | codex | pending | `docs/retros/project-ontos-v4-7-1-hotfix-retro.md` | After lifecycle status is mechanically known | — |
+| D.5 | claude / gemini / glm | attempted-provider-limited | `docs/reviews/project-ontos-v4-7-1-hotfix/D.5-orchestrator-status.md` | Four wrapper-recorded attempts, zero valid artifacts/receipts; direct falsification and 1572-test suite are green but do not substitute external evidence | 2026-07-11 |
+| D.6 | codex | withheld | `docs/reviews/project-ontos-v4-7-1-hotfix/final-approval.md` | `--allow-gated` artifact only; strict and fallback lifecycle verifiers remain incomplete | 2026-07-11 |
+| E | codex | not-reached | `docs/retros/project-ontos-v4-7-1-hotfix-retro.md` | Post-merge retrospective is maintainer-deferred because no merge occurred | — |
 
 ## Contract decisions
 
@@ -48,8 +48,10 @@ tag, publish, release, or close issues.
 - The v2.0.1 receipt schema rejects wrapper-emitted Product receipts, and the
   fallback generator cannot bind real stderr evidence to an empty failed
   artifact without mislabeling it.
-- D.6 is withheld. If the final genuine D.5 provider dispatch
-  fails and the framework fallback verifies, the terminal label must remain
+- The genuine D.5 wave and one correctable Gemini retry are complete. The
+  framework reports `provider_limited_fallback_incomplete`; no receipt was
+  reconstructed.
+- D.6 is withheld. The maintainer-directed process label is
   `provider_limited_fallback_complete; strict P3 not certified; maintainer release actions deferred`.
 - PR #161 cannot be rebased into a v5.0.0 PR until this hotfix is reviewed and
   merged by the maintainer.

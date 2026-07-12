@@ -1,0 +1,91 @@
+manifest_version: "2.0.0"
+authoring_session_family: codex
+meta_orchestrator_family: codex
+deliverable_author_family: codex
+deliverable_author_families: [codex]
+artifact_root: docs/reviews/project-ontos-v4-7-1-hotfix
+deliverable_id: project-ontos-v4-7-1-hotfix
+strict_p3_claim: true
+review_board_classification:
+  mode: strict_verifier_retry
+  strict_p3_capable_evidence: true
+  strict_p3_certified: false
+  merge_authority: recommendation_only
+  rationale: "Genuine three-family D.5 retry against implementation a0062ae; failures trigger the authorized provider-limited fallback, never reconstructed evidence."
+dispatches:
+  - dispatch_id: ontos-471-D5-cv
+    family: claude
+    role: verifier
+    review_mode: verification
+    expected_provider: claude
+    expected_cli: claude
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-v4-7-1-hotfix/D.5-claude-verifier.md
+    prompt_path: docs/reviews/project-ontos-v4-7-1-hotfix/.prompts/D.5-claude-verifier.prompt.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    fallback_models: []
+    template_id: 15-verifier
+    template_version: 1.0.0
+    scope: "Verify both D.3 blockers and post-fix regression/scope gates."
+    status: pending
+  - dispatch_id: ontos-471-D5-gv
+    family: gemini
+    role: verifier
+    review_mode: verification
+    expected_provider: gemini
+    expected_cli: gemini
+    expected_model: auto
+    legacy_execution_cli_override_reason: "Direct current-head retry records the persistent retired-client provider policy."
+    expected_artifact: docs/reviews/project-ontos-v4-7-1-hotfix/D.5-gemini-verifier.md
+    prompt_path: docs/reviews/project-ontos-v4-7-1-hotfix/.prompts/D.5-gemini-verifier.prompt.md
+    evidence_cap: static-inspection
+    dispatch_method: external-cli
+    fallback_models: []
+    template_id: 15-verifier
+    template_version: 1.0.0
+    scope: "Static verifier pass over both D.3 blocker closures."
+    status: pending
+  - dispatch_id: ontos-471-D5-gv-r2
+    family: gemini
+    role: verifier
+    review_mode: verification
+    expected_provider: gemini
+    expected_cli: gemini
+    expected_model: auto
+    legacy_execution_cli_override_reason: "One retry with GEMINI_CLI_TRUST_WORKSPACE=true distinguishes the local trust gate from provider/model availability."
+    expected_artifact: docs/reviews/project-ontos-v4-7-1-hotfix/D.5-gemini-verifier-r2.md
+    prompt_path: docs/reviews/project-ontos-v4-7-1-hotfix/.prompts/D.5-gemini-verifier-r2.prompt.md
+    evidence_cap: static-inspection
+    dispatch_method: external-cli
+    fallback_models: []
+    template_id: 15-verifier
+    template_version: 1.0.0
+    scope: "Static verifier retry after satisfying the headless workspace-trust prerequisite."
+    status: pending
+  - dispatch_id: ontos-471-D5-glv
+    family: glm
+    role: verifier
+    review_mode: verification
+    expected_provider: glm
+    expected_cli: opencode
+    expected_model: glm-5.2
+    expected_artifact: docs/reviews/project-ontos-v4-7-1-hotfix/D.5-glm-verifier.md
+    prompt_path: docs/reviews/project-ontos-v4-7-1-hotfix/.prompts/D.5-glm-verifier.prompt.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    serving_provider: neuralwatt
+    wire_protocol: openai-compatible
+    opencode_provider_id: neuralwatt
+    opencode_model_ref: neuralwatt/glm-5.2
+    opencode_base_url_env: NEURALWATT_BASE_URL
+    opencode_api_key_env: NEURALWATT_API_KEY
+    endpoint_origin_label: neuralwatt
+    evidence_trust_tier: attested-third-party
+    route_attestation_profile_id: neuralwatt-opencode-glm-5-2-v1
+    advisory_only: false
+    fallback_models: []
+    template_id: 15-verifier
+    template_version: 1.0.0
+    scope: "Verify both D.3 blockers and post-fix regression/scope gates."
+    status: pending
