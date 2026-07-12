@@ -187,10 +187,13 @@ class TestDoctorCommand:
              patch("ontos.commands.doctor.check_cli_availability") as mock_cli, \
              patch("ontos.commands.doctor.check_agents_staleness") as mock_agents, \
              patch("ontos.commands.doctor.check_environment_manifests") as mock_env, \
-             patch("ontos.commands.doctor.check_antigravity_mcp") as mock_antigravity:
+             patch("ontos.commands.doctor.check_antigravity_mcp") as mock_antigravity, \
+             patch("ontos.commands.doctor.check_activation_health") as mock_activation, \
+             patch("ontos.commands.doctor.check_cursor_mcp") as mock_cursor:
 
             for mock in [mock_config, mock_hooks, mock_python, mock_docs,
-                        mock_map, mock_valid, mock_cli, mock_agents, mock_env, mock_antigravity]:
+                        mock_map, mock_valid, mock_cli, mock_agents, mock_env,
+                        mock_antigravity, mock_activation, mock_cursor]:
                 mock.return_value = CheckResult(
                     name="test", status="success", message="OK"
                 )
@@ -200,9 +203,8 @@ class TestDoctorCommand:
             exit_code, result = _run_doctor_command(options)
 
             assert exit_code == 0
-            # 12 checks total: 10 mocked + check_activation_health (clean
-            # snapshot under the path-based orphan allowlist) +
-            # check_cursor_mcp (no project/user config present).
+            # All 12 checks are mocked so this aggregate test cannot depend on
+            # live repository documents or user-level MCP configuration.
             assert result.passed == 12
             assert result.failed == 0
 
@@ -217,10 +219,13 @@ class TestDoctorCommand:
              patch("ontos.commands.doctor.check_cli_availability") as mock_cli, \
              patch("ontos.commands.doctor.check_agents_staleness") as mock_agents, \
              patch("ontos.commands.doctor.check_environment_manifests") as mock_env, \
-             patch("ontos.commands.doctor.check_antigravity_mcp") as mock_antigravity:
+             patch("ontos.commands.doctor.check_antigravity_mcp") as mock_antigravity, \
+             patch("ontos.commands.doctor.check_activation_health") as mock_activation, \
+             patch("ontos.commands.doctor.check_cursor_mcp") as mock_cursor:
 
             for mock in [mock_hooks, mock_python, mock_docs,
-                        mock_map, mock_valid, mock_cli, mock_agents, mock_env, mock_antigravity]:
+                        mock_map, mock_valid, mock_cli, mock_agents, mock_env,
+                        mock_antigravity, mock_activation, mock_cursor]:
                 mock.return_value = CheckResult(
                     name="test", status="success", message="OK"
                 )
