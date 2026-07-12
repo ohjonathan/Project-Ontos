@@ -9,11 +9,11 @@ from typing import Optional
 class _FieldImmutableException(Exception):
     """Preserve frozen public fields while allowing exception runtime state.
 
-    Python 3.14's ``contextlib`` assigns ``__traceback__`` while propagating an
-    exception through a generator context manager.  A frozen dataclass rejects
-    that assignment and replaces the real error with ``FrozenInstanceError``.
-    Keep the v4.7.0 field-immutability/hash contract while permitting only the
-    metadata attributes owned by ``BaseException``.
+    ``contextlib`` assigns ``__traceback__`` while propagating an exception
+    through a generator context manager on supported Python versions. A
+    frozen dataclass rejects that assignment and replaces the real error with
+    ``FrozenInstanceError``. Keep the v4.7.0 field-immutability/hash contract
+    while permitting only the metadata attributes owned by ``BaseException``.
     """
 
     _ontos_fields_locked = False

@@ -178,8 +178,13 @@ class TestCommitFailure:
         target = tmp_path / "test.txt"
         ctx.buffer_write(target, "content")
         
-        # Mock rename to fail
-        with patch.object(Path, 'rename', side_effect=OSError("rename failed")):
+        # The hardened writer applies staged files with os.replace(). Force the
+        # destination replacement to fail and verify that the unique temp file
+        # is removed without creating the target.
+        with patch(
+            "ontos.core.context.os.replace",
+            side_effect=OSError("replace failed"),
+        ):
             with pytest.raises(OSError):
                 ctx.commit()
         
@@ -198,7 +203,10 @@ class TestCommitFailure:
         target = tmp_path / "test.txt"
         ctx.buffer_write(target, "content")
         
-        with patch.object(Path, 'rename', side_effect=OSError("rename failed")):
+        with patch(
+            "ontos.core.context.os.replace",
+            side_effect=OSError("replace failed"),
+        ):
             with pytest.raises(OSError):
                 ctx.commit()
         

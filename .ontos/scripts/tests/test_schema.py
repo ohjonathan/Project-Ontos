@@ -4,7 +4,7 @@ These tests cover:
 - Version parsing and validation
 - Schema detection from frontmatter
 - Compatibility checking
-- Frontmatter serialization (stdlib only)
+- Safe, semantically lossless frontmatter serialization
 """
 
 import pytest
@@ -25,6 +25,7 @@ from ontos.core.schema import (
     CURRENT_SCHEMA_VERSION,
     SCHEMA_DEFINITIONS,
 )
+from ontos.io.yaml import parse_yaml
 
 
 class TestParseVersion:
@@ -252,10 +253,10 @@ class TestSerializeFrontmatter:
         assert id_pos < type_pos < deps_pos
 
     def test_value_with_colon(self):
-        """Values with colons are quoted."""
+        """Values with colons round-trip regardless of YAML quote style."""
         fm = {"id": "test", "description": "Note: important"}
         result = serialize_frontmatter(fm)
-        assert 'description: "Note: important"' in result
+        assert parse_yaml(result) == fm
 
 
 class TestAddSchemaToFrontmatter:

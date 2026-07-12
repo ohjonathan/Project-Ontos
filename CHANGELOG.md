@@ -56,8 +56,9 @@ taxonomy.
 - Filename-derived fallback IDs remain verbatim for compatibility. Only an
   explicit `id:` is required to be a string matching the documented grammar.
 - Public exception fields retain their immutable/hashable behavior while
-  permitting Python 3.14 traceback metadata, so context-manager propagation
-  no longer masks the original domain error.
+  permitting `BaseException` runtime metadata on supported Python versions,
+  including Python 3.14, so context-manager propagation no longer masks the
+  original domain error.
 - The central transaction and serializer-backed mutation paths changed in this
   hotfix. Validate high-value bulk mutations in a scratch clone before release
   rollout, especially on unusual network or linked filesystem layouts.
