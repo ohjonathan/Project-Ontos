@@ -122,13 +122,7 @@ class PortfolioIndex:
         with self._connect() as conn:
             conn.execute("INSERT INTO fts_content(fts_content) VALUES('optimize');")
             conn.commit()
-            try:
-                # Publish a self-contained main-db snapshot for strict
-                # read-only consumers opened with URI immutable=1. Leaving
-                # committed rows only in WAL would make that snapshot stale.
-                conn.execute("PRAGMA wal_checkpoint(TRUNCATE);")
-            except sqlite3.OperationalError:
-                pass
+            self._publish_read_only_snapshot(conn)
 
     def rebuild_workspace(self, slug: str, workspace_root: Path) -> None:
         """Rebuild one workspace in a serialized write transaction."""
@@ -466,7 +460,16 @@ class PortfolioIndex:
                         f"FTS parity mismatch for {slug}: documents={docs_count}, fts={fts_count}"
                     )
 
-                conn.execute("PRAGMA wal_checkpoint(PASSIVE);")
+                self._publish_read_only_snapshot(conn)
+
+    @staticmethod
+    def _publish_read_only_snapshot(conn: sqlite3.Connection) -> None:
+        """Checkpoint committed WAL frames before immutable readers can query."""
+        result = conn.execute("PRAGMA wal_checkpoint(TRUNCATE);").fetchone()
+        if result is None or int(result[0]) != 0:
+            raise sqlite3.OperationalError(
+                "Unable to publish a complete read-only portfolio snapshot"
+            )
 
     def _connect(self) -> sqlite3.Connection:
         if self.read_only:

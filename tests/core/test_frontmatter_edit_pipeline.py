@@ -107,6 +107,71 @@ def test_patch_rejects_duplicate_target_field() -> None:
         patch_frontmatter_fields(content, {"status": "active"})
 
 
+@pytest.mark.parametrize("quoted_key", ["'id'", '"id"', '"\\u0069d"'])
+def test_patch_recognizes_quoted_target_key_without_adding_a_duplicate(
+    quoted_key: str,
+) -> None:
+    content = f"---\n{quoted_key}: old_doc\ntype: atom\n---\nbody\n"
+
+    updated = patch_frontmatter_fields(content, {"id": "new_doc"})
+
+    frontmatter, body = parse_frontmatter_content(updated)
+    assert frontmatter["id"] == "new_doc"
+    assert "old_doc" not in updated
+    assert body == "body\n"
+
+
+def test_patch_preserves_quoted_non_target_key_as_a_field_boundary() -> None:
+    content = (
+        "---\n"
+        "id: quoted_boundary\n"
+        "status: draft\n"
+        "'custom': keep\n"
+        "type: atom\n"
+        "---\n"
+        "body\n"
+    )
+
+    updated = patch_frontmatter_fields(content, {"status": "active"})
+
+    frontmatter, body = parse_frontmatter_content(updated)
+    assert frontmatter["status"] == "active"
+    assert frontmatter["custom"] == "keep"
+    assert "'custom': keep\n" in updated
+    assert body == "body\n"
+
+
+@pytest.mark.parametrize(
+    "field_lines",
+    [
+        "'status': draft\nstatus: active\n",
+        "status: active\n'status': draft\n",
+    ],
+)
+def test_patch_rejects_duplicate_target_across_plain_and_quoted_keys(
+    field_lines: str,
+) -> None:
+    content = f"---\n{field_lines}id: duplicate\n---\n"
+
+    with pytest.raises(ValueError, match="more than once"):
+        patch_frontmatter_fields(content, {"status": "active"})
+
+
+def test_patch_fails_closed_if_an_unindexed_yaml_key_would_be_removed() -> None:
+    content = (
+        "---\n"
+        "id: exotic_boundary\n"
+        "status: draft\n"
+        "custom.name: keep\n"
+        "type: atom\n"
+        "---\n"
+        "body\n"
+    )
+
+    with pytest.raises(ValueError, match="changed unrelated fields"):
+        patch_frontmatter_fields(content, {"status": "active"})
+
+
 def test_patch_preserves_comment_on_changed_field() -> None:
     content = "---\nid: commented\nstatus: draft # explain why\n---\n"
     updated = patch_frontmatter_fields(content, {"status": "active"})

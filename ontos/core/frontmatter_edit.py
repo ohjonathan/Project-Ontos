@@ -22,7 +22,13 @@ from ontos.io.yaml import (
 )
 
 
-_TOP_LEVEL_FIELD_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*)\s*:(.*)$")
+_PLAIN_FIELD_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*$")
+_TOP_LEVEL_FIELD_RE = re.compile(
+    r"^(?:(?P<plain>[A-Za-z_][A-Za-z0-9_-]*)|"
+    r"(?P<single>'(?:[^']|'')*')|"
+    r'(?P<double>"(?:[^"\\]|\\.)*"))'
+    r"\s*:(?P<value>.*)$"
+)
 
 
 @dataclass(frozen=True)
@@ -65,7 +71,7 @@ def patch_frontmatter_fields(content: str, updates: Mapping[str, Any]) -> str:
     if not updates:
         return content
     for key in updates:
-        if not isinstance(key, str) or _TOP_LEVEL_FIELD_RE.match(f"{key}:") is None:
+        if not isinstance(key, str) or _PLAIN_FIELD_NAME_RE.fullmatch(key) is None:
             raise ValueError(f"Invalid frontmatter field name: {key!r}")
 
     bom = "\ufeff" if content.startswith("\ufeff") else ""
@@ -82,6 +88,8 @@ def patch_frontmatter_fields(content: str, updates: Mapping[str, Any]) -> str:
     )
     if not isinstance(parsed, dict):
         raise ValueError("Frontmatter must be a mapping")
+    expected_frontmatter = dict(parsed)
+    expected_frontmatter.update(updates)
 
     lines = split.frontmatter.splitlines(keepends=True)
     line_ending = _dominant_line_ending(split.frontmatter, normalized)
@@ -128,12 +136,14 @@ def patch_frontmatter_fields(content: str, updates: Mapping[str, Any]) -> str:
     # documents.
     if "id" in reparsed:
         validate_document_id(reparsed["id"])
-    for key, expected in updates.items():
-        if reparsed.get(key) != expected:
+    for key, expected_value in updates.items():
+        if reparsed.get(key) != expected_value:
             raise ValueError(
                 f"Frontmatter update failed semantic verification for {key!r}"
             )
-    assert_frontmatter_roundtrip(reparsed, new_frontmatter)
+    if reparsed != expected_frontmatter:
+        raise ValueError("Frontmatter update changed unrelated fields")
+    assert_frontmatter_roundtrip(expected_frontmatter, new_frontmatter)
     return prefix + f"---{new_frontmatter}---{split.body}"
 
 
@@ -302,9 +312,11 @@ def _index_top_level_fields(lines: Sequence[str]) -> List[_TopLevelField]:
         match = _TOP_LEVEL_FIELD_RE.match(no_newline)
         if match is None:
             continue
-        key = match.group(1)
-        colon_index = no_newline.find(":")
-        value_text = no_newline[colon_index + 1:]
+        key = _decode_top_level_key(match)
+        if key is None:
+            continue
+        colon_index = match.start("value") - 1
+        value_text = match.group("value")
         top_level_entries.append((key, index, line, colon_index, value_text))
 
     results: List[_TopLevelField] = []
@@ -326,6 +338,25 @@ def _index_top_level_fields(lines: Sequence[str]) -> List[_TopLevelField]:
             )
         )
     return results
+
+
+def _decode_top_level_key(match: re.Match[str]) -> Optional[str]:
+    """Return the semantic key for a supported plain or quoted mapping key."""
+    plain = match.group("plain")
+    if plain is not None:
+        return plain
+
+    token = match.group("single") or match.group("double")
+    if token is None:
+        return None
+    try:
+        parsed, _ = parse_frontmatter_content(f"---\n{token}: null\n---\n")
+    except ValueError:
+        return None
+    if not isinstance(parsed, dict) or len(parsed) != 1:
+        return None
+    key = next(iter(parsed))
+    return key if isinstance(key, str) else None
 
 
 def _check_clean_git_state(repo_root: Path) -> Tuple[bool, Optional[str]]:
