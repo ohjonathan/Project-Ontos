@@ -21,6 +21,8 @@ receipt. It does not substitute Codex evidence for any external family.
 - Pre-fix: `a71ac4a0d55ad86b8f9051f9c339bd1397ff4751`
 - Final product-fix code reviewed at D.5: `a0062ae8b6e8413f15e64259ec16d1c927d55328`
 - Final branch verification ref: `ef869f7e805b691fc614e7017c16438e2d33de0a`
+- Post-D.5 compatibility-test/documentation ref:
+  `30d8dcd811f2d03552f8a24bc6f05b57e4d19e13`
 - Lifecycle-only head at dispatch: `98d765cd339a2ce9cdf3ec98798e385a25318456`
 - D.4 blockers: `D1-FM-QUOTED-KEY-BOUNDARY`,
   `D1-PORTFOLIO-WAL-SNAPSHOT`
@@ -78,6 +80,16 @@ user-level Cursor checks while asserting an exact pass count. Commit `ef869f7`
 mocks those two checks inside the aggregate unit tests. It changes no product
 code or command contract; 8 focused doctor/security tests pass. No external
 receipt is claimed for this post-D.5 test-harness correction.
+
+PR #162 CI then exposed three stale expectations in the retained
+`.ontos/scripts/tests/` compatibility suite. Two patched the retired
+`Path.rename` seam after the secure writer moved to `os.replace`; one asserted
+a particular YAML quote character instead of semantic round-trip equality.
+Commit `30d8dcd` updates only those expectations plus the explanatory
+`core/errors.py`/changelog wording. The full 153-test compatibility suite
+passes. The CI gate was retained because deleting it would weaken the declared
+hotfix verification boundary. No D.5 receipt or renewed certification is
+claimed for this post-D.5 test/documentation-only correction.
 
 ## Status
 

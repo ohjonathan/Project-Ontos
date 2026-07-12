@@ -87,7 +87,7 @@ re_adjudication_queue:
 implementation_sequencing:
   mode: code-first-user-gated
   user_gate_ref: "maintainer decision in Codex task: split PR #161 by observable contract and prioritize v4.7.1"
-  implementation_ref: "ef869f7e805b691fc614e7017c16438e2d33de0a"
+  implementation_ref: "30d8dcd811f2d03552f8a24bc6f05b57e4d19e13"
   rationale: "The maintainer explicitly authorized reconstructing the urgent P0 hotfix from the already-reviewed PR #161 tree; Phase A and all review evidence are regenerated against this focused branch and are not inherited from PR #161."
 
 owners:
@@ -133,6 +133,8 @@ scope:
     - "ontos/mcp/tools.py"
     - "ontos/mcp/writes.py"
     - "pyproject.toml"
+    - ".ontos/scripts/tests/test_context.py"
+    - ".ontos/scripts/tests/test_schema.py"
     - "tests/commands/test_log.py"
     - "tests/commands/test_env.py"
     - "tests/commands/test_consolidate_parity.py"
@@ -386,6 +388,12 @@ gate_prerequisites:
     description: "The complete suite passes from a clean tree and leaves tracked and untracked status unchanged."
     verification:
       command: "test -z \"$(git status --porcelain=v1 --untracked-files=all)\" && PATH=\"$PWD/.venv/bin:$PATH\" .venv/bin/python -m pytest -q && test -z \"$(git status --porcelain=v1 --untracked-files=all)\""
+      expect: "exit-0"
+  - id: G-test-legacy-1
+    category: test
+    description: "The retained compatibility suite agrees with the safe serializer and secure writer seams."
+    verification:
+      command: "PATH=\"$PWD/.venv/bin:$PATH\" .venv/bin/python -m pytest -q .ontos/scripts/tests/"
       expect: "exit-0"
   - id: G-contract-1
     category: test

@@ -48,6 +48,9 @@ In scope:
   creation; refuse collisions instead of overwriting.
 - [x] Prevent read-only MCP servers from creating graph exports, usage logs,
   portfolio configuration, databases, or SQLite sidecars.
+- [x] Keep the existing compatibility CI gate and align its stale failure
+  injections and YAML assertions with the secure writer and semantic
+  serializer contracts.
 - [x] Ship package version 4.7.1 and document the patch behavior.
 - [x] Preserve the doctor RCE fix already present in the `main` base.
 
@@ -61,7 +64,8 @@ Out of scope:
 - Expanded stub lifecycle types and activation incompatibility result shapes.
 - General loader rejection of malformed UTF-8.
 - Context-map timestamp suppression.
-- Hook rewiring, golden-baseline recapture, and removal of legacy tests.
+- Hook rewiring, golden-baseline recapture, and removal of legacy tests. The
+  retained compatibility tests may receive expectation-only maintenance.
 - Publication changes that would remove the source distribution.
 - Merge, tag, release, or issue closure.
 

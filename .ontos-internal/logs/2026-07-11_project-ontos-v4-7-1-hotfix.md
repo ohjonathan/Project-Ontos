@@ -54,6 +54,11 @@ holding schema, exit-code, CLI, and graph contract changes for v5.0.0.
 - Read-only MCP write suppression and self-contained portfolio snapshots.
 - Quoted-key-aware frontmatter surgery with full-mapping postconditions.
 - v4.7.1 version/docs/manifest/tracker and D.1–D.5 lifecycle evidence.
+- PR #162 compatibility-test expectations updated for semantic YAML quoting
+  and the secure writer's `os.replace` seam; the 153-test CI gate remains.
+- Exception documentation corrected: generator context managers require
+  `BaseException` runtime metadata on supported Python versions, not only
+  Python 3.14.
 
 ## Testing
 
@@ -64,6 +69,7 @@ holding schema, exit-code, CLI, and graph contract changes for v5.0.0.
 - Envelope remains schema 3.4; v5 paths and tracked goldens match `bf91b42`.
 - Strict lifecycle: `review_pending` (12 issues).
 - Provider-limited lifecycle: `provider_limited_fallback_incomplete` (12 issues).
+- PR-feedback focus: 10 passed; retained compatibility suite: 153 passed.
 
 ## Impacts
 
