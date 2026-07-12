@@ -19,7 +19,8 @@ receipt. It does not substitute Codex evidence for any external family.
 ## Implementation under verification
 
 - Pre-fix: `a71ac4a0d55ad86b8f9051f9c339bd1397ff4751`
-- Final code: `a0062ae8b6e8413f15e64259ec16d1c927d55328`
+- Final product-fix code reviewed at D.5: `a0062ae8b6e8413f15e64259ec16d1c927d55328`
+- Final branch verification ref: `ef869f7e805b691fc614e7017c16438e2d33de0a`
 - Lifecycle-only head at dispatch: `98d765cd339a2ce9cdf3ec98798e385a25318456`
 - D.4 blockers: `D1-FM-QUOTED-KEY-BOUNDARY`,
   `D1-PORTFOLIO-WAL-SNAPSHOT`
@@ -70,6 +71,13 @@ test failures. They are also a reproduction signal for llm-dev-framework issue
 #214. Pointing fallback evidence at an empty artifact, filtering the Product
 receipt, editing the GLM hash-bound artifact, or hand-writing receipts would
 make the mechanics greener by making the evidence false; none was done.
+
+After the external D.5 attempts, the withheld framework artifact exposed an
+existing non-hermetic aggregate doctor test: it called live activation and
+user-level Cursor checks while asserting an exact pass count. Commit `ef869f7`
+mocks those two checks inside the aggregate unit tests. It changes no product
+code or command contract; 8 focused doctor/security tests pass. No external
+receipt is claimed for this post-D.5 test-harness correction.
 
 ## Status
 

@@ -87,7 +87,7 @@ re_adjudication_queue:
 implementation_sequencing:
   mode: code-first-user-gated
   user_gate_ref: "maintainer decision in Codex task: split PR #161 by observable contract and prioritize v4.7.1"
-  implementation_ref: "a0062ae8b6e8413f15e64259ec16d1c927d55328"
+  implementation_ref: "ef869f7e805b691fc614e7017c16438e2d33de0a"
   rationale: "The maintainer explicitly authorized reconstructing the urgent P0 hotfix from the already-reviewed PR #161 tree; Phase A and all review evidence are regenerated against this focused branch and are not inherited from PR #161."
 
 owners:
