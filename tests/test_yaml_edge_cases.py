@@ -1,13 +1,21 @@
 """Tests for YAML edge cases and null value handling."""
 
+import os
+import sys
 import pytest
 from unittest.mock import patch
-from ontos_generate_context_map import (
-    normalize_depends_on,
-    normalize_type,
-    scan_docs,
-    validate_dependencies
-)
+
+_LEGACY_SCRIPTS = os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts'))
+sys.path.insert(0, _LEGACY_SCRIPTS)
+try:
+    from ontos_generate_context_map import (
+        normalize_depends_on,
+        normalize_type,
+        scan_docs,
+        validate_dependencies,
+    )
+finally:
+    sys.path.remove(_LEGACY_SCRIPTS)
 
 # Default orphan types (User Mode) - atoms should be flagged as orphans
 DEFAULT_ALLOWED_ORPHAN_TYPES = ['product', 'strategy', 'kernel']

@@ -32,12 +32,16 @@ def parse_yaml(content: str) -> Dict[str, Any]:
 def dump_yaml(
     data: Dict[str, Any],
     default_flow_style: Optional[bool] = False,
+    *,
+    sort_keys: bool = True,
 ) -> str:
     """Dump dictionary to YAML string.
 
     Args:
         data: Dictionary to serialize
         default_flow_style: If True, use flow style (inline) for collections
+        sort_keys: Preserve the historical public helper default when true.
+            Callers that control field order may opt out explicitly.
 
     Returns:
         YAML string representation
@@ -46,7 +50,7 @@ def dump_yaml(
         data,
         default_flow_style=default_flow_style,
         allow_unicode=True,
-        sort_keys=False,
+        sort_keys=sort_keys,
     )
 
 

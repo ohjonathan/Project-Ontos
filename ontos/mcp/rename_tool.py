@@ -360,9 +360,8 @@ def rename_document(
         return _user_error_result(exc)
 
     # Result holder so we can shape error returns outside the lock while
-    # keeping OntosUserError/OntosInternalError caught INSIDE the lock
-    # (Python 3.14 frozen-dataclass __traceback__ gotcha documented in
-    # writes.py dispatcher comments).
+    # keeping OntosUserError/OntosInternalError caught INSIDE the lock so
+    # error shaping remains local to this operation.
     result: Optional[CallToolResult] = None
     try:
         with workspace_lock(

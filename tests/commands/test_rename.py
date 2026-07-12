@@ -169,6 +169,34 @@ def test_rename_dirty_git_apply_rejected_but_dry_run_allowed(tmp_path: Path):
     assert "DRY RUN" in dry_run_result.stdout
 
 
+def test_rename_invalid_utf8_is_actionable_and_byte_unchanged(tmp_path: Path):
+    _init_repo(tmp_path)
+    path = tmp_path / "docs" / "bad-encoding.md"
+    original = (
+        b"---\nid: old_id\ntype: atom\nstatus: active\n---\n\n"
+        b"See old_id and invalid byte \xff.\n"
+    )
+    path.write_bytes(original)
+    _init_git_repo(tmp_path)
+
+    result = _run_ontos(
+        tmp_path,
+        "--json",
+        "rename",
+        "old_id",
+        "new_id",
+        "--apply",
+    )
+
+    assert result.returncode == 1
+    payload = json.loads(result.stdout)
+    assert payload["schema_version"] == "3.4"
+    assert payload["error"]["code"] == "E_COMMAND_FAILED"
+    assert payload["data"]["path"] == str(path)
+    assert "Re-save the file as UTF-8" in payload["message"]
+    assert path.read_bytes() == original
+
+
 def test_rename_dry_run_json_includes_line_context_and_skipped_zones(tmp_path: Path):
     _init_repo(tmp_path)
     _write_doc(tmp_path / "docs" / "target.md", "old_id")

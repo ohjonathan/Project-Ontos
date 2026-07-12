@@ -10,6 +10,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 from ontos.core.body_refs import MatchType, ZoneType, scan_body_references
 from ontos.core.context import SessionContext
 from ontos.core.frontmatter_edit import (
+    InvalidDocumentEncodingError,
     _DecodedContent,
     _FrontmatterSplit,
     _TopLevelField,
@@ -126,6 +127,7 @@ class RenamePlan:
 class RenameError:
     code: str
     message: str
+    path: Optional[Path] = None
 
 
 @dataclass
@@ -394,11 +396,18 @@ def build_rename_plan(
     file_plans: List[FilePlan] = []
     all_warnings: List[RenameWarning] = []
     for doc in sorted(docs.values(), key=lambda item: str(item.filepath)):
-        file_plan = _build_file_plan(
-            path=doc.filepath,
-            old_id=old_id,
-            new_id=new_id,
-        )
+        try:
+            file_plan = _build_file_plan(
+                path=doc.filepath,
+                old_id=old_id,
+                new_id=new_id,
+            )
+        except InvalidDocumentEncodingError as exc:
+            return None, RenameError(
+                code=exc.code,
+                message=str(exc),
+                path=exc.path,
+            )
         if file_plan is None:
             continue
         file_plans.append(file_plan)
@@ -1273,37 +1282,40 @@ def _emit_error(
     summary: Optional[RenameSummary] = None,
 ) -> None:
     if options.json_output:
+        data = {
+            "mode": mode,
+            "scope": scope.value,
+            "old_id": old_id,
+            "new_id": new_id,
+            "summary": _summary_to_json(
+                summary
+                or RenameSummary(
+                    files_scanned=0,
+                    documents_loaded=0,
+                    planned_files=0,
+                    frontmatter_edits=0,
+                    body_edits=0,
+                    skipped_zone_sightings=0,
+                    warnings=len(warnings),
+                ),
+                applied_files=len(applied_paths or []),
+            ),
+            "files": [],
+            "applied_paths": list(applied_paths or []),
+            "post_apply_warning": POST_APPLY_WARNING if mode == "apply" else None,
+            "partial_commit": {
+                "detected": partial_commit,
+                "message": error.message if partial_commit else None,
+            },
+        }
+        if error.path is not None:
+            data["path"] = str(error.path)
         emit_command_error(
             command="rename",
             exit_code=1,
             code=error.code,
             message=error.message,
-            data={
-                "mode": mode,
-                "scope": scope.value,
-                "old_id": old_id,
-                "new_id": new_id,
-                "summary": _summary_to_json(
-                    summary
-                    or RenameSummary(
-                        files_scanned=0,
-                        documents_loaded=0,
-                        planned_files=0,
-                        frontmatter_edits=0,
-                        body_edits=0,
-                        skipped_zone_sightings=0,
-                        warnings=len(warnings),
-                    ),
-                    applied_files=len(applied_paths or []),
-                ),
-                "files": [],
-                "applied_paths": list(applied_paths or []),
-                "post_apply_warning": POST_APPLY_WARNING if mode == "apply" else None,
-                "partial_commit": {
-                    "detected": partial_commit,
-                    "message": error.message if partial_commit else None,
-                },
-            },
+            data=data,
             warnings=[_warning_to_json(item) for item in warnings],
         )
         return

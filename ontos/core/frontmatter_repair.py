@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 from ontos.core.context import SessionContext
-from ontos.core.frontmatter_edit import patch_frontmatter_fields
+from ontos.core.frontmatter_edit import patch_frontmatter_fields, read_utf8_for_mutation
 from ontos.core.types import DocumentStatus, DocumentType
 from ontos.io.files import DocumentLoadIssue, load_documents
 from ontos.io.yaml import parse_frontmatter_content
@@ -185,7 +185,7 @@ def _issue_to_edit(issue: DocumentLoadIssue) -> EnumRepairEdit:
 
 
 def _apply_file_edits(path: Path, edits: Sequence[EnumRepairEdit]) -> str:
-    original = path.read_bytes().decode("utf-8")
+    original = read_utf8_for_mutation(path)
     parsed, _ = parse_frontmatter_content(original.removeprefix("\ufeff"))
     if not parsed:
         return original

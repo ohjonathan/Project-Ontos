@@ -1,7 +1,15 @@
 """Tests for cycle detection functionality."""
 
+import os
+import sys
 import pytest
-from ontos_generate_context_map import validate_dependencies
+
+_LEGACY_SCRIPTS = os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts'))
+sys.path.insert(0, _LEGACY_SCRIPTS)
+try:
+    from ontos_generate_context_map import validate_dependencies
+finally:
+    sys.path.remove(_LEGACY_SCRIPTS)
 
 
 class TestCycleDetection:

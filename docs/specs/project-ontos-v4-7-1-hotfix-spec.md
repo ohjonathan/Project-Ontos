@@ -92,11 +92,12 @@ serializer signature and field order but delegates scalar representation to
 that foundation. Its compatibility policy for unknown/future schema versions
 remains identical to the baseline.
 
-The canonical loader validates explicit and filename-derived IDs as strings
-matching the documented ID grammar. README and template exclusions run before
-fallback-ID validation. General reads retain replacement decoding for invalid
-UTF-8; all mutation readers use strict decoding and fail before buffering a
-write.
+The canonical loader validates explicit IDs as strings matching the documented
+ID grammar. A missing ID retains the baseline filename-stem fallback verbatim,
+including spaces, leading underscores, and Unicode. README and template
+exclusions retain their baseline behavior. General reads keep replacement
+decoding for invalid UTF-8; mutation readers use strict decoding and report the
+affected path and recovery step before buffering a write.
 
 ### Format-preserving mutation
 
@@ -164,7 +165,7 @@ Unit and focused integration tests cover:
   values, date-like IDs, multiline values, Unicode, and line-delimiter text;
 - each serializer or mutation consumer, including CLI and MCP log creation;
 - comments, BOM, CRLF, inline comments, unsupported YAML features, id-less
-  documents, and duplicate fields;
+  documents, legacy filename-derived IDs, and duplicate fields;
 - regular predictable temp files, temp symlinks, destination symlinks,
   outside-root paths, duplicate pending writes, interrupted commits, rollback,
   mode/umask, and unchanged external files;
@@ -202,8 +203,15 @@ could appear to succeed:
   path fails before changing external data.
 
 Malformed UTF-8 continues to load through the baseline read-only loader, but a
-mutation refuses it. This prevents replacement characters from being written
+mutation refuses it with exit 1 / `E_COMMAND_FAILED`, the affected path, and a
+UTF-8 recovery step. This prevents replacement characters from being written
 back while avoiding a patch-release change to the visible document set.
+
+Legacy project-local `ontos_config.py` `LOGS_DIR` retains its v4.7.0
+precedence. In its absence, `log` now honors `[paths].logs_dir`; existing logs
+are not moved, and custom directories must remain inside the workspace. A
+custom log directory outside the configured scan scope is writable but is not
+automatically added to map/query scope.
 
 Rollback is a single revert of the hotfix PR. No schema migration or generated
 artifact rewrite is required. The transaction pipeline itself restores
@@ -213,7 +221,7 @@ already-applied paths on commit failure.
 
 | Risk | Severity | Mitigation |
 |---|---|---|
-| Central writer rejects a legitimate filesystem layout | High | Characterization tests for regular files, modes, umask, nested paths, moves, deletes, POSIX/macOS aliases, and Windows backend seams |
+| Central writer rejects a legitimate filesystem layout | High | Characterization tests for regular files, modes, umask, nested paths, moves, deletes, POSIX/macOS aliases, and Windows backend seams; validate bulk mutations in a scratch clone before rollout |
 | Serializer changes scalar style | Medium | Semantic equality is the contract; existing simple-list and field-order assertions remain, while golden command outputs stay at baseline |
 | Selective split accidentally imports v5 behavior | High | Exact-source parity gates for CLI, envelope, link/graph, MCP schemas, stub, and golden paths |
 | MCP outer and inner locks diverge | High | Typed guard identity, focused rename/write-tool regressions, and contention tests |

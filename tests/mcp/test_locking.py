@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
+from dataclasses import FrozenInstanceError
 from multiprocessing import Event, Process
 import os
 from pathlib import Path
@@ -11,6 +13,24 @@ import pytest
 from ontos.core.errors import OntosUserError
 from ontos.core.context import SessionContext
 from ontos.mcp.locking import workspace_lock
+
+
+def test_domain_error_preserves_frozen_contract_and_python314_traceback():
+    error = OntosUserError("bad input", code="E_TEST")
+    original_hash = hash(error)
+
+    with pytest.raises(FrozenInstanceError):
+        error.message = "changed"
+    assert hash(error) == original_hash
+
+    @contextmanager
+    def boundary():
+        yield
+
+    with pytest.raises(OntosUserError) as raised:
+        with boundary():
+            raise error
+    assert raised.value is error
 
 
 def _hold_workspace_lock(workspace_root: str, ready: Event, release: Event) -> None:

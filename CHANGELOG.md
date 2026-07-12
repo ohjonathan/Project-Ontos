@@ -32,7 +32,11 @@ taxonomy.
   changes.
 - **Session logs** — logs use the configured `logs_dir`, safe YAML
   serialization, and exclusive creation. A same-day slug collision returns an
-  error instead of overwriting the existing log.
+  existing `E_FILE_EXISTS` error instead of overwriting the earlier log.
+  Legacy project-local `ontos_config.py` `LOGS_DIR` keeps precedence; when no
+  legacy override exists, `[paths].logs_dir` is honored. Existing logs are not
+  moved automatically. Keep a custom directory inside the configured scan
+  scope if its logs should appear in maps and queries.
 - **Doctor command execution (#147)** — repository-controlled Cursor MCP
   configuration is inspected without executing an arbitrary configured
   command; managed Ontos launchers continue to receive the initialize probe.
@@ -45,7 +49,16 @@ taxonomy.
   `result` object or new exit-code taxonomy is included.
 - Invalid UTF-8 remains replacement-decoded on general read-only loading for
   patch compatibility. Every mutation path decodes strictly and refuses to
-  rewrite malformed input; broad loader rejection is deferred to v5.0.0.
+  rewrite malformed input with exit 1 / `E_COMMAND_FAILED`, the affected path,
+  and a UTF-8 recovery step; broad loader rejection is deferred to v5.0.0.
+- Filename-derived fallback IDs remain verbatim for compatibility. Only an
+  explicit `id:` is required to be a string matching the documented grammar.
+- Public exception fields retain their immutable/hashable behavior while
+  permitting Python 3.14 traceback metadata, so context-manager propagation
+  no longer masks the original domain error.
+- The central transaction and serializer-backed mutation paths changed in this
+  hotfix. Validate high-value bulk mutations in a scratch clone before release
+  rollout, especially on unusual network or linked filesystem layouts.
 - Generated-map timestamp behavior, CLI flag semantics, graph/link output,
   MCP `graph_stats.by_type`, and the accepted stub type set are unchanged.
 

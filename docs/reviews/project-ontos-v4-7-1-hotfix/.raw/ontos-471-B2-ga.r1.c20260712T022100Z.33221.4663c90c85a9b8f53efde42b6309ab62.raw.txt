@@ -1,0 +1,23 @@
+I'll start the Phase B.2 adversarial review. Let me first explore the repository state and gather the key artifacts.
+Let me read the key artifacts in parallel: spec, manifest, B.1 findings, and core contract surfaces.
+Now let me read the B.1 adversarial/product findings and the key contract code surfaces in parallel.
+Let me find the B.1 claude-adversarial review and read the key contract code surfaces.
+Now let me read the B.1 r2 reviews (which would show whether fixes were applied), the B.2 dispatch context, and key contract code surfaces.
+Let me examine the key contract surfaces that the B.1 findings targeted: schema.py (ID validation), frontmatter_edit.py, log.py, and the mutation command surfaces.
+Now let me verify the B.1 fixes across all mutation surfaces. Let me grep for `read_utf8_for_mutation` usage and the collision codes, and run focused tests.
+Let me check the rename.py and retrofit.py mutation read paths, and the B.1 product r2 review.
+Let me check whether any product code changed between the implementation snapshot `e33a31d` and current HEAD, and look at rename.py's mutation read path.
+No product code changed between `e33a31d` and `6168267`. Let me verify the exact ID validation line at the implementation snapshot and check the B.1 adversarial r2's claimed reproduction.
+The committed code at `e33a31d` differs from what I read in the working tree. Let me check for uncommitted changes — these would be the B.1 fixes under review.
+Now I understand: the B.1 fixes are uncommitted working-tree changes on top of `6168267`. Let me systematically diff the key contract surfaces that the B.1 findings targeted.
+The B.1 fixes are uncommitted working-tree changes on top of `6168267`. Let me now run the adversarial attacks on each contract surface.
+Now let me run the critical attacks in parallel: the B.1 adversarial reproduction case, focused tests, schema-3.4 parity check, and remaining mutation surface coverage.
+Let me use the venv for tests and check remaining surfaces.
+The filename fallback ID fix is verified — all 4 documents now load. Let me now check the remaining surfaces: MCP writes.py mutation paths, the clean-tree gate, and run focused tests.
+179 focused tests pass on Python 3.14.6. Let me check the MCP rename_tool path, the spec diff, and whether the test run left the tree clean.
+Let me check the scaffold error path and verify the malformed UTF-8 behavior end-to-end.
+Let me verify the malformed UTF-8 test coverage exists and test the retrofit error path with a git repo.
+The end-to-end test confirms the B-1 fix: exit 1, `E_COMMAND_FAILED`, path named, bytes unchanged. Let me now check test coverage for the UTF-8 fix and the collision taxonomy test.
+Let me verify the scaffold error handling path and do a final end-to-end check.
+I found that pickling/copying `OntosUserError` fails with `FrozenInstanceError`. Let me verify whether this is a regression against the baseline behavior or pre-existing.
+Let me verify the baseline errors.py and check whether the CHANGELOG was updated.

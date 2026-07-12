@@ -1,0 +1,22 @@
+I'll perform a timeboxed Phase B.1 external review. Let me start with parallel investigation of git state, spec, and manifest.
+Let me read the spec, the targeted diff, the manifest area, and the prior r1 review in parallel.
+Let me read the manifest, the saved r2 prompts/raw evidence, and run focused tests in parallel.
+Let me read the r2 prompt for glm and prior r2 raw output (orchestrator-preflight evidence), then kick off focused tests + gates in parallel.
+Tests pass: 206 in 17.68s (direct-run). The prior r2 raw output was truncated (orchestrator-preflight — provider cut off after 3 lines). Let me run the manifest gates and inspect key source files in parallel.
+All gates pass by direct-run. Diff stat: 52 files / +5436 / -483, no forbidden paths touched. Verify the docstring nit M-1 from r1 is still present (static-inspection) and verify the manifest's G-test-2 gate lacks the clean-tree assertion (static-inspection of SF-1).
+All evidence collected. Direct-run gates green, doctor RCE 5/5, focused suite 206/206, manifest G-test-2 lacks clean-tree assertion (SF-1 confirmed static-inspection), frontmatter_edit.py:57-60 docstring nit M-1 still present. Now writing the artifact.
+Artifact written. Quick structural verification of the Verdict heading and frontmatter values:
+Artifact written to `docs/reviews/project-ontos-v4-7-1-hotfix/B.1-glm-peer-r2.md` (verification confirms):
+
+- **Verdict**: `## Verdict` heading, first nonblank line is exactly `Approve`
+- **Frontmatter**: all required keys/values match exactly (id, deliverable_id, phase, role, family, evidence_labels_used, status)
+- **Sections**: H1, completeness, diagram/prose cross-reference, quality, UX, issues, positives, `## Verdict`, notes
+
+**Direct-run evidence reproduced this session** (focused only — full suite not run per task constraint):
+- G-test-1: 206/206 in 17.68s — G-doctor-1: 5/5 in 0.40s
+- G-version-1, G-contract-1, G-contract-2, G-golden-1, G-diff-1, G-branch-1 all green
+- No spec §9 forbidden paths touched (`bf91b42..e33a31d`, 52 files / +5436 / -483)
+
+**Verdict rationale**: implementation is complete against spec §2, byte-identical on all contract paths, lock/transaction core is correctly fail-closed across POSIX+Windows seams, read-only MCP is defense-in-depth. Carried forward from r1, still open as evidence-framework gap (not product-code defect): **SF-1** (manifest `G-test-2` only asserts `exit-0`, no clean-tree assertion vs spec §6 acc. criterion 3 — confirmed statically, not re-bisected since task forbids the full suite). Minors **M-1** (frontmatter_edit.py:57-60 dangling docstring) and **M-2** (map doc-count drift in concurrent review worktree) carried forward; neither blocks the hotfix. Orchestrator-preflight evidence (preserved `.raw/ontos-471-B1-gp-r2.r1.*`) confirmed the prior glm r2 attempt was truncated after three orientation lines — this artifact is the bound retry.
+
+Note: the modified `B.1-dispatch-result.yaml` and `lifecycle-receipt-inventory.yaml` in the working tree were pre-existing modifications before this r2 session (consistent with the preserved-retry entrypoint at HEAD `6168267`); I did not touch either file, only wrote the declared review artifact.

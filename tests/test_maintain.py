@@ -4,9 +4,12 @@ import os
 import pytest
 from unittest.mock import patch, MagicMock
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts')))
-
-from ontos_maintain import run_script, main as maintain_main
+_LEGACY_SCRIPTS = os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts'))
+sys.path.insert(0, _LEGACY_SCRIPTS)
+try:
+    from ontos_maintain import run_script, main as maintain_main
+finally:
+    sys.path.remove(_LEGACY_SCRIPTS)
 
 def test_runs_migrate_then_generate():
     # v2.4: Now runs 3 steps: migrate, generate, consolidate

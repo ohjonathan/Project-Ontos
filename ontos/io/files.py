@@ -448,7 +448,11 @@ def load_document_from_content(
         return inner
 
     # Core fields (B1 Canonical Mapping)
-    doc_id = validate_document_id(fm.get('id', path.stem))
+    # Explicit IDs are a document contract and must obey the documented
+    # grammar.  A missing ID keeps the historical filename-stem fallback:
+    # applying the explicit-ID grammar to an existing filename would make
+    # documents such as ``My Notes.md`` disappear from the canonical loader.
+    doc_id = validate_document_id(fm['id']) if 'id' in fm else path.stem
     doc_type = normalize_type(fm.get('type'), on_error=report_enum_error("type"))
     doc_status = normalize_status(fm.get('status'), on_error=report_enum_error("status"))
     depends_on = normalize_depends_on(

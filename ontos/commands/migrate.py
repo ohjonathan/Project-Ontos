@@ -13,7 +13,7 @@ from ontos.core.schema import (
     add_schema_to_frontmatter,
 )
 from ontos.core.context import SessionContext
-from ontos.core.frontmatter_edit import patch_frontmatter_fields
+from ontos.core.frontmatter_edit import patch_frontmatter_fields, read_utf8_for_mutation
 from ontos.io.config import load_project_config
 from ontos.io.files import find_project_root, load_documents, load_frontmatter
 from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
@@ -200,7 +200,7 @@ def _run_migrate_command(options: MigrateOptions) -> Tuple[int, str]:
                 migrated_count += 1
                 continue
                 
-            original = f.read_bytes().decode("utf-8")
+            original = read_utf8_for_mutation(f)
             new_content = patch_frontmatter_fields(
                 original,
                 {"ontos_schema": new_fm["ontos_schema"]},

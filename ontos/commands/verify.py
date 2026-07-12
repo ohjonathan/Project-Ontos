@@ -12,7 +12,7 @@ from ontos.core.staleness import (
     check_staleness,
 )
 from ontos.core.context import SessionContext
-from ontos.core.frontmatter_edit import patch_frontmatter_fields
+from ontos.core.frontmatter_edit import patch_frontmatter_fields, read_utf8_for_mutation
 from ontos.io.config import load_project_config
 from ontos.io.files import find_project_root, load_documents, load_frontmatter
 from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
@@ -87,7 +87,7 @@ def update_describes_verified(
     Matches exact regex replacement logic from legacy script.
     """
     try:
-        content = filepath.read_bytes().decode("utf-8")
+        content = read_utf8_for_mutation(filepath)
         
         date_str = new_date.isoformat()
         new_content = patch_frontmatter_fields(

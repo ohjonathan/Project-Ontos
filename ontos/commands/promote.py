@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple
-from ontos.core.frontmatter_edit import patch_frontmatter_fields
+from ontos.core.frontmatter_edit import patch_frontmatter_fields, read_utf8_for_mutation
 from ontos.core.types import DocumentData, DocumentType
 from ontos.core.curation import (
     CurationLevel,
@@ -123,7 +123,7 @@ def apply_promotion(
 ) -> bool:
     """Apply promotion to a document."""
     try:
-        content = filepath.read_bytes().decode("utf-8")
+        content = read_utf8_for_mutation(filepath)
         new_fm, summary_seed = promote_to_full(
             frontmatter,
             depends_on=depends_on,

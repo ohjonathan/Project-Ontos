@@ -81,6 +81,20 @@ def test_batch_loader_reports_non_string_id_as_parse_error(tmp_path):
     assert result.issues[0].code == "parse_error"
     assert "Document id must be a string" in result.issues[0].message
 
+
+@pytest.mark.parametrize("filename", ["My Notes.md", "_draft.md", "café-doc.md"])
+def test_loader_preserves_filename_stem_fallback_contract(tmp_path, filename):
+    path = tmp_path / filename
+    path.write_text(
+        "---\ntype: atom\nstatus: active\n---\nBody",
+        encoding="utf-8",
+    )
+
+    result = load_documents([path], parse_frontmatter_content)
+
+    assert list(result.documents) == [path.stem]
+    assert result.issues == []
+
 def test_loader_duplicate_contract_deterministic_first_wins(tmp_path):
     """Verify that lexicographically first path wins for collisions."""
     docs_dir = tmp_path / "docs"

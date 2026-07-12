@@ -389,6 +389,29 @@ def test_promote_document_rejects_invalid_level(tmp_path):
     assert result.structuredContent["error"]["error_code"] == "E_INVALID_LEVEL"
 
 
+def test_promote_document_invalid_utf8_is_actionable_and_unchanged(tmp_path):
+    root = create_workspace(tmp_path)
+    kernel_path = root / "docs" / "kernel.md"
+    original = (
+        b"---\nid: kernel_doc\ntype: kernel\nstatus: active\n"
+        b"curation_level: 0\n---\n\ninvalid: \xff\n"
+    )
+    kernel_path.write_bytes(original)
+    server = build_server(root)
+
+    result = _call(
+        server,
+        "promote_document",
+        {"document_id": "kernel_doc", "new_level": 2},
+    )
+
+    assert result.isError is True
+    assert result.structuredContent["error"]["error_code"] == "E_COMMAND_FAILED"
+    assert str(kernel_path) in result.content[0].text
+    assert "Re-save the file as UTF-8" in result.content[0].text
+    assert kernel_path.read_bytes() == original
+
+
 # ---------------------------------------------------------------------------
 # read_only enforcement (closes m-2)
 # ---------------------------------------------------------------------------

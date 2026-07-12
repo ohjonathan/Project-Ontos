@@ -23,6 +23,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 from ontos.core.context import SessionContext
 from ontos.core.frontmatter import normalize_aliases, normalize_tags
 from ontos.core.frontmatter_edit import (
+    InvalidDocumentEncodingError,
     _check_clean_git_state,
     _index_top_level_fields,
     _read_decoded_content,
@@ -114,6 +115,7 @@ class RetrofitPlan:
 class RetrofitError:
     code: str
     message: str
+    path: Optional[Path] = None
 
 
 @dataclass
@@ -250,7 +252,14 @@ def _prepare_plan(
     file_plans: List[FilePlan] = []
     all_warnings: List[RetrofitWarning] = _loader_issues_to_warnings(load_result.issues)
     for doc in sorted(docs.values(), key=lambda item: str(item.filepath)):
-        file_plan = _build_file_plan(doc)
+        try:
+            file_plan = _build_file_plan(doc)
+        except InvalidDocumentEncodingError as exc:
+            return None, RetrofitError(
+                code=exc.code,
+                message=str(exc),
+                path=exc.path,
+            )
         if file_plan is None:
             continue
         file_plans.append(file_plan)
@@ -607,7 +616,11 @@ def _detect_dominant_line_ending(lines: Sequence[str]) -> str:
 def _format_field_block(field_name: str, values: Sequence[str], line_ending: str) -> List[str]:
     """Serialize one list field through PyYAML and preserve block indentation."""
     expected = {field_name: list(values)}
-    canonical = dump_yaml(expected, default_flow_style=False).rstrip("\n")
+    canonical = dump_yaml(
+        expected,
+        default_flow_style=False,
+        sort_keys=False,
+    ).rstrip("\n")
     assert_frontmatter_roundtrip(expected, canonical)
 
     lines = canonical.splitlines()
@@ -802,34 +815,37 @@ def _emit_error(
     partial_commit: bool,
 ) -> None:
     if options.json_output:
+        data = {
+            "mode": mode,
+            "scope": scope.value,
+            "summary": _summary_to_json(
+                RetrofitSummary(
+                    files_scanned=0,
+                    documents_loaded=0,
+                    planned_files=0,
+                    inserts=0,
+                    replaces=0,
+                    removes=0,
+                    warnings=len(warnings),
+                )
+            ),
+            "files": [],
+            "warnings": [_warning_to_json(item) for item in warnings],
+            "applied_paths": [],
+            "post_apply_warning": POST_APPLY_WARNING if mode == "apply" else None,
+            "partial_commit": {
+                "detected": partial_commit,
+                "message": error.message if partial_commit else None,
+            },
+        }
+        if error.path is not None:
+            data["path"] = str(error.path)
         emit_command_error(
             command="retrofit",
             exit_code=1,
             code=error.code,
             message=error.message,
-            data={
-                "mode": mode,
-                "scope": scope.value,
-                "summary": _summary_to_json(
-                    RetrofitSummary(
-                        files_scanned=0,
-                        documents_loaded=0,
-                        planned_files=0,
-                        inserts=0,
-                        replaces=0,
-                        removes=0,
-                        warnings=len(warnings),
-                    )
-                ),
-                "files": [],
-                "warnings": [_warning_to_json(item) for item in warnings],
-                "applied_paths": [],
-                "post_apply_warning": POST_APPLY_WARNING if mode == "apply" else None,
-                "partial_commit": {
-                    "detected": partial_commit,
-                    "message": error.message if partial_commit else None,
-                },
-            },
+            data=data,
             warnings=[_warning_to_json(item) for item in warnings],
         )
         return

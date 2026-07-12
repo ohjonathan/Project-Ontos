@@ -8,7 +8,9 @@ Phase 2 Decomposition - Created from Phase2-Implementation-Spec.md Section 4.11
 """
 
 from __future__ import annotations
+import importlib.util
 import re
+import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -65,6 +67,42 @@ class LogOptions:
     quiet: bool = False
 
 
+def _load_legacy_logs_dir(project_root: Path) -> Optional[Path]:
+    """Load the project-local legacy LOGS_DIR without leaking import state."""
+    candidates = (
+        project_root / "ontos_config.py",
+        project_root / ".ontos" / "scripts" / "ontos_config.py",
+    )
+    config_path = next((path for path in candidates if path.is_file()), None)
+    if config_path is None:
+        return None
+
+    module_name = "_ontos_project_legacy_config"
+    spec = importlib.util.spec_from_file_location(module_name, config_path)
+    if spec is None or spec.loader is None:
+        return None
+
+    module = importlib.util.module_from_spec(spec)
+    scripts_dir = str(config_path.parent)
+    previous_defaults = sys.modules.pop("ontos_config_defaults", None)
+    sys.path.insert(0, scripts_dir)
+    try:
+        try:
+            spec.loader.exec_module(module)
+        except ImportError:
+            return None
+        value = getattr(module, "LOGS_DIR", None)
+        return Path(value) if value is not None else None
+    finally:
+        try:
+            sys.path.remove(scripts_dir)
+        except ValueError:  # pragma: no cover - defensive against import hooks
+            pass
+        sys.modules.pop("ontos_config_defaults", None)
+        if previous_defaults is not None:
+            sys.modules["ontos_config_defaults"] = previous_defaults
+
+
 def create_session_log(
     project_root: Path,
     options: EndSessionOptions,
@@ -112,10 +150,23 @@ def create_session_log(
     # Combine content
     content = f"---\n{frontmatter}\n---\n\n{body}"
     
-    config = load_project_config(repo_root=project_root)
+    # Preserve the legacy LOGS_DIR precedence from v4.7.0 while adding the
+    # modern .ontos.toml path that the command previously ignored.  Existing
+    # projects with both configurations therefore keep their current archive.
+    legacy_logs_dir = _load_legacy_logs_dir(project_root)
+    if legacy_logs_dir is None:
+        config = load_project_config(repo_root=project_root)
+        configured_logs_dir = Path(config.paths.logs_dir)
+    else:
+        configured_logs_dir = legacy_logs_dir
+
     # Keep the configured path lexical so the no-follow writer can reject
     # symlinked path components instead of resolving through them.
-    logs_dir = project_root / config.paths.logs_dir
+    logs_dir = (
+        configured_logs_dir
+        if configured_logs_dir.is_absolute()
+        else project_root / configured_logs_dir
+    )
     
     filename = f"{date_str}_{topic_slug}.md"
     output_path = logs_dir / filename
@@ -290,7 +341,14 @@ def log_command(options: LogOptions) -> int:
             git_info,
         )
     except (ConfigError, OSError, ValueError) as exc:
-        message = f"Unable to prepare session log: {exc}"
+        if isinstance(exc, ConfigError) and "logs_dir" in str(exc):
+            message = (
+                f"Refusing unsafe paths.logs_dir configuration: {exc}. "
+                "Configure [paths].logs_dir as a real directory inside the "
+                "workspace, then retry."
+            )
+        else:
+            message = f"Unable to prepare session log: {exc}"
         if options.json_output:
             emit_command_error(
                 command="log",
@@ -314,7 +372,7 @@ def log_command(options: LogOptions) -> int:
             emit_command_error(
                 command="log",
                 exit_code=1,
-                code="E_LOG_EXISTS",
+                code="E_FILE_EXISTS",
                 message=message,
                 data={"path": str(output_path)},
             )
@@ -322,7 +380,18 @@ def log_command(options: LogOptions) -> int:
             output.error(message)
         return 1
     except (OSError, ValueError, RuntimeError) as exc:
-        message = f"Unable to create session log {output_path}: {exc}"
+        unsafe_path_failure = any(
+            marker in str(exc).lower()
+            for marker in ("outside the workspace", "symlink", "reparse point")
+        )
+        if unsafe_path_failure:
+            message = (
+                f"Refusing unsafe logs_dir for {output_path}: {exc}. "
+                "Configure LOGS_DIR or [paths].logs_dir as a real directory "
+                "inside the workspace, then retry."
+            )
+        else:
+            message = f"Unable to create session log {output_path}: {exc}"
         if options.json_output:
             emit_command_error(
                 command="log",

@@ -183,3 +183,9 @@ class TestSerializeFrontmatter:
     def test_invalid_document_ids_fail_closed(self, bad_id):
         with pytest.raises(ValueError, match="Document id"):
             serialize_frontmatter({"id": bad_id, "type": "atom"})
+
+
+def test_public_dump_yaml_retains_sorted_key_default():
+    from ontos.io import dump_yaml
+
+    assert dump_yaml({"z": 1, "a": 2}).splitlines() == ["a: 2", "z: 1"]

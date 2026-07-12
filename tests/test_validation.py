@@ -15,18 +15,21 @@ import pytest
 from unittest.mock import patch, MagicMock
 from datetime import datetime, timedelta
 
-# Add scripts directory to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts')))
+_LEGACY_SCRIPTS = os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts'))
+sys.path.insert(0, _LEGACY_SCRIPTS)
+try:
+    from ontos_config_defaults import (
+        VALID_STATUS,
+        VALID_TYPE_STATUS,
+        PROPOSAL_STALE_DAYS,
+        REJECTED_REASON_MIN_LENGTH,
+    )
+    from ontos_generate_context_map import validate_v26_status, get_status_indicator
+finally:
+    sys.path.remove(_LEGACY_SCRIPTS)
 
-from ontos_config_defaults import (
-    VALID_STATUS,
-    VALID_TYPE_STATUS,
-    PROPOSAL_STALE_DAYS,
-    REJECTED_REASON_MIN_LENGTH,
-)
 from ontos.core.proposals import load_decision_history_entries
 from ontos.core.config import get_git_last_modified
-from ontos_generate_context_map import validate_v26_status, get_status_indicator
 
 
 # =============================================================================

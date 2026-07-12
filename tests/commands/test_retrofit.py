@@ -600,6 +600,34 @@ def test_retrofit_apply_surfaces_loader_issues_without_blocking_valid_files(
     assert "tags:" in updated
 
 
+def test_retrofit_invalid_utf8_is_actionable_and_byte_unchanged(tmp_path: Path):
+    _init_repo(tmp_path)
+    path = tmp_path / "docs" / "bad-encoding.md"
+    original = (
+        b"---\nid: bad_encoding\ntype: atom\nstatus: active\n"
+        b"concepts: [safe]\n---\n\ninvalid: \xff\n"
+    )
+    path.write_bytes(original)
+    _init_git_repo(tmp_path)
+
+    result = _run_ontos(
+        tmp_path,
+        "--json",
+        "retrofit",
+        "--obsidian",
+        "--apply",
+    )
+
+    assert result.returncode == 1
+    payload = json.loads(result.stdout)
+    assert payload["schema_version"] == "3.4"
+    assert payload["error"]["code"] == "E_COMMAND_FAILED"
+    assert payload["data"]["path"] == str(path)
+    assert str(path) in payload["message"]
+    assert "Re-save the file as UTF-8" in payload["message"]
+    assert path.read_bytes() == original
+
+
 # ---------------------------------------------------------------------------
 # Scope
 # ---------------------------------------------------------------------------

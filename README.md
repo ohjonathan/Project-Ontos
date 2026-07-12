@@ -522,7 +522,7 @@ Use these phrases with an AI agent that supports Ontos activation. They are not 
 ontos scaffold     # Auto-tag docs with YAML frontmatter
 ontos activate     # Best-effort agent activation with diagnostics
 ontos map          # Generate/update context map
-ontos log          # Create a session log
+ontos log --title "unique-session-title"  # Create without overwriting an earlier log
 ontos doctor       # Check graph health
 ontos maintain     # Run weekly maintenance (9 tasks)
 ontos link-check   # Scan for broken references

@@ -84,6 +84,21 @@ class TestCreateSessionLog:
         )
         assert path.parent == (tmp_path / "var" / "audit-logs")
 
+    def test_preserves_legacy_logs_dir_precedence(self, tmp_path, monkeypatch):
+        _init_git_project(tmp_path)
+        (tmp_path / "ontos_config.py").write_text(
+            "LOGS_DIR = 'legacy/session-logs'\n",
+            encoding="utf-8",
+        )
+
+        _, path = create_session_log(
+            tmp_path,
+            EndSessionOptions(topic="legacy"),
+            {"branch": "main"},
+        )
+
+        assert path.parent == tmp_path / "legacy" / "session-logs"
+
     def test_frontmatter_round_trips_adversarial_values(self, tmp_path):
         _init_git_project(tmp_path)
         options = EndSessionOptions(
@@ -189,7 +204,7 @@ class TestLogCommandCLI:
         payload = json.loads(capsys.readouterr().out)
         assert payload["schema_version"] == "3.4"
         assert "result" not in payload
-        assert payload["error"]["code"] == "E_LOG_EXISTS"
+        assert payload["error"]["code"] == "E_FILE_EXISTS"
 
     @pytest.mark.skipif(not hasattr(os, "symlink"), reason="symlinks unavailable")
     def test_default_logs_dir_symlink_is_rejected_before_resolution(
@@ -215,8 +230,22 @@ class TestLogCommandCLI:
         result = _run_ontos(tmp_path, "log", "--auto")
 
         assert result.returncode == 1
+        assert "Configure LOGS_DIR or [paths].logs_dir" in result.stderr
         assert sentinel.read_text(encoding="utf-8") == "do not change"
         assert list(outside_logs.glob("*.md")) == []
+
+    def test_outside_configured_logs_dir_has_actionable_error(self, tmp_path):
+        _init_git_project(tmp_path)
+        subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True)
+        (tmp_path / ".ontos.toml").write_text(
+            "[ontos]\nversion = '3.0'\n[paths]\nlogs_dir = '../outside'\n",
+            encoding="utf-8",
+        )
+        result = _run_ontos(tmp_path, "log", "--auto")
+
+        assert result.returncode == 1
+        assert "Refusing unsafe paths.logs_dir configuration" in result.stderr
+        assert "inside the workspace" in result.stderr
 
     @pytest.mark.skipif(not hasattr(os, "symlink"), reason="symlinks unavailable")
     def test_archive_marker_symlink_preserves_legacy_success_contract(

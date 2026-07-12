@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, List, Mapping, Optional, Sequence, Tuple
 
+from ontos.core.errors import OntosUserError
 from ontos.io.yaml import (
     assert_frontmatter_roundtrip,
     parse_frontmatter_content,
@@ -215,9 +216,28 @@ def _append_before_line_ending(line: str, suffix: str) -> str:
     return line + suffix
 
 
+class InvalidDocumentEncodingError(OntosUserError):
+    """A mutation target cannot be decoded without changing its bytes."""
+
+    def __init__(self, path: Path):
+        object.__setattr__(self, "path", path)
+        super().__init__(
+            f"{path} is not valid UTF-8 and was not modified. "
+            "Re-save the file as UTF-8, then retry.",
+            code="E_COMMAND_FAILED",
+        )
+
+
+def read_utf8_for_mutation(path: Path) -> str:
+    """Decode a mutation target strictly and attach an actionable path."""
+    try:
+        return path.read_bytes().decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise InvalidDocumentEncodingError(path) from exc
+
+
 def _read_decoded_content(path: Path) -> _DecodedContent:
-    raw = path.read_bytes()
-    decoded = raw.decode("utf-8")
+    decoded = read_utf8_for_mutation(path)
     bom = "\ufeff" if decoded.startswith("\ufeff") else ""
     without_bom = decoded[len(bom) :]
     prefix_len = len(without_bom) - len(without_bom.lstrip())

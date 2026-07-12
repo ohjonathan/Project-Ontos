@@ -51,7 +51,7 @@ from ontos.core.context import SessionContext
 from ontos.core.curation import create_scaffold
 from ontos.core.errors import OntosInternalError, OntosUserError
 from ontos.core.git import rollback_path
-from ontos.core.frontmatter_edit import patch_frontmatter_fields
+from ontos.core.frontmatter_edit import patch_frontmatter_fields, read_utf8_for_mutation
 from ontos.core.locking import (
     WorkspaceBinding,
     capture_workspace_binding,
@@ -368,11 +368,9 @@ def _dispatch(
         return _user_error_result(exc)
 
     # NOTE on exception flow:
-    # OntosUserError / OntosInternalError are frozen dataclasses, which on
-    # Python 3.14+ can't have ``__traceback__`` reassigned by the stdlib
-    # contextlib machinery. Catching them INSIDE the lock prevents
-    # ``workspace_lock()`` from re-raising and tripping that assignment.
-    # See https://github.com/python/cpython (contextmanager __exit__).
+    # Catch domain exceptions inside the lock so error shaping stays local to
+    # the tool operation.  Their public fields remain immutable, while the
+    # exception classes permit BaseException traceback metadata on Python 3.14.
     result: Optional[CallToolResult] = None
     try:
         with workspace_lock(
@@ -651,7 +649,7 @@ def _promote_document_impl(
         )
 
     target = Path(doc.filepath)
-    original = target.read_bytes().decode("utf-8")
+    original = read_utf8_for_mutation(target)
     frontmatter, body = parse_frontmatter_content(original)
     if not frontmatter:
         raise OntosUserError(

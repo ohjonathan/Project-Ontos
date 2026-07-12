@@ -4,14 +4,17 @@ import os
 import pytest
 from unittest.mock import patch, MagicMock
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts')))
-
-from ontos_pre_push_check import (
-    MARKER_FILE,
-    get_change_stats,
-    suggest_related_docs,
-    main
-)
+_LEGACY_SCRIPTS = os.path.abspath(os.path.join(os.path.dirname(__file__), '../.ontos/scripts'))
+sys.path.insert(0, _LEGACY_SCRIPTS)
+try:
+    from ontos_pre_push_check import (
+        MARKER_FILE,
+        get_change_stats,
+        suggest_related_docs,
+        main,
+    )
+finally:
+    sys.path.remove(_LEGACY_SCRIPTS)
 
 def test_marker_exists_allows_push():
     with patch("os.path.exists", return_value=True), \
