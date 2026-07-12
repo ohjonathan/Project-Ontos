@@ -20,11 +20,11 @@ tag, publish, release, or close issues.
 | B.1 | claude / gemini / glm / product | completed-with-provider-gap | `docs/reviews/project-ontos-v4-7-1-hotfix/B.1-*` | Claude adversarial/Product and GLM peer artifacts captured; Gemini direct and AGY routes failed with provider-policy evidence | 2026-07-11 |
 | B.2 | claude / gemini / glm / product | attempted-no-admissible-board | `docs/reviews/project-ontos-v4-7-1-hotfix/B.2-*` | Gemini provider failure repeated; Claude artifacts were not promoted by wrapper; GLM stopped at declared timebox | 2026-07-11 |
 | B.3 | codex | completed | `docs/reviews/project-ontos-v4-7-1-hotfix/B.3-verdict.md` | Eight accepted B.1 actions reconciled; lifecycle gap explicitly preserved | 2026-07-11 |
-| C | codex | completed | `ca1d08932b4e99b958157a118768f40fc152ad64` | 287 focused tests passed after B.1 fixes; exact schema-3.4 source parity and manifest/scope checks passed | 2026-07-11 |
-| D.1 | claude | pending | `docs/reviews/project-ontos-v4-7-1-hotfix/D.1-claude-peer.md` | Fresh implementation inspection required | — |
-| D.2 | claude / gemini / glm / product | pending | `docs/reviews/project-ontos-v4-7-1-hotfix/D.2-*` | Must target the Phase C commit | — |
-| D.3 | codex | pending | `docs/reviews/project-ontos-v4-7-1-hotfix/D.3-verdict.md` | Awaiting D.2 board | — |
-| D.4 | codex | pending | `docs/reviews/project-ontos-v4-7-1-hotfix/D.4-fix-summary.md` | Required even if no-op | — |
+| C | codex | completed | `a0062ae8b6e8413f15e64259ec16d1c927d55328` | Final code includes D.1 fixes; 82 focused and 1572 full-suite tests passed; exact pre/post porcelain matched | 2026-07-11 |
+| D.1 | claude | completed-request-changes | `docs/reviews/project-ontos-v4-7-1-hotfix/D.1-claude-peer.md` | Two direct-run blockers preserved: quoted-key mutation boundary and immutable portfolio WAL publication | 2026-07-11 |
+| D.2 | claude / gemini / glm / product | attempted-provider-limited | `docs/reviews/project-ontos-v4-7-1-hotfix/D.2-*` | Product artifact was substantive but shape-invalid; Gemini provider failed; GLM sandbox failed; Claude peer did not complete | 2026-07-11 |
+| D.3 | codex | completed-provider-limited | `docs/reviews/project-ontos-v4-7-1-hotfix/D.3-verdict.md` | Two supported blockers preserved; artifact explicitly warning-only and non-canonical P3 evidence | 2026-07-11 |
+| D.4 | codex | completed | `docs/reviews/project-ontos-v4-7-1-hotfix/D.4-fix-summary.md` | Both blockers closed in `a0062ae`; EH-15-A adopter-verifier defect recorded | 2026-07-11 |
 | D.5 | claude / gemini / glm | pending | `docs/reviews/project-ontos-v4-7-1-hotfix/D.5-*-verifier.md` | Must target final reviewed commit | — |
 | D.6 | codex | withheld | `docs/reviews/project-ontos-v4-7-1-hotfix/final-approval.md` | May run only after admissible strict-P3 evidence; provider-limited fallback keeps D.6 withheld | — |
 | E | codex | pending | `docs/retros/project-ontos-v4-7-1-hotfix-retro.md` | After lifecycle status is mechanically known | — |
@@ -43,8 +43,12 @@ tag, publish, release, or close issues.
 
 ## Active blockers
 
-- No lifecycle receipt exists yet for this focused deliverable.
-- D.6 is withheld until strict-P3 succeeds. If a genuine provider dispatch
+- B.1, B.2, and D.2 dispatch bundles do not pass `--require-complete`; their
+  failed attempts and hash-bound raw evidence remain intact.
+- The v2.0.1 receipt schema rejects wrapper-emitted Product receipts, and the
+  fallback generator cannot bind real stderr evidence to an empty failed
+  artifact without mislabeling it.
+- D.6 is withheld. If the final genuine D.5 provider dispatch
   fails and the framework fallback verifies, the terminal label must remain
   `provider_limited_fallback_complete; strict P3 not certified; maintainer release actions deferred`.
 - PR #161 cannot be rebased into a v5.0.0 PR until this hotfix is reviewed and

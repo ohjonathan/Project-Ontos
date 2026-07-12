@@ -1,0 +1,13 @@
+[0m
+> build · glm-5.2
+[0m
+[93m[1m! [0mpermission requested: external_directory (/<redacted:secret>/*); auto-rejecting
+[0m✗ [0mcd /<redacted:secret> && git log --oneline -15 failed
+[91m[1mError: [0mThe user rejected permission to use this specific tool call.
+[93m[1m! [0mpermission requested: external_directory (/<redacted:secret>/*); auto-rejecting
+[0m✗ [0mcd /<redacted:secret> && git show --stat a71ac4a 2>/dev/null | head -60 failed
+[91m[1mError: [0mThe user rejected permission to use this specific tool call.
+[93m[1m! [0mpermission requested: external_directory (/<redacted:secret>/*); auto-rejecting
+[0m✗ [0mcd /<redacted:secret> && git show --stat bf91b42 2>/dev/null | head -60 failed
+[91m[1mError: [0mThe user rejected permission to use this specific tool call.
+[0m✱ [0mGlob "docs/reviews/**/*.md"[90m 66 matches[0m

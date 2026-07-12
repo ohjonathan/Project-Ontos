@@ -13,7 +13,7 @@ strict_p3_required_phases: ["B.1", "D.2", "D.5"]
 implementation_sequencing:
   mode: code-first-user-gated
   user_gate_ref: "maintainer decision in Codex task: split PR #161 by observable contract and prioritize v4.7.1"
-  implementation_ref: "ca1d08932b4e99b958157a118768f40fc152ad64"
+  implementation_ref: "a0062ae8b6e8413f15e64259ec16d1c927d55328"
   rationale: "The maintainer explicitly authorized reconstructing the urgent P0 hotfix from the already-reviewed PR #161 tree; Phase A and all review evidence are regenerated against this focused branch and are not inherited from PR #161."
 
 owners:
@@ -84,6 +84,7 @@ scope:
     - "tests/io/test_git_empty_diff.py"
     - "tests/io/test_toml_roundtrip.py"
     - "tests/mcp/test_locking.py"
+    - "tests/mcp/test_portfolio.py"
     - "tests/mcp/__init__.py"
     - "tests/mcp/test_read_only_registration.py"
     - "tests/mcp/test_write_tools.py"
@@ -272,7 +273,9 @@ review_rounds:
     preserved_blocker_ids: []
   - phase: "D.3"
     round: 1
-    preserved_blocker_ids: []
+    preserved_blocker_ids:
+      - "D1-FM-QUOTED-KEY-BOUNDARY"
+      - "D1-PORTFOLIO-WAL-SNAPSHOT"
 reviewer_family_substitutes: []
 consolidation_mode: external
 self_review_caveats:

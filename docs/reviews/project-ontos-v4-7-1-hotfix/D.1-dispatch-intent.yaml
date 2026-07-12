@@ -1,0 +1,25 @@
+manifest_version: "2.0.0"
+authoring_session_family: codex
+meta_orchestrator_family: codex
+deliverable_author_family: codex
+deliverable_author_families: [codex]
+artifact_root: docs/reviews/project-ontos-v4-7-1-hotfix
+deliverable_id: project-ontos-v4-7-1-hotfix
+strict_p3_claim: false
+dispatches:
+  - dispatch_id: ontos-471-D1-cp
+    family: claude
+    role: peer
+    review_mode: implementation-review
+    expected_provider: claude
+    expected_cli: claude
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-v4-7-1-hotfix/D.1-claude-peer.md
+    prompt_path: docs/reviews/project-ontos-v4-7-1-hotfix/.prompts/D.1-claude-peer.prompt.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    fallback_models: []
+    template_id: 03-review-board-peer
+    template_version: 1.0.0
+    scope: "Fresh peer implementation inspection at a71ac4a."
+    status: pending
