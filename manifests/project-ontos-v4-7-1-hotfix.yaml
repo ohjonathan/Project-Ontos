@@ -180,6 +180,7 @@ scope:
     - "docs/retros/project-ontos-v4-7-1-hotfix-retro.md"
     - "docs/logs/2026-07-11_project-ontos-v4-7-1-hotfix.md"
     - ".ontos-internal/logs/2026-07-11_project-ontos-v4-7-1-hotfix.md"
+    - ".ontos-internal/logs/2026-07-12_pr-162-merge-and-cleanup.md"
   allowed_path_patterns:
     - "docs/reviews/project-ontos-v4-7-1-hotfix/**"
   composition_targets:
