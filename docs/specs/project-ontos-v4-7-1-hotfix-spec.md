@@ -203,14 +203,18 @@ could appear to succeed:
   path fails before changing external data.
 
 Malformed UTF-8 continues to load through the baseline read-only loader, but a
-mutation refuses it with exit 1 / `E_COMMAND_FAILED`, the affected path, and a
-UTF-8 recovery step. This prevents replacement characters from being written
-back while avoiding a patch-release change to the visible document set.
+mutation refuses it through each command's existing `E_COMMAND_FAILED` route,
+with the affected path in the message and a UTF-8 recovery step. Exit/envelope
+routing remains command-local in 4.7.1; unification is deferred to v5. This
+prevents replacement characters from being written back while avoiding a
+patch-release change to the visible document set.
 
-Legacy project-local `ontos_config.py` `LOGS_DIR` retains its v4.7.0
-precedence. In its absence, `log` now honors `[paths].logs_dir`; existing logs
-are not moved, and custom directories must remain inside the workspace. A
-custom log directory outside the configured scan scope is writable but is not
+Legacy project-local `ontos_config.py` `LOGS_DIR` retains precedence. Import-
+path-only legacy modules outside the project are no longer discovered; move
+that override into the project or `.ontos.toml`. In the absence of a local
+legacy override, `log` now honors `[paths].logs_dir`; existing logs are not
+moved, and custom directories must remain inside the workspace. A custom log
+directory outside the configured scan scope is writable but is not
 automatically added to map/query scope.
 
 Rollback is a single revert of the hotfix PR. No schema migration or generated

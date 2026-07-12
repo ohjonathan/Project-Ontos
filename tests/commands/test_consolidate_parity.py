@@ -53,21 +53,7 @@ impacts: [doc_{i}]
 Test log {i}
 """)
 
-    # Run native command, keeping only 1 newest log
-    result = subprocess.run(
-        ["python3", "-m", "ontos.cli", "consolidate", "--count", "1", "--all"],
-        capture_output=True,
-        text=True,
-        env={
-            **os.environ,
-            "ONTOS_MODE": "contributor", # Mocking mode
-        },
-        cwd=str(tmp_path)
-    )
-    
-    # Wait, the command needs to find the root.
-    # In my implementation, find_project_root() is used.
-    # If I run it in a tmp_path, it might not find the root if there's no .git or .ontos
+    # The command needs a project marker before it resolves the root.
     (tmp_path / ".ontos").mkdir()
     
     result = subprocess.run(

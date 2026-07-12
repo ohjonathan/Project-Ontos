@@ -1,5 +1,7 @@
 """Parity tests for schema-migrate command (renamed from migrate in v3.2)."""
 
+import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -139,3 +141,38 @@ def test_schema_migrate_apply_writes_files_to_disk(tmp_path):
     assert result.returncode == 0
     migrated = legacy.read_text(encoding="utf-8")
     assert "ontos_schema:" in migrated
+
+
+def test_schema_migrate_invalid_utf8_refuses_without_rewrite(tmp_path):
+    (tmp_path / ".ontos").mkdir()
+    (tmp_path / ".ontos.toml").write_text(
+        "[ontos]\nversion = '3.0'\n",
+        encoding="utf-8",
+    )
+    target = tmp_path / "bad.md"
+    original = b"---\nid: bad_doc\ntype: atom\nstatus: active\n---\n\n\xff\n"
+    target.write_bytes(original)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "ontos.cli",
+            "--json",
+            "schema-migrate",
+            "--apply",
+            "--dirs",
+            str(tmp_path),
+        ],
+        capture_output=True,
+        text=True,
+        env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[2])},
+        cwd=tmp_path,
+    )
+
+    assert result.returncode == 1
+    payload = json.loads(result.stdout)
+    assert payload["error"]["code"] == "E_COMMAND_FAILED"
+    assert str(target) in payload["message"]
+    assert "Re-save the file as UTF-8" in payload["message"]
+    assert target.read_bytes() == original

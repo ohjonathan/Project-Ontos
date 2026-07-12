@@ -49,8 +49,10 @@ taxonomy.
   `result` object or new exit-code taxonomy is included.
 - Invalid UTF-8 remains replacement-decoded on general read-only loading for
   patch compatibility. Every mutation path decodes strictly and refuses to
-  rewrite malformed input with exit 1 / `E_COMMAND_FAILED`, the affected path,
-  and a UTF-8 recovery step; broad loader rejection is deferred to v5.0.0.
+  rewrite malformed input with existing `E_COMMAND_FAILED` semantics, the
+  affected path in the message, and a UTF-8 recovery step. Commands retain
+  their established local exit/envelope routing; cross-command unification is
+  deferred to v5.0.0 with broad loader rejection.
 - Filename-derived fallback IDs remain verbatim for compatibility. Only an
   explicit `id:` is required to be a string matching the documented grammar.
 - Public exception fields retain their immutable/hashable behavior while

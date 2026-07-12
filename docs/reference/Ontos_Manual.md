@@ -131,7 +131,14 @@ ontos log -e feature -t "Session summary"
 Log creation is exclusive: if the same date-and-title slug already exists,
 choose a different `-t`/`--title`. Ontos does not overwrite the earlier log.
 
-**Automated Mode:** Sessions are auto-archived on push. One log per branch per day—subsequent pushes append to the same log.
+**Automated Mode:** Push hooks attempt exclusive log creation. If the derived
+date-and-slug path already exists, the hook refuses the collision rather than
+appending or overwriting; archive the next session with a unique `--title`.
+
+When `[paths].logs_dir` first takes effect after upgrading, new logs may be in
+that directory while older logs remain under `docs/logs`; Ontos does not move
+history automatically. Keep the configured directory in scan scope if those
+logs should appear in maps and queries.
 
 **Auto-generated logs:** Logs created by `--auto` are marked `status: auto-generated`.
 

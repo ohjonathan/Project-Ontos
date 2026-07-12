@@ -13,7 +13,11 @@ from ontos.core.schema import (
     add_schema_to_frontmatter,
 )
 from ontos.core.context import SessionContext
-from ontos.core.frontmatter_edit import patch_frontmatter_fields, read_utf8_for_mutation
+from ontos.core.frontmatter_edit import (
+    InvalidDocumentEncodingError,
+    patch_frontmatter_fields,
+    read_utf8_for_mutation,
+)
 from ontos.io.config import load_project_config
 from ontos.io.files import find_project_root, load_documents, load_frontmatter
 from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
@@ -91,6 +95,16 @@ def _run_migrate_command(options: MigrateOptions) -> Tuple[int, str]:
         explicit_dirs=options.dirs,
     )
 
+    # Apply is a mutation contract: reject malformed input before planning any
+    # file so a lenient discovery read cannot silently classify it as non-Ontos.
+    if options.apply:
+        for path in files:
+            try:
+                read_utf8_for_mutation(path)
+            except InvalidDocumentEncodingError as exc:
+                output.error(str(exc))
+                return 1, str(exc)
+
     load_result = load_documents(files, parse_frontmatter_content)
     if load_result.has_fatal_errors or load_result.duplicate_ids:
         for issue in load_result.issues:
@@ -133,6 +147,9 @@ def _run_migrate_command(options: MigrateOptions) -> Tuple[int, str]:
 
             inferred = detect_schema_version(fm)
             needs_migration.append((f, inferred))
+        except InvalidDocumentEncodingError as exc:
+            output.error(str(exc))
+            return 1, str(exc)
         except Exception as e:
             errors += 1
             output.error(f"Error inspecting {f}: {e}")
