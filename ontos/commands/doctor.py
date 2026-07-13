@@ -1018,8 +1018,9 @@ def _run_doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
 
     Returns:
         Tuple of (exit_code, DoctorResult) for completed diagnostics.
-        Exit code 0 if all pass, 1 if any completed check fails, and 3 if
-        checks complete with warnings only.
+        Internal diagnostic code 0 if all pass, 1 if any completed check
+        fails, and 3 if checks complete with warnings. Public ``doctor``
+        command boundaries normalize warning-only code 3 to process exit 0.
 
     Raises:
         OntosUserError: If the project root or project configuration cannot
@@ -1080,11 +1081,11 @@ def _run_doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
             result.warnings += 1
 
     if result.failed > 0:
-        exit_code = 1
+        exit_code = int(ExitCode.FINDINGS)
     elif result.warnings > 0:
-        exit_code = 3
+        exit_code = int(ExitCode.WARNINGS)
     else:
-        exit_code = 0
+        exit_code = int(ExitCode.CLEAN)
     return exit_code, result
 
 
@@ -1092,7 +1093,11 @@ def doctor_command(options: DoctorOptions) -> int:
     """Run health checks and return exit code only."""
     try:
         exit_code, _ = _run_doctor_command(options)
-        return exit_code
+        return (
+            int(ExitCode.CLEAN)
+            if exit_code == ExitCode.WARNINGS
+            else exit_code
+        )
     except OntosUserError:
         return int(ExitCode.USAGE)
 

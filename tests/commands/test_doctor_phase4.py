@@ -177,8 +177,8 @@ class TestCheckConfiguration:
 class TestDoctorCommand:
     """Tests for doctor_command."""
 
-    def test_returns_exit_code_0_when_checks_pass_and_3_when_they_warn(self):
-        """Clean checks return 0; warning-only checks return 3."""
+    def test_returns_exit_code_0_when_checks_pass_or_only_warn(self):
+        """Clean and warning-only checks both return 0."""
         with patch("ontos.commands.doctor.check_configuration") as mock_config, \
              patch("ontos.commands.doctor.check_git_hooks") as mock_hooks, \
              patch("ontos.commands.doctor.check_python_version") as mock_python, \
@@ -212,8 +212,8 @@ class TestDoctorCommand:
             mock_cursor.return_value = CheckResult(
                 name="cursor", status="warning", message="Review configuration"
             )
-            warning_exit, warning_result = _run_doctor_command(options)
-            assert warning_exit == 3
+            _, warning_result = _run_doctor_command(options)
+            assert doctor_command(options) == 0
             assert warning_result.failed == 0
             assert warning_result.warnings == 1
 

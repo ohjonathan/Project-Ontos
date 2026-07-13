@@ -1132,13 +1132,18 @@ def _cmd_doctor(args) -> int:
 
     emit_verbose_config(options, output)
 
-    exit_code, result = _run_doctor_command(options)
+    diagnostic_exit_code, result = _run_doctor_command(options)
+    exit_code = (
+        int(ExitCode.CLEAN)
+        if diagnostic_exit_code == ExitCode.WARNINGS
+        else diagnostic_exit_code
+    )
 
     if args.json:
-        if exit_code == ExitCode.CLEAN:
-            message = "Health check complete"
-        elif exit_code == ExitCode.WARNINGS:
+        if result.warnings and not result.failed:
             message = "Health check complete with warnings"
+        elif exit_code == ExitCode.CLEAN:
+            message = "Health check complete"
         else:
             message = "Health check failed"
         payload = {

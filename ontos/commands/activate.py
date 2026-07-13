@@ -53,18 +53,21 @@ def activate_command(options: ActivateOptions) -> int:
     )
     if options.json_output:
         if exit_code in {ExitCode.CLEAN, ExitCode.FINDINGS, ExitCode.WARNINGS}:
-            result_status = {
-                int(ExitCode.CLEAN): "clean",
-                int(ExitCode.FINDINGS): "findings",
-                int(ExitCode.WARNINGS): "warnings",
-            }[exit_code]
+            if exit_code == ExitCode.FINDINGS:
+                result_status = "findings"
+            elif (
+                exit_code == ExitCode.WARNINGS
+                or payload.get("status") == "usable_with_warnings"
+            ):
+                result_status = "warnings"
+            else:
+                result_status = "clean"
             emit_command_success(
                 command="activate",
                 exit_code=exit_code,
                 message="Activation context available",
                 data=payload,
                 result_status=result_status,
-                exit_category=result_status,
             )
         else:
             emit_command_error(
@@ -258,7 +261,7 @@ def run_activation(
     if validation_errors:
         exit_code = ExitCode.FINDINGS
     elif warning_count:
-        exit_code = ExitCode.WARNINGS
+        exit_code = ExitCode.CLEAN
     else:
         exit_code = ExitCode.CLEAN
     return int(exit_code), payload

@@ -94,8 +94,10 @@ def test_doctor_frontmatter_reports_precise_enum_diagnostics(tmp_path: Path) -> 
     payload = json.loads(result.stdout)
     checks = {check["name"]: check for check in payload["data"]["checks"]}
 
-    assert result.returncode == 3
-    assert payload["result"]["exit_category"] == "warnings"
+    assert result.returncode == 0
+    assert payload["result"]["status"] == "warnings"
+    assert payload["result"]["exit_category"] == "clean"
+    assert payload["result"]["diagnostics"]["counts"]["warnings"] > 0
     assert checks["frontmatter_enums"]["status"] == "warning"
     assert "2 invalid enum value(s)" in checks["frontmatter_enums"]["message"]
     assert "docs/review.md:3 type='proposal'" in checks["frontmatter_enums"]["details"]
@@ -103,7 +105,7 @@ def test_doctor_frontmatter_reports_precise_enum_diagnostics(tmp_path: Path) -> 
 
     human = _run(root, "doctor", "--frontmatter")
 
-    assert human.returncode == 3
+    assert human.returncode == 0
     assert "docs/review.md:3 type='proposal'" in human.stdout
     assert "docs/review.md:4 status='done'" in human.stdout
 

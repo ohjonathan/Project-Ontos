@@ -127,13 +127,13 @@ def test_explicit_result_status_is_not_rewritten_by_count_heuristics(capsys) -> 
 def test_data_result_status_survives_when_no_incomplete_counter_applies(capsys) -> None:
     emit_command_success(
         command="doctor",
-        exit_code=3,
+        exit_code=0,
         message="Completed with warnings",
         data={"result_status": "warnings", "summary": {"warnings": 1}},
     )
     payload = json.loads(capsys.readouterr().out)
     assert payload["result"]["status"] == "warnings"
-    assert payload["result"]["exit_category"] == "warnings"
+    assert payload["result"]["exit_category"] == "clean"
 
 
 def test_aliases_share_canonical_argument_contracts() -> None:

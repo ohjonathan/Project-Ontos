@@ -249,12 +249,13 @@ def test_activate_json_emits_structured_validation_warnings(tmp_path: Path) -> N
     root = _orphan_workspace(tmp_path)
 
     result = _run(root, "--json", "activate", "--warnings", "full")
-    assert result.returncode == 3, result.stderr
+    assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
     assert payload["status"] == "success"
-    assert payload["exit_code"] == 3
+    assert payload["exit_code"] == 0
     assert payload["result"]["status"] == "warnings"
-    assert payload["result"]["exit_category"] == "warnings"
+    assert payload["result"]["exit_category"] == "clean"
+    assert payload["result"]["diagnostics"]["counts"]["validation_warnings"] > 0
 
     validation = payload["data"]["validation"]
     assert isinstance(validation["errors"], list)
@@ -275,6 +276,11 @@ def test_activate_json_emits_structured_validation_warnings(tmp_path: Path) -> N
     assert orphan["severity"] == "warning"
     assert orphan["document_id"] == "kernel_doc"
     assert orphan["file_path"].endswith("docs/kernel.md")
+
+    human = _run(root, "activate")
+    assert human.returncode == 0
+    assert "Activation status: usable_with_warnings" in human.stdout
+    assert "Top warning groups:" in human.stdout
 
 
 def _depth_chain_workspace(root: Path) -> Path:
@@ -335,7 +341,7 @@ def test_activate_json_depth_warning_carries_structured_metadata(tmp_path: Path)
     root = _depth_chain_workspace(tmp_path)
 
     result = _run(root, "--json", "activate", "--warnings", "full")
-    assert result.returncode == 3, result.stderr
+    assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
 
     depth_records = [
@@ -386,7 +392,7 @@ def test_activate_json_out_of_scope_dependency_carries_structured_metadata(tmp_p
     root = _out_of_scope_workspace(tmp_path)
 
     result = _run(root, "--json", "activate", "--warnings", "full")
-    assert result.returncode == 3, result.stderr
+    assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
 
     out_of_scope = [
@@ -457,7 +463,7 @@ def test_activate_json_schema_class_warning_carries_structured_metadata(tmp_path
     root = _log_schema_workspace(tmp_path)
 
     result = _run(root, "--json", "activate", "--warnings", "full")
-    assert result.returncode == 3, result.stderr
+    assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
 
     log_id = "log_2026_05_22"
@@ -538,9 +544,8 @@ def test_activate_json_error_severity_lands_under_errors_with_structured_shape(
     exit_code, payload = activate_mod.run_activation(
         scope=None, write_map=False, root=tmp_path, warnings_mode="full"
     )
-    # Exit code is 0 because errors are still load_result + validation_warnings,
-    # not validation_errors specifically; activation considers all-with-warnings
-    # as 'usable_with_warnings' (exit 0). The key assertion is the payload shape.
+    # Error-severity validation findings retain diagnostic exit 1; only
+    # warning-only activation states use the upgrade-compatible exit 0.
     assert exit_code == 1
 
     errors = payload["validation"]["errors"]
@@ -630,7 +635,7 @@ def test_activate_json_default_is_grouped(tmp_path: Path) -> None:
     root = _orphan_workspace(tmp_path)
 
     result = _run(root, "--json", "activate")
-    assert result.returncode == 3, result.stderr
+    assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
 
     validation = payload["data"]["validation"]
@@ -646,15 +651,17 @@ def test_activate_json_default_is_grouped(tmp_path: Path) -> None:
     assert sample["severity"] == "warning"
     assert sample["rule_id"] == "orphan"
     assert "message" in sample
-    # Status/exit semantics are unchanged by the budget.
+    # Status remains warning-bearing even though the process exit is clean.
     assert payload["data"]["status"] == "usable_with_warnings"
+    assert payload["result"]["status"] == "warnings"
+    assert payload["result"]["exit_category"] == "clean"
 
 
 def test_activate_json_summary_mode_drops_samples(tmp_path: Path) -> None:
     root = _orphan_workspace(tmp_path)
 
     result = _run(root, "--json", "activate", "--warnings", "summary")
-    assert result.returncode == 3, result.stderr
+    assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
 
     validation = payload["data"]["validation"]
@@ -670,7 +677,7 @@ def test_activate_json_warning_rule_filters_full_records(tmp_path: Path) -> None
         root, "--json", "activate",
         "--warnings", "full", "--warning-rule", "orphan",
     )
-    assert result.returncode == 3, result.stderr
+    assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
 
     validation = payload["data"]["validation"]
@@ -686,7 +693,7 @@ def test_activate_json_full_with_limit_truncates(tmp_path: Path) -> None:
     root = _orphan_workspace(tmp_path)
 
     result = _run(root, "--json", "activate", "--warnings", "full", "--limit", "1")
-    assert result.returncode == 3, result.stderr
+    assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
 
     validation = payload["data"]["validation"]
