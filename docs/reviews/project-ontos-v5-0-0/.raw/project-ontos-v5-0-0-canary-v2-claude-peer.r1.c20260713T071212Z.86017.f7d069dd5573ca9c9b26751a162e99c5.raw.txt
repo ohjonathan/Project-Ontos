@@ -1,0 +1,8 @@
+Both checks passed, so I wrote the approve verdict.
+
+- `git merge-base --is-ancestor 5678e910ce11ed7a3546822cf3e34d50c5741681 HEAD` exited 0 — the product head is an ancestor of the checkout, which is currently at `0cfbcb2ab404dddc9e56b9f796e5a337b47741c3`.
+- `pyproject.toml:7` declares `version = "5.0.0"`.
+
+The single file `docs/reviews/project-ontos-v5-0-0/canary/claude-opus-canary-v2.md` now contains the specified frontmatter, a bare `Approve` as the first non-blank line under `## Verdict`, and the evidence sentence with the observed HEAD substituted in. No other file was touched.
+
+One note that is outside the canary but worth flagging: this repo's `CLAUDE.md` asks every session to start with `ontos map` and end with `ontos log`. I deliberately skipped both, since your instructions scoped this run to exactly two checks and one file write, and running `ontos log` would have created an additional file. Say the word if you want the session log recorded anyway.

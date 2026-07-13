@@ -1,10 +1,10 @@
 results:
-- dispatch_id: project-ontos-v5-0-0-B.1-claude-adversarial
-  capture_id: project-ontos-v5-0-0-B.1-claude-adversarial.r1.c20260713T015226Z.80473.47ee6b209785d1b8c72106c79844691a
+- dispatch_id: project-ontos-v5-0-0-canary-v2-claude-peer
+  capture_id: project-ontos-v5-0-0-canary-v2-claude-peer.r1.c20260713T071212Z.86017.f7d069dd5573ca9c9b26751a162e99c5
   round: 1
   family: claude
   actual_executed_family: claude
-  role: adversarial
+  role: peer
   execution_provider: claude
   execution_cli: claude
   resolved_executable: /Users/jonathanoh/.local/bin/claude
@@ -30,23 +30,23 @@ results:
   - <prompt-body-redacted>
   - --model
   - opus
-  prompt_path: docs/reviews/project-ontos-v5-0-0/.prompts/project-ontos-v5-0-0-B.1-claude-adversarial.r1.c20260713T015226Z.80473.47ee6b209785d1b8c72106c79844691a.md
-  prompt_sha256: sha256:428baaac90b3ed38119d6c282fd436ad612d44f7941ce29df988c17e56866b8d
+  prompt_path: docs/reviews/project-ontos-v5-0-0/.prompts/project-ontos-v5-0-0-canary-v2-claude-peer.r1.c20260713T071212Z.86017.f7d069dd5573ca9c9b26751a162e99c5.md
+  prompt_sha256: sha256:d778bad6718d47e58189cc49cefb11315b5daabb778c10546bd5a5e08d9878b6
   stdin_path: null
   stdin_sha256: null
   exit_code: 0
-  started_at: '2026-07-13T01:52:26Z'
-  ended_at: '2026-07-13T01:56:56Z'
-  raw_output_path: docs/reviews/project-ontos-v5-0-0/.raw/project-ontos-v5-0-0-B.1-claude-adversarial.r1.c20260713T015226Z.80473.47ee6b209785d1b8c72106c79844691a.raw.txt
-  raw_output_hash: sha256:556db53504c7fa1a7489a001db64986fee1df89460e9047b69c68cb4cdf54b61
-  stderr_path: docs/reviews/project-ontos-v5-0-0/.raw/project-ontos-v5-0-0-B.1-claude-adversarial.r1.c20260713T015226Z.80473.47ee6b209785d1b8c72106c79844691a.stderr.txt
+  started_at: '2026-07-13T07:12:13Z'
+  ended_at: '2026-07-13T07:12:30Z'
+  raw_output_path: docs/reviews/project-ontos-v5-0-0/.raw/project-ontos-v5-0-0-canary-v2-claude-peer.r1.c20260713T071212Z.86017.f7d069dd5573ca9c9b26751a162e99c5.raw.txt
+  raw_output_hash: sha256:90ee948d415000e184f6fa46b7aa3c3d76c05e3564004740d8edb23b9747e268
+  stderr_path: docs/reviews/project-ontos-v5-0-0/.raw/project-ontos-v5-0-0-canary-v2-claude-peer.r1.c20260713T071212Z.86017.f7d069dd5573ca9c9b26751a162e99c5.stderr.txt
   stderr_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  evidence_cap: direct-run
+  evidence_cap: static-inspection
   evidence_labels_used: []
   evidence_cap_violations: 0
-  artifact_path: docs/reviews/project-ontos-v5-0-0/B.1-claude-adversarial.md
-  artifact_sha256: sha256:missing
-  status: failed
+  artifact_path: docs/reviews/project-ontos-v5-0-0/canary/claude-opus-canary-v2.md
+  artifact_sha256: sha256:95fabf5555e2a82a9de26ca34b76522bcdb650ea6844bab58363e9db1404131f
+  status: completed
   dispatch_method: external-cli
   test_mode: false
   primary_model_requested: opus
@@ -57,8 +57,8 @@ results:
     mode: primary
     model_requested: opus
     exit_code: 0
-    started_at: '2026-07-13T01:52:26Z'
-    ended_at: '2026-07-13T01:56:56Z'
+    started_at: '2026-07-13T07:12:13Z'
+    ended_at: '2026-07-13T07:12:30Z'
     detected_429: false
     stderr_tail_200: ''
     stdout_substantive: true
@@ -67,9 +67,6 @@ results:
   artifact_source: worker_file
   artifact_write_conflict: false
   artifact_prewrite_sha256: null
-  sequential_dispatch_caveat:
-    reason: single-slot framework defect reproduction before remaining wave
-    timestamp: '2026-07-13T01:52:25Z'
   intent_model_restrictions:
     family: claude
     execution_cli: claude
