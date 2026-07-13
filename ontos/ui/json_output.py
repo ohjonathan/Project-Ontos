@@ -46,7 +46,6 @@ class ExitCategory(str, Enum):
     USAGE = "usage"
     INTERNAL = "internal"
     INTERRUPTED = "interrupted"
-    ERROR = "error"
 
 
 _DIRECT_DIAGNOSTIC_COUNT_KEYS = frozenset(
@@ -320,7 +319,10 @@ def _emit_command_envelope(
     normalized_kind = result_kind or (
         "diagnostic" if diagnostics["basis"] is not None else "operation"
     )
-    normalized_exit_category = exit_category or _exit_category(
+    documented_categories = {category.value for category in ExitCategory}
+    normalized_exit_category = (
+        exit_category if exit_category in documented_categories else None
+    ) or _exit_category(
         execution_status=execution_status,
         exit_code=exit_code,
         result_status=normalized_result,
@@ -469,7 +471,9 @@ def _exit_category(
         return ExitCategory.USAGE.value
     if exit_code == 5:
         return ExitCategory.INTERNAL.value
-    return ExitCategory.ERROR.value
+    # Unknown/reserved nonzero codes are execution failures. Collapse them to
+    # the documented internal category rather than leaking an ad-hoc value.
+    return ExitCategory.INTERNAL.value
 
 
 def validate_json_output(output: str) -> bool:

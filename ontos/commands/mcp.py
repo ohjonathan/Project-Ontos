@@ -297,7 +297,7 @@ def _run_mcp_install_command(options: MCPInstallOptions) -> Tuple[int, str, Dict
         try:
             _write_managed_config(options.client, config_path, updated_config)
         except OSError as exc:
-            return 2, f"Could not write config: {config_path}: {exc}", _build_fallback_data(
+            return 5, f"Could not write config: {config_path}: {exc}", _build_fallback_data(
                 client=options.client,
                 scope=scope,
                 workspace_root=workspace_root,
@@ -390,11 +390,11 @@ def _run_mcp_uninstall_command(options: MCPUninstallOptions) -> Tuple[int, str, 
             if workspace_root is None:
                 exit_code, workspace_root, error_message = _resolve_workspace_root(None)
                 if exit_code != 0 or workspace_root is None:
-                    return 2, f"Could not write config: {config_path}: {exc}", {
+                    return 5, f"Could not write config: {config_path}: {exc}", {
                         "config_path": str(config_path),
                         "error": str(exc),
                     }
-            return 2, f"Could not write config: {config_path}: {exc}", _build_fallback_data(
+            return 5, f"Could not write config: {config_path}: {exc}", _build_fallback_data(
                 client=options.client,
                 scope=scope,
                 workspace_root=workspace_root,

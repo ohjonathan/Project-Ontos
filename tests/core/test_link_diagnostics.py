@@ -198,6 +198,38 @@ def test_body_location_is_physical_file_line_not_body_relative(tmp_path: Path):
     assert finding.location.line == 8
 
 
+def test_body_location_counts_blank_lines_before_frontmatter(tmp_path: Path):
+    _init_project(tmp_path)
+    source = tmp_path / "docs" / "source.md"
+    source.write_text(
+        "\n\n---\nid: source_doc\ntype: atom\nstatus: active\n---\n\n"
+        "See [[missing_doc]].\n",
+        encoding="utf-8",
+    )
+
+    result = _run(tmp_path, ScanScope.LIBRARY)
+
+    finding = next(
+        item for item in result.broken_references if item.value == "missing_doc"
+    )
+    assert finding.location is not None
+    assert finding.location.line == 9
+
+
+def test_body_location_counts_leading_blank_lines_without_frontmatter(tmp_path: Path):
+    _init_project(tmp_path)
+    source = tmp_path / "docs" / "source.md"
+    source.write_text("\n\nSee [[missing_doc]].\n", encoding="utf-8")
+
+    result = _run(tmp_path, ScanScope.LIBRARY)
+
+    finding = next(
+        item for item in result.broken_references if item.value == "missing_doc"
+    )
+    assert finding.location is not None
+    assert finding.location.line == 3
+
+
 def test_markdown_path_resolves_loaded_doc_with_stem_id_mismatch(tmp_path: Path):
     _init_project(tmp_path)
     _write_doc(tmp_path / "docs" / "Ontos_Manual.md", "ontos_manual")

@@ -157,35 +157,40 @@ def _run_export_data_command(options: ExportDataOptions) -> Tuple[int, str]:
     """
     try:
         root = find_project_root()
+    except FileNotFoundError as e:
+        return 2, f"Error: {e}"
     except Exception as e:
-        return 1, f"Error: {e}"
+        return 5, f"Error: {e}"
 
     # Check output file
     if options.output_path:
         if options.output_path.exists() and not options.force:
-            return 1, f"Error: Output file exists: {options.output_path}. Use --force to overwrite."
+            return 2, f"Error: Output file exists: {options.output_path}. Use --force to overwrite."
 
     # Create FULL snapshot first for accurate migration classification (B2)
-    full_snapshot = create_snapshot(
-        root=root,
-        include_content=not options.no_content,
-        filters=None,  # Get everything
-        scope=options.scope,
-    )
+    try:
+        full_snapshot = create_snapshot(
+            root=root,
+            include_content=not options.no_content,
+            filters=None,  # Get everything
+            scope=options.scope,
+        )
 
-    # Convert to JSON with filters applied during serialization
-    filters = SnapshotFilters(
-        types=_parse_csv(options.types),
-        status=_parse_csv(options.status),
-        concepts=_parse_csv(options.concepts),
-    )
-    data = _snapshot_to_json(full_snapshot, filters, options.deterministic)
+        # Convert to JSON with filters applied during serialization
+        filters = SnapshotFilters(
+            types=_parse_csv(options.types),
+            status=_parse_csv(options.status),
+            concepts=_parse_csv(options.concepts),
+        )
+        data = _snapshot_to_json(full_snapshot, filters, options.deterministic)
 
-    # Serialize
-    if options.deterministic:
-        json_str = json.dumps(data, indent=2, sort_keys=True)
-    else:
-        json_str = json.dumps(data, indent=2)
+        # Serialize
+        if options.deterministic:
+            json_str = json.dumps(data, indent=2, sort_keys=True)
+        else:
+            json_str = json.dumps(data, indent=2)
+    except Exception as e:
+        return 5, f"Error creating export: {e}"
 
     # Output
     if options.output_path:
@@ -194,7 +199,7 @@ def _run_export_data_command(options: ExportDataOptions) -> Tuple[int, str]:
             options.output_path.write_text(json_str, encoding='utf-8')
         except (IOError, OSError) as e:
             # S1: Improved error handling
-            return 1, f"Error writing to {options.output_path}: {e}"
+            return 5, f"Error writing to {options.output_path}: {e}"
         return 0, f"Exported {len(data['documents'])} documents to {options.output_path}"
     else:
         # Print to stdout (handled by CLI layer)

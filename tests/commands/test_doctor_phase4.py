@@ -10,6 +10,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
+from ontos.core.errors import OntosUserError
 from ontos.commands.doctor import (
     CheckResult,
     DoctorOptions,
@@ -176,8 +177,8 @@ class TestCheckConfiguration:
 class TestDoctorCommand:
     """Tests for doctor_command."""
 
-    def test_returns_exit_code_0_when_checks_pass(self):
-        """Should return 0 when all checks pass or warn."""
+    def test_returns_exit_code_0_when_checks_pass_and_3_when_they_warn(self):
+        """Clean checks return 0; warning-only checks return 3."""
         with patch("ontos.commands.doctor.check_configuration") as mock_config, \
              patch("ontos.commands.doctor.check_git_hooks") as mock_hooks, \
              patch("ontos.commands.doctor.check_python_version") as mock_python, \
@@ -208,6 +209,14 @@ class TestDoctorCommand:
             assert result.passed == 12
             assert result.failed == 0
 
+            mock_cursor.return_value = CheckResult(
+                name="cursor", status="warning", message="Review configuration"
+            )
+            warning_exit, warning_result = _run_doctor_command(options)
+            assert warning_exit == 3
+            assert warning_result.failed == 0
+            assert warning_result.warnings == 1
+
     def test_returns_exit_code_1_when_check_fails(self):
         """Should return 1 when any check fails."""
         with patch("ontos.commands.doctor.check_configuration") as mock_config, \
@@ -223,15 +232,15 @@ class TestDoctorCommand:
              patch("ontos.commands.doctor.check_activation_health") as mock_activation, \
              patch("ontos.commands.doctor.check_cursor_mcp") as mock_cursor:
 
-            for mock in [mock_hooks, mock_python, mock_docs,
+            for mock in [mock_config, mock_hooks, mock_python, mock_docs,
                         mock_map, mock_valid, mock_cli, mock_agents, mock_env,
                         mock_antigravity, mock_activation, mock_cursor]:
                 mock.return_value = CheckResult(
                     name="test", status="success", message="OK"
                 )
 
-            mock_config.return_value = CheckResult(
-                name="configuration", status="failed", message="Not found"
+            mock_map.return_value = CheckResult(
+                name="context_map", status="failed", message="Map is stale"
             )
 
             options = DoctorOptions()
@@ -242,12 +251,12 @@ class TestDoctorCommand:
 
     def test_fails_cleanly_outside_project(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
-        exit_code, result = _run_doctor_command(DoctorOptions())
 
-        assert exit_code == 1
-        assert result.failed == 1
-        assert result.checks[0].name == "project_root"
-        assert "project root" in result.checks[0].message.lower()
+        with pytest.raises(OntosUserError, match="project root") as exc_info:
+            _run_doctor_command(DoctorOptions())
+
+        assert exc_info.value.code == "E_WORKSPACE_NOT_FOUND"
+        assert doctor_command(DoctorOptions()) == 2
 
 
 class TestFormatDoctorOutput:
@@ -432,7 +441,7 @@ def test_check_docs_directory_from_subdirectory_matches_project_root(tmp_path, m
     assert "1 documents" in result.message
 
 
-def test_doctor_cli_outside_project_returns_nonzero(tmp_path):
+def test_doctor_cli_outside_project_returns_usage_error(tmp_path):
     """Outside-project doctor run should fail with explicit root-discovery message."""
     project_root = Path(__file__).resolve().parents[2]
     env = os.environ.copy()
@@ -446,9 +455,43 @@ def test_doctor_cli_outside_project_returns_nonzero(tmp_path):
         env=env,
     )
 
-    assert result.returncode == 1
-    combined = (result.stdout + result.stderr).lower()
-    assert "project root" in combined or "not in an ontos project" in combined
+    assert result.returncode == 2
+    assert result.stdout == ""
+    assert "project root" in result.stderr.lower()
+
+
+def test_doctor_json_outside_project_is_single_usage_envelope(tmp_path: Path) -> None:
+    home = tmp_path / "home"
+    home.mkdir()
+
+    result = _run_ontos(tmp_path, "--json", "doctor", home=home)
+
+    assert result.returncode == 2
+    assert result.stdout.count("\n") == 1
+    assert result.stderr == ""
+    payload = json.loads(result.stdout)
+    assert payload["status"] == "error"
+    assert payload["exit_code"] == 2
+    assert payload["error"]["code"] == "E_WORKSPACE_NOT_FOUND"
+    assert payload["result"]["exit_category"] == "usage"
+
+
+def test_doctor_json_invalid_config_is_single_usage_envelope(tmp_path: Path) -> None:
+    home = tmp_path / "home"
+    home.mkdir()
+    (tmp_path / ".ontos.toml").write_text("[ontos\n", encoding="utf-8")
+    (tmp_path / "docs").mkdir()
+
+    result = _run_ontos(tmp_path, "doctor", "--json", home=home)
+
+    assert result.returncode == 2
+    assert result.stdout.count("\n") == 1
+    assert result.stderr == ""
+    payload = json.loads(result.stdout)
+    assert payload["status"] == "error"
+    assert payload["exit_code"] == 2
+    assert payload["error"]["code"] == "E_CONFIG_ERROR"
+    assert payload["result"]["exit_category"] == "usage"
 
 
 def test_doctor_json_includes_cursor_mcp_project_precedence_success(tmp_path: Path, monkeypatch) -> None:

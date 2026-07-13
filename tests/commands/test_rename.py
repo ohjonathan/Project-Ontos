@@ -93,8 +93,9 @@ def test_rename_rejects_reserved_new_id(tmp_path: Path):
     _init_repo(tmp_path)
     _write_doc(tmp_path / "docs" / "a.md", "old_id")
     result = _run_ontos(tmp_path, "rename", "old_id", "true")
-    assert result.returncode == 1
-    assert "reserved" in result.stdout.lower()
+    assert result.returncode == 2
+    assert result.stdout == ""
+    assert "reserved" in result.stderr.lower()
 
 
 @pytest.mark.parametrize(
@@ -185,21 +186,41 @@ def test_rename_invalid_id_is_rejected_before_project_discovery(
     assert envelope["result"]["exit_category"] == "usage"
 
 
+def test_rename_outside_project_is_json_usage_error(tmp_path: Path):
+    result = _run_ontos(
+        tmp_path,
+        "--json",
+        "rename",
+        "old_id",
+        "new_id",
+    )
+
+    assert result.returncode == 2
+    payload = json.loads(result.stdout)
+    assert payload["exit_code"] == 2
+    assert payload["status"] == "error"
+    assert payload["error"]["code"] == "project_root_not_found"
+    assert payload["result"]["kind"] == "operation"
+    assert payload["result"]["exit_category"] == "usage"
+
+
 def test_rename_aborts_on_duplicate_ids(tmp_path: Path):
     _init_repo(tmp_path)
     _write_doc(tmp_path / "docs" / "a.md", "dup")
     _write_doc(tmp_path / "docs" / "b.md", "dup")
     result = _run_ontos(tmp_path, "rename", "dup", "new_dup")
-    assert result.returncode == 1
-    assert "duplicate_ids" in result.stdout
+    assert result.returncode == 2
+    assert result.stdout == ""
+    assert "duplicate_ids" in result.stderr
 
 
 def test_rename_aborts_when_old_id_not_found(tmp_path: Path):
     _init_repo(tmp_path)
     _write_doc(tmp_path / "docs" / "a.md", "doc_a")
     result = _run_ontos(tmp_path, "rename", "missing", "new_id")
-    assert result.returncode == 1
-    assert "old_id_not_found" in result.stdout
+    assert result.returncode == 2
+    assert result.stdout == ""
+    assert "old_id_not_found" in result.stderr
 
 
 def test_rename_aborts_when_new_id_exists(tmp_path: Path):
@@ -207,8 +228,9 @@ def test_rename_aborts_when_new_id_exists(tmp_path: Path):
     _write_doc(tmp_path / "docs" / "a.md", "old_id")
     _write_doc(tmp_path / "docs" / "b.md", "new_id")
     result = _run_ontos(tmp_path, "rename", "old_id", "new_id")
-    assert result.returncode == 1
-    assert "new_id_exists" in result.stdout
+    assert result.returncode == 2
+    assert result.stdout == ""
+    assert "new_id_exists" in result.stderr
 
 
 def test_rename_docs_scope_cross_scope_guard(tmp_path: Path):
@@ -217,9 +239,10 @@ def test_rename_docs_scope_cross_scope_guard(tmp_path: Path):
     _write_doc(tmp_path / ".ontos-internal" / "b.md", "new_id")
 
     result = _run_ontos(tmp_path, "rename", "old_id", "new_id", "--scope", "docs")
-    assert result.returncode == 1
-    assert "cross_scope_collision" in result.stdout
-    assert "--scope library" in result.stdout
+    assert result.returncode == 2
+    assert result.stdout == ""
+    assert "cross_scope_collision" in result.stderr
+    assert "--scope library" in result.stderr
 
 
 def test_rename_aborts_when_parse_failed_file_contains_target(tmp_path: Path):
@@ -230,8 +253,9 @@ def test_rename_aborts_when_parse_failed_file_contains_target(tmp_path: Path):
         encoding="utf-8",
     )
     result = _run_ontos(tmp_path, "rename", "old_id", "new_id")
-    assert result.returncode == 1
-    assert "parse_failed_target_sighting" in result.stdout
+    assert result.returncode == 2
+    assert result.stdout == ""
+    assert "parse_failed_target_sighting" in result.stderr
 
 
 def test_rename_dirty_git_apply_rejected_but_dry_run_allowed(tmp_path: Path):
@@ -245,8 +269,9 @@ def test_rename_dirty_git_apply_rejected_but_dry_run_allowed(tmp_path: Path):
     )
 
     apply_result = _run_ontos(tmp_path, "rename", "old_id", "new_id", "--apply")
-    assert apply_result.returncode == 1
-    assert "dirty_git_state" in apply_result.stdout
+    assert apply_result.returncode == 2
+    assert apply_result.stdout == ""
+    assert "dirty_git_state" in apply_result.stderr
 
     dry_run_result = _run_ontos(tmp_path, "rename", "old_id", "new_id")
     assert dry_run_result.returncode == 0
@@ -272,12 +297,13 @@ def test_rename_invalid_utf8_is_actionable_and_byte_unchanged(tmp_path: Path):
         "--apply",
     )
 
-    assert result.returncode == 1
+    assert result.returncode == 2
     payload = json.loads(result.stdout)
     assert payload["schema_version"] == "4.0"
-    assert payload["error"] is None
-    assert payload["result"]["status"] == "findings"
-    assert payload["result"]["exit_category"] == "findings"
+    assert payload["error"]["code"] == "E_COMMAND_FAILED"
+    assert payload["result"]["status"] == "error"
+    assert payload["result"]["exit_category"] == "usage"
+    assert payload["result"]["kind"] == "operation"
     assert payload["data"]["path"] == str(path)
     assert "Re-save the file as UTF-8" in payload["message"]
     assert path.read_bytes() == original
@@ -357,7 +383,8 @@ def test_rename_frontmatter_comments_and_order_preserved_on_apply(tmp_path: Path
 
     result = _run_ontos(tmp_path, "rename", "old_id", "new_id", "--apply")
     assert result.returncode == 0
-    assert "Derived artifacts may be stale" in result.stdout
+    assert "Derived artifacts may be stale" not in result.stdout
+    assert "Derived artifacts may be stale" in result.stderr
 
     updated = path.read_text(encoding="utf-8")
     assert "id: new_id  # keep-id-comment" in updated
@@ -385,6 +412,46 @@ def test_rename_apply_json_schema_and_post_warning(tmp_path: Path):
     assert "Derived artifacts may be stale" in data["post_apply_warning"]
 
 
+def test_rename_commit_failure_is_json_internal_error(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+):
+    from ontos.commands.rename import RenameOptions, rename_command
+    from ontos.core.context import SessionContext
+
+    _init_repo(tmp_path)
+    path = tmp_path / "docs" / "a.md"
+    _write_doc(path, "old_id", body="See old_id.")
+    _init_git_repo(tmp_path)
+    original = path.read_bytes()
+    monkeypatch.chdir(tmp_path)
+
+    def fail_commit(_self):
+        raise OSError("disk unavailable")
+
+    monkeypatch.setattr(SessionContext, "commit", fail_commit)
+
+    exit_code = rename_command(
+        RenameOptions(
+            old_id="old_id",
+            new_id="new_id",
+            apply=True,
+            json_output=True,
+            quiet=True,
+        )
+    )
+
+    assert exit_code == 5
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["exit_code"] == 5
+    assert payload["status"] == "error"
+    assert payload["error"]["code"] == "commit_failed"
+    assert payload["result"]["kind"] == "operation"
+    assert payload["result"]["exit_category"] == "internal"
+    assert path.read_bytes() == original
+
+
 def test_rename_unsupported_frontmatter_warns_in_dry_run_and_blocks_apply(tmp_path: Path):
     _init_repo(tmp_path)
     path = tmp_path / "docs" / "doc.md"
@@ -408,7 +475,7 @@ def test_rename_unsupported_frontmatter_warns_in_dry_run_and_blocks_apply(tmp_pa
     assert any(w["reason_code"] == "non_scalar_list" for w in dry_payload["warnings"])
 
     apply_result = _run_ontos(tmp_path, "--json", "rename", "old_id", "new_id", "--apply")
-    assert apply_result.returncode == 1
+    assert apply_result.returncode == 2
     apply_payload = json.loads(apply_result.stdout)
     assert apply_payload["status"] == "error"
     assert apply_payload["error"]["code"] == "unsupported_target_format"
@@ -610,8 +677,13 @@ def test_rename_anchor_alias_detection_warns_and_blocks_apply(tmp_path: Path):
     dry_payload = json.loads(dry_run.stdout)
     assert any(item["reason_code"] == "anchor_or_alias" for item in dry_payload["warnings"])
 
+    human_dry_run = _run_ontos(tmp_path, "rename", "old_id", "new_id")
+    assert human_dry_run.returncode == 0
+    assert "anchor_or_alias" not in human_dry_run.stdout
+    assert "anchor_or_alias" in human_dry_run.stderr
+
     apply_result = _run_ontos(tmp_path, "--json", "rename", "old_id", "new_id", "--apply")
-    assert apply_result.returncode == 1
+    assert apply_result.returncode == 2
     apply_payload = json.loads(apply_result.stdout)
     assert apply_payload["error"]["code"] == "unsupported_target_format"
 
@@ -639,7 +711,7 @@ def test_rename_block_scalar_detection_warns_and_blocks_apply(tmp_path: Path):
     assert any(item["reason_code"] == "block_scalar_value" for item in dry_payload["warnings"])
 
     apply_result = _run_ontos(tmp_path, "--json", "rename", "old_id", "new_id", "--apply")
-    assert apply_result.returncode == 1
+    assert apply_result.returncode == 2
     apply_payload = json.loads(apply_result.stdout)
     assert apply_payload["error"]["code"] == "unsupported_target_format"
 

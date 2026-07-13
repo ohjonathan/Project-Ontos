@@ -116,6 +116,11 @@ def test_tool_descriptions_include_workspace_name(tmp_path):
             f"Tool '{name}' description should include workspace name '{workspace_name}'"
         )
 
+    rename_description = tool_map["rename_document"].description
+    assert "recovery journal" in rename_description
+    assert "touched paths" in rename_description
+    assert "git checkout -- ." not in rename_description
+
 
 def test_instructions_mention_workspace_overview(tmp_path):
     root = create_workspace(tmp_path)

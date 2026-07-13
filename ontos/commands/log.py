@@ -22,7 +22,7 @@ from ontos.core.context import SessionContext
 from ontos.core.schema import serialize_frontmatter
 from ontos.core.types import TEMPLATES, SECTION_TEMPLATES
 from ontos.io.config import load_project_config
-from ontos.ui.json_output import emit_command_error, emit_command_success
+from ontos.ui.json_output import ExitCode, emit_command_error, emit_command_success
 from ontos.ui.output import OutputHandler
 
 
@@ -307,13 +307,13 @@ def log_command(options: LogOptions) -> int:
         if options.json_output:
             emit_command_error(
                 command="log",
-                exit_code=1,
-                code="E_COMMAND_FAILED",
+                exit_code=ExitCode.USAGE,
+                code="E_WORKSPACE_NOT_FOUND",
                 message="Not in a git repository",
             )
         else:
             output.error("Not in a git repository")
-        return 1
+        return int(ExitCode.USAGE)
 
     # Gather git info
     git_info = {
@@ -340,7 +340,7 @@ def log_command(options: LogOptions) -> int:
             session_options,
             git_info,
         )
-    except (ConfigError, OSError, ValueError) as exc:
+    except (ConfigError, ValueError) as exc:
         if isinstance(exc, ConfigError) and "logs_dir" in str(exc):
             message = (
                 f"Refusing unsafe paths.logs_dir configuration: {exc}. "
@@ -352,13 +352,30 @@ def log_command(options: LogOptions) -> int:
         if options.json_output:
             emit_command_error(
                 command="log",
-                exit_code=1,
-                code="E_COMMAND_FAILED",
+                exit_code=ExitCode.USAGE,
+                code=(
+                    "E_CONFIG_ERROR"
+                    if isinstance(exc, ConfigError)
+                    else "E_USER_INPUT"
+                ),
                 message=message,
             )
         else:
             output.error(message)
-        return 1
+        return int(ExitCode.USAGE)
+    except OSError as exc:
+        message = f"Unable to prepare session log: {exc}"
+        if options.json_output:
+            emit_command_error(
+                command="log",
+                exit_code=ExitCode.INTERNAL,
+                code="E_COMMAND_FAILED",
+                message=message,
+                execution_succeeded=False,
+            )
+        else:
+            output.error(message)
+        return int(ExitCode.INTERNAL)
 
     try:
         _write_log_exclusively(project_root, output_path, content)
@@ -371,37 +388,42 @@ def log_command(options: LogOptions) -> int:
         if options.json_output:
             emit_command_error(
                 command="log",
-                exit_code=1,
+                exit_code=ExitCode.USAGE,
                 code="E_FILE_EXISTS",
                 message=message,
                 data={"path": str(output_path)},
             )
         else:
             output.error(message)
-        return 1
+        return int(ExitCode.USAGE)
     except (OSError, ValueError, RuntimeError) as exc:
         unsafe_path_failure = any(
             marker in str(exc).lower()
             for marker in ("outside the workspace", "symlink", "reparse point")
         )
         if unsafe_path_failure:
+            exit_code = ExitCode.USAGE
+            error_code = "E_CONFIG_ERROR"
             message = (
                 f"Refusing unsafe logs_dir for {output_path}: {exc}. "
                 "Configure LOGS_DIR or [paths].logs_dir as a real directory "
                 "inside the workspace, then retry."
             )
         else:
+            exit_code = ExitCode.INTERNAL
+            error_code = "E_COMMAND_FAILED"
             message = f"Unable to create session log {output_path}: {exc}"
         if options.json_output:
             emit_command_error(
                 command="log",
-                exit_code=1,
-                code="E_COMMAND_FAILED",
+                exit_code=exit_code,
+                code=error_code,
                 message=message,
+                execution_succeeded=False,
             )
         else:
             output.error(message)
-        return 1
+        return int(exit_code)
 
     # Create marker for pre-push enforcement (best effort, but visible when
     # skipped so a later pre-push refusal is not surprising).

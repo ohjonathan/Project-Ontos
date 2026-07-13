@@ -38,6 +38,13 @@ scope:
     - "docs/trackers/project-ontos-v5-0-0.md"
     - "docs/releases/v5.0.0.md"
     - "docs/logs/2026-05-22_merge-pr-118-v4-5-closes-issues-115-116-117.md"
+    - "docs/logs/2026-06-11_fix-github-issues-131-136-warning-grouping-link-ch.md"
+    - "docs/logs/2026-07-03_merge-pull-request-145-from-ohjonathan-docs-fable.md"
+    - "docs/logs/2026-07-09_merge-pull-request-160-from-ohjonathan-audit-147.md"
+    - "docs/logs/2026-07-09_review-pr-160.md"
+    - "docs/logs/2026-07-12_ontos-v5-0-0-structural-release.md"
+    - "docs/logs/2026-07-12_ontos-v5-0-0-contract-fix-round.md"
+    - "docs/releases/v4.7.0.md"
     - "docs/reviews/project-ontos-v4-7-1-hotfix/final-approval.md"
   allowed_path_patterns:
     - "docs/reviews/project-ontos-v5-0-0/**"

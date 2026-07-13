@@ -172,13 +172,20 @@ class TestLogCommandCLI:
         assert isinstance(result, int)
         assert result == 0
 
-    def test_not_in_git_repo_returns_error(self, tmp_path, monkeypatch):
-        """log_command returns 1 when not in a git repository."""
+    def test_not_in_git_repo_returns_usage_error(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        """A missing repository is invalid command context, not findings."""
         monkeypatch.chdir(tmp_path)
         # No .git dir — should fail
-        options = LogOptions(auto=True, quiet=True)
+        options = LogOptions(auto=True, quiet=True, json_output=True)
         result = log_command(options)
-        assert result == 1
+        assert result == 2
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["exit_code"] == 2
+        assert payload["status"] == "error"
+        assert payload["error"]["code"] == "E_WORKSPACE_NOT_FOUND"
+        assert payload["result"]["exit_category"] == "usage"
 
     def test_collision_is_refused_without_overwrite(
         self,
@@ -199,12 +206,44 @@ class TestLogCommandCLI:
         path = next((tmp_path / "docs" / "logs").glob("*_same-session.md"))
         original = path.read_bytes()
         options.json_output = True
-        assert log_command(options) == 1
+        assert log_command(options) == 2
         assert path.read_bytes() == original
         payload = json.loads(capsys.readouterr().out)
         assert payload["schema_version"] == "4.0"
+        assert payload["exit_code"] == 2
         assert payload["result"]["status"] == "error"
+        assert payload["result"]["exit_category"] == "usage"
         assert payload["error"]["code"] == "E_FILE_EXISTS"
+
+    def test_write_failure_returns_internal_error(
+        self,
+        tmp_path,
+        monkeypatch,
+        capsys,
+    ):
+        _init_git_project(tmp_path)
+        subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "--allow-empty", "-m", "init"],
+            cwd=tmp_path,
+            capture_output=True,
+        )
+        monkeypatch.chdir(tmp_path)
+
+        def fail_write(*_args, **_kwargs):
+            raise OSError("disk unavailable")
+
+        monkeypatch.setattr("ontos.commands.log._write_log_exclusively", fail_write)
+
+        result = log_command(
+            LogOptions(auto=True, quiet=True, json_output=True, title="write failure")
+        )
+
+        assert result == 5
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["exit_code"] == 5
+        assert payload["status"] == "error"
+        assert payload["result"]["exit_category"] == "internal"
 
     @pytest.mark.skipif(not hasattr(os, "symlink"), reason="symlinks unavailable")
     def test_default_logs_dir_symlink_is_rejected_before_resolution(
@@ -229,7 +268,7 @@ class TestLogCommandCLI:
 
         result = _run_ontos(tmp_path, "log", "--auto")
 
-        assert result.returncode == 1
+        assert result.returncode == 2
         assert "Configure LOGS_DIR or [paths].logs_dir" in result.stderr
         assert sentinel.read_text(encoding="utf-8") == "do not change"
         assert list(outside_logs.glob("*.md")) == []
@@ -243,7 +282,7 @@ class TestLogCommandCLI:
         )
         result = _run_ontos(tmp_path, "log", "--auto")
 
-        assert result.returncode == 1
+        assert result.returncode == 2
         assert "Refusing unsafe paths.logs_dir configuration" in result.stderr
         assert "inside the workspace" in result.stderr
 

@@ -64,6 +64,31 @@ jobs:
           files: coverage.xml
         continue-on-error: true
 
+  v5-release-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: "3.11"
+
+      - name: Install release-gate dependencies
+        run: pip install -e ".[dev,mcp]"
+
+      - name: Verify v5 golden baselines and coverage
+        run: |
+          PYTHONPATH=. python tests/golden/compare_golden_master.py --fixture all
+          COVERAGE_FILE=/tmp/ontos-v5.coverage pytest tests/ --cov=ontos --cov-fail-under=82
+
+      - name: Verify external lifecycle evidence index
+        run: |
+          git fetch origin lifecycle-evidence/project-ontos-v5-0-0:refs/heads/lifecycle-evidence/project-ontos-v5-0-0
+          python scripts/verify_lifecycle_evidence_ref.py docs/reviews/project-ontos-v5-0-0/evidence-index.yaml
+
   # v3.0: Test non-editable install to catch path resolution bugs
   test-non-editable:
     runs-on: ubuntu-latest

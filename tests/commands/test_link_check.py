@@ -89,6 +89,8 @@ def test_link_check_orphans_only_exit_3(tmp_path: Path):
 
     assert result.returncode == 3
     assert "orphan" in result.stdout.lower()
+    assert "(exit 3)" in result.stdout
+    assert "(exit 2)" not in result.stdout
 
 
 def test_link_check_duplicates_exit_1(tmp_path: Path):
@@ -333,8 +335,9 @@ def test_link_check_json_error_path_uses_envelope(tmp_path: Path):
 
     assert envelope["command"] == "link-check"
     assert envelope["status"] == "error"
-    assert envelope["error"]["code"] == "E_COMMAND_FAILED"
-    assert result.returncode == 1
+    assert envelope["error"]["code"] == "E_USER_INPUT"
+    assert envelope["result"]["exit_category"] == "usage"
+    assert result.returncode == 2
 
 
 def test_link_check_result_status_mapping(tmp_path: Path):

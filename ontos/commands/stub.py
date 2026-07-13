@@ -97,16 +97,26 @@ def write_stub_to_context(
 def _run_stub_command(options: StubOptions) -> Tuple[int, str]:
     """Execute stub command."""
     output = OutputHandler(quiet=options.quiet)
-    root = find_project_root()
+    try:
+        root = find_project_root()
+    except FileNotFoundError as exc:
+        return 2, str(exc)
     
     # Determine if interactive mode needed
     # Legacy logic: interactive if either goal or type is missing
     interactive = not (options.goal and options.doc_type)
-    
+
     if interactive:
-        params = interactive_stub(output)
+        if options.json_output:
+            return 2, "JSON mode requires --goal and --type"
+        try:
+            params = interactive_stub(output)
+        except EOFError:
+            return 2, "Cancelled"
+        except KeyboardInterrupt:
+            return 130, "Interrupted"
         if not params:
-            return 1, "Cancelled"
+            return 2, "Cancelled"
     else:
         doc_id = options.id
         if not doc_id and options.output:
@@ -147,28 +157,30 @@ def _run_stub_command(options: StubOptions) -> Tuple[int, str]:
                 ctx.commit()
             except Exception as exc:
                 output.error(f"Failed to commit stub changes: {exc}")
-                return 1, f"Commit failed: {exc}"
+                return 5, f"Commit failed: {exc}"
             output.success(f"Created stub: {dest}")
             return 0, f"Created {dest}"
         else:
-            return 1, "Failed to write stub"
+            return 5, "Failed to write stub"
     else:
-        # Print to stdout
+        # Print to stdout only in human mode. The CLI wrapper owns the single
+        # schema-v4 envelope in JSON mode.
         fm_yaml = serialize_frontmatter(fm)
         title = fm.get('id', 'Untitled').replace('_', ' ').title()
         goal = fm.get('goal', '')
-        
-        print("\n" + "-" * 40)
-        print(f"---")
-        print(fm_yaml)
-        print("---")
-        print(f"\n# {title}")
-        print("\n## Goal")
-        print(f"\n{goal if goal else '<!-- Describe the goal of this document -->'}")
-        print("\n## Content")
-        print("\n<!-- Add your content here -->")
-        print("-" * 40)
-        return 0, "Stub printed to stdout"
+        if not options.json_output:
+            print("\n" + "-" * 40)
+            print("---")
+            print(fm_yaml)
+            print("---")
+            print(f"\n# {title}")
+            print("\n## Goal")
+            print(f"\n{goal if goal else '<!-- Describe the goal of this document -->'}")
+            print("\n## Content")
+            print("\n<!-- Add your content here -->")
+            print("-" * 40)
+            return 0, "Stub printed to stdout"
+        return 0, "Stub generated"
 
 
 def stub_command(options: StubOptions) -> int:

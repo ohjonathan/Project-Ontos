@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+from ontos.core.config import ConfigError
 from ontos.core.curation import create_scaffold, load_ontosignore, should_ignore
 from ontos.core.schema import serialize_frontmatter
 from ontos.core.context import SessionContext
@@ -11,6 +12,7 @@ from ontos.io.config import load_project_config
 from ontos.io.files import find_project_root, scan_documents, load_documents, load_frontmatter
 from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
 from ontos.io.yaml import parse_frontmatter_content
+from ontos.ui.json_output import ExitCode
 from ontos.ui.output import OutputHandler
 
 # Hardcoded exclusion patterns for dependency directories.
@@ -36,11 +38,28 @@ class ScaffoldOptions:
     runtime_failures: List[str] = field(default_factory=list)
 
 
+@dataclass(frozen=True)
+class ScaffoldFailure:
+    """One failed scaffold operation with its public exit classification."""
+
+    message: str
+    exit_code: ExitCode
+
+
+def _failure_exit_code(failures: List[ScaffoldFailure]) -> int:
+    """Return the most severe public exit code represented by failures."""
+    if any(failure.exit_code == ExitCode.INTERNAL for failure in failures):
+        return int(ExitCode.INTERNAL)
+    if failures:
+        return int(ExitCode.USAGE)
+    return int(ExitCode.CLEAN)
+
+
 def _find_untagged_files_with_failures(
     paths: Optional[List[Path]] = None,
     root: Optional[Path] = None,
     scope: Optional[str] = None,
-) -> Tuple[List[Path], List[str]]:
+) -> Tuple[List[Path], List[ScaffoldFailure]]:
     """Find markdown files without valid frontmatter.
 
     Args:
@@ -48,10 +67,10 @@ def _find_untagged_files_with_failures(
         root: Project root to use (falls back to search)
 
     Returns:
-        Tuple of (paths needing scaffolding, failure messages)
+        Tuple of (paths needing scaffolding, classified failures)
     """
     root = root or find_project_root()
-    failures: List[str] = []
+    failures: List[ScaffoldFailure] = []
     if paths:
         # Filter only existing markdown files from provided paths
         search_paths = []
@@ -61,27 +80,62 @@ def _find_untagged_files_with_failures(
             if p.is_file() and p.suffix == ".md":
                 search_paths.append(p)
             elif p.is_dir():
-                search_paths.extend(scan_documents([p], skip_patterns=load_ontosignore(root)))
+                try:
+                    search_paths.extend(
+                        scan_documents([p], skip_patterns=load_ontosignore(root))
+                    )
+                except OSError as exc:
+                    failures.append(
+                        ScaffoldFailure(f"{p}: {exc}", ExitCode.INTERNAL)
+                    )
+                except Exception as exc:
+                    failures.append(
+                        ScaffoldFailure(f"{p}: {exc}", ExitCode.INTERNAL)
+                    )
+            else:
+                failures.append(
+                    ScaffoldFailure(
+                        f"Path is not an existing Markdown file or directory: {p}",
+                        ExitCode.USAGE,
+                    )
+                )
         # Deduplicate and sort
         files = sorted(list(set(search_paths)))
     else:
         # Default scan from configured scope
-        config = load_project_config(repo_root=root)
-        effective_scope = resolve_scan_scope(scope, config.scanning.default_scope)
-        ignore_patterns = load_ontosignore(root)
-        files = collect_scoped_documents(
-            root,
-            config,
-            effective_scope,
-            base_skip_patterns=ignore_patterns,
-        )
+        try:
+            config = load_project_config(repo_root=root)
+            effective_scope = resolve_scan_scope(scope, config.scanning.default_scope)
+            ignore_patterns = load_ontosignore(root)
+            files = collect_scoped_documents(
+                root,
+                config,
+                effective_scope,
+                base_skip_patterns=ignore_patterns,
+            )
+        except ConfigError as exc:
+            return [], [ScaffoldFailure(str(exc), ExitCode.USAGE)]
+        except OSError as exc:
+            return [], [ScaffoldFailure(str(exc), ExitCode.INTERNAL)]
+        except Exception as exc:
+            return [], [ScaffoldFailure(str(exc), ExitCode.INTERNAL)]
 
-    load_result = load_documents(files, parse_frontmatter_content)
+    try:
+        load_result = load_documents(files, parse_frontmatter_content)
+    except Exception as exc:
+        return [], [ScaffoldFailure(str(exc), ExitCode.INTERNAL)]
     if load_result.has_fatal_errors:
         # We can't safely scaffold if the graph is broken
         for issue in load_result.issues:
             if issue.code in {"parse_error", "io_error"}:
-                failures.append(f"{issue.path}: {issue.message}" if issue.path else issue.message)
+                failures.append(
+                    ScaffoldFailure(
+                        f"{issue.path}: {issue.message}" if issue.path else issue.message,
+                        ExitCode.INTERNAL
+                        if issue.code == "io_error"
+                        else ExitCode.USAGE,
+                    )
+                )
         return [], failures
     # Duplicate IDs are intentionally tolerated in scaffold context.
     # Scaffold creates new files and only needs the existing ID set for
@@ -111,8 +165,15 @@ def _find_untagged_files_with_failures(
             
             if not fm or 'id' not in fm:
                 untagged.append(f)
-        except (OSError, UnicodeDecodeError, ValueError) as exc:
-            failures.append(f"{f}: {exc}")
+        except OSError as exc:
+            failures.append(
+                ScaffoldFailure(f"{f}: {exc}", ExitCode.INTERNAL)
+            )
+            continue
+        except (UnicodeDecodeError, ValueError) as exc:
+            failures.append(
+                ScaffoldFailure(f"{f}: {exc}", ExitCode.USAGE)
+            )
             continue
 
     return untagged, failures
@@ -128,11 +189,11 @@ def find_untagged_files(
     return files
 
 
-def scaffold_file(
+def _scaffold_file_with_failure(
     path: Path,
     ctx: SessionContext,
     dry_run: bool = True,
-) -> Tuple[bool, Optional[dict], Optional[str]]:
+) -> Tuple[bool, Optional[dict], Optional[ScaffoldFailure]]:
     """Add scaffold frontmatter to a file.
 
     Args:
@@ -155,8 +216,22 @@ def scaffold_file(
         
         ctx.buffer_write(path, new_content)
         return True, fm, None
-    except (OSError, UnicodeDecodeError, ValueError) as exc:
-        return False, None, str(exc)
+    except OSError as exc:
+        return False, None, ScaffoldFailure(str(exc), ExitCode.INTERNAL)
+    except (UnicodeDecodeError, ValueError) as exc:
+        return False, None, ScaffoldFailure(str(exc), ExitCode.USAGE)
+    except Exception as exc:
+        return False, None, ScaffoldFailure(str(exc), ExitCode.INTERNAL)
+
+
+def scaffold_file(
+    path: Path,
+    ctx: SessionContext,
+    dry_run: bool = True,
+) -> Tuple[bool, Optional[dict], Optional[str]]:
+    """Compatibility wrapper returning the historical string error value."""
+    success, frontmatter, failure = _scaffold_file_with_failure(path, ctx, dry_run)
+    return success, frontmatter, failure.message if failure is not None else None
 
 
 def _run_scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
@@ -172,24 +247,36 @@ def _run_scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
     options.runtime_failures = []
 
     # 1. Find untagged files
-    root = (
-        options.repo_root.expanduser().resolve()
-        if options.repo_root is not None
-        else find_project_root()
-    )
+    try:
+        root = (
+            options.repo_root.expanduser().resolve()
+            if options.repo_root is not None
+            else find_project_root()
+        )
+    except FileNotFoundError as exc:
+        options.runtime_failures.append(str(exc))
+        return int(ExitCode.USAGE), str(exc)
+    except OSError as exc:
+        options.runtime_failures.append(str(exc))
+        return int(ExitCode.INTERNAL), str(exc)
 
     untagged, discovery_failures = _find_untagged_files_with_failures(
         options.paths,
         root=root,
         scope=options.scope,
     )
-    options.runtime_failures.extend(discovery_failures)
     if not untagged:
+        options.runtime_failures.extend(
+            failure.message for failure in discovery_failures
+        )
         if not options.quiet:
-            output.success("No files need scaffolding")
             for failure in discovery_failures:
-                output.error(f"Failed to inspect: {failure}")
-        return (1 if discovery_failures else 0), "No files need scaffolding"
+                output.error(f"Failed to inspect: {failure.message}")
+            if not discovery_failures:
+                output.success("No files need scaffolding")
+        if discovery_failures:
+            return _failure_exit_code(discovery_failures), "Scaffold discovery failed"
+        return int(ExitCode.CLEAN), "No files need scaffolding"
 
     if not options.quiet:
         if options.dry_run:
@@ -199,9 +286,19 @@ def _run_scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
         output.info(f"Found {len(untagged)} file(s) needing scaffolding")
 
     # 2. Process each file
-    ctx = SessionContext.from_repo(root)
+    try:
+        ctx = SessionContext.from_repo(root)
+    except (ConfigError, FileNotFoundError, ValueError) as exc:
+        options.runtime_failures.append(str(exc))
+        return int(ExitCode.USAGE), str(exc)
+    except OSError as exc:
+        options.runtime_failures.append(str(exc))
+        return int(ExitCode.INTERNAL), str(exc)
+    except Exception as exc:
+        options.runtime_failures.append(str(exc))
+        return int(ExitCode.INTERNAL), str(exc)
     success_count = 0
-    failures: List[str] = []
+    failures: List[ScaffoldFailure] = list(discovery_failures)
 
     for path in untagged:
         try:
@@ -210,7 +307,7 @@ def _run_scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
             rel_path = path
 
         if options.dry_run:
-            success, fm, error = scaffold_file(path, ctx, dry_run=True)
+            success, fm, failure = _scaffold_file_with_failure(path, ctx, dry_run=True)
             if success and fm:
                 if not options.quiet:
                     print(f"\n  {rel_path}")
@@ -219,19 +316,25 @@ def _run_scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
                     print(f"    status: scaffold")
                 success_count += 1
             else:
-                failure = f"{rel_path}: {error or 'unknown error'}"
+                failure = failure or ScaffoldFailure("unknown error", ExitCode.INTERNAL)
+                failure = ScaffoldFailure(
+                    f"{rel_path}: {failure.message}", failure.exit_code
+                )
                 failures.append(failure)
                 if not options.quiet:
-                    output.error(f"Failed to scaffold {rel_path}: {error or 'unknown error'}")
+                    output.error(f"Failed to scaffold {failure.message}")
         else:
-            success, _, error = scaffold_file(path, ctx, dry_run=False)
+            success, _, failure = _scaffold_file_with_failure(path, ctx, dry_run=False)
             if success:
                 output.success(f"Scaffolded: {rel_path}")
                 success_count += 1
             else:
-                failure = f"{rel_path}: {error or 'unknown error'}"
+                failure = failure or ScaffoldFailure("unknown error", ExitCode.INTERNAL)
+                failure = ScaffoldFailure(
+                    f"{rel_path}: {failure.message}", failure.exit_code
+                )
                 failures.append(failure)
-                output.error(f"Failed to scaffold {rel_path}: {error or 'unknown error'}")
+                output.error(f"Failed to scaffold {failure.message}")
 
     # 3. Commit if not dry run
     if not options.dry_run:
@@ -239,9 +342,11 @@ def _run_scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
             ctx.commit()
         except Exception as exc:
             output.error(f"Failed to commit scaffold changes: {exc}")
-            failures.append(f"commit: {exc}")
+            failures.append(
+                ScaffoldFailure(f"commit: {exc}", ExitCode.INTERNAL)
+            )
 
-    options.runtime_failures.extend(failures)
+    options.runtime_failures.extend(failure.message for failure in failures)
 
     # 4. Summary
     if options.dry_run:
@@ -249,15 +354,15 @@ def _run_scaffold_command(options: ScaffoldOptions) -> Tuple[int, str]:
             print()
             output.info("Run with --apply to execute scaffolding")
             for failure in failures:
-                output.error(f"Failed: {failure}")
-        exit_code = 0 if not failures else 1
+                output.error(f"Failed: {failure.message}")
+        exit_code = _failure_exit_code(failures)
         return exit_code, f"Dry run: {success_count} files would be scaffolded"
     else:
         if not options.quiet:
             output.success(f"Scaffolded {success_count}/{len(untagged)} files")
             for failure in failures:
-                output.error(f"Failed: {failure}")
-        return (0 if success_count == len(untagged) and not failures else 1), f"Processed {success_count} files"
+                output.error(f"Failed: {failure.message}")
+        return _failure_exit_code(failures), f"Processed {success_count} files"
 
 
 def scaffold_command(options: ScaffoldOptions) -> int:

@@ -168,25 +168,30 @@ def _run_migration_report_command(options: MigrationReportOptions) -> Tuple[int,
     """
     try:
         root = find_project_root()
+    except FileNotFoundError as e:
+        return 2, f"Error: {e}"
     except Exception as e:
-        return 1, f"Error: {e}"
+        return 5, f"Error: {e}"
 
     # Check output file
     if options.output_path:
         if options.output_path.exists() and not options.force:
-            return 1, f"Error: Output file exists: {options.output_path}. Use --force to overwrite."
+            return 2, f"Error: Output file exists: {options.output_path}. Use --force to overwrite."
 
     # Create snapshot and classify
-    snapshot = create_snapshot(root, scope=options.scope)
-    report = classify_documents(snapshot)
+    try:
+        snapshot = create_snapshot(root, scope=options.scope)
+        report = classify_documents(snapshot)
 
-    # Generate report
-    project_name = root.name
-    if options.format == "json":
-        data = _generate_json_report(report, root)
-        output = json.dumps(data, indent=2)
-    else:
-        output = _generate_markdown_report(report, project_name)
+        # Generate report
+        project_name = root.name
+        if options.format == "json":
+            data = _generate_json_report(report, root)
+            output = json.dumps(data, indent=2)
+        else:
+            output = _generate_markdown_report(report, project_name)
+    except Exception as e:
+        return 5, f"Error generating migration report: {e}"
 
     # Output
     if options.output_path:
@@ -195,7 +200,7 @@ def _run_migration_report_command(options: MigrationReportOptions) -> Tuple[int,
             options.output_path.write_text(output, encoding='utf-8')
         except (IOError, OSError) as e:
             # S1: Improved error handling
-            return 1, f"Error writing migration report to {options.output_path}: {e}"
+            return 5, f"Error writing migration report to {options.output_path}: {e}"
         return 0, f"Generated migration report: {options.output_path}"
     else:
         return 0, output

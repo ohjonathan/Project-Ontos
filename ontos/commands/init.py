@@ -21,6 +21,7 @@ class InitOptions:
     yes: bool = False
     scaffold: bool = False      # Force scaffold without prompt
     no_scaffold: bool = False   # Suppress scaffold prompt entirely
+    json_output: bool = False
 
 
 def _confirm_hooks(options: InitOptions) -> bool:
@@ -40,7 +41,7 @@ def _confirm_hooks(options: InitOptions) -> bool:
     """
     if options.skip_hooks:
         return False  # User explicitly skipped
-    if options.yes:
+    if options.yes or options.json_output:
         return True   # Non-interactive mode
     if not sys.stdin.isatty():
         return True   # Non-TTY: proceed (CI/scripts)
@@ -82,6 +83,9 @@ def _prompt_scaffold(project_root: Path, config, options: InitOptions):
 
     # Short-circuit on flags
     if options.no_scaffold:
+        return None
+
+    if options.json_output and not options.scaffold:
         return None
 
     docs_path = project_root / config.paths.docs_dir
@@ -174,7 +178,7 @@ def _prompt_scaffold(project_root: Path, config, options: InitOptions):
     return selected_paths
 
 
-def _run_scaffold(project_root: Path, paths) -> None:
+def _run_scaffold(project_root: Path, paths, *, quiet: bool = False) -> None:
     """Run scaffold on given paths during init. Non-fatal on failure.
 
     Matches the non-fatal pattern of _generate_agents_file().
@@ -192,12 +196,13 @@ def _run_scaffold(project_root: Path, paths) -> None:
         )
         exit_code, message = _run_scaffold_command(options)
 
-        if exit_code == 0:
+        if exit_code == 0 and not quiet:
             print("   Scaffold complete.", file=sys.stderr)
-        else:
+        elif exit_code != 0 and not quiet:
             print(f"Warning: Scaffold completed with errors: {message}", file=sys.stderr)
     except Exception as e:
-        print(f"Warning: Could not run scaffold: {e}", file=sys.stderr)
+        if not quiet:
+            print(f"Warning: Could not run scaffold: {e}", file=sys.stderr)
 
 
 def _run_init_command(options: InitOptions) -> Tuple[int, str]:
@@ -227,7 +232,7 @@ def _run_init_command(options: InitOptions) -> Tuple[int, str]:
 
     # 3. Detect legacy .ontos/scripts/
     legacy_path = project_root / ".ontos" / "scripts"
-    if legacy_path.exists():
+    if legacy_path.exists() and not options.json_output:
         print("Warning: Legacy .ontos/scripts/ detected. Consider migrating.", file=sys.stderr)
 
     # Track created items for cleanup on abort
@@ -262,13 +267,21 @@ def _run_init_command(options: InitOptions) -> Tuple[int, str]:
         # 5.5 Scaffold integration (optional, interactive)
         scaffold_paths = _prompt_scaffold(project_root, config, options)
         if scaffold_paths is not None:
-            _run_scaffold(project_root, scaffold_paths)
+            _run_scaffold(
+                project_root,
+                scaffold_paths,
+                quiet=options.json_output,
+            )
 
         # 6. Generate initial context map
         context_map_path = project_root / config.paths.context_map
         if not context_map_path.exists():
             created_paths.append(context_map_path)
-        _generate_initial_context_map(project_root, config)
+        _generate_initial_context_map(
+            project_root,
+            config,
+            quiet=options.json_output,
+        )
 
         # 7. Install hooks (with collision safety and consent)
         if _confirm_hooks(options):
@@ -288,11 +301,12 @@ def _run_init_command(options: InitOptions) -> Tuple[int, str]:
                         p.rmdir()
             except Exception:
                 pass
-        print("\nInit aborted. Cleanup complete.")
+        if not options.json_output:
+            print("\nInit aborted. Cleanup complete.")
         return 130, "Aborted by user"  # Standard SIGINT exit code
 
     # 8. Auto-generate AGENTS.md (non-fatal on failure)
-    _generate_agents_file(project_root)
+    _generate_agents_file(project_root, quiet=options.json_output)
 
     # 9. Build success message
     msg = f"Initialized Ontos in {project_root}\n"
@@ -338,7 +352,7 @@ def _create_directories(root: Path, config) -> None:
         (root / d).mkdir(parents=True, exist_ok=True)
 
 
-def _generate_initial_context_map(root: Path, config) -> None:
+def _generate_initial_context_map(root: Path, config, *, quiet: bool = False) -> None:
     """Generate initial context map by running the map command.
 
     Non-fatal on failure - creates placeholder if native command fails.
@@ -360,16 +374,17 @@ def _generate_initial_context_map(root: Path, config) -> None:
             )
             exit_code = map_command(options)
 
-            if exit_code == 0:
+            if exit_code == 0 and not quiet:
                 print("   ✓ Context map generated", file=sys.stderr)
-            else:
+            elif exit_code != 0 and not quiet:
                 print(f"Warning: Context map generation returned code {exit_code}", file=sys.stderr)
         finally:
             os.chdir(original_cwd)
 
     except Exception as e:
         # Fallback: create a minimal context map placeholder
-        print(f"Warning: Could not generate context map: {e}", file=sys.stderr)
+        if not quiet:
+            print(f"Warning: Could not generate context map: {e}", file=sys.stderr)
         try:
             context_map_path = root / config.paths.context_map
             if not context_map_path.exists():
@@ -377,12 +392,17 @@ def _generate_initial_context_map(root: Path, config) -> None:
                     "# Ontos Context Map\n\n"
                     "> Run `ontos map` to generate the full context map.\n"
                 )
-                print("   ✓ Created placeholder context map", file=sys.stderr)
+                if not quiet:
+                    print("   ✓ Created placeholder context map", file=sys.stderr)
         except Exception as fallback_error:
-            print(f"Warning: Could not create placeholder: {fallback_error}", file=sys.stderr)
+            if not quiet:
+                print(
+                    f"Warning: Could not create placeholder: {fallback_error}",
+                    file=sys.stderr,
+                )
 
 
-def _generate_agents_file(root: Path) -> None:
+def _generate_agents_file(root: Path, *, quiet: bool = False) -> None:
     """
     Generate AGENTS.md file after init.
     
@@ -400,15 +420,16 @@ def _generate_agents_file(root: Path) -> None:
             scope=None,
         )
 
-        if exit_code == 0:
+        if exit_code == 0 and not quiet:
             print("   ✓ AGENTS.md generated", file=sys.stderr)
-        elif exit_code == 1:
+        elif exit_code == 1 and not quiet:
             # File already exists, not an error
             print("   ✓ AGENTS.md exists", file=sys.stderr)
-        else:
+        elif exit_code not in (0, 1) and not quiet:
             print(f"Warning: AGENTS.md generation failed: {message}", file=sys.stderr)
     except Exception as e:
-        print(f"Warning: Could not generate AGENTS.md: {e}", file=sys.stderr)
+        if not quiet:
+            print(f"Warning: Could not generate AGENTS.md: {e}", file=sys.stderr)
 
 
 def _get_hooks_dir(root: Path) -> Path:
@@ -444,7 +465,8 @@ def _install_hooks(root: Path, options: InitOptions) -> int:
     try:
         hooks_dir = _get_hooks_dir(root)
     except Exception as e:
-        print(f"Warning: Could not access hooks directory: {e}", file=sys.stderr)
+        if not options.json_output:
+            print(f"Warning: Could not access hooks directory: {e}", file=sys.stderr)
         return 3
 
     hooks = ["pre-push", "pre-commit"]
@@ -460,15 +482,24 @@ def _install_hooks(root: Path, options: InitOptions) -> int:
                     _write_shim_hook(hook_path, hook)
                 else:
                     skipped.append(hook)
-                    print(f"Warning: Existing {hook} hook detected. Skipping. "
-                          f"Use --force to overwrite, or manually integrate.", file=sys.stderr)
+                    if not options.json_output:
+                        print(
+                            f"Warning: Existing {hook} hook detected. Skipping. "
+                            "Use --force to overwrite, or manually integrate.",
+                            file=sys.stderr,
+                        )
             else:
                 _write_shim_hook(hook_path, hook)
         except PermissionError as e:
-            print(f"Warning: Cannot write {hook} hook (permission denied): {e}", file=sys.stderr)
+            if not options.json_output:
+                print(
+                    f"Warning: Cannot write {hook} hook (permission denied): {e}",
+                    file=sys.stderr,
+                )
             skipped.append(hook)
         except Exception as e:
-            print(f"Warning: Failed to install {hook} hook: {e}", file=sys.stderr)
+            if not options.json_output:
+                print(f"Warning: Failed to install {hook} hook: {e}", file=sys.stderr)
             skipped.append(hook)
 
     return 3 if skipped else 0

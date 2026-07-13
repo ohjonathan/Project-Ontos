@@ -6,10 +6,13 @@ import argparse
 import json
 from argparse import Namespace
 
+import pytest
+
 from ontos.cli import (
     _cmd_consolidate,
     _cmd_env,
     _cmd_promote,
+    _cmd_query,
     _emit_handler_result_json,
     create_parser,
     main,
@@ -68,7 +71,19 @@ def test_exit_code_four_remains_reserved() -> None:
         execution_status="error",
         exit_code=4,
         result_status="error",
-    ) == ExitCategory.ERROR.value
+    ) == ExitCategory.INTERNAL.value
+
+
+def test_undocumented_exit_category_is_sanitized(capsys) -> None:
+    emit_command_error(
+        command="query",
+        exit_code=5,
+        code="E_COMMAND_FAILED",
+        message="failed",
+        exit_category="error",
+    )
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["result"]["exit_category"] == "internal"
 
 
 def test_aliases_share_canonical_argument_contracts() -> None:
@@ -108,6 +123,64 @@ def test_json_argparse_errors_use_the_v4_envelope(monkeypatch, capsys) -> None:
     assert payload["result"]["exit_category"] == "usage"
 
 
+def test_fresh_init_json_is_noninteractive_single_envelope(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    (tmp_path / ".git").mkdir()
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        "builtins.input",
+        lambda *_args, **_kwargs: pytest.fail("JSON init must not prompt"),
+    )
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["ontos", "--json", "init", "--skip-hooks"],
+    )
+
+    assert main() == 0
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert captured.out.count("\n") == 1
+    payload = json.loads(captured.out)
+    assert payload["schema_version"] == "4.0"
+    assert payload["command"] == "init"
+    assert payload["status"] == "success"
+    assert payload["exit_code"] == 0
+    assert payload["result"]["status"] == "clean"
+    assert payload["result"]["kind"] == "operation"
+    assert (tmp_path / ".ontos.toml").is_file()
+    assert (tmp_path / "Ontos_Context_Map.md").is_file()
+
+
+def test_init_json_interrupt_is_single_interrupted_envelope(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    (tmp_path / ".git").mkdir()
+    monkeypatch.chdir(tmp_path)
+
+    def interrupt(_options):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr("ontos.commands.init._confirm_hooks", interrupt)
+    monkeypatch.setattr("sys.argv", ["ontos", "--json", "init"])
+
+    assert main() == 130
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert captured.out.count("\n") == 1
+    payload = json.loads(captured.out)
+    assert payload["schema_version"] == "4.0"
+    assert payload["command"] == "init"
+    assert payload["status"] == "error"
+    assert payload["exit_code"] == 130
+    assert payload["error"]["code"] == "E_INTERRUPTED"
+    assert payload["result"]["status"] == "error"
+    assert payload["result"]["exit_category"] == "interrupted"
+    assert not (tmp_path / ".ontos.toml").exists()
+    assert not (tmp_path / "Ontos_Context_Map.md").exists()
+
+
 def test_json_verify_missing_target_is_a_usage_envelope(monkeypatch, capsys) -> None:
     monkeypatch.setattr("sys.argv", ["ontos", "--json", "verify"])
     assert main() == 2
@@ -119,9 +192,54 @@ def test_json_verify_missing_target_is_a_usage_envelope(monkeypatch, capsys) -> 
     assert payload["result"]["exit_category"] == "usage"
 
 
+def test_json_query_failures_use_usage_or_internal_not_findings(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        "sys.argv", ["ontos", "--json", "query", "--list-ids"]
+    )
+    assert main() == 2
+    outside = json.loads(capsys.readouterr().out)
+    assert outside["status"] == "error"
+    assert outside["error"]["code"] == "E_USER_INPUT"
+    assert outside["result"]["exit_category"] == "usage"
+
+    import ontos.commands.query as query_module
+
+    def fail_read(_options):
+        raise PermissionError("cannot read documents")
+
+    monkeypatch.setattr(query_module, "_run_query_command", fail_read)
+    args = Namespace(
+        depends_on=None,
+        depended_by=None,
+        concept=None,
+        stale=None,
+        health=False,
+        list_ids=True,
+        dir=None,
+        quiet=False,
+        json=True,
+        scope=None,
+    )
+    assert _cmd_query(args) == 5
+    unreadable = json.loads(capsys.readouterr().out)
+    assert unreadable["status"] == "error"
+    assert unreadable["error"]["code"] == "E_COMMAND_FAILED"
+    assert unreadable["result"]["exit_category"] == "internal"
+
+
 def test_canonical_nested_command_paths() -> None:
-    assert command_path(Namespace(command="mcp", mcp_command="install")) == "mcp install"
-    assert command_path(Namespace(command="export", export_command="data")) == "export data"
+    cases = [
+        (Namespace(command="mcp", mcp_command="install"), "mcp install"),
+        (Namespace(command="mcp", mcp_command="uninstall"), "mcp uninstall"),
+        (Namespace(command="mcp", mcp_command="print-config"), "mcp print-config"),
+        (Namespace(command="export", export_command="data"), "export data"),
+        (Namespace(command="export", export_command="claude"), "export claude"),
+    ]
+    for args, expected in cases:
+        assert command_path(args) == expected
     assert command_path(Namespace(command="verify")) == "verify"
 
 
@@ -238,3 +356,31 @@ def test_json_workflows_force_noninteractive_options(monkeypatch, capsys) -> Non
     capsys.readouterr()
 
     assert observed == {"all": True, "yes": True}
+
+
+def test_init_human_usage_failure_uses_stderr(monkeypatch, capsys) -> None:
+    from ontos.cli import _cmd_init
+    import ontos.commands.init as init_module
+
+    monkeypatch.setattr(
+        init_module,
+        "_run_init_command",
+        lambda _options: (2, "Not a git repository"),
+    )
+
+    exit_code = _cmd_init(
+        Namespace(
+            force=False,
+            skip_hooks=False,
+            yes=False,
+            scaffold=False,
+            no_scaffold=False,
+            json=False,
+            quiet=False,
+        )
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert captured.out == ""
+    assert "Not a git repository" in captured.err

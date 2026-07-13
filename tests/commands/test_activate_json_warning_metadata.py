@@ -249,8 +249,12 @@ def test_activate_json_emits_structured_validation_warnings(tmp_path: Path) -> N
     root = _orphan_workspace(tmp_path)
 
     result = _run(root, "--json", "activate", "--warnings", "full")
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 3, result.stderr
     payload = json.loads(result.stdout)
+    assert payload["status"] == "success"
+    assert payload["exit_code"] == 3
+    assert payload["result"]["status"] == "warnings"
+    assert payload["result"]["exit_category"] == "warnings"
 
     validation = payload["data"]["validation"]
     assert isinstance(validation["errors"], list)
@@ -331,7 +335,7 @@ def test_activate_json_depth_warning_carries_structured_metadata(tmp_path: Path)
     root = _depth_chain_workspace(tmp_path)
 
     result = _run(root, "--json", "activate", "--warnings", "full")
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 3, result.stderr
     payload = json.loads(result.stdout)
 
     depth_records = [
@@ -382,7 +386,7 @@ def test_activate_json_out_of_scope_dependency_carries_structured_metadata(tmp_p
     root = _out_of_scope_workspace(tmp_path)
 
     result = _run(root, "--json", "activate", "--warnings", "full")
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 3, result.stderr
     payload = json.loads(result.stdout)
 
     out_of_scope = [
@@ -453,7 +457,7 @@ def test_activate_json_schema_class_warning_carries_structured_metadata(tmp_path
     root = _log_schema_workspace(tmp_path)
 
     result = _run(root, "--json", "activate", "--warnings", "full")
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 3, result.stderr
     payload = json.loads(result.stdout)
 
     log_id = "log_2026_05_22"
@@ -537,7 +541,7 @@ def test_activate_json_error_severity_lands_under_errors_with_structured_shape(
     # Exit code is 0 because errors are still load_result + validation_warnings,
     # not validation_errors specifically; activation considers all-with-warnings
     # as 'usable_with_warnings' (exit 0). The key assertion is the payload shape.
-    assert exit_code == 0
+    assert exit_code == 1
 
     errors = payload["validation"]["errors"]
     warnings = payload["validation"]["warnings"]
@@ -573,9 +577,11 @@ def test_activate_json_not_usable_path_emits_empty_lists(tmp_path: Path) -> None
     result = _run(tmp_path, "--json", "activate")
     payload = json.loads(result.stdout)
 
-    # _not_usable returns exit 1 with an error envelope; the inner data block
+    # _not_usable is missing required activation input (usage exit 2); the inner data block
     # still includes the validation shell.
-    assert result.returncode == 1, result.stderr
+    assert result.returncode == 2, result.stderr
+    assert payload["status"] == "error"
+    assert payload["result"]["exit_category"] == "usage"
     validation = payload["data"]["validation"]
     assert validation["errors"] == []
     assert validation["warnings"] == []
@@ -583,6 +589,34 @@ def test_activate_json_not_usable_path_emits_empty_lists(tmp_path: Path) -> None
     assert validation["warnings_total"] == 0
     assert validation["warnings_truncated"] is False
     assert validation["warning_groups"] == []
+
+
+def test_activate_internal_failure_json_and_human_streams(monkeypatch, capsys) -> None:
+    import ontos.commands.activate as activate_mod
+
+    failure_payload = activate_mod._not_usable("map write failed")
+    monkeypatch.setattr(
+        activate_mod,
+        "run_activation",
+        lambda *_args, **_kwargs: (5, failure_payload),
+    )
+
+    exit_code = activate_mod.activate_command(
+        activate_mod.ActivateOptions(json_output=True)
+    )
+    captured = capsys.readouterr()
+    envelope = json.loads(captured.out)
+    assert exit_code == envelope["exit_code"] == 5
+    assert envelope["status"] == "error"
+    assert envelope["result"]["exit_category"] == "internal"
+    assert captured.out.count("\n") == 1
+    assert captured.err == ""
+
+    exit_code = activate_mod.activate_command(activate_mod.ActivateOptions())
+    captured = capsys.readouterr()
+    assert exit_code == 5
+    assert captured.out == ""
+    assert "map write failed" in captured.err
 
 
 # =============================================================================
@@ -596,7 +630,7 @@ def test_activate_json_default_is_grouped(tmp_path: Path) -> None:
     root = _orphan_workspace(tmp_path)
 
     result = _run(root, "--json", "activate")
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 3, result.stderr
     payload = json.loads(result.stdout)
 
     validation = payload["data"]["validation"]
@@ -620,7 +654,7 @@ def test_activate_json_summary_mode_drops_samples(tmp_path: Path) -> None:
     root = _orphan_workspace(tmp_path)
 
     result = _run(root, "--json", "activate", "--warnings", "summary")
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 3, result.stderr
     payload = json.loads(result.stdout)
 
     validation = payload["data"]["validation"]
@@ -636,7 +670,7 @@ def test_activate_json_warning_rule_filters_full_records(tmp_path: Path) -> None
         root, "--json", "activate",
         "--warnings", "full", "--warning-rule", "orphan",
     )
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 3, result.stderr
     payload = json.loads(result.stdout)
 
     validation = payload["data"]["validation"]
@@ -652,7 +686,7 @@ def test_activate_json_full_with_limit_truncates(tmp_path: Path) -> None:
     root = _orphan_workspace(tmp_path)
 
     result = _run(root, "--json", "activate", "--warnings", "full", "--limit", "1")
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 3, result.stderr
     payload = json.loads(result.stdout)
 
     validation = payload["data"]["validation"]

@@ -126,7 +126,7 @@ def test_env_command_write_force_overwrites(temp_workspace):
     # Try without force
     options = EnvOptions(path=temp_workspace, write=True, force=False)
     exit_code, output = _run_env_command(options)
-    assert exit_code == 1
+    assert exit_code == 2
     assert "already exists" in output
     assert env_md.read_text() == "original content"
     
@@ -146,7 +146,7 @@ def test_parse_warnings_in_output(temp_workspace):
     options = EnvOptions(path=temp_workspace, format="text")
     exit_code, output = _run_env_command(options)
     
-    assert exit_code == 0
+    assert exit_code == 3
     assert "Parse Warnings:" in output
     assert "package.json: parse failed" in output
 
@@ -169,7 +169,7 @@ def test_invalid_workspace_path(temp_workspace):
     non_existent = temp_workspace / "ghost"
     options = EnvOptions(path=non_existent)
     exit_code, output = _run_env_command(options)
-    assert exit_code == 1
+    assert exit_code == 2
     assert "does not exist" in output
 
     # Is a file
@@ -177,7 +177,7 @@ def test_invalid_workspace_path(temp_workspace):
     a_file.write_text("hello")
     options = EnvOptions(path=a_file)
     exit_code, output = _run_env_command(options)
-    assert exit_code == 1
+    assert exit_code == 2
     assert "not a directory" in output
 
 

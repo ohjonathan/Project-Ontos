@@ -161,8 +161,42 @@ def test_maintain_exception_isolation_runs_remaining_tasks(tmp_path, monkeypatch
 
     exit_code = maintain_command(MaintainOptions(quiet=True), registry=registry)
 
-    assert exit_code == 1
+    assert exit_code == 5
     assert executed == ["still_runs"]
+
+
+def test_maintain_json_distinguishes_findings_warnings_and_internal_failures(
+    tmp_path, monkeypatch, capsys
+):
+    _init_project(tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    cases = [
+        (TaskResult("failed", "diagnostic finding"), 1, "success", "findings"),
+        (TaskResult("warnings", "warning only", exit_code=3), 3, "success", "warnings"),
+    ]
+    for task_result, expected_code, expected_status, expected_category in cases:
+        registry = MaintainTaskRegistry()
+        registry.register(
+            MaintainTask(
+                name="diagnostic",
+                order=10,
+                description="diagnostic",
+                run=lambda _ctx, result=task_result: result,
+            )
+        )
+
+        exit_code = maintain_command(
+            MaintainOptions(json_output=True), registry=registry
+        )
+        captured = capsys.readouterr()
+        payload = json.loads(captured.out)
+
+        assert exit_code == payload["exit_code"] == expected_code
+        assert payload["status"] == expected_status
+        assert payload["result"]["status"] == expected_category
+        assert payload["result"]["exit_category"] == expected_category
+        assert captured.err == ""
 
 
 def test_auto_consolidate_condition_respects_env(tmp_path, monkeypatch):
@@ -476,8 +510,12 @@ def test_maintain_invalid_task_status_becomes_failed(tmp_path, monkeypatch, caps
         registry=registry,
     )
 
-    assert exit_code == 1
-    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 5
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert payload["status"] == "error"
+    assert payload["result"]["exit_category"] == "internal"
+    assert captured.err == ""
     assert payload["data"]["tasks"][0]["status"] == "failed"
     assert "invalid task status" in payload["data"]["tasks"][0]["details"][0]
 
@@ -500,7 +538,7 @@ def test_promote_check_task_reports_promotable_docs(tmp_path, monkeypatch):
     ctx = _build_context(tmp_path, quiet=True)
     result = _task_promote_check(ctx)
 
-    assert result.status == "success"
+    assert result.status == "failed"
     assert "1 candidates" in result.message
 
 
@@ -550,7 +588,7 @@ def test_promote_check_uses_repo_root_not_cwd(tmp_path, monkeypatch):
     result = _task_promote_check(ctx)
 
     # Should succeed scanning tmp_path, not fail looking for project at other_dir
-    assert result.status == "success"
+    assert result.status == "failed"
     assert "candidates" in result.message
 
 
@@ -574,7 +612,7 @@ def test_promote_check_excludes_non_ready_from_ready_count(tmp_path, monkeypatch
     ctx = _build_context(tmp_path, quiet=True)
     result = _task_promote_check(ctx)
 
-    assert result.status == "success"
+    assert result.status == "failed"
     # Should report 1 ready out of 2 candidates
     assert "1 ready for promotion" in result.message
     assert "2 candidates" in result.message

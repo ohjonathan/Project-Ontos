@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+from ontos.core.config import ConfigError
 from ontos.core.context import SessionContext
 from ontos.core.frontmatter import normalize_reference_list
 from ontos.io.files import find_project_root, load_documents
@@ -152,9 +153,12 @@ def append_to_decision_history(
 def _run_consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
     """Execute consolidate command."""
     if not options.by_age and options.count < 1:
-        return 1, "count must be >= 1"
+        return 2, "count must be >= 1"
 
-    root = find_project_root()
+    try:
+        root = find_project_root()
+    except FileNotFoundError as exc:
+        return 2, str(exc)
     output = OutputHandler(quiet=options.quiet)
     # Resolve paths relative to runtime project root
     from ontos.io.config import load_project_config
@@ -165,7 +169,12 @@ def _run_consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
         decision_history_path = root / ".ontos-internal" / "reference" / "decision_history.md"
     else:
         # User mode
-        config = load_project_config(repo_root=root)
+        try:
+            config = load_project_config(repo_root=root)
+        except ConfigError as exc:
+            return 2, f"Config error: {exc}"
+        except Exception as exc:
+            return 5, f"Config error: {exc}"
         docs_dir_setting = str(config.paths.docs_dir).strip()
         docs_dir = root / docs_dir_setting
         from ontos.core.paths import _warn_deprecated
@@ -211,7 +220,7 @@ def _run_consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
             for issue in load_result.issues:
                 if issue.code in {"duplicate_id", "parse_error", "io_error"}:
                     output.error(issue.message)
-            return 1, "Document load failed"
+            return 5, "Document load failed"
             
     logs_to_consolidate = find_logs_to_consolidate(options, logs_dir, load_result=load_result)
     if not logs_to_consolidate:
@@ -238,8 +247,10 @@ def _run_consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
             output.warning(f"Could not auto-extract summary from {doc_id}")
             try:
                 summary = input("   Enter one-line summary: ").strip()
-            except (EOFError, KeyboardInterrupt):
+            except EOFError:
                 summary = "(Manual entry required)"
+            except KeyboardInterrupt:
+                return 130, "Interrupted"
         
         summary = summary or "(No summary captured)"
         
@@ -258,9 +269,11 @@ def _run_consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
         if not options.all:
             try:
                 confirm = input(f"   Archive this log? [y/N/edit]: ").strip().lower()
-            except (EOFError, KeyboardInterrupt):
+            except EOFError:
                 print("\n   Skipped.")
                 continue
+            except KeyboardInterrupt:
+                return 130, "Interrupted"
             
             if confirm == 'edit':
                 new_summary = input(f"   New summary: ").strip()
@@ -317,7 +330,7 @@ def _run_consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
         output.warning(
             "Reconciliation: verify listed failed logs and decision history entries before re-running consolidate."
         )
-        return 1, f"Consolidated {consolidated_count} logs with {len(failed)} failures"
+        return 5, f"Consolidated {consolidated_count} logs with {len(failed)} failures"
 
     return 0, f"{action} {consolidated_count} logs"
 

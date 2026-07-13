@@ -102,7 +102,7 @@ def test_stub_rejects_symlinked_parent_without_creating_external_directory(
         cwd=tmp_path,
     )
 
-    assert result.returncode == 1
+    assert result.returncode == 5
     assert not (outside / "new-parent").exists()
 
 

@@ -218,7 +218,7 @@ def _run_query_command(options: QueryOptions) -> Tuple[int, str]:
         for issue in load_result.issues:
             if issue.code in {"parse_error", "io_error"}:
                 output.error(issue.message)
-        return 1, "Document load failed"
+        return 5, "Document load failed"
         
     # Report duplicates as warnings for query
     if load_result.duplicate_ids:
@@ -232,7 +232,7 @@ def _run_query_command(options: QueryOptions) -> Tuple[int, str]:
             output.error(f"No documents found in {options.directory}")
         else:
             output.error("No documents found in selected scope")
-        return 1, "No documents found"
+        return 2, "No documents found"
 
     if options.depends_on:
         doc = files_data.get(options.depends_on)

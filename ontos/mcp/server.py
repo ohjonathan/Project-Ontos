@@ -651,8 +651,8 @@ def _register_write_tools(
         description=(
             f"Renames a document ID in the {workspace_name} workspace and "
             "rewrites every referencing file. Requires a clean git working "
-            "tree; on commit failure the workspace is rolled back via "
-            "`git checkout -- .`."
+            "tree; mutations use a durable recovery journal and restore only "
+            "the touched paths if commit is interrupted or fails."
         ),
         handler=handle_rename_document,
         annotations=write_annotations,

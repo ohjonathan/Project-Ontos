@@ -94,7 +94,8 @@ def test_doctor_frontmatter_reports_precise_enum_diagnostics(tmp_path: Path) -> 
     payload = json.loads(result.stdout)
     checks = {check["name"]: check for check in payload["data"]["checks"]}
 
-    assert result.returncode == 0
+    assert result.returncode == 3
+    assert payload["result"]["exit_category"] == "warnings"
     assert checks["frontmatter_enums"]["status"] == "warning"
     assert "2 invalid enum value(s)" in checks["frontmatter_enums"]["message"]
     assert "docs/review.md:3 type='proposal'" in checks["frontmatter_enums"]["details"]
@@ -102,7 +103,7 @@ def test_doctor_frontmatter_reports_precise_enum_diagnostics(tmp_path: Path) -> 
 
     human = _run(root, "doctor", "--frontmatter")
 
-    assert human.returncode == 0
+    assert human.returncode == 3
     assert "docs/review.md:3 type='proposal'" in human.stdout
     assert "docs/review.md:4 status='done'" in human.stdout
 
@@ -124,7 +125,10 @@ def test_maintain_fix_frontmatter_enums_dry_run_json(tmp_path: Path) -> None:
     result = _run(root, "--json", "maintain", "--fix-frontmatter-enums")
     payload = json.loads(result.stdout)
 
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 1, result.stderr
+    assert payload["status"] == "success"
+    assert payload["result"]["status"] == "findings"
+    assert payload["result"]["exit_category"] == "findings"
     assert payload["data"]["mode"] == "dry-run"
     assert payload["data"]["summary"]["repairable"] == 2
     assert payload["data"]["summary"]["unresolved"] == 0

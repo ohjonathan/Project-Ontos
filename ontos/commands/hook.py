@@ -15,15 +15,16 @@ This is a deliberate safety choice:
 
 To enable blocking behavior, set strict mode in .ontos.toml.
 
-JSON OUTPUT: hook is a hidden/internal command (HIDDEN_COMMANDS in cli.py)
-and intentionally does not support --json output. It communicates via
-exit codes and stderr only.
+JSON mode reports the same checks through the schema-4 command envelope while
+the installed Git-hook path keeps the fail-open human behavior described above.
 """
 
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List
+from typing import List, Optional
+
+from ontos.ui.json_output import ExitCode
 
 
 @dataclass
@@ -31,6 +32,20 @@ class HookOptions:
     """Configuration for hook command."""
     hook_type: str  # "pre-push" or "pre-commit"
     args: List[str] = field(default_factory=list)
+    json_output: bool = False
+
+
+@dataclass(frozen=True)
+class HookEvaluation:
+    """Structured hook outcome before CLI or human rendering."""
+
+    human_exit_code: int
+    json_exit_code: int
+    message: str
+    result_status: str
+    execution_succeeded: bool = True
+    error_code: Optional[str] = None
+    human_message: Optional[str] = None
 
 
 def hook_command(options: HookOptions) -> int:
@@ -41,6 +56,8 @@ def hook_command(options: HookOptions) -> int:
         0 = Allow git operation to proceed
         1 = Block git operation
     """
+    if options.json_output:
+        return evaluate_hook(options).json_exit_code
     if options.hook_type == "pre-push":
         return run_pre_push_hook(options.args)
     elif options.hook_type == "pre-commit":
@@ -53,6 +70,30 @@ def hook_command(options: HookOptions) -> int:
         return 0
 
 
+def evaluate_hook(options: HookOptions) -> HookEvaluation:
+    """Evaluate a hook without printing, for structured JSON dispatch."""
+    if options.hook_type == "pre-push":
+        return _evaluate_pre_push_hook(options.args)
+    if options.hook_type == "pre-commit":
+        return _evaluate_pre_commit_hook(options.args)
+    message = f"Unknown hook type '{options.hook_type}'."
+    return HookEvaluation(
+        human_exit_code=0,
+        json_exit_code=int(ExitCode.USAGE),
+        message=message,
+        result_status="error",
+        execution_succeeded=False,
+        error_code="E_USER_INPUT",
+        human_message=f"Warning: {message} Skipping.",
+    )
+
+
+def _render_human_result(result: HookEvaluation) -> int:
+    if result.human_message:
+        print(result.human_message, file=sys.stderr)
+    return result.human_exit_code
+
+
 def run_pre_push_hook(args: List[str]) -> int:
     """
     Pre-push hook: Validate documentation before push.
@@ -61,49 +102,74 @@ def run_pre_push_hook(args: List[str]) -> int:
         0 = Allow push
         1 = Block push (validation errors with strict mode)
     """
+    return _render_human_result(_evaluate_pre_push_hook(args))
+
+
+def _validation_result(message: str, *, strict: bool) -> HookEvaluation:
+    if strict:
+        return HookEvaluation(
+            human_exit_code=1,
+            json_exit_code=int(ExitCode.FINDINGS),
+            message=message,
+            result_status="findings",
+            human_message=f"Error: {message}",
+        )
+    return HookEvaluation(
+        human_exit_code=0,
+        json_exit_code=int(ExitCode.WARNINGS),
+        message=message,
+        result_status="warnings",
+        human_message=f"Warning: {message}",
+    )
+
+
+def _evaluate_pre_push_hook(args: List[str]) -> HookEvaluation:
+    del args
     try:
         from ontos.io.config import load_project_config
-        config = load_project_config()
 
+        config = load_project_config()
         if not config.hooks.pre_push:
-            return 0
+            return HookEvaluation(0, 0, "Pre-push hook disabled", "clean")
 
         context_map = Path.cwd() / config.paths.context_map
-
-        # Check context map exists
         if not context_map.exists():
-            msg = "Context map not found. Run 'ontos map' before pushing."
-            if config.hooks.strict:
-                print(f"Error: {msg}", file=sys.stderr)
-                return 1  # Block when strict
-            else:
-                print(f"Warning: {msg}", file=sys.stderr)
-                return 0  # Allow when not strict
+            return _validation_result(
+                "Context map not found. Run 'ontos map' before pushing.",
+                strict=config.hooks.strict,
+            )
 
-        # Validate context map has frontmatter (basic validation)
         try:
             content = context_map.read_text()
-            if not content.startswith("---"):
-                msg = "Context map missing frontmatter. Run 'ontos map' to regenerate."
-                if config.hooks.strict:
-                    print(f"Error: {msg}", file=sys.stderr)
-                    return 1  # Block when strict
-                else:
-                    print(f"Warning: {msg}", file=sys.stderr)
-                    return 0  # Allow when not strict
-        except Exception as e:
-            print(f"Warning: Could not read context map: {e}", file=sys.stderr)
-            return 0  # Fail-open on read errors
+        except Exception as exc:
+            message = f"Could not read context map: {exc}"
+            return HookEvaluation(
+                human_exit_code=0,
+                json_exit_code=int(ExitCode.INTERNAL),
+                message=message,
+                result_status="error",
+                execution_succeeded=False,
+                error_code="E_HOOK_IO",
+                human_message=f"Warning: {message}",
+            )
 
-        return 0
-
-    except Exception as e:
-        # Fail-open on unexpected errors (design decision B5)
-        print(
-            f"Warning: Hook error (push allowed): {e}",
-            file=sys.stderr
+        if not content.startswith("---"):
+            return _validation_result(
+                "Context map missing frontmatter. Run 'ontos map' to regenerate.",
+                strict=config.hooks.strict,
+            )
+        return HookEvaluation(0, 0, "Pre-push hook checks passed", "clean")
+    except Exception as exc:
+        message = f"Hook error (push allowed): {exc}"
+        return HookEvaluation(
+            human_exit_code=0,
+            json_exit_code=int(ExitCode.INTERNAL),
+            message=message,
+            result_status="error",
+            execution_succeeded=False,
+            error_code="E_HOOK_FAILED",
+            human_message=f"Warning: {message}",
         )
-        return 0
 
 
 def run_pre_commit_hook(args: List[str]) -> int:
@@ -113,14 +179,27 @@ def run_pre_commit_hook(args: List[str]) -> int:
     Returns:
         0 = Always (pre-commit doesn't block by default)
     """
+    return _render_human_result(_evaluate_pre_commit_hook(args))
+
+
+def _evaluate_pre_commit_hook(args: List[str]) -> HookEvaluation:
+    del args
     try:
         from ontos.io.config import load_project_config
+
         config = load_project_config()
-
-        if not config.hooks.pre_commit:
-            return 0
-
-        return 0
-
-    except Exception:
-        return 0
+        message = (
+            "Pre-commit hook checks passed"
+            if config.hooks.pre_commit
+            else "Pre-commit hook disabled"
+        )
+        return HookEvaluation(0, 0, message, "clean")
+    except Exception as exc:
+        return HookEvaluation(
+            human_exit_code=0,
+            json_exit_code=int(ExitCode.INTERNAL),
+            message=f"Pre-commit hook error (commit allowed): {exc}",
+            result_status="error",
+            execution_succeeded=False,
+            error_code="E_HOOK_FAILED",
+        )
