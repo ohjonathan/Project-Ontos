@@ -1,2 +1,20 @@
-verify-lifecycle: FAIL — inventory.receipts is empty or not a list at /private/tmp/project-ontos-v5-evidence/docs/reviews/project-ontos-v5-0-0/lifecycle-receipt-inventory.yaml
-verify-lifecycle: status=review_pending
+verify-lifecycle: FAIL — provider-limited fallback verification rejected (11 issue(s))
+verify-lifecycle: problem groups:
+  - blocked-family-evidence-missing: 8
+  - dispatch-verifier-output: 1
+  - dispatch-verify-failed: 1
+  - fallback-mode-requires-exception: 1
+  ↳ dispatch-verify-failed: receipt ('B.1', 'peer', 'glm') round=1 intent=B.1-dispatch-intent.yaml exit=1
+  ↳ dispatch-verifier-output: FAIL pending:          project-ontos-v5-0-0-B.1-gemini-alignment — no matching result entry
+FAIL pending:          project-ontos-v5-0-0-B.1-claude-product — no matching result entry
+verify-family-dispatch: FAILED — 3 violation(s) across 4 dispatches
+  ↳ blocked-family-evidence-missing: phase=B.1 role=alignment family=gemini is missing AND has no matching harness_blocked_families[]/harness_blocked_providers[] entry naming family='gemini' or its provider with affected_phases including 'B.1'
+  ↳ blocked-family-evidence-missing: phase=B.2 role=peer family=gemini is missing AND has no matching harness_blocked_families[]/harness_blocked_providers[] entry naming family='gemini' or its provider with affected_phases including 'B.2'
+  ↳ blocked-family-evidence-missing: phase=B.2 role=adversarial family=glm is missing AND has no matching harness_blocked_families[]/harness_blocked_providers[] entry naming family='glm' or its provider with affected_phases including 'B.2'
+  ↳ blocked-family-evidence-missing: phase=D.2 role=alignment family=glm is missing AND has no matching harness_blocked_families[]/harness_blocked_providers[] entry naming family='glm' or its provider with affected_phases including 'D.2'
+  ↳ blocked-family-evidence-missing: phase=D.2 role=adversarial family=gemini is missing AND has no matching harness_blocked_families[]/harness_blocked_providers[] entry naming family='gemini' or its provider with affected_phases including 'D.2'
+  ↳ blocked-family-evidence-missing: phase=D.5 role=verifier family=claude is missing AND has no matching harness_blocked_families[]/harness_blocked_providers[] entry naming family='claude' or its provider with affected_phases including 'D.5'
+  ↳ blocked-family-evidence-missing: phase=D.5 role=verifier family=gemini is missing AND has no matching harness_blocked_families[]/harness_blocked_providers[] entry naming family='gemini' or its provider with affected_phases including 'D.5'
+  ↳ blocked-family-evidence-missing: phase=D.5 role=verifier family=glm is missing AND has no matching harness_blocked_families[]/harness_blocked_providers[] entry naming family='glm' or its provider with affected_phases including 'D.5'
+  ↳ fallback-mode-requires-exception: --mode provider-limited-fallback requires manifest.provider_limited_review_exception (v1.8.0) or manifest.p3_exception (v1.5.1) to disclose non-certification
+verify-lifecycle: status=provider_limited_fallback_incomplete

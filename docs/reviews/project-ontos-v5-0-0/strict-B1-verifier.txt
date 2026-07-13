@@ -1,6 +1,10 @@
-FAIL result-status:    project-ontos-v5-0-0-B.1-claude-adversarial — result.status=failed
-verify-family-dispatch: FAILED — 1 violation(s) across 1 dispatches
+FAIL pending:          project-ontos-v5-0-0-B.1-gemini-alignment — no matching result entry
+FAIL pending:          project-ontos-v5-0-0-B.1-claude-product — no matching result entry
+verify-family-dispatch: FAILED — 3 violation(s) across 4 dispatches
 === verify-family-dispatch (require-complete) ===
-Intent:  /private/tmp/project-ontos-v5-evidence/docs/reviews/project-ontos-v5-0-0/B.1-dispatch-intent.yaml (1 dispatches)
-Result:  /private/tmp/project-ontos-v5-evidence/docs/reviews/project-ontos-v5-0-0/B.1-dispatch-result.yaml (0 completed, 1 pending)
+Intent:  /private/tmp/project-ontos-v5-evidence/docs/reviews/project-ontos-v5-0-0/B.1-dispatch-intent.yaml (4 dispatches)
+Result:  /private/tmp/project-ontos-v5-evidence/docs/reviews/project-ontos-v5-0-0/B.1-dispatch-result.yaml (2 completed, 2 pending)
+PASS project-ontos-v5-0-0-B.1-claude-adversarial: claude/adversarial — artifact B.1-claude-adversarial.md
+FAIL project-ontos-v5-0-0-B.1-glm-peer:
+    ↳ R30-B capability↔receipt: family 'glm' — execution_cli=opencode (the S3 advisory substrate captures stdout) — so the result artifact_source must be a wrapper capture (['opencode_written_file_promoted', 'raw_stdout', 'raw_transcript_promoted']), but the receipt records artifact_source='worker_file'. A non-interactive family cannot have produced its own worker_file.
 ---

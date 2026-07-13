@@ -1,2 +1,18 @@
-verify-lifecycle: FAIL — inventory.receipts is empty or not a list at /private/tmp/project-ontos-v5-evidence/docs/reviews/project-ontos-v5-0-0/lifecycle-receipt-inventory.yaml
+verify-lifecycle: FAIL — strict-P3 lifecycle verification rejected (10 issue(s))
+verify-lifecycle: problem groups:
+  - dispatch-verifier-output: 1
+  - dispatch-verify-failed: 1
+  - missing-receipt: 8
+  ↳ dispatch-verify-failed: receipt ('B.1', 'peer', 'glm') round=1 intent=B.1-dispatch-intent.yaml exit=1
+  ↳ dispatch-verifier-output: FAIL pending:          project-ontos-v5-0-0-B.1-gemini-alignment — no matching result entry
+FAIL pending:          project-ontos-v5-0-0-B.1-claude-product — no matching result entry
+verify-family-dispatch: FAILED — 3 violation(s) across 4 dispatches
+  ↳ missing-receipt: phase=B.1 role=alignment family=gemini
+  ↳ missing-receipt: phase=B.2 role=peer family=gemini
+  ↳ missing-receipt: phase=B.2 role=adversarial family=glm
+  ↳ missing-receipt: phase=D.2 role=alignment family=glm
+  ↳ missing-receipt: phase=D.2 role=adversarial family=gemini
+  ↳ missing-receipt: phase=D.5 role=verifier family=claude
+  ↳ missing-receipt: phase=D.5 role=verifier family=gemini
+  ↳ missing-receipt: phase=D.5 role=verifier family=glm
 verify-lifecycle: status=review_pending
