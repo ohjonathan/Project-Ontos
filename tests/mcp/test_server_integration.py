@@ -5,7 +5,7 @@ from pathlib import Path
 
 from mcp.types import ListToolsResult
 
-from tests.mcp import build_cache, build_server, create_workspace, list_tools, write_file
+from tests.mcp_helpers import build_cache, build_server, create_workspace, list_tools, write_file
 
 
 def test_server_lists_all_tools_with_correct_annotations(tmp_path):

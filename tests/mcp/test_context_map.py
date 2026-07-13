@@ -1,7 +1,7 @@
 from ontos.commands.map import CompactMode, GenerateMapOptions, generate_context_map
 from ontos.mcp import tools
 
-from tests.mcp import build_cache, create_empty_workspace, create_workspace
+from tests.mcp_helpers import build_cache, create_empty_workspace, create_workspace
 
 
 def _map_config(cache):

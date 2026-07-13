@@ -413,7 +413,7 @@ def test_map_strict_json_carries_grouped_diagnostics(tmp_path):
 
     result, envelope = _run_map_json(tmp_path, "--strict")
 
-    assert result.returncode == 2
+    assert result.returncode == 3
     data = envelope["data"]
     assert data["result_status"] == "warnings"
     assert data["strict"] is True

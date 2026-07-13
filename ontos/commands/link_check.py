@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
+import sys
 from typing import Dict, List, Optional
 
 from ontos.core.link_diagnostics import LinkDiagnosticsResult, run_link_diagnostics
@@ -111,7 +112,7 @@ def _emit_link_check_error(options: LinkCheckOptions, message: str) -> int:
             message=message,
         )
     else:
-        print(f"Error: {message}")
+        print(f"Error: {message}", file=sys.stderr)
     return 1
 
 
@@ -324,4 +325,3 @@ def _status_text(result: LinkDiagnosticsResult) -> str:
 
 def _status_line(result: LinkDiagnosticsResult) -> str:
     return f"link-check status: {_status_text(result)}"
-

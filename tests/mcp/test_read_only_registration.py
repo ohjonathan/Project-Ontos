@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.mcp import build_server, create_workspace, list_tools
+from tests.mcp_helpers import build_server, create_workspace, list_tools
 
 
 _WRITE_TOOL_NAMES = frozenset(

@@ -403,24 +403,30 @@ def log_command(options: LogOptions) -> int:
             output.error(message)
         return 1
 
-    # Create marker for pre-push enforcement (best effort)
-    _create_archive_marker(project_root, output_path)
+    # Create marker for pre-push enforcement (best effort, but visible when
+    # skipped so a later pre-push refusal is not surprising).
+    marker_warning = _create_archive_marker(project_root, output_path)
+    result_exit_code = 3 if marker_warning else 0
 
     # Output result
     if options.json_output:
         emit_command_success(
             command="log",
-            exit_code=0,
+            exit_code=result_exit_code,
             message="Session log created",
             data={
                 "path": str(output_path),
                 "log_id": output_path.stem,
             },
+            warnings=[marker_warning] if marker_warning else [],
+            result_status="warnings" if marker_warning else "clean",
         )
     elif not options.quiet:
         output.success(f"Session log created: {output_path}")
+        if marker_warning:
+            output.warning(marker_warning)
 
-    return 0
+    return result_exit_code
 
 
 def _create_archive_marker(project_root: Path, log_path: Path) -> None:

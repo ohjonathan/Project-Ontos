@@ -1,6 +1,7 @@
 {
-  "captured_at": "2026-01-13T20:56:04.083030",
-  "python_version": "3.9.6 (default, Oct 17 2025, 17:15:53) \n[Clang 17.0.0 (clang-1700.4.4.1)]",
+  "captured_at": "2026-07-12T18:38:56.016140",
+  "python_version": "3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]",
+  "ontos_version": "5.0.0",
   "fixture": "medium",
   "command": "log"
 }

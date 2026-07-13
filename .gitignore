@@ -20,6 +20,7 @@ __pycache__/
 Thumbs.db
 .ontos/session_archived
 .ontos.lock
+.ontos/transactions/
 ontos.egg-info/
 dist/
 

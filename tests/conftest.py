@@ -1,16 +1,102 @@
 """Pytest configuration and shared fixtures."""
 
 import os
-import sys
+from pathlib import Path
+import re
 import shutil
 import subprocess
+import sys
 import warnings
+
 import pytest
 
-# Import the packaged namespace before exposing legacy script modules. Without
-# this pin, test collection order can make `.ontos/scripts/ontos` shadow the
-# real package and silently exercise a different implementation.
-import ontos as _ontos_package  # noqa: F401
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+_existing_pythonpath = os.environ.get("PYTHONPATH")
+os.environ["PYTHONPATH"] = (
+    str(REPO_ROOT)
+    if not _existing_pythonpath
+    else f"{REPO_ROOT}{os.pathsep}{_existing_pythonpath}"
+)
+
+
+def _repository_status() -> str:
+    result = subprocess.run(
+        ["git", "status", "--porcelain=v1", "--untracked-files=all"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.stdout if result.returncode == 0 else "<git-status-unavailable>"
+
+
+_SESSION_STARTED_CLEAN = _repository_status() == ""
+
+
+_ALIASED_VALUE_OPTION = re.compile(
+    r"^(?P<indent>\s+)(?P<first>--?[A-Za-z0-9][\w-]*)"
+    r"(?: (?P<first_metavar>[A-Z][A-Z0-9_-]*))?, "
+    r"(?P<second>--?[A-Za-z0-9][\w-]*) "
+    r"(?P<metavar>[A-Z][A-Z0-9_-]*)"
+    r"(?P<spacing>\s{2,})(?P<description>.*)$"
+)
+
+
+def _canonicalize_argparse_help(output: str) -> str:
+    """Normalize presentation-only argparse drift across supported Python versions."""
+    lines = output.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+
+    # Python versions wrap mutually-exclusive usage groups differently.
+    if lines and lines[0].startswith("usage: "):
+        usage_end = 1
+        while (
+            usage_end < len(lines)
+            and lines[usage_end].strip()
+            and lines[usage_end][:1].isspace()
+        ):
+            usage_end += 1
+        lines[:usage_end] = [" ".join(line.strip() for line in lines[:usage_end])]
+
+    for index, line in enumerate(lines):
+        # Python 3.9 uses the older section label.
+        if line == "optional arguments:":
+            lines[index] = "options:"
+            continue
+
+        # Python <=3.12 repeats a metavar for every alias; 3.13+ prints it once.
+        match = _ALIASED_VALUE_OPTION.match(line)
+        if match and match.group("first_metavar") in (None, match.group("metavar")):
+            lines[index] = (
+                f"{match.group('indent')}{match.group('first')}, "
+                f"{match.group('second')} {match.group('metavar')}"
+                f"  {match.group('description')}"
+            )
+
+    return "\n".join(lines)
+
+
+@pytest.fixture
+def assert_help_parity():
+    """Compare CLI help while preserving all non-stdlib-controlled content."""
+    def _assert_help_parity(actual: str, golden: str) -> None:
+        assert _canonicalize_argparse_help(actual) == _canonicalize_argparse_help(golden)
+
+    return _assert_help_parity
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Turn a clean-clone test run dirtying the checkout into a test failure."""
+    if not _SESSION_STARTED_CLEAN:
+        return
+    status = _repository_status()
+    if status:
+        reporter = session.config.pluginmanager.get_plugin("terminalreporter")
+        if reporter is not None:
+            reporter.write_sep("=", "tests modified the repository checkout", red=True)
+            reporter.write(status)
+        session.exitstatus = pytest.ExitCode.TESTS_FAILED
+
 
 # v2.9.2: Configure warning filters for deprecation warnings
 def pytest_configure(config):

@@ -25,7 +25,7 @@ from typing import Any
 
 from mcp.types import CallToolResult
 
-from tests.mcp import build_server, create_workspace
+from tests.mcp_helpers import build_server, create_workspace
 
 
 def _git_init_clean(root: Path) -> None:

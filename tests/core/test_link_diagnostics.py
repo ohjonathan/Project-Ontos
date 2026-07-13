@@ -93,13 +93,13 @@ def test_broken_depends_on_returns_exit_1(tmp_path: Path):
     assert any(finding.field == "depends_on" for finding in result.broken_references)
 
 
-def test_orphans_only_returns_exit_2(tmp_path: Path):
+def test_orphans_only_returns_exit_3(tmp_path: Path):
     _init_project(tmp_path)
     _write_doc(tmp_path / "docs" / "orphan.md", "orphan_doc", doc_type="strategy")
 
     result = _run(tmp_path, ScanScope.LIBRARY)
 
-    assert result.exit_code == 2
+    assert result.exit_code == 3
     assert result.summary.broken_references == 0
     assert result.summary.orphans == 1
 
@@ -166,6 +166,149 @@ def test_body_broken_reference_gets_suggestion(tmp_path: Path):
     body_broken = [finding for finding in result.broken_references if finding.field == "body.bare_id_token"]
     assert body_broken
     assert body_broken[0].suggestions
+
+
+def test_broken_depends_on_value_with_apostrophe_uses_structured_context(tmp_path: Path):
+    _init_project(tmp_path)
+    _write_doc(
+        tmp_path / "docs" / "broken.md",
+        "broken_doc",
+        depends_on='["don\'t-exist"]',
+    )
+
+    result = _run(tmp_path, ScanScope.LIBRARY)
+
+    assert [finding.value for finding in result.broken_references] == ["don't-exist"]
+
+
+def test_body_location_is_physical_file_line_not_body_relative(tmp_path: Path):
+    _init_project(tmp_path)
+    _write_doc(
+        tmp_path / "docs" / "source.md",
+        "source_doc",
+        body="\n\nSee [[missing_doc]].",
+    )
+
+    result = _run(tmp_path, ScanScope.LIBRARY)
+
+    finding = next(
+        item for item in result.broken_references if item.value == "missing_doc"
+    )
+    assert finding.location is not None
+    assert finding.location.line == 8
+
+
+def test_markdown_path_resolves_loaded_doc_with_stem_id_mismatch(tmp_path: Path):
+    _init_project(tmp_path)
+    _write_doc(tmp_path / "docs" / "Ontos_Manual.md", "ontos_manual")
+    _write_doc(
+        tmp_path / "docs" / "source.md",
+        "source_doc",
+        body="See [the manual](Ontos_Manual.md).",
+    )
+
+    result = _run(tmp_path, ScanScope.LIBRARY)
+
+    assert result.summary.broken_body == 0
+    assert result.summary.file_dependencies == 0
+
+
+def test_canonical_document_id_precedes_same_named_file_resolution(tmp_path: Path):
+    _init_project(tmp_path)
+    _write_doc(tmp_path / "docs" / "actual.md", "target_id")
+    (tmp_path / "docs" / "target_id").write_text("not a document", encoding="utf-8")
+    _write_doc(
+        tmp_path / "docs" / "source.md",
+        "source_doc",
+        body="See [target](target_id).",
+    )
+
+    result = _run(tmp_path, ScanScope.LIBRARY)
+
+    assert result.summary.broken_body == 0
+    assert result.summary.file_dependencies == 0
+
+
+def test_markdown_loaded_doc_path_is_case_insensitive_and_collision_aware(tmp_path: Path):
+    _init_project(tmp_path)
+    _write_doc(tmp_path / "docs" / "Ontos_Manual.md", "ontos_manual")
+    _write_doc(
+        tmp_path / "docs" / "source.md",
+        "source_doc",
+        body="See [the manual](ONTOS_MANUAL.MD).",
+    )
+
+    result = _run(tmp_path, ScanScope.LIBRARY)
+
+    assert result.summary.broken_body == 0
+
+
+def test_markdown_source_file_with_line_anchor_is_informational_file_reference(
+    tmp_path: Path,
+):
+    _init_project(tmp_path)
+    source_file = tmp_path / "ontos" / "core" / "graph.py"
+    source_file.parent.mkdir(parents=True)
+    source_file.write_text("# source\n", encoding="utf-8")
+    _write_doc(
+        tmp_path / "docs" / "review.md",
+        "review_doc",
+        body="See [implementation](ontos/core/graph.py:170).",
+    )
+
+    result = _run(tmp_path, ScanScope.LIBRARY)
+
+    assert result.summary.broken_body == 0
+    assert result.summary.file_dependencies == 1
+    assert result.summary.unallowlisted_file_dependencies == 0
+    reference = result.file_dependencies[0]
+    assert reference.field == "body.markdown_link_target"
+    assert reference.value == "ontos/core/graph.py:170"
+    assert reference.resolved_path == "ontos/core/graph.py"
+    assert reference.allowlisted is True
+
+
+def test_markdown_path_to_external_scope_uses_actual_external_id(tmp_path: Path):
+    _init_project(
+        tmp_path,
+        extra_config="\n[validation]\nallowed_orphan_types=['atom', 'strategy']\n",
+    )
+    _write_doc(
+        tmp_path / ".ontos-internal" / "Internal_Artifact.md",
+        "internal_doc",
+    )
+    _write_doc(
+        tmp_path / "docs" / "source.md",
+        "source_doc",
+        body="See [internal](../.ontos-internal/Internal_Artifact.md).",
+    )
+
+    result = _run(tmp_path, ScanScope.DOCS)
+
+    assert result.summary.broken_body == 0
+    assert result.summary.external_references == 1
+    assert result.external_references[0].resolved_external_id == "internal_doc"
+
+
+def test_body_scanner_runs_once_per_loaded_document(tmp_path: Path, monkeypatch):
+    _init_project(tmp_path)
+    _write_doc(tmp_path / "docs" / "a.md", "a")
+    _write_doc(tmp_path / "docs" / "b.md", "b")
+
+    from ontos.core import link_diagnostics
+
+    real_scan = link_diagnostics.scan_body_references
+    calls = []
+
+    def counted_scan(*args, **kwargs):
+        calls.append(kwargs.get("body", ""))
+        return real_scan(*args, **kwargs)
+
+    monkeypatch.setattr(link_diagnostics, "scan_body_references", counted_scan)
+
+    _run(tmp_path, ScanScope.LIBRARY)
+
+    assert len(calls) == 2
 
 
 # =============================================================================

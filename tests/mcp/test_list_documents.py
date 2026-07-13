@@ -1,6 +1,6 @@
 from ontos.mcp import tools
 
-from tests.mcp import build_cache, create_workspace
+from tests.mcp_helpers import build_cache, create_workspace
 
 
 def test_list_documents_filters_sort_and_pagination(tmp_path):

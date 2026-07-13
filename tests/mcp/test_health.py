@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from tests.mcp import build_cache, create_workspace, log_usage
+from tests.mcp_helpers import build_cache, create_workspace, log_usage
 
 from ontos.mcp import tools
 

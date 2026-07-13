@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""
-Golden Master Capture Script
-
-Captures v2.9.x behavior for regression testing during v3.0 refactoring.
-Run this ONCE on v2.9.x to establish baselines, then compare against v3.0.
+"""Golden-master capture for the current package behavior.
 
 Usage:
     python capture_golden_master.py [--fixture small|medium|large|all]
@@ -19,11 +15,24 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from ontos import __version__ as ONTOS_VERSION
+
 # Constants
 SCRIPT_DIR = Path(__file__).parent
 FIXTURES_DIR = SCRIPT_DIR / "fixtures"
 BASELINES_DIR = SCRIPT_DIR / "baselines"
 PROJECT_ROOT = SCRIPT_DIR.parent.parent  # tests/golden/ -> project root
+
+
+def _command_env() -> dict[str, str]:
+    env = dict(os.environ)
+    existing = env.get("PYTHONPATH")
+    env["PYTHONPATH"] = (
+        str(PROJECT_ROOT)
+        if not existing
+        else f"{PROJECT_ROOT}{os.pathsep}{existing}"
+    )
+    return env
 
 
 def normalize_output(text: str, fixture_path: Path) -> str:
@@ -61,6 +70,10 @@ def normalize_output(text: str, fixture_path: Path) -> str:
     # Normalize absolute paths to fixture root
     fixture_str = str(fixture_path.resolve())
     text = text.replace(fixture_str, '<FIXTURE_ROOT>')
+    text = text.replace(fixture_path.name, '<FIXTURE_NAME>')
+
+    # Date-prefixed generated log filenames vary by execution day.
+    text = re.sub(r'\d{4}-\d{2}-\d{2}_(?=[A-Za-z0-9])', '<DATE>_', text)
 
     # Normalize any remaining absolute paths containing .ontos-internal
     text = re.sub(
@@ -138,8 +151,8 @@ def normalize_session_log(content: str, fixture_path: Path) -> str:
 
     # Normalize date field in frontmatter
     content = re.sub(
-        r'^date: \d{4}-\d{2}-\d{2}',
-        'date: <DATE>',
+        r'^(date|created): [\'\"]?\d{4}-\d{2}-\d{2}[\'\"]?',
+        r'\1: <DATE>',
         content,
         flags=re.MULTILINE
     )
@@ -212,7 +225,8 @@ def capture_map_command(fixture_path: Path) -> dict:
             capture_output=True,
             text=True,
             timeout=60,
-            errors="replace"
+            errors="replace",
+            env=_command_env(),
         )
     except subprocess.TimeoutExpired:
         print("    ERROR: Command timed out after 60 seconds")
@@ -279,7 +293,8 @@ def capture_log_command(fixture_path: Path, event_type: str = "chore") -> dict:
             capture_output=True,
             text=True,
             timeout=60,
-            errors="replace"
+            errors="replace",
+            env=_command_env(),
         )
     except subprocess.TimeoutExpired:
         print("    ERROR: Command timed out after 60 seconds")
@@ -328,6 +343,7 @@ def save_baseline(fixture_name: str, command: str, data: dict) -> None:
     metadata = {
         "captured_at": datetime.now().isoformat(),
         "python_version": sys.version,
+        "ontos_version": ONTOS_VERSION,
         "fixture": fixture_name,
         "command": command,
     }
@@ -357,6 +373,15 @@ def capture_fixture(fixture_name: str) -> None:
         if map_data.get("exit_code", 0) < 0:
             print(f"  ERROR: Map command failed (exit code {map_data['exit_code']}). Skipping baseline write.")
             return
+
+        # Reset so map generation cannot influence the log baseline.
+        shutil.rmtree(fixture_path)
+        fixture_path = setup_fixture(fixture_name)
+        shutil.copytree(
+            PROJECT_ROOT / ".ontos",
+            fixture_path / ".ontos",
+            dirs_exist_ok=True,
+        )
 
         # Capture log command
         print("  Capturing 'ontos log'...")

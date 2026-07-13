@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from tests.mcp import build_cache, create_workspace, run_base_cli
+from tests.mcp_helpers import build_cache, create_workspace, run_base_cli
 
 from ontos.mcp import tools
 

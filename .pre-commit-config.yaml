@@ -5,17 +5,22 @@ repos:
   - repo: local
     hooks:
       - id: ontos-validate
-        name: Validate Ontos Context Map
-        entry: python3 .ontos/scripts/ontos_generate_context_map.py --strict --quiet --check
-        language: system
+        name: Validate Ontos document graph
+        entry: python -m ontos link-check --no-orphans --quiet
+        language: python
+        additional_dependencies:
+          - "PyYAML>=6.0,<7.0"
+          - "tomli_w>=1.2,<2.0"
         pass_filenames: false
         always_run: true
-        stages: [commit]
+        stages: [pre-commit]
 
       - id: ontos-consolidate
         name: Ontos Auto-Consolidation
-        entry: python3 .ontos/scripts/ontos_pre_commit_check.py
-        language: system
+        entry: python -m ontos hook pre-commit
+        language: python
+        additional_dependencies:
+          - "PyYAML>=6.0,<7.0"
+          - "tomli_w>=1.2,<2.0"
         always_run: true
         pass_filenames: false
-

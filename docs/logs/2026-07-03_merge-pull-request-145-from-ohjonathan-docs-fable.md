@@ -6,7 +6,7 @@ event_type: chore
 source: cli
 branch: main
 created: 2026-07-03
-concepts: [meta-orchestration, audit-remediation, lifecycle]
+concepts: [workflow, hardening, external-review]
 ---
 
 # project-ontos-audit-doctor-rce

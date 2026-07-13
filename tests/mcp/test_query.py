@@ -1,7 +1,7 @@
 from ontos.core.content_hash import compute_content_hash
 from ontos.mcp import tools
 
-from tests.mcp import build_cache, create_workspace
+from tests.mcp_helpers import build_cache, create_workspace
 
 
 def test_query_returns_graph_details(tmp_path):

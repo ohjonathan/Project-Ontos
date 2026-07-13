@@ -202,8 +202,8 @@ class TestLogCommandCLI:
         assert log_command(options) == 1
         assert path.read_bytes() == original
         payload = json.loads(capsys.readouterr().out)
-        assert payload["schema_version"] == "3.4"
-        assert "result" not in payload
+        assert payload["schema_version"] == "4.0"
+        assert payload["result"]["status"] == "error"
         assert payload["error"]["code"] == "E_FILE_EXISTS"
 
     @pytest.mark.skipif(not hasattr(os, "symlink"), reason="symlinks unavailable")
@@ -264,8 +264,8 @@ class TestLogCommandCLI:
 
         assert result.returncode == 0
         payload = json.loads(result.stdout)
-        assert payload["schema_version"] == "3.4"
+        assert payload["schema_version"] == "4.0"
         assert payload["exit_code"] == 0
-        assert "result" not in payload
+        assert payload["result"]["status"] == "clean"
         assert Path(payload["data"]["path"]).is_file()
         assert sentinel.read_text(encoding="utf-8") == "do not change"

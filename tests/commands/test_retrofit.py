@@ -620,8 +620,9 @@ def test_retrofit_invalid_utf8_is_actionable_and_byte_unchanged(tmp_path: Path):
 
     assert result.returncode == 1
     payload = json.loads(result.stdout)
-    assert payload["schema_version"] == "3.4"
-    assert payload["error"]["code"] == "E_COMMAND_FAILED"
+    assert payload["schema_version"] == "4.0"
+    assert payload["error"] is None
+    assert payload["result"]["status"] == "findings"
     assert payload["data"]["path"] == str(path)
     assert str(path) in payload["message"]
     assert "Re-save the file as UTF-8" in payload["message"]

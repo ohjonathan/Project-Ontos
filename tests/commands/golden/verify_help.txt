@@ -1,5 +1,6 @@
 usage: ontos verify [-h] [--quiet] [--json] [--all] [--date DATE]
-                    [--portfolio] [--scope {docs,library}]
+                    [--portfolio] [--workspace-id WORKSPACE_ID]
+                    [--scope {docs,library}]
                     [path]
 
 positional arguments:
@@ -14,6 +15,8 @@ options:
   --date, -d DATE       Verification date (YYYY-MM-DD, default: today)
   --portfolio           Compare portfolio DB against projects.json and report
                         discrepancies
+  --workspace-id WORKSPACE_ID
+                        Limit --portfolio comparison to one workspace slug
   --scope {docs,library}
                         Scan scope: docs (default) or library (includes
                         .ontos-internal)

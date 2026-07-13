@@ -5,6 +5,7 @@ Health check and diagnostics command.
 Implements the CLI health checks with graceful error handling.
 """
 
+import re
 import shutil
 import subprocess
 import sys
@@ -76,8 +77,21 @@ def check_configuration(repo_root: Optional[Path] = None) -> CheckResult:
         )
 
     try:
+        import ontos
+        from ontos.core.config import required_version_incompatibility
         from ontos.io.config import load_project_config
-        load_project_config(repo_root=root)
+        config = load_project_config(repo_root=root)
+        version_issue = required_version_incompatibility(
+            config.ontos.required_version,
+            ontos.__version__,
+        )
+        if version_issue:
+            return CheckResult(
+                name="configuration",
+                status="failed",
+                message="Running Ontos version is incompatible with project config",
+                details=version_issue,
+            )
         return CheckResult(
             name="configuration",
             status="success",
@@ -570,15 +584,111 @@ def check_frontmatter_enums(scope: Optional[str] = None, repo_root: Optional[Pat
     )
 
 
-def check_cli_availability() -> CheckResult:
-    """Check 7: ontos CLI accessible in PATH."""
+_CLI_VERSION_PATTERN = re.compile(
+    r"(?:^|\s)(?:ontos\s+)?v?(\d+(?:\.\d+){1,2})(?:\s|$)",
+    re.IGNORECASE,
+)
+
+
+def check_cli_availability(repo_root: Optional[Path] = None) -> CheckResult:
+    """Check 7: execute the PATH CLI and detect package/version skew."""
+    import ontos
+    from ontos.core.config import (
+        required_version_incompatibility,
+        version_satisfies_requirement,
+    )
+
+    running_version = ontos.__version__
+    required_version: Optional[str] = None
+    if repo_root is not None:
+        try:
+            from ontos.io.config import load_project_config
+
+            required_version = load_project_config(
+                repo_root=resolve_project_root(repo_root=repo_root)
+            ).ontos.required_version
+        except Exception:
+            # The dedicated configuration check reports malformed config.
+            required_version = None
+
     ontos_path = shutil.which("ontos")
 
     if ontos_path:
+        try:
+            result = subprocess.run(
+                [ontos_path, "--version"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+        except FileNotFoundError:
+            return CheckResult(
+                name="cli_availability",
+                status="warning",
+                message=f"PATH ontos disappeared before it could be executed: {ontos_path}",
+                details=f"Use '{sys.executable} -m ontos' as the fallback.",
+            )
+        except subprocess.TimeoutExpired:
+            return CheckResult(
+                name="cli_availability",
+                status="warning",
+                message=f"PATH ontos timed out: {ontos_path}",
+                details=f"Use '{sys.executable} -m ontos' as the fallback.",
+            )
+
+        if result.returncode != 0:
+            details = (result.stderr or result.stdout).strip() or "No diagnostic output"
+            return CheckResult(
+                name="cli_availability",
+                status="warning",
+                message=f"PATH ontos failed its version probe: {ontos_path}",
+                details=(
+                    f"{details}. Use '{sys.executable} -m ontos' as the fallback."
+                ),
+            )
+
+        path_version = _extract_cli_version(result.stdout, result.stderr)
+        if path_version is None:
+            return CheckResult(
+                name="cli_availability",
+                status="warning",
+                message=f"PATH ontos returned an unrecognized version: {ontos_path}",
+                details=(result.stdout or result.stderr).strip() or "No version output",
+            )
+
+        version_issue = required_version_incompatibility(
+            required_version,
+            path_version,
+        )
+        if version_issue:
+            return CheckResult(
+                name="cli_availability",
+                status="failed",
+                message=f"PATH ontos {path_version} is incompatible with this project",
+                details=(
+                    f"{version_issue} The running Python package is {running_version}; "
+                    f"retry with '{sys.executable} -m ontos'."
+                ),
+            )
+
+        if not version_satisfies_requirement(path_version, f"={running_version}"):
+            return CheckResult(
+                name="cli_availability",
+                status="warning",
+                message=(
+                    f"PATH ontos reports {path_version}, but the running package is "
+                    f"{running_version}"
+                ),
+                details=(
+                    f"{ontos_path} shadows the running package. Activation should "
+                    f"retry with '{sys.executable} -m ontos'."
+                ),
+            )
+
         return CheckResult(
             name="cli_availability",
             status="success",
-            message=f"ontos available at {ontos_path}"
+            message=f"ontos {path_version} available at {ontos_path}",
         )
 
     # Check if python -m ontos works
@@ -590,10 +700,18 @@ def check_cli_availability() -> CheckResult:
             timeout=5
         )
         if result.returncode == 0:
+            module_version = _extract_cli_version(result.stdout, result.stderr)
+            if module_version is None:
+                return CheckResult(
+                    name="cli_availability",
+                    status="warning",
+                    message="'python -m ontos' returned an unrecognized version",
+                    details=(result.stdout or result.stderr).strip() or "No version output",
+                )
             return CheckResult(
                 name="cli_availability",
                 status="success",
-                message="ontos available via 'python -m ontos'"
+                message=f"ontos {module_version} available via 'python -m ontos'",
             )
     except Exception:
         pass
@@ -604,6 +722,12 @@ def check_cli_availability() -> CheckResult:
         message="ontos not in PATH",
         details="Install with 'pip install ontos' or use 'python -m ontos'"
     )
+
+
+def _extract_cli_version(stdout: str, stderr: str) -> Optional[str]:
+    """Extract the version from ``ontos --version`` without shell parsing."""
+    match = _CLI_VERSION_PATTERN.search(f"{stdout}\n{stderr}")
+    return match.group(1) if match else None
 
 
 def check_agents_staleness(repo_root: Optional[Path] = None) -> CheckResult:
@@ -925,7 +1049,7 @@ def _run_doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
         # If `ontos activate` reports any error-severity entry, this check
         # contributes a `failed` status and doctor exits non-zero.
         lambda: check_activation_health(options.scope, repo_root),
-        check_cli_availability,
+        lambda: check_cli_availability(repo_root),
         lambda: check_agents_staleness(repo_root),
         lambda: check_environment_manifests(repo_root),
         check_antigravity_mcp,

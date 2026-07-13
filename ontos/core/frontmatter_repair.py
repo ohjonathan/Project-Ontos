@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 from ontos.core.context import SessionContext
@@ -195,6 +196,14 @@ def _apply_file_edits(path: Path, edits: Sequence[EnumRepairEdit]) -> str:
         if edit.new_value is None:
             continue
         if edit.original_field not in parsed:
-            updates[edit.original_field] = edit.old_value
+            match = re.search(
+                rf"(?m)^[ \t]*{re.escape(edit.field)}[ \t]*:[ \t]*([^#\r\n]*?)"
+                rf"[ \t]*(?:#[^\r\n]*)?\r?$",
+                original,
+            )
+            raw_value = match.group(1).strip() if match else edit.old_value
+            if len(raw_value) >= 2 and raw_value[0] == raw_value[-1] and raw_value[0] in {'\"', "'"}:
+                raw_value = raw_value[1:-1]
+            updates[edit.original_field] = raw_value
         updates[edit.field] = edit.new_value
     return patch_frontmatter_fields(original, updates) if updates else original

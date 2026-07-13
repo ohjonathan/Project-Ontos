@@ -42,7 +42,6 @@ jobs:
           else
             pytest tests/ -v --tb=short
           fi
-          pytest .ontos/scripts/tests/ -v --tb=short
 
       # TODO: Recapture baselines for v3.0 CLI changes
       # - name: Run Golden Master tests

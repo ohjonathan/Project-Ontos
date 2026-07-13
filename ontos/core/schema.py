@@ -117,22 +117,22 @@ def parse_version(version_str: str) -> Tuple[int, int]:
     """
     if not version_str or not isinstance(version_str, str):
         raise ValueError(f"Invalid version string: {version_str!r}")
-    
+
     version_str = version_str.strip()
     parts = version_str.split('.')
-    
+
     if len(parts) != 2:
         raise ValueError(f"Version must be in 'major.minor' format: {version_str!r}")
-    
+
     try:
         major = int(parts[0])
         minor = int(parts[1])
     except ValueError as e:
         raise ValueError(f"Version components must be integers: {version_str!r}") from e
-    
+
     if major < 0 or minor < 0:
         raise ValueError(f"Version components must be non-negative: {version_str!r}")
-    
+
     return (major, minor)
 
 
@@ -160,34 +160,34 @@ def detect_schema_version(frontmatter: Dict[str, Any]) -> str:
     """
     if not frontmatter:
         return "1.0"
-    
+
     # Priority 1: Explicit schema declaration
     if 'ontos_schema' in frontmatter:
         schema = frontmatter['ontos_schema']
         if schema and isinstance(schema, str):
             return schema.strip()
-    
+
     # Priority 2: Field inference for legacy documents
     # Check for v3.0 fields
     if 'implements' in frontmatter or 'tests' in frontmatter or 'deprecates' in frontmatter:
         return "3.0"
-    
+
     # Check for v2.2 fields (curation_level is v2.2+)
     if 'curation_level' in frontmatter:
         return "2.2"
-    
+
     # Check for v2.1 fields (describes is v2.1+)
     if 'describes' in frontmatter or 'describes_verified' in frontmatter:
         return "2.1"
-    
+
     # Check for v2.0 fields (logs have event_type, impacts)
     if 'event_type' in frontmatter or 'impacts' in frontmatter:
         return "2.0"
-    
+
     # Check for v2.0 fields (type is required in v2.0+)
     if 'type' in frontmatter and frontmatter.get('type'):
         return "2.0"
-    
+
     # Default: v1.0 (minimal schema)
     return "1.0"
 
@@ -222,7 +222,7 @@ def check_compatibility(
             tool_version=tool_version,
             message=f"Invalid document schema version: {e}"
         )
-    
+
     # Parse tool version (may have patch, e.g., "2.9.0")
     tool_parts = tool_version.split('.')
     try:
@@ -235,7 +235,7 @@ def check_compatibility(
             tool_version=tool_version,
             message=f"Invalid tool version: {tool_version}"
         )
-    
+
     # Check for future major version (incompatible)
     if doc_major > tool_major:
         return SchemaCheckResult(
@@ -244,7 +244,7 @@ def check_compatibility(
             tool_version=tool_version,
             message=f"Document uses schema {doc_version}, but tool only supports up to {tool_major}.x"
         )
-    
+
     # Check for future minor version within same major (read-only)
     if doc_major == tool_major and doc_minor > tool_minor:
         return SchemaCheckResult(
@@ -253,7 +253,7 @@ def check_compatibility(
             tool_version=tool_version,
             message=f"Document uses schema {doc_version}. Tool {tool_version} can read but may not preserve all fields."
         )
-    
+
     # Check for known schema versions
     if doc_version not in SCHEMA_DEFINITIONS:
         # Unknown but compatible major version - treat as read-only
@@ -264,7 +264,7 @@ def check_compatibility(
                 tool_version=tool_version,
                 message=f"Unknown schema version {doc_version}. Reading with best effort."
             )
-    
+
     # Fully compatible
     return SchemaCheckResult(
         compatibility=SchemaCompatibility.COMPATIBLE,
@@ -297,13 +297,13 @@ def validate_frontmatter(
     """
     if schema_version is None:
         schema_version = detect_schema_version(frontmatter)
-    
+
     if schema_version not in SCHEMA_DEFINITIONS:
         return True, []  # Unknown schema, can't validate
-    
+
     schema = SCHEMA_DEFINITIONS[schema_version]
     errors = []
-    
+
     # Check required fields
     for field in schema["required"]:
         if field not in frontmatter or frontmatter[field] is None:
@@ -316,7 +316,7 @@ def validate_frontmatter(
             validate_document_id(frontmatter["id"])
         except ValueError as exc:
             errors.append(str(exc))
-    
+
     return len(errors) == 0, errors
 
 
@@ -343,21 +343,21 @@ def serialize_frontmatter(fm: Dict[str, Any]) -> str:
         validate_document_id(fm["id"])
 
     blocks: List[str] = []
-    
+
     # Define field order for consistent output
     field_order = [
         'id', 'type', 'status', 'ontos_schema', 'curation_level',
         'depends_on', 'concepts', 'describes', 'describes_verified',
         'event_type', 'impacts', 'implements', 'tests', 'deprecates'
     ]
-    
+
     # Process ordered fields first
     processed = set()
     for key in field_order:
         if key in fm:
             blocks.append(_dump_frontmatter_field(key, fm[key], dump_yaml))
             processed.add(key)
-    
+
     # Process remaining fields in original order
     for key, value in fm.items():
         if key not in processed:
@@ -389,10 +389,10 @@ def add_schema_to_frontmatter(
         New frontmatter dict with ontos_schema field.
     """
     result = frontmatter.copy()
-    
+
     if schema_version is None:
         schema_version = detect_schema_version(frontmatter)
-    
+
     result['ontos_schema'] = schema_version
     return result
 

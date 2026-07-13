@@ -19,7 +19,7 @@ def golden_help():
     return golden_path.read_text()
 
 
-def test_verify_help_parity(golden_help):
+def test_verify_help_parity(golden_help, assert_help_parity):
     """Native --help matches legacy."""
     result = subprocess.run(
         [sys.executable, "-m", "ontos.cli", "verify", "--help"],
@@ -27,6 +27,7 @@ def test_verify_help_parity(golden_help):
         text=True,
         env=os.environ.copy()
     )
+    assert_help_parity(result.stdout, golden_help)
     assert "--all" in result.stdout
     assert "--date" in result.stdout
     assert "--portfolio" in result.stdout

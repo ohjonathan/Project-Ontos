@@ -12,6 +12,7 @@ The caller (commands layer) provides the IO callback.
 """
 
 import os
+import re
 from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime
 from pathlib import Path
@@ -30,6 +31,29 @@ BLOCKED_BRANCH_NAMES = {'main', 'master', 'dev', 'develop', 'HEAD'}
 class ConfigError(Exception):
     """Raised when configuration is invalid or cannot be loaded."""
     pass
+
+
+class InvalidRequiredVersionError(ConfigError):
+    """Raised when ``[ontos].required_version`` cannot be parsed eagerly."""
+
+    def __init__(self, detail: str):
+        self.detail = detail
+        super().__init__(detail)
+
+
+REQUIRED_VERSION_MIGRATION_ANCHOR = (
+    "docs/reference/Migration_v3_to_v4.md"
+    "#audit-remediation-compatibility-contracts"
+)
+
+
+_VERSION_PATTERN = re.compile(
+    r"^v?(?P<major>0|[1-9][0-9]*)"
+    r"(?:\.(?P<minor>0|[1-9][0-9]*))?"
+    r"(?:\.(?P<patch>0|[1-9][0-9]*))?"
+    r"$"
+)
+_COMPARATOR_PATTERN = re.compile(r"^(>=|<=|==|=|>|<)?\s*(.+)$")
 
 
 @dataclass
@@ -126,7 +150,20 @@ def _validate_path(path_str: str, repo_root: Path) -> bool:
 
 def _validate_types(data: dict) -> None:
     """Validate types in config data before dataclass instantiation."""
+    for section, values in data.items():
+        if not isinstance(values, dict):
+            raise ConfigError(
+                f"Configuration section '{section}' must be a table, "
+                f"got {type(values).__name__}"
+            )
+
     type_requirements = {
+        ("ontos", "version"): str,
+        ("ontos", "required_version"): str,
+        ("paths", "docs_dir"): str,
+        ("paths", "logs_dir"): str,
+        ("paths", "context_map"): str,
+        ("scanning", "default_scope"): str,
         ("validation", "max_dependency_depth"): int,
         ("workflow", "log_retention_count"): int,
         ("hooks", "pre_push"): bool,
@@ -141,13 +178,31 @@ def _validate_types(data: dict) -> None:
             value = data[section][key]
             if section == "mcp" and key == "usage_log_path" and value is None:
                 continue
-            if not isinstance(value, expected_type):
+            if section == "ontos" and key == "required_version" and value is None:
+                continue
+            if type(value) is not expected_type:
                 raise ConfigError(
                     f"{section}.{key} must be {expected_type.__name__}, "
                     f"got {type(value).__name__}"
                 )
 
+    ontos_section = data.get("ontos", {})
+    required_version = (
+        ontos_section.get("required_version")
+        if isinstance(ontos_section, dict)
+        else None
+    )
+    if isinstance(required_version, str) and required_version.strip():
+        # Parse the range at config-load time. The dummy running version is
+        # irrelevant; this call exists to reject malformed clauses early.
+        try:
+            version_satisfies_requirement("0.0.0", required_version)
+        except ConfigError as exc:
+            raise InvalidRequiredVersionError(str(exc)) from exc
+
     list_of_str_requirements = [
+        ("scanning", "skip_patterns"),
+        ("scanning", "scan_paths"),
         ("validation", "allowed_orphan_types"),
         ("validation", "allowed_orphan_paths"),
         ("validation", "allowed_external_dependency_paths"),
@@ -165,6 +220,165 @@ def _validate_types(data: dict) -> None:
                         f"{section}.{key}[{index}] must be str, "
                         f"got {type(item).__name__}"
                     )
+
+    scanning = data.get("scanning", {})
+    default_scope = scanning.get("default_scope")
+    if default_scope is not None and default_scope not in {"docs", "library"}:
+        raise ConfigError("scanning.default_scope must be 'docs' or 'library'")
+
+    validation = data.get("validation", {})
+    depth = validation.get("max_dependency_depth")
+    if depth is not None and depth < 0:
+        raise ConfigError("validation.max_dependency_depth must be >= 0")
+
+    workflow = data.get("workflow", {})
+    retention = workflow.get("log_retention_count")
+    if retention is not None and retention < 1:
+        raise ConfigError("workflow.log_retention_count must be >= 1")
+
+
+def version_satisfies_requirement(running_version: str, requirement: Optional[str]) -> bool:
+    """Return whether ``running_version`` satisfies an Ontos semver range.
+
+    Supported clauses match the public ``required_version`` contract:
+    comma-separated comparisons (for example ``>=4.7.0, <5.0.0``), tilde
+    ranges (``~4.7``), and ``x``/``*`` wildcards (``4.7.x``). An empty
+    requirement is intentionally compatible for projects that do not pin a
+    runtime.
+
+    Raises:
+        ConfigError: If either the running version or requirement is invalid.
+    """
+    required = str(requirement or "").strip()
+    if not required:
+        return True
+
+    running = _parse_version(
+        running_version,
+        label=f"running Ontos version {running_version!r}",
+    )
+    clauses = [clause.strip() for clause in required.split(",")]
+    if not clauses or any(not clause for clause in clauses):
+        raise ConfigError(
+            "ontos.required_version must be a valid semver range "
+            "(for example '>=4.7.0, <5.0.0')"
+        )
+    # Evaluate every clause before reducing the compatibility result.  A
+    # generator passed directly to ``all`` would stop at the first false
+    # comparison and could therefore hide a malformed later clause.
+    clause_matches = [
+        _version_clause_matches(running, clause) for clause in clauses
+    ]
+    return all(clause_matches)
+
+
+def required_version_incompatibility(
+    requirement: Optional[str],
+    running_version: str,
+) -> Optional[str]:
+    """Return an actionable incompatibility message, or ``None`` if valid."""
+    required = str(requirement or "").strip()
+    if not required:
+        return None
+    try:
+        compatible = version_satisfies_requirement(running_version, required)
+    except ConfigError as exc:
+        return format_invalid_required_version(str(exc))
+    if compatible:
+        return None
+    return (
+        f"Incompatible Ontos version: running {running_version}, but this project "
+        f"requires {required!r}. Use a compatible Ontos installation. "
+        f"See {REQUIRED_VERSION_MIGRATION_ANCHOR}."
+    )
+
+
+def format_invalid_required_version(detail: str) -> str:
+    """Render the public malformed ``required_version`` diagnostic."""
+    return (
+        f"Invalid [ontos].required_version: {detail}. "
+        f"See {REQUIRED_VERSION_MIGRATION_ANCHOR}."
+    )
+
+
+def _parse_version(value: str, *, label: str) -> tuple[int, int, int]:
+    text = str(value).strip()
+    match = _VERSION_PATTERN.fullmatch(text)
+    if match is None:
+        raise ConfigError(f"{label} is not a valid semantic version")
+    return tuple(
+        int(match.group(name) or 0) for name in ("major", "minor", "patch")
+    )
+
+
+def _version_clause_matches(running: tuple[int, int, int], clause: str) -> bool:
+    if clause.startswith("~"):
+        raw_base = clause[1:].strip()
+        base, component_count = _parse_requirement_base(raw_base, clause)
+        if component_count == 1:
+            upper = (base[0] + 1, 0, 0)
+        else:
+            upper = (base[0], base[1] + 1, 0)
+        return base <= running < upper
+
+    comparator_match = _COMPARATOR_PATTERN.fullmatch(clause)
+    if comparator_match is None:
+        raise ConfigError(f"invalid version clause {clause!r}")
+    comparator = comparator_match.group(1) or "="
+    raw_version = comparator_match.group(2).strip()
+
+    if "x" in raw_version.lower() or "*" in raw_version:
+        if comparator not in {"=", "=="}:
+            raise ConfigError(
+                f"wildcard version clause {clause!r} cannot use {comparator!r}"
+            )
+        return _wildcard_clause_matches(running, raw_version, clause)
+
+    expected = _parse_version(raw_version, label=f"version clause {clause!r}")
+    comparisons = {
+        "=": running == expected,
+        "==": running == expected,
+        ">=": running >= expected,
+        "<=": running <= expected,
+        ">": running > expected,
+        "<": running < expected,
+    }
+    return comparisons[comparator]
+
+
+def _parse_requirement_base(
+    raw_version: str,
+    clause: str,
+) -> tuple[tuple[int, int, int], int]:
+    component_text = raw_version[1:] if raw_version.startswith("v") else raw_version
+    component_count = len(component_text.split("."))
+    if component_count > 3:
+        raise ConfigError(f"invalid version clause {clause!r}")
+    return _parse_version(raw_version, label=f"version clause {clause!r}"), component_count
+
+
+def _wildcard_clause_matches(
+    running: tuple[int, int, int],
+    raw_version: str,
+    clause: str,
+) -> bool:
+    text = raw_version[1:] if raw_version.startswith("v") else raw_version
+    components = text.split(".")
+    if not 1 <= len(components) <= 3:
+        raise ConfigError(f"invalid wildcard version clause {clause!r}")
+
+    wildcard_seen = False
+    expected_prefix = []
+    for component in components:
+        if component.lower() == "x" or component == "*":
+            wildcard_seen = True
+            continue
+        if wildcard_seen or not component.isdigit():
+            raise ConfigError(f"invalid wildcard version clause {clause!r}")
+        expected_prefix.append(int(component))
+    if not wildcard_seen:
+        raise ConfigError(f"invalid wildcard version clause {clause!r}")
+    return running[:len(expected_prefix)] == tuple(expected_prefix)
 
 
 def dict_to_config(data: dict, repo_root: Optional[Path] = None) -> OntosConfig:

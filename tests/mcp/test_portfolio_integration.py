@@ -4,7 +4,7 @@ from ontos.mcp import tools
 from ontos.mcp.portfolio import PortfolioIndex
 from ontos.mcp.schemas import validate_success_payload
 
-from tests.mcp import build_cache, create_workspace, write_file
+from tests.mcp_helpers import build_cache, create_workspace, write_file
 
 
 def test_portfolio_index_outputs_validate_against_track_a_tools(tmp_path):

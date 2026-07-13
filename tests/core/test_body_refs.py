@@ -126,6 +126,36 @@ def test_nested_fence_content_skipped_until_matching_closer():
     assert scan.matches[0].line == 6
 
 
+def test_single_line_backtick_span_does_not_swallow_following_diagnostics():
+    body = "```inline_code```\nSee [[missing_doc]] afterward.\n"
+
+    scan = _strict_scan(body)
+
+    assert [match.normalized_id for match in scan.matches] == ["missing_doc"]
+    assert scan.matches[0].line == 2
+
+
+def test_info_string_does_not_close_an_active_fence():
+    body = (
+        "```\n"
+        "```python\n"
+        "[[inside_code]]\n"
+        "```\n"
+        "See [[outside_code]].\n"
+    )
+
+    scan = _strict_scan(body)
+
+    assert [match.normalized_id for match in scan.matches] == ["outside_code"]
+    assert scan.matches[0].line == 5
+
+
+def test_four_space_indented_marker_is_not_a_fence():
+    scan = _strict_scan("    ```yaml\nSee [[visible_doc]].\n")
+
+    assert [match.normalized_id for match in scan.matches] == ["visible_doc"]
+
+
 def test_unsupported_markdown_forms_are_ignored():
     # (#117) Wikilink spans `[[…]]` are now a SUPPORTED generic-mode source
     # for BARE_ID_TOKEN (opt-in via include_generic_bare_id_token=False
@@ -188,6 +218,42 @@ def test_strict_generic_mode_handles_multiple_wikilinks():
     )
     ids = sorted(m.normalized_id for m in scan.matches if m.match_type == MatchType.BARE_ID_TOKEN)
     assert ids == ["alpha", "beta-doc"]
+
+
+def test_wikilink_alias_and_heading_emit_only_document_id():
+    scan = _strict_scan(
+        "Refs: [[beta|The Beta Doc]], [[beta#Section One]], "
+        "and [[ beta#Heading|Alias ]]."
+    )
+
+    matches = [m for m in scan.matches if m.match_type == MatchType.BARE_ID_TOKEN]
+    assert [match.normalized_id for match in matches] == ["beta", "beta", "beta"]
+    assert [match.raw_match for match in matches] == ["beta", "beta", "beta"]
+
+
+def test_rename_wikilink_alias_and_heading_rewrites_target_span_only():
+    body = "[[beta|The Beta Doc]] [[beta#Section One]] [[beta]]"
+
+    scan = _scan(body, rename_target="beta")
+
+    assert len(scan.matches) == 3
+    assert all(match.rewritable for match in scan.matches)
+    rewritten = body
+    for match in sorted(scan.matches, key=lambda item: item.abs_start, reverse=True):
+        rewritten = rewritten[:match.abs_start] + "beta2" + rewritten[match.abs_end:]
+    assert rewritten == "[[beta2|The Beta Doc]] [[beta2#Section One]] [[beta2]]"
+
+
+def test_wikilink_alias_and_heading_text_are_not_reference_targets():
+    body = "[[other|old_id alias]] [[other#old_id heading]] plain old_id"
+
+    rename_scan = _scan(body, rename_target="old_id")
+    strict_scan = _strict_scan(body)
+
+    assert len(rename_scan.matches) == 1
+    assert rename_scan.matches[0].raw_match == "old_id"
+    assert rename_scan.matches[0].abs_start == body.rfind("old_id")
+    assert [match.normalized_id for match in strict_scan.matches] == ["other", "other"]
 
 
 # --- False-positive filter tests ---

@@ -15,14 +15,10 @@ A6 semantics — verified (TrackB-Design §9, v1.1 §4.8.2):
     content in place and rewrites references via
     ``scan_body_references``; filenames are NOT changed.
 
-A3 post-rollback rebuild (addendum v1.2 §A3):
-    If ``ctx.commit()`` raises, the DB may be out of sync with the
-    filesystem. This tool performs ``git checkout -- .`` to revert
-    uncommitted writes (the git clean-state precondition guarantees this
-    is safe), then re-invokes ``rebuild_workspace(slug, root)`` so the
-    index re-converges with the reverted files. Rebuild failures are
-    recorded via ``ctx.error(...)`` but never mask the original commit
-    exception.
+A3 durable rollback:
+    Before the first replacement, the tool records exact original bytes in a
+    fsynced journal. Commit failures and the next invocation after a crash
+    restore only those paths; unrelated user edits are never reverted.
 
 m-13 — FTS5 parity recoverable rebuild:
     The parity check in ``portfolio.py:410-422`` raises after
@@ -37,7 +33,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-import subprocess
 import sys
 import traceback
 from typing import Any, Dict, List, Optional
@@ -47,6 +42,7 @@ from mcp.types import CallToolResult, TextContent
 from ontos.commands.rename import (
     RenameError,
     build_rename_plan,
+    validate_rename_ids,
 )
 from ontos.core.context import SessionContext
 from ontos.core.errors import OntosInternalError, OntosUserError
@@ -56,6 +52,7 @@ from ontos.core.locking import (
     capture_workspace_binding,
     verify_workspace_binding,
 )
+from ontos.core.rename_transaction import RenameTransaction, recover_rename_transaction
 from ontos.io.config import load_project_config
 from ontos.io.scan_scope import ScanScope
 from ontos.mcp._validation import resolve_workspace_slug, validate_workspace_id
@@ -74,7 +71,8 @@ from ontos.mcp.schemas import (
 # validation + collision logic; this helper preserves the stable MCP
 # envelope codes the existing tests assert.
 _RENAME_ERROR_TO_USER_CODE: Dict[str, str] = {
-    "invalid_new_id": "E_INVALID_ID",
+    "invalid_old_id": "E_USER_INPUT",
+    "invalid_new_id": "E_USER_INPUT",
     "reserved_new_id": "E_INVALID_ID",
     "old_id_not_found": "E_DOCUMENT_NOT_FOUND",
     "new_id_exists": "E_DUPLICATE_ID",
@@ -199,26 +197,6 @@ def _preflight(
             code="E_CROSS_WORKSPACE_NOT_SUPPORTED",
         )
 
-    # Git clean-state precondition (§4.8.2 Step 4).
-    #
-    # This runs BEFORE ``workspace_lock()`` because the lock context
-    # materialises ``.ontos.lock`` as an untracked file; checking dirty
-    # state after the lock is held would always see at least that file
-    # and trigger false-positive E_DIRTY_WORKSPACE for any caller that
-    # hasn't added ``.ontos.lock`` to ``.gitignore``. Untracked files
-    # elsewhere also count as dirty: the recovery action is ``git
-    # checkout -- .``, which only restores tracked files, so untracked
-    # state we'd write during the tool run would linger after rollback.
-    clean, reason = is_workspace_clean(workspace_root)
-    if not clean:
-        raise OntosUserError(
-            "Workspace has uncommitted changes. "
-            "Commit or stash before renaming so you can recover with "
-            "`git checkout -- .` if needed. "
-            f"(Reason: {reason})",
-            code="E_DIRTY_WORKSPACE",
-        )
-
     try:
         verify_workspace_binding(workspace_root, workspace_binding)
     except (OSError, ValueError, RuntimeError) as exc:
@@ -285,52 +263,18 @@ def _rebuild_safely(
         traceback.print_exc(file=sys.stderr)
 
 
-def _git_checkout_rollback(root: Path) -> Optional[str]:
-    """Revert all uncommitted changes via ``git checkout -- .``.
-
-    Returns ``None`` on success or a reason string on failure.
-    """
-    try:
-        result = subprocess.run(
-            ["git", "checkout", "--", "."],
-            cwd=str(root),
-            capture_output=True,
-            text=True,
-            timeout=10.0,
-            check=False,
-        )
-    except FileNotFoundError:
-        return "git executable not found on PATH"
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        return f"Unable to run git checkout: {exc}"
-    if result.returncode != 0:
-        stderr = (result.stderr or "").strip()
-        return stderr or "git checkout failed"
-    return None
-
-
 def _commit_with_a3_rollback_and_rebuild(
     ctx: SessionContext,
     portfolio_index: Any,
     slug: str,
     workspace_root: Path,
+    transaction: RenameTransaction,
 ) -> List[Path]:
-    """Commit, or rollback + rebuild on failure (addendum v1.2 §A3).
-
-    This is the multi-file mainline: the git clean-state precondition
-    guarantees ``git checkout -- .`` is a safe recovery action. After
-    reverting, we re-invoke ``rebuild_workspace`` so the portfolio DB
-    re-converges with the reverted filesystem state.
-    """
+    """Commit, or restore the exact touched paths and rebuild on failure."""
     try:
         return ctx.commit()
     except Exception:
-        # Rollback the working tree. The precondition (clean at entry)
-        # means "revert to HEAD" restores the pre-mutation state.
-        reason = _git_checkout_rollback(workspace_root)
-        if reason is not None:
-            ctx.error(f"Post-commit rollback failed: {reason}")
-        # Now reconcile the DB with the reverted filesystem.
+        transaction.rollback()
         _rebuild_safely(portfolio_index, slug, workspace_root, ctx=ctx)
         raise
 
@@ -354,6 +298,11 @@ def rename_document(
     Matches ``ontos/commands/rename.py:221`` semantics — ID-only rename,
     no filesystem moves, all edits flow through ``ctx.buffer_write``.
     """
+    old_id, target_id, input_error = validate_rename_ids(document_id, new_id)
+    if input_error is not None:
+        return _user_error_result(_rename_error_to_user_exc(input_error))
+    assert old_id is not None and target_id is not None
+
     try:
         plan = _preflight(cache, portfolio_index, workspace_id, read_only)
     except OntosUserError as exc:
@@ -370,12 +319,20 @@ def rename_document(
         ) as lock_guard:
             plan.lock_guard = lock_guard
             try:
+                recover_rename_transaction(plan.workspace_root)
+                clean, reason = is_workspace_clean(plan.workspace_root)
+                if not clean:
+                    raise OntosUserError(
+                        "Workspace has uncommitted changes. Commit or stash before renaming. "
+                        f"(Reason: {reason})",
+                        code="E_DIRTY_WORKSPACE",
+                    )
                 payload = _rename_document_impl(
                     cache=cache,
                     portfolio_index=portfolio_index,
                     plan=plan,
-                    document_id=document_id,
-                    new_id=new_id,
+                    document_id=old_id,
+                    new_id=target_id,
                 )
                 result = _success_result("rename_document", payload)
             except OntosUserError as exc:
@@ -429,19 +386,8 @@ def _rename_document_impl(
     document_id: str,
     new_id: str,
 ) -> Dict[str, Any]:
-    old_id = str(document_id).strip() if document_id is not None else ""
-    target_id = str(new_id).strip() if new_id is not None else ""
-
-    if not old_id:
-        raise OntosUserError(
-            "document_id must be non-empty.",
-            code="E_INVALID_DOCUMENT_ID",
-        )
-    if not target_id:
-        raise OntosUserError(
-            "new_id must be non-empty.",
-            code="E_INVALID_ID",
-        )
+    old_id = document_id
+    target_id = new_id
 
     # Route through the shared orchestrator. It performs ID validation,
     # old/new collision checks, the docs-scope cross-scope guard, and the
@@ -482,6 +428,8 @@ def _rename_document_impl(
     if error is not None:
         raise _rename_error_to_user_exc(error)
     assert rename_plan is not None
+    old_id = rename_plan.old_id
+    target_id = rename_plan.new_id
 
     # No-op rename: report success without touching files or acquiring any
     # further write-side state.
@@ -545,26 +493,29 @@ def _rename_document_impl(
 
     # Commit + A3 rollback+rebuild path. On failure we re-raise so the
     # outer dispatcher turns it into a WriteToolErrorEnvelope.
+    transaction = RenameTransaction.prepare(
+        plan.workspace_root,
+        [fp.path for fp in files_to_apply],
+    )
     modified_paths = _commit_with_a3_rollback_and_rebuild(
-        ctx, portfolio_index, plan.slug, plan.workspace_root
+        ctx, portfolio_index, plan.slug, plan.workspace_root, transaction
     )
 
     # Verify planned vs actual commit set (matches rename.py guard).
     planned = {p.path.resolve() for p in files_to_apply}
     committed = {p.resolve() for p in modified_paths}
     if planned != committed:
-        # Best-effort rollback — git checkout even here, then rebuild.
-        rollback_reason = _git_checkout_rollback(plan.workspace_root)
-        if rollback_reason is not None:
-            ctx.error(f"Partial-commit rollback failed: {rollback_reason}")
+        transaction.rollback()
         _rebuild_safely(
             portfolio_index, plan.slug, plan.workspace_root, ctx=ctx
         )
         raise OntosInternalError(
             "Commit result does not match planned file set. "
-            "Repository has been rolled back via `git checkout -- .`.",
+            "No unrelated workspace paths were modified.",
             code="E_PARTIAL_COMMIT_MISMATCH",
         )
+
+    transaction.complete()
 
     # Happy-path post-commit rebuild with m-13 retry.
     _rebuild_safely(

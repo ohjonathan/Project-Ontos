@@ -205,7 +205,7 @@ def test_cli_aliases_parity_and_warning(capsys, tmp_path, monkeypatch):
     assert "Warning: 'ontos tree' is deprecated" in captured.err
 
     # Test 'validate' alias
-    args = parser.parse_args(["validate"])
+    args = parser.parse_args(["validate", "--all"])
     assert args.command == "validate"
     args.func(args)
     captured = capsys.readouterr()

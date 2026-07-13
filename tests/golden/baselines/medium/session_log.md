@@ -1,17 +1,21 @@
 ---
-id: log_<DATE>_complete
+id: log_<DATE>_test-change-for-log-capture
 type: log
 status: active
-event_type: feature
-concepts: [release]
-impacts: [complete_feature]
+event_type: chore
+source: Golden Master Capture
+branch: master
+created: <DATE>
 ---
-# Feature C Complete
-## Goal
-Finalize Feature C.
+
+# Test change for log capture
+
+## Summary
+
+<!-- Brief description of what was done -->
+
 ## Changes Made
-- Marked as complete
-## Raw Session History
-```text
-mno7890 - Feature complete
-```
+
+<!-- List of changes -->
+
+## Testing

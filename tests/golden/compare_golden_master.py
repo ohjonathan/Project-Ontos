@@ -17,7 +17,6 @@ import argparse
 import difflib
 import json
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -29,9 +28,8 @@ PROJECT_ROOT = SCRIPT_DIR.parent.parent
 
 # Import normalization functions from capture script
 from capture_golden_master import (
-    normalize_output,
-    normalize_context_map,
-    normalize_session_log,
+    capture_log_command,
+    capture_map_command,
     setup_fixture,
 )
 
@@ -96,103 +94,13 @@ def compare_exit_code(expected: int, actual: int, name: str) -> ComparisonResult
 
 
 def run_map_command(fixture_path: Path) -> dict:
-    """Run map command and return normalized results."""
-    # Copy .ontos/ to fixture (v3.0: ontos is installed as package, no ontos.py)
-    if (fixture_path / ".ontos").exists():
-        shutil.rmtree(fixture_path / ".ontos")
-    shutil.copytree(
-        PROJECT_ROOT / ".ontos",
-        fixture_path / ".ontos",
-        dirs_exist_ok=True
-    )
-
-    try:
-        result = subprocess.run(
-            [sys.executable, "-m", "ontos", "map"],
-            cwd=fixture_path,
-            capture_output=True,
-            text=True,
-            timeout=60,
-            errors="replace"
-        )
-    except subprocess.TimeoutExpired:
-        print("    ERROR: Command timed out after 60 seconds")
-        return {
-            "stdout": "",
-            "stderr": "TIMEOUT: Command did not complete within 60 seconds",
-            "exit_code": -1,
-            "context_map": "",
-        }
-
-    context_map_path = fixture_path / "Ontos_Context_Map.md"
-    context_map_content = ""
-    if context_map_path.exists():
-        context_map_content = context_map_path.read_text(encoding="utf-8", errors="replace")
-
-    return {
-        "stdout": normalize_output(result.stdout, fixture_path),
-        "stderr": normalize_output(result.stderr, fixture_path),
-        "exit_code": result.returncode,
-        "context_map": normalize_context_map(context_map_content, fixture_path),
-    }
+    """Use the exact capture path so baseline and comparison cannot drift."""
+    return capture_map_command(fixture_path)
 
 
 def run_log_command(fixture_path: Path) -> dict:
-    """Run log command and return normalized results."""
-    # Make a change to trigger log creation
-    test_file = fixture_path / ".ontos-internal" / "test_change.md"
-    test_file.write_text("# Test Change\nThis triggers log creation.\n")
-
-    subprocess.run(
-        ["git", "-c", "user.name=Golden Master", "-c", "user.email=test@example.com", "add", "."],
-        cwd=fixture_path,
-        capture_output=True,
-        check=True
-    )
-    subprocess.run(
-        ["git", "-c", "user.name=Golden Master", "-c", "user.email=test@example.com",
-         "commit", "-m", "Test change"],
-        cwd=fixture_path,
-        capture_output=True,
-        check=True
-    )
-
-    try:
-        result = subprocess.run(
-            [
-                sys.executable, "-m", "ontos", "log",
-                "-e", "chore",
-                "-s", "Golden Master Compare",
-                "--auto"
-            ],
-            cwd=fixture_path,
-            capture_output=True,
-            text=True,
-            timeout=60,
-            errors="replace"
-        )
-    except subprocess.TimeoutExpired:
-        print("    ERROR: Command timed out after 60 seconds")
-        return {
-            "stdout": "",
-            "stderr": "TIMEOUT: Command did not complete within 60 seconds",
-            "exit_code": -1,
-            "session_log": "",
-        }
-
-    logs_dir = fixture_path / ".ontos-internal" / "logs"
-    session_log_content = ""
-    if logs_dir.exists():
-        log_files = sorted(logs_dir.glob("*.md"), reverse=True)
-        if log_files:
-            session_log_content = log_files[0].read_text(encoding="utf-8", errors="replace")
-
-    return {
-        "stdout": normalize_output(result.stdout, fixture_path),
-        "stderr": normalize_output(result.stderr, fixture_path),
-        "exit_code": result.returncode,
-        "session_log": normalize_session_log(session_log_content, fixture_path),
-    }
+    """Use the exact capture path so baseline and comparison cannot drift."""
+    return capture_log_command(fixture_path)
 
 
 def load_baseline(fixture_name: str, command: str) -> dict:
