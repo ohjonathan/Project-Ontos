@@ -7,11 +7,9 @@ single source of truth about what "clean" means for workspace mutation paths.
 Semantics (v4.1 Track B):
 
 * ``is_workspace_clean`` shells out to ``git status --porcelain``. Any
-  non-empty output (including untracked files) is treated as *dirty*. This
-  matches the v1.1 spec §4.8.2 recovery contract: the ``rename_document``
-  precondition must guarantee that ``git checkout -- .`` restores the
-  pre-mutation state, which is only safe when the working tree has nothing
-  to lose.
+  non-empty output (including untracked files) is treated as *dirty*, except
+  for Ontos' own lock and recovery-journal paths. Rename recovery uses exact
+  byte backups and never an unscoped git checkout.
 * ``is_workspace_clean`` returns ``False`` (with a reason string) when git
   is unavailable or the repository cannot be inspected — the tool is a
   precondition for destructive multi-file edits, so we fail closed.
@@ -64,7 +62,14 @@ def is_workspace_clean(
         stderr = (result.stderr or "").strip()
         return False, stderr or "git status failed"
 
-    if result.stdout.strip():
+    internal_paths = {".ontos.lock", ".ontos/transactions/"}
+    dirty = []
+    for line in result.stdout.splitlines():
+        rendered = line[3:] if len(line) >= 4 else line
+        if any(rendered == item.rstrip("/") or rendered.startswith(item) for item in internal_paths):
+            continue
+        dirty.append(line)
+    if dirty:
         return False, "working tree has uncommitted or untracked changes"
     return True, None
 

@@ -1,7 +1,11 @@
 """Tests for the canonical document loading contract (Track A1)."""
 import pytest
 from pathlib import Path
-from ontos.io.files import load_document_from_content, DocumentLoadIssue
+from ontos.io.files import (
+    DocumentLoadIssue,
+    load_document_from_content,
+    load_documents,
+)
 from ontos.io.yaml import parse_frontmatter_content
 from ontos.core.types import DocumentType, DocumentStatus
 
@@ -58,7 +62,25 @@ Body content"""
     assert doc.describes == ["valid_atom"]
 
 
-from ontos.io.files import load_documents
+@pytest.mark.parametrize("raw_id", ["123", "2026-07-10", "null"])
+def test_loader_rejects_yaml_coerced_non_string_ids(tmp_path, raw_id):
+    content = f"---\nid: {raw_id}\ntype: atom\n---\nBody"
+    path = tmp_path / "bad-id.md"
+
+    with pytest.raises(ValueError, match="Document id must be a string"):
+        load_document_from_content(path, content, parse_frontmatter_content)
+
+
+def test_batch_loader_reports_non_string_id_as_parse_error(tmp_path):
+    path = tmp_path / "bad-id.md"
+    path.write_text("---\nid: 2026-07-10\ntype: atom\n---\nBody", encoding="utf-8")
+
+    result = load_documents([path], parse_frontmatter_content)
+
+    assert result.documents == {}
+    assert len(result.issues) == 1
+    assert result.issues[0].code == "parse_error"
+    assert "Document id must be a string" in result.issues[0].message
 
 
 @pytest.mark.parametrize("raw_id", ["123", "2026-07-10", "null"])

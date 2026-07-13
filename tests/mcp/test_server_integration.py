@@ -5,7 +5,7 @@ from pathlib import Path
 
 from mcp.types import ListToolsResult
 
-from tests.mcp import build_cache, build_server, create_workspace, list_tools, write_file
+from tests.mcp_helpers import build_cache, build_server, create_workspace, list_tools, write_file
 
 
 def test_server_lists_all_tools_with_correct_annotations(tmp_path):
@@ -115,6 +115,11 @@ def test_tool_descriptions_include_workspace_name(tmp_path):
         assert workspace_name in tool.description, (
             f"Tool '{name}' description should include workspace name '{workspace_name}'"
         )
+
+    rename_description = tool_map["rename_document"].description
+    assert "recovery journal" in rename_description
+    assert "touched paths" in rename_description
+    assert "git checkout -- ." not in rename_description
 
 
 def test_instructions_mention_workspace_overview(tmp_path):

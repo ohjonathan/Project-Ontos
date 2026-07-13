@@ -8,16 +8,17 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from urllib.parse import unquote
 
 from ontos.core.body_refs import MatchType, scan_body_references
 from ontos.core.config import OntosConfig
-from ontos.core.graph import build_graph, detect_orphans
+from ontos.core.graph import _LoadedPathIndex, build_graph, detect_orphans
 from ontos.core.suggestions import SuggestionIndex, suggest_candidates
 from ontos.core.types import DocumentData, ValidationErrorType
 from ontos.core.validation import ValidationOrchestrator
 from ontos.io.files import DocumentLoadIssue, DocumentLoadResult, load_documents, scan_documents
 from ontos.io.scan_scope import ScanScope
-from ontos.io.yaml import parse_frontmatter_content
+from ontos.io.yaml import parse_frontmatter_content, split_frontmatter_text
 
 _QUOTED_VALUE_RE = re.compile(r"'([^']+)'")
 _LINK_CHECK_SEVERITY = {
@@ -74,11 +75,11 @@ class ExternalReference:
 
 @dataclass(frozen=True)
 class FileDependencyReference:
-    """(#134) depends_on target that exists on disk but is not a loaded doc.
+    """Reference target that exists on disk but is not a loaded doc.
 
-    `allowlisted` is True when the resolved path matches the project's
-    allowed_external_dependency_paths globs (intentional doc-to-file edge);
-    False means the dep resolved on disk but is not declared intentional.
+    For ``depends_on``, `allowlisted` reflects the project's external-file
+    allowlist.  Ordinary Markdown file links are informational and therefore
+    use ``allowlisted=True`` so they never drive the dependency exit gate.
     """
 
     source_doc_id: str
@@ -151,12 +152,14 @@ class LinkDiagnosticsResult:
 
     @property
     def result_status(self) -> str:
-        """Result quality, distinct from transport status (#131)."""
-        if self.exit_code == 0:
-            return "clean"
-        if self.exit_code == 2:
+        """Result quality derived from evidence, not only the shell code."""
+        if self.exit_code == 1:
+            return "failing"
+        if self.summary.load_warnings or self.summary.parse_failed_candidates:
+            return "incomplete"
+        if self.exit_code == 3:
             return "warnings"
-        return "failing"
+        return "clean"
 
     def to_data_payload(
         self,
@@ -299,7 +302,7 @@ class LinkDiagnosticsResult:
             "count_basis": {
                 "orphans": self.orphan_basis,
                 "broken_references": "frontmatter_plus_body",
-                "file_dependencies": "depends_on_resolved_on_disk",
+                "file_dependencies": "frontmatter_and_body_resolved_on_disk",
             },
             "findings_truncated": bool(truncated_sections),
             "truncated_sections": sorted(truncated_sections),
@@ -317,6 +320,16 @@ class LinkDiagnosticsResult:
 class _ExternalScopeInfo:
     external_ids: Set[str]
     external_depends_on_index: Set[str]
+    documents: Dict[str, DocumentData]
+
+
+@dataclass(frozen=True)
+class _ResolvedMarkdownTarget:
+    """Filesystem-aware classification of a Markdown link target."""
+
+    document_id: Optional[str] = None
+    resolved_path: Optional[str] = None
+    ambiguous: bool = False
 
 
 def run_link_diagnostics(
@@ -366,6 +379,8 @@ def run_link_diagnostics(
     )
     timings_ms["external_scope"] = _elapsed_ms(phase_start)
     external_ids = external_scope.external_ids
+    active_path_index = _LoadedPathIndex.from_documents(docs)
+    external_path_index = _LoadedPathIndex.from_documents(external_scope.documents)
 
     broken_references: List[BrokenReference] = []
     external_references: List[ExternalReference] = []
@@ -410,7 +425,11 @@ def run_link_diagnostics(
                 )
             )
             continue
-        value = _extract_reference_value(error.message)
+        value = error.context.get("dep_value")
+        if not isinstance(value, str):
+            # Backward-compatible fallback for ValidationError producers that
+            # predate structured context.  build_graph always supplies it.
+            value = _extract_reference_value(error.message)
         if value is None:
             continue
         _classify_reference(
@@ -467,16 +486,7 @@ def run_link_diagnostics(
     if include_body:
         _notify(f"Scanning body references in {len(docs)} documents...")
         for doc in docs.values():
-            # Pass 1: Known-ID scan — bypasses _looks_like_doc_id filters,
-            # ensuring references to existing docs with filtered-pattern
-            # names (e.g., "v3.2", "depends_on") are always detected.
-            known_scan = scan_body_references(
-                path=doc.filepath,
-                body=doc.content,
-                known_ids=active_ids,
-                include_skipped=False,
-            )
-            # Pass 2: Generic unknown scan — finds broken references to
+            # Generic unknown scan — finds broken references to
             # IDs that don't exist. (#117) The prose-token heuristic
             # (`_looks_like_doc_id`) produced ~11k false positives per
             # 163-doc corpus; it is now disabled by passing
@@ -485,44 +495,65 @@ def run_link_diagnostics(
             # independent of the bare-token heuristic. Broken bare
             # references inside explicit `[[id]]` wikilink sigils still
             # surface via _iter_wikilink_id_candidates.
-            generic_scan = scan_body_references(
+            body_scan = scan_body_references(
                 path=doc.filepath,
                 body=doc.content,
                 include_skipped=False,
                 include_generic_bare_id_token=False,
             )
-            # Merge both passes, deduplicating by position.
-            seen_positions: set[tuple[int, int]] = set()
-            all_body_matches = []
-            for body_match in known_scan.matches:
-                pos_key = (body_match.abs_start, body_match.abs_end)
-                if pos_key not in seen_positions:
-                    seen_positions.add(pos_key)
-                    all_body_matches.append(body_match)
-            for body_match in generic_scan.matches:
-                pos_key = (body_match.abs_start, body_match.abs_end)
-                if pos_key not in seen_positions:
-                    seen_positions.add(pos_key)
-                    all_body_matches.append(body_match)
+            body_line_offset = _body_line_offset(doc)
 
-            for body_match in all_body_matches:
+            for body_match in body_scan.matches:
                 field = (
                     "body.markdown_link_target"
                     if body_match.match_type == MatchType.MARKDOWN_LINK_TARGET
                     else "body.bare_id_token"
                 )
                 location = ReferenceLocation(
-                    line=body_match.line,
+                    line=body_line_offset + body_match.line,
                     col_start=body_match.col_start,
                     col_end=body_match.col_end,
                     zone=body_match.zone.value,
                     match_type=body_match.match_type.value,
                 )
+
+                value = body_match.normalized_id
+                if (
+                    body_match.match_type == MatchType.MARKDOWN_LINK_TARGET
+                    and value not in active_ids
+                    and value not in external_ids
+                ):
+                    resolution = _resolve_markdown_target(
+                        raw_target=body_match.raw_match,
+                        source_path=doc.filepath,
+                        repo_root=repo_root,
+                        active_paths=active_path_index,
+                        external_paths=external_path_index,
+                    )
+                    if resolution.document_id is not None:
+                        value = resolution.document_id
+                    elif resolution.resolved_path is not None:
+                        key = (doc.id, field, resolution.resolved_path)
+                        if key not in file_dep_seen:
+                            file_dep_seen.add(key)
+                            file_dependencies.append(
+                                FileDependencyReference(
+                                    source_doc_id=doc.id,
+                                    source_path=doc.filepath,
+                                    field=field,
+                                    value=body_match.raw_match,
+                                    resolved_path=resolution.resolved_path,
+                                    allowlisted=True,
+                                    severity="info",
+                                )
+                            )
+                        continue
+
                 _classify_reference(
                     source_doc_id=doc.id,
                     source_path=doc.filepath,
                     field=field,
-                    value=body_match.normalized_id,
+                    value=value,
                     severity="error",
                     location=location,
                     active_ids=active_ids,
@@ -720,6 +751,218 @@ def _attach_suggestions(
         finding.suggestions = list(memo[finding.value])
 
 
+def _body_line_offset(doc: DocumentData) -> int:
+    """Return the number of physical file lines preceding ``doc.content``.
+
+    The canonical loader stores frontmatter-stripped body text and removes
+    leading blank line endings.  Scanner locations are body-relative, so this
+    reconstructs the exact offset from the source file without changing the
+    loader or the public location shape.
+    """
+
+    try:
+        # Decode bytes directly so CRLF remains CRLF. ``Path.read_text`` uses
+        # universal-newline translation, while the canonical document loader
+        # preserves line endings in ``doc.content``; mixing the two makes the
+        # equality checks below miss stripped body blank lines in CRLF files.
+        raw = doc.filepath.read_bytes().decode("utf-8")
+    except (OSError, UnicodeDecodeError):
+        return 0
+    # Match the canonical loader: strip an initial BOM and leading whitespace
+    # before looking for the first fence, while retaining the stripped prefix
+    # so body-relative locations can be restored to physical file lines.
+    without_bom = raw[1:] if raw.startswith("\ufeff") else raw
+    normalized = without_bom.lstrip()
+    leading_prefix = without_bom[: len(without_bom) - len(normalized)]
+    split = split_frontmatter_text(normalized)
+    if split is None:
+        # ``load_document`` applies the same leading-whitespace normalization
+        # even when a document has no frontmatter. Restore those physical
+        # lines before converting scanner-relative locations.
+        return _line_break_count(leading_prefix)
+
+    _, raw_body, body_offset = split
+    prefix = normalized[:body_offset]
+    if raw_body == doc.content:
+        stripped_prefix = ""
+    else:
+        normalized_body = raw_body.lstrip("\r\n")
+        if normalized_body != doc.content:
+            # A custom parser/load_result may transform the body.  The
+            # frontmatter offset remains correct even when its additional
+            # leading-newline behavior cannot be inferred safely.
+            return _line_break_count(leading_prefix) + _line_break_count(prefix)
+        stripped_prefix = raw_body[: len(raw_body) - len(normalized_body)]
+    return (
+        _line_break_count(leading_prefix)
+        + _line_break_count(prefix)
+        + _line_break_count(stripped_prefix)
+    )
+
+
+def _line_break_count(text: str) -> int:
+    return len(re.findall(r"\r\n|\r|\n", text))
+
+
+def _resolve_markdown_target(
+    *,
+    raw_target: str,
+    source_path: Path,
+    repo_root: Path,
+    active_paths: _LoadedPathIndex,
+    external_paths: _LoadedPathIndex,
+) -> _ResolvedMarkdownTarget:
+    """Resolve a relative Markdown target without filesystem-dependent case.
+
+    Targets are checked source-relative first (Markdown semantics), then
+    workspace-relative for the repository-style links Ontos documentation
+    supports.  Loaded documents resolve to their frontmatter ID even when the
+    filename differs.  Existing non-document files are returned for the
+    informational file-reference bucket.  Case-only collisions fail closed.
+    """
+
+    try:
+        root_resolved = repo_root.resolve(strict=True)
+    except (OSError, RuntimeError, ValueError):
+        return _ResolvedMarkdownTarget()
+
+    for target_text in _markdown_path_variants(raw_target):
+        relative_target = Path(target_text)
+        if relative_target.is_absolute():
+            continue
+
+        source_parent = (
+            source_path.parent
+            if source_path.is_absolute()
+            else root_resolved / source_path.parent
+        )
+        candidates = [source_parent / relative_target, root_resolved / relative_target]
+        seen_candidates: Set[str] = set()
+        for candidate in candidates:
+            try:
+                lexical_resolved = candidate.resolve(strict=False)
+                lexical_resolved.relative_to(root_resolved)
+            except (OSError, RuntimeError, ValueError):
+                continue
+
+            candidate_key = str(lexical_resolved)
+            if candidate_key in seen_candidates:
+                continue
+            seen_candidates.add(candidate_key)
+
+            active_id, active_ambiguous = active_paths.resolve(candidate, lexical_resolved)
+            if active_id is not None:
+                return _ResolvedMarkdownTarget(document_id=active_id)
+            if active_ambiguous:
+                return _ResolvedMarkdownTarget(ambiguous=True)
+
+            external_id, external_ambiguous = external_paths.resolve(
+                candidate, lexical_resolved
+            )
+            if external_id is not None:
+                return _ResolvedMarkdownTarget(document_id=external_id)
+            if external_ambiguous:
+                return _ResolvedMarkdownTarget(ambiguous=True)
+
+            existing_path, ambiguous = _resolve_existing_workspace_path(
+                lexical_resolved,
+                root_resolved,
+            )
+            if ambiguous:
+                return _ResolvedMarkdownTarget(ambiguous=True)
+            if existing_path is None:
+                continue
+
+            # Recheck inode identities after a case-insensitive filesystem
+            # walk; this also recognizes hard-link aliases of loaded docs.
+            active_id, active_ambiguous = active_paths.resolve(
+                existing_path, existing_path
+            )
+            if active_id is not None:
+                return _ResolvedMarkdownTarget(document_id=active_id)
+            if active_ambiguous:
+                return _ResolvedMarkdownTarget(ambiguous=True)
+            external_id, external_ambiguous = external_paths.resolve(
+                existing_path, existing_path
+            )
+            if external_id is not None:
+                return _ResolvedMarkdownTarget(document_id=external_id)
+            if external_ambiguous:
+                return _ResolvedMarkdownTarget(ambiguous=True)
+
+            try:
+                relative = existing_path.relative_to(root_resolved).as_posix()
+            except ValueError:
+                continue
+            return _ResolvedMarkdownTarget(resolved_path=relative)
+
+    return _ResolvedMarkdownTarget()
+
+
+def _markdown_path_variants(raw_target: str) -> List[str]:
+    """Return decoded path candidates, including ``file.py:123`` anchors."""
+
+    target = raw_target.strip()
+    if target.startswith("<") and target.endswith(">") and len(target) >= 2:
+        target = target[1:-1].strip()
+    target = unquote(target.split("#", 1)[0].strip()).replace("\\", "/")
+    if not target:
+        return []
+
+    variants = [target]
+    line_anchor = re.match(r"^(?P<path>.+):\d+(?::\d+)?$", target)
+    if line_anchor is not None:
+        anchored_path = line_anchor.group("path")
+        if anchored_path and anchored_path not in variants:
+            variants.append(anchored_path)
+    return variants
+
+
+def _resolve_existing_workspace_path(
+    lexical_path: Path,
+    workspace_root: Path,
+) -> Tuple[Optional[Path], bool]:
+    """Resolve an existing path case-insensitively and collision-safely.
+
+    Exact spellings win.  For a missing spelling, each segment is matched by
+    ``casefold``; zero matches means missing and multiple matches means
+    ambiguous.  The final real path must remain within the workspace so
+    symlinks cannot escape containment.
+    """
+
+    try:
+        relative = lexical_path.relative_to(workspace_root)
+    except ValueError:
+        return None, False
+
+    current = workspace_root
+    for segment in relative.parts:
+        exact = current / segment
+        if exact.exists():
+            current = exact
+            continue
+        try:
+            matches = [
+                child
+                for child in current.iterdir()
+                if child.name.casefold() == segment.casefold()
+            ]
+        except (OSError, ValueError):
+            return None, False
+        if not matches:
+            return None, False
+        if len(matches) > 1:
+            return None, True
+        current = matches[0]
+
+    try:
+        resolved = current.resolve(strict=True)
+        resolved.relative_to(workspace_root)
+    except (OSError, RuntimeError, ValueError):
+        return None, False
+    return resolved, False
+
+
 def _elapsed_ms(start: float) -> int:
     return int((time.perf_counter() - start) * 1000)
 
@@ -743,7 +986,7 @@ def _resolve_exit_code(
     if duplicate_count > 0 or broken_count > 0 or unallowlisted_file_dependency_count > 0:
         return 1
     if orphan_count > 0:
-        return 2
+        return 3
     return 0
 
 
@@ -755,11 +998,19 @@ def _load_external_scope_info(
     include_external_scope_resolution: bool,
 ) -> _ExternalScopeInfo:
     if scope != ScanScope.DOCS or not include_external_scope_resolution:
-        return _ExternalScopeInfo(external_ids=set(), external_depends_on_index=set())
+        return _ExternalScopeInfo(
+            external_ids=set(),
+            external_depends_on_index=set(),
+            documents={},
+        )
 
     external_root = repo_root / ".ontos-internal"
     if not external_root.exists():
-        return _ExternalScopeInfo(external_ids=set(), external_depends_on_index=set())
+        return _ExternalScopeInfo(
+            external_ids=set(),
+            external_depends_on_index=set(),
+            documents={},
+        )
 
     external_paths = scan_documents(
         [external_root],
@@ -775,6 +1026,7 @@ def _load_external_scope_info(
     return _ExternalScopeInfo(
         external_ids=external_ids,
         external_depends_on_index=external_depends_on,
+        documents=external_load.documents,
     )
 
 
@@ -828,4 +1080,3 @@ def _decode_file_lenient(path: Path) -> Optional[str]:
     if raw_bytes.startswith(b"\xef\xbb\xbf"):
         raw_bytes = raw_bytes[3:]
     return raw_bytes.decode("utf-8", errors="replace")
-

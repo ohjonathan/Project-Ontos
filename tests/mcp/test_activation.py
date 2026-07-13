@@ -7,7 +7,7 @@ import asyncio
 from ontos.core.types import ValidationError, ValidationErrorType
 from ontos.mcp.tools import _snapshot_issue, _validation_issues
 
-from tests.mcp import build_server, create_workspace
+from tests.mcp_helpers import build_server, create_workspace
 
 
 def _call(server, name: str, args: dict):
@@ -265,7 +265,7 @@ def test_mcp_groups_match_cli_grouping_for_same_records(tmp_path):
     utility produces for the same normalized record list (#132 parity)."""
     from ontos.core.warning_groups import group_warning_records, groups_to_payload
     from ontos.mcp.tools import _normalize_warnings
-    from tests.mcp import build_cache
+    from tests.mcp_helpers import build_cache
 
     cache = build_cache(create_workspace(tmp_path))
     from ontos.mcp import tools

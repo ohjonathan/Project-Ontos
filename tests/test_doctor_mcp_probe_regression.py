@@ -86,6 +86,10 @@ def test_doctor_does_not_execute_project_cursor_command_from_repo_config(tmp_pat
     cursor_check = next(check for check in envelope["data"]["checks"] if check["name"] == "cursor_mcp")
     assert cursor_check["status"] == "warning"
     assert "probe skipped" in cursor_check.get("details", "").lower()
+    assert envelope["message"] == "Health check complete with warnings"
+    assert envelope["result"]["status"] == "warnings"
+    assert envelope["result"]["exit_category"] == "clean"
+    assert envelope["result"]["diagnostics"]["counts"]["warnings"] > 0
 
 
 def test_managed_project_cursor_launcher_still_runs_initialize_probe(tmp_path: Path, monkeypatch) -> None:

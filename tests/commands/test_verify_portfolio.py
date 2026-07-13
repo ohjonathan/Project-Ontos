@@ -101,9 +101,10 @@ def test_verify_portfolio_cli_reports_mismatches_in_json_mode(tmp_path):
     payload = json.loads(result.stdout)
 
     assert result.returncode == 1
-    assert payload["clean"] is False
-    assert payload["summary"] == "1 discrepancies found."
-    assert payload["field_mismatches"] == [
+    data = payload["data"]
+    assert data["clean"] is False
+    assert data["summary"] == "1 discrepancies found."
+    assert data["field_mismatches"] == [
         {
             "slug": "alpha",
             "field": "status",
@@ -123,7 +124,28 @@ def test_verify_portfolio_cli_errors_when_db_missing(tmp_path):
     result = _run_verify_portfolio(home)
 
     assert result.returncode == 2
-    assert "Run `ontos serve --portfolio` first." in result.stdout
+    assert result.stdout == ""
+    assert "Run `ontos serve --portfolio` first." in result.stderr
+
+
+def test_verify_portfolio_json_reports_corrupt_db_as_internal(tmp_path):
+    home = tmp_path / "home"
+    registry_path = tmp_path / "registry" / "projects.json"
+    registry_path.parent.mkdir(parents=True)
+    registry_path.write_text(json.dumps({"projects": []}), encoding="utf-8")
+    _write_portfolio_config(home, registry_path)
+    db_path = home / ".config" / "ontos" / "portfolio.db"
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    db_path.write_text("not a sqlite database", encoding="utf-8")
+
+    result = _run_verify_portfolio(home, "--json")
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == payload["exit_code"] == 5
+    assert payload["status"] == "error"
+    assert payload["error"]["code"] == "E_COMMAND_FAILED"
+    assert payload["result"]["exit_category"] == "internal"
+    assert result.stderr == ""
 
 
 def test_verify_portfolio_scopes_to_workspace_id(tmp_path, capsys):
@@ -309,7 +331,8 @@ def test_cmd_verify_portfolio_handles_malformed_config(monkeypatch, capsys):
     captured = capsys.readouterr()
 
     assert result == 2
-    assert "Invalid portfolio config: Invalid TOML structure" in captured.out
+    assert captured.out == ""
+    assert "Invalid portfolio config: Invalid TOML structure" in captured.err
     assert "Traceback" not in captured.out
     assert "Traceback" not in captured.err
 

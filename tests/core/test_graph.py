@@ -211,6 +211,106 @@ class TestDependsOnPathFallback:
         assert errors == []
         assert "kernel" in graph.edges["strategy"]
 
+    def test_case_only_path_respects_filesystem_case_sensitivity(self, tmp_path):
+        docs = self._docs(
+            tmp_path,
+            [
+                ("kernel", "docs/Kernel.md", []),
+                ("strategy", "docs/strategy.md", ["docs/KERNEL.md"]),
+            ],
+        )
+
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+
+        case_variant = tmp_path / "docs/KERNEL.md"
+        if case_variant.exists():
+            assert errors == []
+            assert graph.edges["strategy"] == ["kernel"]
+        else:
+            assert graph.edges["strategy"] == []
+            assert len(errors) == 1
+            assert errors[0].error_type.value == "broken_link"
+            assert errors[0].context["dep_value"] == "docs/KERNEL.md"
+
+    def test_nonexistent_case_variant_is_not_matched_by_synthetic_casefold(
+        self, tmp_path
+    ):
+        """A stale loaded path cannot make a missing case variant look valid."""
+
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+        source_path = docs_dir / "source.md"
+        source_path.write_text("source", encoding="utf-8")
+        docs = {
+            "target": _make_doc("target"),
+            "source": _make_doc("source", depends_on=["docs/TARGET.md"]),
+        }
+        docs["target"].filepath = docs_dir / "Target.md"
+        docs["source"].filepath = source_path
+
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+
+        assert graph.edges["source"] == []
+        assert len(errors) == 1
+        assert errors[0].error_type.value == "broken_link"
+        assert errors[0].context["dep_value"] == "docs/TARGET.md"
+
+    def test_missing_case_variants_fail_closed_instead_of_picking_a_doc(self, tmp_path):
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+        source_path = docs_dir / "source.md"
+        source_path.write_text("source", encoding="utf-8")
+
+        docs = {
+            "upper": _make_doc("upper"),
+            "lower": _make_doc("lower"),
+            "source": _make_doc("source", depends_on=["docs/TARGET.md"]),
+        }
+        # Neither loaded path exists, so no filesystem identity can safely
+        # associate the missing dependency with either document.
+        docs["upper"].filepath = docs_dir / "Target.md"
+        docs["lower"].filepath = docs_dir / "target.md"
+        docs["source"].filepath = source_path
+
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+
+        assert graph.edges["source"] == []
+        assert len(errors) == 1
+        assert errors[0].error_type.value == "broken_link"
+        assert errors[0].context["dep_value"] == "docs/TARGET.md"
+
+    def test_same_physical_path_collision_fails_closed(self, tmp_path):
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+        target = docs_dir / "target.md"
+        target.write_text("target", encoding="utf-8")
+        source = docs_dir / "source.md"
+        source.write_text("source", encoding="utf-8")
+
+        docs = {
+            "first": _make_doc("first"),
+            "second": _make_doc("second"),
+            "source": _make_doc("source", depends_on=["docs/target.md"]),
+        }
+        docs["first"].filepath = target
+        docs["second"].filepath = target
+        docs["source"].filepath = source
+
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+
+        assert graph.edges["source"] == []
+        assert [error.error_type.value for error in errors] == ["broken_link"]
+
+    def test_broken_dependency_preserves_quoted_value_in_context(self, tmp_path):
+        docs = self._docs(
+            tmp_path,
+            [("source", "docs/source.md", ["don't-exist"])],
+        )
+
+        _, errors = build_graph(docs, workspace_root=tmp_path)
+
+        assert errors[0].context == {"dep_value": "don't-exist"}
+
 
 # ---------------------------------------------------------------------------
 # (#117) README / *_template.md loader skip
@@ -293,6 +393,33 @@ class TestDetectCycles:
         graph, _ = build_graph(docs)
         cycles = detect_cycles(graph)
         assert cycles == []
+
+    def test_deep_cycle_is_iterative_and_canonical(self):
+        graph = DependencyGraph()
+        node_count = 1500
+        for index in range(node_count):
+            dependency = [f"node_{(index + 1) % node_count:04d}"]
+            graph.add_node(f"node_{index:04d}", "atom", "", dependency)
+
+        cycles = detect_cycles(graph)
+
+        assert len(cycles) == 1
+        assert cycles[0][0] == "node_0000"
+        assert cycles[0][-1] == "node_0000"
+        assert len(cycles[0]) == node_count + 1
+
+    def test_cycle_output_is_independent_of_insertion_and_edge_order(self):
+        first = DependencyGraph()
+        first.add_node("a", "atom", "", ["c", "b"])
+        first.add_node("b", "atom", "", ["a"])
+        first.add_node("c", "atom", "", ["a"])
+
+        second = DependencyGraph()
+        second.add_node("c", "atom", "", ["a"])
+        second.add_node("b", "atom", "", ["a"])
+        second.add_node("a", "atom", "", ["b", "c"])
+
+        assert detect_cycles(first) == detect_cycles(second)
 
 
 # ---------------------------------------------------------------------------
@@ -513,6 +640,31 @@ class TestCalculateDepths:
         # Cyclic nodes are treated as depth 0 to prevent infinite recursion
         assert depths["a"] >= 0
         assert depths["b"] >= 0
+
+    def test_deep_chain_does_not_depend_on_python_recursion_limit(self):
+        graph = DependencyGraph()
+        node_count = 2000
+        for index in range(node_count):
+            dependencies = [] if index == 0 else [f"node_{index - 1:04d}"]
+            graph.add_node(f"node_{index:04d}", "atom", "", dependencies)
+
+        assert detect_cycles(graph) == []
+        depths = calculate_depths(graph)
+
+        assert depths["node_0000"] == 0
+        assert depths[f"node_{node_count - 1:04d}"] == node_count - 1
+
+    def test_cycle_component_has_stable_shared_depth(self):
+        graph = DependencyGraph()
+        graph.add_node("a", "atom", "", ["b", "leaf"])
+        graph.add_node("b", "atom", "", ["a"])
+        graph.add_node("leaf", "atom", "", [])
+        graph.add_node("parent", "atom", "", ["a"])
+
+        depths = calculate_depths(graph)
+
+        assert depths["a"] == depths["b"] == 1
+        assert depths["parent"] == 2
 
 
 class TestExternalDependencyAllowlist:

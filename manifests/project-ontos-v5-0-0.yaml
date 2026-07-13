@@ -1,0 +1,238 @@
+manifest_version: "2.0.0"
+id: project-ontos-v5-0-0
+slug: project-ontos-v5-0-0
+summary: "Ontos 5.0.0 structural release: schema-4 CLI contract, canonical parsing and writes, hardened MCP rename transactions, iterative graph traversal, and legacy-fork retirement."
+
+lifecycle_mode: framework lifecycle
+deliverable_type: standard
+user_facing: true
+fallback_evidence_mode: strict_p3
+require_lifecycle_dispatch_bundles: true
+strict_p3_required_phases: ["B.1", "D.2", "D.5"]
+
+owners: ["Project Ontos Maintainers"]
+authorship:
+  deliverable_author_families: [codex]
+  structural_orchestrator_families: [codex]
+
+implementation_sequencing:
+  mode: code-first-user-gated
+  user_gate_ref: "Maintainer instruction in this Codex task: PLEASE IMPLEMENT THIS PLAN"
+  implementation_ref: "codex/ontos-v5.0.0 from origin/main@454b102"
+  rationale: "The maintainer explicitly approved the decision-complete v5 plan; lifecycle reviews judge the runnable reconciled diff rather than PR #161's stale product head."
+
+scope:
+  allowed_paths:
+    - ".github/workflows/ci.yml"
+    - ".gitignore"
+    - ".pre-commit-config.yaml"
+    - ".ontos/scripts/"
+    - "ontos/"
+    - "tests/"
+    - "pyproject.toml"
+    - "Ontos_Context_Map.md"
+    - "AGENTS.md"
+    - "scripts/verify_lifecycle_evidence_ref.py"
+    - "manifests/project-ontos-v5-0-0.yaml"
+    - "docs/specs/project-ontos-v5-0-0-spec.md"
+    - "docs/trackers/project-ontos-v5-0-0.md"
+    - "docs/releases/v5.0.0.md"
+    - "docs/logs/2026-05-22_merge-pr-118-v4-5-closes-issues-115-116-117.md"
+    - "docs/logs/2026-06-11_fix-github-issues-131-136-warning-grouping-link-ch.md"
+    - "docs/logs/2026-07-03_merge-pull-request-145-from-ohjonathan-docs-fable.md"
+    - "docs/logs/2026-07-09_merge-pull-request-160-from-ohjonathan-audit-147.md"
+    - "docs/logs/2026-07-09_review-pr-160.md"
+    - "docs/logs/2026-07-12_ontos-v5-0-0-structural-release.md"
+    - "docs/logs/2026-07-12_ontos-v5-0-0-contract-fix-round.md"
+    - "docs/releases/v4.7.0.md"
+    - "docs/reviews/project-ontos-v4-7-1-hotfix/final-approval.md"
+  allowed_path_patterns:
+    - "docs/reviews/project-ontos-v5-0-0/**"
+    - "docs/retros/project-ontos-v5-0-0*.md"
+  composition_targets:
+    - path: "docs/reviews/project-ontos-audit-rebaseline-remediation/"
+      rationale: "PR #161 review corpus is historical prior art only and is not copied into the product diff or counted for the new product head."
+      shares_with_deliverable_id: "project-ontos-audit-rebaseline-remediation"
+  forbidden_paths:
+    - ".llm-dev/framework/"
+    - ".venv/"
+    - ".git/"
+    - ".github/workflows/publish.yml"
+  forbidden_symbols: []
+  cardinality_assertions:
+    - name: "Package version is exactly 5.0.0"
+      command: "PYTHONPATH=. python -c 'import ontos; print(ontos.__version__)'"
+      expect: "literal:5.0.0"
+    - name: "Command envelope schema is exactly 4.0"
+      command: "PYTHONPATH=. python -c 'from ontos.ui.json_output import COMMAND_ENVELOPE_SCHEMA_VERSION; print(COMMAND_ENVELOPE_SCHEMA_VERSION)'"
+      expect: "literal:4.0"
+    - name: "Legacy Ontos fork is absent"
+      command: "test ! -e .ontos/scripts"
+      expect: "exit-0"
+  cleanliness:
+    pathspecs: []
+    exclude_pathspecs: []
+
+artifacts:
+  spec: "docs/specs/project-ontos-v5-0-0-spec.md"
+  family_verdict: "docs/reviews/project-ontos-v5-0-0/<phase>-<family>-<role>.md"
+  canonical_verdict: "docs/reviews/project-ontos-v5-0-0/<phase>-verdict.md"
+  product_verdict: "docs/reviews/project-ontos-v5-0-0/<phase>-<family>-product.md"
+  fix_summary: "docs/reviews/project-ontos-v5-0-0/D.4-fix-summary.md"
+  verification: "docs/reviews/project-ontos-v5-0-0/D.5-<family>-verifier.md"
+  final_approval: "docs/reviews/project-ontos-v5-0-0/final-approval.md"
+  retro: "docs/retros/project-ontos-v5-0-0-retro.md"
+
+model_assignments:
+  - phase: "A"
+    assignments: {codex: spec-author}
+  - phase: "B.1"
+    assignments: {claude: adversarial, gemini: alignment, glm: peer}
+  - phase: "B.1"
+    assignments: {claude: product}
+  - phase: "B.2"
+    assignments: {claude: alignment, gemini: peer, glm: adversarial}
+  - phase: "B.2"
+    assignments: {claude: product}
+  - phase: "B.3"
+    assignments: {codex: meta-consolidator}
+  - phase: "C"
+    assignments: {codex: implementation-author}
+  - phase: "D.1"
+    assignments: {claude: peer}
+  - phase: "D.2"
+    assignments: {claude: peer, gemini: adversarial, glm: alignment}
+  - phase: "D.2"
+    assignments: {claude: product}
+  - phase: "D.3"
+    assignments: {codex: meta-consolidator}
+  - phase: "D.4"
+    assignments: {codex: fix-author}
+  - phase: "D.5"
+    assignments: {claude: verifier, gemini: verifier, glm: verifier}
+  - phase: "D.6"
+    assignments: {codex: final-approval}
+  - phase: "E"
+    assignments: {codex: retro}
+
+cli_capability_matrix:
+  codex: {shell: true, git: true, test_runner: true, doc_index: true}
+  claude: {shell: true, git: true, test_runner: true, doc_index: true}
+  gemini:
+    shell: false
+    git: false
+    test_runner: false
+    doc_index: true
+    evidence_cap: static-inspection
+    writes_files_non_interactively: false
+    execution_clis:
+      agy:
+        expected_version_regex: "^[0-9]+[.][0-9]+[.][0-9]+"
+        writes_files_non_interactively: false
+  glm: {shell: true, git: true, test_runner: true, doc_index: true}
+
+smoke_checks:
+  - phase: "C"
+    checks:
+      - name: "Focused v5 contract and safety suite"
+        command: "PYTHONPATH=. python -m pytest -q tests/test_cli_contract_v4.py tests/core/test_body_refs.py tests/core/test_link_diagnostics.py tests/core/test_graph.py tests/core/test_rename_transaction.py tests/mcp/test_server_integration.py tests/mcp/test_rename_document.py"
+        expect: "exit-0"
+  - phase: "D.2"
+    checks:
+      - name: "Complete product suite"
+        command: "PYTHONPATH=. python -m pytest -q"
+        expect: "exit-0"
+  - phase: "D.5"
+    checks:
+      - name: "Post-review complete suite"
+        command: "PYTHONPATH=. python -m pytest -q"
+        expect: "exit-0"
+
+regression_guards: []
+sibling_deliverable_ids: []
+review_rounds:
+  - phase: "B.1"
+    round: 1
+    preserved_blocker_ids: []
+  - phase: "B.2"
+    round: 1
+    preserved_blocker_ids: []
+  - phase: "D.3"
+    round: 1
+    preserved_blocker_ids: []
+reviewer_family_substitutes: []
+consolidation_mode: external
+self_review_caveats:
+  - family: codex
+    phases: ["D.3"]
+    rationale: "Codex implements and orchestrates the maintainer-approved release; D.3 only consolidates external findings, and D.5 remains assigned to non-author families."
+
+lifecycle_receipt_inventory_path: "docs/reviews/project-ontos-v5-0-0/lifecycle-receipt-inventory.yaml"
+required_dispatch_bundles:
+  - phase: "B.1"
+    intent_path: "docs/reviews/project-ontos-v5-0-0/B.1-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-v5-0-0/B.1-dispatch-result.yaml"
+  - phase: "B.2"
+    intent_path: "docs/reviews/project-ontos-v5-0-0/B.2-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-v5-0-0/B.2-dispatch-result.yaml"
+  - phase: "D.2"
+    intent_path: "docs/reviews/project-ontos-v5-0-0/D.2-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-v5-0-0/D.2-dispatch-result.yaml"
+  - phase: "D.5"
+    intent_path: "docs/reviews/project-ontos-v5-0-0/D.5-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-v5-0-0/D.5-dispatch-result.yaml"
+
+gate_prerequisites:
+  - id: G-test-1
+    category: test
+    description: "The complete product suite passes."
+    verification: {command: "PYTHONPATH=. python -m pytest -q", expect: "exit-0"}
+  - id: G-test-2
+    category: test
+    description: "Golden capture comparison passes at 5.0.0."
+    verification: {command: "PYTHONPATH=. python tests/golden/compare_golden_master.py --fixture all", expect: "exit-0"}
+  - id: G-scope-1
+    category: scope
+    description: "Legacy fork and CI invocation are absent."
+    verification: {command: "test ! -e .ontos/scripts && ! grep -q 'pytest .ontos/scripts/tests' .github/workflows/ci.yml", expect: "exit-0"}
+  - id: G-cardinality-1
+    category: cardinality
+    description: "Version and command schema match the major release."
+    verification: {command: "PYTHONPATH=. python -c 'import ontos; from ontos.ui.json_output import COMMAND_ENVELOPE_SCHEMA_VERSION as s; assert (ontos.__version__,s)==(\"5.0.0\",\"4.0\")'", expect: "exit-0"}
+  - id: G-verdict-1
+    category: verdict-presence
+    description: "Canonical B.3 verdict exists."
+    verification: {command: "test -f docs/reviews/project-ontos-v5-0-0/B.3-verdict.md", expect: "exit-0"}
+  - id: G-verdict-2
+    category: verdict-presence
+    description: "Canonical D.3 verdict exists."
+    verification: {command: "test -f docs/reviews/project-ontos-v5-0-0/D.3-verdict.md", expect: "exit-0"}
+  - id: G-verdict-3
+    category: verdict-presence
+    description: "Three genuine D.5 verifier artifacts exist."
+    verification: {command: "find docs/reviews/project-ontos-v5-0-0 -name 'D.5-*-verifier.md' | wc -l", expect: "eq:3"}
+  - id: G-blocker-1
+    category: blocker-closure
+    description: "No preserved blocker remains in the canonical D.3 verdict."
+    verification: {command: "test -f docs/reviews/project-ontos-v5-0-0/D.3-verdict.md && ! grep -q 'status: preserved' docs/reviews/project-ontos-v5-0-0/D.3-verdict.md", expect: "exit-0"}
+  - id: G-branch-1
+    category: branch
+    description: "Branch is based on and not behind origin/main."
+    verification: {command: "test \"$(git merge-base origin/main HEAD)\" = \"$(git rev-parse origin/main)\"", expect: "exit-0"}
+
+tracker:
+  path: "docs/trackers/project-ontos-v5-0-0.md"
+  columns: [phase, owner, status, artifact, evidence, timestamp]
+
+branch_map:
+  default: "codex/project-ontos-v5-0-0-<PHASE_ID>-<ROLE>-<FAMILY>"
+
+references:
+  - path: "docs/releases/v5.0.0.md"
+    version: "5.0.0"
+    relevance: "Breaking-contract migration guide and release acceptance boundary."
+  - path: "docs/reviews/2026-07-02-fable-repo-audit.md"
+    version: "2026-07"
+    relevance: "Audit revalidation that assigned #150-#157."
+
+watch_item: "The v5 branch must remain main's shipped 4.7.1 implementation plus deliberate schema-4 and structural changes only; reintroducing PR #161's older v4.7.1 variants is a blocker."

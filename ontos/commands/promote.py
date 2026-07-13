@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple
+from ontos.core.config import ConfigError
 from ontos.core.frontmatter_edit import (
     InvalidDocumentEncodingError,
     patch_frontmatter_fields,
@@ -154,14 +155,24 @@ def apply_promotion(
 def _run_promote_command(options: PromoteOptions) -> Tuple[int, str]:
     """Execute promote command."""
     output = OutputHandler(quiet=options.quiet)
-    root = options.repo_root if options.repo_root is not None else find_project_root()
+    if options.json_output and not (options.check or options.all_ready):
+        return 2, "JSON mode requires --check or --all-ready"
+    try:
+        root = options.repo_root if options.repo_root is not None else find_project_root()
+    except FileNotFoundError as exc:
+        return 2, str(exc)
     
     # 1. Gather files
     if options.files:
         files = [root / f if not f.is_absolute() else f for f in options.files]
     else:
         # Scan by configured scope.
-        config = load_project_config(repo_root=root)
+        try:
+            config = load_project_config(repo_root=root)
+        except ConfigError as exc:
+            return 2, f"Config error: {exc}"
+        except Exception as exc:
+            return 5, f"Config error: {exc}"
         effective_scope = resolve_scan_scope(options.scope, config.scanning.default_scope)
         from ontos.core.curation import load_ontosignore
         ignore_patterns = load_ontosignore(root)
@@ -185,7 +196,7 @@ def _run_promote_command(options: PromoteOptions) -> Tuple[int, str]:
                 fatal = True
         
         if fatal:
-            return 1, "Document load failed"
+            return 5, "Document load failed"
 
     promotable = []
     for doc_id, doc in load_result.documents.items():
@@ -217,7 +228,7 @@ def _run_promote_command(options: PromoteOptions) -> Tuple[int, str]:
                 if not info.promotable:
                     for blocker in info.promotion_blockers[:2]:
                         print(f"      → {blocker}")
-        return 0, f"{ready_count} ready for promotion ({len(promotable)} candidates)"
+        return 1, f"{ready_count} ready for promotion ({len(promotable)} candidates)"
 
     ctx = SessionContext.from_repo(root)
     success_count = 0
@@ -227,7 +238,7 @@ def _run_promote_command(options: PromoteOptions) -> Tuple[int, str]:
         ready_docs = [(f, fm, info) for f, fm, info in promotable if info.promotable]
         if not ready_docs:
             output.warning("No documents are ready for automatic promotion.")
-            return 0, "Nothing ready"
+            return 3, "Nothing ready"
             
         output.info(f"Batch promoting {len(ready_docs)} ready document(s)...")
         for f, fm, info in ready_docs:
@@ -242,15 +253,17 @@ def _run_promote_command(options: PromoteOptions) -> Tuple[int, str]:
                 )
             except InvalidDocumentEncodingError as exc:
                 output.error(str(exc))
-                return 1, str(exc)
+                return 5, str(exc)
             if promoted:
                 success_count += 1
+            else:
+                return 5, f"Failed to promote {f}"
         if success_count > 0:
             try:
                 ctx.commit()
             except Exception as exc:
                 output.error(f"Failed to commit promoted documents: {exc}")
-                return 1, f"Commit failed: {exc}"
+                return 5, f"Commit failed: {exc}"
         return 0, f"Promoted {success_count} documents"
 
     # 5. Interactive Mode
@@ -293,9 +306,11 @@ def _run_promote_command(options: PromoteOptions) -> Tuple[int, str]:
         else:
             try:
                 confirm = input("\n  Promote this document? [Y/n]: ").strip().lower()
-            except (EOFError, KeyboardInterrupt):
+            except EOFError:
                 print("\n  Cancelled.")
-                break
+                return 2, "Cancelled"
+            except KeyboardInterrupt:
+                return 130, "Interrupted"
             
         if confirm in ('n', 'no'):
             output.info("  Skipped.")
@@ -312,16 +327,18 @@ def _run_promote_command(options: PromoteOptions) -> Tuple[int, str]:
             )
         except InvalidDocumentEncodingError as exc:
             output.error(str(exc))
-            return 1, str(exc)
+            return 5, str(exc)
         if promoted:
             success_count += 1
+        else:
+            return 5, f"Failed to promote {f}"
 
     if success_count > 0:
         try:
             ctx.commit()
         except Exception as exc:
             output.error(f"Failed to commit promoted documents: {exc}")
-            return 1, f"Commit failed: {exc}"
+            return 5, f"Commit failed: {exc}"
     if success_count > 0:
         output.success(f"Promoted {success_count} document(s) to Level 2")
     return 0, f"Promoted {success_count} documents"

@@ -12,8 +12,10 @@ from typing import Any, Dict, Optional
 import ontos
 from ontos.commands.export_data import _snapshot_to_json
 from ontos.commands.map import CompactMode, GenerateMapOptions, generate_context_map
+from ontos.core.config import required_version_incompatibility
 from ontos.core.content_hash import compute_content_hash
 from ontos.core.errors import OntosUserError
+from ontos.core.ontology import TYPE_DEFINITIONS
 from ontos.core.snapshot import DocumentSnapshot
 from ontos.core.types import DocumentData, ValidationError, ValidationResult
 from ontos.core.warning_groups import (
@@ -28,16 +30,11 @@ from ontos.mcp.scanner import slugify
 
 
 TYPE_RANKS = {
-    "kernel": 0,
-    "strategy": 1,
-    "product": 2,
-    "atom": 3,
-    "log": 4,
-    "reference": 5,
-    "concept": 6,
-    "unknown": 7,
+    name: definition.rank for name, definition in TYPE_DEFINITIONS.items()
 }
-OVERVIEW_TYPES = ("kernel", "strategy", "product", "atom", "log")
+TYPE_RANKS["unknown"] = max(TYPE_RANKS.values(), default=0) + 1
+
+
 @dataclass(frozen=True)
 class CanonicalDocumentRow:
     id: str
@@ -50,8 +47,7 @@ class CanonicalDocumentRow:
 class CanonicalSnapshotView:
     sorted_ids: list[str]
     total_count: int
-    overview_by_type: dict[str, int]
-    full_by_type: dict[str, int]
+    by_type: dict[str, int]
     list_rows: list[CanonicalDocumentRow]
     path_lookup: dict[str, str]
 
@@ -69,8 +65,11 @@ def build_canonical_snapshot_view(
     workspace_root: Path,
 ) -> CanonicalSnapshotView:
     """Build shared count/list/path indexes for the canonical snapshot."""
-    overview_by_type = {key: 0 for key in OVERVIEW_TYPES}
-    full_by_type: dict[str, int] = {}
+    # Seed every canonical ontology type so zero-count types remain visible,
+    # then retain any normalized extension/unknown values encountered in the
+    # snapshot. This keeps the overview exhaustive without hard-coding a
+    # five-type subset.
+    by_type: dict[str, int] = {name: 0 for name in TYPE_DEFINITIONS}
     path_lookup: dict[str, str] = {}
     list_rows: list[CanonicalDocumentRow] = []
 
@@ -82,9 +81,7 @@ def build_canonical_snapshot_view(
     for doc in sorted_docs:
         doc_type = doc.type.value
         doc_status = doc.status.value
-        if doc_type in overview_by_type:
-            overview_by_type[doc_type] += 1
-        full_by_type[doc_type] = full_by_type.get(doc_type, 0) + 1
+        by_type[doc_type] = by_type.get(doc_type, 0) + 1
 
         rel_path = _workspace_relative_path(doc.filepath, workspace_root)
         list_rows.append(
@@ -97,11 +94,14 @@ def build_canonical_snapshot_view(
         )
         path_lookup[rel_path] = doc.id
 
+    total_count = len(list_rows)
+    if sum(by_type.values()) != total_count:
+        raise RuntimeError("Canonical by_type counts do not sum to total_count")
+
     return CanonicalSnapshotView(
         sorted_ids=[row.id for row in list_rows],
-        total_count=len(list_rows),
-        overview_by_type=overview_by_type,
-        full_by_type=full_by_type,
+        total_count=total_count,
+        by_type=by_type,
         list_rows=list_rows,
         path_lookup=path_lookup,
     )
@@ -140,7 +140,7 @@ def workspace_overview(cache: Any, *, workspace_id: Optional[str] = None) -> dic
         ],
         "graph_stats": {
             "total": cache.canonical_view.total_count,
-            "by_type": dict(cache.canonical_view.overview_by_type),
+            "by_type": dict(cache.canonical_view.by_type),
         },
         "warnings": warnings,
     }
@@ -160,6 +160,29 @@ def activate(
     ``list_validation_warnings`` tool instead.
     """
     _enforce_workspace_scope(cache, workspace_id)
+    version_issue = required_version_incompatibility(
+        cache.config.ontos.required_version,
+        ontos.__version__,
+    )
+    if version_issue:
+        setattr(cache, "activation_performed", False)
+        return {
+            "status": "not_usable",
+            "workspace": cache.workspace_root.name,
+            "workspace_path": str(cache.workspace_root),
+            "doc_count": cache.canonical_view.total_count,
+            "loaded_ids": [],
+            "recommendation": (
+                "halt; retry activation with a compatible Ontos installation"
+            ),
+            "reason": version_issue,
+            "warnings_total": 0,
+            "warnings_truncated": False,
+            "warning_groups": [],
+            "warnings": [],
+            "info_total": 0,
+            "info_groups": [],
+        }
     warnings_mode = str(warnings).strip().lower()
     if warnings_mode not in {"summary", "grouped"}:
         raise OntosUserError(

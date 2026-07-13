@@ -5,11 +5,17 @@ import os
 import site
 import subprocess
 import sys
+from argparse import Namespace
 from pathlib import Path
 
 import pytest
 
-from ontos.commands.mcp import MCPInstallOptions, _run_mcp_install_command
+from ontos.commands.mcp import (
+    MCPInstallOptions,
+    MCPUninstallOptions,
+    _run_mcp_install_command,
+    _run_mcp_uninstall_command,
+)
 from ontos.core.antigravity_mcp import (
     build_antigravity_ontos_entry,
     upsert_antigravity_ontos_entry,
@@ -208,7 +214,7 @@ def test_mcp_install_json_envelope_reports_created_config(tmp_path: Path) -> Non
 
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
-    assert payload["command"] == "mcp-install"
+    assert payload["command"] == "mcp install"
     assert payload["data"]["client"] == "antigravity"
     assert payload["data"]["mode"] == "read-only"
 
@@ -723,13 +729,137 @@ def test_mcp_install_unwritable_config_dir(tmp_path: Path, monkeypatch) -> None:
 
     exit_code, message, data = _run_mcp_install_command(MCPInstallOptions(client="antigravity"))
 
-    assert exit_code == 2
+    assert exit_code == 5
     assert message.startswith("Could not write config:")
     assert str(home / ".gemini" / "antigravity" / "mcp_config.json") in message
     assert data["config_path"] == str(home / ".gemini" / "antigravity" / "mcp_config.json")
     assert data["error"] == "Permission denied"
     assert "fallback_snippet" in data
     assert data["fallback_snippet"]
+
+
+def test_mcp_install_write_failure_is_json_internal_error(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    from ontos.cli import _cmd_mcp_install
+
+    workspace = tmp_path / "workspace"
+    home = tmp_path / "home"
+    workspace.mkdir()
+    home.mkdir()
+    _init_workspace(workspace)
+    monkeypatch.chdir(workspace)
+    monkeypatch.setenv("HOME", str(home))
+
+    def _raise_permission_error(path: Path, data: dict) -> None:
+        raise PermissionError("Permission denied")
+
+    monkeypatch.setattr("ontos.commands.mcp.write_antigravity_config", _raise_permission_error)
+
+    exit_code = _cmd_mcp_install(
+        Namespace(
+            client="antigravity",
+            scope=None,
+            workspace=None,
+            write_enabled=False,
+            config_path=None,
+            json=True,
+            quiet=False,
+        )
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert exit_code == 5
+    assert captured.err == ""
+    assert payload["exit_code"] == 5
+    assert payload["status"] == "error"
+    assert payload["error"]["code"] == "E_COMMAND_FAILED"
+    assert payload["result"]["exit_category"] == "internal"
+
+
+@pytest.mark.parametrize(
+    ("handler_name", "runner_name"),
+    [
+        ("_cmd_mcp_install", "_run_mcp_install_command"),
+        ("_cmd_mcp_uninstall", "_run_mcp_uninstall_command"),
+        ("_cmd_mcp_print_config", "_run_mcp_print_config_command"),
+    ],
+)
+def test_mcp_human_failures_use_stderr(
+    handler_name: str,
+    runner_name: str,
+    monkeypatch,
+    capsys,
+) -> None:
+    import ontos.cli as cli_module
+    import ontos.commands.mcp as mcp_module
+
+    monkeypatch.setattr(
+        mcp_module,
+        runner_name,
+        lambda _options: (
+            5,
+            "Could not write MCP config",
+            {"fallback_snippet": "manual fallback"},
+        ),
+    )
+    args = Namespace(
+        client="antigravity",
+        scope=None,
+        workspace=None,
+        write_enabled=False,
+        config_path=None,
+        json=False,
+        quiet=False,
+    )
+
+    exit_code = getattr(cli_module, handler_name)(args)
+
+    captured = capsys.readouterr()
+    assert exit_code == 5
+    assert captured.out == ""
+    assert "Could not write MCP config" in captured.err
+    if handler_name != "_cmd_mcp_print_config":
+        assert "manual fallback" in captured.err
+
+
+def test_mcp_uninstall_unwritable_config_returns_internal(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    workspace = tmp_path / "workspace"
+    home = tmp_path / "home"
+    workspace.mkdir()
+    home.mkdir()
+    _init_workspace(workspace)
+    monkeypatch.chdir(workspace)
+    monkeypatch.setenv("HOME", str(home))
+
+    config_path = home / ".gemini" / "antigravity" / "mcp_config.json"
+    _write_json(
+        config_path,
+        {"mcpServers": {"ontos": _python_launcher_entry(workspace)}},
+    )
+    before = config_path.read_bytes()
+
+    def _raise_permission_error(path: Path, data: dict) -> None:
+        raise PermissionError("Permission denied")
+
+    monkeypatch.setattr("ontos.commands.mcp.write_antigravity_config", _raise_permission_error)
+
+    exit_code, message, data = _run_mcp_uninstall_command(
+        MCPUninstallOptions(client="antigravity")
+    )
+
+    assert exit_code == 5
+    assert message.startswith("Could not write config:")
+    assert data["config_path"] == str(config_path)
+    assert data["error"] == "Permission denied"
+    assert data["fallback_snippet"]
+    assert config_path.read_bytes() == before
 
 
 def test_mcp_install_symlink_outside_scope_rejected(tmp_path: Path) -> None:

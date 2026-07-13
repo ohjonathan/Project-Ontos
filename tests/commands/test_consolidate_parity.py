@@ -55,7 +55,12 @@ Test log {i}
 
     # The command needs a project marker before it resolves the root.
     (tmp_path / ".ontos").mkdir()
-    
+    (tmp_path / ".ontos.toml").write_text(
+        "[ontos]\nversion='3.0'\n[paths]\ndocs_dir='.'\nlogs_dir='logs'\n",
+        encoding="utf-8",
+    )
+
+    # Run native command, keeping only the newest log.
     result = subprocess.run(
         [sys.executable, "-m", "ontos.cli", "consolidate", "--count", "1", "--all"],
         capture_output=True,
@@ -64,12 +69,13 @@ Test log {i}
         cwd=str(tmp_path)
     )
 
-    # Note: my implemention of consolidate.py uses get_logs_dir() etc. which depend on config.
-    # For a pure parity test in an ivory tower, I might need more setup.
-    # But let's see if it works with basic find_project_root.
-    
-    # assert result.returncode == 0
-    # assert "Consolidated 2 log(s)" in result.stdout
+    assert result.returncode == 0, result.stderr
+    assert "Consolidated 2 log(s)" in result.stdout
+    assert len(list(logs_dir.glob("*.md"))) == 1
+    assert len(list((tmp_path / "archive" / "logs").glob("*.md"))) == 2
+    history = history_file.read_text(encoding="utf-8")
+    assert "| 2023-01-01 | test | feature | Test log 1" in history
+    assert "| 2023-01-02 | test | feature | Test log 2" in history
 
 def test_consolidate_fails_on_duplicates(test_setup):
     """VUL-03: consolidate command must fail on duplicate IDs."""

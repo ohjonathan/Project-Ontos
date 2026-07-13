@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
+import sys
 from typing import Dict, List, Optional
 
 from ontos.core.link_diagnostics import LinkDiagnosticsResult, run_link_diagnostics
@@ -89,6 +90,10 @@ def link_check_command(options: LinkCheckOptions) -> int:
                     "limit": options.limit,
                 },
             ),
+            # The summary counters describe every phase that actually ran,
+            # but omitting either body references or orphan discovery is a
+            # deliberately partial diagnostic scan.
+            diagnostics_complete=include_body and options.include_orphans,
         )
     else:
         _emit_human_report(
@@ -106,13 +111,13 @@ def _emit_link_check_error(options: LinkCheckOptions, message: str) -> int:
     if options.json_output:
         emit_command_error(
             command="link-check",
-            exit_code=1,
-            code="E_COMMAND_FAILED",
+            exit_code=2,
+            code="E_USER_INPUT",
             message=message,
         )
     else:
-        print(f"Error: {message}")
-    return 1
+        print(f"Error: {message}", file=sys.stderr)
+    return 2
 
 
 def _emit_human_report(
@@ -316,12 +321,13 @@ def _emit_load_warnings(result: LinkDiagnosticsResult, limit: Optional[int] = No
 
 def _status_text(result: LinkDiagnosticsResult) -> str:
     if result.exit_code == 0:
-        return "clean (exit 0)"
-    if result.exit_code == 1:
-        return "broken references or duplicates found (exit 1)"
-    return "orphan-only findings (exit 2)"
+        label = "clean"
+    elif result.exit_code == 1:
+        label = "broken references or duplicates found"
+    else:
+        label = "orphan-only findings"
+    return f"{label} (exit {result.exit_code})"
 
 
 def _status_line(result: LinkDiagnosticsResult) -> str:
     return f"link-check status: {_status_text(result)}"
-

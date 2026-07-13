@@ -199,7 +199,7 @@ def test_consolidate_rejects_count_zero(tmp_path, monkeypatch):
         consolidate_module.ConsolidateOptions(count=0, by_age=False, dry_run=True, all=True, quiet=True)
     )
 
-    assert exit_code == 1
+    assert exit_code == 2
     assert "count must be >= 1" in message
 
 
@@ -225,7 +225,7 @@ def test_consolidate_append_failure_does_not_move_log(tmp_path, monkeypatch):
         consolidate_module.ConsolidateOptions(by_age=True, days=0, dry_run=False, all=True, quiet=True)
     )
 
-    assert exit_code == 1
+    assert exit_code == 5
     assert "failures" in message
     assert log_path.exists()
     assert not (project_root / "docs" / "archive" / "logs" / log_path.name).exists()
@@ -258,7 +258,7 @@ def test_consolidate_commit_failure_reports_partial_results(tmp_path, monkeypatc
         consolidate_module.ConsolidateOptions(by_age=True, days=0, dry_run=False, all=True, quiet=True)
     )
 
-    assert exit_code == 1
+    assert exit_code == 5
     assert "1 failures" in message
     archived_logs = list((project_root / "docs" / "archive" / "logs").glob("*.md"))
     remaining_logs = list((project_root / "docs" / "logs").glob("*.md"))

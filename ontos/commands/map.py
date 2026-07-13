@@ -12,13 +12,14 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
+import sys
 from typing import Dict, List, Optional, Any, Tuple
 
 from ontos import __version__ as ONTOS_VERSION
 from ontos.core.validation import ValidationOrchestrator
 from ontos.core.tokens import estimate_tokens, format_token_count
 from ontos.core.types import DocumentData, DocumentStatus, ValidationResult
-from ontos.ui.json_output import emit_command_error, emit_command_success
+from ontos.ui.json_output import ExitCode, emit_command_error, emit_command_success
 
 
 class CompactMode(Enum):
@@ -47,6 +48,39 @@ class GenerateMapOptions:
 # Helper to handle string/enum duality for type/status fields
 def _val(item: Any) -> str:
     return item.value if hasattr(item, "value") else str(item)
+
+
+_GENERATED_TIMESTAMP_PREFIXES = (
+    "generated_at: ",
+    "> Last updated: ",
+    "- **Last Updated:** ",
+)
+
+
+def _without_generated_timestamps(content: str) -> str:
+    """Normalize volatile map timestamps for semantic equality checks."""
+    normalized = []
+    for line in content.splitlines(keepends=True):
+        ending = "\n" if line.endswith("\n") else ""
+        value = line[:-1] if ending else line
+        for prefix in _GENERATED_TIMESTAMP_PREFIXES:
+            if value.startswith(prefix):
+                value = f"{prefix}<generated>"
+                break
+        normalized.append(value + ending)
+    return "".join(normalized)
+
+
+def _write_context_map_if_changed(output_path: Path, content: str) -> bool:
+    """Write a generated map only when non-timestamp content changed."""
+    if output_path.exists():
+        existing = output_path.read_text(encoding="utf-8")
+        if _without_generated_timestamps(existing) == _without_generated_timestamps(
+            content
+        ):
+            return False
+    output_path.write_text(content, encoding="utf-8")
+    return True
 
 
 def _log_date_sort_key(doc: Any) -> tuple:
@@ -832,7 +866,7 @@ def map_command(options: MapOptions) -> int:
         options: CLI-level map options
 
     Returns:
-        Exit code (0 for success, 1 for errors, 2 for warnings in strict mode)
+        Exit code (0 clean, 1 findings, 3 warnings in strict mode)
     """
     from ontos.io.files import find_project_root, load_documents, DocumentLoadResult
     from ontos.io.config import load_project_config
@@ -847,13 +881,14 @@ def map_command(options: MapOptions) -> int:
         if options.json_output:
             emit_command_error(
                 command="map",
-                exit_code=1,
-                code="E_COMMAND_FAILED",
+                exit_code=ExitCode.USAGE,
+                code="E_WORKSPACE_NOT_FOUND",
                 message=str(e),
+                result_kind="diagnostic",
             )
         elif not options.quiet:
-            print(f"Error: {e}")
-        return 1
+            print(f"Error: {e}", file=sys.stderr)
+        return int(ExitCode.USAGE)
 
     # Load config
     try:
@@ -862,13 +897,14 @@ def map_command(options: MapOptions) -> int:
         if options.json_output:
             emit_command_error(
                 command="map",
-                exit_code=1,
-                code="E_COMMAND_FAILED",
+                exit_code=ExitCode.USAGE,
+                code="E_CONFIG_ERROR",
                 message=f"Config error: {e}",
+                result_kind="diagnostic",
             )
         elif not options.quiet:
-            print(f"Config error: {e}")
-        return 1
+            print(f"Config error: {e}", file=sys.stderr)
+        return int(ExitCode.USAGE)
 
     # Determine paths
     output_path = options.output or (project_root / config.paths.context_map)
@@ -915,7 +951,33 @@ def map_command(options: MapOptions) -> int:
                     print(f"    ... and {len(issues) - 3} more (use --verbose for full list)")
 
     if load_result.has_fatal_errors or load_result.duplicate_ids:
-        return 1
+        if options.json_output:
+            fatal_codes = {"duplicate_id", "parse_error", "io_error"}
+            fatal_issues = [
+                issue for issue in load_result.issues if issue.code in fatal_codes
+            ]
+            emit_command_success(
+                command="map",
+                exit_code=ExitCode.FINDINGS,
+                message="Context map generation blocked by document load findings",
+                data={
+                    "path": str(output_path),
+                    "documents": len(load_result.documents),
+                    "errors": len(fatal_issues),
+                    "warnings": len(load_result.issues) - len(fatal_issues),
+                    "issues": [
+                        issue.to_dict(root=project_root)
+                        for issue in load_result.issues
+                    ],
+                    "generator_version": ONTOS_VERSION,
+                },
+                result_status="incomplete",
+                result_kind="diagnostic",
+                diagnostic_counts={"load_issues": len(load_result.issues)},
+                diagnostic_basis="document_load",
+                diagnostics_complete=True,
+            )
+        return int(ExitCode.FINDINGS)
 
     # filter
     filters = parse_filter(options.filter_expr)
@@ -957,7 +1019,7 @@ def map_command(options: MapOptions) -> int:
 
     # Write output
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(content, encoding="utf-8")
+    _write_context_map_if_changed(output_path, content)
     
     # Sync AGENTS.md if flag is set and file exists
     if options.sync_agents:
@@ -994,7 +1056,7 @@ def map_command(options: MapOptions) -> int:
     if result.errors:
         exit_code = 1
     elif options.strict and result.warnings:
-        exit_code = 2
+        exit_code = 3
 
     # Output result
     if options.json_output:

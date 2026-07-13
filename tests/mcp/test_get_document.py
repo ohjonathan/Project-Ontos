@@ -3,7 +3,7 @@ import pytest
 from ontos.core.errors import OntosUserError
 from ontos.mcp import tools
 
-from tests.mcp import build_cache, create_workspace, invoke_tool
+from tests.mcp_helpers import build_cache, create_workspace, invoke_tool
 
 
 def test_get_document_by_id_and_path(tmp_path):

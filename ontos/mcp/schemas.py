@@ -95,17 +95,9 @@ class KeyDocumentItem(StrictModel):
     status: str
 
 
-class GraphStatsByType(StrictModel):
-    kernel: int
-    strategy: int
-    product: int
-    atom: int
-    log: int
-
-
 class GraphStats(StrictModel):
     total: int
-    by_type: GraphStatsByType
+    by_type: Dict[str, int]
 
 
 class WorkspaceOverviewResponse(StrictModel):
@@ -127,6 +119,7 @@ class ActivateResponse(StrictModel):
     doc_count: int
     loaded_ids: List[str]
     recommendation: str
+    reason: Optional[str] = None
     warnings_total: int
     warnings_truncated: bool
     warning_groups: List[WarningGroup]
@@ -401,6 +394,8 @@ def validate_success_payload(tool_name: str, payload: Dict[str, Any]) -> Dict[st
     normalized = validated.model_dump(mode="json", by_alias=True)
     if tool_name == "get_document" and "content" not in payload:
         normalized.pop("content", None)
+    if tool_name == "activate" and "reason" not in payload:
+        normalized.pop("reason", None)
     return normalized
 
 

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from dataclasses import dataclass
+from enum import Enum
 import json
 from pathlib import Path
 import subprocess
@@ -25,6 +27,9 @@ from ontos.mcp.schemas import (
     READ_WARNING_TOOL_NAMES,
     WARNINGS_LIST_TOOL_NAMES,
     ToolErrorEnvelope,
+    ToolErrorTextItem,
+    WriteToolError,
+    WriteToolErrorEnvelope,
     output_schema_for,
     validate_success_payload,
 )
@@ -33,6 +38,22 @@ from ontos.mcp import tools as tool_impl
 _PRE_ACTIVATE_WARNING = (
     "Ontos activation not performed this MCP session; call activate first."
 )
+
+
+class ToolMode(str, Enum):
+    READ = "read"
+    WRITE = "write"
+    PORTFOLIO = "portfolio"
+
+
+@dataclass(frozen=True)
+class ToolInvocationSpec:
+    """Declarative policy consumed by the single MCP invocation boundary."""
+
+    name: str
+    mode: ToolMode
+    ensure_fresh: bool = True
+    use_live_cache: bool = False
 
 
 def _attach_pre_activate_warning(tool_name: str, validated: Dict[str, Any]) -> None:
@@ -630,8 +651,8 @@ def _register_write_tools(
         description=(
             f"Renames a document ID in the {workspace_name} workspace and "
             "rewrites every referencing file. Requires a clean git working "
-            "tree; on commit failure the workspace is rolled back via "
-            "`git checkout -- .`."
+            "tree; mutations use a durable recovery journal and restore only "
+            "the touched paths if commit is interrupted or fails."
         ),
         handler=handle_rename_document,
         annotations=write_annotations,
@@ -648,35 +669,14 @@ def _invoke_write_tool(
     read_only: bool,
     **kwargs: Any,
 ) -> CallToolResult:
-    """Shared write-tool invoker.
-
-    Write tool implementations own their own locking (workspace_lock + A3
-    rebuild path), schema validation, and error envelope construction. This
-    wrapper records usage telemetry, guards against unexpected exceptions
-    above the tool body, and surfaces them as structured MCP errors.
-    """
-    try:
-        _log_usage(cache, tool_name)
-    except Exception:
-        traceback.print_exc(file=sys.stderr)
-
-    try:
-        return tool_fn(
-            cache,
-            portfolio_index=portfolio_index,
-            read_only=read_only,
-            **kwargs,
-        )
-    except OntosUserError as exc:
-        return _tool_error_result(str(exc))
-    except OntosInternalError as exc:
-        print(f"[ontos-mcp] {exc.code}: {exc}", file=sys.stderr)
-        if exc.details:
-            print(exc.details, file=sys.stderr)
-        return _tool_error_result(f"Internal error: {exc}")
-    except Exception:
-        traceback.print_exc(file=sys.stderr)
-        return _tool_error_result(f"Internal error in {tool_name}")
+    return _invoke_boundary(
+        ToolInvocationSpec(tool_name, ToolMode.WRITE),
+        cache,
+        tool_fn,
+        portfolio_index=portfolio_index,
+        read_only=read_only,
+        **kwargs,
+    )
 
 
 def _register_portfolio_tools(
@@ -802,40 +802,17 @@ def _invoke_read_tool(
     use_live_cache: bool = False,
     **kwargs: Any,
 ) -> Union[Dict[str, Any], CallToolResult]:
-    try:
-        _log_usage(cache, tool_name)
-    except Exception:
-        traceback.print_exc(file=sys.stderr)
-
-    workspace_id = kwargs.get("workspace_id")
-    if _is_cross_workspace_read(tool_name, cache, workspace_id):
-        return _tool_error_result(
-            "E_CROSS_WORKSPACE_NOT_SUPPORTED: Cross-workspace reads are not "
-            "supported for this tool. Start a separate `ontos serve` in the "
-            "target workspace."
-        )
-
-    try:
-        tool_input: Any = cache.current_view()
-        if ensure_fresh:
-            tool_input = cache.get_fresh_view()
-        if use_live_cache:
-            tool_input = cache
-        payload = tool_fn(tool_input, **kwargs)
-        validated = validate_success_payload(tool_name, payload)
-        if tool_name != "activate" and not getattr(cache, "activation_performed", False):
-            _attach_pre_activate_warning(tool_name, validated)
-        return _tool_success_result(validated)
-    except OntosUserError as exc:
-        return _tool_error_result(str(exc))
-    except OntosInternalError as exc:
-        print(f"[ontos-mcp] {exc.code}: {exc}", file=sys.stderr)
-        if exc.details:
-            print(exc.details, file=sys.stderr)
-        return _tool_error_result(f"Internal error: {exc}")
-    except Exception:
-        traceback.print_exc(file=sys.stderr)
-        return _tool_error_result(f"Internal error in {tool_name}")
+    return _invoke_boundary(
+        ToolInvocationSpec(
+            tool_name,
+            ToolMode.READ,
+            ensure_fresh=ensure_fresh,
+            use_live_cache=use_live_cache,
+        ),
+        cache,
+        tool_fn,
+        **kwargs,
+    )
 
 
 def _invoke_portfolio_tool(
@@ -846,35 +823,97 @@ def _invoke_portfolio_tool(
     cache: SnapshotCache | None = None,
     **kwargs: Any,
 ) -> Union[Dict[str, Any], CallToolResult]:
-    if portfolio_index is None:
-        return _tool_error_result(
-            "E_PORTFOLIO_REQUIRED: Tool is available only in portfolio mode."
-        )
+    return _invoke_boundary(
+        ToolInvocationSpec(tool_name, ToolMode.PORTFOLIO),
+        cache,
+        tool_fn,
+        portfolio_index=portfolio_index,
+        **kwargs,
+    )
+
+
+def _invoke_boundary(
+    spec: ToolInvocationSpec,
+    cache: SnapshotCache | None,
+    tool_fn: Callable[..., Any],
+    *,
+    portfolio_index: Optional[PortfolioIndexLike] = None,
+    read_only: bool = False,
+    **kwargs: Any,
+) -> Union[Dict[str, Any], CallToolResult]:
+    """Single telemetry, policy, validation, warning, and error boundary."""
 
     try:
         if cache is not None:
-            _log_usage(cache, tool_name)
+            _log_usage(cache, spec.name)
     except Exception:
         traceback.print_exc(file=sys.stderr)
 
     try:
-        cache_input = kwargs.pop("cache_input", None)
-        if cache_input is None:
-            payload = tool_fn(portfolio_index, **kwargs)
+        if spec.mode is ToolMode.WRITE:
+            assert cache is not None
+            return tool_fn(
+                cache,
+                portfolio_index=portfolio_index,
+                read_only=read_only,
+                **kwargs,
+            )
+
+        if spec.mode is ToolMode.PORTFOLIO:
+            if portfolio_index is None:
+                return _tool_error_result(
+                    "Tool is available only in portfolio mode.",
+                    code="E_PORTFOLIO_REQUIRED",
+                )
+            cache_input = kwargs.pop("cache_input", None)
+            payload = (
+                tool_fn(portfolio_index, **kwargs)
+                if cache_input is None
+                else tool_fn(portfolio_index, cache_input, **kwargs)
+            )
         else:
-            payload = tool_fn(portfolio_index, cache_input, **kwargs)
-        validated = validate_success_payload(tool_name, payload)
+            assert cache is not None
+            workspace_id = kwargs.get("workspace_id")
+            if _is_cross_workspace_read(spec.name, cache, workspace_id):
+                return _tool_error_result(
+                    "Cross-workspace reads are not supported for this tool. "
+                    "Start a separate `ontos serve` in the target workspace.",
+                    code="E_CROSS_WORKSPACE_NOT_SUPPORTED",
+                )
+            tool_input: Any = cache.current_view()
+            if spec.ensure_fresh:
+                tool_input = cache.get_fresh_view()
+            if spec.use_live_cache:
+                tool_input = cache
+            payload = tool_fn(tool_input, **kwargs)
+
+        validated = validate_success_payload(spec.name, payload)
+        if (
+            cache is not None
+            and spec.name != "activate"
+            and not getattr(cache, "activation_performed", False)
+        ):
+            _attach_pre_activate_warning(spec.name, validated)
         return _tool_success_result(validated)
     except OntosUserError as exc:
-        return _tool_error_result(str(exc))
+        return _tool_error_result(
+            str(exc),
+            code=getattr(exc, "code", None) or "E_USER_ERROR",
+        )
     except OntosInternalError as exc:
         print(f"[ontos-mcp] {exc.code}: {exc}", file=sys.stderr)
         if exc.details:
             print(exc.details, file=sys.stderr)
-        return _tool_error_result(f"Internal error: {exc}")
+        return _tool_error_result(
+            f"Internal error: {exc}",
+            code=exc.code or "E_INTERNAL",
+        )
     except Exception:
         traceback.print_exc(file=sys.stderr)
-        return _tool_error_result(f"Internal error in {tool_name}")
+        return _tool_error_result(
+            f"Internal error in {spec.name}",
+            code="E_INTERNAL",
+        )
 
 
 def _invoke_tool(
@@ -897,9 +936,15 @@ def _invoke_tool(
     )
 
 
-def _tool_error_result(message: str) -> CallToolResult:
-    envelope = ToolErrorEnvelope(
+def _tool_error_result(message: str, *, code: str = "E_COMMAND_FAILED") -> CallToolResult:
+    envelope = WriteToolErrorEnvelope(
         isError=True,
+        error=WriteToolError(
+            error_code=code,
+            what=message,
+            why=message,
+            fix="See the error message and retry after correcting the input or workspace state.",
+        ),
         content=[{"type": "text", "text": message}],
     ).model_dump(mode="json", by_alias=True)
     return CallToolResult(
@@ -944,10 +989,10 @@ def _render_instructions(
         f"Ontos is a documentation knowledge graph for {workspace_name} "
         f"({doc_count} documents, last indexed {last_indexed_relative}). "
         "It tracks architecture docs, strategy decisions, and technical "
-        "specifications as a typed dependency graph with 5 document types: "
-        "kernel (foundational principles), strategy (goals and roadmap), "
-        "product (user-facing specs), atom (technical implementation docs), "
-        "and log (session history). All tools are deterministic, local-only, "
+        "specifications as a typed dependency graph. The core hierarchy is "
+        "kernel, strategy, product, atom, and log; reference, concept, and "
+        "lifecycle artifact types are canonical documents too. All tools are "
+        "deterministic, local-only, "
         "and fast (<100ms cached after warmup). "
         "Start with `activate` before any other Ontos tool; it returns the "
         "Loaded IDs, activation status, and grouped warning summaries for "

@@ -2,18 +2,17 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-import re
 from typing import List, Optional, Tuple
 
 from ontos.core.curation import create_stub, generate_id_from_path
-from ontos.core.schema import serialize_frontmatter
+from ontos.core.schema import serialize_frontmatter, validate_document_id
 from ontos.core.context import SessionContext
 from ontos.core.errors import OntosUserError
+from ontos.core.ontology import get_valid_types
 from ontos.io.files import find_project_root
 from ontos.ui.output import OutputHandler
 
-_ID_PATTERN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$")
-_VALID_DOC_TYPES = {"kernel", "strategy", "product", "atom", "log"}
+_VALID_DOC_TYPES = frozenset(get_valid_types())
 
 
 @dataclass
@@ -30,10 +29,6 @@ class StubOptions:
 
 def interactive_stub(output: OutputHandler) -> dict:
     """Interactively create a stub."""
-    # Note: For types, we'd ideally load them from ontology.py
-    # For now, we'll use a standard list matching legacy.
-    VALID_TYPES = ["kernel", "strategy", "product", "atom", "log"]
-    
     print()
     output.info("Create Level 1 Stub Document")
     print("-" * 40)
@@ -43,10 +38,10 @@ def interactive_stub(output: OutputHandler) -> dict:
         output.error("Document ID is required")
         return {}
     
-    valid_types_str = ', '.join(sorted(VALID_TYPES))
+    valid_types_str = ', '.join(sorted(_VALID_DOC_TYPES))
     print(f"\nValid types: {valid_types_str}")
     doc_type = input("Document type: ").strip().lower()
-    if doc_type not in VALID_TYPES:
+    if doc_type not in _VALID_DOC_TYPES:
         output.error(f"Invalid type '{doc_type}'. Must be one of: {valid_types_str}")
         return {}
     
@@ -92,7 +87,6 @@ def write_stub_to_context(
 
 <!-- Add your content here -->
 """
-        filepath.parent.mkdir(parents=True, exist_ok=True)
         ctx.buffer_write(filepath, content)
         return True
     except Exception as e:
@@ -103,16 +97,26 @@ def write_stub_to_context(
 def _run_stub_command(options: StubOptions) -> Tuple[int, str]:
     """Execute stub command."""
     output = OutputHandler(quiet=options.quiet)
-    root = find_project_root()
+    try:
+        root = find_project_root()
+    except FileNotFoundError as exc:
+        return 2, str(exc)
     
     # Determine if interactive mode needed
     # Legacy logic: interactive if either goal or type is missing
     interactive = not (options.goal and options.doc_type)
-    
+
     if interactive:
-        params = interactive_stub(output)
+        if options.json_output:
+            return 2, "JSON mode requires --goal and --type"
+        try:
+            params = interactive_stub(output)
+        except EOFError:
+            return 2, "Cancelled"
+        except KeyboardInterrupt:
+            return 130, "Interrupted"
         if not params:
-            return 1, "Cancelled"
+            return 2, "Cancelled"
     else:
         doc_id = options.id
         if not doc_id and options.output:
@@ -153,28 +157,30 @@ def _run_stub_command(options: StubOptions) -> Tuple[int, str]:
                 ctx.commit()
             except Exception as exc:
                 output.error(f"Failed to commit stub changes: {exc}")
-                return 1, f"Commit failed: {exc}"
+                return 5, f"Commit failed: {exc}"
             output.success(f"Created stub: {dest}")
             return 0, f"Created {dest}"
         else:
-            return 1, "Failed to write stub"
+            return 5, "Failed to write stub"
     else:
-        # Print to stdout
+        # Print to stdout only in human mode. The CLI wrapper owns the single
+        # schema-v4 envelope in JSON mode.
         fm_yaml = serialize_frontmatter(fm)
         title = fm.get('id', 'Untitled').replace('_', ' ').title()
         goal = fm.get('goal', '')
-        
-        print("\n" + "-" * 40)
-        print(f"---")
-        print(fm_yaml)
-        print("---")
-        print(f"\n# {title}")
-        print("\n## Goal")
-        print(f"\n{goal if goal else '<!-- Describe the goal of this document -->'}")
-        print("\n## Content")
-        print("\n<!-- Add your content here -->")
-        print("-" * 40)
-        return 0, "Stub printed to stdout"
+        if not options.json_output:
+            print("\n" + "-" * 40)
+            print("---")
+            print(fm_yaml)
+            print("---")
+            print(f"\n# {title}")
+            print("\n## Goal")
+            print(f"\n{goal if goal else '<!-- Describe the goal of this document -->'}")
+            print("\n## Content")
+            print("\n<!-- Add your content here -->")
+            print("-" * 40)
+            return 0, "Stub printed to stdout"
+        return 0, "Stub generated"
 
 
 def stub_command(options: StubOptions) -> int:
@@ -185,14 +191,10 @@ def stub_command(options: StubOptions) -> int:
 
 def _validate_stub_params(params: dict) -> None:
     """Validate non-interactive and interactive stub payload before create_stub."""
-    doc_id = str(params.get("id", "")).strip()
-    if not doc_id:
-        raise OntosUserError("Document ID is required.", code="E_USER_INPUT")
-    if not _ID_PATTERN.match(doc_id):
-        raise OntosUserError(
-            "Invalid --id. Expected ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$",
-            code="E_USER_INPUT",
-        )
+    try:
+        params["id"] = validate_document_id(params.get("id"))
+    except ValueError as exc:
+        raise OntosUserError(str(exc), code="E_USER_INPUT") from exc
 
     doc_type = str(params.get("type", "")).strip().lower()
     if doc_type not in _VALID_DOC_TYPES:

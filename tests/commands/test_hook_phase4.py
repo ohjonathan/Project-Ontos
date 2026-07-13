@@ -1,5 +1,6 @@
 """Tests for hook dispatcher command (Phase 4)."""
 
+import json
 from unittest.mock import patch, MagicMock
 
 import pytest
@@ -10,6 +11,7 @@ from ontos.commands.hook import (
     run_pre_push_hook,
     run_pre_commit_hook,
 )
+from ontos.cli import main
 
 
 class TestHookOptions:
@@ -107,3 +109,97 @@ class TestRunPreCommitHook:
             result = run_pre_commit_hook([])
 
             assert result == 0
+
+
+class TestHookJsonContract:
+    @staticmethod
+    def _payload(capsys):
+        captured = capsys.readouterr()
+        assert captured.err == ""
+        assert captured.out.count("\n") == 1
+        payload = json.loads(captured.out)
+        assert payload["schema_version"] == "4.0"
+        assert payload["command"] == "hook"
+        assert payload["result"]["kind"] == "diagnostic"
+        return payload
+
+    def test_clean_pre_commit_is_one_envelope(self, monkeypatch, capsys):
+        config = MagicMock()
+        config.hooks.pre_commit = True
+        monkeypatch.setattr("ontos.io.config.load_project_config", lambda: config)
+        monkeypatch.setattr(
+            "sys.argv",
+            ["ontos", "--json", "hook", "pre-commit"],
+        )
+
+        assert main() == 0
+        payload = self._payload(capsys)
+        assert payload["status"] == "success"
+        assert payload["exit_code"] == 0
+        assert payload["result"]["status"] == "clean"
+        assert payload["result"]["exit_category"] == "clean"
+
+    def test_strict_pre_push_failure_is_findings_envelope(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        config = MagicMock()
+        config.hooks.pre_push = True
+        config.hooks.strict = True
+        config.paths.context_map = "Ontos_Context_Map.md"
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setattr("ontos.io.config.load_project_config", lambda: config)
+        monkeypatch.setattr(
+            "sys.argv",
+            ["ontos", "hook", "pre-push", "--json"],
+        )
+
+        assert main() == 1
+        payload = self._payload(capsys)
+        assert payload["status"] == "success"
+        assert payload["exit_code"] == 1
+        assert payload["error"] is None
+        assert payload["result"]["status"] == "findings"
+        assert payload["result"]["exit_category"] == "findings"
+        assert payload["data"]["allowed"] is False
+
+    def test_non_strict_pre_push_failure_is_warnings_envelope(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        config = MagicMock()
+        config.hooks.pre_push = True
+        config.hooks.strict = False
+        config.paths.context_map = "Ontos_Context_Map.md"
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setattr("ontos.io.config.load_project_config", lambda: config)
+        monkeypatch.setattr(
+            "sys.argv",
+            ["ontos", "--json", "hook", "pre-push"],
+        )
+
+        assert main() == 3
+        payload = self._payload(capsys)
+        assert payload["status"] == "success"
+        assert payload["exit_code"] == 3
+        assert payload["result"]["status"] == "warnings"
+        assert payload["result"]["exit_category"] == "warnings"
+        assert payload["data"]["allowed"] is True
+
+    def test_hook_runtime_error_is_internal_error_envelope(
+        self, monkeypatch, capsys
+    ):
+        def fail_config():
+            raise OSError("config unreadable")
+
+        monkeypatch.setattr("ontos.io.config.load_project_config", fail_config)
+        monkeypatch.setattr(
+            "sys.argv",
+            ["ontos", "--json", "hook", "pre-push"],
+        )
+
+        assert main() == 5
+        payload = self._payload(capsys)
+        assert payload["status"] == "error"
+        assert payload["exit_code"] == 5
+        assert payload["error"]["code"] == "E_HOOK_FAILED"
+        assert payload["result"]["status"] == "error"
+        assert payload["result"]["exit_category"] == "internal"

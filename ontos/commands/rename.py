@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import re
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from ontos.core.body_refs import MatchType, ZoneType, scan_body_references
 from ontos.core.context import SessionContext
+from ontos.core.errors import OntosUserError
 from ontos.core.frontmatter_edit import (
     InvalidDocumentEncodingError,
     _DecodedContent,
@@ -19,15 +21,16 @@ from ontos.core.frontmatter_edit import (
     _read_decoded_content,
     _split_frontmatter,
 )
-from ontos.core.schema import serialize_frontmatter
+from ontos.core.schema import serialize_frontmatter, validate_document_id
+from ontos.core.rename_transaction import RenameTransaction, recover_rename_transaction
 from ontos.core.types import DocumentData
 from ontos.io.config import load_project_config
 from ontos.io.files import DocumentLoadIssue, find_project_root, load_documents, scan_documents
 from ontos.io.scan_scope import ScanScope, collect_scoped_documents, resolve_scan_scope
 from ontos.io.yaml import parse_frontmatter_content
-from ontos.ui.json_output import emit_command_error, emit_command_success
+from ontos.mcp.locking import workspace_lock
+from ontos.ui.json_output import ExitCode, emit_command_error, emit_command_success
 
-_ID_PATTERN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$")
 _RESERVED_YAML_WORDS = {"true", "false", "yes", "no", "null", "on", "off"}
 _ANCHOR_ALIAS_RE = re.compile(r"(^|[\s,\[\]-])(?:&[A-Za-z0-9_-]+|\*[A-Za-z0-9_-]+)")
 
@@ -157,10 +160,36 @@ class _FrontmatterPatchResult:
 def rename_command(options: RenameOptions) -> int:
     """Execute rename command."""
 
+    _, _, input_error = validate_rename_ids(options.old_id, options.new_id)
+    if input_error is not None:
+        raise OntosUserError(input_error.message, code="E_USER_INPUT")
+
     mode = "apply" if options.apply else "dry_run"
+    if mode == "apply":
+        try:
+            repo_root = find_project_root()
+            with workspace_lock(repo_root) as lock_guard:
+                recover_rename_transaction(repo_root)
+                return _rename_command_locked(options, lock_guard)
+        except OntosUserError:
+            raise
+        except Exception as exc:
+            return _emit_error(
+                options=options,
+                mode=mode,
+                scope=ScanScope.DOCS,
+                old_id=options.old_id,
+                new_id=options.new_id,
+                error=RenameError(code="commit_failed", message=str(exc)),
+                warnings=[],
+                partial_commit=False,
+            )
+
     prepared, error = _prepare_plan(options, mode=mode)
     if error is not None:
-        _emit_error(
+        if error.code in {"invalid_old_id", "invalid_new_id"}:
+            raise OntosUserError(error.message, code="E_USER_INPUT")
+        return _emit_error(
             options=options,
             mode=mode,
             scope=prepared.scope if prepared is not None else ScanScope.DOCS,
@@ -170,7 +199,6 @@ def rename_command(options: RenameOptions) -> int:
             warnings=[],
             partial_commit=False,
         )
-        return 1
 
     assert prepared is not None
     plan = prepared.plan
@@ -184,7 +212,7 @@ def rename_command(options: RenameOptions) -> int:
 
     blocking = plan.blocking_warnings()
     if blocking:
-        _emit_error(
+        return _emit_error(
             options=options,
             mode=mode,
             scope=plan.scope,
@@ -197,7 +225,6 @@ def rename_command(options: RenameOptions) -> int:
             warnings=blocking,
             partial_commit=False,
         )
-        return 1
 
     files_to_apply = [item for item in plan.files if item.has_changes]
     ctx = SessionContext.from_repo(prepared.scope_data.repo_root)
@@ -207,7 +234,7 @@ def rename_command(options: RenameOptions) -> int:
     try:
         modified_paths = ctx.commit()
     except Exception as exc:
-        _emit_error(
+        return _emit_error(
             options=options,
             mode=mode,
             scope=plan.scope,
@@ -223,12 +250,11 @@ def rename_command(options: RenameOptions) -> int:
             warnings=plan.warnings,
             partial_commit=True,
         )
-        return 1
 
     planned_paths = {item.path.resolve() for item in files_to_apply}
     committed_paths = {path.resolve() for path in modified_paths}
     if planned_paths != committed_paths:
-        _emit_error(
+        return _emit_error(
             options=options,
             mode=mode,
             scope=plan.scope,
@@ -246,8 +272,88 @@ def rename_command(options: RenameOptions) -> int:
             applied_paths=sorted(str(path) for path in committed_paths),
             summary=plan.summary,
         )
-        return 1
 
+    _emit_apply_success(options, plan, modified_paths)
+    return 0
+
+
+def _rename_command_locked(options: RenameOptions, lock_guard) -> int:
+    """Plan and commit an apply-mode rename under one workspace lock."""
+
+    prepared, error = _prepare_plan(options, mode="apply")
+    if error is not None:
+        if error.code in {"invalid_old_id", "invalid_new_id"}:
+            raise OntosUserError(error.message, code="E_USER_INPUT")
+        return _emit_error(
+            options=options,
+            mode="apply",
+            scope=prepared.scope if prepared is not None else ScanScope.DOCS,
+            old_id=options.old_id,
+            new_id=options.new_id,
+            error=error,
+            warnings=[],
+            partial_commit=False,
+        )
+
+    assert prepared is not None
+    plan = prepared.plan
+    if plan.no_op:
+        _emit_noop(options, plan)
+        return 0
+    blocking = plan.blocking_warnings()
+    if blocking:
+        return _emit_error(
+            options=options,
+            mode="apply",
+            scope=plan.scope,
+            old_id=plan.old_id,
+            new_id=plan.new_id,
+            error=RenameError(
+                code="unsupported_target_format",
+                message="Rename plan contains unsupported frontmatter formats. Apply is blocked.",
+            ),
+            warnings=blocking,
+            partial_commit=False,
+        )
+
+    files_to_apply = [item for item in plan.files if item.has_changes]
+    transaction = RenameTransaction.prepare(
+        prepared.scope_data.repo_root,
+        [item.path for item in files_to_apply],
+    )
+    ctx = SessionContext(
+        repo_root=prepared.scope_data.repo_root,
+        config={},
+        owns_lock=False,
+        expected_workspace_binding=lock_guard.workspace_binding,
+        external_lock_guard=lock_guard,
+        staging_token=transaction.staging_token,
+    )
+    for file_plan in files_to_apply:
+        ctx.buffer_write(file_plan.path, file_plan.new_content)
+
+    try:
+        modified_paths = ctx.commit()
+        planned_paths = {item.path.resolve() for item in files_to_apply}
+        committed_paths = {path.resolve() for path in modified_paths}
+        if planned_paths != committed_paths:
+            raise RuntimeError("Commit result does not match the planned file set")
+    except Exception as exc:
+        restored = transaction.rollback()
+        return _emit_error(
+            options=options,
+            mode="apply",
+            scope=plan.scope,
+            old_id=plan.old_id,
+            new_id=plan.new_id,
+            error=RenameError(code="commit_failed", message=f"Rename rolled back: {exc}"),
+            warnings=plan.warnings,
+            partial_commit=False,
+            applied_paths=[str(path) for path in restored],
+            summary=plan.summary,
+        )
+
+    transaction.complete()
     _emit_apply_success(options, plan, modified_paths)
     return 0
 
@@ -274,21 +380,20 @@ def build_rename_plan(
     """Shared rename-plan orchestrator used by both the CLI and the MCP tool.
 
     The caller supplies the already-loaded ``docs`` dictionary (and optional
-    ``load_issues`` sequence). This function performs the 11 validation +
+    ``load_issues`` sequence). This function performs the 10 validation +
     collision + file-plan steps that used to live inside ``_prepare_plan``:
 
-    1. Strip ``old_id`` / ``new_id``.
+    1. Canonically validate and normalize ``old_id`` / ``new_id``.
     2. Same-ID no-op → return empty ``RenamePlan``.
-    3. ``_ID_PATTERN`` regex validation of ``new_id``.
-    4. ``_RESERVED_YAML_WORDS`` guard.
-    5. Optional git clean-state check (CLI enforces here; MCP enforces
+    3. ``_RESERVED_YAML_WORDS`` guard.
+    4. Optional git clean-state check (CLI enforces here; MCP enforces
        before acquiring ``workspace_lock()`` and passes ``check_git=False``).
-    6. ``old_id`` must exist exactly once as an explicit frontmatter id.
-    7. ``new_id`` must not already exist in scope.
-    8. Cross-scope collision check when ``scope == ScanScope.DOCS``.
-    9. ``load_issues`` parse-failed-sighting check (skipped when ``None``).
-    10. Per-document ``_build_file_plan`` loop (sorted by filepath).
-    11. Summary + ``RenamePlan`` assembly.
+    5. ``old_id`` must exist exactly once as an explicit frontmatter id.
+    6. ``new_id`` must not already exist in scope.
+    7. Cross-scope collision check when ``scope == ScanScope.DOCS``.
+    8. ``load_issues`` parse-failed-sighting check (skipped when ``None``).
+    9. Per-document ``_build_file_plan`` loop (sorted by filepath).
+    10. Summary + ``RenamePlan`` assembly.
 
     ``check_git=False`` exists because MCP validates git-clean ex-ante —
     ``workspace_lock()`` materialises ``.ontos.lock`` as an untracked file,
@@ -300,8 +405,10 @@ def build_rename_plan(
     issues. This is a documented limitation, not a regression.
     """
 
-    old_id = old_id.strip()
-    new_id = new_id.strip()
+    old_id, new_id, validation_error = validate_rename_ids(old_id, new_id)
+    if validation_error is not None:
+        return None, validation_error
+    assert old_id is not None and new_id is not None
 
     if old_id == new_id:
         empty_plan = RenamePlan(
@@ -324,11 +431,6 @@ def build_rename_plan(
         )
         return empty_plan, None
 
-    if not _ID_PATTERN.match(new_id):
-        return None, RenameError(
-            code="invalid_new_id",
-            message="new_id must match ^[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$",
-        )
     if new_id.lower() in _RESERVED_YAML_WORDS:
         return None, RenameError(
             code="reserved_new_id",
@@ -442,6 +544,24 @@ def build_rename_plan(
     return plan, None
 
 
+def validate_rename_ids(
+    old_id: object,
+    new_id: object,
+) -> Tuple[Optional[str], Optional[str], Optional[RenameError]]:
+    """Validate both rename operands with the canonical document-ID contract."""
+    try:
+        normalized_old_id = validate_document_id(old_id)
+    except ValueError as exc:
+        return None, None, RenameError(code="invalid_old_id", message=str(exc))
+
+    try:
+        normalized_new_id = validate_document_id(new_id)
+    except ValueError as exc:
+        return None, None, RenameError(code="invalid_new_id", message=str(exc))
+
+    return normalized_old_id, normalized_new_id, None
+
+
 def _prepare_plan(options: RenameOptions, *, mode: str) -> Tuple[Optional[_PreparedPlan], Optional[RenameError]]:
     try:
         repo_root = find_project_root()
@@ -455,11 +575,17 @@ def _prepare_plan(options: RenameOptions, *, mode: str) -> Tuple[Optional[_Prepa
 
     scope = resolve_scan_scope(options.scope, config.scanning.default_scope)
 
+    old_id, new_id, validation_error = validate_rename_ids(
+        options.old_id,
+        options.new_id,
+    )
+    if validation_error is not None:
+        return None, validation_error
+    assert old_id is not None and new_id is not None
+
     # Same-ID no-op short-circuit — avoid scanning the filesystem entirely.
     # The orchestrator also handles this, but the CLI wrapper skips the scan
     # to preserve the prior zero-IO behaviour for no-ops.
-    old_id = options.old_id.strip()
-    new_id = options.new_id.strip()
     if old_id == new_id:
         plan, error = build_rename_plan(
             repo_root=repo_root,
@@ -1092,7 +1218,12 @@ def _unsupported_warning(path: Path, field: Optional[str], reason_code: str, mes
 def _count_pre_body_lines(split: _FrontmatterSplit) -> int:
     if not split.has_frontmatter:
         return 0
-    return len(f"---{split.frontmatter}---".splitlines())
+    # ``_split_frontmatter`` preserves the closing fence's line ending as the
+    # first line of ``split.body`` so reconstruction stays byte-for-byte
+    # stable.  The body scanner therefore counts that suffix as body line 1;
+    # exclude the closing fence here to avoid counting the same physical line
+    # twice when converting scanner-relative locations.
+    return max(0, len(f"---{split.frontmatter}---".splitlines()) - 1)
 
 
 def _replacement_for_match(match, *, old_id: str, new_id: str) -> str:
@@ -1158,6 +1289,7 @@ def _emit_noop(options: RenameOptions, plan: RenamePlan) -> None:
                 "summary": _summary_to_json(plan.summary),
                 "files": [],
             },
+            result_kind="operation",
         )
         return
     print("Rename no-op: old_id and new_id are identical (nothing_to_do).")
@@ -1178,6 +1310,7 @@ def _emit_dry_run(options: RenameOptions, plan: RenamePlan) -> None:
                 "files": [_file_plan_to_json(item) for item in plan.files],
             },
             warnings=[_warning_to_json(item) for item in plan.warnings],
+            result_kind="operation",
         )
         return
 
@@ -1226,12 +1359,13 @@ def _emit_dry_run(options: RenameOptions, plan: RenamePlan) -> None:
                     else:
                         print(f"      reason: {edit.skip_reason}")
             if file_plan.warnings:
-                print("  Warnings")
+                print("  Warnings", file=sys.stderr)
                 for warning in file_plan.warnings:
                     field_part = f" field={warning.field}" if warning.field else ""
                     print(
                         "    - "
-                        f"{warning.reason_code}{field_part}: {warning.reason_message}"
+                        f"{warning.reason_code}{field_part}: {warning.reason_message}",
+                        file=sys.stderr,
                     )
             print()
 
@@ -1255,6 +1389,7 @@ def _emit_apply_success(options: RenameOptions, plan: RenamePlan, modified_paths
                 "partial_commit": {"detected": False, "message": None},
             },
             warnings=[_warning_to_json(item) for item in plan.warnings],
+            result_kind="operation",
         )
         return
 
@@ -1265,7 +1400,14 @@ def _emit_apply_success(options: RenameOptions, plan: RenamePlan, modified_paths
     if not options.quiet:
         for path in sorted(modified_paths):
             print(f"  - {path}")
-    print(POST_APPLY_WARNING)
+    print(POST_APPLY_WARNING, file=sys.stderr)
+
+
+def _rename_error_exit_code(error: RenameError) -> ExitCode:
+    """Map rename failures onto the public v5 process-code taxonomy."""
+    if error.code in {"commit_failed", "partial_commit_mismatch"}:
+        return ExitCode.INTERNAL
+    return ExitCode.USAGE
 
 
 def _emit_error(
@@ -1280,7 +1422,8 @@ def _emit_error(
     partial_commit: bool,
     applied_paths: Optional[Sequence[str]] = None,
     summary: Optional[RenameSummary] = None,
-) -> None:
+) -> int:
+    exit_code = _rename_error_exit_code(error)
     if options.json_output:
         data = {
             "mode": mode,
@@ -1312,20 +1455,24 @@ def _emit_error(
             data["path"] = str(error.path)
         emit_command_error(
             command="rename",
-            exit_code=1,
+            exit_code=exit_code,
             code=error.code,
             message=error.message,
             data=data,
             warnings=[_warning_to_json(item) for item in warnings],
+            execution_succeeded=False,
+            result_kind="operation",
         )
-        return
+        return int(exit_code)
 
-    print(f"Error [{error.code}]: {error.message}")
+    print(f"Error [{error.code}]: {error.message}", file=sys.stderr)
     for warning in warnings:
         field_part = f" field={warning.field}" if warning.field else ""
         print(
-            f"  warning ({warning.reason_code}){field_part}: {warning.reason_message} [{warning.path}]"
+            f"  warning ({warning.reason_code}){field_part}: {warning.reason_message} [{warning.path}]",
+            file=sys.stderr,
         )
+    return int(exit_code)
 
 
 def _summary_to_json(summary: RenameSummary, applied_files: int = 0) -> Dict[str, int]:

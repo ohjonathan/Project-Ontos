@@ -6,7 +6,7 @@ from ontos.core.snapshot import DocumentSnapshot
 from ontos.io.snapshot import create_snapshot
 from ontos.mcp.bundler import BundleDocument, _lost_in_middle_order, build_context_bundle
 
-from tests.mcp import create_empty_workspace, create_workspace, write_file
+from tests.mcp_helpers import create_empty_workspace, create_workspace, write_file
 
 
 def _bundle_doc(doc_id: str, score: float) -> BundleDocument:

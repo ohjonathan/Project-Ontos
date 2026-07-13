@@ -2,7 +2,7 @@ import json
 
 from ontos.mcp import tools
 
-from tests.mcp import build_cache, create_workspace
+from tests.mcp_helpers import build_cache, create_workspace
 
 
 def test_export_graph_summary_and_full_payloads(tmp_path):

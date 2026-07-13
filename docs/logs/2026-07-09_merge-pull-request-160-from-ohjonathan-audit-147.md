@@ -6,7 +6,7 @@ event_type: fix
 source: cli
 branch: main
 created: 2026-07-09
-concepts: [security, code-review, ci, audit-remediation]
+concepts: [security, external-review, devops, hardening]
 ---
 
 # Merge pull request #160 from ohjonathan/audit/147-

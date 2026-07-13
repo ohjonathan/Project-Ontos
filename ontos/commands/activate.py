@@ -2,11 +2,19 @@
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+import ontos
 from ontos.commands.map import GenerateMapOptions, generate_context_map
+from ontos.core.config import (
+    ConfigError,
+    InvalidRequiredVersionError,
+    format_invalid_required_version,
+    required_version_incompatibility,
+)
 from ontos.core.frontmatter_repair import enum_issue_summary
 from ontos.core.types import DocumentData
 from ontos.core.warning_groups import (
@@ -19,7 +27,7 @@ from ontos.io.config import load_project_config
 from ontos.io.files import DocumentLoadIssue, find_project_root, load_documents
 from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
 from ontos.io.yaml import parse_frontmatter_content
-from ontos.ui.json_output import emit_command_error, emit_command_success
+from ontos.ui.json_output import ExitCode, emit_command_error, emit_command_success
 
 
 @dataclass
@@ -44,12 +52,22 @@ def activate_command(options: ActivateOptions) -> int:
         limit=options.limit,
     )
     if options.json_output:
-        if exit_code == 0:
+        if exit_code in {ExitCode.CLEAN, ExitCode.FINDINGS, ExitCode.WARNINGS}:
+            if exit_code == ExitCode.FINDINGS:
+                result_status = "findings"
+            elif (
+                exit_code == ExitCode.WARNINGS
+                or payload.get("status") == "usable_with_warnings"
+            ):
+                result_status = "warnings"
+            else:
+                result_status = "clean"
             emit_command_success(
                 command="activate",
-                exit_code=0,
+                exit_code=exit_code,
                 message="Activation context available",
                 data=payload,
+                result_status=result_status,
             )
         else:
             emit_command_error(
@@ -60,8 +78,13 @@ def activate_command(options: ActivateOptions) -> int:
                 data=payload,
             )
     elif not options.quiet:
+        output = (
+            sys.stderr
+            if exit_code in {ExitCode.USAGE, ExitCode.INTERNAL, ExitCode.INTERRUPTED}
+            else sys.stdout
+        )
         for line in format_activation_output(payload):
-            print(line)
+            print(line, file=output)
     return exit_code
 
 
@@ -78,12 +101,36 @@ def run_activation(
     try:
         project_root = root or find_project_root()
     except FileNotFoundError as exc:
-        return 1, _not_usable(str(exc))
+        return int(ExitCode.USAGE), _not_usable(str(exc))
 
     try:
         config = load_project_config(repo_root=project_root)
+    except InvalidRequiredVersionError as exc:
+        return int(ExitCode.USAGE), _not_usable(
+            format_invalid_required_version(exc.detail),
+            project_root=project_root,
+        )
+    except ConfigError as exc:
+        return int(ExitCode.USAGE), _not_usable(
+            f"Config error: {exc}", project_root=project_root
+        )
+    except OSError as exc:
+        return int(ExitCode.INTERNAL), _not_usable(
+            f"Unable to read project config: {exc}", project_root=project_root
+        )
     except Exception as exc:
-        return 1, _not_usable(f"Config error: {exc}", project_root=project_root)
+        return int(ExitCode.INTERNAL), _not_usable(
+            f"Config error: {exc}", project_root=project_root
+        )
+
+    version_issue = required_version_incompatibility(
+        config.ontos.required_version,
+        ontos.__version__,
+    )
+    if version_issue:
+        return int(ExitCode.USAGE), _not_usable(
+            version_issue, project_root=project_root
+        )
 
     effective_scope = resolve_scan_scope(scope, config.scanning.default_scope)
     output_path = project_root / config.paths.context_map
@@ -97,7 +144,7 @@ def run_activation(
     docs = load_result.documents
 
     if not docs and not output_path.exists():
-        return 1, _not_usable(
+        return int(ExitCode.USAGE), _not_usable(
             "No Ontos documents loaded and no existing context map is available.",
             project_root=project_root,
             files_scanned=len(doc_paths),
@@ -131,8 +178,16 @@ def run_activation(
         validation_warnings = [issue.to_dict() for issue in validation.warnings]
         validation_infos = [issue.to_dict() for issue in validation.infos]
         if write_map:
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            output_path.write_text(content, encoding="utf-8")
+            try:
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                output_path.write_text(content, encoding="utf-8")
+            except OSError as exc:
+                return int(ExitCode.INTERNAL), _not_usable(
+                    f"Unable to refresh context map at {output_path}: {exc}",
+                    project_root=project_root,
+                    files_scanned=len(doc_paths),
+                    issues=load_result.issues,
+                )
             map_refreshed = True
 
     # Status / summary counts always derive from the FULL untruncated lists,
@@ -203,16 +258,33 @@ def run_activation(
             else "continue"
         ),
     }
-    return 0, payload
+    if validation_errors:
+        exit_code = ExitCode.FINDINGS
+    elif warning_count:
+        exit_code = ExitCode.CLEAN
+    else:
+        exit_code = ExitCode.CLEAN
+    return int(exit_code), payload
 
 
 def format_activation_output(payload: Dict[str, Any]) -> List[str]:
     lines = [
         f"Activation status: {payload['status']}",
-        f"Map: {'refreshed' if payload['map']['refreshed'] else 'existing'}",
-        f"Docs scanned: {payload.get('files_scanned', 0)}",
-        f"Documents loaded: {payload.get('documents', 0)}",
     ]
+    reason = payload.get("reason")
+    if (
+        payload.get("status") == "not_usable"
+        and isinstance(reason, str)
+        and reason.strip()
+    ):
+        lines.append(f"Reason: {reason.strip()}")
+    lines.extend(
+        [
+            f"Map: {'refreshed' if payload['map']['refreshed'] else 'existing'}",
+            f"Docs scanned: {payload.get('files_scanned', 0)}",
+            f"Documents loaded: {payload.get('documents', 0)}",
+        ]
+    )
     summary = payload.get("summary", {})
     if summary:
         lines.append(

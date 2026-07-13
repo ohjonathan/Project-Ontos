@@ -269,7 +269,12 @@ def _build_context(line_texts: Sequence[str], line_index: int, context_lines: in
 
 
 def _detect_fence_opener(line_text: str) -> Optional[Tuple[str, int]]:
-    stripped = line_text.lstrip()
+    # CommonMark fenced blocks may be indented by at most three spaces.  A
+    # tab or four-space indent belongs to an indented-code/prose context.
+    indent = len(line_text) - len(line_text.lstrip(" "))
+    if indent > 3:
+        return None
+    stripped = line_text[indent:]
     if len(stripped) < 3:
         return None
     marker = stripped[0]
@@ -278,15 +283,28 @@ def _detect_fence_opener(line_text: str) -> Optional[Tuple[str, int]]:
     run_len = _count_run(stripped, 0, marker)
     if run_len < 3:
         return None
+    # A marker later on the same line makes this an inline code span, not an
+    # opening fence.  Without this guard, ```code``` swallowed the remainder
+    # of the document from link diagnostics.
+    if marker in stripped[run_len:]:
+        return None
     return marker, run_len
 
 
 def _is_fence_closer(line_text: str, marker: str, min_len: int) -> bool:
-    stripped = line_text.lstrip()
+    indent = len(line_text) - len(line_text.lstrip(" "))
+    if indent > 3:
+        return False
+    stripped = line_text[indent:]
     if not stripped.startswith(marker):
         return False
     run_len = _count_run(stripped, 0, marker)
-    return run_len >= min_len
+    if run_len < min_len:
+        return False
+    # Closing fences contain only the marker run and optional whitespace.
+    # An info string such as ```python is another opener/content line, not a
+    # closer for the active fence.
+    return stripped[run_len:].strip() == ""
 
 
 def _split_inline_code_segments(line_text: str) -> List[Tuple[ZoneType, int, int]]:
@@ -410,6 +428,11 @@ def _scan_normal_text_segment(
     # they're now the canonical opt-in source for generic-mode bare-id-token
     # matches when callers disable the prose heuristic.
     occupied.extend(_find_unsupported_spans(segment_text, include_wikilinks=False))
+    wikilink_spans = [match.span() for match in _WIKILINK_RE.finditer(segment_text)]
+    wikilink_target_ranges = {
+        (start, end)
+        for start, end, _ in _iter_wikilink_id_candidates(segment_text)
+    }
 
     for link_target in link_targets:
         if rename_target is not None and link_target.normalized_id != rename_target:
@@ -437,11 +460,9 @@ def _scan_normal_text_segment(
 
     bare_candidates: Iterable[Tuple[int, int, str]]
     if rename_target is not None:
-        bare_candidates = (
-            (start, end, rename_target) for start, end in _iter_exact_id_matches(segment_text, rename_target)
-        )
+        bare_candidates = _iter_target_id_candidates(segment_text, rename_target)
     elif known_ids is not None:
-        bare_candidates = _iter_known_id_candidates(
+        bare_candidates = _iter_known_reference_candidates(
             segment_text, ordered_known_ids or _order_known_ids(known_ids)
         )
     elif include_generic_bare_id_token:
@@ -454,6 +475,14 @@ def _scan_normal_text_segment(
 
     for start, end, normalized_id in bare_candidates:
         if _overlaps_any(start, end, occupied):
+            continue
+        if (
+            _overlaps_any(start, end, wikilink_spans)
+            and (start, end) not in wikilink_target_ranges
+        ):
+            # Alias/heading text is display/navigation metadata, not another
+            # document target.  Never diagnose or rewrite identifiers that
+            # merely appear there.
             continue
         matches.append(
             BodyReferenceMatch(
@@ -686,6 +715,39 @@ def _iter_known_id_candidates(text: str, ids: Sequence[str]) -> Iterable[Tuple[i
             yield start, end, doc_id
 
 
+def _iter_target_id_candidates(
+    text: str,
+    target: str,
+) -> Iterable[Tuple[int, int, str]]:
+    """Yield exact prose/Markdown and wikilink-target matches for rename."""
+
+    seen: set[Tuple[int, int]] = set()
+    for start, end in _iter_exact_id_matches(text, target):
+        seen.add((start, end))
+        yield start, end, target
+    for start, end, normalized_id in _iter_wikilink_id_candidates(text):
+        if normalized_id == target and (start, end) not in seen:
+            seen.add((start, end))
+            yield start, end, normalized_id
+
+
+def _iter_known_reference_candidates(
+    text: str,
+    ids: Sequence[str],
+) -> Iterable[Tuple[int, int, str]]:
+    """Yield known IDs, including aliased and heading-qualified wikilinks."""
+
+    known = set(ids)
+    seen: set[Tuple[int, int]] = set()
+    for start, end, normalized_id in _iter_known_id_candidates(text, ids):
+        seen.add((start, end))
+        yield start, end, normalized_id
+    for start, end, normalized_id in _iter_wikilink_id_candidates(text):
+        if normalized_id in known and (start, end) not in seen:
+            seen.add((start, end))
+            yield start, end, normalized_id
+
+
 def _iter_generic_id_candidates(text: str) -> Iterable[Tuple[int, int, str]]:
     for found in _TOKEN_RE.finditer(text):
         start, end = found.span()
@@ -764,10 +826,19 @@ def _iter_wikilink_id_candidates(text: str) -> Iterable[Tuple[int, int, str]]:
     # candidates extracted from explicit `[[id]]` wikilink sigils.
     for match in _WIKILINK_RE.finditer(text):
         raw_inner = match.group(0)[2:-2]
-        inner = raw_inner.strip()
-        if not inner:
+        # Obsidian aliases and headings qualify the target but are not part of
+        # its document identity: [[id|Alias]], [[id#Heading]], or both.
+        separator_positions = [
+            position
+            for marker in ("|", "#")
+            for position in [raw_inner.find(marker)]
+            if position >= 0
+        ]
+        target_part = raw_inner[: min(separator_positions)] if separator_positions else raw_inner
+        target = target_part.strip()
+        if not target:
             continue
-        offset = raw_inner.index(inner) if inner in raw_inner else 0
+        offset = target_part.index(target)
         start = match.start() + 2 + offset
-        end = start + len(inner)
-        yield start, end, inner
+        end = start + len(target)
+        yield start, end, target

@@ -4,7 +4,7 @@ import sys
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from tests.mcp import build_cache, build_server, create_workspace, invoke_tool, run_base_cli, run_mcp_cli
+from tests.mcp_helpers import build_cache, build_server, create_workspace, invoke_tool, run_base_cli, run_mcp_cli
 
 from ontos.mcp import tools
 

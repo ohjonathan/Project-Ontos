@@ -1,7 +1,9 @@
 # Golden Master Testing
 
-Golden Master tests capture the exact behavior of Ontos v2.9.x to ensure
-v3.0 refactoring doesn't introduce regressions.
+Golden Master tests capture normalized current-package behavior so refactors
+cannot silently change the primary map and log artifacts. The baselines were
+recaptured for the v4.7 safe-serializer and hermetic-path contracts on
+2026-07-10.
 
 ## Quick Start
 
@@ -15,7 +17,7 @@ Exit code 0 means all tests pass. Exit code 1 means regression detected.
 
 ### Updating Baselines
 
-When intentional behavior changes occur in v3.0:
+When intentional public behavior changes occur:
 
 ```bash
 # Re-capture baseline for specific fixture
@@ -24,9 +26,7 @@ python tests/golden/capture_golden_master.py --fixture small
 # Re-capture all baselines
 python tests/golden/capture_golden_master.py --fixture all
 
-# Commit the updated baselines
-git add tests/golden/baselines/
-git commit -m "chore: update golden master baselines for v3.0 changes"
+# Review every normalized diff before committing the updated baselines.
 ```
 
 ## Fixture Sizes

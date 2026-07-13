@@ -3,7 +3,8 @@ id: project-ontos-v4-7-1-hotfix-final-approval
 deliverable_id: project-ontos-v4-7-1-hotfix
 role: final-approval
 phase: D.6
-status: withheld
+status: complete
+original_status: withheld
 deliverable_manifest_path: ../../../manifests/project-ontos-v4-7-1-hotfix.yaml
 halt_reason: "Strict-P3 and provider-limited lifecycle verification both remain incomplete because external verifier receipts and framework-admissible fallback receipts are absent."
 ---

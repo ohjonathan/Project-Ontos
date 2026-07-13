@@ -95,6 +95,9 @@ def test_doctor_frontmatter_reports_precise_enum_diagnostics(tmp_path: Path) -> 
     checks = {check["name"]: check for check in payload["data"]["checks"]}
 
     assert result.returncode == 0
+    assert payload["result"]["status"] == "warnings"
+    assert payload["result"]["exit_category"] == "clean"
+    assert payload["result"]["diagnostics"]["counts"]["warnings"] > 0
     assert checks["frontmatter_enums"]["status"] == "warning"
     assert "2 invalid enum value(s)" in checks["frontmatter_enums"]["message"]
     assert "docs/review.md:3 type='proposal'" in checks["frontmatter_enums"]["details"]
@@ -124,7 +127,10 @@ def test_maintain_fix_frontmatter_enums_dry_run_json(tmp_path: Path) -> None:
     result = _run(root, "--json", "maintain", "--fix-frontmatter-enums")
     payload = json.loads(result.stdout)
 
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 1, result.stderr
+    assert payload["status"] == "success"
+    assert payload["result"]["status"] == "findings"
+    assert payload["result"]["exit_category"] == "findings"
     assert payload["data"]["mode"] == "dry-run"
     assert payload["data"]["summary"]["repairable"] == 2
     assert payload["data"]["summary"]["unresolved"] == 0

@@ -6,7 +6,7 @@ event_type: chore
 source: cli
 branch: feat/133-health-consistency
 created: 2026-06-11
-concepts: [validation, link-check, activation, health, mcp]
+concepts: [schema, link-check, activation, doctor, mcp]
 impacts: []
 ---
 

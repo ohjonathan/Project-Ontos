@@ -251,6 +251,11 @@ def test_activate_json_emits_structured_validation_warnings(tmp_path: Path) -> N
     result = _run(root, "--json", "activate", "--warnings", "full")
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
+    assert payload["status"] == "success"
+    assert payload["exit_code"] == 0
+    assert payload["result"]["status"] == "warnings"
+    assert payload["result"]["exit_category"] == "clean"
+    assert payload["result"]["diagnostics"]["counts"]["validation_warnings"] > 0
 
     validation = payload["data"]["validation"]
     assert isinstance(validation["errors"], list)
@@ -271,6 +276,11 @@ def test_activate_json_emits_structured_validation_warnings(tmp_path: Path) -> N
     assert orphan["severity"] == "warning"
     assert orphan["document_id"] == "kernel_doc"
     assert orphan["file_path"].endswith("docs/kernel.md")
+
+    human = _run(root, "activate")
+    assert human.returncode == 0
+    assert "Activation status: usable_with_warnings" in human.stdout
+    assert "Top warning groups:" in human.stdout
 
 
 def _depth_chain_workspace(root: Path) -> Path:
@@ -534,10 +544,9 @@ def test_activate_json_error_severity_lands_under_errors_with_structured_shape(
     exit_code, payload = activate_mod.run_activation(
         scope=None, write_map=False, root=tmp_path, warnings_mode="full"
     )
-    # Exit code is 0 because errors are still load_result + validation_warnings,
-    # not validation_errors specifically; activation considers all-with-warnings
-    # as 'usable_with_warnings' (exit 0). The key assertion is the payload shape.
-    assert exit_code == 0
+    # Error-severity validation findings retain diagnostic exit 1; only
+    # warning-only activation states use the upgrade-compatible exit 0.
+    assert exit_code == 1
 
     errors = payload["validation"]["errors"]
     warnings = payload["validation"]["warnings"]
@@ -573,9 +582,11 @@ def test_activate_json_not_usable_path_emits_empty_lists(tmp_path: Path) -> None
     result = _run(tmp_path, "--json", "activate")
     payload = json.loads(result.stdout)
 
-    # _not_usable returns exit 1 with an error envelope; the inner data block
+    # _not_usable is missing required activation input (usage exit 2); the inner data block
     # still includes the validation shell.
-    assert result.returncode == 1, result.stderr
+    assert result.returncode == 2, result.stderr
+    assert payload["status"] == "error"
+    assert payload["result"]["exit_category"] == "usage"
     validation = payload["data"]["validation"]
     assert validation["errors"] == []
     assert validation["warnings"] == []
@@ -583,6 +594,34 @@ def test_activate_json_not_usable_path_emits_empty_lists(tmp_path: Path) -> None
     assert validation["warnings_total"] == 0
     assert validation["warnings_truncated"] is False
     assert validation["warning_groups"] == []
+
+
+def test_activate_internal_failure_json_and_human_streams(monkeypatch, capsys) -> None:
+    import ontos.commands.activate as activate_mod
+
+    failure_payload = activate_mod._not_usable("map write failed")
+    monkeypatch.setattr(
+        activate_mod,
+        "run_activation",
+        lambda *_args, **_kwargs: (5, failure_payload),
+    )
+
+    exit_code = activate_mod.activate_command(
+        activate_mod.ActivateOptions(json_output=True)
+    )
+    captured = capsys.readouterr()
+    envelope = json.loads(captured.out)
+    assert exit_code == envelope["exit_code"] == 5
+    assert envelope["status"] == "error"
+    assert envelope["result"]["exit_category"] == "internal"
+    assert captured.out.count("\n") == 1
+    assert captured.err == ""
+
+    exit_code = activate_mod.activate_command(activate_mod.ActivateOptions())
+    captured = capsys.readouterr()
+    assert exit_code == 5
+    assert captured.out == ""
+    assert "map write failed" in captured.err
 
 
 # =============================================================================
@@ -612,8 +651,10 @@ def test_activate_json_default_is_grouped(tmp_path: Path) -> None:
     assert sample["severity"] == "warning"
     assert sample["rule_id"] == "orphan"
     assert "message" in sample
-    # Status/exit semantics are unchanged by the budget.
+    # Status remains warning-bearing even though the process exit is clean.
     assert payload["data"]["status"] == "usable_with_warnings"
+    assert payload["result"]["status"] == "warnings"
+    assert payload["result"]["exit_category"] == "clean"
 
 
 def test_activate_json_summary_mode_drops_samples(tmp_path: Path) -> None:
@@ -761,7 +802,7 @@ def test_activate_json_rejects_invalid_limit_with_envelope(tmp_path: Path) -> No
 
     for bad in ("0", "-1"):
         result = _run(root, "--json", "activate", "--limit", bad)
-        assert result.returncode == 1
+        assert result.returncode == 2
         envelope = json.loads(result.stdout)  # stdout must stay valid JSON
         assert envelope["command"] == "activate"
         assert envelope["status"] == "error"
@@ -769,8 +810,8 @@ def test_activate_json_rejects_invalid_limit_with_envelope(tmp_path: Path) -> No
         assert "--limit" in envelope["message"]
 
     human = _run(root, "activate", "--limit", "0")
-    assert human.returncode == 1
-    assert "--limit must be >= 1" in human.stdout
+    assert human.returncode == 2
+    assert "--limit must be >= 1" in human.stderr
 
 
 def test_activate_warning_rule_filters_info_total(tmp_path: Path) -> None:

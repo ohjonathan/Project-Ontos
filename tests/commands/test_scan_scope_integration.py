@@ -234,12 +234,12 @@ def test_promote_scope_library_includes_internal(tmp_path: Path) -> None:
     )
 
     default_result = _run_ontos(tmp_path, "promote", "--check")
-    assert default_result.returncode == 0
+    assert default_result.returncode == 1
     assert "Found 1 candidate" in default_result.stdout
     assert "1 ready for promotion" in default_result.stdout
 
     library_result = _run_ontos(tmp_path, "promote", "--check", "--scope", "library")
-    assert library_result.returncode == 0
+    assert library_result.returncode == 1
     assert "Found 2 candidate" in library_result.stdout
     assert "2 ready for promotion" in library_result.stdout
 

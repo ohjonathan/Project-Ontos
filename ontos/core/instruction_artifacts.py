@@ -318,7 +318,7 @@ def generate_agents_files(
             return 2, f"Error: Output path must be within repository root ({repo_root})"
 
         if agents_path.exists() and not force:
-            return 1, f"AGENTS.md already exists at {agents_path}. Use --force to overwrite."
+            return 2, f"AGENTS.md already exists at {agents_path}. Use --force to overwrite."
 
         try:
             if force and agents_path.exists():
@@ -331,7 +331,7 @@ def generate_agents_files(
             )
             messages.append(f"Created {agents_path}")
         except Exception as exc:
-            return 2, f"Error writing AGENTS.md: {exc}"
+            return 5, f"Error writing AGENTS.md: {exc}"
 
     if generate_cursor:
         cursor_path = repo_root / ".cursorrules"
@@ -339,7 +339,7 @@ def generate_agents_files(
             if generate_agents:
                 messages.append(".cursorrules already exists. Use --force to overwrite.")
             else:
-                return 1, f".cursorrules already exists at {cursor_path}. Use --force to overwrite."
+                return 2, f".cursorrules already exists at {cursor_path}. Use --force to overwrite."
         else:
             try:
                 if force and cursor_path.exists():
@@ -355,7 +355,7 @@ def generate_agents_files(
                 cursor_path.write_text(cursor_content, encoding="utf-8")
                 messages.append(f"Created {cursor_path}")
             except Exception as exc:
-                return 2, f"Error writing .cursorrules: {exc}"
+                return 5, f"Error writing .cursorrules: {exc}"
 
     return 0, "\n".join(messages) if messages else "No files generated"
 
@@ -378,16 +378,16 @@ def generate_claude_file(
         return 2, f"Error: Output path must be within repository root ({repo_root})"
 
     if path.exists() and not force:
-        return 1, f"CLAUDE.md already exists at {path}. Use --force to overwrite."
+        return 2, f"CLAUDE.md already exists at {path}. Use --force to overwrite."
 
     try:
         existing_content = path.read_text(encoding="utf-8") if path.exists() else None
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(generate_claude_content(existing_content), encoding="utf-8")
     except (IOError, OSError) as exc:
-        return 2, f"Error writing file to {path}: {exc}"
+        return 5, f"Error writing file to {path}: {exc}"
     except Exception as exc:
-        return 2, f"An unexpected error occurred: {exc}"
+        return 5, f"An unexpected error occurred: {exc}"
 
     return 0, f"Created {path}"
 
@@ -423,5 +423,10 @@ def generate_all_instruction_exports(
         message=claude_message,
     )
 
-    exit_code = 0 if agents_code == 0 and claude_code == 0 else 1
+    if agents_code == 0 and claude_code == 0:
+        exit_code = 0
+    elif 5 in {agents_code, claude_code}:
+        exit_code = 5
+    else:
+        exit_code = 2
     return exit_code, results

@@ -63,7 +63,7 @@ class TestEnvIntegration:
         
         # Should fail without --force
         result = self.run_cli('env', '--write', cwd=tmp_path)
-        assert result.returncode == 1
+        assert result.returncode == 2
         assert "already exists" in result.stdout or "already exists" in result.stderr
         
         # Should succeed with --force
@@ -76,6 +76,6 @@ class TestEnvIntegration:
         (tmp_path / "package.json").write_text("{ malformed }")
         
         result = self.run_cli('env', cwd=tmp_path)
-        assert result.returncode == 0
+        assert result.returncode == 3
         assert "Parse Warnings:" in result.stdout
         assert "package.json" in result.stdout

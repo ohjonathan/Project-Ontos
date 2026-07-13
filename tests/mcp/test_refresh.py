@@ -1,4 +1,4 @@
-from tests.mcp import build_cache, build_server, create_workspace, list_tools
+from tests.mcp_helpers import build_cache, build_server, create_workspace, list_tools
 
 from ontos.mcp import tools
 

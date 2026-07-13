@@ -360,19 +360,9 @@ def _decode_top_level_key(match: re.Match[str]) -> Optional[str]:
 
 
 def _check_clean_git_state(repo_root: Path) -> Tuple[bool, Optional[str]]:
-    try:
-        result = subprocess.run(
-            ["git", "status", "--porcelain"],
-            cwd=str(repo_root),
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        return False, f"Unable to check git state: {exc}"
+    from ontos.core.git import is_workspace_clean
 
-    if result.returncode != 0:
-        return False, "Git working tree must be clean for --apply."
-    if result.stdout.strip():
-        return False, "Git working tree must be clean for --apply."
+    clean, reason = is_workspace_clean(repo_root)
+    if not clean:
+        return False, reason or "Git working tree must be clean for --apply."
     return True, None

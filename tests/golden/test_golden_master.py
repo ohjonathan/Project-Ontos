@@ -10,14 +10,12 @@ from pathlib import Path
 
 import pytest
 
-
 GOLDEN_DIR = Path(__file__).parent
 
 
 class TestGoldenMaster:
     """Golden master test suite."""
 
-    @pytest.mark.skip(reason="Baselines need recapture for v3.0 CLI changes")
     def test_golden_small_fixture(self):
         """Validate golden master for small fixture."""
         result = subprocess.run(
@@ -29,7 +27,6 @@ class TestGoldenMaster:
         if result.returncode != 0:
             pytest.fail(f"Golden master comparison failed for 'small' fixture:\n{result.stdout}\n{result.stderr}")
 
-    @pytest.mark.skip(reason="Baselines need recapture for v3.0 CLI changes")
     def test_golden_medium_fixture(self):
         """Validate golden master for medium fixture."""
         result = subprocess.run(

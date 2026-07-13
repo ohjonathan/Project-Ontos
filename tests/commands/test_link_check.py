@@ -81,14 +81,16 @@ def test_link_check_broken_refs_exit_1(tmp_path: Path):
     assert "broken" in result.stdout.lower()
 
 
-def test_link_check_orphans_only_exit_2(tmp_path: Path):
+def test_link_check_orphans_only_exit_3(tmp_path: Path):
     _init_repo(tmp_path)
     _write_doc(tmp_path / "docs" / "orphan.md", "orphan_doc", doc_type="strategy")
 
     result = _run_ontos(tmp_path, "link-check")
 
-    assert result.returncode == 2
+    assert result.returncode == 3
     assert "orphan" in result.stdout.lower()
+    assert "(exit 3)" in result.stdout
+    assert "(exit 2)" not in result.stdout
 
 
 def test_link_check_duplicates_exit_1(tmp_path: Path):
@@ -239,6 +241,8 @@ def test_link_check_parse_failed_candidates_cli_json(tmp_path: Path):
     assert result.returncode == 0
     assert payload["summary"]["parse_failed_candidates"] >= 1
     assert payload["summary"]["broken_references"] == 0
+    assert payload["result_status"] == "incomplete"
+    assert envelope["result"]["status"] == "incomplete"
 
 
 def test_link_check_version_like_doc_id_not_broken_with_body_ref(tmp_path: Path):
@@ -311,12 +315,14 @@ def test_link_check_json_emits_standard_envelope(tmp_path: Path):
 
     assert set(envelope) == {
         "schema_version", "command", "status", "exit_code",
-        "message", "data", "warnings", "error",
+        "message", "result", "data", "warnings", "error",
     }
-    assert envelope["schema_version"] == "3.4"
+    assert envelope["schema_version"] == "4.0"
     assert envelope["command"] == "link-check"
     assert envelope["status"] == "success"
     assert envelope["error"] is None
+    assert envelope["result"]["status"] == "findings"
+    assert envelope["result"]["exit_category"] == "findings"
     # Shell exit code mirrors the envelope's exit_code.
     assert result.returncode == envelope["exit_code"] == 1
     assert envelope["data"]["result_status"] == "failing"
@@ -329,8 +335,9 @@ def test_link_check_json_error_path_uses_envelope(tmp_path: Path):
 
     assert envelope["command"] == "link-check"
     assert envelope["status"] == "error"
-    assert envelope["error"]["code"] == "E_COMMAND_FAILED"
-    assert result.returncode == 1
+    assert envelope["error"]["code"] == "E_USER_INPUT"
+    assert envelope["result"]["exit_category"] == "usage"
+    assert result.returncode == 2
 
 
 def test_link_check_result_status_mapping(tmp_path: Path):
@@ -342,6 +349,7 @@ def test_link_check_result_status_mapping(tmp_path: Path):
     envelope = json.loads(result.stdout)
     assert result.returncode == 0
     assert envelope["data"]["result_status"] == "clean"
+    assert envelope["result"]["diagnostics"]["complete"] is True
 
 
 # =============================================================================
@@ -429,10 +437,12 @@ def test_link_check_frontmatter_only_skips_body(tmp_path: Path):
     )
 
     result = _run_ontos(tmp_path, "--json", "link-check", "--frontmatter-only")
-    data = json.loads(result.stdout)["data"]
+    envelope = json.loads(result.stdout)
+    data = envelope["data"]
 
     assert data["summary"]["broken_body"] == 0
     assert data["options"]["body_scan"] is False
+    assert envelope["result"]["diagnostics"]["complete"] is False
 
 
 def test_link_check_no_orphans_drops_exit_2(tmp_path: Path):
@@ -440,13 +450,15 @@ def test_link_check_no_orphans_drops_exit_2(tmp_path: Path):
     _write_doc(tmp_path / "docs" / "orphan.md", "orphan_doc", doc_type="strategy")
 
     default = _run_ontos(tmp_path, "--json", "link-check")
-    assert default.returncode == 2
+    assert default.returncode == 3
 
     no_orphans = _run_ontos(tmp_path, "--json", "link-check", "--no-orphans")
-    data = json.loads(no_orphans.stdout)["data"]
+    envelope = json.loads(no_orphans.stdout)
+    data = envelope["data"]
     assert no_orphans.returncode == 0
     assert data["summary"]["orphans"] == 0
     assert data["options"]["orphans"] is False
+    assert envelope["result"]["diagnostics"]["complete"] is False
 
 
 def test_link_check_json_includes_timings(tmp_path: Path):
@@ -554,15 +566,16 @@ def test_link_check_json_invalid_limit_keeps_envelope(tmp_path: Path):
     _write_doc(tmp_path / "docs" / "a.md", "a")
 
     result = _run_ontos(tmp_path, "--json", "link-check", "--limit", "0")
-    assert result.returncode == 1
+    assert result.returncode == 2
     envelope = json.loads(result.stdout)
     assert envelope["command"] == "link-check"
     assert envelope["status"] == "error"
     assert envelope["error"]["code"] == "E_USER_INPUT"
+    assert envelope["result"]["exit_category"] == "usage"
 
     human = _run_ontos(tmp_path, "link-check", "--limit", "-1")
-    assert human.returncode == 1
-    assert "--limit must be >= 1" in human.stdout
+    assert human.returncode == 2
+    assert "--limit must be >= 1" in human.stderr
 
 
 def test_link_check_human_output_respects_limit(tmp_path: Path):

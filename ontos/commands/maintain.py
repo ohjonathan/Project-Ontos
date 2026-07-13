@@ -15,20 +15,21 @@ from pathlib import Path
 from typing import Callable, Dict, List, Literal, Optional, Sequence, Tuple, cast
 
 import ontos
-from ontos.core.config import OntosConfig
+from ontos.core.config import ConfigError, OntosConfig
 from ontos.core.curation import CurationLevel, detect_curation_level
 from ontos.core.errors import OntosUserError
 from ontos.core.link_diagnostics import run_link_diagnostics
 from ontos.io.config import load_project_config
 from ontos.io.files import find_project_root
 from ontos.io.scan_scope import build_scope_roots, collect_scoped_documents, resolve_scan_scope
-from ontos.ui.json_output import emit_command_error, emit_command_success
+from ontos.ui.json_output import ExitCode, emit_command_error, emit_command_success
 from ontos.ui.output import OutputHandler
 
 STATUS_SUCCESS = "success"
 STATUS_FAILED = "failed"
+STATUS_WARNINGS = "warnings"
 STATUS_SKIPPED = "skipped"
-TaskStatus = Literal["success", "failed", "skipped"]
+TaskStatus = Literal["success", "failed", "warnings", "skipped"]
 
 
 @dataclass
@@ -53,6 +54,7 @@ class TaskResult:
     message: str
     details: List[str] = field(default_factory=list)
     metrics: Dict[str, int] = field(default_factory=dict)
+    exit_code: int = 0
 
 
 @dataclass(frozen=True)
@@ -76,6 +78,7 @@ class TaskExecution:
     details: List[str] = field(default_factory=list)
     metrics: Dict[str, int] = field(default_factory=dict)
     duration_ms: int = 0
+    exit_code: int = 0
 
 
 @dataclass
@@ -152,12 +155,29 @@ def _ok(message: str, details: Optional[List[str]] = None, metrics: Optional[Dic
     )
 
 
-def _fail(message: str, details: Optional[List[str]] = None, metrics: Optional[Dict[str, int]] = None) -> TaskResult:
+def _warn(message: str, details: Optional[List[str]] = None, metrics: Optional[Dict[str, int]] = None) -> TaskResult:
+    return TaskResult(
+        status=STATUS_WARNINGS,
+        message=message,
+        details=details or [],
+        metrics=metrics or {},
+        exit_code=int(ExitCode.WARNINGS),
+    )
+
+
+def _fail(
+    message: str,
+    details: Optional[List[str]] = None,
+    metrics: Optional[Dict[str, int]] = None,
+    *,
+    internal: bool = False,
+) -> TaskResult:
     return TaskResult(
         status=STATUS_FAILED,
         message=message,
         details=details or [],
         metrics=metrics or {},
+        exit_code=int(ExitCode.INTERNAL if internal else ExitCode.FINDINGS),
     )
 
 
@@ -191,13 +211,37 @@ def _parse_bool(value: object, default: bool) -> bool:
 
 def _normalize_task_status(status: object) -> Tuple[TaskStatus, Optional[str]]:
     """Normalize runtime status values to the TaskStatus contract."""
-    if status in {STATUS_SUCCESS, STATUS_FAILED, STATUS_SKIPPED}:
+    if status in {STATUS_SUCCESS, STATUS_FAILED, STATUS_WARNINGS, STATUS_SKIPPED}:
         return cast(TaskStatus, status), None
     return (
         STATUS_FAILED,
         f"invalid task status {status!r}; expected one of "
-        f"{STATUS_SUCCESS!r}, {STATUS_FAILED!r}, {STATUS_SKIPPED!r}",
+        f"{STATUS_SUCCESS!r}, {STATUS_FAILED!r}, {STATUS_WARNINGS!r}, "
+        f"{STATUS_SKIPPED!r}",
     )
+
+
+def _normalize_task_exit_code(
+    status: TaskStatus,
+    declared_exit_code: object,
+    status_error: Optional[str],
+) -> int:
+    """Map task outcomes onto the public v5 process taxonomy."""
+    if status_error is not None:
+        return int(ExitCode.INTERNAL)
+    if status == STATUS_WARNINGS:
+        return int(ExitCode.WARNINGS)
+    if status == STATUS_FAILED:
+        if declared_exit_code in {ExitCode.FINDINGS, ExitCode.INTERNAL}:
+            return int(declared_exit_code)
+        if declared_exit_code == ExitCode.CLEAN:
+            # Legacy registry extensions commonly returned TaskResult("failed", ...)
+            # without a numeric code. Preserve that as a completed finding.
+            return int(ExitCode.FINDINGS)
+        return int(ExitCode.INTERNAL)
+    if declared_exit_code != ExitCode.CLEAN:
+        return int(ExitCode.INTERNAL)
+    return int(ExitCode.CLEAN)
 
 
 def _auto_consolidate_enabled() -> bool:
@@ -334,6 +378,7 @@ def _task_migrate_untagged(ctx: MaintainContext) -> TaskResult:
         f"Failed to migrate untagged files: {message}",
         details=details,
         metrics={"untagged_files": count},
+        internal=True,
     )
 
 
@@ -391,9 +436,13 @@ def _task_health_check(ctx: MaintainContext) -> TaskResult:
         "warnings": result.warnings,
     }
 
-    if exit_code == 0:
+    if exit_code == ExitCode.CLEAN:
         return _ok(message, details=details, metrics=metrics)
-    return _fail(message, details=details, metrics=metrics)
+    if exit_code == ExitCode.WARNINGS:
+        return _warn(message, details=details, metrics=metrics)
+    if exit_code == ExitCode.FINDINGS:
+        return _fail(message, details=details, metrics=metrics)
+    return _fail(message, details=details, metrics=metrics, internal=True)
 
 
 @register_maintain_task(
@@ -501,7 +550,11 @@ def _task_consolidate_logs(ctx: MaintainContext) -> TaskResult:
     )
     if exit_code == 0:
         return _ok(message or "Consolidation complete.", metrics={"retention_count": retention_count})
-    return _fail(message or "Consolidation failed.", metrics={"retention_count": retention_count})
+    return _fail(
+        message or "Consolidation failed.",
+        metrics={"retention_count": retention_count},
+        internal=True,
+    )
 
 
 @dataclass
@@ -696,13 +749,13 @@ def _task_check_links(ctx: MaintainContext) -> TaskResult:
             metrics=metrics,
         )
 
-    if diagnostics.exit_code == 2:
+    if diagnostics.exit_code == ExitCode.WARNINGS:
         details.extend(
             [f"⚠️ orphan {orphan.doc_id} ({orphan.doc_type})" for orphan in diagnostics.orphans[:10]]
         )
         if len(diagnostics.orphans) > 10:
             details.append(f"... and {len(diagnostics.orphans) - 10} more orphans")
-        return _ok(
+        return _warn(
             (
                 f"No broken references or duplicates. Found {diagnostics.summary.orphans} "
                 "scope-relative orphan(s)."
@@ -740,7 +793,7 @@ def _task_sync_agents(ctx: MaintainContext) -> TaskResult:
     )
     if exit_code == 0:
         return _ok(message or "AGENTS.md synchronized.")
-    return _fail(message or "AGENTS.md synchronization failed.")
+    return _fail(message or "AGENTS.md synchronization failed.", internal=True)
 
 
 def _normalize_skip(skip_args: Sequence[str]) -> List[str]:
@@ -754,11 +807,15 @@ def _normalize_skip(skip_args: Sequence[str]) -> List[str]:
 
 
 def _emit_task_line(ctx: MaintainContext, execution: TaskExecution) -> None:
+    if ctx.options.json_output:
+        return
     label = execution.name
     line = f"{label}: {execution.message}"
 
     if execution.status == STATUS_SUCCESS:
         ctx.output.success(line)
+    elif execution.status == STATUS_WARNINGS:
+        ctx.output.warning(line)
     elif execution.status == STATUS_SKIPPED:
         ctx.output.info(f"{label}: skipped ({execution.message})")
     else:
@@ -772,7 +829,12 @@ def _emit_task_line(ctx: MaintainContext, execution: TaskExecution) -> None:
 
 
 def _json_summary(executions: List[TaskExecution], unknown_skips: List[str], dry_run: bool) -> Dict[str, object]:
-    status = STATUS_FAILED if any(e.status == STATUS_FAILED for e in executions) else STATUS_SUCCESS
+    if any(e.status == STATUS_FAILED for e in executions):
+        status = STATUS_FAILED
+    elif any(e.status == STATUS_WARNINGS for e in executions):
+        status = STATUS_WARNINGS
+    else:
+        status = STATUS_SUCCESS
     return {
         "status": status,
         "dry_run": dry_run,
@@ -784,6 +846,7 @@ def _json_summary(executions: List[TaskExecution], unknown_skips: List[str], dry
                 "details": e.details,
                 "metrics": e.metrics,
                 "duration_ms": e.duration_ms,
+                "exit_code": e.exit_code,
             }
             for e in executions
         ],
@@ -791,6 +854,7 @@ def _json_summary(executions: List[TaskExecution], unknown_skips: List[str], dry
         "summary": {
             STATUS_SUCCESS: sum(1 for e in executions if e.status == STATUS_SUCCESS),
             STATUS_FAILED: sum(1 for e in executions if e.status == STATUS_FAILED),
+            STATUS_WARNINGS: sum(1 for e in executions if e.status == STATUS_WARNINGS),
             STATUS_SKIPPED: sum(1 for e in executions if e.status == STATUS_SKIPPED),
         },
     }
@@ -808,27 +872,38 @@ def maintain_command(options: MaintainOptions, registry: Optional[MaintainTaskRe
         if options.json_output:
             emit_command_error(
                 command="maintain",
-                exit_code=1,
-                code="E_COMMAND_FAILED",
+                exit_code=ExitCode.USAGE,
+                code="E_USER_INPUT",
                 message=str(exc),
             )
         elif not options.quiet:
             output.error(str(exc))
-        return 1
+        return int(ExitCode.USAGE)
 
     try:
         config = load_project_config(repo_root=repo_root)
+    except ConfigError as exc:
+        if options.json_output:
+            emit_command_error(
+                command="maintain",
+                exit_code=ExitCode.USAGE,
+                code="E_USER_INPUT",
+                message=f"Config error: {exc}",
+            )
+        elif not options.quiet:
+            output.error(f"Config error: {exc}")
+        return int(ExitCode.USAGE)
     except Exception as exc:
         if options.json_output:
             emit_command_error(
                 command="maintain",
-                exit_code=1,
+                exit_code=ExitCode.INTERNAL,
                 code="E_COMMAND_FAILED",
                 message=f"Config error: {exc}",
             )
         elif not options.quiet:
             output.error(f"Config error: {exc}")
-        return 1
+        return int(ExitCode.INTERNAL)
 
     context = MaintainContext(
         repo_root=repo_root,
@@ -878,6 +953,7 @@ def maintain_command(options: MaintainOptions, registry: Optional[MaintainTaskRe
                     name=task.name,
                     status=STATUS_FAILED,
                     message=f"condition check failed: {exc}",
+                    exit_code=int(ExitCode.INTERNAL),
                 )
                 execution.duration_ms = int((time.perf_counter() - start) * 1000)
                 executions.append(execution)
@@ -901,18 +977,23 @@ def maintain_command(options: MaintainOptions, registry: Optional[MaintainTaskRe
             details = list(result.details)
             if status_error:
                 details.insert(0, status_error)
+            task_exit_code = _normalize_task_exit_code(
+                status, result.exit_code, status_error
+            )
             execution = TaskExecution(
                 name=task.name,
                 status=status,
                 message=result.message,
                 details=details,
                 metrics=result.metrics,
+                exit_code=task_exit_code,
             )
         except Exception as exc:
             execution = TaskExecution(
                 name=task.name,
                 status=STATUS_FAILED,
                 message=f"task raised exception: {exc}",
+                exit_code=int(ExitCode.INTERNAL),
             )
 
         execution.duration_ms = int((time.perf_counter() - start) * 1000)
@@ -921,29 +1002,52 @@ def maintain_command(options: MaintainOptions, registry: Optional[MaintainTaskRe
 
     success_count = sum(1 for execution in executions if execution.status == STATUS_SUCCESS)
     failure_count = sum(1 for execution in executions if execution.status == STATUS_FAILED)
+    warning_count = sum(1 for execution in executions if execution.status == STATUS_WARNINGS)
     skipped_count = sum(1 for execution in executions if execution.status == STATUS_SKIPPED)
 
-    exit_code = 1 if failure_count > 0 else 0
+    if any(execution.exit_code == ExitCode.INTERNAL for execution in executions):
+        exit_code = int(ExitCode.INTERNAL)
+    elif any(execution.exit_code == ExitCode.FINDINGS for execution in executions):
+        exit_code = int(ExitCode.FINDINGS)
+    elif warning_count > 0:
+        exit_code = int(ExitCode.WARNINGS)
+    else:
+        exit_code = int(ExitCode.CLEAN)
     if options.json_output:
         payload = _json_summary(executions, unknown_skips, options.dry_run)
-        if exit_code == 0:
+        if exit_code in {ExitCode.CLEAN, ExitCode.FINDINGS, ExitCode.WARNINGS}:
+            result_status = {
+                int(ExitCode.CLEAN): "clean",
+                int(ExitCode.FINDINGS): "findings",
+                int(ExitCode.WARNINGS): "warnings",
+            }[exit_code]
             emit_command_success(
                 command="maintain",
-                exit_code=0,
-                message="Maintenance run complete",
+                exit_code=exit_code,
+                message=(
+                    "Maintenance run complete"
+                    if exit_code == ExitCode.CLEAN
+                    else "Maintenance run completed with diagnostic results"
+                ),
                 data=payload,
+                result_status=result_status,
             )
         else:
             emit_command_error(
                 command="maintain",
-                exit_code=1,
+                exit_code=ExitCode.INTERNAL,
                 code="E_COMMAND_FAILED",
-                message="Maintenance run completed with failures",
+                message="Maintenance run failed internally",
                 data=payload,
+                execution_succeeded=False,
             )
     elif not options.quiet:
         output.plain("")
-        summary = f"Maintenance summary: {success_count} succeeded, {failure_count} failed, {skipped_count} skipped"
+        summary = (
+            f"Maintenance summary: {success_count} succeeded, "
+            f"{failure_count} failed, {warning_count} warnings, "
+            f"{skipped_count} skipped"
+        )
         if failure_count > 0:
             output.warning(summary)
         else:
@@ -984,41 +1088,52 @@ def _run_frontmatter_enum_repair(ctx: MaintainContext) -> int:
             ctx.output.detail(f"... and {len(plan.edits) - 10} more")
 
     if not ctx.options.apply:
+        exit_code = int(
+            ExitCode.FINDINGS if plan.diagnostics else ExitCode.CLEAN
+        )
         if ctx.options.json_output:
             emit_command_success(
                 command="maintain",
-                exit_code=0,
+                exit_code=exit_code,
                 message="Frontmatter enum repair plan complete",
                 data=payload,
+                result_status="findings" if plan.diagnostics else "clean",
             )
-        return 0
+        return exit_code
 
     clean, git_error = _check_clean_git_state(ctx.repo_root)
     if not clean:
+        exit_code = _git_guard_exit_code(git_error)
         if ctx.options.json_output:
             emit_command_error(
                 command="maintain",
-                exit_code=1,
-                code="E_DIRTY_WORKSPACE",
+                exit_code=exit_code,
+                code=(
+                    "E_DIRTY_WORKSPACE"
+                    if exit_code == ExitCode.USAGE
+                    else "E_COMMAND_FAILED"
+                ),
                 message=git_error or "Git working tree must be clean for --apply.",
                 data=payload,
+                execution_succeeded=False,
             )
         elif not quiet:
             ctx.output.error(git_error or "Git working tree must be clean for --apply.")
-        return 1
+        return exit_code
     if plan.unresolved_edits:
         message = "Unresolved enum values remain; refusing partial apply."
         if ctx.options.json_output:
             emit_command_error(
                 command="maintain",
-                exit_code=1,
+                exit_code=ExitCode.USAGE,
                 code="E_UNRESOLVED_ENUMS",
                 message=message,
                 data=payload,
+                execution_succeeded=False,
             )
         elif not quiet:
             ctx.output.error(message)
-        return 1
+        return int(ExitCode.USAGE)
 
     modified = apply_enum_repair_plan(plan, repo_root=ctx.repo_root)
     payload["modified_files"] = [str(path.relative_to(ctx.repo_root)) for path in modified]
@@ -1033,3 +1148,11 @@ def _run_frontmatter_enum_repair(ctx: MaintainContext) -> int:
     if not quiet:
         ctx.output.success(f"Updated {len(modified)} file(s).")
     return 0
+
+
+def _git_guard_exit_code(reason: Optional[str]) -> int:
+    """Distinguish an expected workspace refusal from a guard failure."""
+    normalized = (reason or "").lower()
+    if "working tree has uncommitted" in normalized or "not a git repository" in normalized:
+        return int(ExitCode.USAGE)
+    return int(ExitCode.INTERNAL)

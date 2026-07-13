@@ -89,17 +89,21 @@ def _write_doc(
 def test_retrofit_requires_obsidian_flag(tmp_path: Path):
     _init_repo(tmp_path)
     result = _run_ontos(tmp_path, "retrofit")
-    assert result.returncode == 1
-    assert "missing_mode" in result.stdout
+    assert result.returncode == 2
+    assert result.stdout == ""
+    assert "missing_mode" in result.stderr
 
 
 def test_retrofit_missing_obsidian_json_envelope(tmp_path: Path):
     _init_repo(tmp_path)
     result = _run_ontos(tmp_path, "--json", "retrofit")
-    assert result.returncode == 1
+    assert result.returncode == 2
     payload = json.loads(result.stdout)
     assert payload["status"] == "error"
     assert payload["error"]["code"] == "missing_mode"
+    assert payload["result"]["kind"] == "operation"
+    assert payload["result"]["exit_category"] == "usage"
+    assert result.stderr == ""
 
 
 # ---------------------------------------------------------------------------
@@ -128,6 +132,7 @@ def test_retrofit_dry_run_json_envelope(tmp_path: Path):
     assert result.returncode == 0
     payload = json.loads(result.stdout)
     assert payload["status"] == "success"
+    assert payload["result"]["kind"] == "operation"
     data = payload["data"]
     assert data["mode"] == "dry_run"
     assert data["summary"]["planned_files"] == 1
@@ -375,8 +380,9 @@ def test_retrofit_apply_aborts_on_dirty_git(tmp_path: Path):
     )
 
     result = _run_ontos(tmp_path, "retrofit", "--obsidian", "--apply")
-    assert result.returncode == 1
-    assert "dirty_git_state" in result.stdout
+    assert result.returncode == 2
+    assert result.stdout == ""
+    assert "dirty_git_state" in result.stderr
 
 
 # ---------------------------------------------------------------------------
@@ -404,8 +410,11 @@ def test_retrofit_apply_skips_duplicate_top_level_field(tmp_path: Path):
     )
 
     dry_run = _run_ontos(tmp_path, "--json", "retrofit", "--obsidian")
-    assert dry_run.returncode == 0
+    assert dry_run.returncode == 3
     dry_payload = json.loads(dry_run.stdout)
+    assert dry_payload["status"] == "success"
+    assert dry_payload["result"]["status"] == "warnings"
+    assert dry_payload["result"]["exit_category"] == "warnings"
     assert any(
         w["reason_code"] == "duplicate_top_level_field"
         for w in dry_payload["warnings"]
@@ -413,7 +422,7 @@ def test_retrofit_apply_skips_duplicate_top_level_field(tmp_path: Path):
 
     _init_git_repo(tmp_path)
     apply_result = _run_ontos(tmp_path, "--json", "retrofit", "--obsidian", "--apply")
-    assert apply_result.returncode == 1
+    assert apply_result.returncode == 2
     apply_payload = json.loads(apply_result.stdout)
     assert apply_payload["error"]["code"] == "unsupported_target_format"
 
@@ -442,7 +451,7 @@ def test_retrofit_dry_run_warns_on_merge_derived_tags_without_duplicate_insert(
     original = path.read_text(encoding="utf-8")
 
     first = _run_ontos(tmp_path, "--json", "retrofit", "--obsidian")
-    assert first.returncode == 0
+    assert first.returncode == 3
     payload = json.loads(first.stdout)
     assert any(
         w["field"] == "tags" and w["reason_code"] == "unpatchable_field_format"
@@ -460,7 +469,7 @@ def test_retrofit_dry_run_warns_on_merge_derived_tags_without_duplicate_insert(
     assert path.read_text(encoding="utf-8") == original
 
     second = _run_ontos(tmp_path, "--json", "retrofit", "--obsidian")
-    assert second.returncode == 0
+    assert second.returncode == 3
     second_payload = json.loads(second.stdout)
     second_entry = next(
         item for item in second_payload["data"]["files"] if item["path"].endswith("merge-derived.md")
@@ -491,7 +500,7 @@ def test_retrofit_dry_run_warns_on_tag_prefixed_tags_field(tmp_path: Path):
     original = path.read_text(encoding="utf-8")
 
     result = _run_ontos(tmp_path, "--json", "retrofit", "--obsidian")
-    assert result.returncode == 0
+    assert result.returncode == 3
     payload = json.loads(result.stdout)
     assert any(
         w["field"] == "tags" and w["reason_code"] == "unpatchable_field_format"
@@ -574,6 +583,35 @@ def test_retrofit_apply_preserves_crlf_line_endings(tmp_path: Path):
     assert b"\n" not in updated.replace(b"\r\n", b"")
 
 
+def test_retrofit_apply_preserves_bom_and_reparses_normalized_content(tmp_path: Path):
+    _init_repo(tmp_path)
+    path = tmp_path / "docs" / "bom.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(
+        b"\xef\xbb\xbf"
+        + (
+            "---\n"
+            "id: bom_doc\n"
+            "type: atom\n"
+            "status: active\n"
+            "concepts:\n"
+            "  - alpha\n"
+            "---\n"
+            "Body\n"
+        ).encode("utf-8")
+    )
+    _init_git_repo(tmp_path)
+
+    result = _run_ontos(tmp_path, "retrofit", "--obsidian", "--apply")
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    updated = path.read_bytes()
+    assert updated.startswith(b"\xef\xbb\xbf---\n")
+    assert updated.count(b"\xef\xbb\xbf") == 1
+    assert b"tags:\n  - alpha\n" in updated
+    assert b"aliases:\n" in updated
+
+
 def test_retrofit_apply_surfaces_loader_issues_without_blocking_valid_files(
     tmp_path: Path,
 ):
@@ -585,7 +623,7 @@ def test_retrofit_apply_surfaces_loader_issues_without_blocking_valid_files(
     _init_git_repo(tmp_path)
 
     result = _run_ontos(tmp_path, "--json", "retrofit", "--obsidian", "--apply")
-    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.returncode == 3, result.stdout + result.stderr
 
     payload = json.loads(result.stdout)
     warning_codes = [warning["reason_code"] for warning in payload["warnings"]]
@@ -618,10 +656,13 @@ def test_retrofit_invalid_utf8_is_actionable_and_byte_unchanged(tmp_path: Path):
         "--apply",
     )
 
-    assert result.returncode == 1
+    assert result.returncode == 2
     payload = json.loads(result.stdout)
-    assert payload["schema_version"] == "3.4"
+    assert payload["schema_version"] == "4.0"
+    assert payload["status"] == "error"
     assert payload["error"]["code"] == "E_COMMAND_FAILED"
+    assert payload["result"]["status"] == "error"
+    assert payload["result"]["exit_category"] == "usage"
     assert payload["data"]["path"] == str(path)
     assert str(path) in payload["message"]
     assert "Re-save the file as UTF-8" in payload["message"]

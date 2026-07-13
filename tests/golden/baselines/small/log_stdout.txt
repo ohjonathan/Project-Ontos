@@ -1,1 +1,1 @@
-⚠️  Branch '<DEFAULT_BRANCH>' not suitable for auto-archive
+✅ Session log created: <FIXTURE_ROOT>/.ontos-internal/logs/<DATE>_test-change-for-log-capture.md

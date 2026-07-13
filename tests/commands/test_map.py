@@ -1,4 +1,6 @@
 
+import json
+
 import pytest
 import sys
 from pathlib import Path
@@ -298,6 +300,74 @@ def test_map_fails_on_duplicate_ids(tmp_path, monkeypatch):
     assert exit_code != 0
 
 
+def test_map_json_outside_project_is_usage_error(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+
+    exit_code = map_command(MapOptions(json_output=True))
+
+    assert exit_code == 2
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["exit_code"] == 2
+    assert payload["status"] == "error"
+    assert payload["error"]["code"] == "E_WORKSPACE_NOT_FOUND"
+    assert payload["result"]["kind"] == "diagnostic"
+    assert payload["result"]["exit_category"] == "usage"
+
+
+def test_map_json_config_failure_is_usage_error(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n")
+
+    def fail_config(*_args, **_kwargs):
+        raise ValueError("bad config")
+
+    monkeypatch.setattr("ontos.io.config.load_project_config", fail_config)
+
+    exit_code = map_command(MapOptions(json_output=True))
+
+    assert exit_code == 2
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["exit_code"] == 2
+    assert payload["error"]["code"] == "E_CONFIG_ERROR"
+    assert payload["result"]["exit_category"] == "usage"
+
+
+def test_map_json_fatal_load_is_incomplete_findings(tmp_path, monkeypatch):
+    from ontos.io.files import DocumentLoadIssue, DocumentLoadResult
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n")
+    issue = DocumentLoadIssue(
+        code="parse_error",
+        path=tmp_path / "docs" / "broken.md",
+        message="invalid frontmatter",
+        severity="error",
+        blocking=True,
+    )
+    monkeypatch.setattr(
+        "ontos.io.files.load_documents",
+        lambda *_args, **_kwargs: DocumentLoadResult(
+            documents={},
+            issues=[issue],
+            duplicate_ids={},
+        ),
+    )
+    emitted = []
+    monkeypatch.setattr(
+        "ontos.commands.map.emit_command_success",
+        lambda **kwargs: emitted.append(kwargs),
+    )
+
+    exit_code = map_command(MapOptions(json_output=True, quiet=True))
+
+    assert exit_code == 1
+    assert len(emitted) == 1
+    assert emitted[0]["exit_code"] == 1
+    assert emitted[0]["result_status"] == "incomplete"
+    assert emitted[0]["result_kind"] == "diagnostic"
+    assert emitted[0]["diagnostic_counts"]["load_issues"] == 1
+
+
 def test_map_default_scope_excludes_internal_docs(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n")
@@ -413,7 +483,7 @@ def test_map_strict_json_carries_grouped_diagnostics(tmp_path):
 
     result, envelope = _run_map_json(tmp_path, "--strict")
 
-    assert result.returncode == 2
+    assert result.returncode == 3
     data = envelope["data"]
     assert data["result_status"] == "warnings"
     assert data["strict"] is True
