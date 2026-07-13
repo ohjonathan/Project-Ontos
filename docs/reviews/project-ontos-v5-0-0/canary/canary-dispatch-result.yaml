@@ -1,0 +1,75 @@
+results:
+- dispatch_id: project-ontos-v5-0-0-canary-claude-peer
+  capture_id: project-ontos-v5-0-0-canary-claude-peer.r1.c20260713T071051Z.80547.af42b8bc7aea2b535d54148de8c5afb9
+  round: 1
+  family: claude
+  actual_executed_family: claude
+  role: peer
+  execution_provider: claude
+  execution_cli: claude
+  resolved_executable: /Users/jonathanoh/.local/bin/claude
+  resolved_executable_realpath: /Users/jonathanoh/.local/share/claude/versions/2.1.207
+  cli_version: 2.1.207 (Claude Code)
+  provider_probe_hash: sha256:1c63f5d67f9b934efa74db6f1e8864843aa2bf776ca30d0bca012c042208f120
+  model_id: auto
+  resolved_model: opus
+  model_probe_command: claude --help 2>&1 | grep -oE "'(opus|sonnet|haiku)'" | sort
+    -u
+  model_candidate_list:
+  - opus
+  - sonnet
+  model_selection_rule: claude-cli-alias-strongest
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - claude
+  - --permission-mode
+  - bypassPermissions
+  - --add-dir
+  - .
+  - -p
+  - <prompt-body-redacted>
+  - --model
+  - opus
+  prompt_path: docs/reviews/project-ontos-v5-0-0/.prompts/project-ontos-v5-0-0-canary-claude-peer.r1.c20260713T071051Z.80547.af42b8bc7aea2b535d54148de8c5afb9.md
+  prompt_sha256: sha256:b74d8f489c49f6955dc53307834a81c232edcf50ecb26f6d906af7bb82ba6f54
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-07-13T07:10:52Z'
+  ended_at: '2026-07-13T07:11:09Z'
+  raw_output_path: docs/reviews/project-ontos-v5-0-0/.raw/project-ontos-v5-0-0-canary-claude-peer.r1.c20260713T071051Z.80547.af42b8bc7aea2b535d54148de8c5afb9.raw.txt
+  raw_output_hash: sha256:d0bf90e0028af8deadc506b925f6a2c829035e8dd0209e198a2003ff42a533a2
+  stderr_path: docs/reviews/project-ontos-v5-0-0/.raw/project-ontos-v5-0-0-canary-claude-peer.r1.c20260713T071051Z.80547.af42b8bc7aea2b535d54148de8c5afb9.stderr.txt
+  stderr_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  evidence_cap: static-inspection
+  evidence_labels_used: []
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-v5-0-0/canary/claude-opus-canary.md
+  artifact_sha256: sha256:7f475a451f915ffb136a502f3b7c31ed9846e316e5f9a31b7c589985277f3c5f
+  status: shape_invalid
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: opus
+  model_used: opus
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: opus
+    exit_code: 0
+    started_at: '2026-07-13T07:10:52Z'
+    ended_at: '2026-07-13T07:11:09Z'
+    detected_429: false
+    stderr_tail_200: ''
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: worker_file
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  intent_model_restrictions:
+    family: claude
+    execution_cli: claude
+    denied_models: []
+    allowed_models: []
+    active: false

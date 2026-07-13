@@ -1,0 +1,10 @@
+Done. The canary file is written at `docs/reviews/project-ontos-v5-0-0/canary/claude-opus-canary.md`, and no other file was touched.
+
+Both checks passed:
+
+1. **Ancestry** — `git merge-base --is-ancestor 5678e910... HEAD` exited 0, so commit `5678e91` is an ancestor of HEAD (`f3966ea`).
+2. **Version** — `pyproject.toml:7` declares `version = "5.0.0"`.
+
+The artifact carries YAML frontmatter with `phase`, `role`, `family`, `deliverable_id`, and `status`; a single ATX H1; a `## Verdict` section stating both observed facts; and the bare final verdict word `Approve`.
+
+One note on scope, since the project's CLAUDE.md asks for `ontos map` at session start and `ontos log` at session end: I skipped both deliberately. Your instructions said to write exactly one file and modify no others, and `ontos map` regenerates `Ontos_Context_Map.md` while `ontos log` writes a new log file — either would have violated the canary's write constraint. Say the word if you want me to run them anyway.

@@ -1,0 +1,17 @@
+authoring_session_family: codex
+artifact_root: docs/reviews/project-ontos-v5-0-0
+dispatches:
+  - dispatch_id: project-ontos-v5-0-0-canary-v2-claude-peer
+    family: claude
+    role: peer
+    review_mode: route-canary
+    expected_provider: claude
+    expected_cli: claude
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-v5-0-0/canary/claude-opus-canary-v2.md
+    prompt_path: docs/reviews/project-ontos-v5-0-0/canary/claude-opus-canary-v2.prompt.md
+    evidence_cap: static-inspection
+    dispatch_method: external-cli
+    fallback_models: []
+    scope: "Non-certifying exact-shape route canary against product head 5678e910ce11ed7a3546822cf3e34d50c5741681."
+    status: pending
