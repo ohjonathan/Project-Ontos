@@ -9,231 +9,242 @@ status: completed
 # Ontos 5.0.0 B.1 GLM peer review
 
 Independent peer assessment of Ontos 5.0.0 at product commit
-`5678e910ce11ed7a3546822cf3e34d50c5741681` relative to base `454b102`.
-Scope: v5 spec, manifest, migration guide, core implementation, focused
-contract/safety tests, and bounded read-only verification. Product files were
-not modified; evidence review ran against the product commit and the hash-bound
-sibling evidence ref `lifecycle-evidence/project-ontos-v5-0-0@7a5c1d4`.
+`5678e910ce11ed7a3546822cf3e34d50c5741681` ("fix: align v5 command contracts")
+relative to base `454b102` ("Log v4.7.1 release session"). The review reads the
+v5 spec, manifest, migration guide, core implementation, and focused
+contract/safety tests, then runs bounded read-only checks. No product files
+were modified; dependencies were installed into an isolated venv outside the
+workspace, and the v5 branch's product code (`ontos/`, `tests/`) is byte-identical
+between the reviewed head `5678e91` and the current checkout, so the suite
+results apply directly to the reviewed head.
 
-## Method
+Scope items examined: schema-4 command envelopes, exit taxonomy, declarative
+command registry, canonical YAML parsing and surgical frontmatter writes,
+physical one-based link lines and wikilink alias/heading resolution, MCP and
+rename durability (lock-before-plan, recovery journal, no unscoped git
+rollback), iterative graph traversal with case-sensitive path identity, legacy
+fork/repo slimming, and hash-bound evidence isolation on a sibling ref.
 
-Read `docs/specs/project-ontos-v5-0-0-spec.md`, `manifests/project-ontos-v5-0-0.yaml`,
-`docs/releases/v5.0.0.md`, and the tracker. Examined `ontos/ui/json_output.py`,
-`ontos/command_registry.py`, `ontos/core/graph.py`, `ontos/core/body_refs.py`,
-`ontos/core/link_diagnostics.py`, `ontos/core/rename_transaction.py`,
-`ontos/core/frontmatter_edit.py`, `ontos/core/git.py`, `ontos/io/yaml.py`,
-`ontos/commands/rename.py`, `ontos/mcp/rename_tool.py`, `ontos/mcp/tools.py`,
-`ontos/mcp/server.py`, and `ontos/mcp/schemas.py`. Read focused tests
-`tests/test_cli_contract_v4.py`, `tests/core/test_graph.py`,
-`tests/core/test_rename_transaction.py`, `tests/core/test_body_refs.py`,
-`tests/core/test_link_diagnostics.py`, `tests/commands/test_rename.py`, and
-`tests/mcp/test_rename_document.py`.
+## Method and bounded read-only checks
 
-## Evidence by contract area
-
-### Schema-4 envelopes — PASS
-
-`ontos/ui/json_output.py:16` defines `COMMAND_ENVELOPE_SCHEMA_VERSION = "4.0"`.
-`_emit_command_envelope` (`ontos/ui/json_output.py:288`) emits a top-level
-`result` object with `status`, `kind`, `exit_category`, and `diagnostics`
-(`basis`, `complete`, `counts`) alongside the retained `data` payload. Execution
-status (`status`) is decoupled from domain outcome (`result.status`): a successful
-diagnostic command that found issues yields `status:"success"` with
-`result.status:"findings"` and exit `1` (`ontos/ui/json_output.py:201-285`).
-`_result_status` reconciles an explicit caller value, `_LEGACY_RESULT_STATUS`
-aliases, incomplete-count keys, and exit-code fallback
-(`ontos/ui/json_output.py:416-453`). `test_cli_contract_v4.py:246` pins the
-separation of execution/findings and count basis.
-
-### Exit taxonomy — PASS
-
-`ExitCode` is an `IntEnum` over `{0, 1, 2, 3, 5, 130}` with code 4 deliberately
-absent (`ontos/ui/json_output.py:29-37`). `ExitCategory` mirrors the documented
-categories (`ontos/ui/json_output.py:40-48`). `_exit_category`
-(`ontos/ui/json_output.py:456-476`) maps 130→interrupted, collapse-unknown nonzero
-execution failures to `internal`, and never leaks an ad-hoc category.
-`test_cli_contract_v4.py:67-74` asserts code 4 stays reserved and that an
-undocumented category (`"error"`) is sanitized to `internal`
-(`test_cli_contract_v4.py:77-86`). Per-command exit surface in
-`docs/releases/v5.0.0.md:82-100` matches the implementation: `query` uses `2`
-for input failures and `5` for runtime failures (`test_cli_contract_v4.py:195-230`),
-and `rename` maps `commit_failed`/`partial_commit_mismatch` to `INTERNAL` and all
-other refusals to `USAGE` (`ontos/commands/rename.py:1397-1401`).
-
-### Command registry — PASS
-
-`ontos/command_registry.py:50-104` is the single declarative source for parser
-builders, handlers, aliases, visibility, result kinds, and nested paths.
-Duplicate-name detection runs at import time (`ontos/command_registry.py:108-109`).
-`command_path` (`ontos/command_registry.py:151-162`) produces canonical
-space-separated paths (`mcp install`, `export data`) instead of legacy hyphenated
-synthetics, matching `docs/releases/v5.0.0.md:48-59`. `test_cli_contract_v4.py:52-95`
-asserts the registry is complete and unique, aliases (`tree`/`map`,
-`validate`/`verify`) share their canonical argument contract, and every parser
-choice carries a `_handler_name` default.
-
-### Canonical parsing and surgical writes — PASS
-
-`ontos/io/yaml.py` is the canonical frontmatter parser used by
-`parse_frontmatter` (`ontos/core/frontmatter.py:22`) and the loader. Mutation paths
-use `patch_frontmatter_fields` (`ontos/core/frontmatter_edit.py:60-147`), which
-preserves BOM, leading whitespace, dominant line endings, inline comments,
-quoting, and ordering; rejects block scalars, anchors/aliases, duplicate
-top-level fields, and nested inline collections; and re-validates via
-`assert_frontmatter_roundtrip` (`ontos/io/yaml.py:115-130`) and a semantic
-equality check before returning. `rename.py` field patching
-(`ontos/commands/rename.py:836-1060`) preserves padding around replaced scalars
-(`_replace_preserving_padding`, `rename.py:1187-1191`).
-
-### Link lines — PASS
-
-Body-reference locations are physical one-based file lines.
-`scan_body_references` (`ontos/core/body_refs.py:111-251`) assigns
-`line_no = index + 1` (`body_refs.py:162`), and `link_diagnostics._body_line_offset`
-(`ontos/core/link_diagnostics.py:754-796`) reconstructs the frontmatter/leading-
-whitespace offset so body-relative scanner coordinates restore to physical file
-lines without changing the loader. Wikilink aliases/headings resolve by target:
-`_iter_wikilink_id_candidates` (`ontos/core/body_refs.py:824-844`) strips `|Alias`
-and `#Heading` to the target part, and rename splices the replacement into the
-target range only, retaining display text (`_replacement_for_match`,
-`rename.py:1223-1269`). The generic prose-token heuristic that produced ~11k false
-positives is opt-in via `include_generic_bare_id_token=False` on the diagnostics
-path (`ontos/core/link_diagnostics.py:498-503`).
-
-### MCP and rename durability — PASS
-
-MCP reads, portfolio tools, and writes share one invocation boundary:
-`_invoke_boundary` (`ontos/mcp/server.py:835-916`) catches `OntosUserError` and
-preserves `exc.code` (`server.py:898-902`). CLI rename acquires `workspace_lock`
-before clean-state checking and plan construction
-(`ontos/commands/rename.py:168-173`); MCP rename locks, recovers any prior
-transaction, then checks git-clean (`ontos/mcp/rename_tool.py:316-329`).
-`RenameTransaction.prepare` (`ontos/core/rename_transaction.py:67-105`) journals
-exact pre-write bytes via `_atomic_bytes` (O_EXCL, O_NOFOLLOW, fsync + directory
-fsync). `recover_rename_transaction` (`rename_transaction.py:115-157`) restores
-only touched paths, validates journal shape, refuses symlinks, and proves
-containment before writing. CLI and MCP share `build_rename_plan`
-(`ontos/commands/rename.py:367-543`), eliminating per-call-site divergence.
-Unscoped `git checkout -- .` is not used: the only matches are docstrings and a
-test docstring describing what the implementation deliberately avoids
-(`ontos/core/git.py:20-21`, `ontos/mcp/rename_tool.py:18`). `rollback_path`
-(`ontos/core/git.py:77-152`) proves trackedness before any `git checkout -- <path>`
-and never deletes a tracked file. `test_rename_document.py:141-165` AST-guards
-that `buffer_write` is the sole mutation channel (no `os.rename`/`buffer_move`).
-
-### Graph traversal — PASS
-
-`detect_cycles` (`ontos/core/graph.py:372-424`) uses an explicit-stack iterative
-DFS with canonical cycle rotation. `calculate_depths` (`graph.py:519-581`)
-condenses to SCCs (`_strongly_connected_components`, iterative Kosaraju,
-`graph.py:584-636`) and runs an iterative Kahn-style topological longest-path.
-Path identity is case-aware via `_casefold_path` (`graph.py:45-55`) plus a
-collision-fail-closed `_LoadedPathIndex` (`graph.py:67-123`); macOS APFS
-case-insensitivity is handled without `os.path.normcase`. Deep corpora are
-tested without Python's recursion cliff: 1500-node cycle
-(`tests/core/test_graph.py:368-380`) and 2000-node depth chain
-(`test_graph.py:615-626`). Path-traversal `depends_on` is contained to the
-workspace and falls through to broken-link severity (`graph.py:126-186`), verified
-by `test_graph.py:176-198`.
-
-### Repo slimming — PASS
-
-`.ontos/scripts/` is absent at the product commit, and CI no longer invokes
-`pytest .ontos/scripts/tests` (`G-scope-1` gate passes). The legacy fork modules
-were removed entirely (diff stat shows wholesale deletion of
-`.ontos/scripts/ontos/*` and `.ontos/scripts/tests/*`). Package commands own hook
-and validation behavior (`ontos/commands/hook.py`, `ontos/commands/verify.py`).
-
-### Evidence isolation — PASS
-
-Raw lifecycle evidence is isolated on
-`lifecycle-evidence/project-ontos-v5-0-0@7a5c1d47894568c80305cf126cc2401156adf301`
-and hash-bound by `docs/reviews/project-ontos-v5-0-0/evidence-index.yaml`
-(schema_version 1, 14 entries). `scripts/verify_lifecycle_evidence_ref.py` checks
-both directions: every indexed path's sha256 against the ref, and the ref's tree
-against the index for unindexed orphans. At the pinned commit `7a5c1d4`, all 14
-indexed entries match (0 sha256 errors, 0 orphans, 0 absent). D.6 is honestly
-WITHHELD (`docs/reviews/project-ontos-v5-0-0/final-approval.md:39-57`): product,
-docs, and packaging gates pass, but strict-P3 produced no genuine external
-receipt. No merge/tag/release/PyPI/issue-closure is authorized by this
-deliverable.
-
-## Bounded read-only checks
+All checks ran read-only against the working tree (product code identical to
+`5678e91`). Python 3.14.6 in an isolated venv with `pyyaml`, `tomli_w`,
+`pytest`, `mcp`, and `pydantic`.
 
 | Check | Command | Result |
-|-------|---------|--------|
-| Cardinality | `PYTHONPATH=. python -c 'assert (ontos.__version__,SCHEMA)==("5.0.0","4.0")'` | PASS |
-| Legacy fork absent | `test ! -e .ontos/scripts && ! grep -q 'pytest .ontos/scripts/tests' .github/workflows/ci.yml` | PASS |
-| Focused contract/safety suite | `pytest tests/test_cli_contract_v4.py tests/core/test_body_refs.py tests/core/test_link_diagnostics.py tests/core/test_graph.py tests/core/test_rename_transaction.py tests/mcp/test_server_integration.py tests/mcp/test_rename_document.py` | 228 passed |
-| Complete product suite (G-test-1) | `pytest -q` | 1536 passed in 72s |
-| Golden comparison (G-test-2) | `tests/golden/compare_golden_master.py --fixture all` | All comparisons PASS |
-| Documentation validation | `ontos map --strict --scope docs` | exit 0 |
-| Lifecycle evidence ref (pinned) | sha256 + tree parity against `7a5c1d4` | 14/14 match, 0 orphans |
+|---|---|---|
+| Cardinality (version/schema) | `PYTHONPATH=. python -c 'import ontos; from ontos.ui.json_output import COMMAND_ENVELOPE_SCHEMA_VERSION as s; assert (ontos.__version__,s)==("5.0.0","4.0")'` | PASS — version `5.0.0`, schema `4.0` |
+| Exit taxonomy | `ExitCode` enum | PASS — `[0,1,2,3,5,130]`; code `4` reserved (absent) |
+| Registry invariant | `command_registry.COMMAND_SPECS` | PASS — 27 commands, no dup (import-time guard), canonical paths `mcp install` / `export data` / `tree`→`map` |
+| Focused contract/safety suite | `pytest tests/test_cli_contract_v4.py tests/core/test_body_refs.py tests/core/test_link_diagnostics.py tests/core/test_graph.py tests/core/test_rename_transaction.py tests/mcp/test_server_integration.py tests/mcp/test_rename_document.py` | PASS — 228 passed |
+| Golden master comparison (G-test-2) | `python tests/golden/compare_golden_master.py --fixture all` | PASS — `medium` + `small`, 5.0.0 metadata |
+| Full product suite (G-test-1 / D.2) | `PYTHONPATH=. python -m pytest -q` | PASS — 1536 passed, 1 warning (expected `emit_error` DeprecationWarning) |
+| Repo slimming (G-scope-1) | `test ! -e .ontos/scripts` + CI grep | PASS — `.ontos/scripts` absent, CI no longer invokes it; 43 legacy scripts deleted |
+| No unscoped git rollback | `grep -rn "git checkout -- \." ontos/core/rename_transaction.py ontos/mcp/rename_tool.py` | PASS — none; recovery uses exact-byte `recover_rename_transaction` |
+| Live envelope smoke | `ontos link-check/env/export data/--json` | PASS — schema 4.0, `result` block present, `--json` before/after subcommand equivalent (only `timings_ms` differs), usage failure emits exactly one envelope, exit 2 |
+| Evidence isolation | sha256-verify indexed artifacts at recorded `evidence_commit` `7a5c1d4` | PASS — 14/14 hashes match, 0 orphans, 0 missing |
 
-Documentation validation reports one `invalid_enum` warning for
-`docs/reviews/project-ontos-v5-0-0/canary/claude-opus-canary.md:6` (`status:
-approved`), but that canary artifact exists only on the lifecycle-evidence
-branch (absent at product commit `5678e91`); the product commit's documentation
-validation is clean, matching `final-approval.md` gate row 2.
+Migration-guide claims verified live: schema-4 envelope with `result.status` /
+`result.kind` / `result.exit_category` / `result.diagnostics`; nested canonical
+`command` path (`export data`); global `--json` works before or after the
+subcommand; JSON mode writes exactly one envelope to stdout with empty stderr;
+`env --json` returns a structured object in `data` (`$schema`, `manifests`,
+`onboarding_steps`, ...).
+
+## Evidence: strengths
+
+**Schema-4 envelopes and exit taxonomy** — `ontos/ui/json_output.py:16` pins
+`COMMAND_ENVELOPE_SCHEMA_VERSION = "4.0"`. `ExitCode` (`:29-37`) defines
+`0/1/2/3/5/130` and omits `4`, matching the reserved-code contract.
+`_exit_category` (`:456-476`) collapses unknown/reserved nonzero codes to
+`internal` rather than leaking ad-hoc values, and `_diagnostics_payload`
+(`:361-405`) derives `basis`/`complete`/`counts` from `data.summary` or direct
+count keys while `_numeric_counts` (`:408-413`) excludes booleans and negative
+values. Live `link-check --json` produced the documented `result` block with
+`diagnostics.complete: true` and a `data.summary`-backed counts map.
+
+**Declarative command registry** — `ontos/command_registry.py:50-104` is the
+single source of truth for parser builders, handlers, aliases, visibility,
+result kinds, and nested paths. An import-time dedup guard (`:107-109`) raises
+on duplicate top-level names. `command_path` (`:151-161`) returns canonical
+space-joined paths for nested commands (`mcp install`, `export data`) and
+resolves hidden aliases (`tree`/`validate`/`agent-export`) without
+hyphen-synthesizing.
+
+**Canonical parsing and surgical writes** — `ontos/io/yaml.py:57-83`
+(`split_frontmatter_text`) recognizes only unindented `---` fences so a
+literal `---` inside a YAML scalar is never a delimiter, and
+`assert_frontmatter_roundtrip` (`:115-130`) fails closed unless serialized
+frontmatter reloads exactly. `ontos/core/frontmatter_edit.py:60-147`
+(`patch_frontmatter_fields`) preserves BOM, leading whitespace, comments,
+quoting, ordering, and line endings, and explicitly rejects duplicates
+(`:99-100`), block scalars/anchors/aliases (`:169-179`), and collection
+comments that would be discarded (`:191-192`). `read_utf8_for_mutation`
+(`:241-246`) strictly UTF-8-decodes mutation targets and surfaces
+`InvalidDocumentEncodingError` rather than silently corrupting bytes.
+
+**Physical link lines and wikilink resolution** — `ontos/core/body_refs.py`
+uses 1-based line indices (`:161-162`) over the body, and
+`link_diagnostics.py:504,512-518` adds `_body_line_offset(doc)`
+(`link_diagnostics.py:754-796`) to reconstruct the physical file line,
+matching the migration guide's "remove consumer-side frontmatter-line offset."
+Alias/heading wikilinks (`[[id|Alias]]`, `[[id#Heading]]`) resolve the target
+while keeping display text out of the target stream (`body_refs.py:824-844`),
+and alias/heading spans are explicitly excluded from being treated as additional
+targets (`body_refs.py:479-486`). Code-fence (`:271-307`) and inline-code
+(`:310-367`) zone handling is CommonMark-aware.
+
+**MCP and rename durability** — Both surfaces lock before clean-check and plan
+construction: CLI `rename.py:171-173` (lock → recover → locked-plan) and MCP
+`rename_tool.py:316-330` (lock → recover → clean check → plan). On commit
+failure both restore via `RenameTransaction.rollback` →
+`recover_rename_transaction` (`rename_transaction.py:111-112,115-158`), which
+validates journal shape, rejects symlinks (`:146-147`), re-checks workspace
+containment (`:142-145`), and restores only touched paths via atomic
+`_atomic_bytes` (`:41-59`, using `O_EXCL`+`O_NOFOLLOW`+`fsync` of file and
+directory). There is no unscoped `git checkout -- .`; planned-vs-committed set
+equality is verified (`rename.py:336-339`, `rename_tool.py:504-516`). The lock
+substrate (`ontos/core/locking.py`) is TOCTOU-hardened: no-follow directory
+walks reject symlinks/reparse points in every parent segment (`:217-280`,
+`:283-429`), the stable directory inode is flock-ed so unlinking the visible
+lockfile cannot split coordination (`:65-99`), and the open handle is
+re-verified against the visible path while held (`:163-197`).
+
+**Iterative graph traversal** — `ontos/core/graph.py` `detect_cycles`
+(`:372-424`) uses an explicit frame stack (no recursion cliff) with
+deterministic canonical cycle rotation (`:436-446`). `calculate_depths`
+(`:519-581`) runs over SCCs from iterative Kosaraju (`:584-636`), so cycles do
+not corrupt depth. Path identity uses NFC-normalized `casefold`, not
+`os.path.normcase`, with an explicit rationale that `normcase` is an identity
+no-op on macOS case-insensitive APFS (`:45-55`). `_LoadedPathIndex`
+(`:67-123`) is collision-aware (exact / casefolded / inode) and fail-closed
+(`None` = ambiguous) rather than last-wins, and `_resolve_depends_on_path`
+(`:147-186`) rejects any resolved path that escapes the workspace root after
+symlink resolution (the gemini-B.1-F1 containment fix).
+
+**MCP error boundary and pre-activation warnings** —
+`ontos/mcp/server.py:835-916` (`_invoke_boundary`) is the single telemetry,
+policy, validation, warning, and error boundary. It preserves
+`OntosUserError.code` in the structured envelope (`:898-902`), handles
+`OntosInternalError` and generic `Exception` separately, and attaches
+pre-activation warnings to both read and portfolio tool results
+(`:891-896`) — confirming the migration guide's "portfolio reads receive the
+same pre-activation warning behavior as workspace reads."
+
+**`graph_stats.by_type` open map** — `ontos/mcp/tools.py:63-107`
+(`build_canonical_snapshot_view`) seeds every canonical ontology type with zero
+and retains extension/unknown values encountered, then asserts
+`sum(by_type.values()) == total_count` (`:97-99`), satisfying the
+"exhaustive open map whose values sum to total" contract.
+
+**Repo slimming and evidence isolation** — `.ontos/scripts/` and its CI
+execution are removed; package commands own hook/validation behavior. The
+lifecycle evidence is hash-bound on sibling ref `lifecycle-evidence/project-ontos-v5-0-0`.
+At the recorded `evidence_commit` `7a5c1d4`, all 14 indexed artifacts
+(`evidence-index.yaml` at `5678e91`, `schema_version: 1`) match their recorded
+sha256 with zero orphans and zero missing entries. Strict-P3 is honestly
+attempted and withheld: `lifecycle-receipt-inventory.yaml` carries
+`receipts: []`, `attempt-summary.md` records the provider `Execution error`
+without synthesis, and `final-approval.md` marks D.6 `WITHHELD` — no receipt
+was fabricated.
 
 ## Findings
 
-### F1 — Portfolio read preactivation warning is partial (LOW)
+### F1 — Stale/misleading comments around rename git-clean and rollback (Low)
 
-The migration guide states "Portfolio reads also receive the same pre-activation
-warning behavior as workspace reads" (`docs/releases/v5.0.0.md:142-145`).
-`_invoke_portfolio_tool` correctly forwards `cache=cache`
-(`ontos/mcp/server.py:690-712`), and `_invoke_boundary` reaches
-`_attach_pre_activate_warning` (`server.py:891-896`). However, only
-`get_context_bundle` is in `WARNINGS_LIST_TOOL_NAMES` (`ontos/mcp/schemas.py:382-384`).
-`project_registry` and `search` are in neither `READ_WARNING_TOOL_NAMES`
-(`schemas.py:366-376`) nor the warnings-list set, and
-`ProjectRegistryResponse`/`SearchResponse` (`schemas.py:249-268`) declare no
-`warnings` field. Because the `StrictModel` forbids undeclared keys, the
-preactivation reminder is silently dropped for those two tools. This is a
-documentation fidelity gap, not a contract defect; the fix is either to add a
-`warnings` field to those two schemas or to narrow the docs claim to
-`get_context_bundle`.
+Several comments describe pre-v5 or otherwise inaccurate behavior on the
+rename durability surface. The code is correct in every case; only the
+documentation contradicts the implementation or the migration guide.
 
-### F2 — Lifecycle evidence verifier resolves the ref HEAD, not the pinned commit (LOW)
+- `ontos/core/git.py:19-21` — module docstring states the multi-file
+  `rename_tool` rollback "runs `git checkout -- .` over the whole workspace."
+  This is exactly the behavior the v5 migration guide removes
+  (`docs/releases/v5.0.0.md:189-191`: "Ontos no longer executes an unscoped
+  `git checkout -- .` rollback"). The v5 `rename_tool.py` restores via
+  `recover_rename_transaction` (exact bytes, touched paths only); the
+  docstring is stale and misrepresents a safety-critical property.
+- `ontos/mcp/rename_tool.py:423-426` — comment claims git clean-state "was
+  already enforced by `_preflight` before we acquired `workspace_lock()`" and
+  that "re-checking here would false-positive because `.ontos.lock` is now an
+  untracked file." Both clauses are wrong: `_preflight`
+  (`rename_tool.py:168-211`) performs no git check (the actual check is at
+  `:323`, inside the lock, after `recover_rename_transaction` at `:322`), and
+  `is_workspace_clean` (`ontos/core/git.py:65`) already ignores `.ontos.lock`
+  and `.ontos/transactions/` via `internal_paths`, so a post-lock re-check
+  would not false-positive. The real reason for `check_git=False` is simply to
+  avoid a redundant second check.
+- `ontos/commands/rename.py:388-389,397-400` — `build_rename_plan` docstring
+  repeats the same inaccurate "MCP enforces before acquiring `workspace_lock()`"
+  / "post-lock check would false-positive" framing.
 
-`scripts/verify_lifecycle_evidence_ref.py:38` resolves the evidence REF to its
-current HEAD (`git rev-parse --verify {evidence_ref}^{commit}`) rather than the
-recorded `evidence_commit` (`7a5c1d4`). Re-running the verifier after the sibling
-ref advanced (it now also carries the B.2 canary artifacts at `0c80825`) yields
-spurious "unindexed evidence artifact" errors even though the index matched at
-the certified commit. The pinned commit verifies cleanly (14/14). This is a
-tooling reproducibility nit, not a product-code defect; the script would be more
-rigorous if it pinned verification to `evidence_commit`.
+Severity: Low. Documentation only; no behavioral impact. The CLI calls
+`build_rename_plan` with the default `check_git=True` after acquiring the lock
+(`rename.py:171` then `:634`), which works precisely because
+`is_workspace_clean` ignores `.ontos.lock`. Recommend correcting the three
+comment sites to match the actual lock→recover→clean→plan sequencing and the
+v5 no-unscoped-rollback contract.
 
-### F3 — Stale test docstring references the forbidden rollback (NIT)
+### F2 — Envelope `result.exit_category` diverges from `exit_code` on incomplete-load runs (Low / Informational)
 
-`tests/mcp/test_rename_document.py:13-14` and the A3 test docstring at
-`tests/mcp/test_rename_document.py:659-663` state that rollback proceeds "via
-`git checkout -- .`". The implementation uses the durable byte-for-byte recovery
-journal (`ontos/core/rename_transaction.py:111-157`,
-`ontos/mcp/rename_tool.py:266-279`), which is the contract the spec mandates
-("Unscoped git rollback is forbidden", `docs/specs/project-ontos-v5-0-0-spec.md:36`).
-The code is correct; only the test prose is stale.
+For `link-check --json --scope docs` on this repository, the envelope reports
+`exit_code: 0` (clean) alongside `result.status: "incomplete"` (one
+`load_warning`) which collapses to `result.exit_category: "findings"`
+(`ontos/ui/json_output.py:464-469`). `link-check`'s own exit gate
+(`link_diagnostics.py:973-986`) returns `0` for a load-warnings-only run
+(only duplicates/broken/orphans/unallowlisted-file-deps drive `1`/`3`), while
+`ExitCategory` (`json_output.py:40-48`) has no `incomplete` member, so the
+catch-all maps "incomplete" to `findings`. A consumer that maps process exits
+exclusively via `result.exit_category` would therefore classify a clean exit-0
+diagnostic as "findings." This is the explicitly-tested, by-design contract
+(`tests/test_cli_contract_v4.py:271-282`; `tests/commands/test_link_check.py:244-245,325`),
+and the migration guide mitigates it by directing consumers to branch on
+`result.status` for outcome quality. Severity: Low/Informational — documented
+and tested, but the `exit_code=0` / `exit_category=findings` divergence on
+load-warning-only runs is a mild semantic wart; consider either documenting the
+divergence in the migration guide or adding a distinct `incomplete` exit
+category.
+
+### F3 — Strict-P3 lifecycle attempt head precedes the reviewed head (Informational)
+
+The strict-P3 attempt was run against product head `8f4fc884...` ("feat!:
+prepare Ontos 5.0.0 structural release") — one commit before the reviewed
+head `5678e91` ("fix: align v5 command contracts"). `5678e91` changed product
+code under `ontos/` (`cli.py`, `json_output.py`, `link_diagnostics.py`,
+`server.py`, `config.py`, and ~20 command modules) plus tests, and is covered
+by the passing product gates (1536-unit suite + golden master) but not by any
+successful strict-P3 receipt — that attempt failed with an empty receipt
+inventory, which is honestly withheld (`final-approval.md:42-46`,
+`docs/releases/v5.0.0.md:18-22`). Separately, the post-`5678e91` rerun-staging
+commits (`e707c4a`..`55e538a`) moved the `lifecycle-evidence/project-ontos-v5-0-0`
+sibling ref from `7a5c1d4` to `55e538a` and removed the in-tree
+`evidence-index.yaml`; this is outside the reviewed diff
+(`454b102..5678e91`) and explains why `verify_lifecycle_evidence_ref.py` exiting
+nonzero against the current tree is a rerun-staging artifact rather than an
+evidence-integrity defect at the reviewed head (all 14 artifacts verify
+cleanly against `7a5c1d4`). Severity: Informational. Consistent with the
+transparent D.6 withholding; no product-code defect.
 
 ## Verdict
 
 Approve
 
-Ontos 5.0.0 faithfully implements the v5 structural-release contract across every
-examined area: schema-4 envelopes with separated execution/result status, a
-reserved exit-4 taxonomy, an authoritative declarative command registry with
-canonical nested paths, canonical YAML parsing and surgical frontmatter writes,
-physical one-based link lines with alias-preserving rename, a single MCP
-invocation boundary that preserves structured error codes, byte-for-byte rename
-recovery journals that forbid unscoped rollback, iterative case-aware graph
-traversal, complete legacy-fork retirement, and hash-bound evidence isolation.
-All bounded read-only checks pass: the 1536-test product suite, the golden
-comparison, the focused contract/safety suite (228 tests), cardinality and
-scope gates, and lifecycle-evidence parity at the pinned commit. The three
-findings are all LOW or NIT and none blocks the release; F1 is a
-documentation/schema fidelity gap on two portfolio tools, F2 is a tooling
-reproducibility nit, and F3 is stale test prose describing the correct
-behavior. D.6 is correctly withheld pending a genuine strict-P3 receipt, and
-no maintainer authorization (merge/tag/release/PyPI/issue-closure) is granted
-or implied by this review.
+Ontos 5.0.0 at `5678e91` faithfully implements the v5 structural-release
+contract: schema-4 command envelopes with a result/diagnostics block, a
+reserved-code exit taxonomy, a declarative command registry with canonical
+nested paths, canonical YAML parsing and surgical byte-preserving frontmatter
+writes, physical one-based link lines with correct alias/heading handling,
+durable MCP/CLI rename (lock-before-plan, exact-byte recovery journal, no
+unscoped git rollback) under a TOCTOU-hardened cross-platform lock, iterative
+case-sensitive graph traversal, removal of the legacy fork and its CI
+execution, and hash-bound evidence isolation on a sibling ref. All bounded
+read-only checks pass: the focused contract/safety suite (228), the golden
+master comparison, the full product suite (1536), and cardinality/scope gates;
+evidence artifacts verify cleanly (14/14 sha256) at the recorded
+`evidence_commit`. The strict-P3 withholding is honest and transparent
+(`receipts: []`, no synthesis). The three findings are non-blocking: two are
+stale/inaccurate comments and a tested envelope edge case (Low), and one is
+lifecycle head-drift context (Informational). None is a product-code defect
+that blocks the structural release's quality or completeness. Recommend
+correcting the F1 comment sites and optionally addressing F2 in a follow-up;
+neither gates release authorization, which remains a maintainer decision
+outside this B.1 peer verdict.

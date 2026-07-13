@@ -113,3 +113,121 @@ results:
       prompt_sha256: sha256:5c5e0453763af5b10ddaf436af06accd2d870b85ee02195ecf4beabcdcecf9c7
       schema_version: 1
       status: passed
+  superseded_by_capture_id: project-ontos-v5-0-0-B.1-glm-peer.r1.c20260713T072923Z.80193.790374d186cef5c679f4b0afa1235094
+  superseded_at: '2026-07-13T07:40:45Z'
+  supersession_reason: redispatch round 1
+- dispatch_id: project-ontos-v5-0-0-B.1-glm-peer
+  capture_id: project-ontos-v5-0-0-B.1-glm-peer.r1.c20260713T072923Z.80193.790374d186cef5c679f4b0afa1235094
+  round: 1
+  family: glm
+  actual_executed_family: glm
+  role: peer
+  execution_provider: glm
+  execution_cli: opencode
+  resolved_executable: /Users/jonathanoh/.opencode/bin/opencode
+  resolved_executable_realpath: /Users/jonathanoh/.opencode/bin/opencode
+  cli_version: 1.17.18
+  provider_probe_hash: sha256:2d1776e670484c41da86c59f688f0559b0b1413bf75d2e05dd69548918e18ea0
+  model_id: glm-5.2
+  resolved_model: glm-5.2
+  model_probe_command: (intent) OpenCode advisory route logical model_id with opencode_model_ref
+  model_candidate_list:
+  - glm-5.2
+  model_selection_rule: operator-declared-advisory-route
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - opencode
+  - run
+  - --model
+  - neuralwatt/glm-5.2
+  - --dir
+  - <repo-root>
+  - <prompt-body-redacted>
+  prompt_path: docs/reviews/project-ontos-v5-0-0/.prompts/project-ontos-v5-0-0-B.1-glm-peer.r1.c20260713T072923Z.80193.790374d186cef5c679f4b0afa1235094.md
+  prompt_sha256: sha256:5c5e0453763af5b10ddaf436af06accd2d870b85ee02195ecf4beabcdcecf9c7
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-07-13T07:29:23Z'
+  ended_at: '2026-07-13T07:40:45Z'
+  raw_output_path: docs/reviews/project-ontos-v5-0-0/.raw/project-ontos-v5-0-0-B.1-glm-peer.r1.c20260713T072923Z.80193.790374d186cef5c679f4b0afa1235094.raw.txt
+  raw_output_hash: sha256:4ad6ffc8af3848d7423adcc267c8e7dc7d0f956df796b9d82b7f8da6b6a1c9dd
+  stderr_path: docs/reviews/project-ontos-v5-0-0/.raw/project-ontos-v5-0-0-B.1-glm-peer.r1.c20260713T072923Z.80193.790374d186cef5c679f4b0afa1235094.stderr.redacted.txt
+  stderr_hash: sha256:dc6d617d30e689cf366478e09b2001c35be41b95d4a661082ef7182f83a798a0
+  evidence_cap: direct-run
+  evidence_labels_used: []
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-v5-0-0/B.1-glm-peer.md
+  artifact_sha256: sha256:26b2886785b92ff825a3afeef416b553cb37f394c6b24b76f45eee7462d3d6be
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: glm-5.2
+  model_used: glm-5.2
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: glm-5.2
+    exit_code: 0
+    started_at: '2026-07-13T07:29:23Z'
+    ended_at: '2026-07-13T07:40:45Z'
+    detected_429: false
+    stderr_tail_200: "ncy\n[\u2713] Run bounded read-only checks: cardinality assertions,\
+      \ focused contract suite, golden comparison\n[\u2713] Write B.1-glm-peer.md\
+      \ verdict with frontmatter, findings, severity, file:line, verdict\n\e[0m"
+    stdout_substantive: false
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: worker_file
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  sequential_dispatch_caveat:
+    reason: single-operator canary-gated lifecycle rerun
+    timestamp: '2026-07-13T07:29:22Z'
+  intent_model_restrictions:
+    family: glm
+    execution_cli: opencode
+    denied_models: []
+    allowed_models: []
+    active: false
+  opencode_model_ref: neuralwatt/glm-5.2
+  opencode_provider_id: neuralwatt
+  opencode_base_url_env: NEURALWATT_BASE_URL
+  opencode_api_key_env: NEURALWATT_API_KEY
+  serving_provider: neuralwatt
+  wire_protocol: openai-compatible
+  evidence_trust_tier: attested-third-party
+  endpoint_origin_redacted: true
+  endpoint_origin_hash: sha256:c0029dc16c79fb52971abbf65f3d94c7dcbdc7ebf8d7b1a8ab454f05fa17f95f
+  endpoint_origin_label: neuralwatt
+  command_env_redacted:
+    NEURALWATT_API_KEY: <redacted:env>
+    NEURALWATT_BASE_URL: <redacted:env>
+    OPENCODE_CONFIG_CONTENT: <redacted>
+  provider_config_redacted:
+    model_ref: neuralwatt/glm-5.2
+    npm: '@ai-sdk/openai-compatible'
+    options:
+      apiKey: <redacted:env>
+      apiKey_env: NEURALWATT_API_KEY
+      baseURL: <redacted>
+      baseURL_env: NEURALWATT_BASE_URL
+    provider_id: neuralwatt
+  route_attestation_profile_id: neuralwatt-opencode-glm-5-2-v1
+  route_attestation_evidence:
+    live_probe:
+      artifact_sha256: sha256:26b2886785b92ff825a3afeef416b553cb37f394c6b24b76f45eee7462d3d6be
+      artifact_source: worker_file
+      captured_at: '2026-07-13T07:40:45Z'
+      evidence_artifact_path: docs/reviews/project-ontos-v5-0-0/.route-attestation/project-ontos-v5-0-0-B.1-glm-peer.r1.c20260713T072923Z.80193.790374d186cef5c679f4b0afa1235094.live-probe.yaml
+      evidence_artifact_sha256: sha256:9e098438ea814cd9f0d96df08dc71dc179e7660f013442f8da85f01ccfb1632d
+      family: glm
+      model_id: glm-5.2
+      producer: dispatch-family-review.sh
+      profile_id: neuralwatt-opencode-glm-5-2-v1
+      prompt_sha256: sha256:5c5e0453763af5b10ddaf436af06accd2d870b85ee02195ecf4beabcdcecf9c7
+      schema_version: 1
+      status: passed
+  supersedes_capture_ids:
+  - project-ontos-v5-0-0-B.1-glm-peer.r1.c20260713T071930Z.43526.19fbb1236b291da084dee294e91fb8d6

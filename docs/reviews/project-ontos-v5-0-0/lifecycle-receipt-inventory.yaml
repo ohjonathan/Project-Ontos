@@ -1,3 +1,74 @@
 schema_version: 2
 deliverable_id: project-ontos-v5-0-0
-receipts: []
+receipts:
+- run_id: project-ontos-v5-0-0-B.1-glm-peer.r1.c20260713T072923Z.80193.790374d186cef5c679f4b0afa1235094-peer
+  dispatch_id: project-ontos-v5-0-0-B.1-glm-peer
+  capture_id: project-ontos-v5-0-0-B.1-glm-peer.r1.c20260713T072923Z.80193.790374d186cef5c679f4b0afa1235094
+  deliverable_id: project-ontos-v5-0-0
+  phase: B.1
+  round: 1
+  role: peer
+  family: glm
+  actual_executed_family: glm
+  provider: glm
+  template_id: review-board-peer
+  template_version: 1.0.0
+  prompt_sha256: 5c5e0453763af5b10ddaf436af06accd2d870b85ee02195ecf4beabcdcecf9c7
+  input_artifact_sha256: 5c5e0453763af5b10ddaf436af06accd2d870b85ee02195ecf4beabcdcecf9c7
+  output_artifact_path: docs/reviews/project-ontos-v5-0-0/B.1-glm-peer.md
+  output_artifact_sha256: 26b2886785b92ff825a3afeef416b553cb37f394c6b24b76f45eee7462d3d6be
+  transcript_or_log_path: docs/reviews/project-ontos-v5-0-0/.raw/project-ontos-v5-0-0-B.1-glm-peer.r1.c20260713T072923Z.80193.790374d186cef5c679f4b0afa1235094.raw.txt
+  stderr_path: docs/reviews/project-ontos-v5-0-0/.raw/project-ontos-v5-0-0-B.1-glm-peer.r1.c20260713T072923Z.80193.790374d186cef5c679f4b0afa1235094.stderr.redacted.txt
+  stderr_sha256: dc6d617d30e689cf366478e09b2001c35be41b95d4a661082ef7182f83a798a0
+  started_at: '2026-07-13T07:29:23Z'
+  ended_at: '2026-07-13T07:40:45Z'
+  exit_code: 0
+  strict_p3_candidate: true
+  provider_limited_fallback: false
+  dispatch_intent_path: docs/reviews/project-ontos-v5-0-0/B.1-dispatch-intent.yaml
+  dispatch_result_path: docs/reviews/project-ontos-v5-0-0/B.1-dispatch-result.yaml
+  meta_orchestrator_family: codex
+  deliverable_author_family: codex
+  execution_cli: opencode
+  model_id: glm-5.2
+  serving_provider: neuralwatt
+  wire_protocol: openai-compatible
+  evidence_trust_tier: attested-third-party
+  opencode_model_ref: neuralwatt/glm-5.2
+  opencode_provider_id: neuralwatt
+  opencode_base_url_env: NEURALWATT_BASE_URL
+  opencode_api_key_env: NEURALWATT_API_KEY
+  endpoint_origin_redacted: true
+  endpoint_origin_hash: sha256:c0029dc16c79fb52971abbf65f3d94c7dcbdc7ebf8d7b1a8ab454f05fa17f95f
+  endpoint_origin_label: neuralwatt
+  command_env_redacted:
+    NEURALWATT_API_KEY: <redacted:env>
+    NEURALWATT_BASE_URL: <redacted:env>
+    OPENCODE_CONFIG_CONTENT: <redacted>
+  provider_config_redacted:
+    model_ref: neuralwatt/glm-5.2
+    npm: '@ai-sdk/openai-compatible'
+    options:
+      apiKey: <redacted:env>
+      apiKey_env: NEURALWATT_API_KEY
+      baseURL: <redacted>
+      baseURL_env: NEURALWATT_BASE_URL
+    provider_id: neuralwatt
+  route_attestation_profile_id: neuralwatt-opencode-glm-5-2-v1
+  route_attestation_evidence:
+    live_probe:
+      artifact_sha256: sha256:26b2886785b92ff825a3afeef416b553cb37f394c6b24b76f45eee7462d3d6be
+      artifact_source: worker_file
+      captured_at: '2026-07-13T07:40:45Z'
+      evidence_artifact_path: docs/reviews/project-ontos-v5-0-0/.route-attestation/project-ontos-v5-0-0-B.1-glm-peer.r1.c20260713T072923Z.80193.790374d186cef5c679f4b0afa1235094.live-probe.yaml
+      evidence_artifact_sha256: sha256:9e098438ea814cd9f0d96df08dc71dc179e7660f013442f8da85f01ccfb1632d
+      family: glm
+      model_id: glm-5.2
+      producer: dispatch-family-review.sh
+      profile_id: neuralwatt-opencode-glm-5-2-v1
+      prompt_sha256: sha256:5c5e0453763af5b10ddaf436af06accd2d870b85ee02195ecf4beabcdcecf9c7
+      schema_version: 1
+      status: passed
+  sequential_dispatch_caveat:
+    reason: single-operator canary-gated lifecycle rerun
+    timestamp: '2026-07-13T07:29:22Z'
