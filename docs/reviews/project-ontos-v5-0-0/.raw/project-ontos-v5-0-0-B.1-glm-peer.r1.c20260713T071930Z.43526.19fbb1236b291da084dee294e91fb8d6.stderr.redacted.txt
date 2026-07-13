@@ -1,0 +1,853 @@
+[0m
+> build · glm-5.2
+[0m
+[0m→ [0mRead .
+[0m
+[0m$ [0mgit log --oneline -5 && echo "---BRANCH---" && git branch --show-current && echo "---STATUS---" && git status --short | head -20
+0c80825 review: stage current-head B.1 lifecycle board
+0cfbcb2 test: preserve first Claude canary and stage F35 retry
+f3966ea test: stage Claude lifecycle route canary
+e707c4a chore: bind v5 lifecycle rerun to current product head
+5678e91 fix: align v5 command contracts
+---BRANCH---
+lifecycle-evidence/project-ontos-v5-0-0
+---STATUS---
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+[0m
+[0m# [0mTodos
+[•] Read v5 spec, manifest, migration guide
+[ ] Examine core implementation: schema-4 envelopes, exit taxonomy, command registry
+[ ] Examine canonical parsing/writes, link lines, MCP/rename durability
+[ ] Examine graph traversal, repo slimming, evidence isolation
+[ ] Read focused tests
+[ ] Run bounded read-only checks
+[ ] Write verdict to B.1-glm-peer.md
+[0m
+[0m$ [0mgit diff --stat 454b102..5678e910ce11ed7a3546822cf3e34d50c5741681 | tail -40
+tests/mcp/test_get_document.py                     |    2 +-
+ tests/mcp/test_health.py                           |    2 +-
+ tests/mcp/test_list_documents.py                   |    2 +-
+ tests/mcp/test_parity.py                           |    2 +-
+ tests/mcp/test_portfolio.py                        |    2 +-
+ tests/mcp/test_portfolio_integration.py            |    2 +-
+ tests/mcp/test_query.py                            |    2 +-
+ tests/mcp/test_read_only_registration.py           |    2 +-
+ tests/mcp/test_refresh.py                          |    2 +-
+ tests/mcp/test_rename_document.py                  |   70 +-
+ <redacted:secret>      |    2 +-
+ tests/mcp/test_schemas.py                          |    2 +-
+ tests/mcp/test_server_integration.py               |    7 +-
+ tests/mcp/test_server_portfolio_mode.py            |    2 +-
+ tests/mcp/test_stream_routing.py                   |    2 +-
+ tests/mcp/test_workspace_overview.py               |   44 +-
+ tests/mcp/test_write_tools.py                      |    2 +-
+ tests/{mcp/__init__.py => mcp_helpers.py}          |   85 +-
+ tests/test_cli_contract_v4.py                      |  386 ++++
+ tests/test_cli_phase4.py                           |   10 +-
+ tests/test_config.py                               |  114 --
+ tests/test_consolidate.py                          |   90 -
+ tests/test_cycle_detection.py                      |  176 --
+ tests/test_doctor_mcp_probe_regression.py          |    4 +-
+ <redacted:secret>         |   26 +-
+ tests/test_end_session.py                          |  271 ---
+ tests/test_env_cli.py                              |    4 +-
+ tests/test_lifecycle_evidence_ref.py               |   44 +
+ tests/test_lint.py                                 |  194 --
+ tests/test_maintain.py                             |   49 -
+ tests/test_orphan_detection.py                     |  260 ---
+ tests/test_pre_commit_check.py                     |  319 ----
+ tests/test_pre_push_check.py                       |   67 -
+ tests/test_query.py                                |   94 -
+ tests/test_v284_refactor.py                        |  149 --
+ tests/test_validation.py                           |  439 -----
+ tests/test_version.py                              |    9 +
+ tests/test_yaml_edge_cases.py                      |  244 ---
+ tests/ui/test_json_output.py                       |    4 +-
+ 206 files changed, 7429 insertions(+), 17631 deletions(-)
+[0m
+[0m$ [0mgit log --oneline 454b102..5678e910ce11ed7a3546822cf3e34d50c5741681
+5678e91 fix: align v5 command contracts
+3536b11 ci: keep coverage artifacts outside checkout
+066a815 docs: record withheld v5 lifecycle disposition
+8f4fc88 feat!: prepare Ontos 5.0.0 structural release
+[0m
+[0m$ [0mgit diff --stat 454b102..5678e910ce11ed7a3546822cf3e34d50c5741681 | head -80
+.github/workflows/ci.yml                           |   26 +-
+ .gitignore                                         |    1 +
+ .ontos/scripts/ontos/__init__.py                   |   57 -
+ .ontos/scripts/ontos/core/__init__.py              |   86 -
+ .ontos/scripts/ontos/core/config.py                |   83 -
+ .ontos/scripts/ontos/core/context.py               |  271 ---
+ .ontos/scripts/ontos/core/curation.py              |  489 -----
+ .ontos/scripts/ontos/core/frontmatter.py           |  122 --
+ .ontos/scripts/ontos/core/history.py               |  263 ---
+ .ontos/scripts/ontos/core/ontology.py              |  312 ----
+ .ontos/scripts/ontos/core/paths.py                 |  345 ----
+ .ontos/scripts/ontos/core/proposals.py             |  134 --
+ .ontos/scripts/ontos/core/schema.py                |  421 -----
+ .ontos/scripts/ontos/core/staleness.py             |  353 ----
+ .ontos/scripts/ontos/ui/__init__.py                |    9 -
+ .ontos/scripts/ontos/ui/output.py                  |  108 --
+ .ontos/scripts/ontos_config.py                     |  167 --
+ .ontos/scripts/ontos_config_defaults.py            |  288 ---
+ .ontos/scripts/ontos_consolidate.py                |  467 -----
+ .ontos/scripts/ontos_create_bundle.py              |  240 ---
+ .ontos/scripts/ontos_end_session.py                | 1902 --------------------
+ .ontos/scripts/ontos_generate_context_map.py       | 1305 --------------
+ .ontos/scripts/ontos_generate_ontology_spec.py     |  166 --
+ .ontos/scripts/ontos_install_hooks.py              |  182 --
+ .ontos/scripts/ontos_maintain.py                   |  264 ---
+ .ontos/scripts/ontos_migrate_frontmatter.py        |  183 --
+ .ontos/scripts/ontos_migrate_schema.py             |  338 ----
+ .ontos/scripts/ontos_migrate_v2.py                 |  127 --
+ .ontos/scripts/ontos_pre_commit_check.py           |  252 ---
+ .ontos/scripts/ontos_pre_push_check.py             |  385 ----
+ .ontos/scripts/ontos_promote.py                    |  454 -----
+ .ontos/scripts/ontos_query.py                      |  323 ----
+ .ontos/scripts/ontos_remove_frontmatter.py         |  167 --
+ .ontos/scripts/ontos_scaffold.py                   |  275 ---
+ .ontos/scripts/ontos_stub.py                       |  288 ---
+ .ontos/scripts/ontos_summarize.py                  |  175 --
+ .ontos/scripts/ontos_update.py                     |  521 ------
+ .ontos/scripts/ontos_verify.py                     |  312 ----
+ .ontos/scripts/tests/conftest.py                   |   30 -
+ .ontos/scripts/tests/test_context.py               |  329 ----
+ .ontos/scripts/tests/test_curation.py              |  357 ----
+ .ontos/scripts/tests/test_deprecation.py           |   87 -
+ .ontos/scripts/tests/test_ontology.py              |  215 ---
+ .ontos/scripts/tests/test_promote.py               |  127 --
+ .ontos/scripts/tests/test_schema.py                |  308 ----
+ .pre-commit-config.yaml                            |   19 +-
+ AGENTS.md                                          |   14 +-
+ Ontos_Context_Map.md                               |   64 +-
+ ..._merge-pr-118-v4-5-closes-issues-115-116-117.md |    2 +-
+ ...<redacted:secret> |    2 +-
+ ...-<redacted:secret> |    2 +-
+ ...<redacted:secret> |    4 +-
+ <redacted:secret>              |    2 +-
+ .../<redacted:secret>  |   84 +
+ .../<redacted:secret>  |   68 +
+ docs/releases/v4.7.0.md                            |    2 +-
+ docs/releases/v5.0.0.md                            |  214 +++
+ .../<redacted:secret>  |    3 +-
+ .../<redacted:secret>       |   19 +
+ .../<redacted:secret> |   57 +
+ docs/specs/project-ontos-v5-0-0-spec.md            |   53 +
+ docs/trackers/project-ontos-v5-0-0.md              |   10 +
+ <redacted:secret>                |  238 +++
+ ontos/__init__.py                                  |    2 +-
+ ontos/cli.py                                       |  732 ++++++--
+ ontos/command_registry.py                          |  162 ++
+ ontos/commands/activate.py                         |   95 +-
+ ontos/commands/consolidate.py                      |   27 +-
+ ontos/commands/doctor.py                           |  196 +-
+ ontos/commands/env.py                              |   27 +-
+ ontos/commands/export_data.py                      |   51 +-
+ ontos/commands/hook.py                             |  169 +-
+ ontos/commands/init.py                             |   83 +-
+ ontos/commands/link_check.py                       |   20 +-
+ ontos/commands/log.py                              |   60 +-
+ ontos/commands/maintain.py                         |  187 +-
+ ontos/commands/map.py                              |   88 +-
+ ontos/commands/mcp.py                              |    6 +-
+ ontos/commands/migrate.py                          |   48 +-
+ ontos/commands/migrate_cmd.py                      |    6 +-
+[0m
+[0m$ [0mgit diff --stat 454b102..5678e910ce11ed7a3546822cf3e34d50c5741681 | wc -l
+207
+[0m
+[0m$ [0mgit diff --stat 454b102..5678e910ce11ed7a3546822cf3e34d50c5741681 | sed -n '80,170p'
+ontos/commands/migrate_cmd.py                      |    6 +-
+ ontos/commands/migration_report.py                 |   31 +-
+ ontos/commands/promote.py                          |   39 +-
+ ontos/commands/query.py                            |    4 +-
+ ontos/commands/rename.py                           |  216 ++-
+ ontos/commands/retrofit.py                         |   85 +-
+ ontos/commands/scaffold.py                         |  193 +-
+ ontos/commands/stub.py                             |   78 +-
+ ontos/commands/verify.py                           |  126 +-
+ ontos/core/body_refs.py                            |   95 +-
+ ontos/core/config.py                               |  221 ++-
+ ontos/core/frontmatter.py                          |  106 +-
+ ontos/core/frontmatter_edit.py                     |   18 +-
+ ontos/core/frontmatter_repair.py                   |   11 +-
+ ontos/core/git.py                                  |   17 +-
+ ontos/core/graph.py                                |  333 +++-
+ ontos/core/history.py                              |    9 +-
+ ontos/core/instruction_artifacts.py                |   21 +-
+ ontos/core/link_diagnostics.py                     |  337 +++-
+ ontos/core/rename_transaction.py                   |  158 ++
+ ontos/core/schema.py                               |   52 +-
+ ontos/mcp/rename_tool.py                           |  127 +-
+ ontos/mcp/schemas.py                               |   13 +-
+ ontos/mcp/server.py                                |  213 ++-
+ ontos/mcp/tools.py                                 |   63 +-
+ ontos/ui/json_output.py                            |  334 +++-
+ pyproject.toml                                     |    2 +-
+ scripts/verify_lifecycle_evidence_ref.py           |   94 +
+ tests/commands/golden/query_help.txt               |   39 +-
+ tests/commands/golden/scaffold_help.txt            |   22 +-
+ <redacted:secret>              |    5 +-
+ .../test_activate_json_warning_metadata.py         |   62 +-
+ .../commands/test_agentic_activation_resilience.py |   10 +-
+ tests/commands/test_agents.py                      |    2 +-
+ tests/commands/test_b2_promote_absolute_path.py    |    2 +-
+ tests/commands/test_consolidate_parity.py          |   20 +-
+ tests/commands/test_consolidate_root_regression.py |    6 +-
+ tests/commands/test_doctor_phase4.py               |   71 +-
+ tests/commands/test_env.py                         |   10 +-
+ tests/commands/test_export_all.py                  |    3 +-
+ tests/commands/test_export_phase4.py               |    2 +-
+ tests/commands/test_hook_phase4.py                 |   96 +
+ tests/commands/test_link_check.py                  |   28 +-
+ tests/commands/test_log.py                         |   61 +-
+ tests/commands/test_maintain.py                    |   50 +-
+ tests/commands/test_map.py                         |   72 +-
+ tests/commands/test_mcp_command.py                 |  136 +-
+ tests/commands/test_migrate_parity.py              |   10 +-
+ tests/commands/test_promote_parity.py              |    6 +-
+ tests/commands/test_query_parity.py                |   68 +-
+ tests/commands/test_rename.py                      |  342 +++-
+ tests/commands/test_retrofit.py                    |   36 +-
+ tests/commands/test_scaffold_parity.py             |  159 +-
+ tests/commands/test_scan_scope_integration.py      |    4 +-
+ tests/commands/test_stub_parity.py                 |   81 +
+ tests/commands/test_verify_parity.py               |   62 +-
+ tests/commands/test_verify_portfolio.py            |   33 +-
+ tests/conftest.py                                  |   96 +-
+ tests/core/test_body_refs.py                       |   66 +
+ tests/core/test_config_phase3.py                   |   15 +
+ tests/core/test_frontmatter_repair.py              |   22 +-
+ tests/core/test_graph.py                           |  123 ++
+ tests/core/test_link_diagnostics.py                |  179 +-
+ tests/core/test_rename_transaction.py              |   51 +
+ tests/golden/README.md                             |   12 +-
+ tests/golden/baselines/medium/context_map.md       |  292 +--
+ tests/golden/baselines/medium/log_metadata.json    |    5 +-
+ tests/golden/baselines/medium/log_stdout.txt       |    2 +-
+ tests/golden/baselines/medium/map_metadata.json    |    5 +-
+ tests/golden/baselines/medium/map_stdout.txt       |   21 +-
+ tests/golden/baselines/medium/session_log.md       |   28 +-
+ tests/golden/baselines/small/context_map.md        |  111 +-
+ tests/golden/baselines/small/log_metadata.json     |    5 +-
+ tests/golden/baselines/small/log_stdout.txt        |    2 +-
+ tests/golden/baselines/small/map_metadata.json     |    5 +-
+ tests/golden/baselines/small/map_stdout.txt        |   16 +-
+ tests/golden/baselines/small/session_log.md        |   25 +-
+ tests/golden/capture_golden_master.py              |   43 +-
+ tests/golden/compare_golden_master.py              |  104 +-
+ tests/golden/test_golden_master.py                 |    3 -
+ tests/mcp/test_activation.py                       |    4 +-
+ tests/mcp/test_bundler.py                          |    2 +-
+ tests/mcp/test_cache.py                            |    2 +-
+ tests/mcp/test_context_bundle.py                   |    2 +-
+ tests/mcp/test_context_bundle_config.py            |    2 +-
+ tests/mcp/test_context_map.py                      |    2 +-
+ tests/mcp/test_error_paths.py                      |    2 +-
+ tests/mcp/test_export_graph.py                     |    2 +-
+ tests/mcp/test_get_document.py                     |    2 +-
+ tests/mcp/test_health.py                           |    2 +-
+ tests/mcp/test_list_documents.py                   |    2 +-
+[0m
+[0m$ [0mgit diff --stat 454b102..5678e910ce11ed7a3546822cf3e34d50c5741681 | sed -n '170,207p'
+tests/mcp/test_list_documents.py                   |    2 +-
+ tests/mcp/test_parity.py                           |    2 +-
+ tests/mcp/test_portfolio.py                        |    2 +-
+ tests/mcp/test_portfolio_integration.py            |    2 +-
+ tests/mcp/test_query.py                            |    2 +-
+ tests/mcp/test_read_only_registration.py           |    2 +-
+ tests/mcp/test_refresh.py                          |    2 +-
+ tests/mcp/test_rename_document.py                  |   70 +-
+ <redacted:secret>      |    2 +-
+ tests/mcp/test_schemas.py                          |    2 +-
+ tests/mcp/test_server_integration.py               |    7 +-
+ tests/mcp/test_server_portfolio_mode.py            |    2 +-
+ tests/mcp/test_stream_routing.py                   |    2 +-
+ tests/mcp/test_workspace_overview.py               |   44 +-
+ tests/mcp/test_write_tools.py                      |    2 +-
+ tests/{mcp/__init__.py => mcp_helpers.py}          |   85 +-
+ tests/test_cli_contract_v4.py                      |  386 ++++
+ tests/test_cli_phase4.py                           |   10 +-
+ tests/test_config.py                               |  114 --
+ tests/test_consolidate.py                          |   90 -
+ tests/test_cycle_detection.py                      |  176 --
+ tests/test_doctor_mcp_probe_regression.py          |    4 +-
+ <redacted:secret>         |   26 +-
+ tests/test_end_session.py                          |  271 ---
+ tests/test_env_cli.py                              |    4 +-
+ tests/test_lifecycle_evidence_ref.py               |   44 +
+ tests/test_lint.py                                 |  194 --
+ tests/test_maintain.py                             |   49 -
+ tests/test_orphan_detection.py                     |  260 ---
+ tests/test_pre_commit_check.py                     |  319 ----
+ tests/test_pre_push_check.py                       |   67 -
+ tests/test_query.py                                |   94 -
+ tests/test_v284_refactor.py                        |  149 --
+ tests/test_validation.py                           |  439 -----
+ tests/test_version.py                              |    9 +
+ tests/test_yaml_edge_cases.py                      |  244 ---
+ tests/ui/test_json_output.py                       |    4 +-
+ 206 files changed, 7429 insertions(+), 17631 deletions(-)
+[0m
+[0m→ [0mRead docs/specs/project-ontos-v5-0-0-spec.md
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead docs/releases/v5.0.0.md
+[0m→ [0mRead docs/trackers/project-ontos-v5-0-0.md
+[0m→ [0mRead ontos/ui/json_output.py
+[0m→ [0mRead ontos/command_registry.py
+[0m→ [0mRead ontos/core/frontmatter.py
+[0m→ [0mRead ontos/core/rename_transaction.py
+[0m→ [0mRead ontos/core/body_refs.py
+[0m→ [0mRead ontos/core/graph.py
+[0m→ [0mRead ontos/core/link_diagnostics.py
+[0m
+[0m# [0mTodos
+[✓] Read v5 spec, manifest, migration guide
+[✓] Examine core implementation: schema-4 envelopes, exit taxonomy, command registry
+[•] Examine canonical parsing/writes, link lines, MCP/rename durability
+[•] Examine graph traversal, repo slimming, evidence isolation
+[ ] Read focused tests
+[ ] Run bounded read-only checks
+[ ] Write verdict to B.1-glm-peer.md
+[0m
+[0m→ [0mRead ontos/commands/rename.py
+[0m→ [0mRead ontos/mcp/rename_tool.py
+[0m✱ [0mGrep "git checkout -- \.|git checkout --\s|git\.checkout|reset --hard"[90m in ontos · 3 matches[0m
+[0m
+[0m$ [0mtest ! -e .ontos/scripts && echo "ABSENT: .ontos/scripts" || echo "PRESENT: .ontos/scripts"
+ABSENT: .ontos/scripts
+[0m
+[0m$ [0mgrep -n "pytest .ontos/scripts" .github/workflows/ci.yml && echo "FOUND_CI_INVOCATION" || echo "NO_CI_INVOCATION"
+NO_CI_INVOCATION
+[0m
+[0m✱ [0mGlob "ontos/io/*.py"[90m 9 matches[0m
+[0m→ [0mRead ontos/io/yaml.py
+[0m→ [0mRead ontos/core/git.py
+[0m→ [0mRead ontos/core/frontmatter_edit.py
+[0m
+[0m# [0mTodos
+[✓] Read v5 spec, manifest, migration guide
+[✓] Examine core implementation: schema-4 envelopes, exit taxonomy, command registry
+[✓] Examine canonical parsing/writes, link lines, MCP/rename durability
+[•] Examine graph traversal, repo slimming, evidence isolation
+[ ] Read focused tests
+[•] Run bounded read-only checks
+[ ] Write verdict to B.1-glm-peer.md
+[0m
+[0m$ [0mPYTHONPATH=. python3 -c 'import ontos; from ontos.ui.json_output import COMMAND_ENVELOPE_SCHEMA_VERSION as s; assert (ontos.__version__,s)==("5.0.0","4.0"); print("version=",ontos.__version__,"schema=",s)'
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import ontos; from ontos.ui.json_output import COMMAND_ENVELOPE_SCHEMA_VERSION as s; assert (ontos.__version__,s)==("5.0.0","4.0"); print("version=",ontos.__version__,"schema=",s)
+    ^^^^^^^^^^^^
+  File "/<redacted:secret>", line 13, in <module>
+    from ontos.core.context import SessionContext, FileOperation, PendingWrite
+  File "/<redacted:secret>", line 18, in <module>
+    from ontos.core.frontmatter import (
+    ...<4 lines>...
+    )
+  File "/private/tmp/project-ontos-v5-evidence/ontos/core/frontmatter.py", line 22, in <module>
+    from ontos.io.yaml import parse_yaml, split_frontmatter_text
+  File "/<redacted:secret>", line 26, in <module>
+    from ontos.io.toml import (
+    ...<4 lines>...
+    )
+  File "/<redacted:secret>", line 12, in <module>
+    import tomli_w
+ModuleNotFoundError: No module named 'tomli_w'
+[0m
+[0m$ [0mtest ! -e .ontos/scripts && ! grep -q 'pytest .ontos/scripts/tests' .github/workflows/ci.yml && echo "G-scope-1 OK" || echo "G-scope-1 FAIL"
+G-scope-1 OK
+[0m
+[0m✗ [0mRead <redacted:secret> failed
+[91m[1mError: [0mFile not found: /<redacted:secret>
+[0m
+[0m$ [0mls -la docs/reviews/project-ontos-v5-0-0/ 2>/dev/null; echo "---"; git rev-parse HEAD; echo "---"; git cat-file -t 5678e910ce11ed7a3546822cf3e34d50c5741681 2>/dev/null && echo "commit exists"
+total 88
+drwxr-xr-x@ 16 jonathanoh  wheel   512 Jul 13 00:19 .
+drwxr-xr-x@ 10 jonathanoh  wheel   320 Jul 12 18:52 ..
+drwxr-xr-x@ 10 jonathanoh  wheel   320 Jul 13 00:19 .prompts
+drwxr-xr-x@ 10 jonathanoh  wheel   320 Jul 13 00:19 .raw
+-rw-r--r--@  1 jonathanoh  wheel   828 Jul 12 18:52 B.1-claude-adversarial.prompt.md
+-rw-r--r--@  1 jonathanoh  wheel  3333 Jul 13 00:19 B.1-dispatch-intent.yaml
+-rw-r--r--@  1 jonathanoh  wheel   910 Jul 12 18:57 attempt-summary.md
+drwxr-xr-x@ 10 jonathanoh  wheel   320 Jul 13 00:12 canary
+-rw-r--r--@  1 jonathanoh  wheel  2485 Jul 13 00:09 final-approval.md
+-rw-r--r--@  1 jonathanoh  wheel    68 Jul 12 18:52 lifecycle-receipt-inventory.yaml
+-rw-r--r--@  1 jonathanoh  wheel     2 Jul 12 18:57 provider-limited-verifier.exit
+-rw-r--r--@  1 jonathanoh  wheel   218 Jul 12 18:57 provider-limited-verifier.txt
+-rw-r--r--@  1 jonathanoh  wheel     2 Jul 12 18:57 strict-B1-verifier.exit
+-rw-r--r--@  1 jonathanoh  wheel   470 Jul 12 18:57 strict-B1-verifier.txt
+-rw-r--r--@  1 jonathanoh  wheel     2 Jul 12 18:57 strict-lifecycle-verifier.exit
+-rw-r--r--@  1 jonathanoh  wheel   218 Jul 12 18:57 strict-lifecycle-verifier.txt
+---
+0c80825e0b5f13708f8de8cbffdb22da776cfc61
+---
+commit
+commit exists
+[0m
+[0m$ [0mls -d .venv 2>/dev/null && echo "venv exists" || echo "no venv"; python3 -c "import tomli_w" 2>&1 | head -1; pip show tomli_w 2>/dev/null | head -2 || echo "tomli_w not installed"
+no venv
+Traceback (most recent call last):
+[0m
+[0m$ [0mgit show 5678e910ce11ed7a3546822cf3e34d50c5741681:docs/releases/v5.0.0.md 2>/dev/null | head -5; echo "---EVIDENCE-INDEX-AT-PRODUCT-COMMIT---"; git ls-tree -r 5678e910ce11ed7a3546822cf3e34d50c5741681 -- docs/reviews/project-ontos-v5-0-0/ 2>/dev/null | head -20
+---
+id: v500
+type: log
+status: active
+branch: codex/ontos-v5.0.0
+---EVIDENCE-INDEX-AT-PRODUCT-COMMIT---
+100644 blob 418064461ff3b42a454d1705db6c2d413f1c5ff0	<redacted:secret>
+100644 blob 77366571eff1980af51249ad2a4606dd35818c85	<redacted:secret>
+[0m
+[0m$ [0mpip install -q -e . 2>&1 | tail -5
+zsh:1: command not found: pip
+[0m
+[0m$ [0mpython3 -m pip install -q -e . 2>&1 | tail -8
+If you disable this error, we STRONGLY recommend that you additionally
+    pass the '--user' flag to pip, or set 'user = true' in your pip.conf
+    file. Failure to do this can result in a broken Homebrew installation.
+    
+    Read more about this behavior here: <https://peps.python.org/pep-0668/>
+
+note: If you believe this is a mistake, please contact your Python installation or OS distribution provider. You can override this, at the risk of breaking your Python installation or OS, by passing --break-system-packages.
+hint: See PEP 668 for the detailed specification.
+[0m
+[0m$ [0mgit show 5678e910ce11ed7a3546822cf3e34d50c5741681:<redacted:secret>
+schema_version: 1
+evidence_ref: lifecycle-evidence/project-ontos-v5-0-0
+evidence_commit: 7a5c1d47894568c80305cf126cc2401156adf301
+evidence_root: docs/reviews/project-ontos-v5-0-0
+entries:
+  - {path: <redacted:secret>, sha256: 428baaac90b3ed38119d6c282fd436ad612d44f7941ce29df988c17e56866b8d, phase: B.1, role: prompt, family: claude, product_head: 8f4fc8842bd8346b541a9c5a08a9d196ee1a6319}
+  - {path: <redacted:secret>, sha256: 556db53504c7fa1a7489a001db64986fee1df89460e9047b69c68cb4cdf54b61, phase: B.1, role: raw-output, family: claude, product_head: 8f4fc8842bd8346b541a9c5a08a9d196ee1a6319}
+  - {path: <redacted:secret>, sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855, phase: B.1, role: stderr, family: claude, product_head: 8f4fc8842bd8346b541a9c5a08a9d196ee1a6319}
+  - {path: <redacted:secret>, sha256: 428baaac90b3ed38119d6c282fd436ad612d44f7941ce29df988c17e56866b8d, phase: B.1, role: source-prompt, family: claude, product_head: 8f4fc8842bd8346b541a9c5a08a9d196ee1a6319}
+  - {path: <redacted:secret>, sha256: f7d1b8edec2889e37d3d0bb5c1fbf2dbf585d3ca3805c7874bfa19305dd4f082, phase: B.1, role: dispatch-intent, family: framework, product_head: 8f4fc8842bd8346b541a9c5a08a9d196ee1a6319}
+  - {path: <redacted:secret>, sha256: bb90300fff3002f841d694f111b4d260e02f4091e8974e41f6a1f6a4072ba28c, phase: B.1, role: dispatch-result, family: framework, product_head: 8f4fc8842bd8346b541a9c5a08a9d196ee1a6319}
+  - {path: <redacted:secret>, sha256: edfe3884cfe3eaea223b0c0d98195267629c2b4a9dec09aa9a6d2c19ee574b6d, phase: D.6, role: summary, family: codex, product_head: 8f4fc8842bd8346b541a9c5a08a9d196ee1a6319}
+  - {path: <redacted:secret>, sha256: 80ccd1dc4152999f3ff5768a0222be9881990b6744fb776b3766a3c3a557f3be, phase: D.6, role: inventory, family: framework, product_head: 8f4fc8842bd8346b541a9c5a08a9d196ee1a6319}
+  - {path: <redacted:secret>, sha256: 4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865, phase: D.6, role: verifier-exit, family: framework, product_head: 8f4fc8842bd8346b541a9c5a08a9d196ee1a6319}
+  - {path: <redacted:secret>, sha256: ca136f969c94dfe091c4cf6677dc5eaa888c2257ac7349466875403c62329e48, phase: D.6, role: verifier-output, family: framework, product_head: 8f4fc8842bd8346b541a9c5a08a9d196ee1a6319}
+  - {path: <redacted:secret>, sha256: 4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865, phase: B.1, role: verifier-exit, family: framework, product_head: 8f4fc8842bd8346b541a9c5a08a9d196ee1a6319}
+  - {path: <redacted:secret>, sha256: 75437f6765d19bf131e2528a339904c7ca1c34ee8999e2602e8238b1a83b0a55, phase: B.1, role: verifier-output, family: framework, product_head: 8f4fc8842bd8346b541a9c5a08a9d196ee1a6319}
+  - {path: <redacted:secret>, sha256: 4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865, phase: D.6, role: verifier-exit, family: framework, product_head: 8f4fc8842bd8346b541a9c5a08a9d196ee1a6319}
+  - {path: <redacted:secret>, sha256: ca136f969c94dfe091c4cf6677dc5eaa888c2257ac7349466875403c62329e48, phase: D.6, role: verifier-output, family: framework, product_head: 8f4fc8842bd8346b541a9c5a08a9d196ee1a6319}
+[0m
+[0m$ [0mpython3 -m venv /<redacted:secret> 2>&1 | tail -3 && /<redacted:secret> -m pip install -q -e . 2>&1 | tail -5 && echo "INSTALL_DONE"
+INSTALL_DONE
+[0m
+[0m$ [<redacted:secret>
+echo "=== G-cardinality-1 ==="; PYTHONPATH=. $VENV -c 'import ontos; from ontos.ui.json_output import COMMAND_ENVELOPE_SCHEMA_VERSION as s; assert (ontos.__version__,s)==("5.0.0","4.0"); print("OK version=",ontos.__version__,"schema=",s)'
+echo "=== G-scope-1 ==="; test ! -e .ontos/scripts && ! grep -q 'pytest .ontos/scripts/tests' .github/workflows/ci.yml && echo "OK" || echo "FAIL"
+echo "=== schema constant at product commit ==="; git show 5678e910ce11ed7a3546822cf3e34d50c5741681:ontos/__init__.py | grep -n version
+=== G-cardinality-1 ===
+OK version= 5.0.0 schema= 4.0
+=== G-scope-1 ===
+OK
+=== schema constant at product commit ===
+10:__version__ = "5.0.0"
+[0m
+[0m$ [<redacted:secret>
+PYTHONPATH=. $VENV -m pytest -q tests/test_cli_contract_v4.py tests/core/test_body_refs.py tests/core/test_link_diagnostics.py tests/core/test_graph.py tests/core/test_rename_transaction.py tests/mcp/test_server_integration.py tests/mcp/test_rename_document.py 2>&1 | tail -25
+/<redacted:secret>: No module named pytest
+[0m
+[0m$ [<redacted:secret> -m pip install -q pytest 2>&1 | tail -3 && echo "PYTEST_INSTALLED"
+PYTEST_INSTALLED
+[0m
+[0m$ [<redacted:secret>
+PYTHONPATH=. $VENV -m pytest -q tests/test_cli_contract_v4.py tests/core/test_body_refs.py tests/core/test_link_diagnostics.py tests/core/test_graph.py tests/core/test_rename_transaction.py tests/mcp/test_server_integration.py tests/mcp/test_rename_document.py 2>&1 | tail -25
+____________ ERROR collecting tests/mcp/test_server_integration.py _____________
+ImportError while importing test module '/<redacted:secret>'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@<redacted:secret>:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/mcp/test_server_integration.py:6: in <module>
+    from mcp.types import ListToolsResult
+E   ModuleNotFoundError: No module named 'mcp'
+______________ ERROR collecting tests/mcp/test_rename_document.py ______________
+ImportError while importing test module '/<redacted:secret>'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@<redacted:secret>:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/mcp/test_rename_document.py:34: in <module>
+    from mcp.types import CallToolResult
+E   ModuleNotFoundError: No module named 'mcp'
+=========================== short test summary info ============================
+ERROR tests/mcp/test_server_integration.py
+ERROR tests/mcp/test_rename_document.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
+============================== 2 errors in 0.25s ===============================
+[0m
+[0m$ [<redacted:secret>
+PYTHONPATH=. $VENV -m pytest -q tests/test_cli_contract_v4.py tests/core/test_body_refs.py tests/core/test_link_diagnostics.py tests/core/test_graph.py tests/core/test_rename_transaction.py 2>&1 | tail -15
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0
+rootdir: /private/tmp/project-ontos-v5-evidence
+configfile: pyproject.toml
+collected 185 items
+
+tests/test_cli_contract_v4.py ................                           [  8%]
+tests/core/test_body_refs.py ........................................... [ 31%]
+.......................................................                  [ 61%]
+tests/core/test_link_diagnostics.py ...........................          [ 76%]
+tests/core/test_graph.py .........................................       [ 98%]
+tests/core/test_rename_transaction.py ...                                [100%]
+
+============================= 185 passed in 0.22s ==============================
+[0m
+[0m$ [<redacted:secret> -m pip install -q mcp pydantic 2>&1 | tail -5 && echo "MCP_DEPS_INSTALLED"
+MCP_DEPS_INSTALLED
+[0m
+[0m$ [<redacted:secret>
+PYTHONPATH=. $VENV scripts/verify_lifecycle_evidence_ref.py 2>&1 | tail -20
+usage: verify_lifecycle_evidence_ref.py [-h] [--repo REPO] index
+verify_lifecycle_evidence_ref.py: error: the following arguments are required: index
+[0m
+[0m$ [<redacted:secret>
+PYTHONPATH=. $VENV -m pytest -q tests/mcp/test_server_integration.py tests/mcp/test_rename_document.py 2>&1 | tail -15
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0
+rootdir: /private/tmp/project-ontos-v5-evidence
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collected 43 items
+
+tests/mcp/test_server_integration.py ........                            [ 18%]
+tests/mcp/test_rename_document.py ...................................    [100%]
+
+============================== 43 passed in 8.88s ==============================
+[0m
+[0m→ [0mRead scripts/verify_lifecycle_evidence_ref.py
+[0m
+[0m$ [0mgit diff --stat 5678e910ce11ed7a3546822cf3e34d50c5741681..0c80825e0b5f13708f8de8cbffdb22da776cfc61 -- ontos/ tests/ 2>&1 | tail -10; echo "---evidence-index-status---"; git status --short <redacted:secret> 2>&1; echo "---diff-product-vs-head docs---"; git diff --stat <redacted:secret> -- ontos/ tests/ pyproject.toml 2>&1 | tail -5
+---evidence-index-status---
+---diff-product-vs-head docs---
+[0m
+[0m$ [<redacted:secret>
+git show 5678e910ce11ed7a3546822cf3e34d50c5741681:<redacted:secret> > /<redacted:secret>
+$VENV scripts/verify_lifecycle_evidence_ref.py /<redacted:secret> 2>&1 | tail -20
+evidence-ref: ERROR: unindexed evidence artifact: <redacted:secret>
+evidence-ref: ERROR: unindexed evidence artifact: <redacted:secret>
+evidence-ref: ERROR: unindexed evidence artifact: <redacted:secret>
+evidence-ref: ERROR: unindexed evidence artifact: <redacted:secret>
+evidence-ref: ERROR: unindexed evidence artifact: <redacted:secret>
+evidence-ref: ERROR: unindexed evidence artifact: <redacted:secret>
+evidence-ref: ERROR: unindexed evidence artifact: <redacted:secret>
+evidence-ref: ERROR: unindexed evidence artifact: <redacted:secret>
+evidence-ref: ERROR: unindexed evidence artifact: <redacted:secret>
+evidence-ref: ERROR: unindexed evidence artifact: <redacted:secret>
+evidence-ref: ERROR: unindexed evidence artifact: <redacted:secret>
+evidence-ref: ERROR: unindexed evidence artifact: <redacted:secret>
+evidence-ref: ERROR: unindexed evidence artifact: <redacted:secret>
+evidence-ref: ERROR: unindexed evidence artifact: <redacted:secret>
+evidence-ref: ERROR: unindexed evidence artifact: <redacted:secret>
+evidence-ref: ERROR: unindexed evidence artifact: <redacted:secret>
+evidence-ref: ERROR: unindexed evidence artifact: <redacted:secret>
+evidence-ref: ERROR: unindexed evidence artifact: <redacted:secret>
+evidence-ref: ERROR: unindexed evidence artifact: <redacted:secret>
+evidence-ref: ERROR: indexed artifact absent from evidence tree: <redacted:secret>
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m
+[0m$ [0mecho "=== ref HEAD vs pinned evidence_commit ==="; git rev-parse lifecycle-evidence/project-ontos-v5-0-0 2>&1; echo "<redacted:secret>"
+echo "=== verify indexed entries match at pinned commit 7a5c1d4 ==="
+<redacted:secret>
+$VENV - <<'PY' 2>&1 | tail -20
+import yaml, hashlib, subprocess, sys
+idx = yaml.safe_load(open("/<redacted:secret>"))
+ref = "7a5c1d47894568c80305cf126cc2401156adf301"
+errs = 0
+for e in idx["entries"]:
+    p = e["path"]
+    r = subprocess.run(["git","show",f"{ref}:{p}"],capture_output=True)
+    if r.returncode:
+        print("MISSING", p); errs+=1; continue
+    actual = hashlib.sha256(r.stdout).hexdigest()
+    if actual != e["sha256"]:
+        print("SHA MISMATCH", p); errs+=1
+print("indexed entries:", len(idx["entries"]), "errors:", errs)
+# tree-listing orphan check at pinned commit
+r = subprocess.run(["git","ls-tree","-r","--name-only",ref,"--","docs/reviews/project-ontos-v5-0-0"],capture_output=True,text=True)
+present = {l for l in r.stdout.splitlines() if l}
+indexed = {e["path"] for e in idx["entries"]}
+print("orphans(unindexed) at pinned commit:", len(present-indexed))
+print("absent from tree:", len(indexed-present))
+PY
+=== ref HEAD vs pinned evidence_commit ===
+0c80825e0b5f13708f8de8cbffdb22da776cfc61
+<redacted:secret>
+=== verify indexed entries match at pinned commit 7a5c1d4 ===
+indexed entries: 14 errors: 0
+orphans(unindexed) at pinned commit: 0
+absent from tree: 0
+[0m
+[0m# [0mTodos
+[✓] Read v5 spec, manifest, migration guide
+[✓] Examine core implementation: schema-4 envelopes, exit taxonomy, command registry
+[✓] Examine canonical parsing/writes, link lines, MCP/rename durability
+[✓] Examine graph traversal, repo slimming, evidence isolation
+[•] Read focused tests
+[✓] Run bounded read-only checks
+[ ] Write verdict to B.1-glm-peer.md
+[0m
+[0m→ [0mRead tests/test_cli_contract_v4.py
+[0m→ [0mRead tests/core/test_rename_transaction.py
+[0m→ [0mRead tests/core/test_graph.py
+[0m→ [0mRead tests/commands/test_rename.py[90m [limit=120][0m
+[0m→ [0mRead tests/mcp/test_rename_document.py
+[0m→ [0mRead <redacted:secret>
+[0m
+[0m$ [0mgit show 5678e910ce11ed7a3546822cf3e34d50c5741681:<redacted:secret> 2>&1 | head -30
+fatal: path '<redacted:secret>' does not exist in '5678e910ce11ed7a3546822cf3e34d50c5741681'
+[0m
+[0m$ [<redacted:secret>
+PYTHONPATH=. $VENV tests/golden/compare_golden_master.py --fixture all 2>&1 | tail -15
+Testing 'ontos map'...
+  map exit_code: PASS
+  map stdout: PASS
+  map stderr: PASS
+  context_map.md: PASS
+
+  Testing 'ontos log'...
+  log exit_code: PASS
+  log stdout: PASS
+  log stderr: PASS
+  session_log.md: PASS
+
+============================================================
+All comparisons PASSED
+============================================================
+[0m
+[0m$ [<redacted:secret>
+PYTHONPATH=. $VENV -m pytest -q 2>&1 | tail -20
+tests/test_frontmatter_tags.py ..                                        [ 90%]
+tests/test_immutable_history.py ...............                          [ 91%]
+tests/test_lib.py ...............                                        [ 92%]
+tests/test_lifecycle_evidence_ref.py .                                   [ 92%]
+tests/test_map_compact.py ....................                           [ 93%]
+tests/test_map_filter.py ...                                             [ 94%]
+tests/test_session_context.py .......................................... [ 96%]
+...........                                                              [ 97%]
+tests/test_suggestions.py ..........                                     [ 98%]
+tests/test_validation_concepts_a1.py .....                               [ 98%]
+tests/test_version.py .                                                  [ 98%]
+tests/ui/test_json_output.py .....................                       [100%]
+
+=============================== warnings summary ===============================
+tests/ui/test_json_output.py::TestConvenienceFunctions::test_emit_error
+  /<redacted:secret>:148: DeprecationWarning: emit_error() is deprecated; use emit_command_error().
+    emit_error("Failed", "E999")
+
+-- Docs: https://<redacted:secret>
+================== 1536 passed, 1 warning in 72.23s (0:01:12) ==================
+[0m
+[0m✱ [0mGrep "by_type|graph_stats|preactivation|pre-activation|OntosUserError"[90m in ontos/mcp/server.py · 94 matches[0m
+[0m
+[0m$ [<redacted:secret>
+PYTHONPATH=. $VENV -m ontos map --strict --scope docs 2>&1 | tail -8; echo "EXIT=$?"
+Load diagnostics:
+  invalid_enum: 1 warnings
+    - /<redacted:secret>:6: invalid frontmatter field 'status' value 'approved'. Expected one of: draft, active, deprecated, archived, rejected, complete, auto-generated, scaffold, pending_curation, in_progress, proposed, ready, completed, revised, in-lifecycle, unknown
+Context map generated: /<redacted:secret>
+  Documents: 207
+EXIT=0
+[0m
+[0m→ [0mRead ontos/mcp/server.py[90m [offset=820, limit=120][0m
+[0m
+[0m$ [0mgit stash list 2>&1 | head -2; echo "=== check product commit has canary docs ==="; git ls-tree -r --name-only 5678e910ce11ed7a3546822cf3e34d50c5741681 -- <redacted:secret>/ 2>&1 | head -3 || echo "no canary dir at product commit"; echo "=== current branch untracked canary ==="; git ls-tree -r --name-only HEAD -- <redacted:secret>/ 2>&1 | head -3
+stash@{0}: On codex/ontos-concept-vocabulary: ontos-internal-leftovers
+stash@{1}: On codex/ontos-metadata-hygiene: ontos-internal-session-leftovers
+=== check product commit has canary docs ===
+=== current branch untracked canary ===
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+[0m
+[0m✱ [0mGrep "_attach_pre_activate_warning|_invoke_portfolio|_invoke_read_tool|workspace_overview|ensure_fresh"[90m in ontos/mcp/server.py · 38 matches[0m
+[0m→ [0mRead ontos/mcp/server.py[90m [limit=60, offset=940][0m
+[0m→ [0mRead ontos/mcp/server.py[90m [limit=90, offset=55][0m
+[0m→ [0mRead ontos/mcp/server.py[90m [limit=90, offset=680][0m
+[0m✱ [0mGrep "READ_WARNING_TOOL_NAMES|WARNINGS_LIST_TOOL_NAMES|_PRE_ACTIVATE_WARNING ="[90m in ontos/mcp/server.py · 10 matches[0m
+[0m
+[0m$ [<redacted:secret>
+PYTHONPATH=. $VENV -m pytest -q tests/mcp/test_workspace_overview.py tests/mcp/test_portfolio.py 2>&1 | tail -8
+plugins: anyio-4.14.2
+collected 52 items
+
+tests/mcp/test_workspace_overview.py ..                                  [  3%]
+tests/mcp/test_portfolio.py ............................................ [ 88%]
+......                                                                   [100%]
+
+============================== 52 passed in 0.39s ==============================
+[0m
+[0m→ [0mRead ontos/mcp/schemas.py[90m [limit=50, offset=360][0m
+[0m✱ [0mGrep "class ProjectRegistryResponse|class SearchResponse|class WorkspaceOverviewResponse"[90m in ontos/mcp/schemas.py · 3 matches[0m
+[0m→ [0mRead ontos/mcp/schemas.py[90m [limit=75, offset=90][0m
+[0m→ [0mRead ontos/mcp/schemas.py[90m [limit=40, offset=249][0m
+[0m
+[0m$ [0mgit show 5678e910ce11ed7a3546822cf3e34d50c5741681:tests/mcp/test_workspace_overview.py 2>/dev/null | head -90
+from tests.mcp_helpers import build_cache, create_empty_workspace, create_workspace
+
+from ontos.core.ontology import get_valid_types
+from ontos.mcp import tools
+
+
+def _zeroed_canonical_types():
+    return {doc_type: 0 for doc_type in get_valid_types()}
+
+
+def test_workspace_overview_counts_and_titles(tmp_path):
+    cache = build_cache(create_workspace(tmp_path))
+
+    payload = tools.workspace_overview(cache)
+
+    assert payload["graph_stats"]["total"] == 8
+    expected_by_type = _zeroed_canonical_types()
+    expected_by_type.update(
+        {
+            "kernel": 1,
+            "strategy": 1,
+            "product": 1,
+            "atom": 1,
+            "log": 1,
+            "reference": 1,
+            "concept": 1,
+            "unknown": 1,
+        }
+    )
+    assert payload["graph_stats"]["by_type"] == expected_by_type
+    assert (
+        sum(payload["graph_stats"]["by_type"].values())
+        == payload["graph_stats"]["total"]
+    )
+    assert payload["key_documents"][0]["id"] == "kernel_doc"
+    assert payload["key_documents"][0]["title"] == "Kernel Doc"
+    assert "canonical documents in docs scope" in payload["summary"]
+
+
+def test_workspace_overview_zero_document_behavior(tmp_path):
+    cache = build_cache(create_empty_workspace(tmp_path))
+
+    payload = tools.workspace_overview(cache)
+
+    assert payload["graph_stats"]["total"] == 0
+    assert payload["key_documents"] == []
+    assert payload["graph_stats"]["by_type"] == _zeroed_canonical_types()
+    assert (
+        sum(payload["graph_stats"]["by_type"].values())
+        == payload["graph_stats"]["total"]
+    )
+[0m
+[0m$ [<redacted:secret>
+PYTHONPATH=. $VENV - <<'PY' 2>&1 | tail -25
+# Empirically check whether portfolio reads get a preactivation warning.
+import inspect
+from ontos.mcp import server
+src = inspect.getsource(server._attach_pre_activate_warning)
+print("_attach_pre_activate_warning uses READ_WARNING_TOOL_NAMES / WARNINGS_LIST_TOOL_NAMES")
+print("project_registry in READ_WARNING? ", "project_registry" in server.READ_WARNING_TOOL_NAMES)
+print("search in READ_WARNING? ", "search" in server.READ_WARNING_TOOL_NAMES)
+print("project_registry in WARNINGS_LIST? ", "project_registry" in server.WARNINGS_LIST_TOOL_NAMES)
+print("search in WARNINGS_LIST? ", "search" in server.WARNINGS_LIST_TOOL_NAMES)
+print("get_context_bundle in WARNINGS_LIST? ", "get_context_bundle" in server.WARNINGS_LIST_TOOL_NAMES)
+PY
+_attach_pre_activate_warning uses READ_WARNING_TOOL_NAMES / WARNINGS_LIST_TOOL_NAMES
+project_registry in READ_WARNING?  False
+search in READ_WARNING?  False
+project_registry in WARNINGS_LIST?  False
+search in WARNINGS_LIST?  False
+get_context_bundle in WARNINGS_LIST?  True
+[0m
+[0m$ [0mls docs/reviews/project-ontos-v5-0-0/*.md docs/reviews/project-ontos-v5-0-0/*.prompt.md 2>/dev/null; echo "=== glm peer prompt ==="; cat <redacted:secret> 2>/dev/null | head -40
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+=== glm peer prompt ===
+# Ontos 5.0.0 B.1 GLM peer review
+
+Independently assess the quality and completeness of Ontos 5.0.0 at product
+commit `5678e910ce11ed7a3546822cf3e34d50c5741681` relative to base `454b102`.
+Read the v5 spec, manifest, migration guide, core implementation, and focused
+tests. Examine schema-4 envelopes, exit taxonomy, command registry, canonical
+parsing/writes, link lines, MCP/rename durability, graph traversal, repo
+slimming, and evidence isolation. Run only bounded read-only checks.
+
+Write the complete verdict only to
+`<redacted:secret>`. It must start with YAML
+frontmatter containing `phase: B.1`, `role: peer`, `family: glm`,
+`deliverable_id: project-ontos-v5-0-0`, and `status: completed`; then one H1;
+evidence and findings with severity plus file:line support; and a
+`## Verdict` section whose first non-blank line is the bare word `Approve` or
+`Request changes`. Do not modify product files.
+[0m
+[0m# [0mTodos
+[✓] Read v5 spec, manifest, migration guide
+[✓] Examine core implementation: schema-4 envelopes, exit taxonomy, command registry
+[✓] Examine canonical parsing/writes, link lines, MCP/rename durability
+[✓] Examine graph traversal, repo slimming, evidence isolation
+[✓] Read focused tests
+[✓] Run bounded read-only checks
+[•] Write verdict to B.1-glm-peer.md
+[0m
+[0m← [0mWrite <redacted:secret>
+Wrote file successfully.
+[0m
+[0m$ [0mecho "=== frontmatter + verdict section ==="; sed -n '1,12p' <redacted:secret>; echo "..."; grep -n "^## Verdict" <redacted:secret>; echo "=== first non-blank line after Verdict ==="; awk '/^## Verdict/{flag=1; next} flag && NF{print; exit}' <redacted:secret>; echo "=== H1 count ==="; grep -c "^# " <redacted:secret>; echo "=== git status (product files untouched) ==="; git status --short -- ontos/ tests/ pyproject.toml manifests/ docs/specs/ docs/releases/ | head
+=== frontmatter + verdict section ===
+---
+phase: B.1
+role: peer
+family: glm
+deliverable_id: project-ontos-v5-0-0
+status: completed
+---
+
+# Ontos 5.0.0 B.1 GLM peer review
+
+Independent peer assessment of Ontos 5.0.0 at product commit
+`5678e910ce11ed7a3546822cf3e34d50c5741681` relative to base `454b102`.
+...
+219:## Verdict
+=== first non-blank line after Verdict ===
+Approve
+=== H1 count ===
+1
+=== git status (product files untouched) ===
+[0m
+[0m$ [0mgit status --short
+M Ontos_Context_Map.md
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+[0m
+[0m$ [0mgit diff --stat Ontos_Context_Map.md; echo "=== restoring to HEAD ==="; git checkout -- Ontos_Context_Map.md && echo "restored"; git status --short -- Ontos_Context_Map.md && echo "(clean)"
+Ontos_Context_Map.md | 28 +++++++++++++++++-----------
+ 1 file changed, 17 insertions(+), 11 deletions(-)
+=== restoring to HEAD ===
+restored
+(clean)
+[0m
+[0m$ [0mecho "=== product files modified (should be empty) ==="; git status --short -- ontos/ tests/ pyproject.toml manifests/ docs/specs/ docs/releases/ Ontos_Context_Map.md AGENTS.md .github/ .pre-commit-config.yaml; echo "=== review artifact present ==="; ls -la <redacted:secret>; echo "=== verdict line check ==="; awk '/^## Verdict/{f=1;next} f&&NF{print;exit}' <redacted:secret>
+=== product files modified (should be empty) ===
+=== review artifact present ===
+-rw-r--r--@ 1 jonathanoh  wheel  13893 Jul 13 00:26 <redacted:secret>
+=== verdict line check ===
+Approve
+[0m
+[0m# [0mTodos
+[✓] Read v5 spec, manifest, migration guide
+[✓] Examine core implementation: schema-4 envelopes, exit taxonomy, command registry
+[✓] Examine canonical parsing/writes, link lines, MCP/rename durability
+[✓] Examine graph traversal, repo slimming, evidence isolation
+[✓] Read focused tests
+[✓] Run bounded read-only checks
+[✓] Write verdict to B.1-glm-peer.md
+[0m

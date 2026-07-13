@@ -1,0 +1,38 @@
+I'll start by exploring the repository structure and understanding the git context, then read the relevant spec, implementation, and test files.
+Let me set up a task list and gather the key context files in parallel.
+Let me see the full diff stat and locate the key files.
+Now let me read the key spec, manifest, release notes, and tracker files in parallel.
+Now let me read the core implementation files for schema-4 envelopes, exit taxonomy, and command registry.
+Now let me read the canonical parsing, link lines, rename transaction, and graph files.
+Now let me examine the graph traversal, link_diagnostics, and the rename command/MCP rename tool.
+Let me update my todos and read the rename command, MCP rename tool, and MCP server.
+Let me verify there's no unscoped git rollback, check repo slimming, and read the canonical yaml parser and the surgical frontmatter edit module.
+Let me read the canonical yaml parser, the git restore helper, and the surgical frontmatter edit module.
+Let me update todos, run the bounded cardinality checks, and read the evidence index and CLI dispatch.
+Let me check the dependency situation and locate the evidence index file.
+The deps aren't installed. Let me install them and check the evidence-index at the product commit.
+Let me create a venv to run the bounded tests and checks properly.
+Now let me run the cardinality assertions and the focused contract/safety tests.
+Now let me run the full focused suite including the MCP tests, and the lifecycle evidence ref check.
+The product code is identical between the product commit and HEAD. Let me run the lifecycle evidence ref verifier using the index from the product commit.
+The sibling ref has advanced past the pinned commit (canary/B.2 artifacts were added later). Let me verify the index still matches at its pinned commit `7a5c1d4`, which is what the final-approval gate certified.
+Evidence isolation is intact at the pinned commit. Let me update todos and read the focused tests.
+Let me read the rename transaction, graph, and rename command tests in parallel.
+Let me read the rename command tests and MCP rename tests.
+Let me check a few remaining areas: the MCP server's workspace overview graph stats, the dispatch intent/result, and run the broader test suite plus golden comparison.
+Let me run the full test suite and the documentation validation check.
+The full suite passes (1,536 tests). Let me run documentation validation and check the MCP server workspace overview features.
+Documentation validation passes (exit 0). Let me verify the MCP preactivation warning behavior and check the product commit's documentation validation status.
+The canary docs (invalid enum warning) exist only on the lifecycle branch, not the product commit — so product documentation validation is clean. Let me verify the portfolio-read preactivation warning claim.
+Portfolio tools pass `cache=cache`, so they get the preactivation warning. Let me verify the portfolio tool names are in the warning-attachment sets.
+Let me check whether the portfolio tool response schemas carry a warnings field (relevant to the preactivation warning claim).
+Let me check the workspace overview test to confirm the exhaustive by_type assertion, and verify the preactivation warning behavior in tests.
+I have comprehensive evidence now. Let me check existing review artifacts for format conventions, then verify the product commit's docs validation was clean.
+I have all the evidence needed. Let me update todos and write the verdict.
+Let me verify the verdict file structure and confirm no product files were modified.
+Let me confirm the only change is the new review file.
+Running `ontos map` regenerated `Ontos_Context_Map.md` as a side effect. Per "do not modify product files," I'll restore it to its committed state.
+Restored. Let me do a final verification that no product files are modified.
+Verdict written to `docs/reviews/project-ontos-v5-0-0/B.1-glm-peer.md`: **Approve**.
+
+Assessed Ontos 5.0.0 at `5678e91` vs base `454b102` across all requested contract areas. Bounded checks pass: full suite (1536 tests), golden comparison, focused contract/safety suite (228 tests), cardinality (`5.0.0`/`4.0`), scope gates, and lifecycle-evidence parity at pinned commit `7a5c1d4` (14/14 match). Three low/nit findings (portfolio preactivation warning partial for `project_registry`/`search`; verifier resolves ref HEAD rather than pinned `evidence_commit`; stale test docstring referencing the forbidden `git checkout -- .`) — none block the release. No product files modified (the `ontos map` regeneration was reverted).
