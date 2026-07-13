@@ -6,7 +6,7 @@ type: log
 status: complete
 original_status: withheld
 deliverable_manifest_path: manifests/project-ontos-v5-0-0.yaml
-halt_reason: "Claude independently verified the remediated PR head bce26f5, but the current-head lifecycle canary was denied before provider invocation and produced no receipt."
+halt_reason: "The maintainer explicitly authorized the 0982095 Claude canary after data-egress disclosure, but tenant policy still denied process creation; no artifact or receipt exists."
 branch: codex/ontos-v5.0.0
 event_type: review
 source: codex
@@ -22,7 +22,7 @@ concepts: [release, external-review, hardening]
 |---|--------------|--------|----------------|--------------|
 | 1 | Product suite passes. | PASSED | test-pass | `bce26f5`: all six CI jobs green; 1,553 tests and 82.21% coverage locally |
 | 2 | Documentation validation is clean. | PASSED | command-exit-0 | 203 documents after this disposition log; zero warnings/findings |
-| 3 | Current-head exact Claude route canary produces a verified artifact. | BLOCKED | orchestrator-preflight | Exact executable/version and byte identity passed preflight; execution policy denied the `bypassPermissions` launch before process creation, so no current-head artifact or receipt exists |
+| 3 | Current-head exact Claude route canary produces a verified artifact. | BLOCKED | orchestrator-preflight | Maintainer authorization was explicit after data-egress disclosure; tenant policy nevertheless denied the `bypassPermissions` launch before process creation, so no `0982095` artifact or receipt exists |
 | 4 | B.1 product head has no blocking verdict. | NOT RUN | head-bound review | Historical `Request changes` applies only to `5678e91`; no lifecycle board ran against `bce26f5` |
 | 5 | Strict-P3 lifecycle receipts verified. | NOT RUN | head-bound receipts | Existing lifecycle receipts are bound to `5678e91` and earlier |
 | 6 | Provider-limited fallback verified. | NOT RUN | head-bound receipts | No exception or fallback approval exists for `bce26f5` |
@@ -39,14 +39,15 @@ regressions; all six CI jobs are green. That top-level comment is out-of-band
 product verification, not a submitted `APPROVE` review or a lifecycle receipt.
 
 That remediation and independent verification do not convert the old verdict
-into lifecycle approval. A current-head canary preflight matched the proven
-Claude executable, realpath, and version and confirmed byte-identical product
-surfaces. The required `bypassPermissions` launch was then denied by execution
-policy before process creation because of external data-egress risk. No provider
-call, worker artifact, dispatch result, or receipt was produced, so strict-P3
-was not started. The historical strict and provider-limited verifier failures
-remain on the sibling evidence ref and are not repurposed as current-head
-evidence.
+into lifecycle approval. For review target
+`0982095e183483a068a4e62bfef61723f0e2a86c`, a fresh canary preflight matched
+the proven Claude executable, realpath, and version and confirmed
+byte-identical product and release surfaces. The maintainer then explicitly
+authorized the external route after acknowledging the data-egress risk. Tenant
+policy still denied process creation. No provider call, worker artifact,
+dispatch result, or receipt was produced, so strict-P3 was not started. The
+historical strict and provider-limited verifier failures remain on the sibling
+evidence ref and are not repurposed as current-head evidence.
 
 ## Gate outcome
 
@@ -68,10 +69,10 @@ carry only the compact hash index and disposition.
 ## Recommendation
 
 Hold the release and keep the PR in draft. CI has passed; lifecycle remains the
-only gate. A retry of the exact Claude canary requires explicit authorization
-after disclosure of its external data-egress risk. If that canary produces and
-verifies a genuine artifact, restart the head-dependent lifecycle phases and
-correct the llm-dev wrapper/verifier mismatch without weakening evidence. Only
+only gate. Maintainer authorization is no longer missing, but this tenant's
+execution policy prevents the agent from launching the exact external route.
+Progress requires a policy change or a genuine canary artifact produced outside
+this restricted layer and then verified through the normal evidence gates. Only
 genuine current-head receipts can re-adjudicate D.6. This document grants no
 ready-for-review, merge, tag, release, PyPI, issue-closure, or other maintainer
 action.

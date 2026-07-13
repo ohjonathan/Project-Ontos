@@ -31,6 +31,9 @@ or release guardrails.
 - Halted before strict-P3 when execution policy denied the required
   `bypassPermissions` launch before provider invocation. No artifact or receipt
   was fabricated.
+- Retried only after the maintainer explicitly authorized the disclosed
+  external data-egress risk. Tenant policy still denied process creation, so the
+  exact route remained unavailable and strict-P3 remained gated off.
 - Kept PR #163 draft, the release hold active, and D.6 `WITHHELD`.
 
 ## Alternatives Considered
@@ -49,8 +52,9 @@ or release guardrails.
 - The sibling evidence ref records the pending canary intent and an honest
   pre-provider policy-block record; raw lifecycle evidence remains outside the
   product branch.
-- A future exact-route retry requires explicit authorization after disclosure
-  of the external data-egress risk. Release actions remain maintainer-deferred.
+- Maintainer authorization has now been supplied; progress requires a tenant
+  policy change or a genuine artifact produced outside this restricted
+  execution layer. Release actions remain maintainer-deferred.
 
 ## Testing
 
@@ -64,3 +68,5 @@ or release guardrails.
 - Pending canary dispatch shape passed `verify-family-dispatch --allow-pending`.
 - The external canary process did not start; therefore no strict-P3 verifier
   result is claimed for the remediated head.
+- The authorized retry against `0982095` was also denied before process
+  creation by tenant policy; no provider artifact or receipt was generated.
