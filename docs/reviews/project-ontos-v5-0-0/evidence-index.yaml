@@ -1,6 +1,6 @@
 schema_version: 1
 evidence_ref: lifecycle-evidence/project-ontos-v5-0-0
-evidence_commit: 23dfad1394390054cad1923f0766de347d9f1086
+evidence_commit: f8d8c144b095d9849769038b45dd877e04f8719d
 evidence_root: docs/reviews/project-ontos-v5-0-0
 entries:
   - {path: "docs/reviews/project-ontos-v5-0-0/.prompts/project-ontos-v5-0-0-B.1-claude-adversarial.prompt.md", sha256: "71246caf76cbd8880c8db085517d9987dbec199d947561765895e60fce6d3d9e", phase: "B.1", role: "prompt", family: "claude", product_head: "5678e910ce11ed7a3546822cf3e34d50c5741681"}
@@ -37,10 +37,13 @@ entries:
   - {path: "docs/reviews/project-ontos-v5-0-0/canary/canary-dispatch-result.yaml", sha256: "6672ad21b79f339737ecf50088331498f0818e610a37c80ef87dc7d5eb18796d", phase: "canary", role: "dispatch-result", family: "framework", product_head: "5678e910ce11ed7a3546822cf3e34d50c5741681"}
   - {path: "docs/reviews/project-ontos-v5-0-0/canary/canary-v2-dispatch-intent.yaml", sha256: "7335a648309451890f75eb831dc5ac47f5f178779c0dcf1088295f51bbbab08a", phase: "canary", role: "dispatch-intent", family: "framework", product_head: "5678e910ce11ed7a3546822cf3e34d50c5741681"}
   - {path: "docs/reviews/project-ontos-v5-0-0/canary/canary-v2-dispatch-result.yaml", sha256: "d2d9415eba455ee5b99bcd472419c0dad431ed4c554413d9dbc9c76cbf060d5d", phase: "canary", role: "dispatch-result", family: "framework", product_head: "5678e910ce11ed7a3546822cf3e34d50c5741681"}
+  - {path: "docs/reviews/project-ontos-v5-0-0/canary/canary-v3-dispatch-intent.yaml", sha256: "1b55090873a7c35e0c8d45fedcfb9582975537ecca65ea186b755132d2d5e367", phase: "canary", role: "dispatch-intent", family: "framework", product_head: "bce26f53349ad61073fff7aa4bf932bad98d982b"}
   - {path: "docs/reviews/project-ontos-v5-0-0/canary/claude-opus-canary-v2.md", sha256: "95fabf5555e2a82a9de26ca34b76522bcdb650ea6844bab58363e9db1404131f", phase: "canary", role: "canary-artifact", family: "claude", product_head: "5678e910ce11ed7a3546822cf3e34d50c5741681"}
   - {path: "docs/reviews/project-ontos-v5-0-0/canary/claude-opus-canary-v2.prompt.md", sha256: "d778bad6718d47e58189cc49cefb11315b5daabb778c10546bd5a5e08d9878b6", phase: "canary", role: "prompt", family: "claude", product_head: "5678e910ce11ed7a3546822cf3e34d50c5741681"}
+  - {path: "docs/reviews/project-ontos-v5-0-0/canary/claude-opus-canary-v3.prompt.md", sha256: "4c42acab8a371f2be1af467b036f7800f928c1d8b7b8a9b644a2cd081f2382ef", phase: "canary", role: "prompt", family: "claude", product_head: "bce26f53349ad61073fff7aa4bf932bad98d982b"}
   - {path: "docs/reviews/project-ontos-v5-0-0/canary/claude-opus-canary.md", sha256: "7f475a451f915ffb136a502f3b7c31ed9846e316e5f9a31b7c589985277f3c5f", phase: "canary", role: "canary-artifact", family: "claude", product_head: "5678e910ce11ed7a3546822cf3e34d50c5741681"}
   - {path: "docs/reviews/project-ontos-v5-0-0/canary/claude-opus-canary.prompt.md", sha256: "b74d8f489c49f6955dc53307834a81c232edcf50ecb26f6d906af7bb82ba6f54", phase: "canary", role: "prompt", family: "claude", product_head: "5678e910ce11ed7a3546822cf3e34d50c5741681"}
+  - {path: "docs/reviews/project-ontos-v5-0-0/canary/current-head-canary-attempt.md", sha256: "f24f1018d7c46628d4e1ea305db4f1e2053b78c7fc062dbacfcfd6491b48b51b", phase: "canary", role: "blockage-evidence", family: "codex", product_head: "bce26f53349ad61073fff7aa4bf932bad98d982b"}
   - {path: "docs/reviews/project-ontos-v5-0-0/final-approval.md", sha256: "3f3ebd650b3de7fa0377ce3ef020bdfab0349a0a1876bc8979246fc940f83bd5", phase: "D.6", role: "final-approval", family: "codex", product_head: "5678e910ce11ed7a3546822cf3e34d50c5741681"}
   - {path: "docs/reviews/project-ontos-v5-0-0/lifecycle-receipt-inventory.yaml", sha256: "3feb2b44f7303323248b0e9af0c75d8accacb3b28fb9de43ec2fa7d75ac40e23", phase: "D.6", role: "inventory", family: "framework", product_head: "5678e910ce11ed7a3546822cf3e34d50c5741681"}
   - {path: "docs/reviews/project-ontos-v5-0-0/provider-limited-verifier.exit", sha256: "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865", phase: "D.6", role: "verifier-exit", family: "framework", product_head: "5678e910ce11ed7a3546822cf3e34d50c5741681"}
