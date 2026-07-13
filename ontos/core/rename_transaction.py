@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -19,6 +20,7 @@ from uuid import uuid4
 
 JOURNAL_RELATIVE_PATH = Path(".ontos") / "transactions" / "rename.json"
 _STAGING_NONCE_LENGTH = 24
+logger = logging.getLogger(__name__)
 
 
 def _journal_path(root: Path) -> Path:
@@ -194,7 +196,7 @@ def _cleanup_staging_artifacts(
     *,
     staging_token: str,
 ) -> None:
-    """Remove token-bound SessionContext artifacts for touched paths only."""
+    """Best-effort removal of token-bound artifacts for touched paths only."""
 
     if not _valid_staging_token(staging_token):
         raise RuntimeError("Invalid transaction staging token")
@@ -206,6 +208,13 @@ def _cleanup_staging_artifacts(
         try:
             candidates = list(parent.iterdir())
         except FileNotFoundError:
+            continue
+        except OSError as exc:
+            logger.warning(
+                "Unable to inspect rename staging directory %s: %s",
+                parent,
+                exc,
+            )
             continue
         for candidate in candidates:
             name = candidate.name
@@ -221,12 +230,27 @@ def _cleanup_staging_artifacts(
                 char not in "0123456789abcdef" for char in nonce
             ):
                 continue
-            if candidate.is_symlink() or not candidate.is_file():
-                raise RuntimeError(
-                    f"Refusing to remove non-regular rename staging artifact: {candidate}"
+            try:
+                if candidate.is_symlink() or not candidate.is_file():
+                    continue
+                candidate.unlink()
+            except FileNotFoundError:
+                continue
+            except OSError as exc:
+                logger.warning(
+                    "Unable to remove rename staging artifact %s: %s",
+                    candidate,
+                    exc,
                 )
-            candidate.unlink()
+                continue
             changed_directories.add(parent)
 
     for directory in sorted(changed_directories, key=str):
-        _fsync_directory(directory)
+        try:
+            _fsync_directory(directory)
+        except OSError as exc:
+            logger.warning(
+                "Unable to sync rename staging directory %s: %s",
+                directory,
+                exc,
+            )

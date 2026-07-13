@@ -414,6 +414,58 @@ def test_rename_apply_recovers_stranded_transaction_staging_before_git_check(
     assert "[[new_id]]" in source.read_text(encoding="utf-8")
 
 
+@pytest.mark.skipif(not hasattr(os, "symlink"), reason="symlinks unavailable")
+def test_rename_apply_recovers_past_non_regular_staging_artifacts(
+    tmp_path: Path,
+):
+    from ontos.core.rename_transaction import (
+        RenameTransaction,
+        recover_rename_transaction,
+    )
+
+    _init_repo(tmp_path)
+    target = tmp_path / "docs" / "target.md"
+    source = tmp_path / "docs" / "source.md"
+    _write_doc(target, "old_id")
+    _write_doc(source, "source_doc", body="See [[old_id]].")
+    original_target = target.read_bytes()
+    original_source = source.read_bytes()
+    (tmp_path / ".gitignore").write_text("*.tmp\n*.bak\n", encoding="utf-8")
+    _init_git_repo(tmp_path)
+
+    transaction = RenameTransaction.prepare(tmp_path, [target, source])
+    symlink = source.parent / (
+        f".{source.name}.{transaction.staging_token}.{'4' * 24}.tmp"
+    )
+    directory = source.parent / (
+        f".{source.name}.{transaction.staging_token}.{'5' * 24}.bak"
+    )
+    try:
+        symlink.symlink_to(source)
+    except OSError as exc:
+        pytest.skip(f"symlinks are unavailable: {exc}")
+    directory.mkdir()
+    target.write_text("partial target write", encoding="utf-8")
+    source.write_text("partial source write", encoding="utf-8")
+
+    restored = recover_rename_transaction(tmp_path)
+
+    assert restored == [source, target]
+    assert target.read_bytes() == original_target
+    assert source.read_bytes() == original_source
+    assert not transaction.journal.exists()
+    assert symlink.is_symlink()
+    assert directory.is_dir()
+
+    result = _run_ontos(tmp_path, "rename", "old_id", "new_id", "--apply")
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert symlink.is_symlink()
+    assert directory.is_dir()
+    assert "id: new_id" in target.read_text(encoding="utf-8")
+    assert "[[new_id]]" in source.read_text(encoding="utf-8")
+
+
 def test_rename_frontmatter_comments_and_order_preserved_on_apply(tmp_path: Path):
     _init_repo(tmp_path)
     content = (
