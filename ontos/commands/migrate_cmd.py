@@ -39,8 +39,10 @@ def _run_migrate_convenience_command(options: MigrateOptions) -> Tuple[int, str]
     """
     try:
         root = find_project_root()
+    except FileNotFoundError as e:
+        return 2, f"Error: {e}"
     except Exception as e:
-        return 1, f"Error: {e}"
+        return 5, f"Error: {e}"
 
     # Create output directory
     out_dir = options.out_dir
@@ -50,7 +52,7 @@ def _run_migrate_convenience_command(options: MigrateOptions) -> Tuple[int, str]
     try:
         out_dir.mkdir(parents=True, exist_ok=True)
     except Exception as e:
-        return 1, f"Error creating output directory: {e}"
+        return 5, f"Error creating output directory: {e}"
 
     # Run export data
     export_options = ExportDataOptions(

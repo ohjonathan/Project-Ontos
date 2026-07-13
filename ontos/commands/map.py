@@ -19,7 +19,7 @@ from ontos import __version__ as ONTOS_VERSION
 from ontos.core.validation import ValidationOrchestrator
 from ontos.core.tokens import estimate_tokens, format_token_count
 from ontos.core.types import DocumentData, DocumentStatus, ValidationResult
-from ontos.ui.json_output import emit_command_error, emit_command_success
+from ontos.ui.json_output import ExitCode, emit_command_error, emit_command_success
 
 
 class CompactMode(Enum):
@@ -881,13 +881,14 @@ def map_command(options: MapOptions) -> int:
         if options.json_output:
             emit_command_error(
                 command="map",
-                exit_code=1,
-                code="E_COMMAND_FAILED",
+                exit_code=ExitCode.USAGE,
+                code="E_WORKSPACE_NOT_FOUND",
                 message=str(e),
+                result_kind="diagnostic",
             )
         elif not options.quiet:
             print(f"Error: {e}", file=sys.stderr)
-        return 1
+        return int(ExitCode.USAGE)
 
     # Load config
     try:
@@ -896,13 +897,14 @@ def map_command(options: MapOptions) -> int:
         if options.json_output:
             emit_command_error(
                 command="map",
-                exit_code=1,
-                code="E_COMMAND_FAILED",
+                exit_code=ExitCode.USAGE,
+                code="E_CONFIG_ERROR",
                 message=f"Config error: {e}",
+                result_kind="diagnostic",
             )
         elif not options.quiet:
             print(f"Config error: {e}", file=sys.stderr)
-        return 1
+        return int(ExitCode.USAGE)
 
     # Determine paths
     output_path = options.output or (project_root / config.paths.context_map)
@@ -949,7 +951,33 @@ def map_command(options: MapOptions) -> int:
                     print(f"    ... and {len(issues) - 3} more (use --verbose for full list)")
 
     if load_result.has_fatal_errors or load_result.duplicate_ids:
-        return 1
+        if options.json_output:
+            fatal_codes = {"duplicate_id", "parse_error", "io_error"}
+            fatal_issues = [
+                issue for issue in load_result.issues if issue.code in fatal_codes
+            ]
+            emit_command_success(
+                command="map",
+                exit_code=ExitCode.FINDINGS,
+                message="Context map generation blocked by document load findings",
+                data={
+                    "path": str(output_path),
+                    "documents": len(load_result.documents),
+                    "errors": len(fatal_issues),
+                    "warnings": len(load_result.issues) - len(fatal_issues),
+                    "issues": [
+                        issue.to_dict(root=project_root)
+                        for issue in load_result.issues
+                    ],
+                    "generator_version": ONTOS_VERSION,
+                },
+                result_status="incomplete",
+                result_kind="diagnostic",
+                diagnostic_counts={"load_issues": len(load_result.issues)},
+                diagnostic_basis="document_load",
+                diagnostics_complete=True,
+            )
+        return int(ExitCode.FINDINGS)
 
     # filter
     filters = parse_filter(options.filter_expr)

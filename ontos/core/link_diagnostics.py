@@ -764,12 +764,21 @@ def _body_line_offset(doc: DocumentData) -> int:
         raw = doc.filepath.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError):
         return 0
-    split = split_frontmatter_text(raw)
+    # Match the canonical loader: strip an initial BOM and leading whitespace
+    # before looking for the first fence, while retaining the stripped prefix
+    # so body-relative locations can be restored to physical file lines.
+    without_bom = raw[1:] if raw.startswith("\ufeff") else raw
+    normalized = without_bom.lstrip()
+    leading_prefix = without_bom[: len(without_bom) - len(normalized)]
+    split = split_frontmatter_text(normalized)
     if split is None:
-        return 0
+        # ``load_document`` applies the same leading-whitespace normalization
+        # even when a document has no frontmatter. Restore those physical
+        # lines before converting scanner-relative locations.
+        return _line_break_count(leading_prefix)
 
     _, raw_body, body_offset = split
-    prefix = raw[:body_offset]
+    prefix = normalized[:body_offset]
     if raw_body == doc.content:
         stripped_prefix = ""
     else:
@@ -778,9 +787,13 @@ def _body_line_offset(doc: DocumentData) -> int:
             # A custom parser/load_result may transform the body.  The
             # frontmatter offset remains correct even when its additional
             # leading-newline behavior cannot be inferred safely.
-            return _line_break_count(prefix)
+            return _line_break_count(leading_prefix) + _line_break_count(prefix)
         stripped_prefix = raw_body[: len(raw_body) - len(normalized_body)]
-    return _line_break_count(prefix) + _line_break_count(stripped_prefix)
+    return (
+        _line_break_count(leading_prefix)
+        + _line_break_count(prefix)
+        + _line_break_count(stripped_prefix)
+    )
 
 
 def _line_break_count(text: str) -> int:

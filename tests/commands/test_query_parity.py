@@ -10,6 +10,7 @@ import pytest
 
 import ontos.commands.query as query_module
 from ontos.core.types import DocumentData, DocumentStatus, DocumentType
+from ontos.io.files import DocumentLoadIssue, DocumentLoadResult
 
 
 @pytest.fixture
@@ -108,3 +109,28 @@ def test_native_query_stale_uses_git_timestamp(tmp_path, monkeypatch):
         lambda *args, **kwargs: datetime.now() - timedelta(days=91),
     )
     assert query_module.query_stale({"old_doc": doc}, 30)[0][0] == "old_doc"
+
+
+def test_query_fatal_document_load_is_internal_failure(tmp_path, monkeypatch):
+    issue = DocumentLoadIssue(
+        code="io_error",
+        path=tmp_path / "unreadable.md",
+        message="cannot read document",
+        severity="error",
+        blocking=True,
+    )
+    monkeypatch.setattr(query_module, "find_project_root", lambda: tmp_path)
+    monkeypatch.setattr(
+        query_module,
+        "scan_docs_for_query",
+        lambda *_args, **_kwargs: DocumentLoadResult(
+            documents={}, issues=[issue], duplicate_ids={}
+        ),
+    )
+
+    exit_code, message = query_module._run_query_command(
+        query_module.QueryOptions(list_ids=True, quiet=True)
+    )
+
+    assert exit_code == 5
+    assert message == "Document load failed"

@@ -242,14 +242,15 @@ class TestCLIDoctorCommand:
     """Tests for doctor command via CLI."""
 
     def test_doctor_runs(self, tmp_path, monkeypatch):
-        """doctor command should run."""
+        """doctor outside a project reports a usage failure on stderr."""
         monkeypatch.chdir(tmp_path)
         result = subprocess.run(
             [sys.executable, "-m", "ontos", "doctor"],
             capture_output=True, text=True
         )
-        # Will fail some checks, but should run
-        assert "configuration" in result.stdout.lower() or "fail" in result.stdout.lower()
+        assert result.returncode == 2
+        assert result.stdout == ""
+        assert "project root" in result.stderr.lower()
 
     def test_doctor_json(self, tmp_path, monkeypatch):
         """--json doctor should output JSON."""
@@ -322,4 +323,5 @@ class TestCLIInitCommand:
         )
 
         assert result.returncode == 2
-        assert "git" in result.stdout.lower()
+        assert result.stdout == ""
+        assert "git" in result.stderr.lower()

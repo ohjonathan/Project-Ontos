@@ -43,6 +43,7 @@ scope:
     - "docs/logs/2026-07-09_merge-pull-request-160-from-ohjonathan-audit-147.md"
     - "docs/logs/2026-07-09_review-pr-160.md"
     - "docs/logs/2026-07-12_ontos-v5-0-0-structural-release.md"
+    - "docs/logs/2026-07-12_ontos-v5-0-0-contract-fix-round.md"
     - "docs/releases/v4.7.0.md"
     - "docs/reviews/project-ontos-v4-7-1-hotfix/final-approval.md"
   allowed_path_patterns:

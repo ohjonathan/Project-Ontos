@@ -63,7 +63,7 @@ def test_migrate_mode_guard_rejects_missing_mode(tmp_path, monkeypatch):
     assert isinstance(migrate_command(MigrateOptions(check=True)), int)
     exit_code, message = _run_migrate_command(MigrateOptions())
 
-    assert exit_code == 1
+    assert exit_code == 2
     assert "Select exactly one mode" in message
 
 
@@ -76,7 +76,7 @@ def test_migrate_mode_guard_rejects_conflicting_mode(tmp_path, monkeypatch):
 
     exit_code, message = _run_migrate_command(MigrateOptions(check=True, apply=True))
 
-    assert exit_code == 1
+    assert exit_code == 2
     assert "Select exactly one mode" in message or "cannot be combined" in message
 
 
@@ -117,7 +117,7 @@ def test_schema_migrate_apply_nonzero_with_unsupported_schema(tmp_path):
         cwd=tmp_path,
     )
 
-    assert result.returncode == 1
+    assert result.returncode == 2
     combined = f"{result.stdout}\n{result.stderr}".lower()
     assert "unsupported schema" in combined
 
@@ -170,9 +170,11 @@ def test_schema_migrate_invalid_utf8_refuses_without_rewrite(tmp_path):
         cwd=tmp_path,
     )
 
-    assert result.returncode == 1
+    assert result.returncode == 5
     payload = json.loads(result.stdout)
+    assert result.stderr == ""
     assert payload["error"]["code"] == "E_COMMAND_FAILED"
+    assert payload["result"]["exit_category"] == "internal"
     assert str(target) in payload["message"]
     assert "Re-save the file as UTF-8" in payload["message"]
     assert target.read_bytes() == original

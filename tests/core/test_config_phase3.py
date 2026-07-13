@@ -102,6 +102,21 @@ class TestValidateTypes:
         _validate_types({"workflow": {"log_retention_count": 50}})
         _validate_types({"hooks": {"pre_push": True, "pre_commit": False}})
 
+    def test_legacy_numeric_bounds_are_clamped_without_mutating_input(self):
+        data = {
+            "validation": {"max_dependency_depth": -4},
+            "workflow": {"log_retention_count": 0},
+        }
+
+        config = dict_to_config(data)
+
+        assert config.validation.max_dependency_depth == 0
+        assert config.workflow.log_retention_count == 1
+        assert data == {
+            "validation": {"max_dependency_depth": -4},
+            "workflow": {"log_retention_count": 0},
+        }
+
 
 class TestValidatePath:
     """Tests for _validate_path() function."""

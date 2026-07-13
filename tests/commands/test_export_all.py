@@ -47,9 +47,10 @@ def test_export_all_json_envelope_and_failures(tmp_path: Path) -> None:
     (tmp_path / "AGENTS.md").write_text("existing", encoding="utf-8")
 
     result = _run_ontos(tmp_path, "--json", "export", "--all")
-    assert result.returncode == 1
+    assert result.returncode == 2
 
     payload = json.loads(result.stdout)
     assert payload["command"] == "export"
     assert payload["status"] == "error"
+    assert payload["result"]["exit_category"] == "usage"
     assert payload["data"]["artifacts"]["agents_bundle"]["created"] is False

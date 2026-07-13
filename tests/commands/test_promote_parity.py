@@ -43,7 +43,7 @@ def test_promote_check_parity(tmp_path):
         cwd=str(tmp_path)
     )
 
-    assert result.returncode == 0
+    assert result.returncode == 1
     assert "Found 1 candidate" in result.stdout
     assert "scaffold_doc" in result.stdout
     assert "[L0]" in result.stdout
@@ -90,9 +90,11 @@ def test_promote_invalid_utf8_refuses_without_rewrite(tmp_path):
         cwd=tmp_path,
     )
 
-    assert result.returncode == 1
+    assert result.returncode == 5
     payload = json.loads(result.stdout)
+    assert result.stderr == ""
     assert payload["error"]["code"] == "E_COMMAND_FAILED"
+    assert payload["result"]["exit_category"] == "internal"
     assert str(target) in payload["message"]
     assert "Re-save the file as UTF-8" in payload["message"]
     assert target.read_bytes() == original

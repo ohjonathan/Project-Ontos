@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -28,7 +29,7 @@ from ontos.io.files import DocumentLoadIssue, find_project_root, load_documents,
 from ontos.io.scan_scope import ScanScope, collect_scoped_documents, resolve_scan_scope
 from ontos.io.yaml import parse_frontmatter_content
 from ontos.mcp.locking import workspace_lock
-from ontos.ui.json_output import emit_command_error, emit_command_success
+from ontos.ui.json_output import ExitCode, emit_command_error, emit_command_success
 
 _RESERVED_YAML_WORDS = {"true", "false", "yes", "no", "null", "on", "off"}
 _ANCHOR_ALIAS_RE = re.compile(r"(^|[\s,\[\]-])(?:&[A-Za-z0-9_-]+|\*[A-Za-z0-9_-]+)")
@@ -173,7 +174,7 @@ def rename_command(options: RenameOptions) -> int:
         except OntosUserError:
             raise
         except Exception as exc:
-            _emit_error(
+            return _emit_error(
                 options=options,
                 mode=mode,
                 scope=ScanScope.DOCS,
@@ -183,13 +184,12 @@ def rename_command(options: RenameOptions) -> int:
                 warnings=[],
                 partial_commit=False,
             )
-            return 1
 
     prepared, error = _prepare_plan(options, mode=mode)
     if error is not None:
         if error.code in {"invalid_old_id", "invalid_new_id"}:
             raise OntosUserError(error.message, code="E_USER_INPUT")
-        _emit_error(
+        return _emit_error(
             options=options,
             mode=mode,
             scope=prepared.scope if prepared is not None else ScanScope.DOCS,
@@ -199,7 +199,6 @@ def rename_command(options: RenameOptions) -> int:
             warnings=[],
             partial_commit=False,
         )
-        return 1
 
     assert prepared is not None
     plan = prepared.plan
@@ -213,7 +212,7 @@ def rename_command(options: RenameOptions) -> int:
 
     blocking = plan.blocking_warnings()
     if blocking:
-        _emit_error(
+        return _emit_error(
             options=options,
             mode=mode,
             scope=plan.scope,
@@ -226,7 +225,6 @@ def rename_command(options: RenameOptions) -> int:
             warnings=blocking,
             partial_commit=False,
         )
-        return 1
 
     files_to_apply = [item for item in plan.files if item.has_changes]
     ctx = SessionContext.from_repo(prepared.scope_data.repo_root)
@@ -236,7 +234,7 @@ def rename_command(options: RenameOptions) -> int:
     try:
         modified_paths = ctx.commit()
     except Exception as exc:
-        _emit_error(
+        return _emit_error(
             options=options,
             mode=mode,
             scope=plan.scope,
@@ -252,12 +250,11 @@ def rename_command(options: RenameOptions) -> int:
             warnings=plan.warnings,
             partial_commit=True,
         )
-        return 1
 
     planned_paths = {item.path.resolve() for item in files_to_apply}
     committed_paths = {path.resolve() for path in modified_paths}
     if planned_paths != committed_paths:
-        _emit_error(
+        return _emit_error(
             options=options,
             mode=mode,
             scope=plan.scope,
@@ -275,7 +272,6 @@ def rename_command(options: RenameOptions) -> int:
             applied_paths=sorted(str(path) for path in committed_paths),
             summary=plan.summary,
         )
-        return 1
 
     _emit_apply_success(options, plan, modified_paths)
     return 0
@@ -288,7 +284,7 @@ def _rename_command_locked(options: RenameOptions, lock_guard) -> int:
     if error is not None:
         if error.code in {"invalid_old_id", "invalid_new_id"}:
             raise OntosUserError(error.message, code="E_USER_INPUT")
-        _emit_error(
+        return _emit_error(
             options=options,
             mode="apply",
             scope=prepared.scope if prepared is not None else ScanScope.DOCS,
@@ -298,7 +294,6 @@ def _rename_command_locked(options: RenameOptions, lock_guard) -> int:
             warnings=[],
             partial_commit=False,
         )
-        return 1
 
     assert prepared is not None
     plan = prepared.plan
@@ -307,7 +302,7 @@ def _rename_command_locked(options: RenameOptions, lock_guard) -> int:
         return 0
     blocking = plan.blocking_warnings()
     if blocking:
-        _emit_error(
+        return _emit_error(
             options=options,
             mode="apply",
             scope=plan.scope,
@@ -320,7 +315,6 @@ def _rename_command_locked(options: RenameOptions, lock_guard) -> int:
             warnings=blocking,
             partial_commit=False,
         )
-        return 1
 
     files_to_apply = [item for item in plan.files if item.has_changes]
     transaction = RenameTransaction.prepare(
@@ -345,7 +339,7 @@ def _rename_command_locked(options: RenameOptions, lock_guard) -> int:
             raise RuntimeError("Commit result does not match the planned file set")
     except Exception as exc:
         restored = transaction.rollback()
-        _emit_error(
+        return _emit_error(
             options=options,
             mode="apply",
             scope=plan.scope,
@@ -357,7 +351,6 @@ def _rename_command_locked(options: RenameOptions, lock_guard) -> int:
             applied_paths=[str(path) for path in restored],
             summary=plan.summary,
         )
-        return 1
 
     transaction.complete()
     _emit_apply_success(options, plan, modified_paths)
@@ -1358,12 +1351,13 @@ def _emit_dry_run(options: RenameOptions, plan: RenamePlan) -> None:
                     else:
                         print(f"      reason: {edit.skip_reason}")
             if file_plan.warnings:
-                print("  Warnings")
+                print("  Warnings", file=sys.stderr)
                 for warning in file_plan.warnings:
                     field_part = f" field={warning.field}" if warning.field else ""
                     print(
                         "    - "
-                        f"{warning.reason_code}{field_part}: {warning.reason_message}"
+                        f"{warning.reason_code}{field_part}: {warning.reason_message}",
+                        file=sys.stderr,
                     )
             print()
 
@@ -1397,7 +1391,14 @@ def _emit_apply_success(options: RenameOptions, plan: RenamePlan, modified_paths
     if not options.quiet:
         for path in sorted(modified_paths):
             print(f"  - {path}")
-    print(POST_APPLY_WARNING)
+    print(POST_APPLY_WARNING, file=sys.stderr)
+
+
+def _rename_error_exit_code(error: RenameError) -> ExitCode:
+    """Map rename failures onto the public v5 process-code taxonomy."""
+    if error.code in {"commit_failed", "partial_commit_mismatch"}:
+        return ExitCode.INTERNAL
+    return ExitCode.USAGE
 
 
 def _emit_error(
@@ -1412,7 +1413,8 @@ def _emit_error(
     partial_commit: bool,
     applied_paths: Optional[Sequence[str]] = None,
     summary: Optional[RenameSummary] = None,
-) -> None:
+) -> int:
+    exit_code = _rename_error_exit_code(error)
     if options.json_output:
         data = {
             "mode": mode,
@@ -1444,20 +1446,24 @@ def _emit_error(
             data["path"] = str(error.path)
         emit_command_error(
             command="rename",
-            exit_code=1,
+            exit_code=exit_code,
             code=error.code,
             message=error.message,
             data=data,
             warnings=[_warning_to_json(item) for item in warnings],
+            execution_succeeded=False,
+            result_kind="operation",
         )
-        return
+        return int(exit_code)
 
-    print(f"Error [{error.code}]: {error.message}")
+    print(f"Error [{error.code}]: {error.message}", file=sys.stderr)
     for warning in warnings:
         field_part = f" field={warning.field}" if warning.field else ""
         print(
-            f"  warning ({warning.reason_code}){field_part}: {warning.reason_message} [{warning.path}]"
+            f"  warning ({warning.reason_code}){field_part}: {warning.reason_message} [{warning.path}]",
+            file=sys.stderr,
         )
+    return int(exit_code)
 
 
 def _summary_to_json(summary: RenameSummary, applied_files: int = 0) -> Dict[str, int]:

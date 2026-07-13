@@ -226,15 +226,19 @@ def _validate_types(data: dict) -> None:
     if default_scope is not None and default_scope not in {"docs", "library"}:
         raise ConfigError("scanning.default_scope must be 'docs' or 'library'")
 
-    validation = data.get("validation", {})
-    depth = validation.get("max_dependency_depth")
-    if depth is not None and depth < 0:
-        raise ConfigError("validation.max_dependency_depth must be >= 0")
 
-    workflow = data.get("workflow", {})
-    retention = workflow.get("log_retention_count")
-    if retention is not None and retention < 1:
-        raise ConfigError("workflow.log_retention_count must be >= 1")
+
+def _clamp_legacy_numeric_bounds(data: dict) -> None:
+    """Keep previously accepted numeric configs loadable with safe bounds."""
+    validation = data.get("validation")
+    if isinstance(validation, dict) and "max_dependency_depth" in validation:
+        validation["max_dependency_depth"] = max(
+            0, validation["max_dependency_depth"]
+        )
+
+    workflow = data.get("workflow")
+    if isinstance(workflow, dict) and "log_retention_count" in workflow:
+        workflow["log_retention_count"] = max(1, workflow["log_retention_count"])
 
 
 def version_satisfies_requirement(running_version: str, requirement: Optional[str]) -> bool:
@@ -388,6 +392,7 @@ def dict_to_config(data: dict, repo_root: Optional[Path] = None) -> OntosConfig:
 
     # Type validation
     _validate_types(data)
+    _clamp_legacy_numeric_bounds(data)
 
     # Path validation
     if repo_root is not None and "paths" in data:

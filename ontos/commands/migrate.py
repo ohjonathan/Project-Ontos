@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 import ontos
+from ontos.core.config import ConfigError
 from ontos.core.schema import (
     SCHEMA_DEFINITIONS,
     SchemaCompatibility,
@@ -76,15 +77,27 @@ def _validate_migrate_mode(options: MigrateOptions) -> Optional[str]:
 def _run_migrate_command(options: MigrateOptions) -> Tuple[int, str]:
     """Execute migrate command."""
     output = OutputHandler(quiet=options.quiet)
-    root = find_project_root()
 
     mode_error = _validate_migrate_mode(options)
     if mode_error:
         output.error(mode_error)
-        return 1, mode_error
+        return 2, mode_error
+
+    try:
+        root = find_project_root()
+    except FileNotFoundError as exc:
+        output.error(str(exc))
+        return 2, str(exc)
 
     from ontos.core.curation import load_ontosignore
-    config = load_project_config(repo_root=root)
+    try:
+        config = load_project_config(repo_root=root)
+    except ConfigError as exc:
+        output.error(f"Config error: {exc}")
+        return 2, f"Config error: {exc}"
+    except Exception as exc:
+        output.error(f"Config error: {exc}")
+        return 5, f"Config error: {exc}"
     effective_scope = resolve_scan_scope(options.scope, config.scanning.default_scope)
     ignore_patterns = load_ontosignore(root)
     files = collect_scoped_documents(
@@ -103,14 +116,14 @@ def _run_migrate_command(options: MigrateOptions) -> Tuple[int, str]:
                 read_utf8_for_mutation(path)
             except InvalidDocumentEncodingError as exc:
                 output.error(str(exc))
-                return 1, str(exc)
+                return 5, str(exc)
 
     load_result = load_documents(files, parse_frontmatter_content)
     if load_result.has_fatal_errors or load_result.duplicate_ids:
         for issue in load_result.issues:
             if issue.code in {"duplicate_id", "parse_error", "io_error"}:
                 output.error(issue.message)
-        return 1, "Document load failed"
+        return 5, "Document load failed"
 
     needs_migration: List[Tuple[Path, str]] = []
     unsupported: List[Tuple[Path, str, str]] = []
@@ -149,10 +162,13 @@ def _run_migrate_command(options: MigrateOptions) -> Tuple[int, str]:
             needs_migration.append((f, inferred))
         except InvalidDocumentEncodingError as exc:
             output.error(str(exc))
-            return 1, str(exc)
+            return 5, str(exc)
         except Exception as e:
             errors += 1
             output.error(f"Error inspecting {f}: {e}")
+
+    if errors:
+        return 5, f"Schema inspection failed for {errors} file(s)"
 
     if options.check:
         output.info(f"\n📊 Schema Migration Check")
@@ -185,13 +201,19 @@ def _run_migrate_command(options: MigrateOptions) -> Tuple[int, str]:
         if unsupported and options.apply:
             if not options.quiet:
                 output.warning("No migratable files, but unsupported schema versions were found.")
-            return 1, f"Unsupported schema versions in {len(unsupported)} file(s)"
+            return 2, f"Unsupported schema versions in {len(unsupported)} file(s)"
 
         if not options.quiet:
             output.success("Nothing to migrate.")
             if unsupported:
                 output.warning(f"Found {len(unsupported)} unsupported schema file(s); no writes attempted.")
-        return 0, "Nothing to migrate"
+        return (3 if unsupported else 0), "Nothing to migrate"
+
+    if options.apply and unsupported:
+        output.error(
+            "Unsupported schema versions were found; refusing a partial migration."
+        )
+        return 2, f"Unsupported schema versions in {len(unsupported)} file(s)"
 
     mode_str = "Dry-run" if options.dry_run else "Applying"
     output.info(f"\n🔄 {mode_str} Schema Migration...")
@@ -231,7 +253,11 @@ def _run_migrate_command(options: MigrateOptions) -> Tuple[int, str]:
             errors += 1
 
     if not options.dry_run and migrated_count > 0:
-        ctx.commit()
+        try:
+            ctx.commit()
+        except Exception as exc:
+            output.error(f"Failed to commit migration: {exc}")
+            return 5, f"Commit failed: {exc}"
 
     action = 'Would migrate' if options.dry_run else 'Migrated'
     output.info(f"\n{action} {migrated_count} file(s).")
@@ -240,7 +266,9 @@ def _run_migrate_command(options: MigrateOptions) -> Tuple[int, str]:
         errors += len(unsupported)
 
     if errors > 0:
-        return 1, f"Migration completed with {errors} errors"
+        return 5, f"Migration completed with {errors} errors"
+    if options.dry_run and unsupported:
+        return 3, f"Migration preview completed with {len(unsupported)} warning(s)"
     return 0, f"Migration completed successfully"
 
 

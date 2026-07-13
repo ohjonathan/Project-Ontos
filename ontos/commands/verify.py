@@ -2,6 +2,7 @@
 
 import json
 import sqlite3
+import sys
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -12,6 +13,7 @@ from ontos.core.staleness import (
     check_staleness,
 )
 from ontos.core.context import SessionContext
+from ontos.core.config import ConfigError
 from ontos.core.frontmatter_edit import (
     InvalidDocumentEncodingError,
     patch_frontmatter_fields,
@@ -22,6 +24,7 @@ from ontos.io.files import find_project_root, load_documents, load_frontmatter
 from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
 from ontos.io.yaml import parse_frontmatter_content
 from ontos.ui.output import OutputHandler
+from ontos.ui.json_output import ExitCode
 
 
 @dataclass
@@ -84,7 +87,9 @@ def update_describes_verified(
     filepath: Path,
     new_date: date,
     ctx: SessionContext,
-    output: OutputHandler
+    output: OutputHandler,
+    *,
+    suppress_errors: bool = False,
 ) -> bool:
     """Update the describes_verified field in a document.
     
@@ -103,7 +108,8 @@ def update_describes_verified(
     except InvalidDocumentEncodingError:
         raise
     except Exception as e:
-        output.error(f"Error updating {filepath}: {e}")
+        if not suppress_errors:
+            output.error(f"Error updating {filepath}: {e}")
         return False
 
 
@@ -144,10 +150,12 @@ def verify_all_interactive(verify_date: date, output: OutputHandler, scope: Opti
     load_result = load_documents(files, parse_frontmatter_content)
     
     if load_result.has_fatal_errors or load_result.duplicate_ids:
+        has_io_error = False
         for issue in load_result.issues:
             if issue.code in {"duplicate_id", "parse_error", "io_error"}:
                 output.error(issue.message)
-        return 1
+                has_io_error = has_io_error or issue.code == "io_error"
+        return int(ExitCode.INTERNAL if has_io_error else ExitCode.USAGE)
 
     stale_docs = find_stale_documents_list(scope=scope)
     
@@ -157,6 +165,7 @@ def verify_all_interactive(verify_date: date, output: OutputHandler, scope: Opti
     
     updated = 0
     skipped = 0
+    failed = 0
     ctx = SessionContext.from_repo(root)
     
     for i, doc in enumerate(stale_docs, 1):
@@ -170,9 +179,12 @@ def verify_all_interactive(verify_date: date, output: OutputHandler, scope: Opti
         
         try:
             response = input("      Verify as current? [y/N]: ").strip().lower()
-        except (EOFError, KeyboardInterrupt):
+        except KeyboardInterrupt:
             output.warning("Aborted")
-            return 1
+            return int(ExitCode.INTERRUPTED)
+        except EOFError:
+            output.error("Interactive input is unavailable")
+            return int(ExitCode.USAGE)
             
         if response == 'y':
             if update_describes_verified(Path(doc['filepath']), verify_date, ctx, output):
@@ -180,6 +192,7 @@ def verify_all_interactive(verify_date: date, output: OutputHandler, scope: Opti
                 updated += 1
             else:
                 output.error("Failed to update")
+                failed += 1
         else:
             output.info("Skipped")
             skipped += 1
@@ -189,7 +202,10 @@ def verify_all_interactive(verify_date: date, output: OutputHandler, scope: Opti
             ctx.commit()
         except Exception as exc:
             output.error(f"Failed to commit verify updates: {exc}")
-            return 1
+            return int(ExitCode.INTERNAL)
+
+    if failed:
+        return int(ExitCode.INTERNAL)
         
     output.info(f"Done. Updated: {updated}, Skipped: {skipped}")
     return 0
@@ -205,17 +221,28 @@ def _run_verify_command(options: VerifyOptions) -> Tuple[int, str]:
         try:
             verify_date = date.fromisoformat(options.date)
         except ValueError:
-            output.error(f"Invalid date format: {options.date}. Use YYYY-MM-DD.")
-            return 1, f"Invalid date format: {options.date}"
+            if not options.json_output:
+                output.error(f"Invalid date format: {options.date}. Use YYYY-MM-DD.")
+            return int(ExitCode.USAGE), f"Invalid date format: {options.date}"
 
     if options.path:
         # Single file mode
         if not options.path.exists():
-            output.error(f"File not found: {options.path}")
-            return 1, f"File not found: {options.path}"
-            
-        root = find_project_root()
-        ctx = SessionContext.from_repo(root)
+            if not options.json_output:
+                output.error(f"File not found: {options.path}")
+            return int(ExitCode.USAGE), f"File not found: {options.path}"
+
+        try:
+            root = find_project_root()
+            ctx = SessionContext.from_repo(root)
+        except FileNotFoundError as exc:
+            if not options.json_output:
+                output.error(str(exc))
+            return int(ExitCode.USAGE), str(exc)
+        except OSError as exc:
+            if not options.json_output:
+                output.error(str(exc))
+            return int(ExitCode.INTERNAL), str(exc)
         
         # A single-file verify mutates this document. Decode strictly before
         # parsing so malformed bytes are a visible refusal, not a parse skip.
@@ -223,13 +250,19 @@ def _run_verify_command(options: VerifyOptions) -> Tuple[int, str]:
             content = read_utf8_for_mutation(options.path)
             fm, _ = parse_frontmatter_content(content)
         except InvalidDocumentEncodingError as exc:
-            output.error(str(exc))
-            return 1, str(exc)
+            if not options.json_output:
+                output.error(str(exc))
+            return int(ExitCode.USAGE), str(exc)
+        except OSError as exc:
+            if not options.json_output:
+                output.error(str(exc))
+            return int(ExitCode.INTERNAL), str(exc)
         except ValueError:
             fm = None
         if not fm:
-            output.error(f"Failed to parse frontmatter in {options.path}")
-            return 1, "Parse failure"
+            if not options.json_output:
+                output.error(f"Failed to parse frontmatter in {options.path}")
+            return int(ExitCode.USAGE), "Parse failure"
             
         describes = normalize_describes(fm.get('describes'))
         if not describes:
@@ -242,22 +275,30 @@ def _run_verify_command(options: VerifyOptions) -> Tuple[int, str]:
                 verify_date,
                 ctx,
                 output,
+                suppress_errors=options.json_output,
             )
         except InvalidDocumentEncodingError as exc:
-            output.error(str(exc))
-            return 1, str(exc)
+            if not options.json_output:
+                output.error(str(exc))
+            return int(ExitCode.USAGE), str(exc)
         if updated:
             try:
                 ctx.commit()
             except Exception as exc:
-                output.error(f"Failed to commit verify updates: {exc}")
-                return 1, f"Commit failed: {exc}"
+                if not options.json_output:
+                    output.error(f"Failed to commit verify updates: {exc}")
+                return int(ExitCode.INTERNAL), f"Commit failed: {exc}"
             output.success(f"Updated describes_verified to {verify_date}")
-            return 0, "Success"
+            return int(ExitCode.CLEAN), "Success"
         else:
-            return 1, "Update failed"
+            return int(ExitCode.INTERNAL), "Update failed"
 
     elif options.all:
+        if options.json_output:
+            return (
+                int(ExitCode.USAGE),
+                "verify --all is interactive; specify a file path in JSON mode",
+            )
         # Interactive all mode
         try:
             result = verify_all_interactive(
@@ -267,12 +308,22 @@ def _run_verify_command(options: VerifyOptions) -> Tuple[int, str]:
             )
         except InvalidDocumentEncodingError as exc:
             output.error(str(exc))
-            return 1, str(exc)
+            return int(ExitCode.USAGE), str(exc)
+        except (FileNotFoundError, ConfigError) as exc:
+            output.error(str(exc))
+            return int(ExitCode.USAGE), str(exc)
+        except OSError as exc:
+            output.error(str(exc))
+            return int(ExitCode.INTERNAL), str(exc)
+        except Exception as exc:
+            output.error(str(exc))
+            return int(ExitCode.INTERNAL), str(exc)
         return result, "Interactive session ended"
         
     else:
-        output.error("Specify a file path or use --all")
-        return 1, "No target specified"
+        if not options.json_output:
+            output.error("Specify a file path or use --all")
+        return int(ExitCode.USAGE), "No target specified"
 
 
 def verify_command(options: VerifyOptions) -> int:
@@ -321,7 +372,7 @@ def verify_portfolio(
     try:
         db_projects = _load_portfolio_db_projects(portfolio_db_path)
         registry_projects = _load_registry_projects(registry_path)
-    except (sqlite3.DatabaseError, OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+    except (sqlite3.DatabaseError, OSError) as exc:
         _emit_verify_portfolio_result(
             clean=False,
             missing_in_db=[],
@@ -329,9 +380,20 @@ def verify_portfolio(
             field_mismatches=[],
             summary=f"Portfolio verification failed: {exc}",
             json_output=json_output,
-            exit_code=2,
+            exit_code=int(ExitCode.INTERNAL),
         )
-        return 2
+        return int(ExitCode.INTERNAL)
+    except (ValueError, TypeError, json.JSONDecodeError) as exc:
+        _emit_verify_portfolio_result(
+            clean=False,
+            missing_in_db=[],
+            missing_in_json=[],
+            field_mismatches=[],
+            summary=f"Portfolio verification failed: {exc}",
+            json_output=json_output,
+            exit_code=int(ExitCode.USAGE),
+        )
+        return int(ExitCode.USAGE)
 
     if workspace_id is not None:
         db_projects = _scope_projects(db_projects, workspace_id)
@@ -468,7 +530,7 @@ def _emit_verify_portfolio_result(
             "field_mismatches": field_mismatches,
             "summary": summary,
         }
-        if exit_code == 2:
+        if exit_code in {ExitCode.USAGE, ExitCode.INTERNAL, ExitCode.INTERRUPTED}:
             payload["error"] = True
         print(json.dumps(payload, ensure_ascii=True))
         return
@@ -476,8 +538,8 @@ def _emit_verify_portfolio_result(
     if clean:
         print(summary)
         return
-    if exit_code == 2:
-        print(summary)
+    if exit_code in {ExitCode.USAGE, ExitCode.INTERNAL, ExitCode.INTERRUPTED}:
+        print(summary, file=sys.stderr)
         return
 
     print(summary)

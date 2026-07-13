@@ -16,11 +16,13 @@ Structure mirrors ``ontos/commands/rename.py``:
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from ontos.core.context import SessionContext
+from ontos.core.config import ConfigError
 from ontos.core.frontmatter import normalize_aliases, normalize_tags
 from ontos.core.frontmatter_edit import (
     InvalidDocumentEncodingError,
@@ -34,7 +36,7 @@ from ontos.io.config import load_project_config
 from ontos.io.files import DocumentLoadIssue, find_project_root, load_documents
 from ontos.io.scan_scope import ScanScope, collect_scoped_documents, resolve_scan_scope
 from ontos.io.yaml import assert_frontmatter_roundtrip, dump_yaml, parse_frontmatter_content
-from ontos.ui.json_output import emit_command_error, emit_command_success
+from ontos.ui.json_output import ExitCode, emit_command_error, emit_command_success
 
 
 REASON_DUPLICATE_TOP_LEVEL = "duplicate_top_level_field"
@@ -116,6 +118,7 @@ class RetrofitError:
     code: str
     message: str
     path: Optional[Path] = None
+    exit_code: int = int(ExitCode.USAGE)
 
 
 @dataclass
@@ -148,7 +151,7 @@ def retrofit_command(options: RetrofitOptions) -> int:
             warnings=[],
             partial_commit=False,
         )
-        return 1
+        return int(ExitCode.USAGE)
 
     mode = "apply" if options.apply else "dry_run"
     prepared, error = _prepare_plan(options, mode=mode)
@@ -161,14 +164,13 @@ def retrofit_command(options: RetrofitOptions) -> int:
             warnings=[],
             partial_commit=False,
         )
-        return 1
+        return error.exit_code
 
     assert prepared is not None
     plan = prepared.plan
 
     if mode == "dry_run":
-        _emit_dry_run(options, plan)
-        return 0
+        return _emit_dry_run(options, plan)
 
     blocking = plan.blocking_warnings()
     if blocking:
@@ -183,12 +185,11 @@ def retrofit_command(options: RetrofitOptions) -> int:
             warnings=blocking,
             partial_commit=False,
         )
-        return 1
+        return int(ExitCode.USAGE)
 
     files_to_apply = [item for item in plan.files if item.has_changes]
     if not files_to_apply:
-        _emit_apply_success(options, plan, [])
-        return 0
+        return _emit_apply_success(options, plan, [])
 
     ctx = SessionContext.from_repo(prepared.scope_data.repo_root)
     for file_plan in files_to_apply:
@@ -207,14 +208,14 @@ def retrofit_command(options: RetrofitOptions) -> int:
                     "commit failed after staging; repository may be partially updated: "
                     f"{exc}"
                 ),
+                exit_code=int(ExitCode.INTERNAL),
             ),
             warnings=plan.warnings,
             partial_commit=True,
         )
-        return 1
+        return int(ExitCode.INTERNAL)
 
-    _emit_apply_success(options, plan, modified_paths)
-    return 0
+    return _emit_apply_success(options, plan, modified_paths)
 
 
 def _prepare_plan(
@@ -227,17 +228,31 @@ def _prepare_plan(
 
     try:
         config = load_project_config(repo_root=repo_root)
-    except Exception as exc:  # pragma: no cover - config failure path
+    except ConfigError as exc:
         return None, RetrofitError(code="config_error", message=f"Config error: {exc}")
+    except OSError as exc:
+        return None, RetrofitError(
+            code="config_io_error",
+            message=f"Unable to read config: {exc}",
+            exit_code=int(ExitCode.INTERNAL),
+        )
+    except Exception as exc:  # pragma: no cover - defensive command boundary
+        return None, RetrofitError(
+            code="config_error",
+            message=f"Config error: {exc}",
+            exit_code=int(ExitCode.INTERNAL),
+        )
 
     scope = resolve_scan_scope(options.scope, config.scanning.default_scope)
 
     if mode == "apply":
         clean, git_error = _check_clean_git_state(repo_root)
         if not clean:
+            exit_code = _git_guard_exit_code(git_error)
             return None, RetrofitError(
                 code="dirty_git_state",
                 message=git_error or "Git working tree must be clean for --apply.",
+                exit_code=exit_code,
             )
 
     doc_paths = collect_scoped_documents(
@@ -248,6 +263,18 @@ def _prepare_plan(
     )
     load_result = load_documents(doc_paths, parse_frontmatter_content)
     docs = load_result.documents
+
+    io_issue = next(
+        (issue for issue in load_result.issues if issue.code == "io_error"),
+        None,
+    )
+    if io_issue is not None:
+        return None, RetrofitError(
+            code="document_io_error",
+            message=io_issue.message,
+            path=io_issue.path,
+            exit_code=int(ExitCode.INTERNAL),
+        )
 
     file_plans: List[FilePlan] = []
     all_warnings: List[RetrofitWarning] = _loader_issues_to_warnings(load_result.issues)
@@ -688,11 +715,12 @@ def _warning_to_json(warning: RetrofitWarning) -> Dict[str, object]:
     }
 
 
-def _emit_dry_run(options: RetrofitOptions, plan: RetrofitPlan) -> None:
+def _emit_dry_run(options: RetrofitOptions, plan: RetrofitPlan) -> int:
+    exit_code = int(ExitCode.WARNINGS if plan.warnings else ExitCode.CLEAN)
     if options.json_output:
         emit_command_success(
             command="retrofit",
-            exit_code=0,
+            exit_code=exit_code,
             message="dry_run",
             data={
                 "mode": "dry_run",
@@ -702,8 +730,9 @@ def _emit_dry_run(options: RetrofitOptions, plan: RetrofitPlan) -> None:
                 "warnings": [_warning_to_json(item) for item in plan.warnings],
             },
             warnings=[_warning_to_json(item) for item in plan.warnings],
+            result_status="warnings" if plan.warnings else "clean",
         )
-        return
+        return exit_code
 
     header = f"DRY RUN: ontos retrofit --obsidian --scope {plan.scope.value}"
     print(header)
@@ -767,17 +796,19 @@ def _emit_dry_run(options: RetrofitOptions, plan: RetrofitPlan) -> None:
         print(f"warning ({warning.reason_code}){field_part}: {warning.reason_message} [{warning.path}]")
 
     print("No files written. Re-run with --apply to execute.")
+    return exit_code
 
 
 def _emit_apply_success(
     options: RetrofitOptions,
     plan: RetrofitPlan,
     modified_paths: Sequence[Path],
-) -> None:
+) -> int:
+    exit_code = int(ExitCode.WARNINGS if plan.warnings else ExitCode.CLEAN)
     if options.json_output:
         emit_command_success(
             command="retrofit",
-            exit_code=0,
+            exit_code=exit_code,
             message="apply",
             data={
                 "mode": "apply",
@@ -792,8 +823,9 @@ def _emit_apply_success(
                 "partial_commit": {"detected": False, "message": None},
             },
             warnings=[_warning_to_json(item) for item in plan.warnings],
+            result_status="warnings" if plan.warnings else "clean",
         )
-        return
+        return exit_code
 
     print(
         f"Applied retrofit: tags + aliases "
@@ -803,6 +835,7 @@ def _emit_apply_success(
         for path in sorted(modified_paths):
             print(f"  - {path}")
     print(POST_APPLY_WARNING)
+    return exit_code
 
 
 def _emit_error(
@@ -842,18 +875,28 @@ def _emit_error(
             data["path"] = str(error.path)
         emit_command_error(
             command="retrofit",
-            exit_code=1,
+            exit_code=error.exit_code,
             code=error.code,
             message=error.message,
             data=data,
             warnings=[_warning_to_json(item) for item in warnings],
+            execution_succeeded=False,
         )
         return
 
-    print(f"Error [{error.code}]: {error.message}")
+    print(f"Error [{error.code}]: {error.message}", file=sys.stderr)
     for warning in warnings:
         field_part = f" field={warning.field}" if warning.field else ""
         print(
             f"  warning ({warning.reason_code}){field_part}: "
-            f"{warning.reason_message} [{warning.path}]"
+            f"{warning.reason_message} [{warning.path}]",
+            file=sys.stderr,
         )
+
+
+def _git_guard_exit_code(reason: Optional[str]) -> int:
+    """Distinguish an expected workspace refusal from a guard failure."""
+    normalized = (reason or "").lower()
+    if "working tree has uncommitted" in normalized or "not a git repository" in normalized:
+        return int(ExitCode.USAGE)
+    return int(ExitCode.INTERNAL)

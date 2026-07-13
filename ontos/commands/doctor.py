@@ -13,7 +13,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, List, Optional, Tuple
 
+from ontos.core.errors import OntosUserError
 from ontos.core.paths import resolve_project_root
+from ontos.ui.json_output import ExitCode
 from ontos.ui.output import OutputHandler
 
 
@@ -428,7 +430,7 @@ def check_activation_health(
         "count_basis": "activation_pipeline",
     }
 
-    if code != 0:
+    if code in {ExitCode.USAGE, ExitCode.INTERNAL, ExitCode.INTERRUPTED}:
         return CheckResult(
             name="activation_health",
             status="warning",
@@ -1015,31 +1017,39 @@ def _run_doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
     Run health checks and return results.
 
     Returns:
-        Tuple of (exit_code, DoctorResult)
-        Exit code 0 if all pass, 1 if any fail
+        Tuple of (exit_code, DoctorResult) for completed diagnostics.
+        Exit code 0 if all pass, 1 if any completed check fails, and 3 if
+        checks complete with warnings only.
+
+    Raises:
+        OntosUserError: If the project root or project configuration cannot
+            be loaded. These are invocation/input failures, not completed
+            diagnostic findings.
     """
     try:
         repo_root = resolve_project_root()
     except FileNotFoundError as exc:
-        result = DoctorResult(
-            checks=[
-                CheckResult(
-                    name="project_root",
-                    status="failed",
-                    message="Could not resolve Ontos project root",
-                    details=str(exc),
-                )
-            ],
-            passed=0,
-            failed=1,
-            warnings=0,
-        )
-        return 1, result
+        raise OntosUserError(
+            "Could not resolve Ontos project root",
+            code="E_WORKSPACE_NOT_FOUND",
+            details=str(exc),
+        ) from exc
 
-    result = DoctorResult()
+    configuration = check_configuration(repo_root)
+    if configuration.status == "failed":
+        raise OntosUserError(
+            configuration.message,
+            code="E_CONFIG_ERROR",
+            details=configuration.details,
+        )
+
+    result = DoctorResult(checks=[configuration])
+    if configuration.status == "success":
+        result.passed = 1
+    else:
+        result.warnings = 1
 
     checks = [
-        lambda: check_configuration(repo_root),
         lambda: check_git_hooks(repo_root),
         check_python_version,
         lambda: check_docs_directory(options.scope, repo_root),
@@ -1069,14 +1079,22 @@ def _run_doctor_command(options: DoctorOptions) -> Tuple[int, DoctorResult]:
         else:
             result.warnings += 1
 
-    exit_code = 1 if result.failed > 0 else 0
+    if result.failed > 0:
+        exit_code = 1
+    elif result.warnings > 0:
+        exit_code = 3
+    else:
+        exit_code = 0
     return exit_code, result
 
 
 def doctor_command(options: DoctorOptions) -> int:
     """Run health checks and return exit code only."""
-    exit_code, _ = _run_doctor_command(options)
-    return exit_code
+    try:
+        exit_code, _ = _run_doctor_command(options)
+        return exit_code
+    except OntosUserError:
+        return int(ExitCode.USAGE)
 
 
 def format_doctor_output(result: DoctorResult, verbose: bool = False) -> str:

@@ -65,7 +65,7 @@ class TestExportCommand:
         options = ExportOptions(force=False)
         exit_code, message = _run_export_command(options)
 
-        assert exit_code == 1
+        assert exit_code == 2
         assert "already exists" in message
         assert (tmp_path / "CLAUDE.md").read_text() == "existing content"
 

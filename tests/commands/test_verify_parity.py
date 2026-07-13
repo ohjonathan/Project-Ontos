@@ -105,9 +105,64 @@ def test_verify_invalid_utf8_refuses_without_rewrite(tmp_path):
         cwd=tmp_path,
     )
 
-    assert result.returncode == 1
+    assert result.returncode == 2
     payload = json.loads(result.stdout)
-    assert payload["error"]["code"] == "E_COMMAND_FAILED"
+    assert payload["error"]["code"] == "E_USER_INPUT"
+    assert payload["result"]["exit_category"] == "usage"
+    assert result.stderr == ""
     assert str(target) in payload["message"]
     assert "Re-save the file as UTF-8" in payload["message"]
     assert target.read_bytes() == original
+
+
+def test_verify_json_invalid_date_is_one_usage_envelope(tmp_path):
+    (tmp_path / ".ontos").mkdir()
+    target = tmp_path / "doc.md"
+    target.write_text(
+        "---\nid: doc\ntype: atom\nstatus: active\ndescribes: [thing]\n---\n",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "ontos.cli",
+            "--json",
+            "verify",
+            str(target),
+            "--date",
+            "not-a-date",
+        ],
+        capture_output=True,
+        text=True,
+        env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[2])},
+        cwd=tmp_path,
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == payload["exit_code"] == 2
+    assert payload["status"] == "error"
+    assert payload["error"]["code"] == "E_USER_INPUT"
+    assert payload["result"]["exit_category"] == "usage"
+    assert result.stdout.count("\n") == 1
+    assert result.stderr == ""
+
+
+def test_verify_all_json_refuses_interactive_prompt_with_usage_envelope(tmp_path):
+    (tmp_path / ".ontos").mkdir()
+
+    result = subprocess.run(
+        [sys.executable, "-m", "ontos.cli", "--json", "verify", "--all"],
+        capture_output=True,
+        text=True,
+        env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[2])},
+        cwd=tmp_path,
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == payload["exit_code"] == 2
+    assert "interactive" in payload["message"]
+    assert payload["result"]["exit_category"] == "usage"
+    assert result.stdout.count("\n") == 1
+    assert result.stderr == ""

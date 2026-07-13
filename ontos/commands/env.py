@@ -539,9 +539,9 @@ def _run_env_command(options: EnvOptions) -> Tuple[int, str]:
 
     # X-M3: Validate workspace path
     if not workspace.exists():
-        return 1, f"Error: workspace path does not exist: {workspace}"
+        return 2, f"Error: workspace path does not exist: {workspace}"
     if not workspace.is_dir():
-        return 1, f"Error: workspace path is not a directory: {workspace}"
+        return 2, f"Error: workspace path is not a directory: {workspace}"
 
     # Detect manifests (v1.1: now returns tuple with warnings)
     manifests, parse_warnings = detect_manifests(workspace)
@@ -570,24 +570,33 @@ def _run_env_command(options: EnvOptions) -> Tuple[int, str]:
     # Handle --write flag
     if options.write:
         ontos_dir = workspace / ".ontos"
-        ontos_dir.mkdir(exist_ok=True)
         env_md = ontos_dir / "environment.md"
 
         # v1.1: Safety check - require --force to overwrite existing file
         if env_md.exists() and not options.force:
-            return 1, f"Error: {env_md} already exists. Use --force to overwrite."
+            return 2, f"Error: {env_md} already exists. Use --force to overwrite."
 
-        env_md.write_text(generate_environment_md(result, workspace))
+        try:
+            ontos_dir.mkdir(exist_ok=True)
+            env_md.write_text(
+                generate_environment_md(result, workspace),
+                encoding="utf-8",
+            )
+        except OSError as exc:
+            return 5, f"Error writing environment documentation: {exc}"
+        exit_code = 3 if parse_warnings else 0
         if not options.quiet:
-            return 0, f"Environment documentation written to {env_md}"
-        return 0, ""
+            return exit_code, f"Environment documentation written to {env_md}"
+        return exit_code, ""
 
     # Format output
     if options.format == "json":
         import json as json_module
-        return 0, json_module.dumps(format_json_output(result), indent=2)
+        return (3 if parse_warnings else 0), json_module.dumps(
+            format_json_output(result), indent=2
+        )
 
-    return 0, format_text_output(result)
+    return (3 if parse_warnings else 0), format_text_output(result)
 
 
 def env_command(options: EnvOptions) -> int:
