@@ -349,6 +349,7 @@ def test_link_check_result_status_mapping(tmp_path: Path):
     envelope = json.loads(result.stdout)
     assert result.returncode == 0
     assert envelope["data"]["result_status"] == "clean"
+    assert envelope["result"]["diagnostics"]["complete"] is True
 
 
 # =============================================================================
@@ -436,10 +437,12 @@ def test_link_check_frontmatter_only_skips_body(tmp_path: Path):
     )
 
     result = _run_ontos(tmp_path, "--json", "link-check", "--frontmatter-only")
-    data = json.loads(result.stdout)["data"]
+    envelope = json.loads(result.stdout)
+    data = envelope["data"]
 
     assert data["summary"]["broken_body"] == 0
     assert data["options"]["body_scan"] is False
+    assert envelope["result"]["diagnostics"]["complete"] is False
 
 
 def test_link_check_no_orphans_drops_exit_2(tmp_path: Path):
@@ -450,10 +453,12 @@ def test_link_check_no_orphans_drops_exit_2(tmp_path: Path):
     assert default.returncode == 3
 
     no_orphans = _run_ontos(tmp_path, "--json", "link-check", "--no-orphans")
-    data = json.loads(no_orphans.stdout)["data"]
+    envelope = json.loads(no_orphans.stdout)
+    data = envelope["data"]
     assert no_orphans.returncode == 0
     assert data["summary"]["orphans"] == 0
     assert data["options"]["orphans"] is False
+    assert envelope["result"]["diagnostics"]["complete"] is False
 
 
 def test_link_check_json_includes_timings(tmp_path: Path):

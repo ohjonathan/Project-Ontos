@@ -327,6 +327,7 @@ def _rename_command_locked(options: RenameOptions, lock_guard) -> int:
         owns_lock=False,
         expected_workspace_binding=lock_guard.workspace_binding,
         external_lock_guard=lock_guard,
+        staging_token=transaction.staging_token,
     )
     for file_plan in files_to_apply:
         ctx.buffer_write(file_plan.path, file_plan.new_content)
@@ -1217,7 +1218,12 @@ def _unsupported_warning(path: Path, field: Optional[str], reason_code: str, mes
 def _count_pre_body_lines(split: _FrontmatterSplit) -> int:
     if not split.has_frontmatter:
         return 0
-    return len(f"---{split.frontmatter}---".splitlines())
+    # ``_split_frontmatter`` preserves the closing fence's line ending as the
+    # first line of ``split.body`` so reconstruction stays byte-for-byte
+    # stable.  The body scanner therefore counts that suffix as body line 1;
+    # exclude the closing fence here to avoid counting the same physical line
+    # twice when converting scanner-relative locations.
+    return max(0, len(f"---{split.frontmatter}---".splitlines()) - 1)
 
 
 def _replacement_for_match(match, *, old_id: str, new_id: str) -> str:
@@ -1283,6 +1289,7 @@ def _emit_noop(options: RenameOptions, plan: RenamePlan) -> None:
                 "summary": _summary_to_json(plan.summary),
                 "files": [],
             },
+            result_kind="operation",
         )
         return
     print("Rename no-op: old_id and new_id are identical (nothing_to_do).")
@@ -1303,6 +1310,7 @@ def _emit_dry_run(options: RenameOptions, plan: RenamePlan) -> None:
                 "files": [_file_plan_to_json(item) for item in plan.files],
             },
             warnings=[_warning_to_json(item) for item in plan.warnings],
+            result_kind="operation",
         )
         return
 
@@ -1381,6 +1389,7 @@ def _emit_apply_success(options: RenameOptions, plan: RenamePlan, modified_paths
                 "partial_commit": {"detected": False, "message": None},
             },
             warnings=[_warning_to_json(item) for item in plan.warnings],
+            result_kind="operation",
         )
         return
 

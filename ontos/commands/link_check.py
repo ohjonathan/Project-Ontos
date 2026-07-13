@@ -90,6 +90,10 @@ def link_check_command(options: LinkCheckOptions) -> int:
                     "limit": options.limit,
                 },
             ),
+            # The summary counters describe every phase that actually ran,
+            # but omitting either body references or orphan discovery is a
+            # deliberately partial diagnostic scan.
+            diagnostics_complete=include_body and options.include_orphans,
         )
     else:
         _emit_human_report(

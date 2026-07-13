@@ -319,10 +319,11 @@ def _emit_command_envelope(
     normalized_kind = result_kind or (
         "diagnostic" if diagnostics["basis"] is not None else "operation"
     )
-    documented_categories = {category.value for category in ExitCategory}
-    normalized_exit_category = (
-        exit_category if exit_category in documented_categories else None
-    ) or _exit_category(
+    # ``exit_category`` is derived exclusively from the public numeric exit
+    # taxonomy.  Keep accepting the legacy keyword while callers migrate, but
+    # never allow it (or the domain-level result status) to contradict the
+    # process exit code advertised by the same envelope.
+    normalized_exit_category = _exit_category(
         execution_status=execution_status,
         exit_code=exit_code,
         result_status=normalized_result,
@@ -425,18 +426,20 @@ def _result_status(
         return ResultStatus.ERROR.value
 
     selected: Optional[ResultStatus] = None
-    raw = explicit
-    if raw is None and isinstance(data, Mapping):
+
+    # The keyword argument is an explicit caller decision and therefore wins
+    # over legacy diagnostic-count heuristics.
+    if explicit is not None:
+        selected = _normalize_result_status(explicit)
+        if selected is not None:
+            return selected.value
+
+    # A status embedded in a legacy data payload remains an inference input:
+    # incomplete-evidence counters may refine clean/warnings to incomplete.
+    if isinstance(data, Mapping):
         candidate = data.get("result_status")
         if isinstance(candidate, str):
-            raw = candidate
-    if raw is not None:
-        selected = _LEGACY_RESULT_STATUS.get(str(raw).lower())
-        if selected is None:
-            try:
-                selected = ResultStatus(str(raw).lower())
-            except ValueError:
-                selected = None
+            selected = _normalize_result_status(candidate)
 
     if selected == ResultStatus.FINDINGS:
         return selected.value
@@ -450,7 +453,19 @@ def _result_status(
         return selected.value
     if exit_code == 0:
         return ResultStatus.CLEAN.value
+    if exit_code == 3:
+        return ResultStatus.WARNINGS.value
     return ResultStatus.FINDINGS.value
+
+
+def _normalize_result_status(raw: str) -> Optional[ResultStatus]:
+    selected = _LEGACY_RESULT_STATUS.get(str(raw).lower())
+    if selected is not None:
+        return selected
+    try:
+        return ResultStatus(str(raw).lower())
+    except ValueError:
+        return None
 
 
 def _exit_category(
@@ -459,21 +474,17 @@ def _exit_category(
     exit_code: int,
     result_status: str,
 ) -> str:
-    if exit_code == 130:
-        return ExitCategory.INTERRUPTED.value
-    if execution_status == "success":
-        if result_status == ResultStatus.CLEAN.value:
-            return ExitCategory.CLEAN.value
-        if result_status == ResultStatus.WARNINGS.value:
-            return ExitCategory.WARNINGS.value
-        return ExitCategory.FINDINGS.value
-    if exit_code == 2:
-        return ExitCategory.USAGE.value
-    if exit_code == 5:
-        return ExitCategory.INTERNAL.value
-    # Unknown/reserved nonzero codes are execution failures. Collapse them to
-    # the documented internal category rather than leaking an ad-hoc value.
-    return ExitCategory.INTERNAL.value
+    # ``execution_status`` and ``result_status`` remain accepted for private
+    # API compatibility, but neither may redefine the numeric exit taxonomy.
+    # Unknown/reserved codes collapse to the documented internal category.
+    return {
+        int(ExitCode.CLEAN): ExitCategory.CLEAN.value,
+        int(ExitCode.FINDINGS): ExitCategory.FINDINGS.value,
+        int(ExitCode.USAGE): ExitCategory.USAGE.value,
+        int(ExitCode.WARNINGS): ExitCategory.WARNINGS.value,
+        int(ExitCode.INTERNAL): ExitCategory.INTERNAL.value,
+        int(ExitCode.INTERRUPTED): ExitCategory.INTERRUPTED.value,
+    }.get(int(exit_code), ExitCategory.INTERNAL.value)
 
 
 def validate_json_output(output: str) -> bool:

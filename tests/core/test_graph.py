@@ -211,7 +211,7 @@ class TestDependsOnPathFallback:
         assert errors == []
         assert "kernel" in graph.edges["strategy"]
 
-    def test_case_only_path_resolves_identically_on_every_filesystem(self, tmp_path):
+    def test_case_only_path_respects_filesystem_case_sensitivity(self, tmp_path):
         docs = self._docs(
             tmp_path,
             [
@@ -222,10 +222,40 @@ class TestDependsOnPathFallback:
 
         graph, errors = build_graph(docs, workspace_root=tmp_path)
 
-        assert errors == []
-        assert graph.edges["strategy"] == ["kernel"]
+        case_variant = tmp_path / "docs/KERNEL.md"
+        if case_variant.exists():
+            assert errors == []
+            assert graph.edges["strategy"] == ["kernel"]
+        else:
+            assert graph.edges["strategy"] == []
+            assert len(errors) == 1
+            assert errors[0].error_type.value == "broken_link"
+            assert errors[0].context["dep_value"] == "docs/KERNEL.md"
 
-    def test_casefold_collision_fails_closed_instead_of_picking_a_doc(self, tmp_path):
+    def test_nonexistent_case_variant_is_not_matched_by_synthetic_casefold(
+        self, tmp_path
+    ):
+        """A stale loaded path cannot make a missing case variant look valid."""
+
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+        source_path = docs_dir / "source.md"
+        source_path.write_text("source", encoding="utf-8")
+        docs = {
+            "target": _make_doc("target"),
+            "source": _make_doc("source", depends_on=["docs/TARGET.md"]),
+        }
+        docs["target"].filepath = docs_dir / "Target.md"
+        docs["source"].filepath = source_path
+
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+
+        assert graph.edges["source"] == []
+        assert len(errors) == 1
+        assert errors[0].error_type.value == "broken_link"
+        assert errors[0].context["dep_value"] == "docs/TARGET.md"
+
+    def test_missing_case_variants_fail_closed_instead_of_picking_a_doc(self, tmp_path):
         docs_dir = tmp_path / "docs"
         docs_dir.mkdir()
         source_path = docs_dir / "source.md"
@@ -236,9 +266,8 @@ class TestDependsOnPathFallback:
             "lower": _make_doc("lower"),
             "source": _make_doc("source", depends_on=["docs/TARGET.md"]),
         }
-        # These paths need not exist: the collision is in the loaded-document
-        # registry and must be handled consistently even on case-insensitive
-        # filesystems that cannot create both names.
+        # Neither loaded path exists, so no filesystem identity can safely
+        # associate the missing dependency with either document.
         docs["upper"].filepath = docs_dir / "Target.md"
         docs["lower"].filepath = docs_dir / "target.md"
         docs["source"].filepath = source_path

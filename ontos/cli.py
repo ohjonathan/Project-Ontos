@@ -1708,7 +1708,10 @@ def _cmd_migration_report(args) -> int:
 
     options = MigrationReportOptions(
         output_path=args.output,
-        format=args.format,
+        # Global --json selects the structured report dialect just as it does
+        # for `env`; otherwise the default Markdown formatter would be
+        # suppressed and the command envelope would carry an empty payload.
+        format="json" if args.json and not args.output else args.format,
         force=args.force,
         quiet=args.quiet or args.json,
         json_output=args.json,
@@ -1720,7 +1723,7 @@ def _cmd_migration_report(args) -> int:
 
     if args.json:
         data = {}
-        if exit_code == 0 and not args.output and args.format == "json" and message:
+        if exit_code == 0 and not args.output and message:
             try:
                 data = json.loads(message)
             except Exception:

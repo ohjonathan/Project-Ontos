@@ -130,6 +130,12 @@ class SessionContext:
         repr=False,
     )
 
+    # Optional durable-transaction token embedded in staged write/backup
+    # names. Rename supplies the token recorded in its recovery journal so a
+    # post-crash recovery can identify and remove only that transaction's
+    # stranded artifacts. Other SessionContext callers retain legacy names.
+    staging_token: Optional[str] = field(default=None, repr=False)
+
     # Mutable state (changes during session)
     pending_writes: List[PendingWrite] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
@@ -1067,7 +1073,7 @@ class SessionContext:
 
         fd, temp_name = self._create_unique_file(
             anchor,
-            prefix=f".{final_name}.",
+            prefix=self._staging_prefix(final_name),
             suffix=".tmp",
             creation_mode=0o600 if final_info is not None else 0o666,
         )
@@ -1116,7 +1122,7 @@ class SessionContext:
     ) -> tuple[str, _EntryBinding]:
         fd, backup_name = self._create_unique_file(
             anchor,
-            prefix=f".{final_name}.",
+            prefix=self._staging_prefix(final_name),
             suffix=".bak",
         )
         try:
@@ -1128,6 +1134,22 @@ class SessionContext:
             anchor.path / backup_name,
             "commit backup reservation",
         )
+
+    def _staging_prefix(self, final_name: str) -> str:
+        """Return the hidden staging prefix for one destination.
+
+        Durable rename tokens are lowercase UUID hex. Validate before using a
+        caller-provided value in a filename so a malformed token cannot alter
+        the staging directory or widen recovery cleanup matching.
+        """
+
+        if self.staging_token is None:
+            return f".{final_name}."
+        if len(self.staging_token) != 32 or any(
+            char not in "0123456789abcdef" for char in self.staging_token
+        ):
+            raise ValueError("Invalid transaction staging token")
+        return f".{final_name}.{self.staging_token}."
 
     def _replace_entry(
         self,

@@ -529,7 +529,12 @@ def _build_file_plan(doc: DocumentData) -> Optional[FilePlan]:
         new_content = decoded.original
     else:
         try:
-            reparsed, _ = parse_frontmatter_content(new_content)
+            # Reparse the normalized document, not the reconstructed file.
+            # ``decoded.leading_prefix`` may contain a UTF-8 BOM or leading
+            # whitespace, neither of which is part of the fence-aware parser's
+            # input contract. The prefix is still retained in ``new_content``
+            # and written back unchanged.
+            reparsed, _ = parse_frontmatter_content(normalized_new)
             for edit in edits:
                 if edit.action == "remove":
                     if reparsed.get(edit.field) not in (None, [], ""):
@@ -731,6 +736,7 @@ def _emit_dry_run(options: RetrofitOptions, plan: RetrofitPlan) -> int:
             },
             warnings=[_warning_to_json(item) for item in plan.warnings],
             result_status="warnings" if plan.warnings else "clean",
+            result_kind="operation",
         )
         return exit_code
 
@@ -824,6 +830,7 @@ def _emit_apply_success(
             },
             warnings=[_warning_to_json(item) for item in plan.warnings],
             result_status="warnings" if plan.warnings else "clean",
+            result_kind="operation",
         )
         return exit_code
 
@@ -881,6 +888,7 @@ def _emit_error(
             data=data,
             warnings=[_warning_to_json(item) for item in warnings],
             execution_succeeded=False,
+            result_kind="operation",
         )
         return
 

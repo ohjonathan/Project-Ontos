@@ -329,6 +329,7 @@ def test_rename_dry_run_json_includes_line_context_and_skipped_zones(tmp_path: P
     data = payload["data"]
     assert data["mode"] == "dry_run"
     assert payload["status"] == "success"
+    assert payload["result"]["kind"] == "operation"
     assert data["summary"]["body_edits"] >= 2
     assert data["summary"]["skipped_zone_sightings"] >= 2
 
@@ -338,6 +339,29 @@ def test_rename_dry_run_json_includes_line_context_and_skipped_zones(tmp_path: P
     skipped = [item for item in source_file["body_edits"] if not item["rewritable"]]
     assert skipped
     assert skipped[0]["skip_reason"] is not None
+
+
+def test_rename_body_edit_reports_physical_file_line(tmp_path: Path):
+    _init_repo(tmp_path)
+    _write_doc(tmp_path / "docs" / "target.md", "old_id")
+    _write_doc(
+        tmp_path / "docs" / "source.md",
+        "source_doc",
+        body="See [[old_id]].",
+    )
+
+    result = _run_ontos(tmp_path, "--json", "rename", "old_id", "new_id")
+
+    assert result.returncode == 0
+    source_file = next(
+        item
+        for item in json.loads(result.stdout)["data"]["files"]
+        if item["path"].endswith("source.md")
+    )
+    rewritable = [item for item in source_file["body_edits"] if item["rewritable"]]
+    assert rewritable
+    # _write_doc emits five physical frontmatter/fence lines before the body.
+    assert {item["line"] for item in rewritable} == {6}
 
 
 def test_rename_apply_updates_aliased_and_heading_wikilinks(tmp_path: Path):
@@ -359,6 +383,35 @@ def test_rename_apply_updates_aliased_and_heading_wikilinks(tmp_path: Path):
     assert "[[new_id#Section One]]" in updated
     assert "[[new_id]]" in updated
     assert "[[old_id" not in updated
+
+
+def test_rename_apply_recovers_stranded_transaction_staging_before_git_check(
+    tmp_path: Path,
+):
+    from ontos.core.rename_transaction import RenameTransaction
+
+    _init_repo(tmp_path)
+    target = tmp_path / "docs" / "target.md"
+    source = tmp_path / "docs" / "source.md"
+    _write_doc(target, "old_id")
+    _write_doc(source, "source_doc", body="See [[old_id]].")
+    _init_git_repo(tmp_path)
+
+    transaction = RenameTransaction.prepare(tmp_path, [target, source])
+    nonce = "1" * 24
+    stranded = [
+        source.parent / f".{source.name}.{transaction.staging_token}.{nonce}.tmp",
+        source.parent / f".{source.name}.{transaction.staging_token}.{nonce}.bak",
+    ]
+    for artifact in stranded:
+        artifact.write_text("interrupted staging", encoding="utf-8")
+
+    result = _run_ontos(tmp_path, "rename", "old_id", "new_id", "--apply")
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert all(not artifact.exists() for artifact in stranded)
+    assert "id: new_id" in target.read_text(encoding="utf-8")
+    assert "[[new_id]]" in source.read_text(encoding="utf-8")
 
 
 def test_rename_frontmatter_comments_and_order_preserved_on_apply(tmp_path: Path):
@@ -406,6 +459,7 @@ def test_rename_apply_json_schema_and_post_warning(tmp_path: Path):
     data = payload["data"]
     assert data["mode"] == "apply"
     assert payload["status"] == "success"
+    assert payload["result"]["kind"] == "operation"
     assert data["summary"]["applied_files"] >= 1
     assert data["partial_commit"]["detected"] is False
     assert payload["error"] is None
