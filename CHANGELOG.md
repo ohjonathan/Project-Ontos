@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 > For the full historical changelog with Ontos frontmatter (from v0.1.0), see [`Ontos_CHANGELOG.md`](Ontos_CHANGELOG.md).
 
-## [4.7.1] - Unreleased
+## [4.7.1] - 2026-07-12
 
 Patch release stopping active frontmatter corruption and hardening local
 write paths without changing the command-envelope schema or exit-code
