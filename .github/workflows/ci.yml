@@ -82,7 +82,7 @@ jobs:
       - name: Verify v5 golden baselines and coverage
         run: |
           PYTHONPATH=. python tests/golden/compare_golden_master.py --fixture all
-          pytest tests/ --cov=ontos --cov-fail-under=82
+          COVERAGE_FILE=/tmp/ontos-v5.coverage pytest tests/ --cov=ontos --cov-fail-under=82
 
       - name: Verify external lifecycle evidence index
         run: |
