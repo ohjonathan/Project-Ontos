@@ -231,3 +231,80 @@ results:
       status: passed
   supersedes_capture_ids:
   - project-ontos-v5-0-0-B.1-glm-peer.r1.c20260713T071930Z.43526.19fbb1236b291da084dee294e91fb8d6
+- dispatch_id: project-ontos-v5-0-0-B.1-claude-adversarial
+  capture_id: project-ontos-v5-0-0-B.1-claude-adversarial.r1.c20260713T074117Z.3145.bd8e4db0fd75bf11bed4cf581d238c42
+  round: 1
+  family: claude
+  actual_executed_family: claude
+  role: adversarial
+  execution_provider: claude
+  execution_cli: claude
+  resolved_executable: /Users/jonathanoh/.local/bin/claude
+  resolved_executable_realpath: /Users/jonathanoh/.local/share/claude/versions/2.1.207
+  cli_version: 2.1.207 (Claude Code)
+  provider_probe_hash: sha256:1c63f5d67f9b934efa74db6f1e8864843aa2bf776ca30d0bca012c042208f120
+  model_id: auto
+  resolved_model: opus
+  model_probe_command: claude --help 2>&1 | grep -oE "'(opus|sonnet|haiku)'" | sort
+    -u
+  model_candidate_list:
+  - opus
+  - sonnet
+  model_selection_rule: claude-cli-alias-strongest
+  model_selection_rule_version: v1.3.0
+  command_argv_redacted:
+  - claude
+  - --permission-mode
+  - bypassPermissions
+  - --add-dir
+  - .
+  - -p
+  - <prompt-body-redacted>
+  - --model
+  - opus
+  prompt_path: docs/reviews/project-ontos-v5-0-0/.prompts/project-ontos-v5-0-0-B.1-claude-adversarial.r1.c20260713T074117Z.3145.bd8e4db0fd75bf11bed4cf581d238c42.md
+  prompt_sha256: sha256:71246caf76cbd8880c8db085517d9987dbec199d947561765895e60fce6d3d9e
+  stdin_path: null
+  stdin_sha256: null
+  exit_code: 0
+  started_at: '2026-07-13T07:41:18Z'
+  ended_at: '2026-07-13T07:54:47Z'
+  raw_output_path: docs/reviews/project-ontos-v5-0-0/.raw/project-ontos-v5-0-0-B.1-claude-adversarial.r1.c20260713T074117Z.3145.bd8e4db0fd75bf11bed4cf581d238c42.raw.txt
+  raw_output_hash: sha256:a00d19eacd18183b82118979b7218202ff854179242c1c23b697efe7bf6263eb
+  stderr_path: docs/reviews/project-ontos-v5-0-0/.raw/project-ontos-v5-0-0-B.1-claude-adversarial.r1.c20260713T074117Z.3145.bd8e4db0fd75bf11bed4cf581d238c42.stderr.txt
+  stderr_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  evidence_cap: direct-run
+  evidence_labels_used: []
+  evidence_cap_violations: 0
+  artifact_path: docs/reviews/project-ontos-v5-0-0/B.1-claude-adversarial.md
+  artifact_sha256: sha256:383d3037fb16bd986f37c8d70c822ada66617f40d445ac261b7831133496b7e2
+  status: completed
+  dispatch_method: external-cli
+  test_mode: false
+  primary_model_requested: opus
+  model_used: opus
+  fallback_candidate_chain: []
+  fallback_attempts:
+  - attempt: 1
+    mode: primary
+    model_requested: opus
+    exit_code: 0
+    started_at: '2026-07-13T07:41:18Z'
+    ended_at: '2026-07-13T07:54:47Z'
+    detected_429: false
+    stderr_tail_200: ''
+    stdout_substantive: true
+  fallback_reason: none
+  wrapper_429_classification: none
+  artifact_source: worker_file
+  artifact_write_conflict: false
+  artifact_prewrite_sha256: null
+  sequential_dispatch_caveat:
+    reason: single-operator canary-gated lifecycle rerun
+    timestamp: '2026-07-13T07:41:16Z'
+  intent_model_restrictions:
+    family: claude
+    execution_cli: claude
+    denied_models: []
+    allowed_models: []
+    active: false

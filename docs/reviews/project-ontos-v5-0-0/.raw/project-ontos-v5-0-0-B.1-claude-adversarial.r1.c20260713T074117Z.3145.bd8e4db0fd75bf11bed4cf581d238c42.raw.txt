@@ -1,0 +1,19 @@
+Verdict written to `docs/reviews/project-ontos-v5-0-0/B.1-claude-adversarial.md`. **Request changes.** No product files touched.
+
+## The headline
+
+Every product gate genuinely passes — 1536 tests, golden comparison at 5.0.0, package build, non-editable install smoke, cardinality and scope assertions. But this is a release whose *entire purpose* is a contract, and the contract does not hold. I found two blockers and nine major findings, all reproduced by execution rather than inferred from reading.
+
+**Blocker 1** is the one that matters most: `result.exit_category` — the field `docs/releases/v5.0.0.md` explicitly tells consumers to use when mapping process exits — disagrees with the actual exit code. Running `ontos link-check --json` on Ontos's own documentation returns `exit_code: 0` and `message: "clean"` alongside `exit_category: "findings"`. The same bug mislabels every warning-only (exit 3) run. A CI consumer following the published contract concludes a clean repo has findings. Root cause is `ontos/ui/json_output.py:464` deriving the category from `result_status` rather than `exit_code`, with `incomplete` (triggered by a single `load_warnings`) falling through to `findings`.
+
+**Blocker 2** needs a decision, not just a patch: the spec says path identity "respects the filesystem's case sensitivity," but `ontos/core/graph.py:45` unconditionally casefolds and never probes the filesystem — its own docstring states the contradiction. On case-sensitive Linux (what CI runs), a `depends_on` pointing at a file that does not exist resolves to a valid edge with zero errors. That's a false negative in broken-link detection, the product's core function. Spec and implementation state opposite things; someone must choose which is wrong.
+
+## What I want to flag beyond the findings
+
+Two defects are *actively enshrined* by the tests meant to prove them. `tests/test_cli_contract_v4.py:271` builds the exact state that breaks `exit_category`, asserts the status becomes `incomplete`, and then stops — never asserting `exit_category`, the one assertion that would have caught Blocker 1. And `tests/core/test_graph.py:214` asserts the negation of the spec clause in its very name. **A green suite is therefore not evidence the contract is met**, and D.2/D.5 verifiers should not treat it as such.
+
+## Credit where due
+
+The parts most likely to destroy user data are correct. Rename takes the workspace lock *before* the cleanliness check and plan construction in both CLI and MCP (no TOCTOU), journals exact original bytes, and the old unscoped `git checkout -- .` is genuinely gone — a real improvement on 4.7.1. No v4.7.1 safety fix was reverted; the manifest's `watch_item` holds. The remaining fixes are mostly small and localized.
+
+Two process notes worth your attention: the repo ships no virtualenv and the default `python3` (3.14) lacks pytest and the deps — a naive `pytest | tail` reports success from the *pipe*, not the suite, which briefly fooled me. And the 5.0.0 wheel still ships `ontos/_hooks/` scripts that invoke the `ontos._scripts` module this release deleted (harmless — nothing installs them — but it contradicts the "legacy fork removed" goal).

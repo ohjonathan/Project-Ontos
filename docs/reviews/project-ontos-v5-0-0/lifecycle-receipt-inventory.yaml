@@ -72,3 +72,34 @@ receipts:
   sequential_dispatch_caveat:
     reason: single-operator canary-gated lifecycle rerun
     timestamp: '2026-07-13T07:29:22Z'
+- run_id: project-ontos-v5-0-0-B.1-claude-adversarial.r1.c20260713T074117Z.3145.bd8e4db0fd75bf11bed4cf581d238c42-adversarial
+  dispatch_id: project-ontos-v5-0-0-B.1-claude-adversarial
+  capture_id: project-ontos-v5-0-0-B.1-claude-adversarial.r1.c20260713T074117Z.3145.bd8e4db0fd75bf11bed4cf581d238c42
+  deliverable_id: project-ontos-v5-0-0
+  phase: B.1
+  round: 1
+  role: adversarial
+  family: claude
+  actual_executed_family: claude
+  provider: claude
+  template_id: review-board-adversarial
+  template_version: 1.1.0
+  prompt_sha256: 71246caf76cbd8880c8db085517d9987dbec199d947561765895e60fce6d3d9e
+  input_artifact_sha256: 71246caf76cbd8880c8db085517d9987dbec199d947561765895e60fce6d3d9e
+  output_artifact_path: docs/reviews/project-ontos-v5-0-0/B.1-claude-adversarial.md
+  output_artifact_sha256: 383d3037fb16bd986f37c8d70c822ada66617f40d445ac261b7831133496b7e2
+  transcript_or_log_path: docs/reviews/project-ontos-v5-0-0/.raw/project-ontos-v5-0-0-B.1-claude-adversarial.r1.c20260713T074117Z.3145.bd8e4db0fd75bf11bed4cf581d238c42.raw.txt
+  stderr_path: docs/reviews/project-ontos-v5-0-0/.raw/project-ontos-v5-0-0-B.1-claude-adversarial.r1.c20260713T074117Z.3145.bd8e4db0fd75bf11bed4cf581d238c42.stderr.txt
+  stderr_sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  started_at: '2026-07-13T07:41:18Z'
+  ended_at: '2026-07-13T07:54:47Z'
+  exit_code: 0
+  strict_p3_candidate: true
+  provider_limited_fallback: false
+  dispatch_intent_path: docs/reviews/project-ontos-v5-0-0/B.1-dispatch-intent.yaml
+  dispatch_result_path: docs/reviews/project-ontos-v5-0-0/B.1-dispatch-result.yaml
+  meta_orchestrator_family: codex
+  deliverable_author_family: codex
+  sequential_dispatch_caveat:
+    reason: single-operator canary-gated lifecycle rerun
+    timestamp: '2026-07-13T07:41:16Z'
