@@ -13,11 +13,12 @@ import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable, List, Sequence, Tuple
 from uuid import uuid4
 
 
 JOURNAL_RELATIVE_PATH = Path(".ontos") / "transactions" / "rename.json"
+_STAGING_NONCE_LENGTH = 24
 
 
 def _journal_path(root: Path) -> Path:
@@ -63,6 +64,8 @@ def _atomic_bytes(path: Path, content: bytes) -> None:
 class RenameTransaction:
     root: Path
     journal: Path
+    staging_token: str
+    destinations: Tuple[Path, ...]
 
     @classmethod
     def prepare(cls, root: Path, paths: Iterable[Path]) -> "RenameTransaction":
@@ -74,6 +77,7 @@ class RenameTransaction:
             )
 
         entries = []
+        destinations = []
         seen = set()
         for candidate in sorted((Path(path).resolve() for path in paths), key=str):
             if candidate in seen:
@@ -85,6 +89,7 @@ class RenameTransaction:
                 raise ValueError(f"Rename destination escapes workspace: {candidate}") from exc
             if candidate.is_symlink() or not candidate.is_file():
                 raise ValueError(f"Rename destination is not a regular file: {candidate}")
+            destinations.append(candidate)
             entries.append(
                 {
                     "path": relative.as_posix(),
@@ -92,19 +97,30 @@ class RenameTransaction:
                 }
             )
 
+        staging_token = uuid4().hex
         payload = {
-            "schema_version": 1,
+            "schema_version": 2,
             "operation": "rename",
             "state": "prepared",
+            "staging_token": staging_token,
             "entries": entries,
         }
         _atomic_bytes(
             journal,
             (json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8"),
         )
-        return cls(root=root, journal=journal)
+        return cls(
+            root=root,
+            journal=journal,
+            staging_token=staging_token,
+            destinations=tuple(destinations),
+        )
 
     def complete(self) -> None:
+        _cleanup_staging_artifacts(
+            self.destinations,
+            staging_token=self.staging_token,
+        )
         self.journal.unlink(missing_ok=True)
         _fsync_directory(self.journal.parent)
 
@@ -126,13 +142,17 @@ def recover_rename_transaction(root: Path) -> List[Path]:
         payload = json.loads(journal.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise RuntimeError(f"Rename transaction journal is unreadable: {exc}") from exc
+    schema_version = payload.get("schema_version")
     if (
-        payload.get("schema_version") != 1
+        schema_version not in {1, 2}
         or payload.get("operation") != "rename"
         or payload.get("state") != "prepared"
         or not isinstance(payload.get("entries"), list)
     ):
         raise RuntimeError("Rename transaction journal has an unsupported shape")
+    staging_token = payload.get("staging_token") if schema_version == 2 else None
+    if schema_version == 2 and not _valid_staging_token(staging_token):
+        raise RuntimeError("Rename transaction journal has an invalid staging token")
 
     restored: List[Path] = []
     for entry in payload["entries"]:
@@ -153,6 +173,60 @@ def recover_rename_transaction(root: Path) -> List[Path]:
         _atomic_bytes(destination, content)
         restored.append(destination)
 
+    if staging_token is not None:
+        _cleanup_staging_artifacts(restored, staging_token=staging_token)
+
     journal.unlink()
     _fsync_directory(journal.parent)
     return restored
+
+
+def _valid_staging_token(value: object) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 32
+        and all(char in "0123456789abcdef" for char in value)
+    )
+
+
+def _cleanup_staging_artifacts(
+    destinations: Sequence[Path],
+    *,
+    staging_token: str,
+) -> None:
+    """Remove token-bound SessionContext artifacts for touched paths only."""
+
+    if not _valid_staging_token(staging_token):
+        raise RuntimeError("Invalid transaction staging token")
+
+    changed_directories: set[Path] = set()
+    for destination in destinations:
+        parent = destination.parent
+        prefix = f".{destination.name}.{staging_token}."
+        try:
+            candidates = list(parent.iterdir())
+        except FileNotFoundError:
+            continue
+        for candidate in candidates:
+            name = candidate.name
+            if not name.startswith(prefix):
+                continue
+            if name.endswith(".tmp"):
+                nonce = name[len(prefix) : -len(".tmp")]
+            elif name.endswith(".bak"):
+                nonce = name[len(prefix) : -len(".bak")]
+            else:
+                continue
+            if len(nonce) != _STAGING_NONCE_LENGTH or any(
+                char not in "0123456789abcdef" for char in nonce
+            ):
+                continue
+            if candidate.is_symlink() or not candidate.is_file():
+                raise RuntimeError(
+                    f"Refusing to remove non-regular rename staging artifact: {candidate}"
+                )
+            candidate.unlink()
+            changed_directories.add(parent)
+
+    for directory in sorted(changed_directories, key=str):
+        _fsync_directory(directory)

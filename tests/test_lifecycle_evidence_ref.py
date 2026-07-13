@@ -18,6 +18,8 @@ def test_evidence_ref_verifier_checks_hashes_and_orphans(tmp_path: Path) -> None
     evidence = tmp_path / "evidence" / "D.2.txt"
     evidence.parent.mkdir()
     evidence.write_bytes(b"review\n")
+    unindexed = tmp_path / "evidence" / "raw.txt"
+    unindexed.write_bytes(b"raw capture\n")
     _git(tmp_path, "add", ".")
     _git(tmp_path, "commit", "-m", "evidence")
     _git(tmp_path, "branch", "evidence-ref")
@@ -27,14 +29,24 @@ def test_evidence_ref_verifier_checks_hashes_and_orphans(tmp_path: Path) -> None
         "schema_version": 1,
         "evidence_ref": "evidence-ref",
         "evidence_root": "evidence",
-        "entries": [{
-            "path": "evidence/D.2.txt",
-            "sha256": hashlib.sha256(b"review\n").hexdigest(),
-            "phase": "D.2",
-            "role": "peer",
-            "family": "codex",
-            "product_head": "a" * 40,
-        }],
+        "entries": [
+            {
+                "path": "evidence/D.2.txt",
+                "sha256": hashlib.sha256(b"review\n").hexdigest(),
+                "phase": "D.2",
+                "role": "peer",
+                "family": "codex",
+                "product_head": "a" * 40,
+            },
+            {
+                "path": "evidence/raw.txt",
+                "sha256": hashlib.sha256(b"raw capture\n").hexdigest(),
+                "phase": "D.2",
+                "role": "raw",
+                "family": "codex",
+                "product_head": "a" * 40,
+            },
+        ],
     }
     index.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
 
@@ -42,3 +54,22 @@ def test_evidence_ref_verifier_checks_hashes_and_orphans(tmp_path: Path) -> None
     payload["entries"][0]["sha256"] = "0" * 64
     index.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
     assert any("sha256 mismatch" in error for error in verify(index, tmp_path))
+
+    payload["entries"][0]["sha256"] = hashlib.sha256(b"review\n").hexdigest()
+    payload["entries"].pop()
+    index.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    assert "unindexed evidence artifact: evidence/raw.txt" in verify(index, tmp_path)
+
+    payload["entries"].append(
+        {
+            "path": "evidence/missing.txt",
+            "sha256": hashlib.sha256(b"missing\n").hexdigest(),
+            "phase": "D.2",
+            "role": "raw",
+            "family": "codex",
+            "product_head": "a" * 40,
+        }
+    )
+    index.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    errors = verify(index, tmp_path)
+    assert "indexed artifact absent from evidence tree: evidence/missing.txt" in errors

@@ -481,22 +481,23 @@ def _rename_document_impl(
         references_updated += len(fp.frontmatter_edits)
         references_updated += sum(1 for edit in fp.body_edits if edit.rewritable)
 
+    transaction = RenameTransaction.prepare(
+        plan.workspace_root,
+        [fp.path for fp in files_to_apply],
+    )
     ctx = SessionContext(
         repo_root=plan.workspace_root,
         config={},
         owns_lock=False,  # addendum v1.2 §A1
         expected_workspace_binding=plan.workspace_binding,
         external_lock_guard=plan.lock_guard,
+        staging_token=transaction.staging_token,
     )
     for fp in files_to_apply:
         ctx.buffer_write(fp.path, fp.new_content)
 
     # Commit + A3 rollback+rebuild path. On failure we re-raise so the
     # outer dispatcher turns it into a WriteToolErrorEnvelope.
-    transaction = RenameTransaction.prepare(
-        plan.workspace_root,
-        [fp.path for fp in files_to_apply],
-    )
     modified_paths = _commit_with_a3_rollback_and_rebuild(
         ctx, portfolio_index, plan.slug, plan.workspace_root, transaction
     )

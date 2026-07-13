@@ -761,7 +761,11 @@ def _body_line_offset(doc: DocumentData) -> int:
     """
 
     try:
-        raw = doc.filepath.read_text(encoding="utf-8")
+        # Decode bytes directly so CRLF remains CRLF. ``Path.read_text`` uses
+        # universal-newline translation, while the canonical document loader
+        # preserves line endings in ``doc.content``; mixing the two makes the
+        # equality checks below miss stripped body blank lines in CRLF files.
+        raw = doc.filepath.read_bytes().decode("utf-8")
     except (OSError, UnicodeDecodeError):
         return 0
     # Match the canonical loader: strip an initial BOM and leading whitespace

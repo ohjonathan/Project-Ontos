@@ -86,6 +86,56 @@ def test_undocumented_exit_category_is_sanitized(capsys) -> None:
     assert payload["result"]["exit_category"] == "internal"
 
 
+@pytest.mark.parametrize(
+    ("exit_code", "expected"),
+    [
+        (0, "clean"),
+        (1, "findings"),
+        (2, "usage"),
+        (3, "warnings"),
+        (5, "internal"),
+        (130, "interrupted"),
+    ],
+)
+def test_exit_category_is_derived_only_from_exit_code(
+    capsys, exit_code: int, expected: str
+) -> None:
+    emit_command_success(
+        command="link-check",
+        exit_code=exit_code,
+        message="conflicting legacy metadata",
+        result_status="incomplete",
+        exit_category="findings",
+    )
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["result"]["exit_category"] == expected
+
+
+def test_explicit_result_status_is_not_rewritten_by_count_heuristics(capsys) -> None:
+    emit_command_success(
+        command="link-check",
+        exit_code=0,
+        message="Caller classified the result",
+        data={"summary": {"load_warnings": 1}},
+        result_status="clean",
+    )
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["result"]["status"] == "clean"
+    assert payload["result"]["exit_category"] == "clean"
+
+
+def test_data_result_status_survives_when_no_incomplete_counter_applies(capsys) -> None:
+    emit_command_success(
+        command="doctor",
+        exit_code=3,
+        message="Completed with warnings",
+        data={"result_status": "warnings", "summary": {"warnings": 1}},
+    )
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["result"]["status"] == "warnings"
+    assert payload["result"]["exit_category"] == "warnings"
+
+
 def test_aliases_share_canonical_argument_contracts() -> None:
     choices = _subparsers(create_parser(include_hidden=True)).choices
 
@@ -280,6 +330,7 @@ def test_v4_envelope_marks_unknown_counts_and_incomplete_diagnostics(capsys) -> 
     )
     incomplete = json.loads(capsys.readouterr().out)
     assert incomplete["result"]["status"] == "incomplete"
+    assert incomplete["result"]["exit_category"] == "clean"
 
     _emit_handler_result_json(
         command="verify",

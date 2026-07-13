@@ -11,7 +11,6 @@ Phase 2 Decomposition - Created from Phase2-Implementation-Spec.md Section 4.3
 from __future__ import annotations
 import fnmatch
 import heapq
-import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Sequence, Set, Optional, Tuple, Union
@@ -42,19 +41,6 @@ def _looks_like_path(dep_id: str) -> bool:
     return "/" in dep_id or "\\" in dep_id or dep_id.lower().endswith(".md")
 
 
-def _casefold_path(path: Path) -> str:
-    """Return a platform-independent case-insensitive path key.
-
-    ``os.path.normcase`` is intentionally not used here: on macOS it is an
-    identity operation even when the underlying APFS volume is
-    case-insensitive.  Normalizing separators plus Unicode before casefolding
-    gives the same lookup semantics on Linux, macOS, and Windows.
-    """
-
-    normalized = unicodedata.normalize("NFC", str(path).replace("\\", "/"))
-    return normalized.casefold()
-
-
 def _record_unique(mapping: Dict[object, Optional[str]], key: object, doc_id: str) -> None:
     """Record a unique key, marking collisions as ambiguous with ``None``."""
 
@@ -68,21 +54,20 @@ def _record_unique(mapping: Dict[object, Optional[str]], key: object, doc_id: st
 class _LoadedPathIndex:
     """Collision-aware identities for loaded document paths.
 
-    Exact resolved paths take precedence.  A unique casefolded identity makes
-    case-only references deterministic across filesystems.  Device/inode
-    identity covers symlinks and hard links when the candidate exists.  Any
+    Exact resolved paths take precedence. Device/inode identity covers aliases
+    that the underlying filesystem actually resolves, including case variants
+    on case-insensitive volumes as well as symlinks and hard links. Case-only
+    references therefore remain broken on case-sensitive filesystems. Any
     collision is fail-closed instead of choosing whichever document happened
     to be inserted last.
     """
 
     exact: Dict[Path, Optional[str]]
-    folded: Dict[str, Optional[str]]
     inode: Dict[Tuple[int, int], Optional[str]]
 
     @classmethod
     def from_documents(cls, docs: Dict[str, DocumentData]) -> "_LoadedPathIndex":
         exact: Dict[Path, Optional[str]] = {}
-        folded: Dict[str, Optional[str]] = {}
         inode: Dict[Tuple[int, int], Optional[str]] = {}
 
         for doc in docs.values():
@@ -91,25 +76,19 @@ class _LoadedPathIndex:
             except (OSError, RuntimeError, ValueError):
                 continue
             _record_unique(exact, resolved, doc.id)
-            _record_unique(folded, _casefold_path(resolved), doc.id)
             try:
                 stat_result = doc.filepath.stat()
             except (OSError, ValueError):
                 continue
             _record_unique(inode, (stat_result.st_dev, stat_result.st_ino), doc.id)
 
-        return cls(exact=exact, folded=folded, inode=inode)
+        return cls(exact=exact, inode=inode)
 
     def resolve(self, candidate: Path, resolved: Path) -> Tuple[Optional[str], bool]:
         """Return ``(doc_id, ambiguous)`` for a candidate path."""
 
         if resolved in self.exact:
             doc_id = self.exact[resolved]
-            return doc_id, doc_id is None
-
-        folded_key = _casefold_path(resolved)
-        if folded_key in self.folded:
-            doc_id = self.folded[folded_key]
             return doc_id, doc_id is None
 
         try:

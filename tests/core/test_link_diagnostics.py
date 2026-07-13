@@ -230,6 +230,31 @@ def test_body_location_counts_leading_blank_lines_without_frontmatter(tmp_path: 
     assert finding.location.line == 3
 
 
+def test_body_location_preserves_crlf_blank_line_offsets(tmp_path: Path):
+    _init_project(tmp_path)
+    source = tmp_path / "docs" / "source.md"
+    source.write_bytes(
+        (
+            "---\r\n"
+            "id: source_doc\r\n"
+            "type: atom\r\n"
+            "status: active\r\n"
+            "---\r\n"
+            "\r\n"
+            "\r\n"
+            "See [[missing_doc]].\r\n"
+        ).encode("utf-8")
+    )
+
+    result = _run(tmp_path, ScanScope.LIBRARY)
+
+    finding = next(
+        item for item in result.broken_references if item.value == "missing_doc"
+    )
+    assert finding.location is not None
+    assert finding.location.line == 8
+
+
 def test_markdown_path_resolves_loaded_doc_with_stem_id_mismatch(tmp_path: Path):
     _init_project(tmp_path)
     _write_doc(tmp_path / "docs" / "Ontos_Manual.md", "ontos_manual")

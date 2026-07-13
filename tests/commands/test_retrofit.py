@@ -101,6 +101,7 @@ def test_retrofit_missing_obsidian_json_envelope(tmp_path: Path):
     payload = json.loads(result.stdout)
     assert payload["status"] == "error"
     assert payload["error"]["code"] == "missing_mode"
+    assert payload["result"]["kind"] == "operation"
     assert payload["result"]["exit_category"] == "usage"
     assert result.stderr == ""
 
@@ -131,6 +132,7 @@ def test_retrofit_dry_run_json_envelope(tmp_path: Path):
     assert result.returncode == 0
     payload = json.loads(result.stdout)
     assert payload["status"] == "success"
+    assert payload["result"]["kind"] == "operation"
     data = payload["data"]
     assert data["mode"] == "dry_run"
     assert data["summary"]["planned_files"] == 1
@@ -579,6 +581,35 @@ def test_retrofit_apply_preserves_crlf_line_endings(tmp_path: Path):
     assert b"tags:\r\n  - alpha\r\n" in updated
     assert b"aliases:\r\n" in updated
     assert b"\n" not in updated.replace(b"\r\n", b"")
+
+
+def test_retrofit_apply_preserves_bom_and_reparses_normalized_content(tmp_path: Path):
+    _init_repo(tmp_path)
+    path = tmp_path / "docs" / "bom.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(
+        b"\xef\xbb\xbf"
+        + (
+            "---\n"
+            "id: bom_doc\n"
+            "type: atom\n"
+            "status: active\n"
+            "concepts:\n"
+            "  - alpha\n"
+            "---\n"
+            "Body\n"
+        ).encode("utf-8")
+    )
+    _init_git_repo(tmp_path)
+
+    result = _run_ontos(tmp_path, "retrofit", "--obsidian", "--apply")
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    updated = path.read_bytes()
+    assert updated.startswith(b"\xef\xbb\xbf---\n")
+    assert updated.count(b"\xef\xbb\xbf") == 1
+    assert b"tags:\n  - alpha\n" in updated
+    assert b"aliases:\n" in updated
 
 
 def test_retrofit_apply_surfaces_loader_issues_without_blocking_valid_files(
