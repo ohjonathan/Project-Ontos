@@ -1,0 +1,2 @@
+verify-lifecycle: FAIL — inventory.receipts is empty or not a list at /private/tmp/project-ontos-v5-evidence/docs/reviews/project-ontos-v5-0-0/lifecycle-receipt-inventory.yaml
+verify-lifecycle: status=review_pending

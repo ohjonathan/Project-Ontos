@@ -1,0 +1,17 @@
+authoring_session_family: codex
+artifact_root: docs/reviews/project-ontos-v5-0-0
+dispatches:
+  - dispatch_id: project-ontos-v5-0-0-B.1-claude-adversarial
+    family: claude
+    role: adversarial
+    review_mode: full-3-lens
+    expected_provider: claude
+    expected_cli: claude
+    expected_model: auto
+    expected_artifact: docs/reviews/project-ontos-v5-0-0/B.1-claude-adversarial.md
+    prompt_path: docs/reviews/project-ontos-v5-0-0/.prompts/project-ontos-v5-0-0-B.1-claude-adversarial.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    fallback_models: []
+    scope: "Adversarial review of the Ontos 5.0.0 structural release at product head 8f4fc8842bd8346b541a9c5a08a9d196ee1a6319."
+    status: pending
