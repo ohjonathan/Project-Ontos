@@ -534,7 +534,12 @@ def test_activate_json_error_severity_lands_under_errors_with_structured_shape(
         severity="warning",
     )
 
-    def _patched_generate_context_map(docs, gen_config, options):
+    def _patched_generate_context_map(
+        docs,
+        gen_config,
+        options,
+        known_concepts=None,
+    ):
         return "stub-content", ValidationResult(
             errors=[synthetic_error], warnings=[synthetic_warning]
         )

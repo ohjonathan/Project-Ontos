@@ -1,0 +1,249 @@
+manifest_version: "2.0.1"
+id: project-ontos-audit-tail-consistency
+slug: project-ontos-audit-tail-consistency
+summary: "Reconcile four cross-surface count findings and retire the portfolio WAL/SHM isolation flake for v5.0.1."
+
+lifecycle_mode: framework lifecycle
+deliverable_type: standard
+user_facing: true
+fallback_evidence_mode: strict_p3
+require_lifecycle_dispatch_bundles: true
+strict_p3_required_phases: ["B.1", "D.2", "D.5"]
+
+owners: ["Project Ontos Maintainers"]
+authorship:
+  deliverable_author_families: [codex]
+  structural_orchestrator_families: [codex]
+
+implementation_sequencing:
+  mode: code-first-user-gated
+  user_gate_ref: "Maintainer dispatch for sequential PR C after independently verified merge of PR B #168."
+  implementation_ref: "codex/audit-tail-consistency from origin/main@f2ed48d8b935a486a1d09778efa345910400257b"
+  rationale: "The maintainer supplied the reconciliation direction, clean-path tripwire, WAL isolation contract, and required before/after evidence."
+
+scope:
+  allowed_paths:
+    - "AGENTS.md"
+    - "Ontos_Context_Map.md"
+    - "docs/specs/project-ontos-audit-tail-consistency-spec.md"
+    - "docs/trackers/project-ontos-audit-tail-consistency.md"
+    - "docs/trackers/project-ontos-audit-remediation-release-line.md"
+    - "docs/retros/project-ontos-audit-tail-consistency-retro.md"
+    - "manifests/project-ontos-audit-tail-consistency.yaml"
+    - "ontos/commands/activate.py"
+    - "ontos/commands/maintain.py"
+    - "ontos/commands/map.py"
+    - "ontos/io/concepts.py"
+    - "ontos/io/scan_scope.py"
+    - "ontos/io/snapshot.py"
+    - "ontos/mcp/cache.py"
+    - "ontos/mcp/portfolio.py"
+    - "ontos/mcp/tools.py"
+    - "tests/commands/test_agentic_activation_resilience.py"
+    - "tests/commands/test_activate_json_warning_metadata.py"
+    - "tests/commands/test_health_count_consistency.py"
+    - "tests/commands/test_maintain.py"
+    - "tests/commands/test_map.py"
+    - "tests/core/test_snapshot.py"
+    - "tests/io/test_scan_scope.py"
+    - "tests/mcp/test_cache.py"
+    - "tests/mcp/test_context_map.py"
+    - "tests/mcp/test_portfolio.py"
+    - "tests/mcp/test_read_only_registration.py"
+  allowed_path_patterns:
+    - "docs/logs/*audit-tail-consistency*.md"
+    - "docs/reviews/project-ontos-audit-tail-consistency/**"
+  composition_targets:
+    - path: "docs/reviews/2026-07-02-fable-repo-audit.md"
+      rationale: "Read-only evidence for D1b-counts-1/2/3/4."
+      shares_with_deliverable_id: "project-ontos-audit-remediation-2026-07"
+    - path: "docs/trackers/project-ontos-audit-tail-dead-code.md"
+      rationale: "Read-only evidence for the accepted PR B WAL/SHM full-suite flake now retired here."
+      shares_with_deliverable_id: "project-ontos-audit-tail-dead-code"
+  forbidden_paths:
+    - ".github/"
+    - ".ontos-internal/archive/"
+    - ".project-internal/"
+    - ".llm-dev/framework/"
+    - ".venv/"
+    - "build/"
+    - "dist/"
+    - "docs/releases/"
+    - "ontos/commands/consolidate.py"
+    - "ontos/core/paths.py"
+    - "ontos/mcp/portfolio_config.py"
+    - "pyproject.toml"
+  forbidden_symbols: []
+  cardinality_assertions:
+    - name: "The four D1b reconciliation regressions are present"
+      command: "${ONTOS_PYTHON} -c 'from pathlib import Path; text=Path(\"tests/commands/test_health_count_consistency.py\").read_text(); names=(\"test_concept_warning_counts_agree_across_full_validation_surfaces\",\"test_configured_context_map_is_excluded_across_counted_surfaces\",\"test_body_reference_counts_agree_between_link_check_and_maintain\"); assert all(name in text for name in names); assert \"test_context_map_honors_snapshot_dependency_depth\" in Path(\"tests/mcp/test_context_map.py\").read_text()'"
+      expect: "exit-0"
+    - name: "Every PortfolioIndex production connection is managed"
+      command: "! rg -n 'with self[.]_connect[(][)] as conn' ontos/mcp/portfolio.py"
+      expect: "exit-0"
+    - name: "Package version remains release-action neutral"
+      command: "${ONTOS_PYTHON} -c 'import ontos; assert ontos.__version__ == \"5.0.0\"'"
+      expect: "exit-0"
+  cleanliness:
+    pathspecs: []
+    exclude_pathspecs: ["review-board/.external/"]
+
+artifacts:
+  spec: "docs/specs/project-ontos-audit-tail-consistency-spec.md"
+  family_verdict: "docs/reviews/project-ontos-audit-tail-consistency/<phase>-<family>-<role>.md"
+  canonical_verdict: "docs/reviews/project-ontos-audit-tail-consistency/<phase>-verdict.md"
+  product_verdict: "docs/reviews/project-ontos-audit-tail-consistency/<phase>-<family>-product.md"
+  fix_summary: "docs/reviews/project-ontos-audit-tail-consistency/D.4-fix-summary.md"
+  verification: "docs/reviews/project-ontos-audit-tail-consistency/D.5-<family>-verifier.md"
+  final_approval: "docs/reviews/project-ontos-audit-tail-consistency/final-approval.md"
+  retro: "docs/retros/project-ontos-audit-tail-consistency-retro.md"
+
+model_assignments:
+  - phase: "A"
+    assignments: {codex: spec-author}
+  - phase: "B.1"
+    assignments: {claude: adversarial, gemini: alignment, glm: peer}
+  - phase: "B.1"
+    assignments: {claude: product}
+  - phase: "B.2"
+    assignments: {claude: alignment, gemini: peer, glm: adversarial}
+  - phase: "B.2"
+    assignments: {claude: product}
+  - phase: "B.3"
+    assignments: {codex: meta-consolidator}
+  - phase: "C"
+    assignments: {codex: implementation-author}
+  - phase: "D.1"
+    assignments: {claude: peer}
+  - phase: "D.2"
+    assignments: {claude: peer, gemini: adversarial, glm: alignment}
+  - phase: "D.2"
+    assignments: {claude: product}
+  - phase: "D.3"
+    assignments: {codex: meta-consolidator}
+  - phase: "D.4"
+    assignments: {codex: fix-author}
+  - phase: "D.5"
+    assignments: {claude: verifier, gemini: verifier, glm: verifier}
+  - phase: "D.6"
+    assignments: {codex: final-approval}
+  - phase: "E"
+    assignments: {codex: retro}
+
+cli_capability_matrix:
+  codex: {shell: true, git: true, test_runner: true, doc_index: true}
+  claude: {shell: true, git: true, test_runner: true, doc_index: true}
+  gemini:
+    shell: false
+    git: false
+    test_runner: false
+    doc_index: true
+    evidence_cap: static-inspection
+    writes_files_non_interactively: false
+  glm: {shell: true, git: true, test_runner: true, doc_index: true}
+
+smoke_checks:
+  - phase: "C"
+    checks:
+      - name: "PR C focused regressions"
+        command: "PYTHONPATH=. ${ONTOS_PYTHON} -m pytest -q tests/commands/test_activate_json_warning_metadata.py tests/commands/test_agentic_activation_resilience.py tests/commands/test_health_count_consistency.py tests/commands/test_maintain.py tests/commands/test_map.py tests/commands/test_doctor_phase4.py tests/core/test_snapshot.py tests/io/test_scan_scope.py tests/mcp/test_cache.py tests/mcp/test_context_map.py tests/mcp/test_portfolio.py tests/mcp/test_read_only_registration.py"
+        expect: "exit-0"
+      - name: "Portfolio resources close without warnings"
+        command: "PYTHONWARNINGS='error::ResourceWarning' ${ONTOS_PYTHON} -X dev -m pytest -q tests/mcp/test_portfolio.py tests/mcp/test_read_only_registration.py::test_read_only_portfolio_queries_existing_snapshot_without_mutation -W error::pytest.PytestUnraisableExceptionWarning"
+        expect: "exit-0"
+      - name: "Complete Ontos suite"
+        command: "PYTHONPATH=. ${ONTOS_PYTHON} -m pytest -q"
+        expect: "exit-0"
+      - name: "Document graph is valid"
+        command: "${ONTOS_PYTHON} -m ontos link-check --no-orphans --quiet"
+        expect: "exit-0"
+  - phase: "D.5"
+    checks:
+      - name: "Post-review complete suite"
+        command: "PYTHONPATH=. ${ONTOS_PYTHON} -m pytest -q"
+        expect: "exit-0"
+
+regression_guards: []
+sibling_deliverable_ids: []
+review_rounds: []
+reviewer_family_substitutes: []
+consolidation_mode: fast-path
+self_review_caveats:
+  - family: codex
+    phases: ["D.3"]
+    rationale: "Codex implements the maintainer-approved slice and only consolidates independent review evidence; D.5 remains non-author."
+
+lifecycle_receipt_inventory_path: "docs/reviews/project-ontos-audit-tail-consistency/lifecycle-receipt-inventory.yaml"
+required_dispatch_bundles:
+  - phase: "B.1"
+    intent_path: "docs/reviews/project-ontos-audit-tail-consistency/B.1-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-tail-consistency/B.1-dispatch-result.yaml"
+  - phase: "B.2"
+    intent_path: "docs/reviews/project-ontos-audit-tail-consistency/B.2-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-tail-consistency/B.2-dispatch-result.yaml"
+  - phase: "D.2"
+    intent_path: "docs/reviews/project-ontos-audit-tail-consistency/D.2-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-tail-consistency/D.2-dispatch-result.yaml"
+  - phase: "D.5"
+    intent_path: "docs/reviews/project-ontos-audit-tail-consistency/D.5-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-tail-consistency/D.5-dispatch-result.yaml"
+
+merge_authority:
+  mode: recommendation_only
+
+cross_repo_dependencies: []
+historical_receipt_gaps: []
+gate_only_invariants: []
+convergence_metrics: []
+
+gate_env:
+  - name: ONTOS_PYTHON
+    description: "Python interpreter with repository development dependencies installed."
+    example: "ONTOS_PYTHON=/Users/jonathanoh/Developer/workspaces/Project-Ontos/.venv/bin/python"
+    required: true
+    scope: both
+
+gate_prerequisites:
+  - id: G-test-1
+    category: test
+    description: "The focused PR C regression suite passes."
+    verification: {command: "PYTHONPATH=. ${ONTOS_PYTHON} -m pytest -q tests/commands/test_activate_json_warning_metadata.py tests/commands/test_agentic_activation_resilience.py tests/commands/test_health_count_consistency.py tests/commands/test_maintain.py tests/commands/test_map.py tests/commands/test_doctor_phase4.py tests/core/test_snapshot.py tests/io/test_scan_scope.py tests/mcp/test_cache.py tests/mcp/test_context_map.py tests/mcp/test_portfolio.py tests/mcp/test_read_only_registration.py", expect: "exit-0"}
+  - id: G-test-2
+    category: test
+    description: "The complete Ontos suite passes without a WAL/SHM exemption."
+    verification: {command: "PYTHONPATH=. ${ONTOS_PYTHON} -m pytest -q", expect: "exit-0"}
+  - id: G-scope-1
+    category: scope
+    description: "No config/provenance, release, archive, test-hygiene, consolidation, or breaking-path surface changed."
+    verification: {command: "git diff --name-only origin/main -- .github pyproject.toml docs/releases .ontos-internal/archive .project-internal ontos/commands/consolidate.py ontos/core/paths.py ontos/mcp/portfolio_config.py", expect: "empty"}
+  - id: G-cardinality-1
+    category: cardinality
+    description: "Portfolio SQLite connections are deterministically closed."
+    verification: {command: "! rg -n 'with self[.]_connect[(][)] as conn' ontos/mcp/portfolio.py && PYTHONWARNINGS='error::ResourceWarning' ${ONTOS_PYTHON} -X dev -m pytest -q tests/mcp/test_portfolio.py tests/mcp/test_read_only_registration.py::test_read_only_portfolio_queries_existing_snapshot_without_mutation -W error::pytest.PytestUnraisableExceptionWarning", expect: "exit-0"}
+  - id: G-verdict-1
+    category: verdict-presence
+    description: "Canonical B.3/D.3 verdicts and three D.5 verifier artifacts exist."
+    verification: {command: "test -f docs/reviews/project-ontos-audit-tail-consistency/B.3-verdict.md && test -f docs/reviews/project-ontos-audit-tail-consistency/D.3-verdict.md && test \"$(find docs/reviews/project-ontos-audit-tail-consistency -name 'D.5-*-verifier.md' | wc -l | tr -d ' ')\" = 3", expect: "exit-0"}
+  - id: G-blocker-1
+    category: blocker-closure
+    description: "No preserved blocker remains in the canonical D.3 verdict."
+    verification: {command: "test -f docs/reviews/project-ontos-audit-tail-consistency/D.3-verdict.md && ! grep -q 'status: preserved' docs/reviews/project-ontos-audit-tail-consistency/D.3-verdict.md", expect: "exit-0"}
+  - id: G-branch-1
+    category: branch
+    description: "The branch remains based on the current origin/main review baseline."
+    verification: {command: "test \"$(git merge-base origin/main HEAD)\" = \"$(git rev-parse origin/main)\"", expect: "exit-0"}
+
+tracker:
+  path: "docs/trackers/project-ontos-audit-tail-consistency.md"
+  columns: [phase, owner, status, artifact, evidence, timestamp]
+
+branch_map:
+  default: "codex/audit-tail-consistency"
+
+references:
+  - path: "docs/reviews/2026-07-02-fable-repo-audit.md"
+    relevance: "Original evidence for D1b-counts-1/2/3/4."
+  - path: "docs/trackers/project-ontos-audit-remediation-release-line.md"
+    relevance: "Authoritative sequential release split and reconciliation arithmetic."
+
+watch_item: "This PR may resolve only D1b-counts-1/2/3/4, the accepted portfolio WAL/SHM flake, and activation's inherited no-op map-write tail. Package versioning, release actions, PR D config/provenance work, archive/test-hygiene/consolidation tails, and the v6 path removal remain out of scope."

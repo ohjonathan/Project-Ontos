@@ -108,12 +108,18 @@ def collect_scoped_documents(
         explicit_dirs=explicit_dirs,
     )
     workspace_root = None if explicit_dirs else repo_root
-    return scan_documents(
+    documents = scan_documents(
         plan.roots,
         skip_patterns=plan.skip_patterns,
         workspace_root=workspace_root,
         exclude_transient=True,
     )
+    generated_map = (repo_root / config.paths.context_map).resolve(strict=False)
+    return [
+        path
+        for path in documents
+        if path.resolve(strict=False) != generated_map
+    ]
 
 
 def build_scan_scope_plan(

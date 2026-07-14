@@ -18,6 +18,17 @@ from textwrap import dedent
 
 import pytest
 
+from ontos.commands.maintain import (
+    MaintainContext,
+    MaintainOptions,
+    _scan_docs,
+    _task_check_links,
+)
+from ontos.io.config import load_project_config
+from ontos.mcp import tools as mcp_tools
+from ontos.ui.output import OutputHandler
+from tests.mcp_helpers import build_cache
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -171,6 +182,171 @@ def test_health_surfaces_agree_on_counts(fixture_repo: Path) -> None:
     validation_check = checks["validation"]
     assert validation_check["data"]["count_basis"] == "frontmatter_quick_scan"
     assert "quick scan" in validation_check["message"]
+
+
+def test_concept_warning_counts_agree_across_full_validation_surfaces(
+    tmp_path: Path,
+) -> None:
+    _write(
+        tmp_path / ".ontos.toml",
+        """
+        [ontos]
+        version = "4.0"
+        """,
+    )
+    _write(
+        tmp_path / ".ontos-internal/reference/Common_Concepts.md",
+        """
+        | Concept | Description |
+        |---|---|
+        | `known` | Known concept |
+        """,
+    )
+    _write(
+        tmp_path / "docs/a.md",
+        """
+        ---
+        id: a
+        type: atom
+        status: active
+        concepts: [known, unknown]
+        ---
+        """,
+    )
+
+    map_payload = _payload(_run(tmp_path, "--json", "map", "--strict"))
+    activate = _payload(
+        _run(tmp_path, "--json", "activate", "--warnings", "full")
+    )
+    doctor = _payload(_run(tmp_path, "--json", "doctor"))
+    doctor_checks = {check["name"]: check for check in doctor["data"]["checks"]}
+    cache = build_cache(tmp_path)
+    mcp_activate = mcp_tools.activate(cache)
+    mcp_map = mcp_tools.context_map(cache, compact="full")
+
+    assert map_payload["data"]["warnings"] == 1
+    assert activate["data"]["summary"]["validation_warnings"] == 1
+    assert doctor_checks["activation_health"]["data"]["validation_warnings"] == 1
+    assert mcp_activate["warnings_total"] == 1
+    assert len(mcp_map["validation"]["warnings"]) == 1
+    assert mcp_map["validation"]["warnings"][0]["rule_id"] == "curation"
+
+
+def test_configured_context_map_is_excluded_across_counted_surfaces(
+    tmp_path: Path,
+) -> None:
+    _write(
+        tmp_path / ".ontos.toml",
+        """
+        [ontos]
+        version = "4.0"
+
+        [paths]
+        context_map = "docs/Ontos_Context_Map.md"
+        """,
+    )
+    _write(
+        tmp_path / "docs/a.md",
+        """
+        ---
+        id: a
+        type: atom
+        status: active
+        ---
+        """,
+    )
+    _write(
+        tmp_path / "docs/b.md",
+        """
+        ---
+        id: b
+        type: atom
+        status: active
+        depends_on: [a]
+        ---
+        """,
+    )
+    _write(
+        tmp_path / "docs/Ontos_Context_Map.md",
+        """
+        ---
+        id: ontos_context_map
+        type: strategy
+        status: complete
+        ---
+        Generated map.
+        """,
+    )
+
+    map_payload = _payload(_run(tmp_path, "--json", "map"))
+    activate = _payload(_run(tmp_path, "--json", "activate", "--warnings", "full"))
+    doctor = _payload(_run(tmp_path, "--json", "doctor"))
+    link_check = _payload(_run(tmp_path, "--json", "link-check"))
+    query = _payload(_run(tmp_path, "--json", "query", "--health"))
+    query_data = query["data"]["results"] if "results" in query["data"] else query["data"]
+
+    config = load_project_config(repo_root=tmp_path)
+    maintain_ctx = MaintainContext(
+        repo_root=tmp_path,
+        config=config,
+        options=MaintainOptions(quiet=True),
+        output=OutputHandler(quiet=True),
+    )
+    maintain_paths = _scan_docs(maintain_ctx)
+    maintain = _task_check_links(maintain_ctx)
+    cache = build_cache(tmp_path)
+    mcp_map = mcp_tools.context_map(cache, compact="full")
+
+    doctor_checks = {check["name"]: check for check in doctor["data"]["checks"]}
+    assert map_payload["data"]["documents"] == 2
+    assert activate["data"]["documents"] == 2
+    assert "2 documents" in doctor_checks["docs_directory"]["message"]
+    assert link_check["data"]["summary"]["documents_loaded"] == 2
+    assert link_check["data"]["summary"]["orphans"] == 0
+    assert query_data["total_docs"] == 2
+    assert query_data["orphans"] == 0
+    assert len(maintain_paths) == 2
+    assert maintain.metrics["orphans"] == 0
+    assert len(cache.snapshot.documents) == 2
+    assert all(
+        warning["rule_id"] != "orphan"
+        for warning in mcp_map["validation"]["warnings"]
+    )
+
+
+def test_body_reference_counts_agree_between_link_check_and_maintain(
+    tmp_path: Path,
+) -> None:
+    _write(tmp_path / ".ontos.toml", "[ontos]\nversion = '4.0'\n")
+    _write(
+        tmp_path / "docs/a.md",
+        """
+        ---
+        id: a
+        type: atom
+        status: active
+        ---
+        See [[missing_body_doc]].
+        """,
+    )
+
+    link_check = _payload(_run(tmp_path, "--json", "link-check"))
+    config = load_project_config(repo_root=tmp_path)
+    maintain = _task_check_links(
+        MaintainContext(
+            repo_root=tmp_path,
+            config=config,
+            options=MaintainOptions(quiet=True),
+            output=OutputHandler(quiet=True),
+        )
+    )
+
+    assert link_check["exit_code"] == 1
+    assert link_check["data"]["summary"]["broken_references"] == 1
+    assert link_check["data"]["summary"]["broken_body"] == 1
+    assert maintain.status == "failed"
+    assert maintain.exit_code == 1
+    assert maintain.metrics["broken_links"] == 1
 
 
 def test_orphan_counts_track_config_changes(fixture_repo: Path) -> None:

@@ -323,8 +323,24 @@ def test_check_links_task_uses_shared_link_diagnostics(tmp_path, monkeypatch):
     result = _task_check_links(ctx)
 
     assert result.status == "success"
-    assert observed["include_body"] is False
+    assert observed["include_body"] is True
     assert observed["include_external_scope_resolution"] is True
+
+
+def test_check_links_task_reports_broken_body_references(tmp_path):
+    _init_project(tmp_path)
+    (tmp_path / "docs" / "a.md").write_text(
+        "---\nid: a\ntype: atom\nstatus: active\n---\n"
+        "See [[missing_body_doc]].\n",
+        encoding="utf-8",
+    )
+
+    result = _task_check_links(_build_context(tmp_path, quiet=True))
+
+    assert result.status == "failed"
+    assert result.exit_code == 1
+    assert result.metrics["broken_links"] == 1
+    assert any("missing_body_doc" in detail for detail in result.details)
 
 
 def test_maintain_scan_docs_default_scope_excludes_internal(tmp_path):

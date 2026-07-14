@@ -71,6 +71,14 @@ def test_activate_json_generates_usable_context_map_with_valid_status(tmp_path: 
     assert context_map.exists()
     assert "status: complete" in context_map.read_text(encoding="utf-8").split("---", 2)[1]
 
+    original = context_map.read_bytes()
+    second = _run(root, "--json", "activate")
+    second_payload = json.loads(second.stdout)
+
+    assert second.returncode == 0, second.stderr
+    assert second_payload["data"]["map"]["refreshed"] is False
+    assert context_map.read_bytes() == original
+
 
 def test_doctor_frontmatter_reports_precise_enum_diagnostics(tmp_path: Path) -> None:
     # (#117) `review` and `completed` are now canonical; use `proposal` and
