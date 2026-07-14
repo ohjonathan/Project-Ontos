@@ -1,11 +1,10 @@
 ---
 id: project_ontos_audit_remediation_release_line_tracker
 type: tracker
-status: complete
+status: active
 meta_cycle_id: project-ontos-audit-remediation-2026-07
 owner: meta-orchestrator (claude; meta-cycle project-ontos-audit-remediation-2026-07)
 depends_on: []
-completed: 2026-07-13
 ---
 
 # Release-line tracker — project-ontos-audit-remediation-2026-07
@@ -57,6 +56,11 @@ leased to another in-flight deliverable **halts Phase C and routes back to the
 meta-cycle** (deliverable-level S2); it does not negotiate directly with the sibling
 session.
 
+**Tail-sweep serialization (2026-07-13).** The #148/#149 tail runs through focused PRs
+from fresh `origin/main` branches, one at a time. Each next branch starts only after the
+preceding PR merges and is independently reverified. The historical leases above do not
+authorize concurrent tail work.
+
 ## O4 — Cross-deliverable verification ledger
 
 Lifecycle states: `not started → Phase 0 → A → B.1/B.3 → C → D.1–D.6 → E → closed`.
@@ -71,8 +75,8 @@ evidence.
 |---|---|---|---|---|---|---|
 | project-ontos-audit-serializer-corruption | #146 | v4.7.1 | **shipped / closed** — P0 serializer and canonical string-ID validation shipped from merge `19868ad` in tag `v4.7.1`. | provider-limited; strict P3 not certified; D.6 withheld | `provider_limited_fallback_complete` | 2026-07-12 |
 | project-ontos-audit-doctor-rce | #147 | v4.7.1 | **shipped / closed** — exact managed-launcher argv gate and SECURITY.md correction shipped from merge `19868ad` in tag `v4.7.1`; no product residual remains. | provider-limited, label-only; strict P3 not certified; D.6 withheld | `provider_limited_fallback_complete` | 2026-07-12 |
-| project-ontos-audit-relN-quick-wins | #148 | post-v5 backlog | **open / transferred** — broad consolidation remains; received #150's test-hygiene tail and retains exact TestPyPI provenance hardening after the v5 smoke resolved 4.7.1. | — | — | 2026-07-13 |
-| project-ontos-audit-relN-sweep | #149 | post-v5 backlog | **open / transferred** — broad docs/dead-code program remains; received #156's archive extraction, generated-artifact churn, and consolidation-policy tail. | — | — | 2026-07-13 |
+| project-ontos-audit-relN-quick-wins | #148 | v5.0.1 | **open / sweep in progress** — 6 of 12 issue findings were addressed by v5.0.0; six remain for v5.0.1. Also carries two inherited #150 test-hygiene tails outside the 33-finding reconciliation. | — | — | 2026-07-13 |
+| project-ontos-audit-relN-sweep | #149 | v5.0.1 + v6.0.0 | **open / sweep in progress** — 2 of 21 issue findings were addressed by v5.0.0; 19 remain: 18 patch-safe findings for v5.0.1 and breaking `D5b-dead-code-3` for v6.0.0 after v5.0.1 deprecation. Also carries three inherited #156 tails outside the 33-finding reconciliation. | — | — | 2026-07-13 |
 | project-ontos-audit-characterization-tests | #150 | v5.0.0 | **shipped / closed** — characterization and golden safety net shipped; 1,556-test release gate passed; residual hygiene transferred to #148. | provider-limited governance waiver; current-head strict-P3/provider receipts not certified; D.6 withheld | `provider_limited_governance_waiver_released` | 2026-07-13 |
 | project-ontos-audit-parser-consolidation | #151 | v5.0.0 | **shipped / closed** — canonical fence-aware frontmatter loader and fallback-parser retirement shipped. | provider-limited governance waiver; current-head strict-P3/provider receipts not certified; D.6 withheld | `provider_limited_governance_waiver_released` | 2026-07-13 |
 | project-ontos-audit-writepath-bodyref | #152 | v5.0.0 | **shipped / closed** — surgical writes, physical link lines, and aliased/heading wikilink handling shipped. | provider-limited governance waiver; current-head strict-P3/provider receipts not certified; D.6 withheld | `provider_limited_governance_waiver_released` | 2026-07-13 |
@@ -86,6 +90,28 @@ evidence.
 report Phase transitions and terminal statuses). Per-deliverable trackers stay
 per-deliverable-owned (F-2).
 
+### #148/#149 reconciliation and active tail
+
+- **Program state:** 10/12 issues shipped: #146/#147 in v4.7.1 and #150–#157 in
+  v5.0.0. #148 and #149 remain open.
+- **Reconciliation baseline:** independent verification against
+  `main@3dd093e51e1125147e3533352abda75d7ae1d489` found 8 of 33 findings addressed
+  by v5.0.0 and reproduced each of the 25 remaining findings.
+- **Addressed by v5.0.0 (8):** `D7-cli-consistency-1`, `D3b-structure-2`,
+  `D2a-write-safety-2`, `D2b-roundtrip-1`, `D2a-write-safety-7`, `D4a-config-2`,
+  `D5b-dead-code-7`, and `R2-activation-version-skew-1`.
+- **Remaining release split (25):** PR A docs accuracy (7), PR B patch-safe dead code
+  plus deprecation (9), PR C counts/consistency (4), and PR D config/provenance (4)
+  ship in v5.0.1. PR E removes the 11 deprecated `paths.py` compatibility exports for
+  `D5b-dead-code-3` in v6.0.0.
+- **Inherited cleanup tails (5; excluded from the 33-finding arithmetic):** #148 carries
+  `D6a-test-gaps-10` and `D6b-test-quality-4` from #150. #149 carries
+  `D5a-repo-redundancy-4`, `D5a-repo-redundancy-7`, and `D8-docs-clarity-7` from #156.
+- **Control plane:** `R2-control-plane-parity-1` is transferred, not completed, to #165
+  (“Machine-readable audit registry and external parity gate”), covering the 91 audit
+  rows plus nine R2 rows and assignment/ledger/GitHub parity validation. It is outside
+  the #148/#149 arithmetic.
+
 ### v4.7.1 release outcome
 
 - #146 and #147 are shipped and closed. Release evidence is main merge `19868ad`, annotated
@@ -96,7 +122,9 @@ per-deliverable-owned (F-2).
   push (triggering PyPI), GitHub release publication, and closure of the v4.7.1-program
   issues changed from **maintainer-deferred** to **performed in this session, authorized
   2026-07-12**. No v5.0.0 / #161 release action was authorized or performed.
-- #148 and #149 remain open under the v4.8.0 consolidation milestone.
+- At the v4.7.1 release, #148 and #149 remained open under the then-v4.8.0
+  consolidation milestone; their current release split is recorded in the active-tail
+  reconciliation above.
 
 ### v5.0.0 release outcome
 
@@ -125,9 +153,11 @@ per-deliverable-owned (F-2).
   release, and #150–#157 closure were performed. The public authorization record is
   [PR comment
   4963625974](https://github.com/ohjonathan/Project-Ontos/pull/163#issuecomment-4963625974).
-- The July release meta-cycle is complete by explicit residual-custody transfer. #148 and
-  #149 remain open in the post-v5 backlog, and epic #158 remains open as their
-  custody/control-plane tracker; `R2-control-plane-parity-1` is not claimed complete.
+- The July meta-cycle remains active. 10/12 issues have shipped, but #148/#149 remain
+  open with 25 reconciled findings. Twenty-four patch-safe findings and
+  the five inherited cleanup tails target v5.0.1; the one breaking compatibility removal
+  targets v6.0.0. Epic #158 remains open through #148/#149 closure.
+  `R2-control-plane-parity-1` is transferred to #165 and is not claimed complete.
 
 ## Dependency edges enforced at dispatch (kickoff §3)
 
@@ -158,5 +188,10 @@ per-deliverable-owned (F-2).
   release, and closed #150–#157. Recorded outcome
   `provider_limited_governance_waiver_released` with current-head strict/provider receipt
   verification incomplete and D.6 withheld. Transferred residual custody to #148/#149,
-  updated epic #158, and closed meta-cycle `project-ontos-audit-remediation-2026-07`
-  without claiming the unresolved control-plane parity row.
+  updated epic #158, and prematurely recorded meta-cycle completion; that completion
+  assertion is superseded by the correction below.
+- 2026-07-13 — corrected the premature meta-cycle completion assertion and returned O4
+  to `active`. Reconciled #148/#149 against `main@3dd093e`: 8 of 33 findings were
+  addressed by v5.0.0 and 25 remain. Scheduled 24 patch-safe findings plus five inherited
+  cleanup tails for v5.0.1, separated the one breaking `paths.py` removal into v6.0.0,
+  and transferred `R2-control-plane-parity-1` to #165 without claiming it complete.
