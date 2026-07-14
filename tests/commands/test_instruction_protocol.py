@@ -1,6 +1,6 @@
 """Unit tests for shared instruction protocol rendering/helpers."""
 
-from ontos.commands.instruction_protocol import (
+from ontos.core.instruction_protocol import (
     DEFAULT_USER_CUSTOM_PLACEHOLDER,
     InstructionProtocolConfig,
     preserve_user_custom_section,

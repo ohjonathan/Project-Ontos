@@ -56,10 +56,6 @@ Issues = "https://github.com/ohjonathan/Project-Ontos/issues"
 where = ["."]
 include = ["ontos", "ontos.*"]
 
-[tool.setuptools.package-data]
-"ontos._templates" = ["*"]
-"ontos._hooks" = ["*"]
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]

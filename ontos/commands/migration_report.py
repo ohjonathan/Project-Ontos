@@ -204,9 +204,3 @@ def _run_migration_report_command(options: MigrationReportOptions) -> Tuple[int,
         return 0, f"Generated migration report: {options.output_path}"
     else:
         return 0, output
-
-
-def migration_report_command(options: MigrationReportOptions) -> int:
-    """Generate migration report and return exit code only."""
-    exit_code, _ = _run_migration_report_command(options)
-    return exit_code

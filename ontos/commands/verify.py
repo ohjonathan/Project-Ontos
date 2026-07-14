@@ -113,29 +113,6 @@ def update_describes_verified(
         return False
 
 
-def verify_document(path: Path, verify_date: str) -> Tuple[bool, str]:
-    """Helper for verify command."""
-    # Ensure path is Path object
-    p = Path(path)
-    root = find_project_root()
-    ctx = SessionContext.from_repo(root)
-    output = OutputHandler(quiet=True)
-    
-    try:
-        dt = date.fromisoformat(verify_date)
-    except ValueError:
-        return False, "Invalid date format"
-        
-    success = update_describes_verified(p, dt, ctx, output)
-    if success:
-        try:
-            ctx.commit()
-        except Exception as exc:
-            return False, f"Commit failed: {exc}"
-        return True, "Verified"
-    return False, "Failed"
-
-
 def verify_all_interactive(verify_date: date, output: OutputHandler, scope: Optional[str] = None) -> int:
     """Interactively verify all stale documents."""
     root = find_project_root()

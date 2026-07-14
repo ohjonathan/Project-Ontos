@@ -38,26 +38,6 @@ class MigrateOptions:
     scope: Optional[str] = None
 
 
-def check_file_needs_migration(filepath: Path) -> Tuple[bool, str, str]:
-    """Check if a file needs schema migration."""
-    try:
-        fm, _ = load_frontmatter(filepath, parse_frontmatter_content)
-        if fm is None:
-            return False, "", "No frontmatter"
-        
-        if 'id' not in fm:
-            return False, "", "No id field"
-        
-        if 'ontos_schema' in fm:
-            schema = str(fm['ontos_schema'])
-            return False, schema, f"Already has ontos_schema: {schema}"
-        
-        inferred = detect_schema_version(fm)
-        return True, inferred, f"Would add ontos_schema: {inferred}"
-    except Exception as e:
-        return False, "", f"Error: {e}"
-
-
 def _validate_migrate_mode(options: MigrateOptions) -> Optional[str]:
     """Validate command mode contract for check/dry-run/apply."""
     selected = [bool(options.check), bool(options.dry_run), bool(options.apply)]

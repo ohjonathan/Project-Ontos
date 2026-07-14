@@ -336,22 +336,6 @@ def _check_git_repo(project_root: Path) -> Optional[Tuple[int, str]]:
     return 2, "Not a git repository. Run 'git init' first."
 
 
-def _create_directories(root: Path, config) -> None:
-    """Create standard directory structure."""
-    dirs = [
-        config.paths.docs_dir,
-        config.paths.logs_dir,
-        f"{config.paths.docs_dir}/kernel",
-        f"{config.paths.docs_dir}/strategy",
-        f"{config.paths.docs_dir}/product",
-        f"{config.paths.docs_dir}/atom",
-        f"{config.paths.docs_dir}/reference",
-        f"{config.paths.docs_dir}/archive",
-    ]
-    for d in dirs:
-        (root / d).mkdir(parents=True, exist_ok=True)
-
-
 def _generate_initial_context_map(root: Path, config, *, quiet: bool = False) -> None:
     """Generate initial context map by running the map command.
 

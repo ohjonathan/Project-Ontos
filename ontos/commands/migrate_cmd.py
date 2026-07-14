@@ -78,9 +78,3 @@ def _run_migrate_convenience_command(options: MigrateOptions) -> Tuple[int, str]
         return report_code, f"Report failed: {report_msg}"
 
     return 0, f"Migration artifacts created in {out_dir}/\n  - snapshot.json\n  - analysis.md"
-
-
-def migrate_convenience_command(options: MigrateOptions) -> int:
-    """Run convenience migration pipeline and return exit code only."""
-    exit_code, _ = _run_migrate_convenience_command(options)
-    return exit_code

@@ -395,15 +395,3 @@ def add_schema_to_frontmatter(
 
     result['ontos_schema'] = schema_version
     return result
-
-
-def get_schema_info(version: str) -> Optional[Dict[str, List[str]]]:
-    """Get schema definition for a version.
-
-    Args:
-        version: Schema version string.
-
-    Returns:
-        Dictionary with 'required' and 'optional' field lists, or None.
-    """
-    return SCHEMA_DEFINITIONS.get(version)

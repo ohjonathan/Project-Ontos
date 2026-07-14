@@ -1,7 +1,8 @@
-import pytest
 from pathlib import Path
-from ontos.commands.map import _format_doc_link, GenerateMapOptions
-from ontos.io.obsidian import read_file_lenient
+
+from ontos.commands.map import _format_doc_link
+from ontos.io.files import load_document
+from ontos.io.yaml import parse_frontmatter_content
 
 def test_format_doc_link_non_obsidian():
     # Backticks for non-obsidian
@@ -33,23 +34,24 @@ def test_unicode_filename():
     )
     assert result == "[[日本語|japanese_doc]]"
 
-def test_read_file_lenient_bom(tmp_path):
+def test_canonical_loader_handles_utf8_bom(tmp_path):
     p = tmp_path / "bom.md"
-    # UTF-8 BOM is \xef\xbb\xbf
-    p.write_bytes(b'\xef\xbb\xbf---\nid: test\n---\nHello')
-    content = read_file_lenient(p)
-    assert content.startswith('---')
-    assert 'id: test' in content
+    p.write_bytes(b'\xef\xbb\xbf---\nid: test\ntype: atom\n---\nHello')
 
-def test_read_file_lenient_whitespace(tmp_path):
+    document = load_document(p, parse_frontmatter_content)
+
+    assert document.id == "test"
+    assert "Hello" in document.content
+
+
+def test_canonical_loader_handles_leading_whitespace(tmp_path):
     p = tmp_path / "white.md"
-    p.write_text('\n\n  \n---\nid: test\n---\nHello')
-    content = read_file_lenient(p)
-    assert content.startswith('---')
-    assert 'id: test' in content
+    p.write_text(
+        '\n\n  \n---\nid: test\ntype: atom\n---\nHello',
+        encoding="utf-8",
+    )
 
-def test_read_file_lenient_no_frontmatter(tmp_path):
-    p = tmp_path / "plain.md"
-    p.write_text('Just text')
-    content = read_file_lenient(p)
-    assert content == 'Just text'
+    document = load_document(p, parse_frontmatter_content)
+
+    assert document.id == "test"
+    assert "Hello" in document.content
