@@ -12,17 +12,6 @@ from ontos.commands.map import (
     generate_context_map,
 )
 
-def test_map_sync_agents_flag_exists():
-    """--sync-agents flag is recognized."""
-    import subprocess
-    result = subprocess.run(
-        [sys.executable, "-m", "ontos", "map", "--help"],
-        capture_output=True,
-        text=True
-    )
-    assert "--sync-agents" in result.stdout
-
-
 def test_map_sync_agents_updates_agents_md(tmp_path, monkeypatch):
     """When --sync-agents is set and AGENTS.md exists, it gets updated."""
     # Setup: Create minimal ontos project

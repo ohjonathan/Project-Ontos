@@ -3,7 +3,6 @@
 import json
 import subprocess
 import sys
-import pytest
 from pathlib import Path
 
 # Project root
@@ -23,20 +22,6 @@ class TestUnifiedCLI:
             timeout=30
         )
         return result
-
-    def test_help_flag(self):
-        """--help should show usage and return 0."""
-        result = self.run_cli('--help')
-        assert result.returncode == 0
-        assert 'usage:' in result.stdout.lower()
-        assert 'log' in result.stdout
-        assert 'map' in result.stdout
-
-    def test_help_short_flag(self):
-        """-h should also show help."""
-        result = self.run_cli('-h')
-        assert result.returncode == 0
-        assert 'usage:' in result.stdout.lower()
 
     def test_no_args_shows_help(self):
         """Running with no arguments should show help."""
@@ -74,24 +59,6 @@ class TestUnifiedCLI:
         # argparse outputs to stderr
         assert 'invalid choice' in result.stderr
 
-    # Test all v3.0 commands respond to --help
-    @pytest.mark.parametrize("command", [
-        'init', 'map', 'log', 'doctor', 'maintain', 'link-check', 'agents', 'export', 'mcp', 'hook', 'agent-export',
-        'verify', 'query', 'migrate', 'consolidate', 'promote', 'scaffold', 'stub', 'env', 'rename',
-        'tree', 'validate'
-    ])
-    def test_command_help(self, command):
-        """Each command should respond to --help."""
-        result = self.run_cli(command, '--help')
-        assert result.returncode == 0, f"Command '{command}' --help failed"
-        assert 'usage:' in result.stdout.lower(), f"Command '{command}' didn't show usage"
-
-    def test_rename_help_mentions_dry_run_safety_note(self):
-        """rename help should include explicit dry-run safety note."""
-        result = self.run_cli('rename', '--help')
-        assert result.returncode == 0
-        assert 'Dry-run by default. Use --apply to write changes.' in result.stdout
-
 
 class TestCLIArgumentPassthrough:
     """Test that arguments are passed through to subcommands correctly."""
@@ -117,12 +84,6 @@ class TestCLIArgumentPassthrough:
         result = self.run_cli('map', '--quiet', cwd=tmp_path)
         # Should not error on the flag (may fail for other reasons like no git repo)
         assert 'unrecognized arguments: --quiet' not in result.stderr.lower()
-
-    def test_global_quiet_flag(self):
-        """Global --quiet flag should work."""
-        result = self.run_cli('--quiet', 'map', '--help')
-        assert result.returncode == 0
-
 
 class TestCLIModuleStructure:
     """Test that the CLI module is structured correctly."""
@@ -162,40 +123,6 @@ class TestCLICommands:
         )
         return result
 
-    def test_all_commands_listed_in_help(self):
-        """All v3.0 commands should appear in --help output."""
-        result = self.run_cli('--help')
-        expected_commands = [
-            'init', 'map', 'log', 'doctor', 'maintain', 'link-check', 'agents', 'export', 'mcp',
-            'verify', 'query', 'migrate', 'consolidate', 'promote', 'scaffold', 'stub', 'env', 'rename'
-        ]
-        for cmd in expected_commands:
-            assert cmd in result.stdout, f"Command '{cmd}' not in help output"
-
-    def test_hidden_commands_not_listed_in_top_level_help(self):
-        """Deprecated/internal commands should be hidden from top-level --help."""
-        result = self.run_cli('--help')
-        hidden_commands = ['agent-export', 'hook', 'tree', 'validate']
-
-        for cmd in hidden_commands:
-            assert cmd not in result.stdout, f"Hidden command '{cmd}' leaked into --help output"
-        assert '==SUPPRESS==' not in result.stdout
-
-    def test_doctor_runs(self):
-        """doctor command should run without crashing."""
-        result = self.run_cli('doctor', '--help')
-        assert result.returncode == 0
-
-    def test_agents_runs(self):
-        """agents command should run without crashing."""
-        result = self.run_cli('agents', '--help')
-        assert result.returncode == 0
-
-    def test_mcp_runs(self):
-        """mcp command should run without crashing."""
-        result = self.run_cli('mcp', '--help')
-        assert result.returncode == 0
-
 
 class TestLegacyScriptExecution:
     """Test that fixed legacy scripts execute without ModuleNotFoundError.
@@ -221,12 +148,6 @@ class TestLegacyScriptExecution:
         # Should NOT have ModuleNotFoundError
         assert 'ModuleNotFoundError' not in result.stderr
         assert "'ontos' is not a package" not in result.stderr
-
-    def test_stub_executes(self):
-        """stub command should execute without import errors."""
-        result = self.run_cli('stub', '--help')
-        assert 'ModuleNotFoundError' not in result.stderr
-        assert result.returncode == 0
 
     def test_promote_executes(self):
         """promote command should execute without import errors."""

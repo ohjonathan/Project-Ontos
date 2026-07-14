@@ -20,6 +20,8 @@ import hashlib
 import json
 import os
 import re
+import shutil
+import subprocess
 import sys
 import tarfile
 import time
@@ -35,6 +37,7 @@ MANIFEST_SCHEMA = "ontos.release-bundle/v1"
 MANIFEST_FILENAME = "release-manifest.json"
 PROJECT_NAME = "ontos"
 TESTPYPI_JSON_URL = "https://test.pypi.org/pypi/{project}/{version}/json"
+TESTPYPI_SIMPLE_URL = "https://test.pypi.org/simple/"
 MAX_INDEX_RESPONSE_BYTES = 2 * 1024 * 1024
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _SOURCE_SHA_RE = re.compile(r"^[0-9a-f]{40}(?:[0-9a-f]{24})?$")
@@ -438,6 +441,112 @@ def verify_downloaded_wheel(manifest_path: Path, download_dir: Path) -> Path:
     return wheel
 
 
+def _version_not_found(output: str, requirement: str) -> bool:
+    """Return whether pip reports that the exact release version is unavailable."""
+
+    lowered = output.lower()
+    if "packages do not match the hashes" in lowered or "expected sha256" in lowered:
+        return False
+    messages = (
+        f"Could not find a version that satisfies the requirement {requirement}",
+        f"No matching distribution found for {requirement}",
+    )
+    return any(message in output for message in messages)
+
+
+def download_testpypi_wheel(
+    manifest_path: Path,
+    requirement_path: Path,
+    download_dir: Path,
+    attempts: int,
+    delay: float,
+    runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+    sleeper: Callable[[float], None] = time.sleep,
+) -> Path:
+    """Download and verify the exact TestPyPI wheel with bounded propagation retries.
+
+    Only pip's exact-version-not-found result is retryable. Hash failures, other pip
+    errors, and downloaded-wheel provenance mismatches fail immediately.
+    """
+
+    if attempts < 1:
+        raise ReleaseArtifactError("attempts must be at least 1")
+    if delay < 0:
+        raise ReleaseArtifactError("delay must be non-negative")
+
+    manifest = _load_manifest(manifest_path)
+    rows = _validated_manifest_rows(manifest)
+    requirement = f"{PROJECT_NAME}=={manifest['version']}"
+    wheel = next(row for row in rows if row["kind"] == "wheel")
+    expected_locked_requirement = (
+        f"{requirement} --hash=sha256:{wheel['sha256']}\n"
+    )
+    try:
+        locked_requirement = requirement_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        raise ReleaseArtifactError(f"cannot read hash-locked requirement: {exc}") from exc
+    if locked_requirement != expected_locked_requirement:
+        raise ReleaseArtifactError("hash-locked requirement does not match the release manifest")
+    if os.path.lexists(download_dir) and download_dir.is_symlink():
+        raise ReleaseArtifactError("download directory must not be a symlink")
+    if download_dir.exists() and not download_dir.is_dir():
+        raise ReleaseArtifactError("download directory path is not a directory")
+    if download_dir.exists() and any(download_dir.iterdir()):
+        raise ReleaseArtifactError("download directory must be absent or empty")
+
+    for attempt in range(1, attempts + 1):
+        attempt_dir = download_dir.with_name(
+            f".{download_dir.name}.attempt-{os.getpid()}-{attempt}"
+        )
+        if attempt_dir.exists():
+            raise ReleaseArtifactError(f"temporary download directory already exists: {attempt_dir}")
+        attempt_dir.mkdir(parents=True)
+        result = runner(
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "--isolated",
+                "download",
+                "--index-url",
+                TESTPYPI_SIMPLE_URL,
+                "--no-deps",
+                "--only-binary=:all:",
+                "--require-hashes",
+                "--dest",
+                str(attempt_dir),
+                "--requirement",
+                str(requirement_path),
+            ],
+            capture_output=True,
+            text=True,
+        )
+        if result.stdout:
+            print(result.stdout, end="")
+        if result.stderr:
+            print(result.stderr, end="", file=sys.stderr)
+
+        if result.returncode == 0:
+            wheel = verify_downloaded_wheel(manifest_path, attempt_dir)
+            if download_dir.exists():
+                download_dir.rmdir()
+            os.replace(attempt_dir, download_dir)
+            return download_dir / wheel.name
+
+        output = f"{result.stdout}\n{result.stderr}"
+        shutil.rmtree(attempt_dir)
+        if not _version_not_found(output, requirement):
+            raise ReleaseArtifactError(
+                f"TestPyPI wheel download failed with non-retryable pip exit {result.returncode}"
+            )
+        if attempt != attempts:
+            sleeper(delay)
+
+    raise ReleaseArtifactError(
+        f"TestPyPI Simple API did not expose {requirement} after {attempts} attempts"
+    )
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -470,6 +579,16 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     downloaded.add_argument("--manifest", type=Path, required=True)
     downloaded.add_argument("--download-dir", type=Path, required=True)
+
+    download = subparsers.add_parser(
+        "download-testpypi-wheel",
+        help="download and verify the exact TestPyPI wheel with bounded retries",
+    )
+    download.add_argument("--manifest", type=Path, required=True)
+    download.add_argument("--requirement", type=Path, required=True)
+    download.add_argument("--download-dir", type=Path, required=True)
+    download.add_argument("--attempts", type=int, default=12)
+    download.add_argument("--delay", type=float, default=10.0)
     return parser
 
 
@@ -486,6 +605,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             write_requirement(args.manifest, args.output)
         elif args.command == "verify-downloaded-wheel":
             verify_downloaded_wheel(args.manifest, args.download_dir)
+        elif args.command == "download-testpypi-wheel":
+            download_testpypi_wheel(
+                args.manifest,
+                args.requirement,
+                args.download_dir,
+                args.attempts,
+                args.delay,
+            )
         else:  # pragma: no cover - argparse rejects unknown commands
             raise AssertionError(args.command)
     except ReleaseArtifactError as exc:

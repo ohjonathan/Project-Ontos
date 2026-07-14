@@ -10,18 +10,6 @@ from pathlib import Path
 class TestExportDataCommand:
     """Tests for ontos export data command."""
 
-    def test_export_data_help(self):
-        """Verify --help works."""
-        result = subprocess.run(
-            [sys.executable, "-m", "ontos", "export", "data", "--help"],
-            capture_output=True,
-            text=True
-        )
-        assert result.returncode == 0
-        assert "--output" in result.stdout
-        assert "--type" in result.stdout
-        assert "--deterministic" in result.stdout
-
     def test_export_data_to_file(self, tmp_path):
         """Export documents to JSON file."""
         # Setup project
@@ -96,17 +84,6 @@ class TestExportDataCommand:
 
 class TestExportClaudeCommand:
     """Tests for ontos export claude command."""
-
-    def test_export_claude_help(self):
-        """Verify --help works."""
-        result = subprocess.run(
-            [sys.executable, "-m", "ontos", "export", "claude", "--help"],
-            capture_output=True,
-            text=True
-        )
-        assert result.returncode == 0
-        assert "--output" in result.stdout
-        assert "--force" in result.stdout
 
     def test_export_claude_creates_file(self, tmp_path):
         """Export claude creates CLAUDE.md."""

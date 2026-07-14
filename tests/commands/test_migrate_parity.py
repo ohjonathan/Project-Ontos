@@ -9,18 +9,6 @@ from pathlib import Path
 import pytest
 
 
-def test_schema_migrate_help_parity():
-    """Native --help matches legacy."""
-    result = subprocess.run(
-        [sys.executable, "-m", "ontos.cli", "schema-migrate", "--help"],
-        capture_output=True,
-        text=True
-    )
-    assert "--check" in result.stdout
-    assert "--apply" in result.stdout
-    assert "migrate" in result.stdout.lower()
-
-
 def test_schema_migrate_check_parity(tmp_path):
     """Schema-migrate check identifies legacy documents."""
     # Create a legacy doc (no ontos_schema)

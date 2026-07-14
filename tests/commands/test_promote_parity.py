@@ -9,19 +9,6 @@ from pathlib import Path
 import pytest
 
 
-def test_promote_help_parity():
-    """Native --help matches legacy."""
-    result = subprocess.run(
-        [sys.executable, "-m", "ontos.cli", "promote", "--help"],
-        capture_output=True,
-        text=True,
-        env=os.environ.copy()
-    )
-    assert "--check" in result.stdout
-    assert "--all-ready" in result.stdout
-    assert "promote" in result.stdout.lower()
-
-
 def test_promote_check_parity(tmp_path):
     """Promote check identifies L0/L1 documents."""
     # Initialize mock repo

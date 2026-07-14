@@ -12,28 +12,6 @@ import pytest
 from ontos.io.yaml import parse_frontmatter_content
 
 
-@pytest.fixture
-def golden_help():
-    """Load golden help output."""
-    golden_path = Path(__file__).parent / "golden" / "verify_help.txt"
-    return golden_path.read_text()
-
-
-def test_verify_help_parity(golden_help, assert_help_parity):
-    """Native --help matches legacy."""
-    result = subprocess.run(
-        [sys.executable, "-m", "ontos.cli", "verify", "--help"],
-        capture_output=True,
-        text=True,
-        env=os.environ.copy()
-    )
-    assert_help_parity(result.stdout, golden_help)
-    assert "--all" in result.stdout
-    assert "--date" in result.stdout
-    assert "--portfolio" in result.stdout
-    assert "verify" in result.stdout.lower()
-
-
 def test_verify_single_file_parity(tmp_path):
     """Verify single file updates describes_verified."""
     (tmp_path / ".ontos").mkdir()

@@ -13,20 +13,6 @@ from ontos.core.ontology import get_valid_types
 from ontos.core.schema import validate_document_id
 
 
-def test_stub_help_parity():
-    """Native --help matches legacy."""
-    result = subprocess.run(
-        [sys.executable, "-m", "ontos.cli", "stub", "--help"],
-        capture_output=True,
-        text=True,
-        env=os.environ.copy()
-    )
-    assert "--goal" in result.stdout
-    assert "--type" in result.stdout
-    assert "--output" in result.stdout
-    assert "stub" in result.stdout.lower()
-
-
 def test_stub_file_creation_parity(tmp_path):
     """Stub command creates file with correct frontmatter."""
     (tmp_path / ".ontos.toml").write_text(

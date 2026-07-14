@@ -1,7 +1,7 @@
 {
   "captured_at": "2026-07-14T01:03:15.892219",
   "python_version": "3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]",
-  "ontos_version": "5.0.1",
+  "ontos_version": "5.0.2",
   "fixture": "medium",
   "command": "map"
 }

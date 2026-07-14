@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import json
+import subprocess
 import tarfile
 import urllib.error
 import zipfile
@@ -16,6 +17,7 @@ from scripts.release_artifacts import (
     MANIFEST_SCHEMA,
     ReleaseArtifactError,
     create_manifest,
+    download_testpypi_wheel,
     verify_bundle,
     verify_downloaded_wheel,
     verify_testpypi,
@@ -24,8 +26,8 @@ from scripts.release_artifacts import (
 
 
 SOURCE_SHA = "a" * 40
-TAG = "v5.0.1"
-VERSION = "5.0.1"
+TAG = "v5.0.2"
+VERSION = "5.0.2"
 
 
 def _metadata(name: str = "ontos", version: str = VERSION) -> bytes:
@@ -130,7 +132,7 @@ def test_verify_bundle_fails_closed_for_tampered_bytes_or_identity(tmp_path):
     with pytest.raises(ReleaseArtifactError, match="does not match manifest"):
         verify_bundle(bundle, TAG, SOURCE_SHA)
     with pytest.raises(ReleaseArtifactError, match="tag"):
-        verify_bundle(bundle, "v5.0.2", SOURCE_SHA)
+        verify_bundle(bundle, "v5.0.3", SOURCE_SHA)
     with pytest.raises(ReleaseArtifactError, match="source SHA"):
         verify_bundle(bundle, TAG, "b" * 40)
 
@@ -278,6 +280,110 @@ def test_hash_locked_requirement_and_downloaded_wheel_match_manifest(tmp_path):
         verify_downloaded_wheel(bundle / "release-manifest.json", downloaded)
 
 
+def test_testpypi_download_retries_only_exact_version_not_found(tmp_path):
+    bundle, manifest = _make_bundle(tmp_path)
+    manifest_path = bundle / "release-manifest.json"
+    requirement = tmp_path / "requirement.txt"
+    write_requirement(manifest_path, requirement)
+    destination = tmp_path / "downloaded"
+    sleeps = []
+    calls = 0
+
+    def runner(command, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls < 3:
+            return subprocess.CompletedProcess(
+                command,
+                1,
+                "",
+                f"ERROR: No matching distribution found for ontos=={VERSION}\n",
+            )
+        wheel_row = next(row for row in manifest["artifacts"] if row["kind"] == "wheel")
+        source = bundle / "dist" / wheel_row["filename"]
+        target_dir = Path(command[command.index("--dest") + 1])
+        (target_dir / source.name).write_bytes(source.read_bytes())
+        return subprocess.CompletedProcess(command, 0, "downloaded\n", "")
+
+    wheel = download_testpypi_wheel(
+        manifest_path,
+        requirement,
+        destination,
+        attempts=3,
+        delay=0.25,
+        runner=runner,
+        sleeper=sleeps.append,
+    )
+
+    assert wheel == destination / f"ontos-{VERSION}-py3-none-any.whl"
+    assert calls == 3
+    assert sleeps == [0.25, 0.25]
+
+
+def test_testpypi_download_never_retries_hash_mismatch(tmp_path):
+    bundle, _ = _make_bundle(tmp_path)
+    manifest_path = bundle / "release-manifest.json"
+    requirement = tmp_path / "requirement.txt"
+    write_requirement(manifest_path, requirement)
+    calls = 0
+    sleeps = []
+
+    def runner(command, **kwargs):
+        nonlocal calls
+        calls += 1
+        return subprocess.CompletedProcess(
+            command,
+            1,
+            "",
+            "ERROR: No matching distribution found for ontos==5.0.2\n"
+            "ERROR: THESE PACKAGES DO NOT MATCH THE HASHES FROM THE REQUIREMENTS FILE\n",
+        )
+
+    with pytest.raises(ReleaseArtifactError, match="non-retryable"):
+        download_testpypi_wheel(
+            manifest_path,
+            requirement,
+            tmp_path / "downloaded",
+            attempts=12,
+            delay=10,
+            runner=runner,
+            sleeper=sleeps.append,
+        )
+
+    assert calls == 1
+    assert sleeps == []
+
+
+def test_testpypi_download_version_not_found_retry_is_bounded(tmp_path):
+    bundle, _ = _make_bundle(tmp_path)
+    manifest_path = bundle / "release-manifest.json"
+    requirement = tmp_path / "requirement.txt"
+    write_requirement(manifest_path, requirement)
+    calls = 0
+
+    def runner(command, **kwargs):
+        nonlocal calls
+        calls += 1
+        return subprocess.CompletedProcess(
+            command,
+            1,
+            "",
+            f"ERROR: No matching distribution found for ontos=={VERSION}\n",
+        )
+
+    with pytest.raises(ReleaseArtifactError, match="after 2 attempts"):
+        download_testpypi_wheel(
+            manifest_path,
+            requirement,
+            tmp_path / "downloaded",
+            attempts=2,
+            delay=0,
+            runner=runner,
+        )
+
+    assert calls == 2
+
+
 def test_publish_workflow_uses_one_verified_bundle_without_index_fallback():
     workflow = Path(".github/workflows/publish.yml").read_text(encoding="utf-8")
     parsed_workflow = yaml.safe_load(workflow)
@@ -288,15 +394,18 @@ def test_publish_workflow_uses_one_verified_bundle_without_index_fallback():
     assert "--source-sha \"$SOURCE_SHA\"" in workflow
     assert workflow.count("scripts/release_artifacts.py verify \\") == 4
     assert "scripts/release_artifacts.py verify-testpypi" in workflow
-    assert "scripts/release_artifacts.py verify-downloaded-wheel" in workflow
-    assert "--index-url https://test.pypi.org/simple/" in workflow
+    assert "scripts/release_artifacts.py download-testpypi-wheel" in workflow
+    assert "--attempts 12" in workflow
+    assert "--delay 10" in workflow
+    release_helper = Path("scripts/release_artifacts.py").read_text(encoding="utf-8")
+    assert 'TESTPYPI_SIMPLE_URL = "https://test.pypi.org/simple/"' in release_helper
     assert "https://pypi.org/simple" not in workflow
     assert "--extra-index-url" not in workflow
     assert "skip-existing" not in workflow
     assert "--no-deps" in workflow
     assert "--only-binary=:all:" in workflow
     assert "--require-hashes" in workflow
-    assert workflow.count("-m pip --isolated") == 3
+    assert workflow.count("-m pip --isolated") == 2
     assert "--no-index" in workflow
     assert "scripts/release-smoke-requirements.txt" in workflow
     assert '"$VERIFY_VENV/bin/python" -I -c' in workflow

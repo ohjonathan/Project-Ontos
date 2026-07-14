@@ -10,17 +10,6 @@ from pathlib import Path
 class TestMigrationReportCommand:
     """Tests for ontos migration-report command."""
 
-    def test_migration_report_help(self):
-        """Verify --help works."""
-        result = subprocess.run(
-            [sys.executable, "-m", "ontos", "migration-report", "--help"],
-            capture_output=True,
-            text=True
-        )
-        assert result.returncode == 0
-        assert "--output" in result.stdout
-        assert "--format" in result.stdout
-
     def test_migration_report_markdown(self, tmp_path):
         """Generate markdown report."""
         config = tmp_path / ".ontos.toml"
@@ -128,16 +117,6 @@ class TestMigrationReportCommand:
 
 class TestMigrateConvenienceCommand:
     """Tests for ontos migrate convenience command."""
-
-    def test_migrate_help(self):
-        """Verify --help works."""
-        result = subprocess.run(
-            [sys.executable, "-m", "ontos", "migrate", "--help"],
-            capture_output=True,
-            text=True
-        )
-        assert result.returncode == 0
-        assert "--out-dir" in result.stdout
 
     def test_migrate_creates_artifacts(self, tmp_path):
         """Migrate creates both files."""

@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 > For the full historical changelog with Ontos frontmatter (from v0.1.0), see [`Ontos_CHANGELOG.md`](Ontos_CHANGELOG.md).
 
+## [5.0.2] - 2026-07-14
+
+Patch release hardening the exact-artifact gate against TestPyPI propagation
+lag and completing the inherited #148 test-hygiene tail.
+
+### Fixed
+
+- **Bounded TestPyPI Simple-API polling** — the hash-locked wheel download now
+  retries only when pip reports that the exact manifest version is not yet
+  available. Retries are bounded to 12 attempts with a 10-second interval.
+  Hash mismatches, unexpected pip failures, and downloaded-wheel provenance
+  mismatches remain immediate fail-closed errors.
+
+### Changed
+
+- **CLI help tests** — command help coverage now walks the declarative parser
+  and registry recursively in-process, with selected `format_help()` golden
+  comparisons. Only genuine process-boundary tests remain subprocess-based.
+- **Pytest configuration** — removed the registered but unconsumed `legacy`
+  marker.
+
 ## [5.0.1] - 2026-07-14
 
 Release candidate completing the patch-safe audit-remediation code sweep.

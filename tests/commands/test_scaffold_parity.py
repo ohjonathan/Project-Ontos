@@ -18,32 +18,6 @@ def _init_scaffold_workspace(root: Path) -> None:
     (root / "docs").mkdir()
 
 
-@pytest.fixture
-def golden_help():
-    """Load golden help output."""
-    golden_path = Path(__file__).parent / "golden" / "scaffold_help.txt"
-    return golden_path.read_text()
-
-
-def test_scaffold_help_parity(golden_help, assert_help_parity):
-    """Native --help matches legacy."""
-    # Run the native command through the main entry point
-    # We use 'python3 -m ontos.cli' to ensure we run the package code
-    result = subprocess.run(
-        [sys.executable, "-m", "ontos.cli", "scaffold", "--help"],
-        capture_output=True,
-        text=True,
-        env=os.environ.copy()
-    )
-    assert_help_parity(result.stdout, golden_help)
-    # Compare key elements (flags, descriptions)
-    # The wording might be slightly different in the new implementation (help vs title)
-    # but the functional coverage should be the same.
-    assert "--apply" in result.stdout
-    assert "--dry-run" in result.stdout
-    assert "frontmatter" in result.stdout.lower()
-
-
 def test_scaffold_dry_run_parity(tmp_path):
     """Dry-run output matches legacy format."""
     # Create test file without frontmatter
