@@ -45,9 +45,3 @@ def _run_export_claude_command(options: ExportClaudeOptions) -> Tuple[int, str]:
         output_path=options.output_path,
         force=options.force,
     )
-
-
-def export_claude_command(options: ExportClaudeOptions) -> int:
-    """Generate CLAUDE.md and return exit code only."""
-    exit_code, _ = _run_export_claude_command(options)
-    return exit_code

@@ -228,11 +228,6 @@ def _emit_slug_collision_warning(base_slug: str, slug: str, path: Path) -> None:
         raise
 
 
-def _load_registry_records(registry_path: Path | None) -> list[RegistryRecord]:
-    """Backward-compatible alias for internal callers."""
-    return load_registry_records(registry_path)
-
-
 def _registry_root(raw: object, default_root: Path) -> Path:
     if isinstance(raw, dict):
         dev_root = raw.get("dev_root")

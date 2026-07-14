@@ -50,16 +50,6 @@ class CanonicalSnapshotView:
     by_type: dict[str, int]
     list_rows: list[CanonicalDocumentRow]
     path_lookup: dict[str, str]
-
-
-def tool_error(message: str) -> dict[str, Any]:
-    """Return the normalized MCP tool error envelope."""
-    return {
-        "isError": True,
-        "content": [{"type": "text", "text": message}],
-    }
-
-
 def build_canonical_snapshot_view(
     snapshot: DocumentSnapshot,
     workspace_root: Path,

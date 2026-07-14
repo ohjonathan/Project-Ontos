@@ -553,24 +553,25 @@ class TestGatherStats:
 class TestExportAlias:
     """Tests for deprecated export alias."""
 
-    def test_export_warns_and_delegates(self, tmp_path, monkeypatch, capsys):
-        """ontos export should warn and delegate to agents."""
+    def test_export_dispatches_to_live_deprecated_handler(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        """Bare ``ontos export`` should use the registered CLAUDE exporter."""
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
         (tmp_path / ".ontos-internal").mkdir()
 
-        # Import the CLI handler
-        from ontos.cli import _cmd_export
-        
-        # Create mock args
-        class MockArgs:
-            output = None
-            force = False
-            json = False
-            quiet = False
-        
-        exit_code = _cmd_export(MockArgs())
-        
+        from ontos.cli import _cmd_export_deprecated, create_parser
+
+        args = create_parser().parse_args(["export"])
+        assert args.func is _cmd_export_deprecated
+
+        exit_code = args.func(args)
+
         captured = capsys.readouterr()
         assert "deprecated" in captured.err.lower()
+        assert "export claude" in captured.err
+        assert "v3.4" not in captured.err
         assert exit_code == 0
+        assert (tmp_path / "CLAUDE.md").is_file()
+        assert not (tmp_path / "AGENTS.md").exists()

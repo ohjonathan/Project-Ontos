@@ -143,4 +143,6 @@ class TestExportDeprecation:
 
         # Should warn in stderr
         assert "deprecated" in result.stderr.lower()
-        assert "v3.4" in result.stderr
+        assert "export claude" in result.stderr
+        assert "export data" in result.stderr
+        assert "v3.4" not in result.stderr

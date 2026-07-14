@@ -3,6 +3,12 @@
 This module contains functions for resolving Ontos directory and file paths
 with mode-awareness (contributor vs user mode) and backward compatibility.
 
+The legacy path constants and ``get_*`` helpers remain available throughout
+the Ontos 5.x release line for import compatibility. They are deprecated in
+5.0.1 and scheduled for removal in 6.0.0. New code should load project
+configuration, resolve the project root at runtime, and construct paths with
+``pathlib.Path``.
+
 IMPURE: Many functions use os.path.exists() and imports from config modules.
 """
 
@@ -16,10 +22,20 @@ from pathlib import Path
 from typing import Optional, Union
 
 
-# NOTE:
-# Keep PROJECT_ROOT constant for compatibility with legacy imports, but do not
-# use it as the runtime anchor for path resolution.
+# Deprecated in 5.0.1; retained without an import-time warning for compatibility
+# through the Ontos 5.x release line. Scheduled for removal in 6.0.0. New code
+# should call resolve_project_root() at runtime instead.
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def _warn_v2_path_api(name: str, replacement: str) -> None:
+    """Warn when a callable from the v2 path-compatibility API is used."""
+    warnings.warn(
+        f"ontos.core.paths.{name}() is deprecated in Ontos 5.0.1 and will be "
+        f"removed in v6.0.0; use {replacement} instead.",
+        DeprecationWarning,
+        stacklevel=3,
+    )
 
 
 def _normalize_start_path(start_path: Optional[Union[Path, str]] = None) -> str:
@@ -155,7 +171,8 @@ def _warn_deprecated(old_path: str, new_path: str) -> None:
     warnings.warn(
         f"Using deprecated path '{old_path}'. "
         f"Expected: '{new_path}'. "
-        f"Run 'python3 ontos_init.py' to update.",
+        "Create the expected location and move the legacy data there using "
+        "pathlib.Path or your normal filesystem tools.",
         FutureWarning,
         stacklevel=3  # Point to caller's caller
     )
@@ -177,15 +194,8 @@ def _runtime_docs_and_logs_dirs(root: Path) -> tuple[str, Optional[str]]:
         return docs_dir, logs_dir
 
 
-def get_logs_dir(repo_root: Optional[Union[Path, str]] = None) -> str:
-    """Get the logs directory path based on config.
-
-    Respects LOGS_DIR config setting if set, otherwise derives from DOCS_DIR.
-    Handles both contributor mode (.ontos-internal) and user mode (docs/logs).
-
-    Returns:
-        Absolute path to logs directory.
-    """
+def _get_logs_dir(repo_root: Optional[Union[Path, str]] = None) -> str:
+    """Implement legacy logs-directory resolution without a nested warning."""
     root = resolve_project_root(repo_root=repo_root)
 
     # Contributor mode uses .ontos-internal/logs
@@ -205,15 +215,43 @@ def get_logs_dir(repo_root: Optional[Union[Path, str]] = None) -> str:
     return str(root / docs_dir / "logs")
 
 
+def get_logs_dir(repo_root: Optional[Union[Path, str]] = None) -> str:
+    """Get the logs directory path based on config.
+
+    .. deprecated:: 5.0.1
+       Scheduled for removal in v6.0.0. Load project config, resolve the
+       project root, and construct the path explicitly instead.
+
+    Respects LOGS_DIR config setting if set, otherwise derives from DOCS_DIR.
+    Handles both contributor mode (.ontos-internal) and user mode (docs/logs).
+
+    Returns:
+        Absolute path to logs directory.
+    """
+    _warn_v2_path_api(
+        "get_logs_dir",
+        "load_project_config(), resolve_project_root(), and pathlib.Path operations",
+    )
+    return _get_logs_dir(repo_root=repo_root)
+
+
 def get_log_count(repo_root: Optional[Union[Path, str]] = None) -> int:
     """Count active session logs in logs directory.
+
+    .. deprecated:: 5.0.1
+       Scheduled for removal in v6.0.0. Iterate the configured logs directory
+       with ``pathlib.Path`` instead.
 
     Only counts markdown files starting with a digit (date-prefixed logs).
 
     Returns:
         Number of active log files.
     """
-    logs_dir = get_logs_dir(repo_root=repo_root)
+    _warn_v2_path_api(
+        "get_log_count",
+        "load_project_config() and pathlib.Path iteration",
+    )
+    logs_dir = _get_logs_dir(repo_root=repo_root)
     if not os.path.exists(logs_dir):
         return 0
 
@@ -224,14 +262,22 @@ def get_log_count(repo_root: Optional[Union[Path, str]] = None) -> int:
 def get_logs_older_than(days: int, repo_root: Optional[Union[Path, str]] = None) -> list:
     """Get list of log filenames older than N days.
 
+    .. deprecated:: 5.0.1
+       Scheduled for removal in v6.0.0. Iterate the configured logs directory
+       with ``pathlib.Path`` and compare dates explicitly instead.
+
     Args:
         days: Age threshold in days.
 
     Returns:
         List of log filenames (not full paths) older than threshold.
     """
+    _warn_v2_path_api(
+        "get_logs_older_than",
+        "load_project_config() and explicit pathlib.Path/date operations",
+    )
     from datetime import timedelta
-    logs_dir = get_logs_dir(repo_root=repo_root)
+    logs_dir = _get_logs_dir(repo_root=repo_root)
     if not os.path.exists(logs_dir):
         return []
 
@@ -254,9 +300,17 @@ def get_logs_older_than(days: int, repo_root: Optional[Union[Path, str]] = None)
 def get_archive_dir(repo_root: Optional[Union[Path, str]] = None) -> str:
     """Get the archive directory path based on config.
 
+    .. deprecated:: 5.0.1
+       Scheduled for removal in v6.0.0. Load project config, resolve the
+       project root, and construct the path explicitly instead.
+
     Returns:
         Absolute path to archive directory.
     """
+    _warn_v2_path_api(
+        "get_archive_dir",
+        "load_project_config(), resolve_project_root(), and pathlib.Path operations",
+    )
     root = resolve_project_root(repo_root=repo_root)
 
     if is_ontos_repo(repo_root=root):
@@ -269,12 +323,20 @@ def get_archive_dir(repo_root: Optional[Union[Path, str]] = None) -> str:
 def get_decision_history_path(repo_root: Optional[Union[Path, str]] = None) -> str:
     """Get decision_history.md path with backward compatibility.
 
+    .. deprecated:: 5.0.1
+       Scheduled for removal in v6.0.0. Load project config, resolve the
+       project root, and construct the path explicitly instead.
+
     v2.5.2: Uses nested structure (docs/strategy/decision_history.md)
     Pre-v2.5.2: Falls back to flat structure (docs/decision_history.md)
 
     Returns:
         Absolute path to decision_history.md.
     """
+    _warn_v2_path_api(
+        "get_decision_history_path",
+        "load_project_config(), resolve_project_root(), and pathlib.Path operations",
+    )
     root = resolve_project_root(repo_root=repo_root)
 
     if is_ontos_repo(repo_root=root):
@@ -300,9 +362,17 @@ def get_decision_history_path(repo_root: Optional[Union[Path, str]] = None) -> s
 def get_proposals_dir(repo_root: Optional[Union[Path, str]] = None) -> str:
     """Get proposals directory path (mode-aware).
 
+    .. deprecated:: 5.0.1
+       Scheduled for removal in v6.0.0. Load project config, resolve the
+       project root, and construct the path explicitly instead.
+
     Returns:
         Absolute path to proposals directory.
     """
+    _warn_v2_path_api(
+        "get_proposals_dir",
+        "load_project_config(), resolve_project_root(), and pathlib.Path operations",
+    )
     root = resolve_project_root(repo_root=repo_root)
 
     if is_ontos_repo(repo_root=root):
@@ -315,12 +385,20 @@ def get_proposals_dir(repo_root: Optional[Union[Path, str]] = None) -> str:
 def get_archive_logs_dir(repo_root: Optional[Union[Path, str]] = None) -> str:
     """Get archive/logs directory path with backward compatibility.
 
+    .. deprecated:: 5.0.1
+       Scheduled for removal in v6.0.0. Load project config, resolve the
+       project root, and construct the path explicitly instead.
+
     v2.5.2: Uses nested structure (docs/archive/logs/)
     Pre-v2.5.2: Falls back to flat structure (docs/archive/)
 
     Returns:
         Absolute path to archive/logs directory.
     """
+    _warn_v2_path_api(
+        "get_archive_logs_dir",
+        "load_project_config(), resolve_project_root(), and pathlib.Path operations",
+    )
     root = resolve_project_root(repo_root=repo_root)
 
     if is_ontos_repo(repo_root=root):
@@ -346,11 +424,19 @@ def get_archive_logs_dir(repo_root: Optional[Union[Path, str]] = None) -> str:
 def get_archive_proposals_dir(repo_root: Optional[Union[Path, str]] = None) -> str:
     """Get archive/proposals directory path (mode-aware).
 
+    .. deprecated:: 5.0.1
+       Scheduled for removal in v6.0.0. Load project config, resolve the
+       project root, and construct the path explicitly instead.
+
     New in v2.5.2 - no backward compatibility needed.
 
     Returns:
         Absolute path to archive/proposals directory.
     """
+    _warn_v2_path_api(
+        "get_archive_proposals_dir",
+        "load_project_config(), resolve_project_root(), and pathlib.Path operations",
+    )
     root = resolve_project_root(repo_root=repo_root)
 
     if is_ontos_repo(repo_root=root):
@@ -363,12 +449,20 @@ def get_archive_proposals_dir(repo_root: Optional[Union[Path, str]] = None) -> s
 def get_concepts_path(repo_root: Optional[Union[Path, str]] = None) -> str:
     """Get Common_Concepts.md path with backward compatibility.
 
+    .. deprecated:: 5.0.1
+       Scheduled for removal in v6.0.0. Load project config, resolve the
+       project root, and construct the path explicitly instead.
+
     v2.5.2: Uses nested structure (docs/reference/Common_Concepts.md)
     Pre-v2.5.2: Falls back to flat structure (docs/Common_Concepts.md)
 
     Returns:
         Absolute path to Common_Concepts.md.
     """
+    _warn_v2_path_api(
+        "get_concepts_path",
+        "load_project_config(), resolve_project_root(), and pathlib.Path operations",
+    )
     root = resolve_project_root(repo_root=repo_root)
 
     if is_ontos_repo(repo_root=root):
@@ -397,14 +491,22 @@ def find_last_session_date(
 ) -> str:
     """Find the date of the most recent session log.
 
+    .. deprecated:: 5.0.1
+       Scheduled for removal in v6.0.0. Iterate the configured logs directory
+       with ``pathlib.Path`` instead.
+
     Args:
         logs_dir: Directory containing log files. If None, uses LOGS_DIR from config.
 
     Returns:
         Date string in YYYY-MM-DD format, or empty string if no logs found.
     """
+    _warn_v2_path_api(
+        "find_last_session_date",
+        "load_project_config() and explicit pathlib.Path operations",
+    )
     if logs_dir is None:
-        logs_dir = get_logs_dir(repo_root=repo_root)
+        logs_dir = _get_logs_dir(repo_root=repo_root)
 
     if not os.path.exists(logs_dir):
         return ""

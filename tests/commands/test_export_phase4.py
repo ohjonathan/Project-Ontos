@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from ontos.commands.agents import generate_agents_content
-from ontos.commands.claude_template import CLAUDE_MD_TEMPLATE
+from ontos.core.claude_template import CLAUDE_MD_TEMPLATE
 from ontos.commands.export import (
     ExportOptions,
     _run_export_command,

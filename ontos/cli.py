@@ -1618,7 +1618,6 @@ def _cmd_export_deprecated(args) -> int:
 
     if not args.json:
         print("Warning: 'ontos export' is deprecated. Use 'ontos export claude' or 'ontos export data'.", file=sys.stderr)
-        print("This alias will be removed in v3.4.", file=sys.stderr)
 
     # Ensure args has required attributes for _cmd_export_claude
     if not hasattr(args, 'output'):
@@ -1628,39 +1627,6 @@ def _cmd_export_deprecated(args) -> int:
 
     # Delegate to export claude
     return _cmd_export_claude(args)
-
-
-def _cmd_export(args) -> int:
-    """Handle export command (deprecated - delegates to agents)."""
-    import sys
-    if not args.json:
-        print("Warning: 'ontos export' is deprecated. Use 'ontos agents' instead.", file=sys.stderr)
-
-    from ontos.commands.agents import AgentsOptions, _run_agents_command
-
-    options = AgentsOptions(
-        output_path=args.output,
-        force=args.force,
-        format="agents",
-        all_formats=False,
-    )
-
-    with _suppress_command_output_for_json(args.json):
-        exit_code, message = _run_agents_command(options)
-
-    if args.json:
-        _emit_handler_result_json(
-            command="export",
-            exit_code=exit_code,
-            message=message,
-            data={"deprecated": True},
-        )
-    else:
-        _print_handler_message(exit_code, message, quiet=args.quiet)
-
-    return exit_code
-
-
 
 
 def _cmd_schema_migrate(args) -> int:

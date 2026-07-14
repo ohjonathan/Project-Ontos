@@ -321,13 +321,6 @@ def _scan_docs(ctx: MaintainContext) -> List[Path]:
     )
 
 
-def _load_docs_for_graph(ctx: MaintainContext) -> "DocumentLoadResult":
-    from ontos.io.files import load_documents
-    from ontos.io.yaml import parse_frontmatter_content
-
-    return load_documents(_scan_docs(ctx), parse_frontmatter_content)
-
-
 @register_maintain_task(
     name="migrate_untagged",
     order=10,
