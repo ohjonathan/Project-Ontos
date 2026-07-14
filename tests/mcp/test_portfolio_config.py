@@ -33,13 +33,27 @@ def test_ensure_portfolio_config_then_load_returns_addendum_defaults(tmp_path, m
     cfg = load_portfolio_config()
 
     assert config_path.exists()
-    assert cfg.scan_roots == ["~/Dev"]
-    assert cfg.exclude == ["~/Dev/.dev-hub", "~/Dev/archive"]
-    assert cfg.registry_path == "~/Dev/.dev-hub/registry/projects.json"
+    assert cfg.scan_roots == []
+    assert cfg.exclude == []
+    assert cfg.registry_path is None
     # Addendum v1.2 §A4 default values (Dev 4 updated these from 8192/5/14).
     assert cfg.bundle_token_budget == 8000
     assert cfg.bundle_max_logs == 20
     assert cfg.bundle_log_window_days == 30
+
+
+def test_default_config_text_is_byte_stable_and_neutral():
+    assert portfolio_config_module._DEFAULT_CONFIG_TEXT.encode("utf-8") == (
+        b"[portfolio]\n"
+        b"scan_roots = []\n"
+        b"exclude = []\n"
+        b'registry_path = ""\n'
+        b"\n"
+        b"[bundle]\n"
+        b"token_budget = 8000\n"
+        b"max_logs = 20\n"
+        b"log_window_days = 30\n"
+    )
 
 
 def test_load_portfolio_config_custom_values(tmp_path, monkeypatch):
@@ -48,9 +62,9 @@ def test_load_portfolio_config_custom_values(tmp_path, monkeypatch):
     config_path.write_text(
         """
         [portfolio]
-        scan_roots = ["~/Dev", "~/Work"]
-        exclude = ["~/Dev/archive"]
-        registry_path = "~/Dev/.dev-hub/registry/projects.json"
+        scan_roots = ["~/Projects", "~/Work"]
+        exclude = ["~/Projects/archive"]
+        registry_path = "~/Projects/registry/projects.json"
 
         [bundle]
         token_budget = 4000
@@ -63,21 +77,21 @@ def test_load_portfolio_config_custom_values(tmp_path, monkeypatch):
 
     cfg = load_portfolio_config()
 
-    assert cfg.scan_roots == ["~/Dev", "~/Work"]
-    assert cfg.exclude == ["~/Dev/archive"]
-    assert cfg.registry_path == "~/Dev/.dev-hub/registry/projects.json"
+    assert cfg.scan_roots == ["~/Projects", "~/Work"]
+    assert cfg.exclude == ["~/Projects/archive"]
+    assert cfg.registry_path == "~/Projects/registry/projects.json"
     assert cfg.bundle_token_budget == 4000
     assert cfg.bundle_max_logs == 7
     assert cfg.bundle_log_window_days == 3
 
 
-def test_load_portfolio_config_missing_registry_path_uses_default(tmp_path, monkeypatch):
+def test_load_portfolio_config_missing_registry_path_is_neutral(tmp_path, monkeypatch):
     config_path = tmp_path / ".config" / "ontos" / "portfolio.toml"
     config_path.parent.mkdir(parents=True)
     config_path.write_text(
         """
         [portfolio]
-        scan_roots = ["~/Dev"]
+        scan_roots = ["~/Projects"]
         """,
         encoding="utf-8",
     )
@@ -85,7 +99,7 @@ def test_load_portfolio_config_missing_registry_path_uses_default(tmp_path, monk
 
     cfg = load_portfolio_config()
 
-    assert cfg.registry_path == "~/Dev/.dev-hub/registry/projects.json"
+    assert cfg.registry_path is None
 
 
 def test_load_portfolio_config_empty_registry_path_disables_merge(tmp_path, monkeypatch):
@@ -209,7 +223,7 @@ def test_load_portfolio_config_non_string_registry_path_falls_back_to_default(tm
 
     cfg = load_portfolio_config()
 
-    assert cfg.registry_path == "~/Dev/.dev-hub/registry/projects.json"
+    assert cfg.registry_path is None
 
 
 def test_load_portfolio_config_non_string_registry_path_warns_and_falls_back_to_default(
@@ -231,14 +245,17 @@ def test_load_portfolio_config_non_string_registry_path_warns_and_falls_back_to_
     with caplog.at_level("WARNING"):
         cfg = load_portfolio_config()
 
-    assert cfg.registry_path == "~/Dev/.dev-hub/registry/projects.json"
+    assert cfg.registry_path is None
     assert "Ignoring non-string portfolio.registry_path value" in caplog.text
 
 
 def test_load_portfolio_config_invalid_toml_raises(tmp_path, monkeypatch):
     config_path = tmp_path / ".config" / "ontos" / "portfolio.toml"
     config_path.parent.mkdir(parents=True)
-    config_path.write_text("[portfolio\nscan_roots = [\"~/Dev\"]\n", encoding="utf-8")
+    config_path.write_text(
+        "[portfolio\nscan_roots = [\"~/Projects\"]\n",
+        encoding="utf-8",
+    )
     monkeypatch.setattr(portfolio_config_module, "PORTFOLIO_CONFIG_PATH", config_path)
 
     with pytest.raises(ValueError):
@@ -247,6 +264,9 @@ def test_load_portfolio_config_invalid_toml_raises(tmp_path, monkeypatch):
 
 def test_ensure_portfolio_config_is_idempotent(tmp_path, monkeypatch):
     config_path = tmp_path / ".config" / "ontos" / "portfolio.toml"
+    config_path.parent.mkdir(parents=True)
+    original = b'[portfolio]\nscan_roots = ["/custom/root"]\n'
+    config_path.write_bytes(original)
     monkeypatch.setattr(portfolio_config_module, "PORTFOLIO_CONFIG_PATH", config_path)
 
     first = ensure_portfolio_config()
@@ -255,3 +275,4 @@ def test_ensure_portfolio_config_is_idempotent(tmp_path, monkeypatch):
     assert first == Path(config_path)
     assert second == Path(config_path)
     assert config_path.exists()
+    assert config_path.read_bytes() == original

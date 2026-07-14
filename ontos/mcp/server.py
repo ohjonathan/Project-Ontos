@@ -1099,14 +1099,37 @@ def _build_cache(workspace_root: Path) -> SnapshotCache:
 
 def _build_portfolio_index(*, read_only: bool = False) -> PortfolioIndexLike:
     from ontos.mcp.portfolio import PortfolioIndex
-    from ontos.mcp.portfolio_config import ensure_portfolio_config, load_portfolio_config
+    from ontos.mcp.portfolio_config import (
+        PortfolioConfig,
+        ensure_portfolio_config,
+        load_portfolio_config,
+    )
 
     # Read-only servers consume an existing snapshot and never initialize
     # config, create a DB, rebuild, or open WAL/SHM sidecars.
-    if not read_only:
+    if read_only:
+        try:
+            config = load_portfolio_config()
+        except FileNotFoundError:
+            config = PortfolioConfig()
+    else:
         ensure_portfolio_config()
-    config = load_portfolio_config()
-    scan_roots = [Path(path).expanduser() for path in config.scan_roots]
+        config = load_portfolio_config()
+        configured_scan_roots = [
+            path.strip()
+            for path in config.scan_roots
+            if path.strip()
+        ]
+        if not configured_scan_roots and not config.registry_path:
+            raise OntosUserError(
+                "Portfolio discovery is not configured. Set at least one "
+                "portfolio.scan_roots entry or portfolio.registry_path in "
+                "~/.config/ontos/portfolio.toml.",
+                code="E_PORTFOLIO_NOT_CONFIGURED",
+            )
+    if read_only:
+        configured_scan_roots = config.scan_roots
+    scan_roots = [Path(path).expanduser() for path in configured_scan_roots]
     registry_path = (
         Path(config.registry_path).expanduser()
         if config.registry_path

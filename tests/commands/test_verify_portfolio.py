@@ -148,6 +148,27 @@ def test_verify_portfolio_json_reports_corrupt_db_as_internal(tmp_path):
     assert result.stderr == ""
 
 
+@pytest.mark.parametrize("json_mode", [False, True])
+def test_verify_portfolio_requires_explicit_registry(tmp_path, json_mode):
+    home = tmp_path / "home"
+    extra = ("--json",) if json_mode else ()
+
+    result = _run_verify_portfolio(home, *extra)
+
+    assert result.returncode == 2
+    config_path = home / ".config" / "ontos" / "portfolio.toml"
+    assert config_path.exists()
+    assert 'registry_path = ""' in config_path.read_text(encoding="utf-8")
+    if json_mode:
+        payload = json.loads(result.stdout)
+        assert payload["error"]["code"] == "E_PORTFOLIO_REGISTRY_REQUIRED"
+        assert payload["exit_code"] == 2
+        assert result.stderr == ""
+    else:
+        assert result.stdout == ""
+        assert "portfolio.registry_path" in result.stderr
+
+
 def test_verify_portfolio_scopes_to_workspace_id(tmp_path, capsys):
     db_path = tmp_path / "portfolio.db"
     alpha_path = tmp_path / "Dev" / "alpha"
@@ -342,7 +363,7 @@ def test_cmd_verify_portfolio_threads_workspace_id(monkeypatch):
     calls: list[object] = []
 
     class _Config:
-        registry_path = None
+        registry_path = "/configured/registry/projects.json"
 
     def _load_config():
         return _Config()
@@ -352,6 +373,7 @@ def test_cmd_verify_portfolio_threads_workspace_id(monkeypatch):
         return 0
 
     monkeypatch.setattr(portfolio_config_module, "load_portfolio_config", _load_config)
+    monkeypatch.setattr(portfolio_config_module, "ensure_portfolio_config", lambda: None)
     monkeypatch.setattr(verify_module, "verify_portfolio", _fake_verify_portfolio)
 
     assert _cmd_verify(args) == 0

@@ -1,0 +1,7 @@
+# Python 3.11 / ubuntu-latest smoke dependencies for the trusted-publish gate.
+# Keep exact versions and hashes so dependency installation cannot weaken the
+# already hash-verified Ontos wheel proof.
+PyYAML==6.0.3 \
+    --hash=sha256:b8bb0864c5a28024fac8a632c443c87c5aa6f215c0b126c449ae1a150412f31d
+tomli_w==1.2.0 \
+    --hash=sha256:188306098d013b691fcadc011abd66727d3c414c571bb01b1a174ba8c983cf90

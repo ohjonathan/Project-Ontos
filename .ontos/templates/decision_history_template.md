@@ -9,11 +9,10 @@ depends_on: []
 
 This document records key decisions made during development, including both approvals and rejections.
 
-## Decision Log
+## History Ledger
 
-| Date | Slug | Decision | Outcome | Archive Path |
-|------|------|----------|---------|--------------|
-| | | | | |
+| Date | Slug | Event | Decision / Outcome | Impacts | Archive Path |
+|:---|:---|:---|:---|:---|:---|
 
 ## How to Use
 

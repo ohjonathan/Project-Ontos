@@ -506,10 +506,16 @@ ontos consolidate --dry-run --by-age --days 30
 ontos consolidate --all --by-age --days 30
 ```
 
-In v5.0.0, direct count mode defaults to keeping 15 logs, while maintenance
-passes the configured retention default of 20. `--days` is ignored unless
-`--by-age` is also present. Consolidation updates the decision-history ledger
-and moves each selected log transactionally; inspect the dry run first.
+When `--count` is omitted, direct count mode and maintenance both use
+`[workflow].log_retention_count` (normally 20). An explicit `--count` wins;
+`--count 0` remains invalid. `--days` is ignored unless `--by-age` is also
+present, so age-based selection is independent of the count setting.
+Consolidation updates the decision-history ledger and moves each selected log
+transactionally; inspect the dry run first. If decision history is missing, or
+a recognized generated/narrative decision history lacks its ledger,
+consolidation initializes or appends the canonical `## History Ledger`
+section. Arbitrary or malformed history files still fail closed without
+moving logs.
 
 ### Migrate document schemas
 
@@ -664,18 +670,21 @@ A generic client document contains an `"mcpServers"` entry similar to:
 ### Portfolio configuration
 
 Portfolio settings are separate from `.ontos.toml` and live at
-`~/.config/ontos/portfolio.toml`. In v5.0.0 a writable portfolio server creates
-this file when absent and opens `~/.config/ontos/portfolio.db`; a read-only
-portfolio server requires an existing config and database and does not create
-WAL/SHM sidecars.
+`~/.config/ontos/portfolio.toml`. A writable portfolio server creates this
+file when absent, but its generated discovery settings are deliberately empty.
+It refuses before creating `~/.config/ontos/portfolio.db` until at least one
+scan root or a registry is configured. `ensure_portfolio_config()` never
+overwrites an existing file. A read-only portfolio server may open an existing
+database without a config and does not create config, rebuild the index, or
+create WAL/SHM sidecars.
 
-The v5.0.0 generated portfolio defaults are:
+The v5.0.1 generated portfolio defaults are:
 
 ```toml
 [portfolio]
-scan_roots = ["~/Dev"]
-exclude = ["~/Dev/.dev-hub", "~/Dev/archive"]
-registry_path = "~/Dev/.dev-hub/registry/projects.json"
+scan_roots = []
+exclude = []
+registry_path = ""
 
 [bundle]
 token_budget = 8000
@@ -683,9 +692,13 @@ max_logs = 20
 log_window_days = 30
 ```
 
-Review and replace those paths for the actual machine before relying on
-portfolio results. `verify --portfolio` compares the database to the configured
-registry; `--workspace-id` limits the comparison.
+The three bundle values are shared named defaults; centralization does not
+change their behavior. Add one or more project-parent paths to `scan_roots`,
+set `registry_path`, or do both before starting a writable portfolio server.
+Omitting any of the three portfolio keys also yields the empty value; Ontos no
+longer inherits a personal directory layout. `verify --portfolio` requires an
+explicit `registry_path`, compares the database to that registry, and accepts
+`--workspace-id` to limit the comparison.
 
 ### Usage logging
 
@@ -822,7 +835,8 @@ The breaking v5 changes are integrations, not repository data: JSON envelope
 4.0, the exit-code taxonomy, canonical nested command paths, physical body-link
 line numbers, an open-map MCP `graph_stats.by_type`, and scoped durable rename
 recovery. See [the v5.0.0 migration guide](../releases/v5.0.0.md) before
-upgrading automation.
+upgrading automation. For the patch-level portfolio, consolidation, and release
+gate changes, see [the v5.0.1 release notes](../releases/v5.0.1.md).
 
 Long-lived MCP hosts keep their child process alive across package upgrades.
 Restart the MCP host or reload its plugin, then check `ontos --version` in a new
@@ -856,6 +870,8 @@ ontos consolidate --dry-run --count 20
 | Context map missing frontmatter | Regenerate with `ontos map` |
 | Instruction file conflict | Preserve `USER CUSTOM`, resolve source changes, and regenerate |
 | MCP reports an old version | Restart the MCP host |
+| Portfolio discovery is not configured | Add `portfolio.scan_roots` or `portfolio.registry_path` to `~/.config/ontos/portfolio.toml` |
+| Portfolio verification requires a registry | Set an explicit `portfolio.registry_path`; verification has no fallback path |
 
 ### Generated artifacts
 

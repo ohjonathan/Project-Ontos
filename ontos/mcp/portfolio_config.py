@@ -14,6 +14,9 @@ except ImportError:  # pragma: no cover - Python 3.10 fallback
     import tomli as tomllib  # type: ignore
 
 __all__ = [
+    "DEFAULT_BUNDLE_LOG_WINDOW_DAYS",
+    "DEFAULT_BUNDLE_MAX_LOGS",
+    "DEFAULT_BUNDLE_TOKEN_BUDGET",
     "PortfolioConfig",
     "PORTFOLIO_CONFIG_PATH",
     "ensure_portfolio_config",
@@ -22,32 +25,36 @@ __all__ = [
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_REGISTRY_PATH = "~/Dev/.dev-hub/registry/projects.json"
+DEFAULT_BUNDLE_TOKEN_BUDGET = 8_000
+DEFAULT_BUNDLE_MAX_LOGS = 20
+DEFAULT_BUNDLE_LOG_WINDOW_DAYS = 30
+
+_DEFAULT_REGISTRY_PATH: Optional[str] = None
 _REGISTRY_PATH_EDGE_CHARS = "\u200b\u200c\u200d\ufeff"
 _MISSING = object()
 
 
 @dataclass(frozen=True)
 class PortfolioConfig:
-    scan_roots: List[str] = field(default_factory=lambda: ["~/Dev"])
-    exclude: List[str] = field(default_factory=lambda: ["~/Dev/.dev-hub", "~/Dev/archive"])
+    scan_roots: List[str] = field(default_factory=list)
+    exclude: List[str] = field(default_factory=list)
     registry_path: Optional[str] = _DEFAULT_REGISTRY_PATH
-    bundle_token_budget: int = 8000
-    bundle_max_logs: int = 20
-    bundle_log_window_days: int = 30
+    bundle_token_budget: int = DEFAULT_BUNDLE_TOKEN_BUDGET
+    bundle_max_logs: int = DEFAULT_BUNDLE_MAX_LOGS
+    bundle_log_window_days: int = DEFAULT_BUNDLE_LOG_WINDOW_DAYS
 
 
 PORTFOLIO_CONFIG_PATH = Path.home() / ".config" / "ontos" / "portfolio.toml"
 
-_DEFAULT_CONFIG_TEXT = """[portfolio]
-scan_roots = ["~/Dev"]
-exclude = ["~/Dev/.dev-hub", "~/Dev/archive"]
-registry_path = "~/Dev/.dev-hub/registry/projects.json"
+_DEFAULT_CONFIG_TEXT = f"""[portfolio]
+scan_roots = []
+exclude = []
+registry_path = ""
 
 [bundle]
-token_budget = 8000
-max_logs = 20
-log_window_days = 30
+token_budget = {DEFAULT_BUNDLE_TOKEN_BUDGET}
+max_logs = {DEFAULT_BUNDLE_MAX_LOGS}
+log_window_days = {DEFAULT_BUNDLE_LOG_WINDOW_DAYS}
 """
 
 
@@ -87,15 +94,24 @@ def load_portfolio_config() -> PortfolioConfig:
         bundle = {}
 
     return PortfolioConfig(
-        scan_roots=_coerce_str_list(portfolio.get("scan_roots"), ["~/Dev"]),
-        exclude=_coerce_str_list(portfolio.get("exclude"), ["~/Dev/.dev-hub", "~/Dev/archive"]),
+        scan_roots=_coerce_str_list(portfolio.get("scan_roots"), []),
+        exclude=_coerce_str_list(portfolio.get("exclude"), []),
         registry_path=_coerce_registry_path(
             portfolio.get("registry_path", _MISSING),
             _DEFAULT_REGISTRY_PATH,
         ),
-        bundle_token_budget=_coerce_int(bundle.get("token_budget"), 8000),
-        bundle_max_logs=_coerce_int(bundle.get("max_logs"), 20),
-        bundle_log_window_days=_coerce_int(bundle.get("log_window_days"), 30),
+        bundle_token_budget=_coerce_int(
+            bundle.get("token_budget"),
+            DEFAULT_BUNDLE_TOKEN_BUDGET,
+        ),
+        bundle_max_logs=_coerce_int(
+            bundle.get("max_logs"),
+            DEFAULT_BUNDLE_MAX_LOGS,
+        ),
+        bundle_log_window_days=_coerce_int(
+            bundle.get("log_window_days"),
+            DEFAULT_BUNDLE_LOG_WINDOW_DAYS,
+        ),
     )
 
 
@@ -105,7 +121,10 @@ def _coerce_str_list(value: object, default: List[str]) -> List[str]:
     return list(default)
 
 
-def _coerce_registry_path(value: object, default: str) -> Optional[str]:
+def _coerce_registry_path(
+    value: object,
+    default: Optional[str],
+) -> Optional[str]:
     if value is _MISSING:
         return default
     if isinstance(value, os.PathLike):
@@ -113,7 +132,10 @@ def _coerce_registry_path(value: object, default: str) -> Optional[str]:
     if isinstance(value, str):
         stripped = _strip_registry_path_edges(value)
         return stripped or None
-    logger.warning("Ignoring non-string portfolio.registry_path value %r; using default path.", value)
+    logger.warning(
+        "Ignoring non-string portfolio.registry_path value %r; using default.",
+        value,
+    )
     return default
 
 

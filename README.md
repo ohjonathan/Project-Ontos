@@ -381,7 +381,8 @@ The MCP server exposes up to 18 tools depending on server flags:
 | `refresh` | Force cache rebuild after bulk changes | ⚠️ |
 | `get_context_bundle` | Token-budgeted context bundle for a workspace | ✅ |
 
-**Portfolio (2 tools — v4.1, requires `--portfolio` flag and `~/.config/ontos/portfolio.toml`):**
+**Portfolio (2 tools — v4.1, requires `--portfolio`; writable mode also
+requires configured discovery in `~/.config/ontos/portfolio.toml`):**
 
 | Tool | Purpose |
 |------|---------|
@@ -403,7 +404,7 @@ Write tools are registered only when the server runs without `--read-only`. In r
 ### 5. Verify
 
 ```bash
-ontos --version   # Should show 4.7.x
+ontos --version   # Should show 5.0.x
 ontos serve       # Starts the stdio server (Ctrl+C to stop)
 ```
 
@@ -420,8 +421,13 @@ Portfolio mode lets a single `ontos serve` process index and search across all y
 ontos serve --portfolio
 ```
 
-> [!TIP]
-> The first `--portfolio` run auto-creates `~/.config/ontos/portfolio.toml` with sensible defaults. Edit it to match your directory layout.
+> [!IMPORTANT]
+> The first writable `--portfolio` run creates
+> `~/.config/ontos/portfolio.toml` with inert, empty discovery settings and
+> then refuses to create a database until you configure at least one scan root
+> or a registry. This prevents Ontos from silently indexing an unrelated
+> directory. Read-only mode may consume an existing database without creating
+> config or SQLite sidecars.
 
 #### Configuration
 
@@ -429,9 +435,9 @@ Portfolio config lives at `~/.config/ontos/portfolio.toml`:
 
 ```toml
 [portfolio]
-scan_roots = ["~/Dev"]                    # Parent dirs to scan (first-level children)
-exclude = ["~/Dev/.dev-hub", "~/Dev/archive"]  # Paths or substrings to skip
-registry_path = "~/Dev/.dev-hub/registry/projects.json"  # Optional enriched metadata
+scan_roots = []        # Add parent dirs whose first-level children are projects
+exclude = []           # Optional paths or substrings to skip
+registry_path = ""     # Optional project-registry JSON path
 
 [bundle]
 token_budget = 8000     # Max tokens for context bundles
@@ -439,10 +445,15 @@ max_logs = 20           # Max session logs per bundle
 log_window_days = 30    # Only include logs from the last N days
 ```
 
-- **`scan_roots`** accepts a list — scan multiple parent directories (e.g., `["~/Dev", "~/Work"]`).
+- **`scan_roots`** accepts a list — scan multiple parent directories (for
+  example, `["/path/to/projects", "/path/to/work-projects"]`).
 - The scanner looks at **first-level children** of each scan root and picks directories containing `.git/`.
 - **`exclude`** matches both absolute paths and substrings against resolved paths.
 - **`registry_path`** is optional. If set, registry entries are merged with filesystem discovery — adding tags, status overrides, and notes. Projects listed in the registry but missing on disk are skipped.
+- **`verify --portfolio`** requires an explicit `registry_path`; it never
+  guesses a machine-specific fallback.
+- The bundle values shown above are the shared defaults: 8,000 tokens, 20
+  logs, and a 30-day log window.
 - Each workspace gets a URL-safe slug from its directory name (`Ontos-dev` → `ontos-dev`). Collisions get numeric suffixes (`workspace`, `workspace-2`).
 
 #### IDE Configuration
@@ -487,7 +498,7 @@ The server binds to one **primary workspace** (the `cwd` or `--workspace` path).
 Calling a core tool with a `workspace_id` that doesn't match the primary workspace returns `E_CROSS_WORKSPACE_NOT_SUPPORTED`. This is a deliberate safety boundary. To read another project's documents, change your `cwd` or run a second `ontos serve` instance.
 
 > [!NOTE]
-> Cross-workspace document reads and writes are not supported in v4.7.0.
+> Cross-workspace document reads and writes are not supported in v5.0.1.
 
 #### Example Workflow
 
@@ -595,21 +606,22 @@ Version 3 is when Ontos became public. The earlier versions live on in the desig
 
 | Version | Status | Highlights |
 |---------|--------|------------|
-| **v4.7.0** | Current | Grouped activation warnings, link-check JSON envelope + ~200x faster scans, external file dependency allowlist, cross-command health consistency |
-| **v4.6.0** | Previous | CLI `activate --json` warning/error metadata parity with MCP |
-| **v4.5.0** | Previous | Schema-safe bundle warnings, lifecycle type/status widening, MCP upgrade docs |
+| **v5.0.1** | Release candidate | Patch-safe audit tail, neutral portfolio defaults, consistent retention, exact-artifact TestPyPI gate, decision-history self-heal |
+| **v5.0.0** | Current release | Schema-4 command results, exit taxonomy, canonical dispatch, durable rename recovery |
+| **v4.7.1** | Previous | Safe frontmatter serialization and doctor command-execution hardening |
 | **Future** | Next | HTTP / Streamable HTTP transport, daemon mode, security hardening |
 
-v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python. v3.2 added re-architecture support, environment detection, and activation resilience. v3.3 ships 62 audit-derived hardening fixes plus `link-check`, `rename`, unified JSON envelopes, and a canonical document loader. v3.3.1 reduced link-check false positives by 89% and added `promote_check` to the maintenance pipeline. v3.4 adds `--compact tiered` context maps for token-constrained agents. v4.0 adds an MCP server mode with 8 read-only tools, enabling native integration with AI IDEs like Claude Desktop and Cursor without CLI overhead. v4.1 expands MCP to 15 tools, a portfolio index with FTS5 search, advisory flock locking, and a shared rename orchestrator used by both CLI and MCP. v4.2.0 makes Cursor a first-class managed MCP client alongside Antigravity and adds `ontos mcp print-config` for Claude Code, Codex, and VS Code. v4.3.0 adds `ontos retrofit --obsidian`, a dry-run-first write path that lands computed `tags` and `aliases` on disk for Obsidian-compatible browsing. v4.4.0 adds `ontos activate`, MCP session activation state, `session_end`, precise frontmatter diagnostics, enum repair, and shared scan exclusions. v4.5.0 hardens activation/link-check diagnostics, widens lifecycle artifact type/status vocabulary, and documents MCP host restarts after upgrades. v4.6.0 makes CLI `activate --json` validation warnings/errors structured objects, matching MCP activation metadata. v4.7.0 closes the issue #131–#136 stability batch: grouped activation warnings with a paginated `list_validation_warnings` MCP tool, the standard JSON envelope plus output controls and ~200x faster scans for `link-check`, an `allowed_external_dependency_paths` allowlist with info-severity classification, context-map generator provenance, and basis-labeled, mutually consistent health counts across doctor/activate/query/link-check. The next transport work remains on the roadmap.
+v3.0 transformed Ontos from repo-injected scripts into a pip-installable package. v3.1 made all CLI commands native Python. v3.2 added re-architecture support, environment detection, and activation resilience. v3.3 shipped audit-derived hardening plus `link-check`, `rename`, unified JSON envelopes, and a canonical document loader. v4 introduced MCP, portfolio search, activation, managed clients, and bounded diagnostics. v4.7.1 hardened serialization and doctor command execution. v5.0.0 introduced the schema-4 result envelope, canonical command dispatch, parser/write-path consolidation, and durable rename recovery. v5.0.1 closes the patch-safe audit code tail; the deprecated v2 paths compatibility removal remains scheduled for v6.0.0.
 
 ---
 
 ## Documentation
 
-> *Note: Documentation links below point to the latest source on GitHub. During release cutover, source docs may reflect `v4.7.0` before PyPI finishes publishing the same version.*
+> *Note: Documentation links below point to the latest source on GitHub. During release cutover, source docs may reflect the `v5.0.1` release candidate before the maintainer tags and publishes it.*
 
 - **[Ontos Manual](https://github.com/ohjonathan/Project-Ontos/blob/main/docs/reference/Ontos_Manual.md)**: Complete reference—installation, workflow, configuration, errors
 - **[Agent Instructions](https://github.com/ohjonathan/Project-Ontos/blob/main/docs/reference/Ontos_Agent_Instructions.md)**: Commands for AI agents
+- **[v5.0.1 Release Notes](https://github.com/ohjonathan/Project-Ontos/blob/main/docs/releases/v5.0.1.md)**: Patch behavior changes, provenance gate, and upgrade checklist
 - **[Migration Guide v3→v4](https://github.com/ohjonathan/Project-Ontos/blob/main/docs/reference/Migration_v3_to_v4.md)**: Upgrading from v3.x — what's new and how to enable MCP
 - **[Migration Guide v2→v3](https://github.com/ohjonathan/Project-Ontos/blob/main/docs/reference/Migration_v2_to_v3.md)**: Upgrading from v2.x
 - **[Minimal Example](https://github.com/ohjonathan/Project-Ontos/blob/main/examples/minimal/README.md)**: 3-file quick start
