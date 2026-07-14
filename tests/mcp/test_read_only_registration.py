@@ -131,16 +131,20 @@ def test_read_only_portfolio_queries_existing_snapshot_without_mutation(
     config_path.write_text("[portfolio]\nscan_roots=[]\nexclude=[]\n", encoding="utf-8")
     db_path = state / "portfolio.db"
     writable = PortfolioIndex(db_path)
-    writable.rebuild_all(scan_roots=[], exclude=[])
-    writable.close()
+    try:
+        writable.rebuild_all(scan_roots=[], exclude=[])
+    finally:
+        writable.close()
 
     monkeypatch.setattr(portfolio_config, "PORTFOLIO_CONFIG_PATH", config_path)
     monkeypatch.setattr(server_module, "DEFAULT_PORTFOLIO_DB_PATH", db_path)
     before = {path.name: path.read_bytes() for path in state.iterdir() if path.is_file()}
 
     read_only = server_module._build_portfolio_index(read_only=True)
-    assert read_only.get_projects() == []
-    read_only.close()
+    try:
+        assert read_only.get_projects() == []
+    finally:
+        read_only.close()
 
     after = {path.name: path.read_bytes() for path in state.iterdir() if path.is_file()}
     assert after == before

@@ -3,6 +3,7 @@
 import pytest
 from pathlib import Path
 from ontos.core.snapshot import SnapshotFilters, DocumentSnapshot
+from ontos.core.types import ValidationErrorType
 from ontos.io.snapshot import create_snapshot
 
 
@@ -149,6 +150,77 @@ status: active
 
         assert "docs_doc" in snapshot.documents
         assert "internal_doc" in snapshot.documents
+
+    @pytest.mark.parametrize(
+        ("configured_max", "expected_depth_warnings"),
+        [(10, 0), (0, 8)],
+    )
+    def test_create_snapshot_honors_configured_dependency_depth(
+        self,
+        tmp_path,
+        configured_max,
+        expected_depth_warnings,
+    ):
+        (tmp_path / ".ontos.toml").write_text(
+            "[ontos]\nversion = '3.2'\n\n"
+            f"[validation]\nmax_dependency_depth = {configured_max}\n",
+            encoding="utf-8",
+        )
+        docs = tmp_path / "docs"
+        docs.mkdir()
+        for index in range(9):
+            dependency = (
+                f"depends_on: [doc_{index + 1}]\n" if index < 8 else ""
+            )
+            (docs / f"doc_{index}.md").write_text(
+                "---\n"
+                f"id: doc_{index}\n"
+                "type: atom\n"
+                "status: active\n"
+                f"{dependency}"
+                "---\n",
+                encoding="utf-8",
+            )
+
+        snapshot = create_snapshot(tmp_path)
+        depth_warnings = [
+            warning
+            for warning in snapshot.validation_result.warnings
+            if warning.error_type == ValidationErrorType.DEPTH
+        ]
+
+        assert len(depth_warnings) == expected_depth_warnings
+        if configured_max == 0:
+            assert all("max 0" in warning.message for warning in depth_warnings)
+
+    def test_create_snapshot_uses_authoritative_concept_vocabulary(self, tmp_path):
+        (tmp_path / ".ontos.toml").write_text(
+            "[ontos]\nversion = '3.2'\n",
+            encoding="utf-8",
+        )
+        docs = tmp_path / "docs"
+        docs.mkdir()
+        (docs / "a.md").write_text(
+            "---\nid: a\ntype: atom\nstatus: active\n"
+            "concepts: [known, unknown]\n---\n",
+            encoding="utf-8",
+        )
+        reference = tmp_path / ".ontos-internal" / "reference"
+        reference.mkdir(parents=True)
+        (reference / "Common_Concepts.md").write_text(
+            "| Concept | Description |\n|---|---|\n| `known` | Known |\n",
+            encoding="utf-8",
+        )
+
+        snapshot = create_snapshot(tmp_path)
+        concept_warnings = [
+            warning
+            for warning in snapshot.validation_result.warnings
+            if warning.error_type == ValidationErrorType.CURATION
+        ]
+
+        assert len(concept_warnings) == 1
+        assert "unknown" in concept_warnings[0].message
 
 
 class TestSnapshotProperties:

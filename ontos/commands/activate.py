@@ -8,7 +8,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import ontos
-from ontos.commands.map import GenerateMapOptions, generate_context_map
+from ontos.commands.map import (
+    GenerateMapOptions,
+    _write_context_map_if_changed,
+    generate_context_map,
+)
 from ontos.core.config import (
     ConfigError,
     InvalidRequiredVersionError,
@@ -24,6 +28,7 @@ from ontos.core.warning_groups import (
     select_warning_records,
 )
 from ontos.io.config import load_project_config
+from ontos.io.concepts import load_known_concepts
 from ontos.io.files import DocumentLoadIssue, find_project_root, load_documents
 from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
 from ontos.io.yaml import parse_frontmatter_content
@@ -138,7 +143,7 @@ def run_activation(
         project_root,
         config,
         effective_scope,
-        base_skip_patterns=[*config.scanning.skip_patterns, str(output_path.resolve())],
+        base_skip_patterns=list(config.scanning.skip_patterns),
     )
     load_result = load_documents(doc_paths, parse_frontmatter_content)
     docs = load_result.documents
@@ -173,6 +178,7 @@ def run_activation(
             docs,
             gen_config,
             GenerateMapOptions(max_dependency_depth=config.validation.max_dependency_depth),
+            known_concepts=load_known_concepts(project_root),
         )
         validation_errors = [issue.to_dict() for issue in validation.errors]
         validation_warnings = [issue.to_dict() for issue in validation.warnings]
@@ -180,7 +186,7 @@ def run_activation(
         if write_map:
             try:
                 output_path.parent.mkdir(parents=True, exist_ok=True)
-                output_path.write_text(content, encoding="utf-8")
+                map_refreshed = _write_context_map_if_changed(output_path, content)
             except OSError as exc:
                 return int(ExitCode.INTERNAL), _not_usable(
                     f"Unable to refresh context map at {output_path}: {exc}",
@@ -188,7 +194,6 @@ def run_activation(
                     files_scanned=len(doc_paths),
                     issues=load_result.issues,
                 )
-            map_refreshed = True
 
     # Status / summary counts always derive from the FULL untruncated lists,
     # so the warning budget below never changes activation semantics (#132).

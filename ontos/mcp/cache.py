@@ -11,6 +11,7 @@ from typing import Any, Callable, Dict, Optional, Set, Tuple
 
 from ontos.core.graph import calculate_depths
 from ontos.core.snapshot import DocumentSnapshot
+from ontos.io.concepts import concept_vocabulary_paths
 from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
 from ontos.io.snapshot import create_snapshot
 from ontos.mcp.tools import CanonicalSnapshotView, build_canonical_snapshot_view
@@ -160,6 +161,7 @@ class SnapshotCache:
 
         tracked_doc_path_keys = frozenset(tracked_doc_keys)
         fingerprints.update(self._describes_fingerprints(snapshot, tracked_doc_path_keys))
+        fingerprints.update(self._validation_input_fingerprints())
 
         return SnapshotCacheState(
             snapshot=snapshot,
@@ -200,15 +202,16 @@ class SnapshotCache:
             if current != state.fingerprints.get(key):
                 return True
 
-        current_describes = self._describes_fingerprints(
+        current_extra_fingerprints = self._describes_fingerprints(
             state.snapshot,
             state.tracked_doc_path_keys,
         )
+        current_extra_fingerprints.update(self._validation_input_fingerprints())
         tracked_extra_keys = set(state.fingerprints) - set(state.tracked_doc_path_keys)
-        if tracked_extra_keys != set(current_describes):
+        if tracked_extra_keys != set(current_extra_fingerprints):
             return True
 
-        for key, current in current_describes.items():
+        for key, current in current_extra_fingerprints.items():
             if current != state.fingerprints.get(key):
                 return True
 
@@ -246,6 +249,16 @@ class SnapshotCache:
                 rel_target = resolved_target.relative_to(self.workspace_root).as_posix()
                 fingerprints[f"path::{rel_target}"] = self._stat_fingerprint(resolved_target)
 
+        return fingerprints
+
+    def _validation_input_fingerprints(self) -> Dict[str, Fingerprint]:
+        """Fingerprint non-document files that change snapshot validation."""
+        fingerprints: Dict[str, Fingerprint] = {}
+        for path in concept_vocabulary_paths(self.workspace_root):
+            relative = path.resolve(strict=False).relative_to(self.workspace_root)
+            fingerprints[f"validation-input::{relative.as_posix()}"] = (
+                self._stat_fingerprint(path)
+            )
         return fingerprints
 
     def _resolve_describes_target(self, raw_target: str) -> Optional[Path]:

@@ -310,14 +310,12 @@ def _scan_dirs(ctx: MaintainContext) -> List[Path]:
 
 
 def _scan_docs(ctx: MaintainContext) -> List[Path]:
-    context_map = (ctx.repo_root / ctx.config.paths.context_map).resolve()
     scope = resolve_scan_scope(ctx.options.scope, ctx.config.scanning.default_scope)
     return collect_scoped_documents(
         ctx.repo_root,
         ctx.config,
         scope,
         base_skip_patterns=list(ctx.config.scanning.skip_patterns),
-        extra_skip_patterns=[str(context_map)],
     )
 
 
@@ -674,7 +672,7 @@ def _task_check_links(ctx: MaintainContext) -> TaskResult:
         config=ctx.config,
         doc_paths=doc_paths,
         scope=scope,
-        include_body=False,
+        include_body=True,
         include_external_scope_resolution=True,
         # (#135) maintain never surfaces finding.suggestions in its output, so
         # skipping suggestion generation is a free speedup with identical results.

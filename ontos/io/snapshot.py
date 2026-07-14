@@ -12,6 +12,7 @@ from ontos.core.snapshot import DocumentSnapshot, SnapshotFilters, matches_filte
 from ontos.core.graph import build_graph
 from ontos.core.validation import ValidationOrchestrator
 from ontos.io.config import load_project_config
+from ontos.io.concepts import load_known_concepts
 from ontos.io.files import load_documents
 from ontos.io.scan_scope import collect_scoped_documents, resolve_scan_scope
 from ontos.io.yaml import parse_frontmatter_content
@@ -77,17 +78,18 @@ def create_snapshot(
     # Build graph (workspace_root threaded for #117 path-fallback resolution).
     graph, _ = build_graph(filtered_docs, workspace_root=root)
 
-    # Run structural validation only (no vocabulary check).
-    # Snapshot is an IO-layer operation — vocabulary checking requires
-    # project-level config (known_concepts) which is a command-layer concern.
+    # Run the same project validation settings used by map and activation so
+    # cached/MCP counts cannot drift from command counts.
     orchestrator = ValidationOrchestrator(
         filtered_docs,
         {
+            "max_dependency_depth": config.validation.max_dependency_depth,
             "allowed_orphan_types": config.validation.allowed_orphan_types,
             "allowed_orphan_paths": config.validation.allowed_orphan_paths,
             "allowed_external_dependency_paths": (
                 config.validation.allowed_external_dependency_paths
             ),
+            "known_concepts": load_known_concepts(root),
         },
         workspace_root=root,
     )

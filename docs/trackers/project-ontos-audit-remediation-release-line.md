@@ -75,8 +75,8 @@ evidence.
 |---|---|---|---|---|---|---|
 | project-ontos-audit-serializer-corruption | #146 | v4.7.1 | **shipped / closed** — P0 serializer and canonical string-ID validation shipped from merge `19868ad` in tag `v4.7.1`. | provider-limited; strict P3 not certified; D.6 withheld | `provider_limited_fallback_complete` | 2026-07-12 |
 | project-ontos-audit-doctor-rce | #147 | v4.7.1 | **shipped / closed** — exact managed-launcher argv gate and SECURITY.md correction shipped from merge `19868ad` in tag `v4.7.1`; no product residual remains. | provider-limited, label-only; strict P3 not certified; D.6 withheld | `provider_limited_fallback_complete` | 2026-07-12 |
-| project-ontos-audit-relN-quick-wins | #148 | v5.0.1 | **open / sweep in progress** — 6 of 12 issue findings were addressed by v5.0.0; six remain for v5.0.1. Also carries two inherited #150 test-hygiene tails outside the 33-finding reconciliation. | — | — | 2026-07-13 |
-| project-ontos-audit-relN-sweep | #149 | v5.0.1 + v6.0.0 | **open / sweep in progress** — 9 of 21 issue findings are addressed on `main` (2 in v5.0.0 and seven in PR #167, merge `d6eca47`). Twelve remain: PR B implements nine patch-safe findings for v5.0.1 and is in review; `D4a-config-3` and `D4a-config-5` remain for v5.0.1; breaking `D5b-dead-code-3` remains for v6.0.0, with its 11 legacy names deprecated but not removed in PR B. Of three inherited #156 tails outside the 33-finding arithmetic, `D5a-repo-redundancy-7` shipped in PR #167 and two remain. | — | — | 2026-07-13 |
+| project-ontos-audit-relN-quick-wins | #148 | v5.0.1 | **open / sweep in progress** — 6 of 12 issue findings are landed on `main`; PR C implements the four `D1b-counts` rows for review, leaving `D4a-config-1` and `R2-testpypi-provenance-1` for PR D. PR C also retires the accepted PR B WAL/SHM flake outside the 33-finding arithmetic. Two inherited #150 test-hygiene tails remain separately tracked. | — | — | 2026-07-13 |
+| project-ontos-audit-relN-sweep | #149 | v5.0.1 + v6.0.0 | **open / sweep in progress** — 18 of 21 issue findings are landed on `main`: two in v5.0.0, seven in PR #167 (`d6eca47`), and nine in PR #168 (`f2ed48d`). `D4a-config-3` and `D4a-config-5` remain for v5.0.1; breaking `D5b-dead-code-3` remains for v6.0.0, with all 11 legacy names deprecated but not removed. Of three inherited #156 tails outside the 33-finding arithmetic, `D5a-repo-redundancy-7` is complete and two remain. | — | — | 2026-07-13 |
 | project-ontos-audit-characterization-tests | #150 | v5.0.0 | **shipped / closed** — characterization and golden safety net shipped; 1,556-test release gate passed; residual hygiene transferred to #148. | provider-limited governance waiver; current-head strict-P3/provider receipts not certified; D.6 withheld | `provider_limited_governance_waiver_released` | 2026-07-13 |
 | project-ontos-audit-parser-consolidation | #151 | v5.0.0 | **shipped / closed** — canonical fence-aware frontmatter loader and fallback-parser retirement shipped. | provider-limited governance waiver; current-head strict-P3/provider receipts not certified; D.6 withheld | `provider_limited_governance_waiver_released` | 2026-07-13 |
 | project-ontos-audit-writepath-bodyref | #152 | v5.0.0 | **shipped / closed** — surgical writes, physical link lines, and aliased/heading wikilink handling shipped. | provider-limited governance waiver; current-head strict-P3/provider receipts not certified; D.6 withheld | `provider_limited_governance_waiver_released` | 2026-07-13 |
@@ -100,24 +100,31 @@ per-deliverable-owned (F-2).
 - **Addressed by v5.0.0 (8):** `D7-cli-consistency-1`, `D3b-structure-2`,
   `D2a-write-safety-2`, `D2b-roundtrip-1`, `D2a-write-safety-7`, `D4a-config-2`,
   `D5b-dead-code-7`, and `R2-activation-version-skew-1`.
-- **Progress through PR A:** [PR #167](https://github.com/ohjonathan/Project-Ontos/pull/167)
+- **Progress through PR B:** [PR #167](https://github.com/ohjonathan/Project-Ontos/pull/167)
   merged at `d6eca479d5c5d71b2335e3ee2abad4f8d2651e3e` and resolved all seven A
-  findings. Current `main` therefore has 15 of 33 findings addressed and 18 remaining.
-- **Current release split (18):** PR B covers `B=9`, PR C covers `C=4`, and PR D
-  covers `D=4` for v5.0.1. PR E removes `E=1` in v6.0.0. PR B also adds the
-  non-closing v5.0.1 deprecation for E's 11 legacy compatibility names.
-- **PR B review state:** its nine B findings are implemented but are not counted as
-  landed until merge. After merge, the program will be 24 of 33 addressed with
-  `C=4`, `D=4`, and `E=1` remaining.
+  findings. [PR #168](https://github.com/ohjonathan/Project-Ontos/pull/168)
+  then merged at `f2ed48d8b935a486a1d09778efa345910400257b` and resolved all nine B
+  findings after independent verification. Current `main` therefore has 24 of
+  33 findings addressed and nine remaining.
+- **Current release split (9):** PR C covers `C=4` and PR D covers `D=4` for
+  v5.0.1. PR E removes `E=1` in v6.0.0. PR B added the non-closing v5.0.1
+  deprecation for E's 11 legacy compatibility names.
+- **PR C review state:** its four `D1b-counts` findings are implemented but are not
+  counted as landed until merge. After verified merge, the program will be 28 of
+  33 addressed with `D=4` and `E=1` remaining. PR C also retires the operational
+  WAL/SHM flake accepted during PR B; this does not alter the 33-finding arithmetic.
 - **Breaking compatibility row:** `D5b-dead-code-3` remains open. PR B retains all
   11 legacy names, adds the v5.0.1 callable deprecation warnings, and documents
   `PROJECT_ROOT` without an import-time warning; removal remains assigned to v6.0.0.
   The audit's original 12-name count included live, supported `resolve_config`, which
   is not deprecated or removed.
 - **Inherited cleanup tails (5 total; excluded from the 33-finding arithmetic):** PR
-  #167 completed `D5a-repo-redundancy-7`. Four remain: #148's `D6a-test-gaps-10`
-  and `D6b-test-quality-4`, plus #149's `D5a-repo-redundancy-4` and
-  `D8-docs-clarity-7`.
+  #167 completed `D5a-repo-redundancy-7`; PR C completes its residual activation
+  no-op-write sub-tail. Four original inherited rows remain: #148's
+  `D6a-test-gaps-10` and `D6b-test-quality-4`, plus #149's
+  `D5a-repo-redundancy-4` and `D8-docs-clarity-7`. The PR B WAL/SHM flake was
+  an additional operational exemption, not a sixth inherited audit row, and is
+  retired by PR C.
 - **Control plane:** `R2-control-plane-parity-1` is transferred, not completed, to #165
   (“Machine-readable audit registry and external parity gate”), covering the 91 audit
   rows plus nine R2 rows and assignment/ledger/GitHub parity validation. It is outside
@@ -165,10 +172,11 @@ per-deliverable-owned (F-2).
   [PR comment
   4963625974](https://github.com/ohjonathan/Project-Ontos/pull/163#issuecomment-4963625974).
 - The July meta-cycle remains active. At the v5.0.0 baseline, 25 reconciled findings
-  and five inherited tails remained. PR #167 has since resolved seven original
-  findings and one inherited tail, leaving 18 original findings and four inherited
-  tails open on current `main`. PR B is in review for nine of those 18;
-  `D5b-dead-code-3` remains scheduled for v6.0.0. Epic #158 remains open, and
+  and five inherited tails remained. PR #167 resolved seven original findings and
+  one inherited row; PR #168 resolved nine more original findings. Nine original
+  findings and four inherited rows remain open on current `main`; PR C implements
+  four of those original findings for review and retires the separate WAL/SHM
+  operational exemption. `D5b-dead-code-3` remains scheduled for v6.0.0. Epic #158 remains open, and
   `R2-control-plane-parity-1` remains transferred to #165 rather than complete.
 
 ## Dependency edges enforced at dispatch (kickoff §3)
@@ -213,3 +221,9 @@ per-deliverable-owned (F-2).
   for v5.0.1 plus deprecation-only preparation for `D5b-dead-code-3`; its nine findings
   are not counted as landed until merge, and the breaking removal remains deferred to
   v6.0.0. Four of five inherited tails remain.
+- 2026-07-13 — PR #168 merged as `f2ed48d` after independent verification,
+  resolving the nine B findings and advancing current `main` to 24 of 33 addressed
+  with `C=4`, `D=4`, and `E=1` remaining. PR C implemented all four
+  `D1b-counts` reconciliations for review, completed activation's residual no-op map
+  write, and retired the separately accepted portfolio WAL/SHM test flake without
+  changing the original or inherited-tail arithmetic.

@@ -1,7 +1,15 @@
+import pytest
+
 from ontos.commands.map import CompactMode, GenerateMapOptions, generate_context_map
+from ontos.core.types import ValidationErrorType
 from ontos.mcp import tools
 
-from tests.mcp_helpers import build_cache, create_empty_workspace, create_workspace
+from tests.mcp_helpers import (
+    build_cache,
+    create_empty_workspace,
+    create_workspace,
+    write_file,
+)
 
 
 def _map_config(cache):
@@ -39,3 +47,52 @@ def test_context_map_zero_document_behavior(tmp_path):
 
     assert "**Doc Count:** 0" in payload["markdown"]
     assert isinstance(payload["validation"], dict)
+
+
+@pytest.mark.parametrize(("configured_max", "expected_depth_warnings"), [(10, 0), (0, 8)])
+def test_context_map_honors_snapshot_dependency_depth(
+    tmp_path,
+    configured_max,
+    expected_depth_warnings,
+):
+    root = tmp_path / "depth-workspace"
+    root.mkdir()
+    write_file(
+        root / ".ontos.toml",
+        f"""
+        [ontos]
+        version = "4.0"
+
+        [validation]
+        max_dependency_depth = {configured_max}
+        """,
+    )
+    for index in range(9):
+        dependency = f"depends_on: [doc_{index + 1}]" if index < 8 else ""
+        write_file(
+            root / f"docs/doc_{index}.md",
+            f"""
+            ---
+            id: doc_{index}
+            type: atom
+            status: active
+            {dependency}
+            ---
+            """,
+        )
+    cache = build_cache(root)
+
+    payload = tools.context_map(cache, compact="full")
+    snapshot_depth = [
+        warning
+        for warning in cache.snapshot.validation_result.warnings
+        if warning.error_type == ValidationErrorType.DEPTH
+    ]
+    map_depth = [
+        warning
+        for warning in payload["validation"]["warnings"]
+        if warning["rule_id"] == "depth"
+    ]
+
+    assert len(snapshot_depth) == expected_depth_warnings
+    assert len(map_depth) == expected_depth_warnings

@@ -23,6 +23,7 @@ from ontos.core.warning_groups import (
     groups_to_payload,
     select_warning_records,
 )
+from ontos.io.concepts import load_known_concepts
 from ontos.io.scan_scope import resolve_scan_scope
 from ontos.io.snapshot import create_snapshot
 from ontos.mcp._types import PortfolioIndexLike
@@ -290,7 +291,11 @@ def context_map(
     markdown, validation = generate_context_map(
         cache.snapshot.documents,
         config_dict,
-        GenerateMapOptions(compact=compact_modes[compact_key]),
+        GenerateMapOptions(
+            compact=compact_modes[compact_key],
+            max_dependency_depth=cache.config.validation.max_dependency_depth,
+        ),
+        known_concepts=load_known_concepts(cache.workspace_root),
     )
     return {
         "markdown": markdown,

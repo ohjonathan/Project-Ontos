@@ -114,6 +114,37 @@ def test_collect_scoped_documents_respects_docs_path_override(tmp_path: Path):
     assert [p.name for p in files] == ["a.md"]
 
 
+def test_collect_scoped_documents_excludes_configured_context_map(tmp_path: Path):
+    config = default_config()
+    config.paths.context_map = "docs/generated-map.md"
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "a.md").write_text("# a")
+    (tmp_path / "docs" / "generated-map.md").write_text("# generated")
+
+    files = collect_scoped_documents(tmp_path, config, ScanScope.DOCS)
+
+    assert [path.name for path in files] == ["a.md"]
+
+
+def test_explicit_directory_scan_still_excludes_configured_context_map(
+    tmp_path: Path,
+):
+    config = default_config()
+    config.paths.context_map = "docs/generated-map.md"
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "a.md").write_text("# a")
+    (tmp_path / "docs" / "generated-map.md").write_text("# generated")
+
+    files = collect_scoped_documents(
+        tmp_path,
+        config,
+        ScanScope.DOCS,
+        explicit_dirs=[Path("docs")],
+    )
+
+    assert [path.name for path in files] == ["a.md"]
+
+
 def test_build_scan_scope_plan_returns_dataclass(tmp_path: Path):
     config = default_config()
     plan = build_scan_scope_plan(

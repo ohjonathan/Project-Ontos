@@ -21,6 +21,7 @@ from ontos import __version__ as ONTOS_VERSION
 from ontos.core.validation import ValidationOrchestrator
 from ontos.core.tokens import estimate_tokens, format_token_count
 from ontos.core.types import DocumentData, DocumentStatus, ValidationResult
+from ontos.io.concepts import load_known_concepts as _load_known_concepts
 from ontos.ui.json_output import ExitCode, emit_command_error, emit_command_success
 
 
@@ -189,38 +190,6 @@ def _log_date_sort_key(doc: Any) -> tuple:
         created_value if date_value else "",
         str(doc.id),
     )
-
-
-def _load_known_concepts(root: Path) -> set:
-    """Load known concept vocabulary from Common_Concepts.md.
-
-    Returns an empty set if the file doesn't exist or can't be parsed,
-    which disables vocabulary checking (structural checks still run).
-    """
-    # Check both possible locations
-    for candidate in [
-        root / ".ontos-internal" / "reference" / "Common_Concepts.md",
-        root / "docs" / "reference" / "Common_Concepts.md",
-    ]:
-        if candidate.exists():
-            try:
-                content = candidate.read_text(encoding='utf-8')
-                concepts = set()
-                # Extract concept names from the markdown table rows
-                # Format: | `concept_name` | ... |
-                for line in content.split('\n'):
-                    line = line.strip()
-                    if line.startswith('|') and '`' in line:
-                        cells = line.split('|')
-                        if len(cells) >= 2:
-                            cell = cells[1].strip()
-                            # Extract backtick-wrapped concept name
-                            if cell.startswith('`') and cell.endswith('`'):
-                                concepts.add(cell[1:-1])
-                return concepts
-            except Exception:
-                pass
-    return set()
 
 
 def generate_context_map(
@@ -1000,8 +969,10 @@ def map_command(options: MapOptions) -> int:
     # Scan using shared scope utility.
     effective_scope = resolve_scan_scope(options.scope, config.scanning.default_scope)
     skip = list(config.scanning.skip_patterns)
-    # Skip the context map itself using full resolved path
-    skip.append(str(output_path.resolve()))
+    # The configured map is excluded centrally by collect_scoped_documents.
+    # A custom --output remains command-specific and must be excluded too.
+    if options.output is not None:
+        skip.append(str(output_path.resolve()))
     doc_paths = collect_scoped_documents(
         project_root,
         config,

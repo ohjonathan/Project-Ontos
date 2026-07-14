@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from datetime import datetime, timezone
 import json
 from pathlib import Path
 import re
 import sqlite3
 import threading
-from typing import Any, Optional
+from typing import Any, Iterator, Optional
 
 from ontos.core.content_hash import compute_content_hash
 from ontos.core.errors import OntosUserError
@@ -66,7 +67,7 @@ class PortfolioIndex:
                     raise FileNotFoundError(
                         f"Read-only portfolio index not found: {self.db_path}"
                     )
-                with self._connect() as conn:
+                with self._managed_connection() as conn:
                     version = int(conn.execute("PRAGMA user_version;").fetchone()[0])
                     if version != self.SCHEMA_VERSION:
                         raise sqlite3.DatabaseError(
@@ -77,18 +78,18 @@ class PortfolioIndex:
                 return
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
             try:
-                with self._connect() as conn:
+                with self._managed_connection() as conn:
                     self._initialize_db(conn)
                     conn.execute("PRAGMA optimize = 0x10002;")
             except sqlite3.DatabaseError:
                 self._reset_db_file()
-                with self._connect() as conn:
+                with self._managed_connection() as conn:
                     self._initialize_db(conn)
                     conn.execute("PRAGMA optimize = 0x10002;")
             self._opened = True
 
     def close(self) -> None:
-        """No-op API for compatibility with context-managed callers."""
+        """Mark the index closed; operation-scoped connections close eagerly."""
         self._opened = False
 
     def rebuild_all(
@@ -107,7 +108,7 @@ class PortfolioIndex:
         )
 
         with self._write_lock:
-            with self._connect() as conn:
+            with self._managed_connection() as conn:
                 conn.execute("BEGIN IMMEDIATE;")
                 conn.execute("DELETE FROM edges;")
                 conn.execute("DELETE FROM documents;")
@@ -119,7 +120,7 @@ class PortfolioIndex:
         for project in projects:
             self._rebuild_workspace(project.slug, project.path, project=project)
 
-        with self._connect() as conn:
+        with self._managed_connection() as conn:
             conn.execute("INSERT INTO fts_content(fts_content) VALUES('optimize');")
             conn.commit()
             self._publish_read_only_snapshot(conn)
@@ -133,7 +134,7 @@ class PortfolioIndex:
     def is_workspace_stale(self, slug: str) -> bool:
         """Return True when tracked file fingerprints drift from scan_state."""
         self.open()
-        with self._connect() as conn:
+        with self._managed_connection() as conn:
             row = conn.execute(
                 """
                 SELECT p.path AS path, s.fingerprint AS fingerprint
@@ -166,7 +167,7 @@ class PortfolioIndex:
     def get_projects(self) -> list[dict[str, Any]]:
         """Return portfolio project metadata rows."""
         self.open()
-        with self._connect() as conn:
+        with self._managed_connection() as conn:
             rows = conn.execute(
                 """
                 SELECT slug, path, status, doc_count, has_ontos, has_readme,
@@ -213,7 +214,7 @@ class PortfolioIndex:
         if not sanitized_query:
             raise OntosUserError("query must be non-empty.", code="E_INVALID_QUERY")
 
-        with self._connect() as conn:
+        with self._managed_connection() as conn:
             try:
                 conn.execute("BEGIN;")
                 where = "fts_content MATCH ?"
@@ -285,7 +286,7 @@ class PortfolioIndex:
     def get_workspace_documents(self, slug: str) -> list[dict[str, Any]]:
         """Return indexed document rows for one workspace."""
         self.open()
-        with self._connect() as conn:
+        with self._managed_connection() as conn:
             rows = conn.execute(
                 """
                 SELECT
@@ -318,7 +319,7 @@ class PortfolioIndex:
         )
 
         with self._write_lock:
-            with self._connect() as conn:
+            with self._managed_connection() as conn:
                 conn.execute("BEGIN IMMEDIATE;")
                 rowids = [
                     row[0]
@@ -478,18 +479,36 @@ class PortfolioIndex:
                 uri=True,
                 timeout=self.CONNECT_TIMEOUT_SECONDS,
             )
-            conn.row_factory = sqlite3.Row
-            conn.execute("PRAGMA query_only = ON;")
-            conn.execute("PRAGMA busy_timeout = 5000;")
+            try:
+                conn.row_factory = sqlite3.Row
+                conn.execute("PRAGMA query_only = ON;")
+                conn.execute("PRAGMA busy_timeout = 5000;")
+            except Exception:
+                conn.close()
+                raise
             return conn
         conn = sqlite3.connect(
             str(self.db_path),
             timeout=self.CONNECT_TIMEOUT_SECONDS,
         )
-        conn.row_factory = sqlite3.Row
-        self._apply_pragmas(conn)
-        conn.execute("PRAGMA wal_autocheckpoint = 0;")
+        try:
+            conn.row_factory = sqlite3.Row
+            self._apply_pragmas(conn)
+            conn.execute("PRAGMA wal_autocheckpoint = 0;")
+        except Exception:
+            conn.close()
+            raise
         return conn
+
+    @contextmanager
+    def _managed_connection(self) -> Iterator[sqlite3.Connection]:
+        """Preserve transaction semantics while deterministically closing SQLite."""
+        conn = self._connect()
+        try:
+            with conn:
+                yield conn
+        finally:
+            conn.close()
 
     def _require_writable(self) -> None:
         if self.read_only:

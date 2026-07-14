@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import closing
 import sqlite3
 from pathlib import Path
 import threading
@@ -12,6 +13,32 @@ from ontos.mcp.portfolio import PortfolioIndex, _MAX_FTS_QUERY_LENGTH, _sanitize
 from tests.mcp_helpers import create_workspace, write_file
 
 
+@pytest.fixture(autouse=True)
+def _isolate_portfolio_resources(tmp_path, monkeypatch):
+    """Keep every index test-local and prove teardown leaves no WAL state."""
+    instances: list[PortfolioIndex] = []
+    original_init = PortfolioIndex.__init__
+
+    def _tracking_init(self, db_path, *, read_only=False):
+        resolved = Path(db_path).expanduser().resolve(strict=False)
+        resolved.relative_to(tmp_path.resolve())
+        original_init(self, resolved, read_only=read_only)
+        instances.append(self)
+
+    monkeypatch.setattr(PortfolioIndex, "__init__", _tracking_init)
+    yield
+
+    for index in reversed(instances):
+        index.close()
+
+    sidecars = sorted(
+        path.relative_to(tmp_path).as_posix()
+        for pattern in ("*-wal", "*-shm")
+        for path in tmp_path.rglob(pattern)
+    )
+    assert sidecars == [], f"portfolio SQLite sidecars leaked across test teardown: {sidecars}"
+
+
 def test_open_creates_schema_and_sets_user_version(tmp_path):
     db_path = tmp_path / "portfolio.db"
     index = PortfolioIndex(db_path)
@@ -19,7 +46,7 @@ def test_open_creates_schema_and_sets_user_version(tmp_path):
     index.open()
     index.close()
 
-    with sqlite3.connect(db_path) as conn:
+    with closing(sqlite3.connect(db_path)) as conn:
         user_version = conn.execute("PRAGMA user_version;").fetchone()[0]
         journal_mode = conn.execute("PRAGMA journal_mode;").fetchone()[0]
         table_names = {
@@ -45,7 +72,7 @@ def test_open_recovers_from_corrupt_database(tmp_path):
     index = PortfolioIndex(db_path)
     index.open()
 
-    with sqlite3.connect(db_path) as conn:
+    with closing(sqlite3.connect(db_path)) as conn:
         assert conn.execute("PRAGMA user_version;").fetchone()[0] == 1
     expected_markers = {
         wal_path: "stale wal",
@@ -353,7 +380,7 @@ def test_connect_uses_nonzero_timeout(tmp_path, monkeypatch):
 
     monkeypatch.setattr("ontos.mcp.portfolio.sqlite3.connect", recording_connect)
 
-    with index._connect() as conn:
+    with closing(index._connect()) as conn:
         conn.execute("SELECT 1;")
 
     assert isinstance(captured["timeout"], (int, float))
@@ -415,6 +442,9 @@ def test_search_fts_translates_busy_errors_to_user_error(tmp_path, monkeypatch):
     index.rebuild_workspace("workspace", workspace_root)
 
     class FakeBusyConnection:
+        def __init__(self):
+            self.closed = False
+
         def __enter__(self):
             return self
 
@@ -446,12 +476,17 @@ def test_search_fts_translates_busy_errors_to_user_error(tmp_path, monkeypatch):
         def commit():
             return None
 
-    monkeypatch.setattr(index, "_connect", lambda: FakeBusyConnection())
+        def close(self):
+            self.closed = True
+
+    fake_connection = FakeBusyConnection()
+    monkeypatch.setattr(index, "_connect", lambda: fake_connection)
 
     with pytest.raises(OntosUserError) as exc_info:
         index.search_fts("Atom", workspace="workspace", offset=0, limit=10)
 
     assert exc_info.value.code == "E_PORTFOLIO_BUSY"
+    assert fake_connection.closed is True
 
 
 def test_rebuild_workspace_keeps_fts_row_parity(tmp_path):
@@ -460,7 +495,7 @@ def test_rebuild_workspace_keeps_fts_row_parity(tmp_path):
     index = PortfolioIndex(db_path)
     index.rebuild_workspace("workspace", workspace_root)
 
-    with sqlite3.connect(db_path) as conn:
+    with closing(sqlite3.connect(db_path)) as conn:
         docs_count = conn.execute(
             "SELECT COUNT(*) FROM documents WHERE workspace = ?",
             ("workspace",),
