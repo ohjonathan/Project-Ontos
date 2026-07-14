@@ -75,7 +75,7 @@ evidence.
 |---|---|---|---|---|---|---|
 | project-ontos-audit-serializer-corruption | #146 | v4.7.1 | **shipped / closed** — P0 serializer and canonical string-ID validation shipped from merge `19868ad` in tag `v4.7.1`. | provider-limited; strict P3 not certified; D.6 withheld | `provider_limited_fallback_complete` | 2026-07-12 |
 | project-ontos-audit-doctor-rce | #147 | v4.7.1 | **shipped / closed** — exact managed-launcher argv gate and SECURITY.md correction shipped from merge `19868ad` in tag `v4.7.1`; no product residual remains. | provider-limited, label-only; strict P3 not certified; D.6 withheld | `provider_limited_fallback_complete` | 2026-07-12 |
-| project-ontos-audit-relN-quick-wins | #148 | v5.0.1 + v5.0.2 | **open / final patch pending** — all 12 original issue findings shipped through v5.0.1. The two inherited #150 test-hygiene rows, `D6a-test-gaps-10` and `D6b-test-quality-4`, are implemented for v5.0.2 and close #148 only after that patch is released and verified. | — | — | 2026-07-14 |
+| project-ontos-audit-relN-quick-wins | #148 | v5.0.1 + v5.0.2 | **shipped / closed** — all 12 original issue findings shipped through v5.0.1; inherited `D6a-test-gaps-10` and `D6b-test-quality-4` shipped in v5.0.2 from tag `61fd4bc`, completing and closing #148. | provider-limited governance waiver; strict P3 not certified; D.6 withheld | `provider_limited_governance_waiver_released` | 2026-07-14 |
 | project-ontos-audit-relN-sweep | #149 | v5.0.1 + v6.0.0 | **open / breaking follow-up** — 20 of 21 original issue findings shipped through v5.0.1. Breaking `D5b-dead-code-3` remains for v6.0.0; all 11 legacy names remain importable with their v5 deprecation path. | — | — | 2026-07-14 |
 | project-ontos-audit-characterization-tests | #150 | v5.0.0 | **shipped / closed** — characterization and golden safety net shipped; 1,556-test release gate passed; residual hygiene transferred to #148. | provider-limited governance waiver; current-head strict-P3/provider receipts not certified; D.6 withheld | `provider_limited_governance_waiver_released` | 2026-07-13 |
 | project-ontos-audit-parser-consolidation | #151 | v5.0.0 | **shipped / closed** — canonical fence-aware frontmatter loader and fallback-parser retirement shipped. | provider-limited governance waiver; current-head strict-P3/provider receipts not certified; D.6 withheld | `provider_limited_governance_waiver_released` | 2026-07-13 |
@@ -92,9 +92,9 @@ per-deliverable-owned (F-2).
 
 ### #148/#149 reconciliation and active tail
 
-- **Program state through v5.0.1:** 10/12 issues are closed: #146/#147 in
-  v4.7.1 and #150–#157 in v5.0.0. #148 and #149 remain open for the documented
-  v5.0.2 test-hygiene and v6.0.0 breaking-removal follow-ups.
+- **Program state through v5.0.2:** 11/12 issues are closed: #146/#147 in
+  v4.7.1, #150–#157 in v5.0.0, and #148 across v5.0.1/v5.0.2. Only #149
+  remains open for the documented v6.0.0 breaking-removal follow-up.
 - **Reconciliation baseline:** independent verification against
   `main@3dd093e51e1125147e3533352abda75d7ae1d489` found 8 of 33 findings addressed
   by v5.0.0 and reproduced each of the 25 remaining findings.
@@ -131,8 +131,9 @@ per-deliverable-owned (F-2).
   The audit's original 12-name count included live, supported `resolve_config`, which
   is not deprecated or removed.
 - **Inherited cleanup tails:** the generated-artifact and WAL/SHM tails shipped
-  in #167/#169. #148's two test-hygiene rows are the v5.0.2 follow-up and do not
-  alter the 32-of-33 arithmetic.
+  in #167/#169. #148's two test-hygiene rows shipped in v5.0.2 through
+  [PR #171](https://github.com/ohjonathan/Project-Ontos/pull/171) and do not alter
+  the 32-of-33 arithmetic.
 - **Control plane:** `R2-control-plane-parity-1` is transferred, not completed, to #165
   (“Machine-readable audit registry and external parity gate”), covering the 91 audit
   rows plus nine R2 rows and assignment/ledger/GitHub parity validation. It is outside
@@ -216,6 +217,31 @@ per-deliverable-owned (F-2).
   patch and #149's v6.0.0 breaking path removal; transferred control-plane issue
   #165 remains outside the #148/#149 arithmetic.
 
+### v5.0.2 release outcome
+
+- [PR #171](https://github.com/ohjonathan/Project-Ontos/pull/171) merged to
+  `main` as `61fd4bc8d9f7549bdfb2ac0c34490333d12bfc92`. The annotated
+  `v5.0.2` tag targets that exact commit.
+- Maintainer-authorized release actions ran on 2026-07-14. [GitHub release
+  v5.0.2](https://github.com/ohjonathan/Project-Ontos/releases/tag/v5.0.2)
+  and [PyPI 5.0.2](https://pypi.org/project/ontos/5.0.2/) are published; a
+  clean external virtual environment installed and reported 5.0.2.
+- The tagged [publish workflow
+  29346309272](https://github.com/ohjonathan/Project-Ontos/actions/runs/29346309272)
+  passed tests, tag/version validation, immutable bundle construction, exact
+  TestPyPI publication and verification, and trusted PyPI publication.
+- The new bounded `download-testpypi-wheel` gate passed its first live run on
+  **attempt 1 of 12**. It downloaded the exact hash-locked 5.0.2 wheel, verified
+  its bytes against the immutable manifest, installed without index fallback,
+  and smoke-tested outside the checkout before production publication. No retry
+  was needed; fail-closed hash/provenance behavior remained active.
+- `D6a-test-gaps-10` and `D6b-test-quality-4` are shipped, and #148 is closed.
+  The program is complete through the patch-safe v5 release line. The only
+  remaining original finding is #149's breaking `D5b-dead-code-3` removal for
+  v6.0.0; transferred control-plane issue #165 remains outside the arithmetic.
+- Outcome remains documented provider-limited governance: strict-P3 is not
+  certified and D.6 remains withheld.
+
 ## Dependency edges enforced at dispatch (kickoff §3)
 
 - #146 and #147 are independent and dispatchable immediately (v4.7.1).
@@ -279,3 +305,11 @@ per-deliverable-owned (F-2).
   exact-artifact download/install/smoke chain and published successfully. Marked
   the v5.0.1 active code scope complete at 32 of 33 original findings, with the
   v5.0.2 test-hygiene and v6.0.0 breaking-removal follow-ups documented.
+- 2026-07-14 — PR #171 merged as `61fd4bc`, then v5.0.2 shipped from that
+  commit through annotated tag `v5.0.2`, publish workflow `29346309272`, GitHub
+  release, and PyPI. The bounded TestPyPI Simple-API download gate passed its
+  first live run on attempt 1 of 12 before exact-wheel install/smoke and
+  production publication. Shipped both inherited test-hygiene rows, closed
+  #148, and left #158 open with #149's v6.0.0 breaking removal as the sole
+  remaining original audit-tail item. Provider-limited governance and D.6
+  withholding remain unchanged.
