@@ -35,6 +35,9 @@ def test_bundler_module_all_exports_public_surface():
 def test_portfolio_config_module_all_exports_public_surface():
     assert sorted(portfolio_config_module.__all__) == sorted(
         [
+            "DEFAULT_BUNDLE_LOG_WINDOW_DAYS",
+            "DEFAULT_BUNDLE_MAX_LOGS",
+            "DEFAULT_BUNDLE_TOKEN_BUDGET",
             "PortfolioConfig",
             "PORTFOLIO_CONFIG_PATH",
             "ensure_portfolio_config",

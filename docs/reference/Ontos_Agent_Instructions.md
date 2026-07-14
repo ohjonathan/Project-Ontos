@@ -93,6 +93,13 @@ Portfolio mode adds `project_registry` and `search`. A writable server adds
 required for cross-workspace portfolio operations. A server started with
 `--read-only` does not register the five write tools.
 
+The generated `~/.config/ontos/portfolio.toml` is intentionally inert:
+`scan_roots = []`, `exclude = []`, and `registry_path = ""`. Before starting a
+writable portfolio server, configure at least one scan root or a registry;
+Ontos refuses before creating a database otherwise. Do not substitute the
+current working directory or guess a user-specific path. Read-only mode may
+consume an existing database without creating config or SQLite sidecars.
+
 Prefer MCP for structured reads when it is already configured. Use the CLI for
 repository setup, health checks, maintenance, and any workflow not represented
 by an MCP tool.
@@ -249,10 +256,12 @@ ontos consolidate --dry-run --by-age --days 30
 ontos consolidate --all --by-age --days 30
 ```
 
-`--days` has an effect only with `--by-age`. Count mode otherwise keeps the 15
-newest logs in v5.0.0; maintenance passes `[workflow].log_retention_count`
-(default 20) explicitly. Consolidation moves selected logs and records them in
-the decision-history ledger, so review the dry run first.
+`--days` has an effect only with `--by-age`. If `--count` is omitted, count
+mode uses `[workflow].log_retention_count` (normally 20); an explicit count
+wins, and `--count 0` is invalid. Consolidation moves selected logs and records
+them in the decision-history ledger, so review the dry run first. A missing or
+recognized ledger-less decision history self-heals to the canonical
+`## History Ledger` format; arbitrary malformed history still fails closed.
 
 ## Schema and re-architecture workflows
 
@@ -287,7 +296,8 @@ ontos verify --all
 
 `verify --all` is interactive. Do not combine it with JSON automation.
 `verify --portfolio` is a separate comparison of the portfolio database and
-registry, optionally limited by `--workspace-id`.
+an explicitly configured `portfolio.registry_path`, optionally limited by
+`--workspace-id`. It does not infer a registry path.
 
 ## MCP server and client setup
 

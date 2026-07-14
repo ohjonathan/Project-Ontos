@@ -196,15 +196,20 @@ v4.1 introduces a per-session SQLite portfolio index with FTS5 full-text search.
 Configure in `~/.config/ontos/portfolio.toml`:
 ```toml
 [portfolio]
-scan_roots = ["~/Dev"]
-exclude = ["~/Dev/.dev-hub", "~/Dev/archive"]
-registry_path = "~/Dev/.dev-hub/registry/projects.json"
+scan_roots = []
+exclude = []
+registry_path = ""
 
 [bundle]
 token_budget = 8000
 max_logs = 20
 log_window_days = 30
 ```
+
+The v5.0.1 code generates those neutral portfolio values. Add at least one
+scan root or a registry before starting a writable portfolio server; the empty
+config is inert and does not silently index a conventional or current-working
+directory. Existing configured files are preserved.
 
 ### Write Tools
 
@@ -216,7 +221,8 @@ All write paths (CLI and MCP) now use `workspace_lock()` with advisory flock on 
 
 ### Verify Subcommand
 
-`ontos verify --portfolio` audits portfolio consistency (slug collisions, malformed TOML).
+`ontos verify --portfolio` audits portfolio consistency (slug collisions,
+malformed TOML) and requires an explicit `portfolio.registry_path`.
 
 ### Shared Rename Orchestrator
 

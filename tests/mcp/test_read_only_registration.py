@@ -128,7 +128,6 @@ def test_read_only_portfolio_queries_existing_snapshot_without_mutation(
     state = tmp_path / "state"
     state.mkdir()
     config_path = state / "portfolio.toml"
-    config_path.write_text("[portfolio]\nscan_roots=[]\nexclude=[]\n", encoding="utf-8")
     db_path = state / "portfolio.db"
     writable = PortfolioIndex(db_path)
     try:
@@ -148,3 +147,55 @@ def test_read_only_portfolio_queries_existing_snapshot_without_mutation(
 
     after = {path.name: path.read_bytes() for path in state.iterdir() if path.is_file()}
     assert after == before
+    assert not config_path.exists()
+
+
+def test_writable_portfolio_refuses_neutral_config_before_database_creation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from ontos.core.errors import OntosUserError
+    from ontos.mcp import portfolio_config
+    from ontos.mcp import server as server_module
+
+    config_path = tmp_path / "state" / "portfolio.toml"
+    db_path = tmp_path / "state" / "portfolio.db"
+    monkeypatch.setattr(portfolio_config, "PORTFOLIO_CONFIG_PATH", config_path)
+    monkeypatch.setattr(server_module, "DEFAULT_PORTFOLIO_DB_PATH", db_path)
+
+    with pytest.raises(OntosUserError) as exc_info:
+        server_module._build_portfolio_index(read_only=False)
+
+    assert exc_info.value.code == "E_PORTFOLIO_NOT_CONFIGURED"
+    assert "portfolio.scan_roots" in str(exc_info.value)
+    assert config_path.exists()
+    assert not db_path.exists()
+    assert not db_path.with_name("portfolio.db-wal").exists()
+    assert not db_path.with_name("portfolio.db-shm").exists()
+
+
+@pytest.mark.parametrize("blank_root", ["", "   "])
+def test_writable_portfolio_refuses_blank_scan_root_before_database_creation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    blank_root: str,
+) -> None:
+    from ontos.core.errors import OntosUserError
+    from ontos.mcp import portfolio_config
+    from ontos.mcp import server as server_module
+
+    config_path = tmp_path / "state" / "portfolio.toml"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        f'[portfolio]\nscan_roots = ["{blank_root}"]\nregistry_path = ""\n',
+        encoding="utf-8",
+    )
+    db_path = tmp_path / "state" / "portfolio.db"
+    monkeypatch.setattr(portfolio_config, "PORTFOLIO_CONFIG_PATH", config_path)
+    monkeypatch.setattr(server_module, "DEFAULT_PORTFOLIO_DB_PATH", db_path)
+
+    with pytest.raises(OntosUserError) as exc_info:
+        server_module._build_portfolio_index(read_only=False)
+
+    assert exc_info.value.code == "E_PORTFOLIO_NOT_CONFIGURED"
+    assert not db_path.exists()

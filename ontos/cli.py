@@ -835,8 +835,11 @@ def _register_consolidate(subparsers, parent):
     p.add_argument(
         "--count",
         type=int,
-        default=15,
-        help="Number of newest logs to keep (default: 15)"
+        default=None,
+        help=(
+            "Number of newest logs to keep "
+            "(default: workflow.log_retention_count, normally 20)"
+        ),
     )
     p.add_argument(
         "--by-age",
@@ -1943,9 +1946,14 @@ def _cmd_verify(args) -> int:
             else:
                 print(message, file=sys.stderr)
             return int(ExitCode.USAGE)
-        registry_path = Path(config.registry_path).expanduser() if config.registry_path else (
-            Path.home() / "Dev" / ".dev-hub" / "registry" / "projects.json"
-        )
+        if not config.registry_path:
+            raise OntosUserError(
+                "Portfolio verification requires an explicit "
+                "portfolio.registry_path in "
+                "~/.config/ontos/portfolio.toml.",
+                code="E_PORTFOLIO_REGISTRY_REQUIRED",
+            )
+        registry_path = Path(config.registry_path).expanduser()
         verify_kwargs = {
             "portfolio_db_path": Path.home() / ".config" / "ontos" / "portfolio.db",
             "registry_path": registry_path,

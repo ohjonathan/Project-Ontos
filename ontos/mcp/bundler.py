@@ -12,6 +12,11 @@ from ontos.core.snapshot import DocumentSnapshot
 from ontos.core.staleness import check_staleness, parse_describes_verified
 from ontos.core.tokens import estimate_tokens
 from ontos.core.types import DocumentData
+from ontos.mcp.portfolio_config import (
+    DEFAULT_BUNDLE_LOG_WINDOW_DAYS,
+    DEFAULT_BUNDLE_MAX_LOGS,
+    DEFAULT_BUNDLE_TOKEN_BUDGET,
+)
 from ontos.mcp.tools import TYPE_RANKS
 
 __all__ = ["BundleDocument", "build_context_bundle"]
@@ -35,9 +40,9 @@ def build_context_bundle(
     workspace_root: Path,
     workspace_slug: str,
     *,
-    token_budget: int = 8000,
-    max_logs: int = 20,
-    log_window_days: int = 30,
+    token_budget: int = DEFAULT_BUNDLE_TOKEN_BUDGET,
+    max_logs: int = DEFAULT_BUNDLE_MAX_LOGS,
+    log_window_days: int = DEFAULT_BUNDLE_LOG_WINDOW_DAYS,
 ) -> dict[str, Any]:
     """Build a token-budgeted context bundle from a workspace snapshot.
 

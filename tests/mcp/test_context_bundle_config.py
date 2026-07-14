@@ -12,6 +12,7 @@ Covers:
 from __future__ import annotations
 
 from datetime import date, timedelta
+import inspect
 from pathlib import Path
 
 try:  # Python 3.11+
@@ -24,7 +25,13 @@ from ontos.io.snapshot import create_snapshot
 from ontos.mcp import tools as tool_impl
 from ontos.mcp.bundler import build_context_bundle
 from ontos.mcp.cache import SnapshotCache
-from ontos.mcp.portfolio_config import PortfolioConfig, _DEFAULT_CONFIG_TEXT
+from ontos.mcp.portfolio_config import (
+    DEFAULT_BUNDLE_LOG_WINDOW_DAYS,
+    DEFAULT_BUNDLE_MAX_LOGS,
+    DEFAULT_BUNDLE_TOKEN_BUDGET,
+    PortfolioConfig,
+    _DEFAULT_CONFIG_TEXT,
+)
 
 from tests.mcp_helpers import build_cache, create_empty_workspace, create_workspace, write_file
 
@@ -46,14 +53,38 @@ def test_portfolio_config_dataclass_defaults_match_toml_template():
     defaults = PortfolioConfig()
 
     # Bundle block.
-    assert bundle.get("token_budget") == defaults.bundle_token_budget == 8000
-    assert bundle.get("max_logs") == defaults.bundle_max_logs == 20
-    assert bundle.get("log_window_days") == defaults.bundle_log_window_days == 30
+    assert (
+        bundle.get("token_budget")
+        == defaults.bundle_token_budget
+        == DEFAULT_BUNDLE_TOKEN_BUDGET
+    )
+    assert (
+        bundle.get("max_logs")
+        == defaults.bundle_max_logs
+        == DEFAULT_BUNDLE_MAX_LOGS
+    )
+    assert (
+        bundle.get("log_window_days")
+        == defaults.bundle_log_window_days
+        == DEFAULT_BUNDLE_LOG_WINDOW_DAYS
+    )
 
     # Portfolio block scalars/lists.
     assert portfolio_block.get("scan_roots") == defaults.scan_roots
     assert portfolio_block.get("exclude") == defaults.exclude
-    assert portfolio_block.get("registry_path") == defaults.registry_path
+    assert portfolio_block.get("registry_path") == ""
+    assert defaults.registry_path is None
+
+    signature = inspect.signature(build_context_bundle)
+    assert (
+        signature.parameters["token_budget"].default
+        == DEFAULT_BUNDLE_TOKEN_BUDGET
+    )
+    assert signature.parameters["max_logs"].default == DEFAULT_BUNDLE_MAX_LOGS
+    assert (
+        signature.parameters["log_window_days"].default
+        == DEFAULT_BUNDLE_LOG_WINDOW_DAYS
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -1,25 +1,46 @@
 """Native consolidate command implementation."""
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-from ontos.core.config import ConfigError
+from ontos.core.config import ConfigError, WorkflowConfig
 from ontos.core.context import SessionContext
 from ontos.core.frontmatter import normalize_reference_list
 from ontos.io.files import find_project_root, load_documents
 from ontos.io.yaml import parse_frontmatter_content
 from ontos.ui.output import OutputHandler
 
-HISTORY_LEDGER_HEADER = '| Date | Slug | Event | Decision / Outcome |'
+HISTORY_LEDGER_HEADING = "## History Ledger"
+HISTORY_LEDGER_HEADER = (
+    "| Date | Slug | Event | Decision / Outcome | Impacts | Archive Path |"
+)
+HISTORY_LEDGER_SEPARATOR = "|:---|:---|:---|:---|:---|:---|"
+HISTORY_LEDGER_SECTION = (
+    f"{HISTORY_LEDGER_HEADING}\n\n"
+    f"{HISTORY_LEDGER_HEADER}\n"
+    f"{HISTORY_LEDGER_SEPARATOR}\n"
+)
+_GENERATED_HISTORY_MARKER = "GENERATED FILE - DO NOT EDIT MANUALLY"
+_MINIMAL_DECISION_HISTORY = (
+    "---\n"
+    "id: decision_history\n"
+    "type: strategy\n"
+    "status: active\n"
+    "depends_on: []\n"
+    "---\n\n"
+    "# Decision History\n\n"
+    "This document records consolidated session-log decisions.\n\n"
+    f"{HISTORY_LEDGER_SECTION}"
+)
 
 
 @dataclass
 class ConsolidateOptions:
     """Options for consolidate command."""
-    count: int = 15
+    count: Optional[int] = None
     by_age: bool = False
     days: int = 30
     dry_run: bool = False
@@ -58,9 +79,14 @@ def find_logs_to_consolidate(options: ConsolidateOptions, logs_dir: Path, load_r
                 continue
         return logs_to_consolidate
     else:
-        if len(all_logs) <= options.count:
+        retention_count = (
+            options.count
+            if options.count is not None
+            else WorkflowConfig().log_retention_count
+        )
+        if len(all_logs) <= retention_count:
             return []
-        return all_logs[:-options.count]
+        return all_logs[:-retention_count]
 
 
 def extract_summary(filepath: Path) -> Optional[str]:
@@ -92,69 +118,108 @@ def append_to_decision_history(
     ctx: SessionContext,
     output: OutputHandler
 ) -> bool:
-    """Append entry to the History Ledger table in decision_history.md."""
+    """Append to the canonical ledger, initializing recognized histories."""
     history_file = history_path
-    if not history_file.exists():
-        output.error(f"{history_file} not found.")
-        return False
-
-    content = history_file.read_text(encoding='utf-8')
-    if HISTORY_LEDGER_HEADER not in content:
-        output.error("decision_history.md missing History Ledger table.")
-        return False
+    if history_file.exists():
+        with history_file.open("r", encoding="utf-8", newline="") as handle:
+            content = handle.read()
+        if HISTORY_LEDGER_HEADER not in content:
+            content = _append_canonical_history_ledger(content, output)
+            if content is None:
+                return False
+    else:
+        content = _MINIMAL_DECISION_HISTORY
 
     impacts_str = ', '.join(impacts) if impacts else '—'
     safe_summary = summary.replace('|', '\\|')
     new_row = f"| {date_str} | {slug} | {event_type} | {safe_summary} | {impacts_str} | `{archive_path}` |"
-    
-    lines = content.split('\n')
-    in_history_ledger = False
-    history_ledger_end = -1
-    
-    for i, line in enumerate(lines):
-        if HISTORY_LEDGER_HEADER in line:
-            in_history_ledger = True
-            continue
-        
-        if in_history_ledger:
-            if line.strip().startswith('|'):
-                history_ledger_end = i
-            elif line.strip().startswith('##'):
-                break
-            elif not line.strip():
-                # Look ahead
-                found_header = False
-                for j in range(i + 1, min(i + 3, len(lines))):
-                    if lines[j].strip().startswith('##'):
-                        found_header = True
-                        break
-                    elif lines[j].strip():
-                        break
-                if found_header:
-                    break
 
-    if history_ledger_end == -1:
-        # Check if separator row exists
-        for i, line in enumerate(lines):
-            if HISTORY_LEDGER_HEADER in line:
-                if i + 1 < len(lines) and lines[i + 1].strip().startswith('|'):
-                    history_ledger_end = i + 1
-                    break
-
-    if history_ledger_end == -1:
-        output.error("Could not find insertion point in History Ledger table")
+    updated = _insert_history_row(content, new_row, archive_path, output)
+    if updated is None:
         return False
-
-    lines.insert(history_ledger_end + 1, new_row)
-    ctx.buffer_write(history_file, '\n'.join(lines))
+    if updated != content:
+        ctx.buffer_write(history_file, updated)
     return True
+
+
+def _append_canonical_history_ledger(
+    content: str,
+    output: OutputHandler,
+) -> Optional[str]:
+    """Append one ledger section only to a recognized decision history."""
+    if HISTORY_LEDGER_HEADING in content:
+        output.error("decision_history.md has a malformed History Ledger table.")
+        return None
+
+    has_heading = re.search(r"(?m)^# Decision History\s*$", content) is not None
+    has_identity = (
+        _GENERATED_HISTORY_MARKER in content
+        or re.search(r"(?m)^id:\s*decision_history\s*$", content) is not None
+    )
+    if not has_heading or not has_identity:
+        output.error(
+            "decision_history.md is not a recognized decision-history document; "
+            "refusing to modify it."
+        )
+        return None
+
+    if content.endswith("\n\n"):
+        separator = ""
+    elif content.endswith("\n"):
+        separator = "\n"
+    else:
+        separator = "\n\n"
+    return f"{content}{separator}{HISTORY_LEDGER_SECTION}"
+
+
+def _insert_history_row(
+    content: str,
+    new_row: str,
+    archive_path: str,
+    output: OutputHandler,
+) -> Optional[str]:
+    """Insert one row into exactly one well-formed canonical ledger."""
+    lines = content.splitlines(keepends=True)
+    heading_indices = [
+        index
+        for index, line in enumerate(lines)
+        if line.rstrip("\r\n") == HISTORY_LEDGER_HEADING
+    ]
+    header_indices = [
+        index
+        for index, line in enumerate(lines)
+        if line.rstrip("\r\n") == HISTORY_LEDGER_HEADER
+    ]
+    if len(heading_indices) != 1 or len(header_indices) != 1:
+        output.error("decision_history.md has an ambiguous History Ledger table.")
+        return None
+
+    heading_index = heading_indices[0]
+    header_index = header_indices[0]
+    if header_index <= heading_index or header_index + 1 >= len(lines):
+        output.error("Could not find insertion point in History Ledger table")
+        return None
+    if lines[header_index + 1].rstrip("\r\n") != HISTORY_LEDGER_SEPARATOR:
+        output.error("decision_history.md has a malformed History Ledger separator.")
+        return None
+
+    insertion_index = header_index + 2
+    archive_token = f"`{archive_path}`"
+    while insertion_index < len(lines):
+        stripped = lines[insertion_index].strip()
+        if not stripped.startswith("|"):
+            break
+        if archive_token in lines[insertion_index]:
+            return content
+        insertion_index += 1
+
+    newline = "\r\n" if "\r\n" in lines[header_index] else "\n"
+    lines.insert(insertion_index, f"{new_row}{newline}")
+    return "".join(lines)
 
 
 def _run_consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
     """Execute consolidate command."""
-    if not options.by_age and options.count < 1:
-        return 2, "count must be >= 1"
-
     try:
         root = find_project_root()
     except FileNotFoundError as exc:
@@ -164,6 +229,7 @@ def _run_consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
     from ontos.io.config import load_project_config
     if (root / '.ontos-internal').exists():
         # Contributor mode
+        configured_retention_count = WorkflowConfig().log_retention_count
         logs_dir = root / ".ontos-internal" / "logs"
         archive_logs_dir = root / ".ontos-internal" / "archive" / "logs"
         decision_history_path = root / ".ontos-internal" / "reference" / "decision_history.md"
@@ -175,6 +241,7 @@ def _run_consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
             return 2, f"Config error: {exc}"
         except Exception as exc:
             return 5, f"Config error: {exc}"
+        configured_retention_count = config.workflow.log_retention_count
         docs_dir_setting = str(config.paths.docs_dir).strip()
         docs_dir = root / docs_dir_setting
         from ontos.core.paths import _warn_deprecated
@@ -213,6 +280,15 @@ def _run_consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
         else:
             decision_history_path = new_history_path
 
+    effective_count = (
+        options.count
+        if options.count is not None
+        else configured_retention_count
+    )
+    if not options.by_age and effective_count < 1:
+        return 2, "count must be >= 1"
+    resolved_options = replace(options, count=effective_count)
+
     load_result = None
     if logs_dir.exists():
         load_result = load_documents(list(logs_dir.glob("*.md")), parse_frontmatter_content)
@@ -222,7 +298,11 @@ def _run_consolidate_command(options: ConsolidateOptions) -> Tuple[int, str]:
                     output.error(issue.message)
             return 5, "Document load failed"
             
-    logs_to_consolidate = find_logs_to_consolidate(options, logs_dir, load_result=load_result)
+    logs_to_consolidate = find_logs_to_consolidate(
+        resolved_options,
+        logs_dir,
+        load_result=load_result,
+    )
     if not logs_to_consolidate:
         if not options.quiet:
             output.success("Nothing to consolidate.")

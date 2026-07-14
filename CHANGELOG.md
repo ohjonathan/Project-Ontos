@@ -4,6 +4,55 @@ All notable changes to this project will be documented in this file.
 
 > For the full historical changelog with Ontos frontmatter (from v0.1.0), see [`Ontos_CHANGELOG.md`](Ontos_CHANGELOG.md).
 
+## [5.0.1] - Unreleased
+
+Release candidate completing the patch-safe audit-remediation code sweep.
+Release tags, package publication, and other release actions remain
+maintainer-owned.
+
+### Changed
+
+- **Neutral portfolio defaults (behavioral)** — newly generated
+  `~/.config/ontos/portfolio.toml` files now start with empty `scan_roots`,
+  `exclude`, and `registry_path` values. Hand-edited configs that omit those
+  keys also receive empty values instead of inheriting the former
+  machine-specific layout. A writable portfolio server refuses to create its
+  database until at least one scan root or a registry is configured;
+  read-only mode may still open an existing database without creating config
+  or SQLite sidecars. `verify --portfolio` now requires an explicit registry.
+- **Consolidation retention** — omitted `consolidate --count` now uses
+  `[workflow].log_retention_count` (normally 20), matching `maintain`.
+  An explicit `--count` still wins, `--count 0` still exits with usage code 2,
+  and age mode remains independent.
+- **Bundle defaults** — the existing 8,000-token, 20-log, and 30-day context
+  bundle defaults now come from shared named constants. Their values and
+  generated TOML bytes are unchanged.
+
+### Fixed
+
+- **Decision-history recovery** — consolidation initializes a missing
+  decision history and appends one canonical `## History Ledger` section to a
+  recognized generated/narrative history that lacks it. Repeated writes are
+  idempotent; arbitrary or malformed history files still fail closed without
+  moving logs. The scaffold template now uses the same six-column ledger.
+- **Release provenance** — the tag workflow builds one immutable wheel/sdist
+  bundle with a tag-, version-, source-, size-, kind-, filename-, and
+  SHA-256-bound manifest. TestPyPI verification checks the exact published
+  file set and hashes, downloads `ontos==<tag version>` from TestPyPI only
+  under `--require-hashes`, installs the verified wheel with `--no-deps`, and
+  asserts package and metadata versions outside the checkout. An occupied
+  TestPyPI version now fails closed; production publication remains gated on
+  successful exact-artifact verification.
+
+### Compatibility notes
+
+- The portfolio default change is intentionally inert: configure discovery
+  explicitly before the first writable portfolio run. Existing configured
+  portfolio files and databases are not rewritten or deleted.
+- The command surface, schema-4 envelope, and exit-code taxonomy remain v5
+  compatible. The deprecated v2 path aliases remain importable in 5.0.1;
+  their planned removal remains a v6.0.0 change.
+
 ## [4.7.1] - 2026-07-12
 
 Patch release stopping active frontmatter corruption and hardening local

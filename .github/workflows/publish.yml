@@ -1,8 +1,7 @@
 # .github/workflows/publish.yml
-# PyPI Publishing Workflow per Spec v1.1 Section 4
 #
-# Triggers on v* tags. Publishes to TestPyPI first, verifies install,
-# then publishes to PyPI via trusted publisher (OIDC).
+# A tag creates one immutable release bundle. Both publishers and the
+# TestPyPI verification job consume and verify those exact bytes.
 
 name: Publish to PyPI
 
@@ -13,7 +12,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write # Required for trusted publishing
 
 jobs:
   test:
@@ -30,14 +28,16 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,mcp]"
+          python -m pip install -e ".[dev,mcp]"
 
       - name: Run tests
         run: python -m pytest tests/ -v
 
-      - name: Validate version tag (m6)
+      - name: Validate version tag
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          TAG_VERSION=${GITHUB_REF#refs/tags/v}
+          TAG_VERSION=${RELEASE_TAG#v}
           PKG_VERSION=$(python -c "import ontos; print(ontos.__version__)")
           if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
             echo "ERROR: Tag version ($TAG_VERSION) does not match package version ($PKG_VERSION)"
@@ -46,7 +46,7 @@ jobs:
           echo "Version validated: $TAG_VERSION"
 
   build:
-    name: Build Distribution
+    name: Build Immutable Release Bundle
     needs: test
     runs-on: ubuntu-latest
     steps:
@@ -60,68 +60,196 @@ jobs:
       - name: Install build tools
         run: python -m pip install --upgrade pip build
 
-      - name: Build sdist and wheel
-        run: python -m build
+      - name: Build wheel and sdist
+        run: python -m build --outdir release-bundle/dist
 
-      - name: Upload distribution artifacts
+      - name: Bind bundle to tag, source, bytes, and embedded metadata
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          python scripts/release_artifacts.py create \
+            --dist-dir release-bundle/dist \
+            --manifest release-bundle/release-manifest.json \
+            --tag "$RELEASE_TAG" \
+            --source-sha "$SOURCE_SHA"
+          python scripts/release_artifacts.py verify \
+            --bundle-dir release-bundle \
+            --tag "$RELEASE_TAG" \
+            --source-sha "$SOURCE_SHA"
+
+      - name: Upload immutable release bundle
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: dist
-          path: dist/
+          name: release-bundle-${{ github.sha }}
+          path: release-bundle/
+          if-no-files-found: error
+          compression-level: 0
 
   publish-testpypi:
-    name: Publish to TestPyPI
+    name: Publish Exact Bundle to TestPyPI
     needs: build
     runs-on: ubuntu-latest
     environment: testpypi
+    permissions:
+      contents: read
+      id-token: write
     steps:
-      - name: Download distribution artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: dist
-          path: dist/
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - name: Publish to TestPyPI
-        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
-        with:
-          repository-url: https://test.pypi.org/legacy/
-          skip-existing: true  # Allow re-runs if TestPyPI already has this version
-
-  verify-testpypi:
-    name: Verify TestPyPI Install
-    needs: publish-testpypi
-    runs-on: ubuntu-latest
-    steps:
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: "3.11"
 
-      - name: Wait for TestPyPI propagation
-        run: sleep 30
+      - name: Download immutable release bundle
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-bundle-${{ github.sha }}
+          path: release-bundle/
 
-      - name: Install from TestPyPI
+      - name: Verify bundle before TestPyPI publication
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          SOURCE_SHA: ${{ github.sha }}
         run: |
-          # Install dependencies from PyPI, package from TestPyPI
-          pip install pyyaml toml  # Core dependencies
-          pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ ontos
+          python scripts/release_artifacts.py verify \
+            --bundle-dir release-bundle \
+            --tag "$RELEASE_TAG" \
+            --source-sha "$SOURCE_SHA"
 
-      - name: Verify installation
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: release-bundle/dist/
+
+  verify-testpypi:
+    name: Verify Exact TestPyPI Wheel
+    needs: publish-testpypi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: "3.11"
+
+      - name: Download immutable release bundle
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-bundle-${{ github.sha }}
+          path: release-bundle/
+
+      - name: Verify bundle and exact TestPyPI file set
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          SOURCE_SHA: ${{ github.sha }}
         run: |
-          ontos --version
-          python -c "import ontos; print(f'Ontos version: {ontos.__version__}')"
+          python scripts/release_artifacts.py verify \
+            --bundle-dir release-bundle \
+            --tag "$RELEASE_TAG" \
+            --source-sha "$SOURCE_SHA"
+          python scripts/release_artifacts.py verify-testpypi \
+            --manifest release-bundle/release-manifest.json \
+            --attempts 12 \
+            --delay 10 \
+            --timeout 15
+
+      - name: Download the hash-locked TestPyPI wheel
+        env:
+          REQUIREMENT_FILE: ${{ runner.temp }}/ontos-testpypi-requirement.txt
+          WHEEL_DIR: ${{ runner.temp }}/ontos-testpypi-wheel
+        run: |
+          python scripts/release_artifacts.py write-requirement \
+            --manifest release-bundle/release-manifest.json \
+            --output "$REQUIREMENT_FILE"
+          mkdir -p "$WHEEL_DIR"
+          python -m pip --isolated download \
+            --index-url https://test.pypi.org/simple/ \
+            --no-deps \
+            --only-binary=:all: \
+            --require-hashes \
+            --dest "$WHEEL_DIR" \
+            --requirement "$REQUIREMENT_FILE"
+          python scripts/release_artifacts.py verify-downloaded-wheel \
+            --manifest release-bundle/release-manifest.json \
+            --download-dir "$WHEEL_DIR"
+
+      - name: Install the verified wheel with no index fallback
+        env:
+          REQUIREMENT_FILE: ${{ runner.temp }}/ontos-testpypi-requirement.txt
+          VERIFY_VENV: ${{ runner.temp }}/ontos-testpypi-venv
+          WHEEL_DIR: ${{ runner.temp }}/ontos-testpypi-wheel
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python -m venv "$VERIFY_VENV"
+          "$VERIFY_VENV/bin/python" -m pip --isolated install \
+            --no-index \
+            --find-links "$WHEEL_DIR" \
+            --no-deps \
+            --only-binary=:all: \
+            --require-hashes \
+            --requirement "$REQUIREMENT_FILE"
+          "$VERIFY_VENV/bin/python" -I -c 'import importlib.metadata, os; assert importlib.metadata.version("ontos") == os.environ["RELEASE_TAG"][1:]'
+
+      - name: Install hash-locked runtime dependencies for smoke testing
+        env:
+          VERIFY_VENV: ${{ runner.temp }}/ontos-testpypi-venv
+        run: |
+          "$VERIFY_VENV/bin/python" -m pip --isolated install \
+            --no-deps \
+            --only-binary=:all: \
+            --require-hashes \
+            --requirement scripts/release-smoke-requirements.txt
+
+      - name: Smoke-test outside the checkout
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          SMOKE_DIR: ${{ runner.temp }}/ontos-release-smoke
+          VERIFY_VENV: ${{ runner.temp }}/ontos-testpypi-venv
+        run: |
+          TAG_VERSION=${RELEASE_TAG#v}
+          mkdir -p "$SMOKE_DIR"
+          cd "$SMOKE_DIR" || exit 1
+          unset PYTHONPATH
+          "$VERIFY_VENV/bin/python" -I -c 'import importlib.metadata, ontos, os; expected = os.environ["RELEASE_TAG"][1:]; assert ontos.__version__ == expected; assert importlib.metadata.version("ontos") == expected'
+          test "$("$VERIFY_VENV/bin/ontos" --version)" = "ontos $TAG_VERSION"
 
   publish-pypi:
-    name: Publish to PyPI
+    name: Publish Exact Bundle to PyPI
     needs: verify-testpypi
     runs-on: ubuntu-latest
     environment: pypi
+    permissions:
+      contents: read
+      id-token: write
     steps:
-      - name: Download distribution artifacts
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: "3.11"
+
+      - name: Download immutable release bundle
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          name: dist
-          path: dist/
+          name: release-bundle-${{ github.sha }}
+          path: release-bundle/
+
+      - name: Verify bundle before PyPI publication
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          python scripts/release_artifacts.py verify \
+            --bundle-dir release-bundle \
+            --tag "$RELEASE_TAG" \
+            --source-sha "$SOURCE_SHA"
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
+        with:
+          packages-dir: release-bundle/dist/

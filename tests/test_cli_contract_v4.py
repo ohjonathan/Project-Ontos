@@ -370,6 +370,7 @@ def test_json_workflows_force_noninteractive_options(monkeypatch, capsys) -> Non
 
     def fake_consolidate(options):
         observed["all"] = options.all
+        observed["count"] = options.count
         return 0, "done"
 
     def fake_promote(options):
@@ -383,7 +384,7 @@ def test_json_workflows_force_noninteractive_options(monkeypatch, capsys) -> Non
 
     assert _cmd_consolidate(
         Namespace(
-            count=15,
+            count=None,
             by_age=False,
             days=30,
             dry_run=False,
@@ -406,7 +407,7 @@ def test_json_workflows_force_noninteractive_options(monkeypatch, capsys) -> Non
     ) == 0
     capsys.readouterr()
 
-    assert observed == {"all": True, "yes": True}
+    assert observed == {"all": True, "count": None, "yes": True}
 
 
 def test_init_human_usage_failure_uses_stderr(monkeypatch, capsys) -> None:
