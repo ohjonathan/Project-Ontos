@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 > For the full historical changelog with Ontos frontmatter (from v0.1.0), see [`Ontos_CHANGELOG.md`](Ontos_CHANGELOG.md).
 
-## [5.0.1] - Unreleased
+## [5.0.1] - 2026-07-14
 
 Release candidate completing the patch-safe audit-remediation code sweep.
 Release tags, package publication, and other release actions remain
