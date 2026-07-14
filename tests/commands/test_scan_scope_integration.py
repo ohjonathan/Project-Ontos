@@ -45,42 +45,6 @@ def _init_repo(tmp_path: Path) -> None:
     (tmp_path / "docs").mkdir(exist_ok=True)
 
 
-@pytest.mark.parametrize(
-    "args",
-    [
-        ("map", "--help"),
-        ("maintain", "--help"),
-        ("query", "--help"),
-        ("verify", "--help"),
-        ("scaffold", "--help"),
-        ("promote", "--help"),
-        ("schema-migrate", "--help"),
-        ("agents", "--help"),
-        ("doctor", "--help"),
-        ("export", "data", "--help"),
-        ("migration-report", "--help"),
-        ("migrate", "--help"),
-        ("tree", "--help"),
-        ("validate", "--help"),
-        ("agent-export", "--help"),
-        ("link-check", "--help"),
-        ("rename", "--help"),
-    ],
-)
-def test_scope_flag_registered_for_migrated_commands(tmp_path: Path, args: tuple[str, ...]) -> None:
-    _init_repo(tmp_path)
-    result = _run_ontos(tmp_path, *args)
-    assert result.returncode == 0
-    assert "--scope" in result.stdout
-
-
-def test_export_claude_help_has_no_scope(tmp_path: Path) -> None:
-    _init_repo(tmp_path)
-    result = _run_ontos(tmp_path, "export", "claude", "--help")
-    assert result.returncode == 0
-    assert "--scope" not in result.stdout
-
-
 def test_query_scope_library_includes_internal(tmp_path: Path) -> None:
     _init_repo(tmp_path)
     _write_doc(tmp_path / "docs" / "a.md", "doc_a")

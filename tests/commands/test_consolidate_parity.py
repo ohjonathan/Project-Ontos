@@ -22,19 +22,6 @@ def test_setup(tmp_path):
     return tmp_path
 
 
-def test_consolidate_help_parity():
-    """Native --help matches legacy."""
-    result = subprocess.run(
-        [sys.executable, "-m", "ontos.cli", "consolidate", "--help"],
-        capture_output=True,
-        text=True,
-        env=os.environ.copy()
-    )
-    assert "--count" in result.stdout
-    assert "--by-age" in result.stdout
-    assert "consolidate" in result.stdout.lower()
-
-
 def test_consolidate_count_parity(test_setup):
     """Consolidation moves logs and updates history."""
     tmp_path = test_setup

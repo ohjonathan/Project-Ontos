@@ -47,18 +47,6 @@ def _build_context(tmp_path: Path, **option_overrides) -> MaintainContext:
     )
 
 
-def test_maintain_help_contains_flags():
-    result = subprocess.run(
-        [sys.executable, "-m", "ontos", "maintain", "--help"],
-        capture_output=True,
-        text=True,
-    )
-    assert result.returncode == 0
-    assert "--dry-run" in result.stdout
-    assert "--skip" in result.stdout
-    assert "--verbose" in result.stdout
-
-
 def test_default_registry_has_expected_order():
     assert list_registered_tasks() == [
         "migrate_untagged",

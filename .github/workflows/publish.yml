@@ -165,17 +165,12 @@ jobs:
           python scripts/release_artifacts.py write-requirement \
             --manifest release-bundle/release-manifest.json \
             --output "$REQUIREMENT_FILE"
-          mkdir -p "$WHEEL_DIR"
-          python -m pip --isolated download \
-            --index-url https://test.pypi.org/simple/ \
-            --no-deps \
-            --only-binary=:all: \
-            --require-hashes \
-            --dest "$WHEEL_DIR" \
-            --requirement "$REQUIREMENT_FILE"
-          python scripts/release_artifacts.py verify-downloaded-wheel \
+          python scripts/release_artifacts.py download-testpypi-wheel \
             --manifest release-bundle/release-manifest.json \
-            --download-dir "$WHEEL_DIR"
+            --requirement "$REQUIREMENT_FILE" \
+            --download-dir "$WHEEL_DIR" \
+            --attempts 12 \
+            --delay 10
 
       - name: Install the verified wheel with no index fallback
         env:

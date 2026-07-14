@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ontos"
-version = "5.0.1"
+version = "5.0.2"
 description = "Local-first documentation management for AI-assisted development"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -61,9 +61,6 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
-markers = [
-    "legacy: tests for pre-v3.0 legacy script compatibility layer (.ontos/scripts/tests/)",
-]
 
 [tool.coverage.run]
 source = ["ontos"]
