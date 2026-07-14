@@ -69,7 +69,7 @@ If you just regained context after compaction, re-read this file ({instruction_f
 {map_sync_row}| `{regenerate_command}` | {regenerate_purpose} |
 | `ontos doctor` | Health check and validation |
 | `ontos log --title "unique-session-title"` | Archive session work without overwriting an earlier log |
-| `ontos query <id>` | Find document by ID |"""
+| `ontos query --depends-on <id>` | Show dependencies for a document ID |"""
 
 
 ACTIVATION_PROTOCOL_TAIL_TEMPLATE = """## Core Invariants

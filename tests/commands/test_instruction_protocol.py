@@ -30,6 +30,11 @@ def test_render_activation_protocol_head_includes_optional_map_sync_row():
     assert "## What is Activation?" in content
     assert "| `ontos map --sync-agents` | Regenerate map + sync AGENTS.md |" in content
     assert "| `ontos agents` | Generate instruction files |" in content
+    assert (
+        "| `ontos query --depends-on <id>` | Show dependencies for a document ID |"
+        in content
+    )
+    assert "`ontos query <id>`" not in content
 
 
 def test_render_activation_protocol_head_omits_map_sync_row_when_unset():

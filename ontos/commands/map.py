@@ -8,11 +8,13 @@ Phase 2 Decomposition - Created from Phase2-Implementation-Spec.md Section 4.10
 """
 
 from __future__ import annotations
+
+import re
+import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-import sys
 from typing import Dict, List, Optional, Any, Tuple
 
 from ontos import __version__ as ONTOS_VERSION
@@ -56,6 +58,25 @@ _GENERATED_TIMESTAMP_PREFIXES = (
     "- **Last Updated:** ",
 )
 
+_RECENT_ACTIVITY_SUMMARY_LIMIT = 200
+_HTML_COMMENT_RE = re.compile(r"<!--.*?(?:-->|$)", re.DOTALL)
+_MARKDOWN_HEADING_RE = re.compile(r"^#{1,6}(?:\s|$)")
+_MARKDOWN_RULE_RE = re.compile(r"^(?:[-*_]\s*){3,}$")
+_SETEXT_HEADING_UNDERLINE_RE = re.compile(r"^(?:=+|-+)\s*$")
+_UNTOUCHED_PLACEHOLDER_LINES = frozenset(
+    {
+        "add your content here",
+        "brief description of what was done",
+        "describe the goal of this document",
+        "how the fix works",
+        "how this was tested",
+        "list of changes",
+        "tbd",
+        "todo: expand this scaffold.",
+        "what caused the issue",
+    }
+)
+
 
 def _without_generated_timestamps(content: str) -> str:
     """Normalize volatile map timestamps for semantic equality checks."""
@@ -83,20 +104,91 @@ def _write_context_map_if_changed(output_path: Path, content: str) -> bool:
     return True
 
 
-def _log_date_sort_key(doc: Any) -> tuple:
-    """Sort key for log documents: dated entries first, then undated by ID.
+def _normalize_recent_activity_summary(value: Any) -> str:
+    """Normalize and bound a Recent Activity summary for inline rendering."""
+    summary = " ".join(str(value).split())
+    if len(summary) <= _RECENT_ACTIVITY_SUMMARY_LIMIT:
+        return summary
+    return summary[: _RECENT_ACTIVITY_SUMMARY_LIMIT - 3] + "..."
 
-    Returns a tuple (priority, value) so dated and undated entries never
-    mix lexicographically. Dated entries get priority 1 (sorts higher in
-    reverse), undated get priority 0.
+
+def _is_untouched_body_placeholder(line: str) -> bool:
+    """Return whether a body line is generated scaffolding rather than content."""
+    normalized = line.strip().casefold()
+    if normalized in _UNTOUCHED_PLACEHOLDER_LINES:
+        return True
+    return bool(
+        re.fullmatch(r"\[(?:placeholder|tbd|todo)\]", normalized)
+        or re.fullmatch(r"\{\{?(?:placeholder|tbd|todo)\}\}?", normalized)
+    )
+
+
+def _extract_recent_activity_summary(doc: Any) -> str:
+    """Extract the bounded one-line summary shown in Recent Activity.
+
+    An explicit, non-null frontmatter ``summary`` is authoritative, including
+    an intentionally empty string. Otherwise, use the first substantive body
+    paragraph after removing comments and skipping headings, Markdown rules,
+    and untouched generated placeholders.
+    """
+    frontmatter = getattr(doc, "frontmatter", {}) or {}
+    if "summary" in frontmatter and frontmatter["summary"] is not None:
+        return _normalize_recent_activity_summary(frontmatter["summary"])
+
+    body = str(getattr(doc, "content", "") or "")
+    body = _HTML_COMMENT_RE.sub("", body)
+    paragraph_lines: List[str] = []
+    body_lines = body.splitlines()
+    for index, raw_line in enumerate(body_lines):
+        line = raw_line.strip()
+        if not line:
+            if paragraph_lines:
+                break
+            continue
+        if (
+            _MARKDOWN_HEADING_RE.match(line)
+            or _MARKDOWN_RULE_RE.fullmatch(line)
+            or _SETEXT_HEADING_UNDERLINE_RE.fullmatch(line)
+        ):
+            if paragraph_lines:
+                break
+            continue
+        next_line = body_lines[index + 1].strip() if index + 1 < len(body_lines) else ""
+        if _SETEXT_HEADING_UNDERLINE_RE.fullmatch(next_line):
+            if paragraph_lines:
+                break
+            continue
+        if _is_untouched_body_placeholder(line):
+            if paragraph_lines:
+                break
+            continue
+        paragraph_lines.append(line)
+
+    if paragraph_lines:
+        return _normalize_recent_activity_summary(" ".join(paragraph_lines))
+
+    return "No summary"
+
+
+def _log_date_sort_key(doc: Any) -> tuple:
+    """Sort logs by ``date``, then ``created``, then document ID.
+
+    Callers sort this key in reverse so the newest effective date comes first.
+    ``created`` orders explicit-date ties and becomes the chronological fallback
+    for logs without ``date``; ID is the deterministic final fallback.
 
     Used by _generate_tier1_summary() and _generate_tiered_compact_output()
     to ensure consistent log ordering.
     """
     date_str = doc.frontmatter.get("date")
-    if date_str:
-        return (1, str(date_str))
-    return (0, doc.id)
+    created_str = doc.frontmatter.get("created")
+    date_value = str(date_str).strip() if date_str is not None else ""
+    created_value = str(created_str).strip() if created_str is not None else ""
+    return (
+        date_value or created_value,
+        created_value if date_value else "",
+        str(doc.id),
+    )
 
 
 def _load_known_concepts(root: Path) -> set:
@@ -294,7 +386,7 @@ def _generate_tier1_summary(
     log_lines = ["### Recent Activity"]
     log_docs = [d for d in docs.values() if _val(d.type) == "log"]
     
-    # Sort by date frontmatter (falling back to ID) — shared helper
+    # Sort by date, then created, then ID — shared helper
     log_docs_sorted = sorted(log_docs, key=_log_date_sort_key, reverse=True)[:3]
 
     if log_docs_sorted:
@@ -302,11 +394,7 @@ def _generate_tier1_summary(
         log_lines.append("|-----|--------|---------|")
         for doc in log_docs_sorted:
             status = doc.status.value
-            summary = doc.frontmatter.get("summary", "No summary")
-            if summary is None:
-                summary = "No summary"
-            if not isinstance(summary, str):
-                summary = str(summary)
+            summary = _extract_recent_activity_summary(doc)
             # B3: Escape pipes and remove newlines in summary
             summary_escaped = _escape_markdown_table_cell(summary).replace("\n", " ")
             log_lines.append(f"| {doc.id} | {status} | {summary_escaped} |")

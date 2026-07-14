@@ -1,7 +1,8 @@
 """Tests for export command (Phase 4)."""
 
-from pathlib import Path
+import os
 import re
+from pathlib import Path
 
 import pytest
 
@@ -80,6 +81,20 @@ class TestExportCommand:
 
         assert exit_code == 0
         assert (tmp_path / "CLAUDE.md").read_text() == CLAUDE_MD_TEMPLATE
+
+    def test_force_skips_unchanged_claude_rewrite(self, tmp_path, monkeypatch):
+        """Forced CLAUDE.md regeneration should preserve an unchanged file."""
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
+        claude_path = tmp_path / "CLAUDE.md"
+        claude_path.write_text(CLAUDE_MD_TEMPLATE, encoding="utf-8")
+        os.utime(claude_path, ns=(1_000_000_000, 1_000_000_000))
+
+        exit_code, message = _run_export_command(ExportOptions(force=True))
+
+        assert exit_code == 0
+        assert message == f"Unchanged {claude_path}"
+        assert claude_path.stat().st_mtime_ns == 1_000_000_000
 
     def test_overwrites_with_force_preserves_user_custom(self, tmp_path, monkeypatch):
         """Should preserve USER CUSTOM section on forced overwrite."""
