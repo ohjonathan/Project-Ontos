@@ -78,7 +78,9 @@ v6 path removal or performing release actions.
 - 135 focused regressions passed before adversarial review; follow-up CRLF and
   blank-root regressions passed with the exact doctor 12-check tripwire.
 - Complete suite: 1,631 passed.
-- Ontos activation: 222 documents, zero load issues, zero errors, and zero
+- The v5.0.1 small/medium golden baselines were recaptured with the canonical
+  capture command; the standalone golden comparison passed.
+- Ontos activation: 223 documents, zero load issues, zero errors, and zero
   warnings after vocabulary correction.
 - Wheel/sdist build, immutable manifest create/verify, `twine check`, Linux
   dependency-hash download, and a non-editable outside-checkout wheel smoke
