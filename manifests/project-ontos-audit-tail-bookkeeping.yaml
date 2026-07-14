@@ -1,0 +1,213 @@
+manifest_version: "2.0.1"
+id: project-ontos-audit-tail-bookkeeping
+slug: project-ontos-audit-tail-bookkeeping
+summary: "Reconcile the public audit-remediation ledger and GitHub issue custody before the remaining v5.0.1 sweep."
+
+lifecycle_mode: framework lifecycle
+deliverable_type: closeout-proof
+user_facing: true
+fallback_evidence_mode: strict_p3
+require_lifecycle_dispatch_bundles: true
+strict_p3_required_phases: ["B.1", "D.2", "D.5"]
+
+owners: ["Project Ontos Maintainers"]
+authorship:
+  deliverable_author_families: [codex]
+  structural_orchestrator_families: [codex]
+
+implementation_sequencing:
+  mode: code-first-user-gated
+  user_gate_ref: "Maintainer instruction in this Codex task: PLEASE IMPLEMENT THIS PLAN"
+  implementation_ref: "codex/audit-tail-bookkeeping from origin/main@3dd093e; lifecycle reviews bind the completed Phase 0 diff"
+  rationale: "The maintainer approved a decision-complete bookkeeping patch and requested review of the resulting public ledger and GitHub state."
+
+scope:
+  allowed_paths:
+    - "docs/trackers/project-ontos-audit-remediation-release-line.md"
+    - "docs/trackers/project-ontos-audit-tail-bookkeeping.md"
+    - "docs/specs/project-ontos-audit-tail-bookkeeping-spec.md"
+    - "docs/retros/project-ontos-audit-tail-bookkeeping-retro.md"
+    - "manifests/project-ontos-audit-tail-bookkeeping.yaml"
+    - "Ontos_Context_Map.md"
+    - "AGENTS.md"
+    - ".cursorrules"
+    - "CLAUDE.md"
+  allowed_path_patterns:
+    - "docs/reviews/project-ontos-audit-tail-bookkeeping/**"
+    - "docs/logs/*audit-tail-bookkeeping*.md"
+  composition_targets:
+    - path: "docs/reviews/2026-07-02-fable-repo-audit.md"
+      rationale: "Read-only source for the original finding assignments and reconciliation evidence."
+      shares_with_deliverable_id: "project-ontos-audit-remediation-2026-07"
+  forbidden_paths:
+    - "ontos/"
+    - "tests/"
+    - ".github/"
+    - "pyproject.toml"
+    - "docs/releases/"
+    - "docs/reference/"
+    - ".llm-dev/framework/"
+    - ".venv/"
+    - "dist/"
+    - "build/"
+  forbidden_symbols: []
+  cardinality_assertions:
+    - name: "Ledger records ten of twelve issues shipped"
+      command: "grep -c '10/12 issues shipped' docs/trackers/project-ontos-audit-remediation-release-line.md"
+      expect: "gte:1"
+    - name: "Ledger records the eight-addressed and twenty-five-remaining split"
+      command: "${ONTOS_PYTHON} -c 'from pathlib import Path; s=Path(\"docs/trackers/project-ontos-audit-remediation-release-line.md\").read_text(); assert \"8 of 33\" in s and \"25\" in s and \"v5.0.1\" in s'"
+      expect: "exit-0"
+  cleanliness:
+    pathspecs: []
+    exclude_pathspecs: []
+
+artifacts:
+  spec: "docs/specs/project-ontos-audit-tail-bookkeeping-spec.md"
+  family_verdict: "docs/reviews/project-ontos-audit-tail-bookkeeping/<phase>-<family>-<role>.md"
+  canonical_verdict: "docs/reviews/project-ontos-audit-tail-bookkeeping/<phase>-verdict.md"
+  product_verdict: "docs/reviews/project-ontos-audit-tail-bookkeeping/<phase>-<family>-product.md"
+  fix_summary: "docs/reviews/project-ontos-audit-tail-bookkeeping/D.4-fix-summary.md"
+  verification: "docs/reviews/project-ontos-audit-tail-bookkeeping/D.5-<family>-verifier.md"
+  final_approval: "docs/reviews/project-ontos-audit-tail-bookkeeping/final-approval.md"
+  retro: "docs/retros/project-ontos-audit-tail-bookkeeping-retro.md"
+
+model_assignments:
+  - phase: "A"
+    assignments: {codex: spec-author}
+  - phase: "B.1"
+    assignments: {claude: adversarial, gemini: alignment, glm: peer}
+  - phase: "B.1"
+    assignments: {claude: product}
+  - phase: "B.2"
+    assignments: {claude: alignment, gemini: peer, glm: adversarial}
+  - phase: "B.2"
+    assignments: {claude: product}
+  - phase: "B.3"
+    assignments: {codex: meta-consolidator}
+  - phase: "C"
+    assignments: {codex: implementation-author}
+  - phase: "D.1"
+    assignments: {claude: peer}
+  - phase: "D.2"
+    assignments: {claude: peer, gemini: adversarial, glm: alignment}
+  - phase: "D.2"
+    assignments: {claude: product}
+  - phase: "D.3"
+    assignments: {codex: meta-consolidator}
+  - phase: "D.4"
+    assignments: {codex: fix-author}
+  - phase: "D.5"
+    assignments: {claude: verifier, gemini: verifier, glm: verifier}
+  - phase: "D.6"
+    assignments: {codex: final-approval}
+  - phase: "E"
+    assignments: {codex: retro}
+
+cli_capability_matrix:
+  codex: {shell: true, git: true, test_runner: true, doc_index: true}
+  claude: {shell: true, git: true, test_runner: true, doc_index: true}
+  gemini:
+    shell: false
+    git: false
+    test_runner: false
+    doc_index: true
+    evidence_cap: static-inspection
+    writes_files_non_interactively: false
+  glm: {shell: true, git: true, test_runner: true, doc_index: true}
+
+smoke_checks:
+  - phase: "C"
+    checks:
+      - name: "Complete Ontos suite"
+        command: "PYTHONPATH=. ${ONTOS_PYTHON} -m pytest -q"
+        expect: "exit-0"
+      - name: "Document graph is valid"
+        command: "${ONTOS_PYTHON} -m ontos link-check --no-orphans --quiet"
+        expect: "exit-0"
+  - phase: "D.5"
+    checks:
+      - name: "Post-review complete suite"
+        command: "PYTHONPATH=. ${ONTOS_PYTHON} -m pytest -q"
+        expect: "exit-0"
+
+regression_guards: []
+sibling_deliverable_ids: []
+review_rounds: []
+reviewer_family_substitutes: []
+consolidation_mode: fast-path
+self_review_caveats:
+  - family: codex
+    phases: ["D.3"]
+    rationale: "Codex implements the approved bookkeeping patch and only consolidates external review evidence; D.5 remains assigned to non-author families."
+
+lifecycle_receipt_inventory_path: "docs/reviews/project-ontos-audit-tail-bookkeeping/lifecycle-receipt-inventory.yaml"
+required_dispatch_bundles:
+  - phase: "B.1"
+    intent_path: "docs/reviews/project-ontos-audit-tail-bookkeeping/B.1-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-tail-bookkeeping/B.1-dispatch-result.yaml"
+  - phase: "B.2"
+    intent_path: "docs/reviews/project-ontos-audit-tail-bookkeeping/B.2-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-tail-bookkeeping/B.2-dispatch-result.yaml"
+  - phase: "D.2"
+    intent_path: "docs/reviews/project-ontos-audit-tail-bookkeeping/D.2-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-tail-bookkeeping/D.2-dispatch-result.yaml"
+  - phase: "D.5"
+    intent_path: "docs/reviews/project-ontos-audit-tail-bookkeeping/D.5-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-audit-tail-bookkeeping/D.5-dispatch-result.yaml"
+
+merge_authority:
+  mode: recommendation_only
+
+cross_repo_dependencies: []
+historical_receipt_gaps: []
+gate_only_invariants: []
+convergence_metrics: []
+
+gate_env:
+  - name: ONTOS_PYTHON
+    description: "Python interpreter with the repository's development and test dependencies installed."
+    example: "ONTOS_PYTHON=.venv/bin/python"
+    required: true
+    scope: both
+
+gate_prerequisites:
+  - id: G-test-1
+    category: test
+    description: "Proof test: the complete Ontos suite passes after bookkeeping changes."
+    verification: {command: "PYTHONPATH=. ${ONTOS_PYTHON} -m pytest -q", expect: "exit-0"}
+  - id: G-scope-1
+    category: scope
+    description: "Zero product-code proof: no runtime, test, workflow, or package metadata files changed."
+    verification: {command: "git diff --name-only origin/main -- ontos tests .github pyproject.toml", expect: "empty"}
+  - id: G-cardinality-1
+    category: cardinality
+    description: "Live-doc reconciliation records 10/12 shipped, 8 of 33 addressed, 25 remaining, and v5.0.1."
+    verification: {command: "${ONTOS_PYTHON} -c 'from pathlib import Path; s=Path(\"docs/trackers/project-ontos-audit-remediation-release-line.md\").read_text(); assert all(x in s for x in (\"10/12 issues shipped\", \"8 of 33\", \"25\", \"v5.0.1\"))'", expect: "exit-0"}
+  - id: G-verdict-1
+    category: verdict-presence
+    description: "Canonical B.3/D.3 verdicts and three D.5 verifier artifacts exist."
+    verification: {command: "test -f docs/reviews/project-ontos-audit-tail-bookkeeping/B.3-verdict.md && test -f docs/reviews/project-ontos-audit-tail-bookkeeping/D.3-verdict.md && test \"$(find docs/reviews/project-ontos-audit-tail-bookkeeping -name 'D.5-*-verifier.md' | wc -l | tr -d ' ')\" = 3", expect: "exit-0"}
+  - id: G-blocker-1
+    category: blocker-closure
+    description: "No preserved blocker remains in the canonical D.3 verdict."
+    verification: {command: "test -f docs/reviews/project-ontos-audit-tail-bookkeeping/D.3-verdict.md && ! grep -q 'status: preserved' docs/reviews/project-ontos-audit-tail-bookkeeping/D.3-verdict.md", expect: "exit-0"}
+  - id: G-branch-1
+    category: branch
+    description: "Branch remains based on the current origin/main review baseline."
+    verification: {command: "test \"$(git merge-base origin/main HEAD)\" = \"$(git rev-parse origin/main)\"", expect: "exit-0"}
+
+tracker:
+  path: "docs/trackers/project-ontos-audit-tail-bookkeeping.md"
+  columns: [phase, owner, status, artifact, evidence, timestamp]
+
+branch_map:
+  default: "codex/audit-tail-bookkeeping"
+
+references:
+  - path: "docs/trackers/project-ontos-audit-remediation-release-line.md"
+    relevance: "Live O4 ledger being corrected."
+  - path: "docs/reviews/2026-07-02-fable-repo-audit.md"
+    relevance: "Original finding inventory and issue assignments."
+
+watch_item: "This slice may reconcile documentation and GitHub custody only. Any product-code, test, workflow, package metadata, release, merge, tag, or publication mutation is a blocker."
