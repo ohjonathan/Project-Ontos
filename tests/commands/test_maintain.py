@@ -22,6 +22,7 @@ from ontos.commands.maintain import (
     _task_curation_stats,
     _task_promote_check,
     _task_review_proposals,
+    _task_sync_agents,
     list_registered_tasks,
     maintain_command,
 )
@@ -238,6 +239,40 @@ def test_agents_staleness_condition_only_runs_when_stale(tmp_path, monkeypatch):
     should_run, reason = _condition_agents_stale(ctx)
     assert should_run is False
     assert "up to date" in reason.lower()
+
+
+def test_sync_agents_noop_clears_mtime_staleness_without_rewriting(
+    tmp_path, monkeypatch
+):
+    """A semantic no-op acknowledges fresh inputs without changing AGENTS bytes."""
+    _init_project(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    ctx = _build_context(tmp_path)
+    agents_path = tmp_path / "AGENTS.md"
+    map_path = tmp_path / "Ontos_Context_Map.md"
+    logs_dir = tmp_path / "docs" / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    map_path.write_text("# map", encoding="utf-8")
+    log_path = logs_dir / "2026-02-10_test.md"
+    log_path.write_text("# log", encoding="utf-8")
+
+    from ontos.core.instruction_artifacts import generate_agents_content
+
+    content = generate_agents_content()
+    agents_path.write_text(content, encoding="utf-8")
+    os.utime(agents_path, (100, 100))
+    os.utime(map_path, (200, 200))
+    os.utime(log_path, (150, 150))
+    os.utime(tmp_path / ".ontos.toml", (120, 120))
+    assert _condition_agents_stale(ctx)[0] is True
+
+    result = _task_sync_agents(ctx)
+
+    assert result.status == "success"
+    assert result.message.startswith("Unchanged ")
+    assert agents_path.read_text(encoding="utf-8") == content
+    assert not (tmp_path / "AGENTS.md.bak").exists()
+    assert _condition_agents_stale(ctx)[0] is False
 
 
 def test_check_links_task_reports_broken_dependencies(tmp_path):

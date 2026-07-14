@@ -4,3 +4,7 @@ docs/reviews/project-ontos-v4-7-1-hotfix/.prompts/* -whitespace
 docs/reviews/project-ontos-v4-7-1-hotfix/.route-attestation/* -whitespace
 docs/reviews/project-ontos-v4-7-1-hotfix/*.md -whitespace
 docs/reviews/project-ontos-v4-7-1-hotfix/*.yaml -whitespace
+
+# The context map is fully generated; instruction artifacts preserve user-authored sections.
+# Resolve map conflicts by regenerating after the merge. Do not configure a merge driver.
+Ontos_Context_Map.md linguist-generated=true

@@ -138,25 +138,9 @@ def test_map_sync_agents_flag(tmp_path, monkeypatch):
 
 def test_tier1_token_capping(mock_docs):
     """Tier 1 should be truncated if it exceeds limit (simulated)."""
-    # Create very large summary to trigger capping
-    large_summary = "A" * 4000
-    mock_docs["arch_1"].frontmatter["summary"] = large_summary
-    mock_docs["ref_1"].frontmatter["summary"] = large_summary
-    
-    # Add more logs with recent dates so they sort above existing fixture logs
-    for i in range(10, 20):
-        log_id = f"log_large_{i}"
-        mock_docs[log_id] = DocumentData(
-            id=log_id,
-            filepath=Path(f"logs/{log_id}.md"),
-            type=DocumentType.LOG,
-            status=DocumentStatus.ACTIVE,
-            frontmatter={"summary": large_summary, "date": f"2026-02-{i:02d}"},
-            content=large_summary,
-            depends_on=[]
-        )
-
-    config = {"project_name": "Test Project", "version": "3.2"}
+    # Recent Activity summaries are capped independently at 200 characters,
+    # so use an oversized project name to exercise the section-level budget.
+    config = {"project_name": "P" * 9000, "version": "3.2"}
     options = GenerateMapOptions()
     
     content, _ = generate_context_map(mock_docs, config, options)

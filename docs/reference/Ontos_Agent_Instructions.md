@@ -7,404 +7,359 @@ depends_on: [ontos_manual]
 
 # Ontos Agent Instructions
 
-> **v4.7:** All CLI commands use `ontos <command>` (package installed via pip).
-> Agents can also connect via MCP server (`ontos serve`) for native integration — up to 18 tools including 5 write tools and portfolio search.
-> `ontos retrofit --obsidian` is the CLI write path for landing computed `tags` and `aliases` into on-disk frontmatter for Obsidian.
-> Use `python3 -m ontos <command>` if not installed globally.
-> See [Ontos Manual](Ontos_Manual.md) for details.
+This is the executable runbook for agents working in an Ontos v5 project.
+Use the repository's `AGENTS.md`, `CLAUDE.md`, or `.cursorrules` first when one
+is present; those files can add project-specific instructions. The complete
+human reference is the [Ontos Manual](Ontos_Manual.md).
 
-## Commands
+## Runtime selection
 
-### "Initialize Ontos" (New Projects)
+Use the runtime selected by the repository instructions. In the absence of a
+project-specific rule:
 
-For projects without Ontos:
+1. Prefer an executable repository runtime such as
+   `./.venv/bin/python -m ontos`.
+2. Otherwise use `python3 -m ontos` when the module is installed.
+3. Otherwise use the `ontos` executable on `PATH`.
+4. If a candidate fails or reports an incompatible version, try each remaining
+   candidate once. Do not let a stale global executable shadow a working
+   repository installation.
+
+The examples below use `ontos`. Substitute the selected runtime verbatim.
+
+## Mandatory activation
+
+Run activation before project work:
+
+```bash
+ontos activate
+```
+
+Then:
+
+1. Treat `usable` as a clean activation.
+2. Treat `usable_with_warnings` as usable context. Read task-critical files
+   directly and inspect warnings relevant to the task.
+3. Stop when activation is `not_usable`; read the reported configuration,
+   project-root, or document-load error instead of guessing.
+4. Read the Tier 1 section of the configured context map, normally
+   `Ontos_Context_Map.md`.
+5. Select only the documents relevant to the request and follow their
+   `depends_on` edges upward as needed.
+6. Confirm the loaded IDs: `Loaded: [id1, id2]`.
+
+Useful activation diagnostics:
+
+```bash
+ontos activate --json
+ontos activate --warnings summary
+ontos activate --warnings full --limit 20
+ontos activate --warning-rule orphan
+ontos activate --scope library
+```
+
+`--scope docs` scans the configured documentation roots. `--scope library`
+also scans `.ontos-internal`. A command-line scope overrides
+`[scanning].default_scope` in `.ontos.toml`.
+
+Re-run activation after context compaction, after a large branch change, or
+whenever the project structure, document count, or current context is unclear.
+
+## MCP activation
+
+When an MCP host exposes Ontos tools, call `activate` before any other Ontos
+tool. A pre-activation read still works but includes `_ontos_warning`; treat it
+as a reminder to activate, not as project context.
+
+Use the read tools as follows:
+
+| Tool | Use |
+|---|---|
+| `activate` | Establish activation state and load IDs and warnings |
+| `list_validation_warnings` | Page complete warning records by rule or severity |
+| `workspace_overview` | Get key documents and graph statistics |
+| `context_map` | Get the rendered context narrative |
+| `get_document` | Read one document by ID or path |
+| `list_documents` | Browse documents by type or status |
+| `export_graph` | Return a structured graph; file export requires writable mode |
+| `query` | Inspect one document's dependencies and dependents |
+| `health` | Inspect server, cache, and index freshness |
+| `refresh` | Force a snapshot rebuild after bulk changes |
+| `get_context_bundle` | Build a token-budgeted context package |
+
+Portfolio mode adds `project_registry` and `search`. A writable server adds
+`scaffold_document`, `log_session`, `session_end`, `promote_document`, and
+`rename_document`. `workspace_id` is optional in a single-workspace server and
+required for cross-workspace portfolio operations. A server started with
+`--read-only` does not register the five write tools.
+
+Prefer MCP for structured reads when it is already configured. Use the CLI for
+repository setup, health checks, maintenance, and any workflow not represented
+by an MCP tool.
+
+## Core invariants
+
+- Never edit the generated context map manually. Run `ontos map`.
+- Never hand-edit generated instruction protocol text. Put durable local rules
+  inside the preserved `USER CUSTOM` block and regenerate.
+- Dry-run a mutation when the command supports it. Apply only when the user has
+  authorized the write.
+- Read a command's error and help before changing course. Do not invent flags.
+- Keep document IDs unique and stable. Use `ontos rename`, not a search-and-
+  replace, when an ID must change.
+- Treat parse failures, duplicate IDs, unsafe paths, and unsupported schemas as
+  blockers for write operations.
+
+## Command quick reference
+
+Global `--json` and `--quiet`/`-q` work before or after a subcommand. Use
+`ontos --help` and `ontos <command> --help` for the authoritative parser.
+
+| Task | Command |
+|---|---|
+| Activate | `ontos activate` |
+| Generate the map | `ontos map` |
+| Generate map and sync an existing `AGENTS.md` | `ontos map --sync-agents` |
+| Diagnose the project | `ontos doctor` |
+| Validate all references | `ontos link-check` |
+| List document IDs | `ontos query --list-ids` |
+| Show a document's dependencies | `ontos query --depends-on <id>` |
+| Show its dependents | `ontos query --depended-by <id>` |
+| Search a concept | `ontos query --concept <tag>` |
+| Find stale documents | `ontos query --stale <days>` |
+| Archive the session | `ontos log --title "unique-session-title"` |
+| Generate agent instructions | `ontos agents --force` |
+| Generate all instruction files | `ontos export --all --force` |
+
+Query requires an explicit selector such as `--depends-on` or `--depended-by`;
+positional document IDs are unsupported.
+
+## Initialize a project
+
+Run inside a Git repository:
+
 ```bash
 ontos init
 ```
 
-Creates the full directory structure (`docs/kernel/`, `strategy/`, `product/`, `atom/`, etc.) and configuration.
+Initialization writes `.ontos.toml`, creates the configured docs hierarchy and
+logs directory, generates the context map and `AGENTS.md`, and offers to install
+pre-commit and pre-push shims. It does not install a repository copy of Ontos.
 
-**With existing markdown files:**
+For existing Markdown:
+
 ```bash
-ontos init --scaffold    # Auto-add metadata to docs/
-ontos init --no-scaffold # Skip scaffold prompt
+ontos init --scaffold
+ontos init --no-scaffold
+ontos init --skip-hooks
 ```
 
-### "Ontos" via MCP (v4.0)
+`--scaffold` is an explicit write to untagged files under docs scope. Use
+`--force` only when overwriting an existing configuration or Ontos-managed
+hooks is intentional; non-Ontos hooks are otherwise preserved.
 
-If the IDE supports MCP and the Ontos server is configured:
+## Map, inspect, and validate
 
-1. The IDE connects to `ontos serve` automatically on startup
-2. Call `activate` first; it marks the MCP session activated and returns status, loaded IDs, and grouped warning summaries (v4.7) — page full warning records with `list_validation_warnings` when needed
-3. Use `workspace_overview` to get project orientation (key documents, graph stats)
-4. Use `get_document` to read specific documents by ID
-5. Use `context_map` for the full context narrative
-6. Use `query` to explore dependencies for a single document
-
-If a read tool is used before `activate`, the server includes `_ontos_warning` in that response. Treat `usable_with_warnings` as actionable context; only stop when activation reports no usable context. **MCP vs CLI:** MCP tools return structured JSON and support live cache invalidation. Use MCP when available; fall back to CLI when MCP is not configured.
-
-**Core tools:**
-
-| Tool | Purpose |
-|------|---------|
-| `activate` | Mandatory best-effort session activation |
-| `workspace_overview` | Project orientation (key docs, stats, warnings) |
-| `context_map` | Full context map (supports compact modes) |
-| `get_document` | Read one document by ID or path |
-| `list_documents` | Browse documents with type/status filters |
-| `list_validation_warnings` | Page full validation warning records by rule/severity (v4.7) |
-| `export_graph` | Structured graph export |
-| `query` | Dependency details for one document |
-| `health` | Server health and index freshness |
-| `refresh` | Force cache rebuild after bulk changes |
-| `get_context_bundle` | Token-budgeted context bundle for a workspace |
-
-**Portfolio tools (v4.1, requires `--portfolio` flag):**
-
-| Tool | Purpose |
-|------|---------|
-| `project_registry` | Inventory of all known workspaces |
-| `search` | FTS5 full-text search across workspaces |
-
-**Write tools (v4.1, mutable mode only):**
-
-| Tool | Purpose |
-|------|---------|
-| `scaffold_document` | Create a new markdown file with scaffold frontmatter |
-| `log_session` | Create a dated session log |
-| `session_end` | Create a structured session-end log |
-| `promote_document` | Change curation level without moving the file |
-| `rename_document` | Rename an ID across all referencing files |
-
-### "Start MCP Server" (v4.0)
 ```bash
-ontos serve                    # Serve current directory
-ontos serve --workspace /path  # Serve specific workspace
-ontos serve --read-only        # Omit write tools from the server
+ontos map
+ontos map --strict
+ontos map --compact tiered
+ontos map --filter 'type:strategy'
+ontos doctor --verbose
+ontos doctor --frontmatter
+ontos link-check --summary
+ontos link-check --limit 20
 ```
-Starts a stdio MCP server. Configure in your IDE's MCP settings. Requires `pip install 'ontos[mcp]'`.
 
-### "Ontos" (Activate via CLI)
-1. Run `ontos activate` or `ontos activate --json`
-2. If activation reports warnings, continue with task-critical direct reads
-3. Read map, identify relevant IDs for user's request
-4. **Check consolidation status (prompted/advisory modes only):**
-   - Context map generation now shows consolidation warning when needed
-   - In automated mode, consolidation happens automatically on commit
-5. Read ONLY those files
-6. print("Loaded: [id1, id2]")
+`map` writes the configured context-map path. `--output` selects another path;
+`--sync-agents` refreshes an existing `AGENTS.md`. `link-check` scans both
+frontmatter and body references by default. Use `--frontmatter-only` only when
+body references are intentionally out of scope, and `--no-orphans` only when
+orphan findings are intentionally excluded.
 
-### "Query Ontos"
-1. `ontos query --depends-on [id]` (Check dependencies)
-2. `ontos query --concept [tag]` (Find by concept)
-3. `ontos query --stale 30` (Find stale docs)
+## Create and curate documents
 
-### "Archive Ontos" (End Session)
+Scaffold and retrofit are dry-run-first:
 
-**Step 1: Check for auto-generated log first (v2.4)**
 ```bash
-ontos log --enhance
+ontos scaffold
+ontos scaffold docs/feature.md --apply
+ontos stub --goal "Describe the payment flow" --type product
+ontos stub --goal "Describe the API" --type atom --output docs/atom/api.md
+ontos promote --check
+ontos promote docs/feature.md
+ontos retrofit --obsidian
+ontos retrofit --obsidian --apply
 ```
 
-Exit codes:
-- `0` — Auto-generated log found, displayed for enrichment
-- `1` — No auto-generated log found, proceed to Step 2
-- `2` — Log already enriched (status: active), nothing to do
+`stub` takes flags, not a positional output path. Use `--output` to choose the
+file. `retrofit --obsidian` computes `tags` and `aliases`; it does not rename IDs
+or modify document bodies.
 
-**Step 2a: If --enhance found a log (exit 0)**
-1. Read the displayed log content
-2. Fill in Goal, Key Decisions, Alternatives Considered
-3. Add relevant concepts (check `Common_Concepts.md`)
-4. Verify impacts are correct
-5. Change `status: auto-generated` to `status: active`
-6. Commit the enriched log
+## Rename safely
 
-**Step 2b: If no auto-generated log (exit 1)**
-1. Run: `ontos log -e <type> -s "Agent Name"`
-2. Read generated log and fill in sections
-3. Commit
-
-Event types: `feature`, `fix`, `refactor`, `exploration`, `chore`, `decision`
-
-**Pre-push blocking:** In `prompted` mode, push fails without archived session. In `automated` mode, logs are created automatically.
-
-**RULE:** Never use `git push --no-verify` without explicit user approval.
-
-### "Curate Ontos" (v2.9)
-1. `ontos scaffold` — Preview scaffolds for untagged files
-2. `ontos scaffold --apply` — Create Level 0 scaffolds
-3. `ontos stub --goal "..." --type product` — Create Level 1 stub
-4. `ontos promote --check` — Check for documents ready to promote
-5. `ontos promote <file>` — Interactive promotion to Level 2
-
-### "Maintain Ontos" (Weekly)
-1. `ontos maintain`
-2. This runs nine tasks:
-   - Migrate untagged files (includes scaffold)
-   - Regenerate context map
-   - Run health checks (`ontos doctor`)
-   - Report curation stats (L0/L1/L2)
-   - Report documents ready for promotion (`ontos promote --check`, ready count)
-   - Consolidate old logs (if `AUTO_CONSOLIDATE=True`)
-   - Review draft proposals (reports candidates for manual graduation)
-   - Validate dependency links
-   - Sync `AGENTS.md` (if stale)
-3. Fix any errors reported
-4. Commit context map if changed
-
-### "Update Ontos"
-1. `ontos update`
-2. `ontos migrate --check` (Check for schema updates)
-
-### "Install Ontos" (v2.9.3+)
-For fresh installations:
 ```bash
-curl -sO https://raw.githubusercontent.com/ohjonathan/Project-Ontos/v2.9.4/install.py
-python3 install.py
+ontos rename old_id new_id
+ontos rename old_id new_id --apply
 ```
-The installer verifies SHA256 checksums before extraction.
 
-### "Upgrade Ontos" (v2.9.3+)
-For existing installations:
+The default is a plan. Apply requires a safe workspace state and updates the
+document ID plus frontmatter and body references as one transaction. If a prior
+rename was interrupted, allow Ontos to run its scoped recovery before retrying.
+
+## End a session
+
+Create a unique log:
+
 ```bash
-python3 install.py --upgrade --latest
+ontos log --title "audit-tail-docs" --event-type chore --source "Codex"
 ```
-Config customizations are automatically preserved during upgrade.
 
-### "Create Scaffold" (v2.9.1+)
-Auto-scaffold untagged markdown files:
-1. `ontos scaffold --dry-run` — Preview changes
-2. `ontos scaffold --apply` — Apply scaffolds (L0)
-3. Review and promote scaffolds to L1/L2
+Valid documented event types are `feature`, `fix`, `refactor`, `exploration`,
+`chore`, `decision`, and `release`. Read the new file and complete the sections
+that explain goal, decisions, alternatives, impacts, and testing. Ontos creates
+logs exclusively: if the date-and-title slug already exists, choose a different
+title rather than overwriting history.
 
-### "Create Stub" (v2.9.1+)
-Create minimal L1 documents (goal only):
+On a writable MCP server, prefer `session_end` for the same structured fields.
+On a read-only server, use the CLI.
+
+Session logging has no enhancement subcommand or legacy workflow-mode preset.
+Git hooks do not create or enrich session logs.
+
+## Maintenance and consolidation
+
 ```bash
-ontos stub docs/feature.md
+ontos maintain --dry-run
+ontos maintain
+ontos maintain --skip consolidate_logs
 ```
 
-### "Promote Document" (v2.9.1+)
-Elevate curation level:
-1. `ontos promote docs/feature.md` — L0→L1 or L1→L2
-2. Fill in required fields for target level
-3. Re-run promote after editing
+Maintenance orchestrates nine registered tasks: `migrate_untagged`,
+`regenerate_map`, `health_check`, `curation_stats`, `promote_check`,
+`consolidate_logs`, `review_proposals`, `check_links`, and `sync_agents`.
+`--skip` is repeatable or comma-separated.
 
-### "Check Schema Migration" (v2.9.0+)
-Check documents for schema updates:
+Run consolidation explicitly when the user intends to archive logs:
+
 ```bash
-ontos migrate --check
+ontos consolidate --dry-run --count 20
+ontos consolidate --all --count 20
+ontos consolidate --dry-run --by-age --days 30
+ontos consolidate --all --by-age --days 30
 ```
 
-### "Verify Ontos" (v2.7)
-Mark documentation as current after reviewing described atoms:
-1. `ontos verify <path>` — Single file
-2. `ontos verify --all` — Interactive: all stale docs
+`--days` has an effect only with `--by-age`. Count mode otherwise keeps the 15
+newest logs in v5.0.0; maintenance passes `[workflow].log_retention_count`
+(default 20) explicitly. Consolidation moves selected logs and records them in
+the decision-history ledger, so review the dry run first.
 
-**When to verify:**
-- After updating code that a document describes
-- When Archive Ontos shows staleness warnings
-- When context map Section 5 shows stale documents
+## Schema and re-architecture workflows
 
-### "Retrofit Obsidian Frontmatter" (v4.3)
-Use this when the user wants on-disk `tags:` and `aliases:` updated for Obsidian browsing:
+These commands have distinct purposes:
 
-1. `ontos retrofit --obsidian` — Dry-run preview
-2. Review inserts, replaces, removes, and warnings
-3. `ontos retrofit --obsidian --apply` — Only when the user explicitly wants writes
-4. `ontos retrofit --obsidian --scope library` — Include `.ontos-internal` when requested
-
-**Rules:**
-- Dry-run is the default
-- `--apply` requires clean git and aborts on blocking warnings
-- Use `retrofit` to sync frontmatter, not to rename IDs or change document bodies
-
-
-## Type Hierarchy
-
-| Type | Rank | Depends On |
-|------|------|-----------|
-| kernel | 0 | nothing |
-| strategy | 1 | kernel |
-| product | 2 | kernel, strategy |
-| atom | 3 | kernel, strategy, product, atom |
-| log | 4 | uses `impacts`, not `depends_on` |
-
-Rule: Dependencies flow DOWN (atom → product → strategy → kernel).
-
-## Validation Errors
-
-| Error | Fix |
-|-------|-----|
-| `[BROKEN LINK]` | Create referenced doc or remove from depends_on |
-| `[CYCLE]` | Remove one dependency in the loop |
-| `[ORPHAN]` | Add to another doc's depends_on |
-| `[ARCHITECTURE]` | Lower-rank can't depend on higher-rank |
-| `[STALE]` | Document's `describes` targets were modified after `describes_verified` date. Run `ontos_verify.py` |
-
-
-## Historical Recall
-
-The `archive/` directory is excluded from the Context Map to save tokens.
-
-To understand rationale behind past decisions:
-
-1. **Read** `docs/strategy/decision_history.md`
-2. **Locate** the relevant entry by date, slug, or impacted document
-3. **Retrieve** — You are authorized to read the file at the Archive Path, even though it's not in the Context Map
-
-
-## Proposal Awareness (v2.6+)
-
-### Finding Proposals
-Proposals live in `strategy/proposals/`. Check for:
-- **Draft proposals** — In progress, may be discussed in context
-- **Active proposals** — Approved, should be in `strategy/` (not `proposals/`)
-
-### Reviewing a Proposal
-When user asks to review a proposal:
-1. Read the proposal document
-2. Identify the problems it solves
-3. Evaluate against existing architecture
-4. Suggest improvements or identify risks
-
-### Recalling Rejected Ideas
-Rejected proposals are **excluded by default** to save tokens. To recall:
 ```bash
-ontos map --include-rejected
+# Inspect or add explicit ontos_schema fields
+ontos schema-migrate --check
+ontos schema-migrate --dry-run
+ontos schema-migrate --apply
+
+# Analyze portability for a codebase re-architecture
+ontos migration-report
+ontos migrate --out-dir migration/
 ```
 
-**Why rejected proposals matter:**
-- Avoid re-analyzing the same ideas
-- Understand why something wasn't done
-- Revisit if circumstances change
+`schema-migrate` is the document-schema command and requires exactly one mode.
+`migrate` is a convenience export: it creates `snapshot.json` and
+`analysis.md`; it does not modify document schemas. Schema inspection belongs
+to `schema-migrate --check`.
 
-### Creating New Proposals
-When user wants to propose something:
-1. Create in `strategy/proposals/` with `status: draft`
-2. Link to relevant strategy docs via `depends_on`
-3. Include clear problem statement and proposed solution
+## Verify documentation currency
 
-### Graduating Proposals (v2.6.1)
-When a proposal is implemented:
+Use `describes` to associate an Ontos document with source paths, then mark it
+reviewed after checking those sources:
 
-**Automatic detection:** Archive Ontos detects implementation based on:
-- Branch name matches proposal version (e.g., `feat/v2.6-*`)
-- Session impacts a proposal document
-
-**Graduation prompt:**
-```
-💡 Detected: This session may implement proposal 'v2_6_proposals'
-   (Branch matches version 2.6)
-   Graduate to strategy/? [y/N]: y
-
-   ✅ Graduated: v2_6_proposals_and_tooling.md
-      proposals/v2.6/ → strategy/v2.6/
-      Status: draft → active
+```bash
+ontos verify docs/reference/api.md
+ontos verify docs/reference/api.md --date 2026-07-13
+ontos verify --all
 ```
 
-**Maintain Ontos fallback:** If graduation was missed, Maintain Ontos reports draft proposals that match the current Ontos version for manual graduation.
+`verify --all` is interactive. Do not combine it with JSON automation.
+`verify --portfolio` is a separate comparison of the portfolio database and
+registry, optionally limited by `--workspace-id`.
 
-**Example:**
-```
-User: "Why did we choose OAuth2?"
+## MCP server and client setup
 
-Agent:
-1. Reads decision_history.md
-2. Finds: "2025-12-10 | auth-migration | Chose OAuth2..."
-3. Reads .ontos-internal/archive/logs/2025-12-10_auth-migration.md
-4. Responds with sourced explanation
-```
+The MCP extra is required:
 
-**Rule:** Only read archived files explicitly listed in `decision_history.md` or requested by the user.
-
----
-
-## Auto-Generated Logs (v2.4)
-
-In `automated` mode, logs are created automatically on push with `status: auto-generated`.
-
-**Identifying auto-generated logs:**
-```yaml
----
-status: auto-generated  # ← Needs enrichment
-branch: feat/my-feature
----
+```bash
+pip install 'ontos[mcp]'
+ontos serve --workspace . --read-only
 ```
 
-**Session Appending:** Multiple pushes on the same branch in one day append to the same log file. This prevents "ghost log" pollution.
+Managed client installation is available for Antigravity and Cursor:
 
-**Enrichment workflow:**
-1. Run `--enhance` to find the log
-2. Fill in the human context (Goal, Decisions, Alternatives)
-3. Change status to `active`
-4. Commit
-
-**Lint warnings:** The context map generator flags auto-generated logs:
-```
-[LINT] log_20251215_feature: Auto-generated log needs enrichment
+```bash
+ontos mcp install --client antigravity
+ontos mcp install --client cursor --scope project
+ontos mcp uninstall --client cursor --scope project
 ```
 
----
+Generate, but do not write, complete configs for additional supported client
+formats:
 
-## Tagging Discipline (v3.0 Readiness)
-
-Quality tagging now enables intelligent querying later.
-
-### Concepts
-
-1. **Check first:** Read `docs/reference/Common_Concepts.md`
-2. **Prefer existing:** Use standard vocabulary over synonyms
-3. **Be specific:** 2-4 concepts per log, not 10 vague ones
-4. **Be consistent:** If you used `auth` before, don't switch to `authentication`
-
-**Example:**
-```yaml
-# Good
-concepts: [auth, api]
-
-# Bad - too many, inconsistent vocabulary
-concepts: [authentication, login, oauth, jwt, security, backend, api-design]
+```bash
+ontos mcp print-config --client claude-code
+ontos mcp print-config --client codex
+ontos mcp print-config --client vscode
 ```
 
-### Impacts
+Managed install, uninstall, and doctor checks are POSIX-only. On Windows, use
+`print-config` and update the client manually. Generated server entries are
+read-only by default; `--write-enabled` opts into write tools.
 
-1. **Never empty:** Every session impacts *something* — find it
-2. **Use suggestions:** Run `ontos_end_session.py --suggest-impacts`
-3. **Include indirect:** If you modified code that `api_spec.md` documents, include `api_spec`
-4. **Think broadly:** Design discussions impact strategy docs, not just atoms
+## Installation and upgrade
 
-**Example:**
-```yaml
-# Good - specific and complete
-impacts: [auth_flow, api_spec, user_model]
+Install with pipx or pip, not a downloaded legacy installer:
 
-# Bad - lazy or incomplete
-impacts: []
+```bash
+pipx install ontos
+# or
+python3 -m pip install ontos
 ```
 
-### Alternatives Considered
+Upgrade the same environment that runs Ontos:
 
-1. **Always fill:** Document what you *didn't* do
-2. **Include rationale:** "Rejected X because Y"
-3. **Name names:** "Considered Firebase, PostgreSQL, SQLite" not "considered options"
-4. **Be honest:** If you didn't consider alternatives, say "No alternatives evaluated"
-
-**Example:**
-```markdown
-## 3. Alternatives Considered
-- Considered Firebase Auth — rejected due to vendor lock-in concerns
-- Considered session-based auth — rejected, need stateless for horizontal scaling
-- Evaluated Auth0 — too expensive for current stage
+```bash
+pipx upgrade ontos
+# or
+python3 -m pip install --upgrade ontos
 ```
 
-## Changelogs
+For a pipx installation that needs MCP extras, use:
 
-- `Ontos_CHANGELOG.md` — Only for Ontos tooling changes
-- `CHANGELOG.md` — For project using Ontos (use `--changelog` flag)
+```bash
+pipx install --force 'ontos[mcp]'
+```
 
-## Context Selection
+After an upgrade, restart long-lived MCP hosts so they spawn the new server,
+then verify with `ontos --version`, `ontos doctor`, and `ontos map`. Existing v4
+documents and `.ontos.toml` files load in v5; no one-time data conversion is
+required. Automation consuming JSON must follow the v5 envelope and exit-code
+contract described in the Manual.
 
-1. Start with IDs matching user's request
-2. Follow `depends_on` chains upward
-3. Stop at kernel or sufficient context
-4. Prefer fewer, more relevant docs
+Ontos has no CLI self-update command or downloaded-installer upgrade workflow;
+upgrade the package through pipx or pip.
+
+## Context selection
+
+1. Start with IDs that directly match the user's request.
+2. Follow `depends_on` toward foundational context.
+3. Load the smallest set that resolves the task.
+4. Use `docs` scope unless internal library documents are relevant.
+5. Use the decision-history ledger to locate archived rationale, then read only
+   the cited archive paths needed for the question.
+
+For the authoritative ontology, statuses, and dependency rules, read
+[Ontos Ontology Specification](ontology_spec.md).

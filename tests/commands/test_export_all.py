@@ -40,6 +40,14 @@ def test_export_all_generates_three_artifacts(tmp_path: Path) -> None:
     assert (tmp_path / "AGENTS.md").exists()
     assert (tmp_path / ".cursorrules").exists()
     assert (tmp_path / "CLAUDE.md").exists()
+    for path in (
+        tmp_path / "AGENTS.md",
+        tmp_path / ".cursorrules",
+        tmp_path / "CLAUDE.md",
+    ):
+        content = path.read_text(encoding="utf-8")
+        assert "ontos query --depends-on <id>" in content
+        assert "ontos query <id>" not in content
 
 
 def test_export_all_json_envelope_and_failures(tmp_path: Path) -> None:
@@ -54,3 +62,19 @@ def test_export_all_json_envelope_and_failures(tmp_path: Path) -> None:
     assert payload["status"] == "error"
     assert payload["result"]["exit_category"] == "usage"
     assert payload["data"]["artifacts"]["agents_bundle"]["created"] is False
+
+
+def test_export_all_json_reports_unchanged_artifacts_as_not_created(tmp_path: Path) -> None:
+    _init_project(tmp_path)
+    first = _run_ontos(tmp_path, "export", "--all")
+    assert first.returncode == 0
+
+    second = _run_ontos(tmp_path, "--json", "export", "--all", "--force")
+
+    assert second.returncode == 0
+    payload = json.loads(second.stdout)
+    artifacts = payload["data"]["artifacts"]
+    assert artifacts["agents_bundle"]["created"] is False
+    assert artifacts["claude"]["created"] is False
+    assert "Unchanged" in artifacts["agents_bundle"]["message"]
+    assert artifacts["claude"]["message"].startswith("Unchanged ")

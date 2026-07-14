@@ -30,9 +30,9 @@ This document provides a tiered index of the knowledge graph for AI orientation.
 ### Recent Activity
 | Log | Status | Summary |
 |-----|--------|---------|
-| log_20250301_complete | active | No summary |
-| log_20250215_rejected | active | No summary |
-| log_20250201_security | active | No summary |
+| log_20250301_complete | active | Finalize Feature C. |
+| log_20250215_rejected | active | Evaluate GraphQL as alternative. |
+| log_20250201_security | active | Implement security measures. |
 | ... and 2 more logs | | |
 
 ### Key Documents

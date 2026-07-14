@@ -30,7 +30,7 @@ This document provides a tiered index of the knowledge graph for AI orientation.
 ### Recent Activity
 | Log | Status | Summary |
 |-----|--------|---------|
-| log_20250101_initial_setup | active | No summary |
+| log_20250101_initial_setup | active | Set up the project structure. |
 
 ### Key Documents
 - `mission` (2 dependents) — .ontos-internal/kernel/mission.md

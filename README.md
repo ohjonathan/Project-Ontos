@@ -636,3 +636,5 @@ You can use, modify, distribute, and build commercial products on Ontos. The req
 ### Contributing
 
 Issues and PRs welcome. If you're planning something substantial, open an issue first so we can align on direction.
+
+Start with the contributor-facing [Ontos architecture](docs/reference/Architecture.md) for package boundaries, data flow, safe writes, extension points, and testing.
