@@ -19,7 +19,7 @@ concepts:
 | -A.proposal | proposal-reviewer:glm | pending | `docs/reviews/project-ontos-v5-0-3-log-paths/pre-a-proposal-verdict.md` | Awaiting an independent Template 16 decision on the proposal | |
 | A | spec-author:codex | blocked | `docs/specs/project-ontos-v5-0-3-log-paths-spec.md` | Blocked until the exact non-author verdict `Proceed to Phase A`; future branch and immutable base SHA are not yet created | |
 | B.1 | external board + Product | not started | family and Product verdicts | Starts only after an approved Phase A specification | |
-| B.2 | external board + Product | not started | family and Product verdicts | Starts only if the B.1 review loop requires it | |
+| B.2 | external board + Product | not started | family and Product verdicts | Mandatory second design review for this user-facing child; starts after B.1 findings are resolved and ready for independent confirmation | |
 | B.3 | meta-consolidator | not started | canonical specification verdict | No specification review evidence exists | |
 | C | implementation-author:codex | not started | scoped implementation | No implementation is authorized by this scaffold | |
 | D.1 | peer reviewer | not started | review artifact | Awaiting implementation | |

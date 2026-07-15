@@ -1,0 +1,349 @@
+[0m
+> build · glm-5.2
+[0m
+[0m$ [0mgit log --oneline -10
+41f0893 docs: regenerate context map for repository
+2286d33 docs: scaffold six remediation children
+c4607f0 docs: prepare six-way remediation split review
+bd04620 docs: archive PR 179 merge
+b2e0e0e Merge pull request #179 from <redacted:secret>
+20ab329 docs: address GLM proposal review feedback
+3065d76 docs: propose v5 remediation release plan
+7d07556 Merge pull request #172 from ohjonathan/codex/release-v5.0.2
+3315411 docs: record the v5.0.2 release
+61fd4bc Merge pull request #171 from ohjonathan/codex/v5.0.2-audit-tail
+[0m
+[0m$ [0mgit rev-parse HEAD && echo "---STATUS---" && git status --porcelain && echo "---BRANCH---" && git rev-parse --abbrev-ref HEAD
+41f08938bcc90cf07ac862b460101147e1f555f0
+---STATUS---
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+---BRANCH---
+codex/v5-remediation-child-scaffolding
+[0m
+[0m$ [0montos activate 2>&1 || python3 -m ontos activate 2>&1
+Activation status: usable
+Map: refreshed
+Docs scanned: 247
+Documents loaded: 247
+Issues: load=0, validation_errors=0, validation_warnings=0
+Recommended agent action: continue
+Loaded: ['ontos_manual', 'project_ontos_audit_remediation_release_line_tracker', 'project_ontos_v5_remediation_release_plan_proposal', 'project-ontos-v5-0-0-spec', 'ontology_spec']
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m
+[0m$ [0mls -la <redacted:secret>/
+total 96
+drwxr-xr-x@ 10 jonathanoh  wheel    320 Jul 14 20:00 .
+drwxr-xr-x@ 12 jonathanoh  wheel    384 Jul 14 19:34 ..
+drwxr-xr-x@  6 jonathanoh  wheel    192 Jul 14 20:36 .prompts
+drwxr-xr-x@  6 jonathanoh  wheel    192 Jul 14 20:36 .raw
+-rw-r--r--@  1 jonathanoh  wheel   2051 Jul 14 20:26 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   3973 Jul 14 20:23 phase-0-live-issue-audit.md
+-rw-r--r--@  1 jonathanoh  wheel   1799 Jul 14 20:26 pre-a-glm-dispatch-intent.yaml
+-rw-r--r--@  1 jonathanoh  wheel   4132 Jul 14 19:54 pre-a-glm-dispatch-result.yaml
+-rw-r--r--@  1 jonathanoh  wheel   5279 Jul 14 20:32 pre-a-glm-template16-validation.md
+-rw-r--r--@  1 jonathanoh  wheel  17843 Jul 14 19:52 pre-a-proposal-verdict.md
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m✱ [0mGlob "<redacted:secret>.*.md"[90m 0 matches[0m
+[0m✱ [0mGlob "<redacted:secret>.*"[90m 0 matches[0m
+[0m
+[0m$ [0mls -la <redacted:secret>/ && echo "---RAW---" && ls -la <redacted:secret>/
+total 48
+drwxr-xr-x@  6 jonathanoh  wheel   192 Jul 14 20:36 .
+drwxr-xr-x@ 10 jonathanoh  wheel   320 Jul 14 20:00 ..
+-rw-r--r--@  1 jonathanoh  wheel  6205 Jul 14 20:32 phase-0-glm-governance-review.prompt.md
+-rw-r--r--@  1 jonathanoh  wheel  3105 Jul 14 19:47 pre-a-glm-proposal-review.prompt.md
+-rw-r--r--@  1 jonathanoh  wheel  6205 Jul 14 20:36 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  3105 Jul 14 19:49 <redacted:secret>
+---RAW---
+total 72
+drwxr-xr-x@  6 jonathanoh  wheel    192 Jul 14 20:36 .
+drwxr-xr-x@ 10 jonathanoh  wheel    320 Jul 14 20:00 ..
+-rw-r--r--@  1 jonathanoh  wheel    546 Jul 14 20:36 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   4060 Jul 14 20:36 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel  19378 Jul 14 19:54 <redacted:secret>
+-rw-r--r--@  1 jonathanoh  wheel   4151 Jul 14 19:54 <redacted:secret>
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>
+[0m→ [0mRead <redacted:secret>[90m [offset=1189, limit=500][0m
+[0m
+[0m$ [0mbash .<redacted:secret> --allow-pending --intent <redacted:secret> --result <redacted:secret> --manifest <redacted:secret> 2>&1; echo "EXIT_CODE=$?"
+FAIL non-terminal:     project-ontos-v5-remediation-release-plan-pre-a-glm-review — opencode_dispatch_failure_class is only permitted on failed OpenCode route results
+verify-family-dispatch: FAILED — 1 violation(s) across 1 dispatches
+=== verify-family-dispatch (allow-pending) ===
+Intent:  /<redacted:secret> (1 dispatches)
+Result:  /<redacted:secret> (0 completed, 1 pending)
+---
+EXIT_CODE=1
+[0m
+[0m$ [0mgrep -nE '^### 18[.]1 |^### 20[.]2 |^## 21[.]|^### 21[.]' <redacted:secret>
+2557:### 18.1 #149 compatibility isolation
+2788:### 20.2 Config downgrade rule
+2810:## 21. Work Breakdown and Child Deliverables
+2812:### 21.1 Parent proposal lifecycle
+2834:### 21.2 Required child deliverables
+2856:### 21.3 Shared-file serialization
+2873:### 21.4 Baseline discipline
+[0m
+[0m$ [0mgrep -nE '^### 18[.]1 ' <redacted:secret>
+2557:### 18.1 #149 compatibility isolation
+[0m
+[0m→ [0mRead <redacted:secret>[90m [offset=2557, limit=260][0m
+[0m→ [0mRead <redacted:secret>[90m [offset=2788, limit=150][0m
+[0m
+[0m$ [0mgit diff --stat c4607f05d43688bcc9472575d310f0be468a74cf..41f08938bcc90cf07ac862b460101147e1f555f0
+AGENTS.md                                          |  12 +-
+ Ontos_Context_Map.md                               |  35 +-
+ .../phase-0-glm-governance-review.prompt.md        | 123 ++++++
+ ...<redacted:secret> |  65 ++++
+ ....<redacted:secret> | 228 +++++++++++
+ ...<redacted:secret> |  93 +++++
+ .../<redacted:secret>    |  48 +++
+ .../phase-0-live-issue-audit.md                    |  47 +++
+ .../pre-a-glm-dispatch-intent.yaml                 |   3 +
+ .../pre-a-glm-dispatch-result.yaml                 |  97 +++++
+ .../pre-a-glm-template16-validation.md             | 109 ++++++
+ .../pre-a-proposal-verdict.md                      | 218 +++++++++++
+ ...<redacted:secret> | 372 ++++++++++++++++++
+ ...-ontos-v5-0-3-built-in-status-alias-proposal.md | 255 +++++++++++++
+ ...ct-ontos-v5-0-3-dependency-resolver-proposal.md | 270 +++++++++++++
+ .../project-ontos-v5-0-3-log-paths-proposal.md     | 420 +++++++++++++++++++++
+ ...<redacted:secret> | 274 ++++++++++++++
+ ...-<redacted:secret> | 351 +++++++++++++++++
+ ...t-ontos-v5-remediation-release-plan-proposal.md |  15 +-
+ .../<redacted:secret>      |  25 ++
+ .../<redacted:secret>  |  25 ++
+ .../project-ontos-v5-0-3-dependency-resolver.md    |  31 ++
+ <redacted:secret>    |  31 ++
+ ...<redacted:secret> |  25 ++
+ .../<redacted:secret>  |  25 ++
+ .../project-ontos-v5-remediation-release-plan.md   |  12 +-
+ .../<redacted:secret>    | 275 ++++++++++++++
+ ...<redacted:secret> | 269 +++++++++++++
+ .../<redacted:secret>  | 258 +++++++++++++
+ <redacted:secret>      | 271 +++++++++++++
+ ...<redacted:secret> | 271 +++++++++++++
+ ...<redacted:secret> | 260 +++++++++++++
+ 32 files changed, 4785 insertions(+), 28 deletions(-)
+[0m
+[0m$ [0mgrep -cE '^### v(5[.]0[.]3|5[.]1[.]0|5[.]2[.]0|6[.]0[.]0) — ' <redacted:secret> && echo "---" && grep -oE '#(149|158|165|173|174|175|176|177|178)' <redacted:secret> | sort -u | wc -l | tr -d ' ' && echo "---" && awk '/^### 18[.]1 /{in_section=1; next} /^### /{if(in_section) exit} in_section && /^[0-9]+[.] `/{count++} END{print count+0}' <redacted:secret> && echo "---" && wc -l <redacted:secret>
+4
+---
+9
+---
+11
+---
+    3380 <redacted:secret>
+[0m
+[0m$ [0mgit diff c4607f05d43688bcc9472575d310f0be468a74cf..41f08938bcc90cf07ac862b460101147e1f555f0 -- <redacted:secret>
+diff --git <redacted:secret> <redacted:secret>
+index d246be8..4f7592e 100644
+--- <redacted:secret>
++++ <redacted:secret>
+@@ -1,7 +1,7 @@
+ ---
+ id: project_ontos_v5_remediation_release_plan_proposal
+ type: spec
+-status: proposed
++status: complete
+ created: 2026-07-14
+ owner: Project Ontos Maintainers
+ depends_on:
+@@ -66,7 +66,7 @@ against an isolated current-main worktree. Before publication, the proposal
+ artifacts were moved to the dedicated
+ `codex/project-ontos-v5-remediation-release-plan` branch created directly from
+ that baseline. The base-SHA changed-path scope and exact branch-identity gates
+-pass there; independent Pre-A review and its verdict remain pending.
++passed there.
+ 
+ After that proposal merged and PR #179 was archived, Phase 0 preparation found
+ that the mandatory v5.0.3 `required_version` preflight had no child owner. This
+@@ -74,7 +74,10 @@ scope-correction revision adds the sixth independently governed child and moves
+ the parent review assignment to GLM. The review input is committed on
+ `codex/v5-remediation-child-scaffolding` from
+ `main@bd04620376ed6a8d0024e990e04a86da402b9398`; the GLM verdict records the
+-exact reviewed commit before any child scaffold is created.
++exact reviewed commit `c4607f05d43688bcc9472575d310f0be468a74cf` and returned
++the terminal Template 16 disposition **Split into multiple proposals**. That
++review authorized only the six Phase 0 governance scaffolds now recorded here;
++it did not authorize parent Phase A–E work or child implementation.
+ 
+ The live open-issue inventory covered:
+ 
+@@ -394,7 +397,7 @@ public API whose warning says “removed in v6.0.0” belongs in v6.
+ | #175 | Implement same-device/core responsibilities in v5.2; transfer optional cross-device CAS to an accepted follow-up if it does not ship in the same issue | Close only after v5.2 verification **and** recorded board custody transfer; otherwise keep #175 open |
+ | #176 | Fix independently in v5.0.3 | Close after published-wheel reproduction |
+ | #177 | Correct issue wording, then implement classifier/policy before #174 | Close after all consumers share classifier |
+-| #178 | Ship built-in alias in v5.0.3 and complete feature in v5.1 | Close only after full cross-surface acceptance |
++| #178 | Ship the built-in alias and required-version downgrade preflight in v5.0.3; complete workspace vocabularies in v5.1 | Close only after full cross-surface acceptance |
+ 
+ Two new issues should receive the inherited #149 residuals:
+ 
+@@ -498,8 +501,8 @@ unrelated cleanup.
+ 
+ ### 11.1 Scope
+ 
+-v5.0.3 contains four independently reversible product changes plus one
+-compatibility-isolation slice:
++v5.0.3 contains four independently reversible product changes. The log-path
++change also carries one tightly coupled compatibility-isolation slice:
+ 
+ 1. safe resolution of existing bare root-file dependencies (#176);
+ 2. one consistent resolved log-path contract across writers, readers, counters,
+[0m
+[0m$ [0mshasum -a 256 <redacted:secret>
+713d5d844f2fcc85940d635d23ed51500bcf004daf4738a9be6e9c23a01d8315  <redacted:secret>
+[0m
+[0m$ [0mdiff <redacted:secret> <redacted:secret> && echo "IDENTICAL"
+IDENTICAL
+[0m
+[0m$ [0mgit diff --name-only c4607f05d43688bcc9472575d310f0be468a74cf..41f08938bcc90cf07ac862b460101147e1f555f0
+AGENTS.md
+Ontos_Context_Map.md
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+<redacted:secret>
+[0m
+[0m→ [0mRead <redacted:secret>
+[0m
+[0m← [0mWrite <redacted:secret>
+Wrote file successfully.
+[0m
+[0m$ [0mhead -16 <redacted:secret>
+---
+id: <redacted:secret>
+type: review
+deliverable_id: project-ontos-v5-remediation-release-plan
+phase: 0.docs
+role: peer
+family: glm
+evidence_labels_used:
+  - static-inspection
+  - direct-run
+status: completed
+---
+
+# Phase 0 GLM Governance Review — Project Ontos v5 Remediation Release Plan
+
+## Reviewed commit and tree state
+[0m
+[0m$ [0mtail -5 <redacted:secret>
+planning observations only; they do not authorize merge, implementation, or
+  any code change.
+
+## Verdict
+Approve
+[0m
+[0m$ [0mgrep -nE '^## Verdict' <redacted:secret> && grep -A1 '^## Verdict' <redacted:secret>
+411:## Verdict
+## Verdict
+Approve
+[0m
+[0m$ [0mgit status --porcelain
+M Ontos_Context_Map.md
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+[0m
+[0m$ [0mgit diff Ontos_Context_Map.md | head -40
+diff --git a/Ontos_Context_Map.md b/Ontos_Context_Map.md
+index 26ed07c..605138c 100644
+--- a/Ontos_Context_Map.md
++++ b/Ontos_Context_Map.md
+@@ -5,15 +5,15 @@ status: complete
+ ontos_map_version: 2
+ generated_by: ontos map
+ generator_version: 5.0.2
+-generated_at: 2026-07-14 20:34:31
++generated_at: 2026-07-14 20:36:23
+ scope: docs
+ documents_loaded: 247
+ ---
+ 
+-# Project-Ontos Tiered Context Map
++# project-ontos-v5-child-scaffolding Tiered Context Map
+ 
+ > Auto-generated by Ontos 5.0.2
+-> Last updated: 2026-07-14 20:34:31
++> Last updated: 2026-07-14 20:36:23
+ 
+ This document provides a tiered index of the knowledge graph for AI orientation.
+ - **Tier 1: Essential Context**: (~2k tokens) Project summary, recent work, and architecture.
+@@ -23,9 +23,9 @@ This document provides a tiered index of the knowledge graph for AI orientation.
+ ## Tier 1: Essential Context
+ 
+ ### Project Summary
+-- **Name:** Project-Ontos
++- **Name:** project-ontos-v5-child-scaffolding
+ - **Doc Count:** 247
+-- **Last Updated:** 2026-07-15 03:34:31 UTC
++- **Last Updated:** 2026-07-15 03:36:23 UTC
+ 
+ ### Recent Activity
+ | Log | Status | Summary |
+[0m
+[0m$ [0mgit checkout -- Ontos_Context_Map.md && git status --porcelain
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+?? <redacted:secret>
+[0m
