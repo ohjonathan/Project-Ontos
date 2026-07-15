@@ -1,0 +1,144 @@
+schema_version: "1.0"
+deliverable_id: project-ontos-v5-remediation-release-plan
+review_kind: supplemental-governance-docs
+validation_kind: post-review-reconciliation
+validation_author_family: codex
+reviewed_commit: 41f08938bcc90cf07ac862b460101147e1f555f0
+reviewer_family: glm
+artifact_path: docs/reviews/project-ontos-v5-remediation-release-plan/phase-0-glm-governance-review.md
+artifact_sha256: sha256:fa64970d96a50450c6c19fee03fcddf83d4bb59ccf832a0d7b5bcc94ff536623
+verdict: Approve
+
+authority:
+  strict_p3_claim: false
+  strict_p3_certified: false
+  merge_authority: recommendation_only
+  lifecycle_receipt: false
+  closure_gate: false
+
+checks:
+  dispatcher_exit:
+    status: passed
+    evidence: "dispatch-family-review exited 0 and reported artifact fa64970d96a5"
+  artifact_shape:
+    status: passed
+    evidence: "scripts/llm-dev lint-artifact --family glm classified the artifact as verdict_shaped with verdict Approve"
+  reviewed_tree_binding:
+    status: passed
+    evidence: "The artifact records clean reviewed commit 41f08938bcc90cf07ac862b460101147e1f555f0; only dispatcher capture outputs were untracked during review."
+  current_head_coverage:
+    status: not_reviewed_by_glm
+    evidence: >-
+      The GLM artifact and its hash bind only reviewed commit 41f0893. This
+      Codex-authored reconciliation, dispatcher outputs, and the two conservative
+      B.2 tracker corrections are outside that reviewed tree.
+  manifest_aware_dispatch_verification:
+    status: failed_non_certifying
+    evidence: "verify-family-dispatch --require-complete reported three violations; this packet is excluded from strict-P3 receipts and closure gates."
+
+verification_failures:
+  - id: opencode-exact-path-worker-file
+    category: dispatcher-verifier-semantic-gap
+    detail: >-
+      The honest result records artifact_source=worker_file because OpenCode
+      wrote the exact expected artifact and the dispatcher completed. R30-B
+      fires unconditionally for family=glm plus execution_cli=opencode and
+      requires a wrapper-capture source; the result records worker_file at line
+      65. Changing either the result or route-attestation sidecar would falsify
+      provenance.
+  - id: artifact-public-identifier-entropy
+    category: route-redaction-false-positive
+    detail: >-
+      The candidate inventory is artifact line 2 (public dispatch/frontmatter
+      ID), line 37 (phase-0-glm-governance-dispatch-intent.yaml), and line 280
+      (committed historical prompt-capture path). These are public governance
+      identifiers and paths, not credentials.
+  - id: prompt-public-identifier-entropy
+    category: route-redaction-false-positive
+    detail: >-
+      The candidate inventory is captured-prompt lines 23, 24, and 26
+      (committed historical prompt/raw/stderr paths), lines 36 and 41 (public
+      child IDs), and line 95 (public dispatch/frontmatter ID). These are public
+      governance identifiers and paths, not credentials.
+
+secret_scan:
+  method: "shared route-redaction scanner with entropy suppression"
+  non_entropy_findings:
+    artifact: 0
+    prompt: 0
+    raw_stdout: 0
+    redacted_stderr: 0
+  conclusion: "No credential-shaped content was identified."
+
+fact_check_corrections:
+  handling: >-
+    Preserve the hash-bound model artifact unchanged. The corrections below
+    supersede only its inaccurate citations or descriptions; none changes its
+    Approve recommendation or grants lifecycle authority.
+  items:
+    - id: snapshot-timing
+      artifact_lines: "22-28"
+      correction: >-
+        The three-file tree status is the pre-output dispatcher snapshot. The
+        completed review packet additionally contains its result, review,
+        attestation, and validation outputs.
+    - id: repeated-pre-a-language
+      artifact_lines: "55-56"
+      correction: >-
+        Read "states 17 times" as "states repeatedly"; the exact count was not
+        supported by a recorded cardinality check.
+    - id: product-card-description
+      artifact_lines: "94-96"
+      correction: >-
+        Each relevant phase has two phase cards: one review-role card and one
+        separate Product card, rather than two Product entries.
+    - id: sibling-concurrency-citation
+      artifact_lines: "103-104"
+      correction: >-
+        The no-concurrent-sibling rule is explicit in the board-hygiene and
+        issue-165 proposals. The four product children express independence and
+        shared-file serialization in their own dependency or sequencing text;
+        they do not all use the same section-9 wording.
+    - id: issue-165-cardinality-gate-location
+      artifact_lines: "139-152"
+      correction: >-
+        Manifest lines 68-73 define scope.cardinality_assertions; the actual
+        G-cardinality-1 gate is at lines 204-209. The proposal namespace rule is
+        the section-8 bullet at line 231, not a section numbered 8.8.
+    - id: issue-178-custody-sources
+      artifact_lines: "217-220"
+      correction: >-
+        The custody language is in the board-hygiene proposal line 211, alias
+        proposal lines 149 and 185, and preflight proposal lines 166 and 203.
+        The cited child trackers do not themselves contain that wording.
+    - id: round-1-evidence-label
+      artifact_lines: "251-254"
+      correction: >-
+        PR-P-1 remained static-inspection and is supported by the recorded
+        4/9/11/3380 cardinality reproduction. PR-P-3, not PR-P-1, was downgraded
+        from claimed direct-run to inherited static evidence, consistent with
+        artifact lines 391-392.
+    - id: author-family-source
+      artifact_line: "277"
+      correction: >-
+        deliverable_author_family=codex is sourced from
+        pre-a-glm-dispatch-intent.yaml line 4, not the dispatch result file.
+
+post_review_delta:
+  description: >-
+    After the reviewed commit, two child trackers were corrected to state that
+    B.2 is a mandatory second design review for a user-facing child. This
+    narrows governance permissiveness and does not change child scope,
+    implementation authority, or the GLM recommendation.
+  reviewed_by_glm: false
+  paths:
+    - docs/trackers/project-ontos-v5-0-3-dependency-resolver.md
+    - docs/trackers/project-ontos-v5-0-3-log-paths.md
+
+handling:
+  preserve_generated_files_unchanged: true
+  derive_merge_or_phase_authority: false
+  add_to_lifecycle_receipt_inventory: false
+  upstream_followup: >-
+    Resolve the exact-path OpenCode worker_file versus R30-B capture mismatch
+    in llm-dev-framework separately; it is outside this Ontos governance PR.

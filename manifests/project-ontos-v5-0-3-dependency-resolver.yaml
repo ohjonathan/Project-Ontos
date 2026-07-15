@@ -1,0 +1,258 @@
+manifest_version: "2.0.1"
+id: project-ontos-v5-0-3-dependency-resolver
+slug: project-ontos-v5-0-3-dependency-resolver
+summary: "Resolve existing bare workspace-root file dependencies safely while preserving document-ID precedence and cross-surface graph parity for Ontos v5.0.3."
+
+deliverable_type: standard
+user_facing: true
+lifecycle_mode: framework lifecycle
+fallback_evidence_mode: strict_p3
+require_lifecycle_dispatch_bundles: true
+strict_p3_required_phases: ["B.1", "D.2", "D.5"]
+
+owners: ["Project Ontos Maintainers"]
+authorship:
+  deliverable_author_families: [codex]
+  structural_orchestrator_families: [codex]
+
+pre_a:
+  entry: proposal
+  artifact_path: "docs/reviews/project-ontos-v5-0-3-dependency-resolver/pre-a-proposal-verdict.md"
+
+scope:
+  allowed_paths:
+    - "AGENTS.md"
+    - "Ontos_Context_Map.md"
+    - "docs/specs/project-ontos-v5-0-3-dependency-resolver-proposal.md"
+    - "docs/specs/project-ontos-v5-0-3-dependency-resolver-spec.md"
+    - "docs/trackers/project-ontos-v5-0-3-dependency-resolver.md"
+    - "docs/retros/project-ontos-v5-0-3-dependency-resolver-retro.md"
+    - "docs/reference/Ontos_Manual.md"
+    - "docs/reference/ontology_spec.md"
+    - "docs/releases/v5.0.3.md"
+    - "manifests/project-ontos-v5-0-3-dependency-resolver.yaml"
+    - "ontos/core/graph.py"
+    - "ontos/core/link_diagnostics.py"
+    - "ontos/core/validation.py"
+    - "ontos/commands/activate.py"
+    - "ontos/commands/doctor.py"
+    - "ontos/commands/link_check.py"
+    - "ontos/commands/maintain.py"
+    - "ontos/commands/map.py"
+    - "ontos/mcp/tools.py"
+    - "tests/core/test_dependency_resolver_v503.py"
+    - "tests/core/test_graph.py"
+    - "tests/core/test_link_diagnostics.py"
+    - "tests/commands/test_activate_json_warning_metadata.py"
+    - "tests/commands/test_doctor_phase4.py"
+    - "tests/commands/test_link_check.py"
+    - "tests/commands/test_maintain.py"
+    - "tests/commands/test_map.py"
+    - "tests/mcp/test_activation.py"
+  allowed_path_patterns:
+    - "docs/reviews/project-ontos-v5-0-3-dependency-resolver/**"
+  composition_targets:
+    - path: "docs/specs/project-ontos-v5-remediation-release-plan-proposal.md"
+      rationale: "Read-only parent authority for the #176 resolution order, compatibility boundary, release placement, and child-split watch item."
+      shares_with_deliverable_id: "project-ontos-v5-remediation-release-plan"
+  forbidden_paths:
+    - ".github/"
+    - ".llm-dev/framework/"
+    - ".ontos-internal/archive/"
+    - ".project-internal/"
+    - "build/"
+    - "dist/"
+    - "docs/logs/"
+    - "ontos/core/body_refs.py"
+    - "ontos/core/config.py"
+    - "ontos/core/ontology.py"
+    - "ontos/core/paths.py"
+    - "ontos/commands/consolidate.py"
+    - "ontos/commands/log.py"
+    - "ontos/mcp/schemas.py"
+    - "ontos/mcp/writes.py"
+    - "pyproject.toml"
+  forbidden_symbols: []
+  forbidden_symbol_exemptions: []
+  cardinality_assertions:
+    - name: "The proposal preserves all thirteen parent-authorized #176 acceptance fixtures"
+      command: 'grep -cE "^\| R([1-9]|1[0-3]) \|" docs/specs/project-ontos-v5-0-3-dependency-resolver-proposal.md'
+      expect: "eq:13"
+  cleanliness:
+    pathspecs: []
+    exclude_pathspecs:
+      - "docs/reviews/project-ontos-v5-0-3-dependency-resolver/.external/"
+
+artifacts:
+  spec: "docs/specs/project-ontos-v5-0-3-dependency-resolver-spec.md"
+  family_verdict: "docs/reviews/project-ontos-v5-0-3-dependency-resolver/<phase>-<family>-<role>.md"
+  canonical_verdict: "docs/reviews/project-ontos-v5-0-3-dependency-resolver/<phase>-verdict.md"
+  product_verdict: "docs/reviews/project-ontos-v5-0-3-dependency-resolver/<phase>-<family>-product.md"
+  proposal_verdict: "docs/reviews/project-ontos-v5-0-3-dependency-resolver/pre-a-proposal-verdict.md"
+  fix_summary: "docs/reviews/project-ontos-v5-0-3-dependency-resolver/D.4-fix-summary.md"
+  verification: "docs/reviews/project-ontos-v5-0-3-dependency-resolver/D.5-<family>-verifier.md"
+  final_approval: "docs/reviews/project-ontos-v5-0-3-dependency-resolver/final-approval.md"
+  retro: "docs/retros/project-ontos-v5-0-3-dependency-resolver-retro.md"
+
+model_assignments:
+  - phase: "-A.proposal"
+    assignments: {glm: proposal-reviewer}
+  - phase: "A"
+    assignments: {codex: spec-author}
+  - phase: "B.1"
+    assignments: {claude: adversarial, gemini: alignment, glm: peer}
+  - phase: "B.1"
+    assignments: {claude: product}
+  - phase: "B.2"
+    assignments: {claude: alignment, gemini: peer, glm: adversarial}
+  - phase: "B.2"
+    assignments: {claude: product}
+  - phase: "B.3"
+    assignments: {codex: meta-consolidator}
+  - phase: "C"
+    assignments: {codex: implementation-author}
+  - phase: "D.1"
+    assignments: {claude: peer}
+  - phase: "D.2"
+    assignments: {claude: peer, gemini: adversarial, glm: alignment}
+  - phase: "D.2"
+    assignments: {claude: product}
+  - phase: "D.3"
+    assignments: {codex: meta-consolidator}
+  - phase: "D.4"
+    assignments: {codex: fix-author}
+  - phase: "D.5"
+    assignments: {claude: verifier, gemini: verifier, glm: verifier}
+  - phase: "D.6"
+    assignments: {codex: final-approval}
+  - phase: "E"
+    assignments: {codex: retro}
+
+cli_capability_matrix:
+  codex: {shell: true, git: true, test_runner: true, doc_index: true}
+  claude: {shell: true, git: true, test_runner: true, doc_index: true}
+  gemini:
+    shell: false
+    git: false
+    test_runner: false
+    doc_index: true
+    evidence_cap: static-inspection
+    writes_files_non_interactively: false
+  glm: {shell: true, git: true, test_runner: true, doc_index: true}
+
+smoke_checks:
+  - phase: "-A.proposal"
+    checks:
+      - name: "Proposal frontmatter resolves"
+        command: 'PYTHONPATH=. "${ONTOS_PYTHON}" -m ontos link-check --frontmatter-only --json'
+        expect: "exit-0"
+      - name: "Manifest conforms to the adopter framework"
+        command: "scripts/llm-dev verify manifests/project-ontos-v5-0-3-dependency-resolver.yaml"
+        expect: "exit-0"
+      - name: "Proposal preserves the full #176 fixture matrix"
+        command: 'grep -cE "^\| R([1-9]|1[0-3]) \|" docs/specs/project-ontos-v5-0-3-dependency-resolver-proposal.md'
+        expect: "eq:13"
+
+regression_guards: []
+sibling_deliverable_ids: []
+review_rounds: []
+reviewer_family_substitutes: []
+consolidation_mode: fast-path
+implementation_sequencing:
+  mode: spec-first
+self_review_caveats:
+  - family: codex
+    phases: ["D.3"]
+    rationale: "Codex may implement only after approval and then consolidate independent review evidence; D.2 and D.5 remain assigned to non-author families."
+
+lifecycle_receipt_inventory_path: "docs/reviews/project-ontos-v5-0-3-dependency-resolver/lifecycle-receipt-inventory.yaml"
+required_dispatch_bundles:
+  - phase: "B.1"
+    intent_path: "docs/reviews/project-ontos-v5-0-3-dependency-resolver/B.1-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-v5-0-3-dependency-resolver/B.1-dispatch-result.yaml"
+  - phase: "B.2"
+    intent_path: "docs/reviews/project-ontos-v5-0-3-dependency-resolver/B.2-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-v5-0-3-dependency-resolver/B.2-dispatch-result.yaml"
+  - phase: "D.2"
+    intent_path: "docs/reviews/project-ontos-v5-0-3-dependency-resolver/D.2-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-v5-0-3-dependency-resolver/D.2-dispatch-result.yaml"
+  - phase: "D.5"
+    intent_path: "docs/reviews/project-ontos-v5-0-3-dependency-resolver/D.5-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-v5-0-3-dependency-resolver/D.5-dispatch-result.yaml"
+
+merge_authority:
+  mode: recommendation_only
+
+cross_repo_dependencies: []
+historical_receipt_gaps: []
+gate_only_invariants: []
+convergence_metrics: []
+
+gate_env:
+  - name: ONTOS_PYTHON
+    description: "Python interpreter with Project Ontos development dependencies."
+    example: "ONTOS_PYTHON=.venv/bin/python"
+    required: true
+    scope: both
+  - name: CHILD_BASE_SHA
+    description: "Full immutable commit SHA captured when the dedicated child worktree is created after Pre-A approval and persisted in its handoff or receipt."
+    example: "CHILD_BASE_SHA=<40-hex-commit-sha>"
+    required: true
+    scope: gate
+
+gate_prerequisites:
+  - id: G-test-1
+    category: test
+    description: "Future implementation gate: the dedicated #176 matrix and shared CLI/MCP graph parity suites pass."
+    verification:
+      command: 'PYTHONPATH=. "${ONTOS_PYTHON}" -m pytest -q tests/core/test_dependency_resolver_v503.py tests/core/test_graph.py tests/core/test_link_diagnostics.py tests/commands/test_link_check.py tests/mcp/test_activation.py'
+      expect: "exit-0"
+  - id: G-scope-1
+    category: scope
+    description: "Future implementation gate: all changes remain inside this child manifest from its recorded immutable base."
+    verification:
+      command: 'test -n "${CHILD_BASE_SHA:-}" && test "$(git rev-parse --verify "${CHILD_BASE_SHA}^{commit}" 2>/dev/null)" = "${CHILD_BASE_SHA}" && bash .llm-dev/framework/scripts/verify-changed-path-scope.sh --manifest manifests/project-ontos-v5-0-3-dependency-resolver.yaml --base "${CHILD_BASE_SHA}"'
+      expect: "exit-0"
+  - id: G-cardinality-1
+    category: cardinality
+    description: "The child proposal preserves all thirteen independently reviewable #176 fixtures."
+    verification:
+      command: 'grep -cE "^\| R([1-9]|1[0-3]) \|" docs/specs/project-ontos-v5-0-3-dependency-resolver-proposal.md'
+      expect: "eq:13"
+  - id: G-verdict-1
+    category: verdict-presence
+    description: "A non-author GLM Template 16 proposal verdict exists."
+    verification:
+      command: "test -f docs/reviews/project-ontos-v5-0-3-dependency-resolver/pre-a-proposal-verdict.md"
+      expect: "exit-0"
+  - id: G-blocker-1
+    category: blocker-closure
+    description: "The child may enter Phase A only on the exact requested Template 16 disposition."
+    verification:
+      command: 'grep -Eq "^- \*\*Overall verdict:\*\* Proceed to Phase A$" docs/reviews/project-ontos-v5-0-3-dependency-resolver/pre-a-proposal-verdict.md'
+      expect: "exit-0"
+  - id: G-branch-1
+    category: branch
+    description: "Future implementation gate: work runs on the dedicated child branch descended from its recorded base."
+    verification:
+      command: 'test -n "${CHILD_BASE_SHA:-}" && test "$(git branch --show-current)" = "codex/project-ontos-v5-0-3-dependency-resolver" && test "$(git rev-parse --verify "${CHILD_BASE_SHA}^{commit}" 2>/dev/null)" = "${CHILD_BASE_SHA}" && test "$(git merge-base "${CHILD_BASE_SHA}" HEAD)" = "${CHILD_BASE_SHA}"'
+      expect: "exit-0"
+
+tracker:
+  path: "docs/trackers/project-ontos-v5-0-3-dependency-resolver.md"
+  columns: [phase, owner, status, artifact, evidence, timestamp]
+
+branch_map:
+  default: "codex/project-ontos-v5-0-3-dependency-resolver"
+
+references:
+  - path: "docs/specs/project-ontos-v5-remediation-release-plan-proposal.md"
+    relevance: "Parent authority for #176 scope, sequencing, exclusions, gates, and release custody."
+  - path: "docs/reviews/2026-07-10-codex-audit-revalidation.md"
+    relevance: "Current-main reproduction and audited issue baseline."
+  - path: "docs/reference/Ontos_Manual.md"
+    relevance: "Current activation, link-check, doctor, map, and public behavior."
+  - path: "docs/reference/ontology_spec.md"
+    relevance: "Current document identity and dependency semantics."
+
+watch_item: "This child may change only #176 bare depends_on resolution through the shared graph boundary. Exact active or configured-external document IDs always beat filesystem interpretation; ambiguity, containment escape, symlink/reparse escape, and case collision fail closed without absolute-path disclosure; existing explicit-path behavior plus the broken_link rule ID/severity remain compatible. Body-reference policy, log paths, configuration schema, vocabulary, archive work, #149 removal, and every sibling child are out of scope. This public graph/MCP child remains user_facing, requires Product review, and must not enter Phase A without its own non-author Proceed to Phase A verdict."

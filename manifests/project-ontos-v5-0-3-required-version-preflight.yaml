@@ -1,0 +1,271 @@
+manifest_version: "2.0.1"
+id: project-ontos-v5-0-3-required-version-preflight
+slug: project-ontos-v5-0-3-required-version-preflight
+summary: "Pre-A child for deterministic required-version error precedence before strict v5.0.3 configuration validation."
+
+deliverable_type: standard
+user_facing: true
+lifecycle_mode: framework lifecycle
+
+owners:
+  - "Project Ontos Maintainers"
+
+authorship:
+  deliverable_author_families:
+    - codex
+  structural_orchestrator_families:
+    - codex
+
+pre_a:
+  entry: proposal
+  artifact_path: "docs/reviews/project-ontos-v5-0-3-required-version-preflight/pre-a-proposal-verdict.md"
+
+scope:
+  allowed_paths:
+    - "AGENTS.md"
+    - "Ontos_Context_Map.md"
+    - "docs/reference/Ontos_Manual.md"
+    - "docs/specs/project-ontos-v5-0-3-required-version-preflight-proposal.md"
+    - "docs/specs/project-ontos-v5-0-3-required-version-preflight-spec.md"
+    - "docs/trackers/project-ontos-v5-0-3-required-version-preflight.md"
+    - "docs/retros/project-ontos-v5-0-3-required-version-preflight-retro.md"
+    - "manifests/project-ontos-v5-0-3-required-version-preflight.yaml"
+    - "ontos/core/config.py"
+    - "ontos/io/config.py"
+    - "tests/io/test_config_phase3.py"
+    - "tests/commands/test_agentic_activation_resilience.py"
+    - "tests/mcp/test_activation.py"
+    - "tests/mcp/test_server_integration.py"
+  allowed_path_patterns:
+    - "docs/reviews/project-ontos-v5-0-3-required-version-preflight/**"
+  composition_targets:
+    - path: "docs/specs/project-ontos-v5-remediation-release-plan-proposal.md"
+      rationale: "The child composes the parent downgrade-safety contract and must not broaden or rewrite the accepted v5/v6 release boundary."
+      shares_with_deliverable_id: "project-ontos-v5-remediation-release-plan"
+  forbidden_paths:
+    - ".github/"
+    - "build/"
+    - "dist/"
+    - "docs/logs/"
+    - "docs/reference/Migration_v3_to_v4.md"
+    - "ontos/commands/activate.py"
+    - "ontos/core/frontmatter_repair.py"
+    - "ontos/core/types.py"
+    - "ontos/io/toml.py"
+    - "ontos/mcp/tools.py"
+    - "pyproject.toml"
+    - "site/"
+    - "tests/core/test_frontmatter_repair.py"
+  forbidden_symbols: []
+  forbidden_symbol_exemptions: []
+  cardinality_assertions:
+    - name: "Proposal freezes exactly four required-version behavior cases"
+      command: "grep -cE '^\\| RV-[1-4] \\|' docs/specs/project-ontos-v5-0-3-required-version-preflight-proposal.md"
+      expect: "eq:4"
+  cleanliness:
+    pathspecs: []
+    exclude_pathspecs:
+      - "docs/reviews/project-ontos-v5-0-3-required-version-preflight/.external/"
+
+artifacts:
+  spec: "docs/specs/project-ontos-v5-0-3-required-version-preflight-spec.md"
+  family_verdict: "docs/reviews/project-ontos-v5-0-3-required-version-preflight/<phase>-<family>-<role>.md"
+  canonical_verdict: "docs/reviews/project-ontos-v5-0-3-required-version-preflight/<phase>-verdict.md"
+  product_verdict: "docs/reviews/project-ontos-v5-0-3-required-version-preflight/<phase>-<family>-product.md"
+  proposal_verdict: "docs/reviews/project-ontos-v5-0-3-required-version-preflight/pre-a-proposal-verdict.md"
+  fix_summary: "docs/reviews/project-ontos-v5-0-3-required-version-preflight/D.4-fix-summary.md"
+  verification: "docs/reviews/project-ontos-v5-0-3-required-version-preflight/D.5-<family>-verifier.md"
+  final_approval: "docs/reviews/project-ontos-v5-0-3-required-version-preflight/final-approval.md"
+  retro: "docs/retros/project-ontos-v5-0-3-required-version-preflight-retro.md"
+
+model_assignments:
+  - phase: "-A.proposal"
+    assignments:
+      glm: proposal-reviewer
+  - phase: "A"
+    assignments:
+      codex: spec-author
+  - phase: "B.1"
+    assignments:
+      claude-opus: peer
+      claude-sonnet: alignment
+      gemini: adversarial
+  - phase: "B.1"
+    assignments:
+      glm: product
+  - phase: "B.2"
+    assignments:
+      claude-sonnet: peer
+      gemini: alignment
+      claude-opus: adversarial
+  - phase: "B.2"
+    assignments:
+      glm: product
+  - phase: "B.3"
+    assignments:
+      claude-opus: meta-consolidator
+  - phase: "C"
+    assignments:
+      codex: implementation-author
+  - phase: "D.1"
+    assignments:
+      claude-opus: peer
+  - phase: "D.2"
+    assignments:
+      claude-sonnet: peer
+      gemini: alignment
+      claude-opus: adversarial
+  - phase: "D.2"
+    assignments:
+      glm: product
+  - phase: "D.3"
+    assignments:
+      claude-sonnet: meta-consolidator
+  - phase: "D.4"
+    assignments:
+      codex: fix-author
+  - phase: "D.5"
+    assignments:
+      claude-opus: verifier
+      claude-sonnet: verifier
+      gemini: verifier
+  - phase: "D.6"
+    assignments:
+      claude-opus: final-approval
+  - phase: "E"
+    assignments:
+      glm: retro
+
+cli_capability_matrix:
+  codex:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+  claude-opus:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+  claude-sonnet:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+  gemini:
+    shell: false
+    git: false
+    test_runner: false
+    doc_index: true
+    evidence_cap: static-inspection
+    writes_files_non_interactively: false
+    expected_version_regex: "^[0-9]+[.][0-9]+[.][0-9]+"
+  glm:
+    shell: false
+    git: false
+    test_runner: false
+    doc_index: true
+    evidence_cap: static-inspection
+    writes_files_non_interactively: false
+
+smoke_checks:
+  - phase: "-A.proposal"
+    checks:
+      - name: "Proposal frontmatter and document graph are valid"
+        command: 'PYTHONPATH=. "${ONTOS_PYTHON}" -m ontos link-check --frontmatter-only --json'
+        expect: "exit-0"
+      - name: "Manifest conforms to the pinned framework"
+        command: "scripts/llm-dev verify manifests/project-ontos-v5-0-3-required-version-preflight.yaml"
+        expect: "exit-0"
+  - phase: "C"
+    checks:
+      - name: "Focused configuration, CLI, and MCP tests pass"
+        command: 'PYTHONPATH=. "${ONTOS_PYTHON}" -m pytest -q tests/io/test_config_phase3.py tests/commands/test_agentic_activation_resilience.py tests/mcp/test_activation.py tests/mcp/test_server_integration.py'
+        expect: "exit-0"
+
+regression_guards: []
+sibling_deliverable_ids: []
+review_rounds: []
+self_review_caveats: []
+consolidation_mode: external
+implementation_sequencing:
+  mode: spec-first
+reviewer_family_substitutes: []
+gate_env:
+  - name: ONTOS_PYTHON
+    description: "Python interpreter with Project Ontos development dependencies."
+    example: "ONTOS_PYTHON=.venv/bin/python"
+    required: true
+    scope: both
+  - name: CHILD_BASE_SHA
+    description: "Full immutable commit SHA captured when the dedicated child worktree is created after Pre-A approval and persisted in its handoff or receipt."
+    example: "CHILD_BASE_SHA=<40-hex-commit-sha>"
+    required: true
+    scope: gate
+
+lifecycle_receipt_inventory_path: "docs/reviews/project-ontos-v5-0-3-required-version-preflight/lifecycle-receipt-inventory.yaml"
+
+merge_authority:
+  mode: recommendation_only
+
+cross_repo_dependencies: []
+historical_receipt_gaps: []
+gate_only_invariants: []
+convergence_metrics: []
+
+gate_prerequisites:
+  - id: G-test-1
+    category: test
+    description: "Focused configuration, CLI, and MCP precedence tests pass."
+    verification:
+      command: 'PYTHONPATH=. "${ONTOS_PYTHON}" -m pytest -q tests/io/test_config_phase3.py tests/commands/test_agentic_activation_resilience.py tests/mcp/test_activation.py tests/mcp/test_server_integration.py'
+      expect: "exit-0"
+  - id: G-scope-1
+    category: scope
+    description: "Future implementation gate: the child changes only the shared required-version preflight surface from its recorded immutable base."
+    verification:
+      command: 'test -n "${CHILD_BASE_SHA:-}" && test "$(git rev-parse --verify "${CHILD_BASE_SHA}^{commit}" 2>/dev/null)" = "${CHILD_BASE_SHA}" && bash .llm-dev/framework/scripts/verify-changed-path-scope.sh --manifest manifests/project-ontos-v5-0-3-required-version-preflight.yaml --base "${CHILD_BASE_SHA}"'
+      expect: "exit-0"
+  - id: G-cardinality-1
+    category: cardinality
+    description: "The normative proposal contains exactly the four required behavior cases."
+    verification:
+      command: "grep -cE '^\\| RV-[1-4] \\|' docs/specs/project-ontos-v5-0-3-required-version-preflight-proposal.md"
+      expect: "eq:4"
+  - id: G-verdict-1
+    category: verdict-presence
+    description: "A non-author GLM Template 16 proposal verdict exists."
+    verification:
+      command: "test -f docs/reviews/project-ontos-v5-0-3-required-version-preflight/pre-a-proposal-verdict.md"
+      expect: "exit-0"
+  - id: G-blocker-1
+    category: blocker-closure
+    description: "Pre-A explicitly authorizes Phase A before a specification is drafted."
+    verification:
+      command: 'grep -Eq "^- \*\*Overall verdict:\*\* Proceed to Phase A$" docs/reviews/project-ontos-v5-0-3-required-version-preflight/pre-a-proposal-verdict.md'
+      expect: "exit-0"
+  - id: G-branch-1
+    category: branch
+    description: "Future child work runs on its dedicated branch descended from the recorded immutable base."
+    verification:
+      command: 'test -n "${CHILD_BASE_SHA:-}" && test "$(git branch --show-current)" = "codex/project-ontos-v5-0-3-required-version-preflight" && test "$(git rev-parse --verify "${CHILD_BASE_SHA}^{commit}" 2>/dev/null)" = "${CHILD_BASE_SHA}" && test "$(git merge-base "${CHILD_BASE_SHA}" HEAD)" = "${CHILD_BASE_SHA}"'
+      expect: "exit-0"
+
+tracker:
+  path: "docs/trackers/project-ontos-v5-0-3-required-version-preflight.md"
+  columns: [phase, owner, status, artifact, evidence, timestamp]
+
+branch_map:
+  default: "codex/project-ontos-v5-0-3-required-version-preflight"
+
+references:
+  - path: "docs/specs/project-ontos-v5-remediation-release-plan-proposal.md"
+    relevance: "Approved parent release boundary and exact downgrade-preflight contract."
+  - path: "ontos/core/config.py"
+    relevance: "Existing required-version range semantics and public diagnostics."
+  - path: "ontos/io/config.py"
+    relevance: "Single shared TOML load and strict configuration conversion path."
+  - path: "docs/reference/Ontos_Manual.md"
+    relevance: "Public required-version and strict configuration behavior."
+
+watch_item: "This child owns only error precedence for raw [ontos].required_version before ordinary strict configuration validation. It must reuse the existing range semantics and the existing TOML load, share one preflight across CLI and MCP, and perform no mutation. Absent or compatible requirements continue into the strict loader; an incompatible or malformed requirement reports deterministically first. The child must never accept, interpret, or rewrite a v5.1-only section, create a second parser, or weaken unknown-section validation. Issue #178 remains open. Any broader config-schema acceptance or claim that this child closes #178 is a BREACH."

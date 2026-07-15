@@ -1,0 +1,29 @@
+I'll begin executing this independent GLM governance-docs review. Let me start with Ontos activation, git state capture, and initial document reads in parallel.
+Ontos activated. Git HEAD is `41f08938bcc90cf07ac862b460101147e1f555f0`. Only untracked files are dispatcher captures (allowed by task scope). No tracked diffs. Let me read all required documents now.
+Now let me read the review directory documents and child governance artifacts.
+Now let me read the prompt and raw capture files, plus start reading the six child governance artifacts.
+Let me check what's in the `.prompts` and `.raw` directories.
+Let me read the remaining three child proposals and all six child manifests and trackers.
+Now let me read all six child manifests and six child trackers.
+Now let me read all six child trackers.
+Let me now run the pinned verifier and some static checks, and read the remaining portions of the parent proposal.
+Let me read the key sections of the parent proposal (§18.1, §20.2, §21) and run more static checks.
+Let me verify the diff from the Round 1 commit to HEAD and run the cardinality checks.
+Let me run the final verification commands—checking the artifact hash and confirming the captured prompt matches the template.
+Let me quickly verify the governance review prompt to ensure alignment with the expected deliverable.
+All checks complete. Now let me compose and write the governance review.
+Let me verify the written review has the correct format and the exact verdict shape.
+Let me do a final verification that I haven't modified any tracked files.
+The `ontos activate` command may have touched `Ontos_Context_Map.md`. Let me check and restore it since I must work read-only except for the review artifact.
+The `ontos activate` step regenerated the map with updated timestamps. Let me restore it to keep the tree read-only except for the review artifact.
+Review complete. The tree is now clean except for the review artifact (`phase-0-glm-governance-review.md`) and the dispatcher-generated capture files.
+
+**Summary:**
+
+- **Reviewed commit:** `41f08938bcc90cf07ac862b460101147e1f555f0`
+- **All 17 mandated checks passed** — including parent Pre-A Split termination, six child triples with `user_facing: true` + Product seats + `pre_a.artifact_path`, empty `sibling_deliverable_ids`, scope/forbidden-sibling/custody/rollback/acceptance/unknowns/watch items, #165's 91+9=100 arithmetic and #165/#174 namespace separation, independent reversibility of resolver/log-path/alias/preflight, preflight's existing-TOML-only contract, #178 staying open, all evidence provenance fields accurately represented.
+- **Pinned verifier result:** exit code 1 (nonzero, as expected for the historical non-certifying packet with `shape_invalid` + `auth-401-403`), reconciled in the Template 16 validation document.
+- **Diff from `c4607f0` to HEAD:** 32 files — only the authorized closeout (parent proposal 15-line diff, parent tracker 12-line diff), evidence reconciliation, live audit, six child governance scaffolds, and generated AGENTS.md/Context Map sync. No code, tests, `pyproject.toml`, `.github/`, or published artifacts changed.
+- **Three informational (non-blocking) findings** reported: Product reviewer capability asymmetry in alias/preflight children, family-namespace convention variance, and pre-existing §11.1 list punctuation.
+
+**Verdict: Approve** — this supplemental docs review passed; it has recommendation-only authority and cannot authorize merge, parent Phase A-E, or child implementation.

@@ -1,7 +1,7 @@
 ---
 id: project_ontos_v5_remediation_release_plan_tracker
 type: tracker
-status: active
+status: complete
 owner: Project Ontos Maintainers
 depends_on:
   - project_ontos_v5_remediation_release_plan_proposal
@@ -15,8 +15,8 @@ concepts:
 
 | Phase | Owner | Status | Artifact | Evidence | Timestamp |
 |-------|-------|--------|----------|----------|-----------|
-| Charter | orchestrator | active | `manifests/project-ontos-v5-remediation-release-plan.yaml` | Framework-governed Template 16 Pre-A proposal; only `Split into multiple proposals` is accepted; no parent A-E certification is claimable | 2026-07-14 |
-| -A.proposal authoring | proposal-author:codex | content complete — review pending | `docs/specs/project-ontos-v5-remediation-release-plan-proposal.md` | Published from current-main baseline `7d07556e0f71c0f1eca8760614aef6d21951f874`; `G-scope-1` and `G-branch-1` pass on the dedicated branch, while terminal clean-tree verification is performed after commit | 2026-07-14 |
-| -A.proposal review | proposal-reviewer:claude-opus | pending | `docs/reviews/project-ontos-v5-remediation-release-plan/pre-a-proposal-verdict.md` | Template 16 two-lens non-author review | |
-| 0 — child split | orchestrator | pending | release-specific child proposals and manifests | Enter only after the exact `Split into multiple proposals` verdict; each child re-enters at Pre-A and this parent never enters Phase A | |
-| Child governance | orchestrator | pending | each child manifest and Phase A spec | Every child carries a scoped v5/v6 watch item; children changing public CLI/config/query/export/JSON/MCP/migration contracts, including #173/#177/#178, set `user_facing: true` and receive Product review | |
+| Charter | orchestrator | complete — terminal Pre-A | `manifests/project-ontos-v5-remediation-release-plan.yaml` | Parent may terminate only on the exact Template 16 Split disposition and never claims Phase A–E certification | 2026-07-15 |
+| -A.proposal authoring | proposal-author:codex | complete | `docs/specs/project-ontos-v5-remediation-release-plan-proposal.md` | GLM reviewed immutable commit `c4607f05d43688bcc9472575d310f0be468a74cf`, including the corrected six-child boundary | 2026-07-15 |
+| -A.proposal review | proposal-reviewer:glm | complete — split | `docs/reviews/project-ontos-v5-remediation-release-plan/pre-a-proposal-verdict.md` | Exact context disposition `Split into multiple proposals`; the hash-bound artifact is non-strict proposal-review evidence, while the generated dispatch packet is retained only as non-certifying provenance and reconciled in `pre-a-glm-template16-validation.md` | 2026-07-15 |
+| 0 — child split | orchestrator | complete — six children scaffolded | six child proposal, tracker, and manifest triples | Each child is independently scoped, `user_facing: true`, and blocked before Phase A pending its own non-author Template 16 verdict | 2026-07-15 |
+| Child governance | orchestrator | transferred — individual Pre-A reviews pending | six child manifests and proposals | Children carry scoped v5/v6 watch items, Product seats, dedicated future branches, and no inherited parent implementation authority | 2026-07-15 |
