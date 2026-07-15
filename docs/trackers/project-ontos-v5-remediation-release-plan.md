@@ -6,9 +6,9 @@ owner: Project Ontos Maintainers
 depends_on:
   - project_ontos_v5_remediation_release_plan_proposal
 concepts:
-  - release-planning
-  - remediation
-  - lifecycle
+  - proposals
+  - release
+  - workflow
 ---
 
 # Project Ontos v5 Remediation Release Plan — Tracker

@@ -14,6 +14,12 @@ not a rewrite of the Fable report. The canonical machine-readable finding and
 assignment register is
 `manifests/project-ontos-audit-remediation-registry.yaml`.
 
+Snapshot scope: working-tree partitions and test counts in this addendum record
+what was observed on 2026-07-10. They are historical provenance, not a claim
+about current `main`, a reproducible release receipt, or present issue status.
+Later consumers must use the current registry, released evidence, and live
+issue custody instead of promoting these transient counts into a gate.
+
 ## Executive verdict
 
 The Fable audit is a useful, high-signal defect baseline for `589d919`; it is not

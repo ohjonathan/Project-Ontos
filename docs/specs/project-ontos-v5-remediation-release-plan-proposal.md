@@ -11,12 +11,12 @@ depends_on:
   - project-ontos-codex-audit-revalidation-2026-07
   - project_ontos_audit_remediation_release_line_tracker
 concepts:
-  - release-planning
-  - compatibility
+  - proposals
+  - release
   - activation
-  - validation
-  - semantic-references
-  - workspace-vocabularies
+  - schema
+  - link-check
+  - config
 ---
 
 # Project Ontos v5 Remediation Release Plan Proposal
@@ -2961,6 +2961,17 @@ No green source-tree test substitutes for published-artifact verification.
 ### 23.1 Immediate board maintenance
 
 #### #149
+
+Historical priority note: the 2026-07-10 revalidation called #149
+`P1-containing` because the then-combined issue still carried four P1 patch
+items. Those patch items shipped through v5.0.2. The proposed `[P2]` title below
+applies only to the residual v6 compatibility-shim deletion; it does not
+rewrite the severity of the completed historical work.
+
+The live body observed on 2026-07-14 still described PR #170 as a draft with
+merge pending even though #170 had merged and shipped in v5.0.2. The board
+update must correct that stale state explicitly rather than merely changing the
+title or labels.
 
 Retitle to:
 
