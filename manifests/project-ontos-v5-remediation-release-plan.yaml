@@ -1,0 +1,261 @@
+manifest_version: "2.0.1"
+id: project-ontos-v5-remediation-release-plan
+slug: project-ontos-v5-remediation-release-plan
+summary: "Terminal Pre-A proposal that splits Project Ontos v5 remediation into governed child deliverables while restricting v6.0.0 to the exact eleven deprecated path-compatibility names promised through the v5 line."
+
+deliverable_type: standard
+# This parent changes no product surface and terminates at the Template 16
+# split disposition. Children that own CLI, configuration, query/export,
+# JSON/MCP, migration, or other public contracts must set user_facing: true.
+user_facing: false
+# `Split into multiple proposals` is a framework-governed terminal Pre-A
+# route. It creates no parent Phase A-E certification claim.
+lifecycle_mode: framework lifecycle
+
+owners:
+  - "Project Ontos Maintainers"
+
+authorship:
+  deliverable_author_families:
+    - codex
+  structural_orchestrator_families:
+    - codex
+
+pre_a:
+  entry: proposal
+  artifact_path: "docs/specs/project-ontos-v5-remediation-release-plan-proposal.md"
+
+scope:
+  allowed_paths:
+    - "AGENTS.md"
+    - "Ontos_Context_Map.md"
+    - "docs/reviews/2026-07-10-codex-audit-revalidation.md"
+    - "docs/specs/project-ontos-v5-remediation-release-plan-proposal.md"
+    - "docs/specs/project-ontos-v5-remediation-release-plan-spec.md"
+    - "docs/trackers/project-ontos-v5-remediation-release-plan.md"
+    - "docs/retros/project-ontos-v5-remediation-release-plan-retro.md"
+    - "manifests/project-ontos-v5-remediation-release-plan.yaml"
+  allowed_path_patterns:
+    - "docs/reviews/project-ontos-v5-remediation-release-plan/**"
+  composition_targets: []
+  forbidden_paths:
+    - ".github/"
+    - ".llm-dev/framework/"
+    - "build/"
+    - "dist/"
+    - "docs/logs/"
+    - "ontos/"
+    - "pyproject.toml"
+    - "site/"
+    - "tests/"
+  forbidden_symbols: []
+  forbidden_symbol_exemptions: []
+  cardinality_assertions:
+    - name: "Proposal contains exactly the four target release headings"
+      command: "grep -cE '^### v(5[.]0[.]3|5[.]1[.]0|5[.]2[.]0|6[.]0[.]0) — ' docs/specs/project-ontos-v5-remediation-release-plan-proposal.md"
+      expect: "eq:4"
+    - name: "Proposal covers every live issue in the audited inventory"
+      command: "grep -oE '#(149|158|165|173|174|175|176|177|178)' docs/specs/project-ontos-v5-remediation-release-plan-proposal.md | sort -u | wc -l | tr -d ' '"
+      expect: "eq:9"
+    - name: "Proposal freezes exactly eleven v6 compatibility removals"
+      command: "awk '/^### 18[.]1 /{in_section=1; next} /^### /{if(in_section) exit} in_section && /^[0-9]+[.] `/{count++} END{print count+0}' docs/specs/project-ontos-v5-remediation-release-plan-proposal.md"
+      expect: "eq:11"
+  cleanliness:
+    pathspecs: []
+    exclude_pathspecs:
+      - "docs/reviews/project-ontos-v5-remediation-release-plan/.external/"
+
+artifacts:
+  spec:              "docs/specs/project-ontos-v5-remediation-release-plan-spec.md"
+  family_verdict:    "docs/reviews/project-ontos-v5-remediation-release-plan/<phase>-<family>-<role>.md"
+  canonical_verdict: "docs/reviews/project-ontos-v5-remediation-release-plan/<phase>-verdict.md"
+  proposal_verdict:  "docs/reviews/project-ontos-v5-remediation-release-plan/pre-a-proposal-verdict.md"
+  fix_summary:       "docs/reviews/project-ontos-v5-remediation-release-plan/D.4-fix-summary.md"
+  verification:      "docs/reviews/project-ontos-v5-remediation-release-plan/D.5-<family>-verifier.md"
+  final_approval:    "docs/reviews/project-ontos-v5-remediation-release-plan/final-approval.md"
+  retro:             "docs/retros/project-ontos-v5-remediation-release-plan-retro.md"
+
+# Only -A.proposal may dispatch for this parent. The remaining assignments are
+# an inert schema/P3 fallback roster: G-blocker-1 accepts only the terminal
+# Split verdict, so none of phases A-E may start under this manifest.
+model_assignments:
+  - phase: "-A.proposal"
+    assignments:
+      claude-opus: proposal-reviewer
+  - phase: "A"
+    assignments:
+      codex: spec-author
+  - phase: "B.1"
+    assignments:
+      claude-opus: peer
+      claude-sonnet: alignment
+      gemini: adversarial
+  - phase: "B.3"
+    assignments:
+      claude-opus: meta-consolidator
+  - phase: "C"
+    assignments:
+      codex: implementation-author
+  - phase: "D.1"
+    assignments:
+      claude-opus: peer
+  - phase: "D.2"
+    assignments:
+      claude-sonnet: peer
+      gemini: alignment
+      claude-opus: adversarial
+  - phase: "D.3"
+    assignments:
+      claude-sonnet: meta-consolidator
+  - phase: "D.4"
+    assignments:
+      codex: fix-author
+  - phase: "D.5"
+    assignments:
+      claude-opus: verifier
+      claude-sonnet: verifier
+      gemini: verifier
+  - phase: "D.6"
+    assignments:
+      claude-opus: final-approval
+  - phase: "E"
+    assignments:
+      gemini: retro
+
+cli_capability_matrix:
+  claude-opus:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+  claude-sonnet:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+  codex:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
+  gemini:
+    shell: false
+    git: false
+    test_runner: false
+    doc_index: true
+    evidence_cap: static-inspection
+    writes_files_non_interactively: false
+    expected_version_regex: "^[0-9]+[.][0-9]+[.][0-9]+"
+
+smoke_checks:
+  - phase: "-A.proposal"
+    checks:
+      - name: "Proposal frontmatter and document graph are valid"
+        command: "./.venv/bin/python -m ontos link-check --frontmatter-only --json"
+        expect: "exit-0"
+      - name: "Pre-A deliverable has no whitespace errors"
+        command: "git diff --check"
+        expect: "exit-0"
+      - name: "Deliverable manifest conforms to the adopter framework"
+        command: "scripts/llm-dev verify manifests/project-ontos-v5-remediation-release-plan.yaml"
+        expect: "exit-0"
+      - name: "Proposal still covers all four target releases"
+        command: "grep -cE '^### v(5[.]0[.]3|5[.]1[.]0|5[.]2[.]0|6[.]0[.]0) — ' docs/specs/project-ontos-v5-remediation-release-plan-proposal.md"
+        expect: "eq:4"
+
+regression_guards: []
+sibling_deliverable_ids: []
+review_rounds: []
+self_review_caveats: []
+consolidation_mode: external
+implementation_sequencing:
+  mode: spec-first
+reviewer_family_substitutes: []
+gate_env: []
+
+lifecycle_receipt_inventory_path: "docs/reviews/project-ontos-v5-remediation-release-plan/lifecycle-receipt-inventory.yaml"
+
+merge_authority:
+  mode: recommendation_only
+
+cross_repo_dependencies: []
+historical_receipt_gaps: []
+gate_only_invariants: []
+convergence_metrics: []
+
+gate_prerequisites:
+  - id: G-test-1
+    category: test
+    description: "Pre-A proposal frontmatter resolves in the clean docs scope."
+    verification:
+      command: "./.venv/bin/python -m ontos link-check --frontmatter-only --json"
+      expect: "exit-0"
+  - id: G-scope-1
+    category: scope
+    description: "Pre-A changed paths remain within this documentation-only deliverable."
+    verification:
+      command: "bash .llm-dev/framework/scripts/verify-changed-path-scope.sh --manifest manifests/project-ontos-v5-remediation-release-plan.yaml --base 7d07556e0f71c0f1eca8760614aef6d21951f874"
+      expect: "exit-0"
+  - id: G-cardinality-1
+    category: cardinality
+    description: "Exactly four target release headings are present."
+    verification:
+      command: "grep -cE '^### v(5[.]0[.]3|5[.]1[.]0|5[.]2[.]0|6[.]0[.]0) — ' docs/specs/project-ontos-v5-remediation-release-plan-proposal.md"
+      expect: "eq:4"
+  - id: G-cardinality-2
+    category: cardinality
+    description: "All nine audited live issues are represented."
+    verification:
+      command: "grep -oE '#(149|158|165|173|174|175|176|177|178)' docs/specs/project-ontos-v5-remediation-release-plan-proposal.md | sort -u | wc -l | tr -d ' '"
+      expect: "eq:9"
+  - id: G-cardinality-3
+    category: cardinality
+    description: "The Pre-A proposal freezes exactly eleven v6 compatibility removals."
+    verification:
+      command: "awk '/^### 18[.]1 /{in_section=1; next} /^### /{if(in_section) exit} in_section && /^[0-9]+[.] `/{count++} END{print count+0}' docs/specs/project-ontos-v5-remediation-release-plan-proposal.md"
+      expect: "eq:11"
+  - id: G-verdict-1
+    category: verdict-presence
+    description: "A non-author Pre-A proposal verdict exists."
+    verification:
+      command: "test -f docs/reviews/project-ontos-v5-remediation-release-plan/pre-a-proposal-verdict.md"
+      expect: "exit-0"
+  - id: G-blocker-1
+    category: blocker-closure
+    description: "The non-author Pre-A disposition is the one authorized terminal route: Split into multiple proposals."
+    verification:
+      command: 'grep -Eq "^- \*\*Overall verdict:\*\* Split into multiple proposals$" docs/reviews/project-ontos-v5-remediation-release-plan/pre-a-proposal-verdict.md'
+      expect: "exit-0"
+  - id: G-branch-1
+    category: branch
+    description: "Pre-A work runs on the dedicated deliverable branch based from the audited current-main baseline."
+    verification:
+      command: "test \"$(git branch --show-current)\" = \"codex/project-ontos-v5-remediation-release-plan\""
+      expect: "exit-0"
+  - id: G-branch-2
+    category: branch
+    description: "Deliverable-owned paths are clean after commit; sibling-session noise is ignored."
+    verification:
+      command: "bash .llm-dev/framework/scripts/clean-tree-scoped.sh --manifest manifests/project-ontos-v5-remediation-release-plan.yaml"
+      expect: "exit-0"
+
+tracker:
+  path: "docs/trackers/project-ontos-v5-remediation-release-plan.md"
+  columns: [phase, owner, status, artifact, evidence, timestamp]
+
+branch_map:
+  default: "codex/project-ontos-v5-remediation-release-plan"
+
+references:
+  - path: "docs/reference/Ontos_Manual.md"
+    relevance: "Current public CLI, configuration, activation, and workflow contract."
+  - path: "docs/reference/Ontos_Agent_Instructions.md"
+    relevance: "Current generated-agent activation and session lifecycle contract."
+  - path: "docs/reference/ontology_spec.md"
+    relevance: "Current canonical type, status, and graph semantics."
+  - path: "docs/reviews/2026-07-10-codex-audit-revalidation.md"
+    relevance: "Independent current-state revalidation and custody baseline."
+  - path: "docs/trackers/project-ontos-audit-remediation-release-line.md"
+    relevance: "Canonical historical audit release and custody ledger."
+
+watch_item: "This parent terminates at Pre-A only on the exact Template 16 verdict 'Split into multiple proposals'; it must not enter Phase A or claim parent A-E certification. Every child manifest and Phase A spec must carry a scoped watch item preserving this boundary. Any child that changes CLI, configuration, query/export, JSON/MCP, migration, or another public contract—including #173, #177, and #178—must set user_facing: true and receive Product review. Project Ontos completes workspace vocabularies, portable receipts, semantic references, stable findings, and local Git-aware coordination in v5; v6.0.0 removes only the exact eleven promised path-compatibility names. Deferring #178 to v6, broadening the v6 break, or dispatching parent Phase A-E is a BREACH."
