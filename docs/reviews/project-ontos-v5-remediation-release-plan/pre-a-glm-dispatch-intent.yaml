@@ -1,0 +1,38 @@
+manifest_version: "2.0.1"
+authoring_session_family: codex
+meta_orchestrator_family: codex
+deliverable_author_family: codex
+deliverable_author_families:
+  - codex
+deliverable_id: project-ontos-v5-remediation-release-plan
+artifact_root: docs/reviews/project-ontos-v5-remediation-release-plan
+strict_p3_claim: true
+dispatches:
+  - dispatch_id: project-ontos-v5-remediation-release-plan-pre-a-glm-review
+    phase: -A.proposal
+    family: glm
+    role: proposal-reviewer
+    review_mode: proposal-review
+    expected_provider: glm
+    expected_cli: opencode
+    expected_model: glm-5.2
+    expected_artifact: docs/reviews/project-ontos-v5-remediation-release-plan/pre-a-proposal-verdict.md
+    prompt_path: docs/reviews/project-ontos-v5-remediation-release-plan/.prompts/pre-a-glm-proposal-review.prompt.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    serving_provider: neuralwatt
+    wire_protocol: openai-compatible
+    opencode_provider_id: neuralwatt
+    opencode_model_ref: neuralwatt/glm-5.2
+    opencode_base_url_env: NEURALWATT_BASE_URL
+    opencode_api_key_env: NEURALWATT_API_KEY
+    endpoint_origin_label: neuralwatt
+    evidence_trust_tier: attested-third-party
+    route_attestation_profile_id: neuralwatt-opencode-glm-5-2-v1
+    fallback_models: []
+    scope: |
+      Independent Template 16 Product and Technical review of the terminal
+      parent proposal after explicit ownership was added for the v5.0.3
+      required-version preflight. The reviewer must choose an exact Template 16
+      verdict and, for a split verdict, evaluate all six child boundaries.
+    status: pending

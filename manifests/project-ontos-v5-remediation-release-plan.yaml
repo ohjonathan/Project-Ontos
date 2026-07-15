@@ -23,7 +23,7 @@ authorship:
 
 pre_a:
   entry: proposal
-  artifact_path: "docs/specs/project-ontos-v5-remediation-release-plan-proposal.md"
+  artifact_path: "docs/reviews/project-ontos-v5-remediation-release-plan/pre-a-proposal-verdict.md"
 
 scope:
   allowed_paths:
@@ -32,9 +32,27 @@ scope:
     - "docs/reviews/2026-07-10-codex-audit-revalidation.md"
     - "docs/specs/project-ontos-v5-remediation-release-plan-proposal.md"
     - "docs/specs/project-ontos-v5-remediation-release-plan-spec.md"
+    - "docs/specs/project-ontos-v5-remediation-board-hygiene-proposal.md"
+    - "docs/specs/project-ontos-issue-165-audit-registry-proposal.md"
+    - "docs/specs/project-ontos-v5-0-3-dependency-resolver-proposal.md"
+    - "docs/specs/project-ontos-v5-0-3-log-paths-proposal.md"
+    - "docs/specs/project-ontos-v5-0-3-built-in-status-alias-proposal.md"
+    - "docs/specs/project-ontos-v5-0-3-required-version-preflight-proposal.md"
     - "docs/trackers/project-ontos-v5-remediation-release-plan.md"
+    - "docs/trackers/project-ontos-v5-remediation-board-hygiene.md"
+    - "docs/trackers/project-ontos-issue-165-audit-registry.md"
+    - "docs/trackers/project-ontos-v5-0-3-dependency-resolver.md"
+    - "docs/trackers/project-ontos-v5-0-3-log-paths.md"
+    - "docs/trackers/project-ontos-v5-0-3-built-in-status-alias.md"
+    - "docs/trackers/project-ontos-v5-0-3-required-version-preflight.md"
     - "docs/retros/project-ontos-v5-remediation-release-plan-retro.md"
     - "manifests/project-ontos-v5-remediation-release-plan.yaml"
+    - "manifests/project-ontos-v5-remediation-board-hygiene.yaml"
+    - "manifests/project-ontos-issue-165-audit-registry.yaml"
+    - "manifests/project-ontos-v5-0-3-dependency-resolver.yaml"
+    - "manifests/project-ontos-v5-0-3-log-paths.yaml"
+    - "manifests/project-ontos-v5-0-3-built-in-status-alias.yaml"
+    - "manifests/project-ontos-v5-0-3-required-version-preflight.yaml"
   allowed_path_patterns:
     - "docs/reviews/project-ontos-v5-remediation-release-plan/**"
   composition_targets: []
@@ -60,6 +78,9 @@ scope:
     - name: "Proposal freezes exactly eleven v6 compatibility removals"
       command: "awk '/^### 18[.]1 /{in_section=1; next} /^### /{if(in_section) exit} in_section && /^[0-9]+[.] `/{count++} END{print count+0}' docs/specs/project-ontos-v5-remediation-release-plan-proposal.md"
       expect: "eq:11"
+    - name: "Terminal split scaffolds exactly six initial child governance triples"
+      command: "for id in project-ontos-v5-remediation-board-hygiene project-ontos-issue-165-audit-registry project-ontos-v5-0-3-dependency-resolver project-ontos-v5-0-3-log-paths project-ontos-v5-0-3-built-in-status-alias project-ontos-v5-0-3-required-version-preflight; do test -f docs/specs/$id-proposal.md && test -f docs/trackers/$id.md && test -f manifests/$id.yaml || exit 1; done"
+      expect: "exit-0"
   cleanliness:
     pathspecs: []
     exclude_pathspecs:
@@ -81,7 +102,7 @@ artifacts:
 model_assignments:
   - phase: "-A.proposal"
     assignments:
-      claude-opus: proposal-reviewer
+      glm: proposal-reviewer
   - phase: "A"
     assignments:
       codex: spec-author
@@ -146,12 +167,17 @@ cli_capability_matrix:
     evidence_cap: static-inspection
     writes_files_non_interactively: false
     expected_version_regex: "^[0-9]+[.][0-9]+[.][0-9]+"
+  glm:
+    shell: true
+    git: true
+    test_runner: true
+    doc_index: true
 
 smoke_checks:
   - phase: "-A.proposal"
     checks:
       - name: "Proposal frontmatter and document graph are valid"
-        command: "./.venv/bin/python -m ontos link-check --frontmatter-only --json"
+        command: "ontos link-check --frontmatter-only --json"
         expect: "exit-0"
       - name: "Pre-A deliverable has no whitespace errors"
         command: "git diff --check"
@@ -188,13 +214,13 @@ gate_prerequisites:
     category: test
     description: "Pre-A proposal frontmatter resolves in the clean docs scope."
     verification:
-      command: "./.venv/bin/python -m ontos link-check --frontmatter-only --json"
+      command: "ontos link-check --frontmatter-only --json"
       expect: "exit-0"
   - id: G-scope-1
     category: scope
     description: "Pre-A changed paths remain within this documentation-only deliverable."
     verification:
-      command: "bash .llm-dev/framework/scripts/verify-changed-path-scope.sh --manifest manifests/project-ontos-v5-remediation-release-plan.yaml --base 7d07556e0f71c0f1eca8760614aef6d21951f874"
+      command: "bash .llm-dev/framework/scripts/verify-changed-path-scope.sh --manifest manifests/project-ontos-v5-remediation-release-plan.yaml --base bd04620376ed6a8d0024e990e04a86da402b9398"
       expect: "exit-0"
   - id: G-cardinality-1
     category: cardinality
@@ -214,6 +240,12 @@ gate_prerequisites:
     verification:
       command: "awk '/^### 18[.]1 /{in_section=1; next} /^### /{if(in_section) exit} in_section && /^[0-9]+[.] `/{count++} END{print count+0}' docs/specs/project-ontos-v5-remediation-release-plan-proposal.md"
       expect: "eq:11"
+  - id: G-cardinality-4
+    category: cardinality
+    description: "The terminal split creates exactly the six approved initial child proposal, tracker, and manifest triples."
+    verification:
+      command: "for id in project-ontos-v5-remediation-board-hygiene project-ontos-issue-165-audit-registry project-ontos-v5-0-3-dependency-resolver project-ontos-v5-0-3-log-paths project-ontos-v5-0-3-built-in-status-alias project-ontos-v5-0-3-required-version-preflight; do test -f docs/specs/$id-proposal.md && test -f docs/trackers/$id.md && test -f manifests/$id.yaml || exit 1; done"
+      expect: "exit-0"
   - id: G-verdict-1
     category: verdict-presence
     description: "A non-author Pre-A proposal verdict exists."
@@ -230,7 +262,7 @@ gate_prerequisites:
     category: branch
     description: "Pre-A work runs on the dedicated deliverable branch based from the audited current-main baseline."
     verification:
-      command: "test \"$(git branch --show-current)\" = \"codex/project-ontos-v5-remediation-release-plan\""
+      command: "test \"$(git branch --show-current)\" = \"codex/v5-remediation-child-scaffolding\""
       expect: "exit-0"
   - id: G-branch-2
     category: branch
@@ -244,7 +276,7 @@ tracker:
   columns: [phase, owner, status, artifact, evidence, timestamp]
 
 branch_map:
-  default: "codex/project-ontos-v5-remediation-release-plan"
+  default: "codex/v5-remediation-child-scaffolding"
 
 references:
   - path: "docs/reference/Ontos_Manual.md"

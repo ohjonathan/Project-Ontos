@@ -41,7 +41,7 @@ This proposal therefore adopts the following release train:
 | Target | Purpose | Primary custody |
 |---|---|---|
 | Governance checkpoint | Repair the issue board and make the audit registry authoritative | #158, #165 |
-| v5.0.3 | Narrow correctness patch | #176, safe #178 alias slice, log-path residual |
+| v5.0.3 | Narrow correctness patch | #176, safe #178 alias and migration-preflight slices, log-path residual |
 | v5.1.0 | Portable activation identity and complete workspace vocabularies | #173, #178 |
 | v5.2.0 | Semantic references, stable findings, and same-device coordination | #177, #174, core #175 |
 | Remaining v5.x maintenance | Compatibility isolation, archive extraction, optional cross-device coordination if separately approved | #149 preparation and extracted follow-ups |
@@ -67,6 +67,14 @@ artifacts were moved to the dedicated
 `codex/project-ontos-v5-remediation-release-plan` branch created directly from
 that baseline. The base-SHA changed-path scope and exact branch-identity gates
 pass there; independent Pre-A review and its verdict remain pending.
+
+After that proposal merged and PR #179 was archived, Phase 0 preparation found
+that the mandatory v5.0.3 `required_version` preflight had no child owner. This
+scope-correction revision adds the sixth independently governed child and moves
+the parent review assignment to GLM. The review input is committed on
+`codex/v5-remediation-child-scaffolding` from
+`main@bd04620376ed6a8d0024e990e04a86da402b9398`; the GLM verdict records the
+exact reviewed commit before any child scaffold is created.
 
 The live open-issue inventory covered:
 
@@ -420,7 +428,7 @@ complete.
 flowchart TD
     B["Board cleanup: #149, #158, new residual issues"]
     G["#165 canonical audit registry"]
-    P["v5.0.3: #176 + log paths/wrapper slice + safe alias"]
+    P["v5.0.3: #176 + log paths/wrapper slice + safe alias + version preflight"]
     R["#173 receipts and generated ownership"]
     V["#178 resolved workspace vocabulary"]
     L["#177 semantic reference classifier and policy"]
@@ -453,10 +461,12 @@ granted.
 
 ### v5.0.3 — Correctness Patch
 
-Deliver #176, one safe built-in #178 alias, the extracted log-path bug, and the
-log-related delegation slice of #149's v5 compatibility isolation. Do not
-introduce custom vocabulary, finding IDs, namespaces, archive/history cutover,
-archive deletion, or public API removal.
+Deliver #176, one safe built-in #178 alias, the extracted log-path bug, the
+log-related delegation slice of #149's v5 compatibility isolation, and the
+narrow `required_version` downgrade preflight needed before v5.1 configuration
+ships. Do not introduce custom vocabulary, parse or accept v5.1-only sections,
+add finding IDs or namespaces, perform archive/history cutover or deletion, or
+remove a public API.
 
 ### v5.1.0 — Activation Receipts and Workspace Vocabularies
 
@@ -488,13 +498,15 @@ unrelated cleanup.
 
 ### 11.1 Scope
 
-v5.0.3 contains three independently reversible product changes plus one
+v5.0.3 contains four independently reversible product changes plus one
 compatibility-isolation slice:
 
 1. safe resolution of existing bare root-file dependencies (#176);
 2. one consistent resolved log-path contract across writers, readers, counters,
    and consolidation; and
-3. the built-in repair alias `in-progress -> in_progress` from #178.
+3. the built-in repair alias `in-progress -> in_progress` from #178; and
+4. a narrow `[ontos].required_version` preflight before strict configuration
+   validation, owning only the downgrade-safety slice of #178's migration.
 
 The log-path change includes delegation of the log-related #149 wrappers to the
 same resolver. Those wrappers remain public and retain their v5 signatures,
@@ -708,7 +720,31 @@ The alias must:
 This closes only the alias slice. Issue #178 stays open until workspace aliases,
 extensions, frozen paths, receipts, and all consumer surfaces are complete.
 
-### 11.5 Explicit exclusions
+### 11.5 Required-version preflight
+
+Before the ordinary strict configuration loader reports an unknown v5.1-only
+section or field, v5.0.3 must perform one bounded raw-config preflight:
+
+1. Read only `[ontos].required_version` from the raw `.ontos.toml` source.
+2. When the field is absent, continue through the existing loader unchanged.
+3. When the field is present and excludes the running Ontos version, stop with
+   a deterministic incompatible-version diagnostic before any unknown-section
+   diagnostic.
+4. When the field is present and includes the running version, continue through
+   the existing strict loader. v5.0.3 must still reject every v5.1-only section
+   and field it does not understand.
+5. Reject a malformed requirement deterministically; never reinterpret it as a
+   permissive range or ignore it.
+6. Reuse the same preflight across CLI and MCP configuration-loading surfaces.
+
+This preflight does not create a second configuration parser, accept the new
+vocabulary schema, or weaken strict validation. Its only purpose is to give an
+older-but-preflight-aware v5 runtime an actionable version error before users
+encounter incidental unknown-section errors during downgrade or mixed-version
+operation. The child owns this migration-compatibility slice of #178; issue
+#178 remains open for the complete v5.1 workspace-vocabulary contract.
+
+### 11.6 Explicit exclusions
 
 v5.0.3 does not include:
 
@@ -722,7 +758,7 @@ v5.0.3 does not include:
 - removal of #149 compatibility names or isolation of the non-log names beyond
   the mandatory delegation slice in §11.3.
 
-### 11.6 v5.0.3 gates
+### 11.7 v5.0.3 gates
 
 #### Product gates
 
@@ -742,6 +778,9 @@ v5.0.3 does not include:
   services while their v5 compatibility contracts remain byte-for-byte pinned
   where applicable.
 - Repair output for `in-progress` is deterministic and formatting-safe.
+- An incompatible `[ontos].required_version` wins over unknown v5.1-section
+  diagnostics, while absent or compatible requirements preserve strict v5.0.3
+  configuration behavior.
 
 #### Safety gates
 
@@ -763,7 +802,7 @@ v5.0.3 does not include:
   checkout and its version/hash are verified.
 - Published-wheel smoke reproduces the fixed bare-file behavior.
 
-### 11.7 Rollback
+### 11.8 Rollback
 
 - If dependency resolution regresses, revert only the resolver change and ship
   a new patch version; never replace an immutable tag.
@@ -774,14 +813,20 @@ v5.0.3 does not include:
   recorded decision-history entry.
 - The `in-progress` repair is canonical and remains valid after rollback, but
   no repair occurs without explicit apply.
+- If the preflight regresses configuration loading, revert only that preflight;
+  v5.0.3 never accepted or rewrote v5.1-only configuration, so rollback does
+  not require a data migration.
 
-### 11.8 Closure criteria
+### 11.9 Closure criteria
 
 - Close #176 only after the released artifact—not merely the source tree—passes
   the reproduction.
 - Close the new log-path issue after Project Ontos and one internal-log fixture
   prove writer/reader/consolidator parity.
 - Record the built-in alias checkbox in #178, but do not close #178.
+- Record the downgrade-preflight slice in #178 only after CLI and MCP fixtures
+  prove incompatible-version precedence and unchanged strict validation; do not
+  close #178.
 
 ## 12. Governance Checkpoint — Machine-Readable Audit Registry (#165)
 
@@ -2792,6 +2837,7 @@ lifecycle evidence.
 | v5.0.3 dependency resolver | graph resolver and parity tests | current containment/allowlist | body-reference policy |
 | v5.0.3 log paths | resolved log paths and consumers | config/context/write transactions | archive deletion |
 | v5.0.3 alias | one built-in repair mapping | repair engine | custom vocabulary |
+| v5.0.3 required-version preflight | narrow version check before strict validation | raw config and current version-range semantics | v5.1 section parsing or acceptance |
 | v5.1 identity primitives | canonical digest and analysis builder | config, loader, graph | generated writes initially |
 | v5.1 receipts/ownership | public receipt and generated plan/check | identity primitives | custom vocab resolution |
 | v5.1 vocabulary core | config, resolver, dual model | receipts/config digest | repair apply initially |
@@ -3005,7 +3051,7 @@ wording, add `finding_key` to #174, and split optional CAS from #175.
 
 | Release | Required docs |
 |---|---|
-| v5.0.3 | root-file dependency behavior, effective log paths, safe alias, release notes |
+| v5.0.3 | root-file dependency behavior, effective log paths, safe alias, required-version downgrade preflight, release notes |
 | v5.1.0 | receipt contract, generated ownership, vocabulary config/reference, migration/downgrade, CLI/MCP examples |
 | v5.2.0 | namespace grammar, path policy, finding IDs/diff/baselines, generated ownership/merge-check, CI recipes |
 | final v5.x | full v6 path API migration table, archive location/restore guide |
@@ -3278,12 +3324,13 @@ in v5 and reserve v6 for #149 deletion.
 | Portable activation identity | #173 | §13, §20, §22, §24 |
 | Runtime finding identity and ratchet | #174 | §16, §17.5, §22 |
 | Worktree coordination, merge result, and optional-CAS custody | #175 | §8, §17, §20, §24 |
-| Bare root-file dependency | #176 | §11.2, §11.6 |
+| Bare root-file dependency | #176 | §11.2, §11.7 |
 | Semantic namespaces and body policy | #177 | §15, §16.3 |
 | Workspace vocabulary and repair | #178 | §11.4, §14, §20 |
 | Compatibility isolation and deletion | #149 | §11.3, §18.1, §19 |
 | Tracker closure/custody | #158 | §8, §23.1 |
-| Log-path residual | extracted issue | §11.3, §11.6 |
+| Log-path residual | extracted issue | §11.3, §11.7 |
+| Required-version downgrade preflight | #178 migration slice | §11.5, §14.10, §20.2 |
 | Archive residual | extracted issue | §18.2–§18.4 |
 
 ## 30. Review Questions
@@ -3313,11 +3360,13 @@ multiple proposals**. That verdict terminates this parent at Pre-A. It
 authorizes only Phase 0 scaffolding of independent child proposals; it does not
 authorize product implementation or certify this parent through A–E.
 
-Scaffold board hygiene, #165, and the v5.0.3 child proposals first. Each child
-must receive its own non-author Pre-A decision before progressing. Do not begin
-v5.1 implementation until #165 is authoritative and the v5.0.3 log-path
-contract has made the active stream and still-canonical internal archive/history
-authority explicit. That step does not freeze or migrate the latter authority.
+Scaffold board hygiene, #165, and four v5.0.3 product children—dependency
+resolver, log paths, built-in status alias, and required-version preflight—first.
+These six children must each receive their own non-author Pre-A decision before
+progressing. Do not begin v5.1 implementation until #165 is authoritative and
+the v5.0.3 log-path contract has made the active stream and still-canonical
+internal archive/history authority explicit. That step does not freeze or
+migrate the latter authority.
 
 The core strategic decision is final unless review finds a concrete
 compatibility contradiction:
