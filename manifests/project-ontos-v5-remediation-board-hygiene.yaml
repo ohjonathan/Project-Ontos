@@ -1,0 +1,260 @@
+manifest_version: "2.0.1"
+id: project-ontos-v5-remediation-board-hygiene
+slug: project-ontos-v5-remediation-board-hygiene
+summary: "Reconcile Project Ontos issue-board custody for the approved v5 remediation program without changing product code or overstating successor completion."
+
+lifecycle_mode: framework lifecycle
+deliverable_type: closeout-proof
+user_facing: true
+fallback_evidence_mode: strict_p3
+require_lifecycle_dispatch_bundles: true
+strict_p3_required_phases: ["B.1", "D.2", "D.5"]
+
+owners: ["Project Ontos Maintainers"]
+authorship:
+  deliverable_author_families: [codex]
+  structural_orchestrator_families: [codex]
+
+pre_a:
+  entry: proposal
+  artifact_path: "docs/reviews/project-ontos-v5-remediation-board-hygiene/pre-a-proposal-verdict.md"
+
+implementation_sequencing:
+  mode: spec-first
+
+scope:
+  allowed_paths:
+    - "AGENTS.md"
+    - "Ontos_Context_Map.md"
+    - "docs/specs/project-ontos-v5-remediation-board-hygiene-proposal.md"
+    - "docs/specs/project-ontos-v5-remediation-board-hygiene-spec.md"
+    - "docs/trackers/project-ontos-v5-remediation-board-hygiene.md"
+    - "docs/retros/project-ontos-v5-remediation-board-hygiene-retro.md"
+    - "manifests/project-ontos-v5-remediation-board-hygiene.yaml"
+  allowed_path_patterns:
+    - "docs/reviews/project-ontos-v5-remediation-board-hygiene/**"
+  composition_targets:
+    - path: "docs/specs/project-ontos-v5-remediation-release-plan-proposal.md"
+      rationale: "Read-only inheritance of the approved board-custody scope, issue dispositions, and v5/v6 boundary."
+      shares_with_deliverable_id: "project-ontos-v5-remediation-release-plan"
+  forbidden_paths:
+    - ".github/"
+    - ".llm-dev/framework/"
+    - ".ontos-internal/"
+    - ".venv/"
+    - "build/"
+    - "dist/"
+    - "docs/logs/"
+    - "docs/reference/"
+    - "docs/releases/"
+    - "ontos/"
+    - "pyproject.toml"
+    - "scripts/"
+    - "site/"
+    - "tests/"
+  forbidden_symbols: []
+  forbidden_symbol_exemptions: []
+  cardinality_assertions:
+    - name: "Proposal owns both primary custody issues"
+      command: "grep -oE '#(149|158)' docs/specs/project-ontos-v5-remediation-board-hygiene-proposal.md | sort -u | wc -l | tr -d ' '"
+      expect: "eq:2"
+    - name: "Proposal names both required residual issues"
+      command: "grep -cE '^1\\. `\\[Bug\\] Align contributor log writes|^2\\. `\\[Chore\\] Classify and extract eligible internal archive material' docs/specs/project-ontos-v5-remediation-board-hygiene-proposal.md"
+      expect: "eq:2"
+  cleanliness:
+    pathspecs: []
+    exclude_pathspecs:
+      - "docs/reviews/project-ontos-v5-remediation-board-hygiene/.external/"
+
+artifacts:
+  spec: "docs/specs/project-ontos-v5-remediation-board-hygiene-spec.md"
+  family_verdict: "docs/reviews/project-ontos-v5-remediation-board-hygiene/<phase>-<family>-<role>.md"
+  canonical_verdict: "docs/reviews/project-ontos-v5-remediation-board-hygiene/<phase>-verdict.md"
+  product_verdict: "docs/reviews/project-ontos-v5-remediation-board-hygiene/<phase>-<family>-product.md"
+  proposal_verdict: "docs/reviews/project-ontos-v5-remediation-board-hygiene/pre-a-proposal-verdict.md"
+  fix_summary: "docs/reviews/project-ontos-v5-remediation-board-hygiene/D.4-fix-summary.md"
+  verification: "docs/reviews/project-ontos-v5-remediation-board-hygiene/D.5-<family>-verifier.md"
+  final_approval: "docs/reviews/project-ontos-v5-remediation-board-hygiene/final-approval.md"
+  retro: "docs/retros/project-ontos-v5-remediation-board-hygiene-retro.md"
+
+model_assignments:
+  - phase: "-A.proposal"
+    assignments: {glm: proposal-reviewer}
+  - phase: "A"
+    assignments: {codex: spec-author}
+  - phase: "B.1"
+    assignments: {claude: peer, gemini: alignment, glm: adversarial}
+  - phase: "B.1"
+    assignments: {claude: product}
+  - phase: "B.2"
+    assignments: {claude: alignment, gemini: peer, glm: adversarial}
+  - phase: "B.2"
+    assignments: {claude: product}
+  - phase: "B.3"
+    assignments: {claude: meta-consolidator}
+  - phase: "C"
+    assignments: {codex: implementation-author}
+  - phase: "D.1"
+    assignments: {claude: peer}
+  - phase: "D.2"
+    assignments: {claude: peer, gemini: adversarial, glm: alignment}
+  - phase: "D.2"
+    assignments: {claude: product}
+  - phase: "D.3"
+    assignments: {claude: meta-consolidator}
+  - phase: "D.4"
+    assignments: {codex: fix-author}
+  - phase: "D.5"
+    assignments: {claude: verifier, gemini: verifier, glm: verifier}
+  - phase: "D.6"
+    assignments: {codex: final-approval}
+  - phase: "E"
+    assignments: {codex: retro}
+
+cli_capability_matrix:
+  codex: {shell: true, git: true, test_runner: true, doc_index: true}
+  claude: {shell: true, git: true, test_runner: true, doc_index: true}
+  gemini:
+    shell: false
+    git: false
+    test_runner: false
+    doc_index: true
+    evidence_cap: static-inspection
+    writes_files_non_interactively: false
+  glm: {shell: true, git: true, test_runner: true, doc_index: true}
+
+smoke_checks:
+  - phase: "-A.proposal"
+    checks:
+      - name: "Proposal frontmatter and document dependencies resolve"
+        command: 'PYTHONPATH=. "${ONTOS_PYTHON}" -m ontos link-check --frontmatter-only --json'
+        expect: "exit-0"
+      - name: "Proposal scaffold has no whitespace errors"
+        command: "git diff --check"
+        expect: "exit-0"
+      - name: "Manifest conforms to the pinned adopter framework"
+        command: "scripts/llm-dev verify manifests/project-ontos-v5-remediation-board-hygiene.yaml"
+        expect: "exit-0"
+
+regression_guards: []
+sibling_deliverable_ids: []
+review_rounds: []
+reviewer_family_substitutes: []
+self_review_caveats: []
+consolidation_mode: external
+
+lifecycle_receipt_inventory_path: "docs/reviews/project-ontos-v5-remediation-board-hygiene/lifecycle-receipt-inventory.yaml"
+required_dispatch_bundles:
+  - phase: "B.1"
+    intent_path: "docs/reviews/project-ontos-v5-remediation-board-hygiene/B.1-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-v5-remediation-board-hygiene/B.1-dispatch-result.yaml"
+  - phase: "B.2"
+    intent_path: "docs/reviews/project-ontos-v5-remediation-board-hygiene/B.2-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-v5-remediation-board-hygiene/B.2-dispatch-result.yaml"
+  - phase: "D.2"
+    intent_path: "docs/reviews/project-ontos-v5-remediation-board-hygiene/D.2-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-v5-remediation-board-hygiene/D.2-dispatch-result.yaml"
+  - phase: "D.5"
+    intent_path: "docs/reviews/project-ontos-v5-remediation-board-hygiene/D.5-dispatch-intent.yaml"
+    result_path: "docs/reviews/project-ontos-v5-remediation-board-hygiene/D.5-dispatch-result.yaml"
+
+merge_authority:
+  mode: recommendation_only
+
+cross_repo_dependencies: []
+historical_receipt_gaps: []
+gate_only_invariants: []
+convergence_metrics: []
+
+gate_env:
+  - name: ONTOS_PYTHON
+    description: "Python interpreter containing the repository development dependencies."
+    example: "ONTOS_PYTHON=.venv/bin/python"
+    required: true
+    scope: both
+  - name: CHILD_BASE_SHA
+    description: "Full immutable commit SHA captured when the dedicated child branch is opened and persisted in its handoff or receipt."
+    example: "CHILD_BASE_SHA=<40-hex-commit-sha>"
+    required: true
+    scope: gate
+
+gate_prerequisites:
+  - id: G-test-1
+    category: test
+    description: "The child documentation graph resolves without frontmatter errors."
+    verification:
+      command: 'PYTHONPATH=. "${ONTOS_PYTHON}" -m ontos link-check --frontmatter-only --json'
+      expect: "exit-0"
+  - id: G-scope-1
+    category: scope
+    description: "Changed paths remain within the board-hygiene scope from its recorded immutable base."
+    verification:
+      command: 'test -n "${CHILD_BASE_SHA:-}" && test "$(git rev-parse --verify "${CHILD_BASE_SHA}^{commit}" 2>/dev/null)" = "${CHILD_BASE_SHA}" && bash .llm-dev/framework/scripts/verify-changed-path-scope.sh --manifest manifests/project-ontos-v5-remediation-board-hygiene.yaml --base "${CHILD_BASE_SHA}"'
+      expect: "exit-0"
+  - id: G-cardinality-1
+    category: cardinality
+    description: "The proposal owns both primary custody issues and both required residual extractions."
+    verification:
+      command: "test \"$(grep -oE '#(149|158)' docs/specs/project-ontos-v5-remediation-board-hygiene-proposal.md | sort -u | wc -l | tr -d ' ')\" = 2 && test \"$(grep -cE '^1\\. `\\[Bug\\] Align contributor log writes|^2\\. `\\[Chore\\] Classify and extract eligible internal archive material' docs/specs/project-ontos-v5-remediation-board-hygiene-proposal.md)\" = 2"
+      expect: "exit-0"
+  - id: G-verdict-1
+    category: verdict-presence
+    description: "A non-author Template 16 proposal verdict exists."
+    verification:
+      command: "test -f docs/reviews/project-ontos-v5-remediation-board-hygiene/pre-a-proposal-verdict.md"
+      expect: "exit-0"
+  - id: G-verdict-2
+    category: verdict-presence
+    description: "Canonical B.3/D.3 verdicts and three D.5 verifier artifacts exist before final approval."
+    verification:
+      command: "test -f docs/reviews/project-ontos-v5-remediation-board-hygiene/B.3-verdict.md && test -f docs/reviews/project-ontos-v5-remediation-board-hygiene/D.3-verdict.md && test \"$(find docs/reviews/project-ontos-v5-remediation-board-hygiene -name 'D.5-*-verifier.md' | wc -l | tr -d ' ')\" = 3"
+      expect: "exit-0"
+  - id: G-blocker-1
+    category: blocker-closure
+    description: "The exact non-author Pre-A disposition authorizes Phase A."
+    verification:
+      command: "grep -Eq '^- \\*\\*Overall verdict:\\*\\* Proceed to Phase A$' docs/reviews/project-ontos-v5-remediation-board-hygiene/pre-a-proposal-verdict.md"
+      expect: "exit-0"
+  - id: G-blocker-2
+    category: blocker-closure
+    description: "No preserved implementation blocker remains in the canonical D.3 verdict."
+    verification:
+      command: "test -f docs/reviews/project-ontos-v5-remediation-board-hygiene/D.3-verdict.md && ! grep -q 'status: preserved' docs/reviews/project-ontos-v5-remediation-board-hygiene/D.3-verdict.md"
+      expect: "exit-0"
+  - id: G-branch-1
+    category: branch
+    description: "Work runs on the dedicated board-hygiene child branch descended from its recorded immutable base."
+    verification:
+      command: 'test -n "${CHILD_BASE_SHA:-}" && test "$(git branch --show-current)" = "codex/project-ontos-v5-remediation-board-hygiene" && test "$(git rev-parse --verify "${CHILD_BASE_SHA}^{commit}" 2>/dev/null)" = "${CHILD_BASE_SHA}" && test "$(git merge-base "${CHILD_BASE_SHA}" HEAD)" = "${CHILD_BASE_SHA}"'
+      expect: "exit-0"
+  - id: G-branch-2
+    category: branch
+    description: "Deliverable-owned paths are clean after commit."
+    verification:
+      command: "bash .llm-dev/framework/scripts/clean-tree-scoped.sh --manifest manifests/project-ontos-v5-remediation-board-hygiene.yaml"
+      expect: "exit-0"
+
+tracker:
+  path: "docs/trackers/project-ontos-v5-remediation-board-hygiene.md"
+  columns: [phase, owner, status, artifact, evidence, timestamp]
+
+branch_map:
+  default: "codex/project-ontos-v5-remediation-board-hygiene"
+
+references:
+  - path: "docs/specs/project-ontos-v5-remediation-release-plan-proposal.md"
+    relevance: "Approved parent scope, issue dispositions, board updates, and release-boundary authority."
+  - path: "docs/reviews/project-ontos-v5-remediation-release-plan/phase-0-live-issue-audit.md"
+    relevance: "Fresh read-only confirmation that all nine tracked issues remain open and that the board-hygiene child is still required."
+  - path: "docs/reviews/2026-07-10-codex-audit-revalidation.md"
+    relevance: "Dated evidence separating shipped audit work from remaining issue custody."
+  - path: "docs/trackers/project-ontos-audit-remediation-release-line.md"
+    relevance: "Historical audit release and successor-custody ledger."
+
+watch_item: >-
+  This child may reconcile live issue wording, labels, milestones, successor
+  custody, and residual issue creation only after its own non-author Pre-A
+  approval and full lifecycle authorization. It must not change product code,
+  claim successor work complete, close #149 before v6 artifact verification,
+  remove any of the eleven compatibility names during v5, defer complete #178
+  delivery to v6, or broaden v6.0.0 beyond deleting those exact eleven names.

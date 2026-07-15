@@ -6,6 +6,9 @@ deliverable_author_families:
   - codex
 deliverable_id: project-ontos-v5-remediation-release-plan
 artifact_root: docs/reviews/project-ontos-v5-remediation-release-plan
+# Historical as-run intent: strict evidence was attempted but not achieved.
+# The generated result is retained as non-certifying provenance; see
+# pre-a-glm-template16-validation.md.
 strict_p3_claim: true
 dispatches:
   - dispatch_id: project-ontos-v5-remediation-release-plan-pre-a-glm-review

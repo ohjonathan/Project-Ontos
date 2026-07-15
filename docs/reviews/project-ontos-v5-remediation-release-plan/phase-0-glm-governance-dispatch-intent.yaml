@@ -1,0 +1,48 @@
+manifest_version: "2.0.1"
+authoring_session_family: codex
+meta_orchestrator_family: codex
+deliverable_author_family: codex
+deliverable_author_families:
+  - codex
+deliverable_id: project-ontos-v5-remediation-release-plan
+artifact_root: docs/reviews/project-ontos-v5-remediation-release-plan
+strict_p3_claim: false
+review_board_classification:
+  mode: supplemental_governance_docs_review
+  strict_p3_capable_evidence: false
+  strict_p3_certified: false
+  merge_authority: recommendation_only
+  rationale: >-
+    This non-lifecycle GLM review checks the committed Phase 0 governance packet
+    only. Its verdict cannot authorize merge, parent Phase A-E, or child work.
+  audit_only_failed_dispatches: []
+dispatches:
+  - dispatch_id: project-ontos-v5-remediation-release-plan-phase-0-glm-governance-review
+    phase: 0.docs
+    family: glm
+    role: peer
+    review_mode: docs-review
+    expected_provider: glm
+    expected_cli: opencode
+    expected_model: glm-5.2
+    expected_artifact: docs/reviews/project-ontos-v5-remediation-release-plan/phase-0-glm-governance-review.md
+    prompt_path: docs/reviews/project-ontos-v5-remediation-release-plan/.prompts/phase-0-glm-governance-review.prompt.md
+    evidence_cap: direct-run
+    dispatch_method: external-cli
+    serving_provider: neuralwatt
+    wire_protocol: openai-compatible
+    opencode_provider_id: neuralwatt
+    opencode_model_ref: neuralwatt/glm-5.2
+    opencode_base_url_env: NEURALWATT_BASE_URL
+    opencode_api_key_env: NEURALWATT_API_KEY
+    endpoint_origin_label: neuralwatt
+    evidence_trust_tier: attested-third-party
+    route_attestation_profile_id: neuralwatt-opencode-glm-5-2-v1
+    fallback_models: []
+    scope: |
+      Supplementary independent docs review of the terminal parent closeout,
+      live issue snapshot, Template 16 evidence reconciliation, and all six
+      child proposal/manifest/tracker triples. This is not a parent Phase A-E
+      lifecycle dispatch, cannot replace the canonical Split verdict, and has
+      recommendation-only authority.
+    status: pending

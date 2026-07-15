@@ -1,7 +1,7 @@
 ---
 id: project_ontos_v5_remediation_release_plan_proposal
 type: spec
-status: proposed
+status: complete
 created: 2026-07-14
 owner: Project Ontos Maintainers
 depends_on:
@@ -66,7 +66,7 @@ against an isolated current-main worktree. Before publication, the proposal
 artifacts were moved to the dedicated
 `codex/project-ontos-v5-remediation-release-plan` branch created directly from
 that baseline. The base-SHA changed-path scope and exact branch-identity gates
-pass there; independent Pre-A review and its verdict remain pending.
+passed there.
 
 After that proposal merged and PR #179 was archived, Phase 0 preparation found
 that the mandatory v5.0.3 `required_version` preflight had no child owner. This
@@ -74,7 +74,10 @@ scope-correction revision adds the sixth independently governed child and moves
 the parent review assignment to GLM. The review input is committed on
 `codex/v5-remediation-child-scaffolding` from
 `main@bd04620376ed6a8d0024e990e04a86da402b9398`; the GLM verdict records the
-exact reviewed commit before any child scaffold is created.
+exact reviewed commit `c4607f05d43688bcc9472575d310f0be468a74cf` and returned
+the terminal Template 16 disposition **Split into multiple proposals**. That
+review authorized only the six Phase 0 governance scaffolds now recorded here;
+it did not authorize parent Phase A–E work or child implementation.
 
 The live open-issue inventory covered:
 
@@ -394,7 +397,7 @@ public API whose warning says “removed in v6.0.0” belongs in v6.
 | #175 | Implement same-device/core responsibilities in v5.2; transfer optional cross-device CAS to an accepted follow-up if it does not ship in the same issue | Close only after v5.2 verification **and** recorded board custody transfer; otherwise keep #175 open |
 | #176 | Fix independently in v5.0.3 | Close after published-wheel reproduction |
 | #177 | Correct issue wording, then implement classifier/policy before #174 | Close after all consumers share classifier |
-| #178 | Ship built-in alias in v5.0.3 and complete feature in v5.1 | Close only after full cross-surface acceptance |
+| #178 | Ship the built-in alias and required-version downgrade preflight in v5.0.3; complete workspace vocabularies in v5.1 | Close only after full cross-surface acceptance |
 
 Two new issues should receive the inherited #149 residuals:
 
@@ -498,8 +501,8 @@ unrelated cleanup.
 
 ### 11.1 Scope
 
-v5.0.3 contains four independently reversible product changes plus one
-compatibility-isolation slice:
+v5.0.3 contains four independently reversible product changes. The log-path
+change also carries one tightly coupled compatibility-isolation slice:
 
 1. safe resolution of existing bare root-file dependencies (#176);
 2. one consistent resolved log-path contract across writers, readers, counters,

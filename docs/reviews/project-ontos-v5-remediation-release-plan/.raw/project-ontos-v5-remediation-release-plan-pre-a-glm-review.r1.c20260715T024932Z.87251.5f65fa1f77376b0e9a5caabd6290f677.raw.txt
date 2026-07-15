@@ -1,0 +1,228 @@
+I'll start by activating Ontos context as required, recording the git commit, and reading the mandatory files in parallel.
+I have the git commit (`c4607f05d43688bcc9472575d310f0be468a74cf`). The proposal was capped at line 1194. Let me read the rest of the proposal and also load the Ontos Context Map for Tier 1 context.
+Let me continue reading the proposal to understand the v6 deletion section and closing governance sections.
+The proposal is large (3377 lines) and I've now read it in full. Let me verify the six child scaffolds exist (the manifest gates them) and confirm each re-enters Pre-A rather than pre-authorizing implementation — this grounds the scope-sanity findings.
+The six child governance triples do not yet exist at the reviewed commit — that's expected (the tracker shows Phase 0 scaffolding is downstream of the Split verdict). I now have everything needed. Let me verify the reviews directory and write the artifact.
+The directory exists. Now I'll write the complete Template 16 artifact.
+Let me verify the artifact exists and the blocker-gate pattern matches the required exact line.
+The artifact exists at the exact path and the `G-blocker-1` gate's required exact line matches (`- **Overall verdict:** Split into multiple proposals`). Emitting the complete artifact below as my final output.
+The artifact exists at `docs/reviews/project-ontos-v5-remediation-release-plan/pre-a-proposal-verdict.md` and the `G-blocker-1` exact-line gate matches. Emitting the same complete artifact below as final output.
+
+---
+id: project-ontos-v5-remediation-release-plan-proposal-verdict
+type: review
+deliverable_id: project-ontos-v5-remediation-release-plan
+phase: -A.proposal
+role: proposal-reviewer
+family: glm
+proposal_doc: docs/specs/project-ontos-v5-remediation-release-plan-proposal.md
+evidence_labels_used:
+  - direct-run
+  - static-inspection
+  - orchestrator-preflight
+status: completed
+---
+
+# Proposal Review — project-ontos-v5-remediation-release-plan
+
+Round 1, non-author independent review under Template 16 (two-lens Pre-A proposal
+review). The reviewer family is `glm`; the proposal author family and structural-
+orchestrator family is `codex` (per
+`manifests/project-ontos-v5-remediation-release-plan.yaml` `authorship`). These
+are different families, so the same-family halt condition does not apply.
+
+## 1. Context header
+- **Proposal doc:** docs/specs/project-ontos-v5-remediation-release-plan-proposal.md
+- **Date:** 2026-07-14
+- **Reviewer family:** glm
+- **Author family (excluded from this review):** codex
+- **Overall verdict:** Split into multiple proposals
+
+## 2. Feasibility
+
+As a *single* Phase A→E deliverable, this proposal cannot become a deliverable in
+a reasonable spec pass. It is a release-line program spanning four target
+versions (v5.0.3, v5.1.0, v5.2.0, v6.0.0) plus a governance checkpoint, remaining
+v5.x maintenance, and archive migration, across nine live issues (#149, #158,
+#165, #173–#178). §21.2 enumerates roughly seventeen ultimate child scopes; the
+initial scaffold alone is six. A single Phase A spec would simultaneously
+specify narrow patch-level correctness work (v5.0.3 #176) and a major-version
+breaking API deletion (v6.0.0 #149), which the proposal itself forbids as a
+non-goal (§5: "Implementing all releases in one monolithic lifecycle
+deliverable"; §26.11: "One monolithic implementation PR — Rejected").
+
+The proposal is, however, correctly sized as a **terminal Pre-A Split parent**:
+`user_facing: false`, `lifecycle_mode: framework lifecycle`, a content-only
+charter whose only accepted Pre-A disposition is `Split into multiple proposals`.
+`model_assignments` enables only `-A.proposal` for the parent; phases A–E are an
+inert schema/P3 fallback roster that gate `G-blocker-1` prevents from starting.
+Capability, resource, or authority gaps for the **parent** deliverable: none
+material. The parent changes no product surface and writes no code; its sole
+output is this verdict plus forward-declared child governance paths.
+
+What would need to be true for each child to reach a spec pass: each child
+re-enters `-A.proposal` with its own proposal and manifest and receives its own
+non-author Pre-A decision before any Phase A work (confirmed by the tracker and
+§21.4). That is downstream of this verdict and not in scope for this review.
+
+## 3. Lens findings
+
+### 3.1 Product-lens findings (adversarial posture)
+
+| ID | Description | Location | Evidence | Disagreement with Technical lens? |
+|----|-------------|----------|----------|------------------------------------|
+| PR-P-1 | The proposal is over-scoped for one deliverable: one Pre-A doc spans v5.0.3→v6.0.0 across four release versions, a governance checkpoint, v5.x maintenance, and archive migration. This is the core product reason it must split rather than advance to a single Phase A spec. | proposal §1 release train, §10 release summary, §21.2 child table | static-inspection | no |
+| PR-P-2 | Direction is sound despite the breadth. The additive declared/canonical vocabulary model completes #178 in v5 without a breaking enum rewrite; v6 is reserved for the exact eleven #149 names whose warnings already promise "removed in v6.0.0"; reasonable alternatives (defer #178 to v6, dynamic enums, arbitrary strings, monolithic PR, suppressed-path warnings, one finding hash with severity) are considered and rejected with concrete reasons. | proposal §6.9, §11.4, §14, §19, §26 | static-inspection | no |
+| PR-P-3 | Problem-solution fit is evidenced by reproduced current-main defects, not just prose: #176 bare-file broken link, MCP cache same-size-mutation staleness, log-path writer/consolidator split, #177 undifferentiated bare_id_token matches, #178 unknown-enum degradation. The v5.0.3 slices are minimal and fail-closed. | proposal §2.1 direct current-main execution, §11.2–§11.5 | direct-run (commands cited in proposal §2 ran on 2026-07-14), static-inspection | no |
+| PR-P-4 | Wording inconsistency (cosmetic, non-blocking): §11.1 says "four independently reversible product changes plus one compatibility-isolation slice," but the #149 wrapper-delegation slice is folded *into* change #2 (log paths), not a separate fifth change. The six-child decomposition (child 4 = log paths + the seven log-related #149 wrappers) is correct; the §11.1 phrasing could mislead a child Phase A author and should be tightened in the child spec. | proposal §11.1, §11.3 | static-inspection | no |
+| PR-P-5 | At the reviewed commit the six child governance triples (proposal+tracker+manifest) do not yet exist. This is by design: the tracker marks Phase 0 (child split) "pending — Enter only after the exact `Split into multiple proposals` verdict." `G-cardinality-4` (scaffolds exist) therefore passes downstream of this verdict, not at the Pre-A commit. The verdict must not itself claim the six children are scaffolded. | manifest `G-cardinality-4`, tracker "0 — child split" row; direct `ls` of the six child paths on `c4607f0` returned no files | orchestrator-preflight, direct-run | no |
+
+### 3.2 Technical-lens findings (alignment posture)
+
+| ID | Description | Location | Evidence | Disagreement with Product lens? |
+|----|-------------|----------|----------|----------------------------------|
+| PR-T-1 | The sixth child closes the prior ownership gap. §2 and the tracker record that the mandatory v5.0.3 `required_version` preflight had no child owner; this scope-corrected revision adds the sixth independently governed child (`project-ontos-v5-0-3-required-version-preflight`) to the manifest's `allowed_paths`, the `G-cardinality-4` list, and §21.2. | proposal §2, §11.5, §21.2; manifest `allowed_paths` + `G-cardinality-4`; tracker -A.proposal authoring row | static-inspection | no |
+| PR-T-2 | The sixth child does NOT parse or accept v5.1-only configuration. The contract reads only `[ontos].required_version` from raw `.ontos.toml`; absent → unchanged loader; present-and-includes-running-version → continue strict loader that still rejects every v5.1-only section/field; present-and-excludes → deterministic incompatible-version diagnostic before any unknown-section diagnostic; malformed → deterministic reject, never a permissive range. §11.5 states the preflight "does not create a second configuration parser, accept the new vocabulary schema, or weaken strict validation"; §20.2 restates "it does not parse or accept the new section." | proposal §11.5 steps 1–6, §14.10, §20.2 | static-inspection | no |
+| PR-T-3 | Each child can re-enter Pre-A without accidentally authorizing implementation. The parent manifest enables only the `-A.proposal` assignment; phases A–E are an inert fallback roster that `G-blocker-1` keeps from starting. The parent is `user_facing: false` and `lifecycle_mode: framework lifecycle` (terminal Split route, no parent A–E certification). §21.1/§21.4 require every child proposal/spec/manifest to carry a scoped copy of the parent's v5/v6 release-boundary watch item and to start with its own independent Pre-A review. | manifest `model_assignments`, `G-blocker-1`, `watch_item`, `lifecycle_mode`; proposal §21.1, §21.4 | orchestrator-preflight, static-inspection | no |
+| PR-T-4 | The six boundaries are independently reversible. Child 3 (dependency resolver) depends only on the existing containment/allowlist layer, not on children 4/5/6. Child 4 (resolved log paths + the seven log-related #149 wrappers) reverts as one intentional unit, independently of 3/5/6 — §11.3 mandates the delegation slice travel with the resolver so deprecated and supported callers cannot diverge. Child 5 (one built-in alias) is self-contained. Child 6 (preflight) touches neither the resolver, the log path contract, nor the alias. | proposal §11.2–§11.5, §11.8 rollback, §18.1 | static-inspection | no |
+| PR-T-5 | The v5.0.3 #149 isolation slice is exactly seven of the eleven names (the log/archive/history-related wrappers); the remaining four (`get_proposals_dir`, `get_archive_proposals_dir`, `get_concepts_path`, `PROJECT_ROOT`) are isolated in later v5.x and deleted only in v6. No name is removed before v6, preserving the documented v6-removal promise. The manifest's `G-cardinality-3` freezes exactly eleven §18.1 removals. | proposal §11.3 table, §18.1; manifest `G-cardinality-3` | static-inspection | no |
+| PR-T-6 | No hidden cross-cutting coupling among the six children: the preflight does not consume the dependency resolver or log-path contract; the alias does not consume the resolver or preflight; board hygiene and #165 carry no product-code dependency on the v5.0.3 children. The dependency graph in §9 expresses safety ordering (e.g., #165 blocks v5.1 release authority) without collapsing the v5.0.3 children into one unit. | proposal §9, §21.2, §21.3 | static-inspection | no |
+
+### 3.3 Product-vs-Technical disagreements (high-signal)
+
+| Product lens says | Technical lens says | Resolution required before A? |
+|-------------------|----------------------|-------------------------------|
+
+No factual disagreements between the two lenses. Both independently converge on:
+(i) the proposal is directionally sound and evidence-backed, and (ii) it is too
+broad for one Phase A→E deliverable, so the parent terminates at Pre-A and the
+six named children must each re-enter Pre-A. The Template 16 halt condition for
+lenses that contradict on *facts* does not apply; the convergence is on
+judgment and is consistent with the direct evidence.
+
+## 4. Scope sanity
+
+This proposal is not sized for a single deliverable. It is correctly framed as a
+terminal Pre-A Split parent: it changes no product surface and its only
+authorized Pre-A disposition is `Split into multiple proposals`. The initial
+split has six independently reversible child boundaries, each named concretely
+and matching the manifest's `G-cardinality-4` roster and the proposal's §21.2 /
+§31 recommendation:
+
+1. **board hygiene** (`project-ontos-v5-remediation-board-hygiene`) — #149/#158
+   title/label/milestone/body corrections, residual-issue splits, and custody
+   records. Governance only; no product code; reversible by board changes.
+2. **issue #165 audit registry** (`project-ontos-issue-165-audit-registry`) —
+   canonical registry, validator, renderer, and governance docs/tests rebuilt
+   from the off-main prototype against current main. Blocks v5.1 release
+   authority but is independent of the v5.0.3 code children.
+3. **v5.0.3 dependency resolver** (`project-ontos-v5-0-3-dependency-resolver`)
+   — #176 bare root-file dependency resolution through the shared graph
+   resolver, with the §11.2 resolution order and ambiguous/collision/containment
+   fail-closed contract. Depends only on the existing containment/allowlist
+   layer.
+4. **v5.0.3 resolved log paths and #149 wrapper delegation**
+   (`project-ontos-v5-0-3-log-paths`) — one `ResolvedLogPaths`-equivalent
+   contract consumed by all writers/readers/counters/consolidators/MCP, plus
+   delegation of the seven log-related #149 wrappers to the shared resolver/query
+   services while their v5 compatibility signatures stay pinned. Reverts as one
+   intentional unit; independent of children 3/5/6.
+5. **v5.0.3 built-in status alias** (`project-ontos-v5-0-3-built-in-status-alias`)
+   — exactly one safe mapping `in-progress -> in_progress`, plan-first and
+   formatting-preserving. Self-contained slice of #178; #178 stays open.
+6. **v5.0.3 `[ontos].required_version` preflight**
+   (`project-ontos-v5-0-3-required-version-preflight`) — bounded raw read of
+   `[ontos].required_version` before strict config validation, owning only
+   #178's downgrade-safety migration slice. Closes the prior ownership gap and is
+   explicitly forbidden from parsing or accepting v5.1-only sections or weakening
+   strict validation. Independent of children 3/4/5.
+
+These six cross distinct boundaries (different releases, modules, review risk
+profiles, and reversibility surfaces) and should be separate deliverables. The
+v5.1, v5.2, remaining-v5.x, and v6.0.0 children enumerated in §21.2 are
+deliberately not in the initial six; scaffolding them before v5.0.3 and #165 land
+would contradict the §9 safety dependency graph. That sequencing is sound and
+not a scope defect.
+
+## 5. Reviewer diversity check
+
+Under the Pre-A.proposal two-lens configuration (playbook §13.4), this session
+covered both the Product (adversarial) and Technical (alignment) lenses,
+keeping the findings separate in §3.1 and §3.2. The reviewer family is `glm`; the
+proposal's deliverable-author family and structural-orchestrator family are both
+`codex` (per the manifest `authorship` block). The reviewer is therefore not the
+same family as the author, and the same-family halt-and-redispatch condition
+does not apply.
+
+## 6. Unknowns worth resolving before Phase A
+
+- `must-resolve-pre-A` — none. The one ownership gap that existed for this parent
+  (the `required_version` preflight had no child owner) is resolved in this
+  scope-corrected revision: §11.5, §21.2, the tracker, and the manifest's
+  `allowed_paths` / `G-cardinality-4` now assign it the sixth child.
+- `resolve-during-A` — the exact "bounded raw read" mechanism that extracts
+  `[ontos].required_version` from raw `.ontos.toml` without drifting into partial
+  TOML parsing. The parent proposal constrains it (read only that field; reject
+  malformed requirements; never reinterpret as a permissive range), but the
+  child's Phase A spec must pin the concrete scan/extraction algorithm so it
+  cannot accrete into a second configuration parser.
+- `resolve-during-A` — confirm at Phase 0 scaffolding that each of the six child
+  governance triples carries the scoped copy of the parent's v5/v6
+  release-boundary watch item, sets `user_facing: true` where it changes CLI,
+  configuration, query/export, JSON/MCP, or migration behavior (proposal §21.4),
+  and re-enters Pre-A rather than inheriting parent Phase A certification.
+- `defer` — the exact downstream v5.1/v5.2/v5.x/v6 child decomposition (§21.2
+  lists roughly seventeen ultimate children). Not material to this parent's
+  Pre-A verdict; the initial six are sufficient to authorize Phase 0.
+
+## 7. Verdict
+
+Split into multiple proposals.
+
+The proposal is directionally sound and evidence-backed (PR-P-2, PR-P-3, PR-T-1,
+PR-T-2): real reproduced defects, a compatibility-respecting release boundary
+(complete #178 in v5 additively; reserve v6 for the eleven promised #149
+deletions), and reasonable rejection of simpler alternatives. But it is far too
+broad for one Phase A→E deliverable (PR-P-1): a single spec would mix v5.0.3
+patch correctness with a v6.0.0 breaking API deletion, contradicting the
+proposal's own §5 non-goal and §26.11. The initial split has six independently
+reversible boundaries (PR-T-4, PR-T-5, PR-T-6), each its own Pre-A child;
+notably, the sixth child closes the prior ownership gap for the
+`required_version` preflight without parsing or accepting v5.1-only configuration
+(PR-T-1, PR-T-2), and each child can re-enter Pre-A without accidentally
+authorizing implementation because the parent manifest enables only
+`-A.proposal`, `G-blocker-1` accepts only the Split verdict, and the parent is a
+terminal `framework lifecycle` Split parent with no A–E claim (PR-T-3). No
+must-resolve-pre-A unknowns remain (§6).
+
+The **parent therefore ends at Pre-A rather than advancing to Phase A** because
+the Split verdict is the framework's terminal route for a deliberately
+multi-deliverable program: it authorizes only Phase 0 scaffolding of the six
+independent child proposals, trackers, and manifests, and explicitly does not
+authorize product implementation, parent Phase A specification, or parent A–E
+certification. Every child must separately pass its own non-author Pre-A review
+before any Phase A work begins.
+
+## 8. Notes
+
+Round 1. Reviewed Git commit (recorded via `git rev-parse HEAD`):
+`c4607f05d43688bcc9472575d310f0be468a74cf`, on branch
+`codex/v5-remediation-child-scaffolding` (matches the manifest `branch_map`
+default and `G-branch-1`). The two preceding commits are `bd04620` (archive PR
+#179 merge) and `b2e0e0e` (merge commit of PR #179). The proposal establishes its
+implementation baseline at `main@7d07556e0f71c0f1eca8760614aef6d21951f874`
+(§2) and states the scope-corrected review input was committed on
+`codex/v5-remediation-child-scaffolding` from `main@bd04620376ed6a8d0024e990e04a86da402b9398`
+(§2), consistent with the manifest's `G-scope-1` base SHA.
+
+At this reviewed commit the six child governance triples do not yet exist on
+disk (verified by direct `ls`); this is correct because Phase 0 scaffolding is
+downstream of this verdict (tracker "0 — child split" row) and is gated by
+`G-cardinality-4`, which is intended to pass after Phase 0, not at the Pre-A
+verdict commit. This Round 1 verdict is not bound by playbook §13.5 Round 3
+escalation logic; ≥2 prior verdicts do not yet exist on this proposal, so no
+final-round/timebox/strategic-decision-pass evaluation applies. The reviewer read
+Template 16 (`16-proposal-review.md`), the full proposal (§1–§31), the parent
+manifest, the tracker, the 2026-07-10 codex audit-revalidation addendum, and the
+PR #179 merge log, and did not author any child proposal, specification,
+manifest, tracker, code, or GitHub change.
