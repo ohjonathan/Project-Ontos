@@ -150,7 +150,11 @@ def scan_documents(
             skip = False
             path_str = str(md_file)
             for pattern in skip_patterns:
-                if fnmatch(path_str, pattern) or md_file.match(pattern):
+                if (
+                    fnmatch(path_str, pattern)
+                    or md_file.match(pattern)
+                    or _matches_path_suffix(md_file, pattern)
+                ):
                     skip = True
                     break
             if not skip:
@@ -160,6 +164,27 @@ def scan_documents(
                 results.add(resolved)
 
     return sorted(list(results))
+
+
+def _matches_path_suffix(md_file: Path, pattern: str) -> bool:
+    """Match a skip pattern against every path-segment suffix.
+
+    (#181) ``Path.match`` is right-anchored and segment-local, so a directory
+    pattern such as the default ``archive/*`` only matched files DIRECTLY
+    under an ``archive/`` directory — the nested layout that
+    ``ontos consolidate`` itself writes (``docs/archive/logs/…``) was scanned
+    straight back into the live graph, as was every nested file under
+    ``node_modules/*``. Matching the pattern against each segment suffix with
+    ``fnmatch`` (where ``*`` crosses ``/``) makes a directory pattern exclude
+    the whole subtree while leaving basename patterns like ``_template.md``
+    exact-match only.
+    """
+    normalized = pattern.replace("\\", "/")
+    parts = md_file.parts
+    return any(
+        fnmatch("/".join(parts[start:]), normalized)
+        for start in range(len(parts))
+    )
 
 
 def _is_transient_markdown_candidate(path: Path) -> bool:
