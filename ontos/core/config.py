@@ -16,7 +16,9 @@ import re
 from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Callable
+from typing import Dict, List, Optional, Callable
+
+from ontos.core.types import DocumentStatus, DocumentType
 
 
 # Branch names that should not be used as auto-slugs
@@ -118,6 +120,20 @@ class McpConfig:
 
 
 @dataclass
+class FrontmatterConfig:
+    """[frontmatter] section.
+
+    (#178) ``aliases`` holds workspace-declared enum-repair mappings keyed by
+    field name (``type``/``status``); each table maps a project alias to a
+    canonical DocumentType/DocumentStatus value. Keys are normalized to
+    lowercase at load time and validated fail-closed: targets must be
+    canonical (never ``unknown``) and keys must not themselves be canonical
+    values, so alias chains and cycles are impossible by construction.
+    """
+    aliases: Dict[str, Dict[str, str]] = field(default_factory=dict)
+
+
+@dataclass
 class OntosConfig:
     """Root configuration object."""
     ontos: OntosSection = field(default_factory=OntosSection)
@@ -127,6 +143,7 @@ class OntosConfig:
     workflow: WorkflowConfig = field(default_factory=WorkflowConfig)
     hooks: HooksConfig = field(default_factory=HooksConfig)
     mcp: McpConfig = field(default_factory=McpConfig)
+    frontmatter: FrontmatterConfig = field(default_factory=FrontmatterConfig)
 
 
 def default_config() -> OntosConfig:
@@ -225,6 +242,77 @@ def _validate_types(data: dict) -> None:
     default_scope = scanning.get("default_scope")
     if default_scope is not None and default_scope not in {"docs", "library"}:
         raise ConfigError("scanning.default_scope must be 'docs' or 'library'")
+
+
+_ALIAS_FIELDS = ("type", "status")
+
+
+def _validate_frontmatter_aliases(data: dict) -> None:
+    """(#178) Validate and normalize `[frontmatter.aliases.*]` fail-closed.
+
+    Alias keys are lowercased in place so repair-time lookups (which
+    normalize observed values the same way) see one canonical spelling.
+    """
+    section = data.get("frontmatter")
+    if not isinstance(section, dict):
+        return
+    aliases = section.get("aliases")
+    if aliases is None:
+        return
+    if not isinstance(aliases, dict):
+        raise ConfigError(
+            f"frontmatter.aliases must be a table, got {type(aliases).__name__}"
+        )
+
+    canonical = {
+        "type": {item.value for item in DocumentType},
+        "status": {item.value for item in DocumentStatus},
+    }
+    for field_name, table in aliases.items():
+        if field_name not in _ALIAS_FIELDS:
+            raise ConfigError(
+                f"Unknown alias table 'frontmatter.aliases.{field_name}' "
+                f"(expected one of: {', '.join(_ALIAS_FIELDS)})"
+            )
+        if not isinstance(table, dict):
+            raise ConfigError(
+                f"frontmatter.aliases.{field_name} must be a table, "
+                f"got {type(table).__name__}"
+            )
+        allowed = canonical[field_name]
+        normalized: Dict[str, str] = {}
+        for raw_key, raw_target in table.items():
+            if not isinstance(raw_key, str) or not raw_key.strip():
+                raise ConfigError(
+                    f"frontmatter.aliases.{field_name} keys must be "
+                    f"non-empty strings, got {raw_key!r}"
+                )
+            if not isinstance(raw_target, str):
+                raise ConfigError(
+                    f"frontmatter.aliases.{field_name}[{raw_key!r}] must be "
+                    f"str, got {type(raw_target).__name__}"
+                )
+            key = raw_key.strip().lower()
+            target = raw_target.strip()
+            if key in allowed:
+                raise ConfigError(
+                    f"frontmatter.aliases.{field_name} key {raw_key!r} is "
+                    f"already a canonical {field_name} value and cannot be "
+                    f"remapped"
+                )
+            if target == DocumentType.UNKNOWN.value or target not in allowed:
+                raise ConfigError(
+                    f"frontmatter.aliases.{field_name}[{raw_key!r}] target "
+                    f"{raw_target!r} is not a canonical {field_name} value. "
+                    f"Allowed: {', '.join(sorted(allowed - {'unknown'}))}"
+                )
+            if key in normalized:
+                raise ConfigError(
+                    f"frontmatter.aliases.{field_name} defines {key!r} more "
+                    f"than once after case normalization"
+                )
+            normalized[key] = target
+        aliases[field_name] = normalized
 
 
 
@@ -392,6 +480,7 @@ def dict_to_config(data: dict, repo_root: Optional[Path] = None) -> OntosConfig:
 
     # Type validation
     _validate_types(data)
+    _validate_frontmatter_aliases(data)
     _clamp_legacy_numeric_bounds(data)
 
     # Path validation
@@ -414,6 +503,9 @@ def dict_to_config(data: dict, repo_root: Optional[Path] = None) -> OntosConfig:
     workflow = WorkflowConfig(**_section_kwargs(WorkflowConfig, "workflow", data.get("workflow")))
     hooks = HooksConfig(**_section_kwargs(HooksConfig, "hooks", data.get("hooks")))
     mcp = McpConfig(**_section_kwargs(McpConfig, "mcp", data.get("mcp")))
+    frontmatter = FrontmatterConfig(
+        **_section_kwargs(FrontmatterConfig, "frontmatter", data.get("frontmatter"))
+    )
 
     return OntosConfig(
         ontos=ontos,
@@ -423,6 +515,7 @@ def dict_to_config(data: dict, repo_root: Optional[Path] = None) -> OntosConfig:
         workflow=workflow,
         hooks=hooks,
         mcp=mcp,
+        frontmatter=frontmatter,
     )
 
 

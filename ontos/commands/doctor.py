@@ -558,7 +558,12 @@ def check_frontmatter_enums(scope: Optional[str] = None, repo_root: Optional[Pat
             effective_scope,
             base_skip_patterns=list(config.scanning.skip_patterns),
         )
-        plan = build_enum_repair_plan(files)
+        aliases = config.frontmatter.aliases
+        plan = build_enum_repair_plan(
+            files,
+            type_aliases=aliases.get("type"),
+            status_aliases=aliases.get("status"),
+        )
     except Exception as exc:
         return CheckResult(
             name="frontmatter_enums",

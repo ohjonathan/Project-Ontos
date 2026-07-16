@@ -243,6 +243,46 @@ workspace-relative roots to both scopes. Library scope adds
 workspace-relative glob patterns. An allowed external dependency is reported
 as informational rather than as a broken link.
 
+`skip_patterns` directory patterns such as `archive/*` exclude the whole
+subtree (including nested layouts like `docs/archive/logs/`), while basename
+patterns like `_template.md` match exact names only.
+
+### Frontmatter enum aliases
+
+The optional `[frontmatter.aliases.type]` and `[frontmatter.aliases.status]`
+tables declare explicit project mappings consumed by
+`ontos maintain --fix-frontmatter-enums` and `ontos doctor --frontmatter`:
+
+```toml
+[frontmatter.aliases.type]
+runbook = "reference"
+meta-orchestrator-report = "report"
+
+[frontmatter.aliases.status]
+provider_limited_fallback_complete = "complete"
+```
+
+Rules, all fail-closed at config load:
+
+- Targets must be canonical Ontos type/status values (`unknown` is never a
+  valid target), so alias chains and cycles are impossible.
+- Alias keys must not themselves be canonical values, and are matched
+  case-insensitively.
+- Project aliases win over the built-in repair tables (for example, the
+  built-in `in-progress -> in_progress` mapping can be overridden, though
+  it rarely should be).
+
+Aliases are repair-time mappings, not load-time acceptance: files converge
+to canonical values on `--apply` (the prior spelling is preserved as
+`original_type`/`original_status`), and the canonical values then travel via
+git. Repair plans report each edit's mapping `source` (`built-in` or
+`config`).
+
+Because older Ontos releases reject unknown configuration sections, a
+repository that adopts `[frontmatter]` should also pin
+`[ontos].required_version` (for example `>=5.1`) so lagging installations
+fail with a clear version message instead of a config error.
+
 ### Configuration validation and precedence
 
 Root discovery walks upward from the current directory. At each directory it

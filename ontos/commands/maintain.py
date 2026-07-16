@@ -1055,7 +1055,12 @@ def _run_frontmatter_enum_repair(ctx: MaintainContext) -> int:
     )
 
     files = _scan_docs(ctx)
-    plan = build_enum_repair_plan(files)
+    aliases = ctx.config.frontmatter.aliases
+    plan = build_enum_repair_plan(
+        files,
+        type_aliases=aliases.get("type"),
+        status_aliases=aliases.get("status"),
+    )
     mode = "apply" if ctx.options.apply else "dry-run"
     payload = plan.to_dict(root=ctx.repo_root)
     payload["mode"] = mode

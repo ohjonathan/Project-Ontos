@@ -204,3 +204,92 @@ def test_enum_repair_preserves_case_inline_comments_and_crlf(tmp_path):
     assert "original_type: Proposal\r\n" in updated
     assert "original_status: DONE\r\n" in updated
     assert "\n" not in updated.replace("\r\n", "")
+
+
+def _write_doc(tmp_path, name, doc_type, status):
+    path = tmp_path / "docs" / name
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        dedent(
+            f"""
+            ---
+            id: {name.removesuffix('.md')}
+            type: {doc_type}
+            status: {status}
+            ---
+            Body.
+            """
+        ).lstrip(),
+        encoding="utf-8",
+    )
+    return path
+
+
+def test_builtin_in_progress_alias_is_repairable(tmp_path):
+    # (#178 / plan §11.4) The hyphenated spelling of the canonical
+    # `in_progress` status must repair without any configuration.
+    path = _write_doc(tmp_path, "wip.md", "log", "in-progress")
+
+    plan = build_enum_repair_plan([path])
+
+    assert len(plan.edits) == 1
+    edit = plan.edits[0]
+    assert edit.repairable is True
+    assert edit.new_value == "in_progress"
+    assert edit.source == "built-in"
+
+
+def test_config_aliases_make_project_values_repairable(tmp_path):
+    # The issue's reproduced pain: values like `runbook` and
+    # `provider_limited_fallback_complete` were 0-repairable.
+    path = _write_doc(
+        tmp_path, "runbook.md", "runbook", "provider_limited_fallback_complete"
+    )
+
+    plan = build_enum_repair_plan(
+        [path],
+        type_aliases={"runbook": "reference"},
+        status_aliases={"provider_limited_fallback_complete": "complete"},
+    )
+
+    by_field = {edit.field: edit for edit in plan.edits}
+    assert by_field["type"].new_value == "reference"
+    assert by_field["type"].source == "config"
+    assert by_field["status"].new_value == "complete"
+    assert by_field["status"].source == "config"
+    assert plan.unresolved_edits == []
+
+
+def test_config_alias_wins_over_builtin(tmp_path):
+    # Built-in maps halted -> rejected; a project may decide differently.
+    path = _write_doc(tmp_path, "halted.md", "log", "halted")
+
+    plan = build_enum_repair_plan(
+        [path], status_aliases={"halted": "archived"}
+    )
+
+    assert plan.edits[0].new_value == "archived"
+    assert plan.edits[0].source == "config"
+
+
+def test_unmapped_value_stays_unresolved_with_alias_hint(tmp_path):
+    path = _write_doc(tmp_path, "odd.md", "log", "backlog")
+
+    plan = build_enum_repair_plan([path])
+
+    assert len(plan.unresolved_edits) == 1
+    edit = plan.unresolved_edits[0]
+    assert edit.new_value is None
+    assert edit.source is None
+    assert "[frontmatter.aliases.status]" in edit.reason
+
+
+def test_config_alias_apply_preserves_original_value(tmp_path):
+    path = _write_doc(tmp_path, "wip2.md", "log", "in-progress")
+
+    plan = build_enum_repair_plan([path])
+    apply_enum_repair_plan(plan, repo_root=tmp_path)
+
+    content = path.read_text(encoding="utf-8")
+    assert "status: in_progress" in content
+    assert "original_status: in-progress" in content

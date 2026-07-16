@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import re
-from typing import Any, Dict, Iterable, List, Optional, Sequence
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
 
 from ontos.core.context import SessionContext
 from ontos.core.frontmatter_edit import patch_frontmatter_fields, read_utf8_for_mutation
@@ -40,6 +40,9 @@ STATUS_REPAIRS: Dict[str, str] = {
     "in-review": "active",
     "halted": "rejected",
     "failed": "rejected",
+    # (#178) The canonical status is `in_progress`; the hyphenated spelling
+    # is the single most common agent-emitted alias.
+    "in-progress": "in_progress",
 }
 
 
@@ -53,6 +56,9 @@ class EnumRepairEdit:
     original_field: str
     repairable: bool
     reason: str
+    # (#178) Which mapping produced the repair: 'built-in' for the shipped
+    # tables, 'config' for [frontmatter.aliases.*]; None when unresolved.
+    source: Optional[str] = None
 
     def to_dict(self, *, root: Optional[Path] = None) -> Dict[str, Any]:
         if root is None:
@@ -75,6 +81,7 @@ class EnumRepairEdit:
             "original_field": self.original_field,
             "repairable": self.repairable,
             "reason": self.reason,
+            "source": self.source,
         }
 
 
@@ -107,11 +114,28 @@ class EnumRepairPlan:
         }
 
 
-def build_enum_repair_plan(paths: Sequence[Path]) -> EnumRepairPlan:
-    """Load documents and build conservative enum repair edits."""
+def build_enum_repair_plan(
+    paths: Sequence[Path],
+    *,
+    type_aliases: Optional[Mapping[str, str]] = None,
+    status_aliases: Optional[Mapping[str, str]] = None,
+) -> EnumRepairPlan:
+    """Load documents and build conservative enum repair edits.
+
+    Args:
+        paths: Documents to diagnose.
+        type_aliases: (#178) Workspace alias table for ``type`` values from
+            ``[frontmatter.aliases.type]``; wins over the built-in table.
+        status_aliases: (#178) Workspace alias table for ``status`` values
+            from ``[frontmatter.aliases.status]``; wins over the built-in
+            table.
+    """
     load_result = load_documents(list(paths), parse_frontmatter_content)
     diagnostics = [issue for issue in load_result.issues if issue.code == "invalid_enum"]
-    edits = [_issue_to_edit(issue) for issue in diagnostics]
+    edits = [
+        _issue_to_edit(issue, type_aliases or {}, status_aliases or {})
+        for issue in diagnostics
+    ]
     return EnumRepairPlan(
         files_scanned=len(paths),
         diagnostics=diagnostics,
@@ -155,12 +179,28 @@ def enum_issue_summary(
     return lines
 
 
-def _issue_to_edit(issue: DocumentLoadIssue) -> EnumRepairEdit:
+def _issue_to_edit(
+    issue: DocumentLoadIssue,
+    type_aliases: Mapping[str, str],
+    status_aliases: Mapping[str, str],
+) -> EnumRepairEdit:
     field = issue.field or ""
     old_value = str(issue.value).strip()
     normalized_value = old_value.lower()
-    mapping = TYPE_REPAIRS if field == "type" else STATUS_REPAIRS if field == "status" else {}
-    new_value = mapping.get(normalized_value)
+    if field == "type":
+        builtin, workspace = TYPE_REPAIRS, type_aliases
+    elif field == "status":
+        builtin, workspace = STATUS_REPAIRS, status_aliases
+    else:
+        builtin, workspace = {}, {}
+    # (#178) Workspace aliases win over built-ins so a project can override
+    # a shipped mapping; both are explicit tables, never guesses.
+    new_value: Optional[str] = None
+    source: Optional[str] = None
+    if normalized_value in workspace:
+        new_value, source = workspace[normalized_value], "config"
+    elif normalized_value in builtin:
+        new_value, source = builtin[normalized_value], "built-in"
     allowed = [item.value for item in DocumentType] if field == "type" else [item.value for item in DocumentStatus]
     if new_value is None:
         return EnumRepairEdit(
@@ -171,7 +211,12 @@ def _issue_to_edit(issue: DocumentLoadIssue) -> EnumRepairEdit:
             line=issue.line,
             original_field=f"original_{field}",
             repairable=False,
-            reason=f"No conservative mapping is known. Allowed values: {', '.join(allowed)}.",
+            reason=(
+                f"No conservative mapping is known. Allowed values: "
+                f"{', '.join(allowed)}. Declare an explicit mapping under "
+                f"[frontmatter.aliases.{field or 'status'}] in .ontos.toml "
+                f"to make this repairable."
+            ),
         )
     return EnumRepairEdit(
         path=issue.path,
@@ -181,7 +226,11 @@ def _issue_to_edit(issue: DocumentLoadIssue) -> EnumRepairEdit:
         line=issue.line,
         original_field=f"original_{field}",
         repairable=True,
-        reason=f"Map lifecycle artifact value {old_value!r} to Ontos enum {new_value!r}.",
+        reason=(
+            f"Map lifecycle artifact value {old_value!r} to Ontos enum "
+            f"{new_value!r} ({source} mapping)."
+        ),
+        source=source,
     )
 
 
