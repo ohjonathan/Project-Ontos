@@ -793,3 +793,174 @@ class TestExternalDependencyAllowlist:
         # Resolves to real/target.py which is NOT under apps/ -> not allowlisted.
         assert errors[0].error_type.value == "out_of_scope_dependency"
         assert errors[0].context["allowlisted"] is False
+
+
+class TestBareRootFileDependencies:
+    """(#176) Bare workspace-root files (no separator, no .md suffix) resolve
+    through a stricter regular-file probe instead of bypassing filesystem
+    resolution entirely. Acceptance matrix mirrors the v5 remediation plan
+    §11.2."""
+
+    def _docs(self, tmp_path, layout):
+        docs = {}
+        for doc_id, rel_path, depends_on in layout:
+            abs_path = tmp_path / rel_path
+            abs_path.parent.mkdir(parents=True, exist_ok=True)
+            abs_path.write_text(f"# {doc_id}\n")
+            docs[doc_id] = DocumentData(
+                id=doc_id,
+                type=DocumentType.ATOM,
+                status=DocumentStatus.ACTIVE,
+                filepath=abs_path,
+                frontmatter={"id": doc_id, "type": "atom"},
+                content="",
+                depends_on=list(depends_on),
+            )
+        return docs
+
+    def test_bare_allowlisted_root_file_is_external_file_dependency(self, tmp_path):
+        (tmp_path / "pyproject.toml").write_text("[project]\n")
+        docs = self._docs(tmp_path, [("a", "docs/a.md", ["pyproject.toml"])])
+
+        graph, errors = build_graph(
+            docs,
+            workspace_root=tmp_path,
+            allowed_external_dependency_paths=["pyproject.toml"],
+        )
+
+        assert len(errors) == 1
+        assert errors[0].error_type.value == "external_file_dependency"
+        assert errors[0].severity == "info"
+        assert errors[0].context["resolved_path"] == "pyproject.toml"
+
+    def test_bare_and_dot_slash_spellings_classify_identically(self, tmp_path):
+        (tmp_path / "pyproject.toml").write_text("[project]\n")
+        results = {}
+        for spelling in ("pyproject.toml", "./pyproject.toml"):
+            docs = self._docs(tmp_path, [("a", "docs/a.md", [spelling])])
+            graph, errors = build_graph(
+                docs,
+                workspace_root=tmp_path,
+                allowed_external_dependency_paths=["pyproject.toml"],
+            )
+            assert len(errors) == 1
+            results[spelling] = (
+                errors[0].error_type.value,
+                errors[0].severity,
+                errors[0].context.get("resolved_path"),
+                errors[0].context.get("allowlisted"),
+            )
+        assert results["pyproject.toml"] == results["./pyproject.toml"]
+
+    def test_bare_extensionless_root_file_resolves(self, tmp_path):
+        (tmp_path / "LICENSE").write_text("MIT\n")
+        (tmp_path / "Makefile").write_text("all:\n")
+        docs = self._docs(
+            tmp_path, [("a", "docs/a.md", ["LICENSE", "Makefile"])]
+        )
+
+        graph, errors = build_graph(
+            docs,
+            workspace_root=tmp_path,
+            allowed_external_dependency_paths=["LICENSE"],
+        )
+
+        by_dep = {e.context["dep_value"]: e for e in errors}
+        assert by_dep["LICENSE"].error_type.value == "external_file_dependency"
+        # Existing but not allowlisted -> soft out-of-scope, not broken.
+        assert by_dep["Makefile"].error_type.value == "out_of_scope_dependency"
+
+    def test_doc_id_takes_precedence_over_same_named_root_file(self, tmp_path):
+        (tmp_path / "pyproject.toml").write_text("[project]\n")
+        docs = self._docs(
+            tmp_path,
+            [
+                ("pyproject.toml", "docs/build-config.md", []),
+                ("a", "docs/a.md", ["pyproject.toml"]),
+            ],
+        )
+
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+
+        assert errors == []
+        assert "pyproject.toml" in graph.edges["a"]
+
+    def test_missing_dotted_value_stays_broken_link(self, tmp_path):
+        docs = self._docs(tmp_path, [("a", "docs/a.md", ["nonexistent.toml"])])
+
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+
+        assert len(errors) == 1
+        assert errors[0].error_type.value == "broken_link"
+        assert errors[0].severity == "error"
+
+    def test_bare_directory_stays_broken_link(self, tmp_path):
+        # 'docs' is far more likely a typo'd doc ID than a directory edge.
+        docs = self._docs(tmp_path, [("a", "docs/a.md", ["docs"])])
+
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+
+        assert len(errors) == 1
+        assert errors[0].error_type.value == "broken_link"
+
+    def test_explicit_path_directory_behavior_unchanged(self, tmp_path):
+        # Characterized pre-#176 behavior: an explicit ./dir spelling that
+        # exists classifies as out-of-scope (exists() accepts directories).
+        (tmp_path / "assets").mkdir()
+        docs = self._docs(tmp_path, [("a", "docs/a.md", ["./assets"])])
+
+        graph, errors = build_graph(docs, workspace_root=tmp_path)
+
+        assert len(errors) == 1
+        assert errors[0].error_type.value == "out_of_scope_dependency"
+
+    def test_bare_symlink_escape_stays_broken_link(self, tmp_path):
+        outside = tmp_path.parent / "outside-176"
+        outside.mkdir(parents=True, exist_ok=True)
+        (outside / "secret.toml").write_text("x")
+        (tmp_path / "escape.toml").symlink_to(outside / "secret.toml")
+        docs = self._docs(tmp_path, [("a", "docs/a.md", ["escape.toml"])])
+
+        graph, errors = build_graph(
+            docs,
+            workspace_root=tmp_path,
+            allowed_external_dependency_paths=["escape.toml"],
+        )
+
+        assert len(errors) == 1
+        assert errors[0].error_type.value == "broken_link"
+        # Escaping target location must not leak into the message.
+        assert str(outside) not in errors[0].message
+
+    def test_bare_ambiguous_candidates_fail_closed(self, tmp_path):
+        # Same bare name exists at workspace root AND next to the declaring
+        # doc as two different files -> fail closed (broken link), never
+        # chosen by ordering accident.
+        (tmp_path / "config.toml").write_text("root\n")
+        (tmp_path / "docs").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "docs/config.toml").write_text("doc-local\n")
+        docs = self._docs(tmp_path, [("a", "docs/a.md", ["config.toml"])])
+
+        graph, errors = build_graph(
+            docs,
+            workspace_root=tmp_path,
+            allowed_external_dependency_paths=["config.toml", "docs/config.toml"],
+        )
+
+        assert len(errors) == 1
+        assert errors[0].error_type.value == "broken_link"
+
+    def test_bare_candidates_same_file_deduplicate(self, tmp_path):
+        # Declaring doc at workspace root: both candidate bases name the
+        # same file -> one clean external classification.
+        (tmp_path / "config.toml").write_text("root\n")
+        docs = self._docs(tmp_path, [("a", "a.md", ["config.toml"])])
+
+        graph, errors = build_graph(
+            docs,
+            workspace_root=tmp_path,
+            allowed_external_dependency_paths=["config.toml"],
+        )
+
+        assert len(errors) == 1
+        assert errors[0].error_type.value == "external_file_dependency"

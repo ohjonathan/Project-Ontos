@@ -37,7 +37,10 @@ EXTERNAL_FILE_DEPENDENCY_SEVERITY = "info"
 
 
 def _looks_like_path(dep_id: str) -> bool:
-    # A pure doc-id never contains a path separator or '.md' suffix.
+    # An explicit path spelling contains a separator or a '.md' suffix.
+    # (#176) Bare tokens such as 'pyproject.toml' or 'Makefile' are no longer
+    # excluded from resolution outright; they get a stricter regular-file
+    # probe in _resolve_depends_on_path instead of this heuristic.
     return "/" in dep_id or "\\" in dep_id or dep_id.lower().endswith(".md")
 
 
@@ -128,19 +131,34 @@ def _resolve_depends_on_path(
     external-dep emission). This is the gemini-B.1-F1 fix — `Path.resolve`
     follows symlinks, so a malicious or buggy `depends_on: '../../etc/passwd'`
     must not leak filesystem state through the activation warnings channel.
+
+    (#176) Bare tokens (no separator, no '.md' suffix) such as
+    'pyproject.toml', 'Makefile', or 'LICENSE' get a stricter probe than
+    explicit path spellings: only existing regular files count, and when the
+    workspace-root and declaring-doc candidates name two different files the
+    resolution fails closed (broken link) instead of picking one by ordering
+    accident. Explicit-path behavior — including its characterized handling
+    of directories — is unchanged.
     """
-    if workspace_root is None or not _looks_like_path(dep_id):
+    if workspace_root is None:
         return None, None, None
+    explicit_path = _looks_like_path(dep_id)
 
     candidates: List[Path] = []
     raw = Path(dep_id)
     if raw.is_absolute():
+        if not explicit_path:
+            # Unreachable in practice (an absolute path always contains a
+            # separator) but kept fail-closed for platform-specific spellings.
+            return None, None, None
         candidates.append(raw)
     else:
         candidates.append(workspace_root / raw)
         doc_dir = doc.filepath.parent if doc.filepath else workspace_root
         candidates.append(doc_dir / raw)
 
+    bare_matches: List[Tuple[Path, Path]] = []
+    bare_seen: Set[object] = set()
     for candidate in candidates:
         try:
             resolved = candidate.resolve(strict=False)
@@ -160,8 +178,29 @@ def _resolve_depends_on_path(
             # selecting an arbitrary document or misclassifying it as an
             # out-of-scope file.
             return None, None, None
-        if candidate.exists():
-            return None, candidate, resolved
+        if explicit_path:
+            if candidate.exists():
+                return None, candidate, resolved
+            continue
+        # Bare-token probe: regular files only. A bare token matching a
+        # directory (e.g. 'docs') stays a broken link — it is far more
+        # likely a typo'd document ID than an intentional directory edge.
+        if candidate.is_file():
+            identity: object = resolved
+            try:
+                stat_result = candidate.stat()
+                identity = (stat_result.st_dev, stat_result.st_ino)
+            except (OSError, ValueError):
+                pass
+            if identity not in bare_seen:
+                bare_seen.add(identity)
+                bare_matches.append((candidate, resolved))
+
+    if not explicit_path and len(bare_matches) == 1:
+        candidate, resolved = bare_matches[0]
+        return None, candidate, resolved
+    # Zero bare matches -> broken link; two distinct files for the same bare
+    # token -> fail-closed ambiguity (also broken link) per #176.
     return None, None, None
 
 
