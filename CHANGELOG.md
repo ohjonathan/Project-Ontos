@@ -17,7 +17,10 @@ Issue-review remediation slices from the 2026-07-16 GitHub issues review
   filesystem resolution and reporting a hard broken link. Bare and `./`
   spellings classify identically; a bare token matching a directory stays a
   broken link; ambiguous workspace-root vs declaring-doc candidates fail
-  closed. Behavior note: existing corpora with allowlisted bare root-file
+  closed. An ambiguous bare token (two different files match) produces an
+  explicit diagnostic naming the workspace-relative candidates
+  (`reason: ambiguous_bare_candidates`) instead of a false "does not
+  exist". Behavior note: existing corpora with allowlisted bare root-file
   dependencies will see `broken_link` errors become
   `external_file_dependency`/`out_of_scope_dependency` records, which can
   change doctor/activation exit codes (in the fixed direction).
@@ -25,18 +28,26 @@ Issue-review remediation slices from the 2026-07-16 GitHub issues review
   such as the default `archive/*` previously matched only direct children,
   so the nested `docs/archive/logs/…` layout that `ontos consolidate`
   itself writes (and nested markdown under `node_modules/`) was scanned
-  back into the live graph. Directory patterns now exclude the whole
-  subtree. Behavior note: repositories with nested archive layouts will
-  correctly report lower document counts; library scope now excludes
+  back into the live graph. Skip patterns now match contiguous runs of
+  workspace-relative path segments: `*` stays within one segment, a
+  directory pattern excludes its whole subtree, `/**` is available for
+  explicit subtree intent, and ancestor directories outside the repository
+  never participate (a checkout under `…/archive/…` is unaffected).
+  Behavior note: repositories with nested archive layouts will correctly
+  report lower document counts; library scope now excludes
   `.ontos-internal/archive/` like every other scope.
 - **AGENTS.md ownership guard and content-based staleness (#173)** —
   `ontos maintain` and `ontos map --sync-agents` no longer force-overwrite
   an AGENTS.md that Ontos did not generate; non-Ontos files are reported by
   ownership (`user_managed`/`managed_block`) with an explicit
-  `ontos agents --force` adoption path. Staleness for Ontos-owned files is
-  decided by semantic content comparison instead of mtimes, so clones,
-  worktrees, and touch-only changes no longer flip freshness verdicts, and
-  the `touch_on_unchanged` mtime hack is retired.
+  `ontos agents --force` adoption path. Ownership requires the byte-exact
+  generation header in its structural template position — the phrase
+  appearing elsewhere in a hand-authored file does not count. Staleness for
+  Ontos-owned files is decided by semantic content comparison against the
+  passed repository root instead of mtimes or process CWD; the current
+  branch is normalized out of the comparison, so clones, worktrees on other
+  branches at the same HEAD, and touch-only changes no longer flip
+  freshness verdicts. The `touch_on_unchanged` mtime hack is retired.
 
 ### Added
 
@@ -44,12 +55,16 @@ Issue-review remediation slices from the 2026-07-16 GitHub issues review
   `[frontmatter.aliases.type]` / `[frontmatter.aliases.status]` tables in
   `.ontos.toml` declare explicit project mappings for
   `maintain --fix-frontmatter-enums` and `doctor --frontmatter`.
-  Validation is fail-closed (targets must be canonical and never
-  `unknown`; keys must not be canonical; case-normalized duplicates
-  rejected) and repair edits report their mapping `source`
-  (`built-in`/`config`). Projects adopting the new section should pin
-  `[ontos].required_version` so older installations fail with a version
-  message instead of an unknown-section config error.
+  Validation is fail-closed: targets must be canonical and never
+  `unknown`; keys must not be canonical; case-normalized duplicates are
+  rejected; and redefining a built-in mapping to a different target is a
+  conflict error. Repair edits report their mapping `source`
+  (`built-in`/`config`), and `original_*` preservation is quote-aware
+  (`status: "qa#blocked"` round-trips exactly). Generated configs never
+  emit an empty `[frontmatter]` section, so defaults remain readable by
+  Ontos ≤ 5.0.2; repositories that do adopt the tables become unreadable
+  by older installations (the unknown-section error fires before
+  `required_version` is evaluated), so upgrade every device first.
 - **Built-in `in-progress` → `in_progress` repair alias (#178)** — the
   canonical status existed but its most common agent-emitted spelling had
   no repair mapping.
