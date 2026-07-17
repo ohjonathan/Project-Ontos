@@ -293,3 +293,63 @@ def test_config_alias_apply_preserves_original_value(tmp_path):
     content = path.read_text(encoding="utf-8")
     assert "status: in_progress" in content
     assert "original_status: in-progress" in content
+
+
+def test_apply_preserves_quoted_value_containing_hash(tmp_path):
+    # PR #182 review: '#' inside a quoted YAML scalar is content, not a
+    # comment — original_status must not truncate to '"qa'.
+    path = _write_doc(tmp_path, "quoted.md", "log", '"qa#blocked"')
+
+    plan = build_enum_repair_plan(
+        [path], status_aliases={"qa#blocked": "rejected"}
+    )
+    assert plan.edits[0].repairable is True
+    apply_enum_repair_plan(plan, repo_root=tmp_path)
+
+    content = path.read_text(encoding="utf-8")
+    assert "status: rejected" in content
+    assert "original_status: 'qa#blocked'" in content or (
+        'original_status: "qa#blocked"' in content
+    ) or "original_status: qa#blocked" in content
+    # Round-trip: the preserved value parses back to the exact spelling.
+    from ontos.io.yaml import parse_frontmatter_content
+
+    parsed, _ = parse_frontmatter_content(content)
+    assert parsed["original_status"] == "qa#blocked"
+
+
+def test_apply_preserves_unquoted_value_containing_hash(tmp_path):
+    # Unquoted 'qa#blocked' has NO comment per YAML (no space before '#').
+    path = _write_doc(tmp_path, "unquoted.md", "log", "qa#blocked")
+
+    plan = build_enum_repair_plan(
+        [path], status_aliases={"qa#blocked": "rejected"}
+    )
+    assert plan.edits[0].repairable is True
+    apply_enum_repair_plan(plan, repo_root=tmp_path)
+
+    from ontos.io.yaml import parse_frontmatter_content
+
+    parsed, _ = parse_frontmatter_content(path.read_text(encoding="utf-8"))
+    assert parsed["original_status"] == "qa#blocked"
+
+
+def test_apply_strips_real_trailing_comment_from_original(tmp_path):
+    path = tmp_path / "docs" / "commented.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "---\nid: commented\ntype: log\nstatus: in-progress # WIP note\n---\nBody.\n",
+        encoding="utf-8",
+    )
+
+    plan = build_enum_repair_plan([path])
+    apply_enum_repair_plan(plan, repo_root=tmp_path)
+
+    content = path.read_text(encoding="utf-8")
+    from ontos.io.yaml import parse_frontmatter_content
+
+    parsed, _ = parse_frontmatter_content(content)
+    assert parsed["original_status"] == "in-progress"
+    assert parsed["status"] == "in_progress"
+    # The inline comment on the repaired line survives (existing guarantee).
+    assert "# WIP note" in content

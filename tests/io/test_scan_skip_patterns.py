@@ -62,6 +62,55 @@ class TestArchiveSubtreeExclusion:
 
         assert _scanned_names(tmp_path) == {"docs/archive.md"}
 
+    def test_ancestor_directory_names_never_participate(self, tmp_path):
+        # PR #182 review P1: a checkout under an ancestor directory named
+        # 'archive' (or node_modules, __pycache__, …) must not have the
+        # default patterns wipe out the entire scan.
+        workspace = tmp_path / "archive" / "node_modules" / "project"
+        _touch(workspace, "docs/keep.md")
+        _touch(workspace, "docs/archive/logs/old.md")
+
+        results = scan_documents(
+            [workspace / "docs"],
+            skip_patterns=DEFAULT_SKIPS,
+            workspace_root=workspace,
+        )
+        names = {p.relative_to(workspace.resolve()).as_posix() for p in results}
+        assert names == {"docs/keep.md"}
+
+        # Same guarantee without an explicit workspace_root: the scan root
+        # is the relativization base.
+        results = scan_documents([workspace / "docs"], skip_patterns=DEFAULT_SKIPS)
+        names = {p.relative_to(workspace.resolve()).as_posix() for p in results}
+        assert names == {"docs/keep.md"}
+
+    def test_custom_file_patterns_stay_non_recursive(self, tmp_path):
+        # PR #182 review P1: 'reviews/*.md' must not silently become
+        # recursive — '*' stays within one segment.
+        _touch(tmp_path, "docs/reviews/draft.md")
+        _touch(tmp_path, "docs/reviews/team/nested.md")
+
+        results = scan_documents(
+            [tmp_path / "docs"],
+            skip_patterns=["reviews/*.md"],
+            workspace_root=tmp_path,
+        )
+        names = {p.relative_to(tmp_path.resolve()).as_posix() for p in results}
+        assert names == {"docs/reviews/team/nested.md"}
+
+    def test_explicit_double_star_matches_subtree(self, tmp_path):
+        _touch(tmp_path, "docs/reviews/draft.md")
+        _touch(tmp_path, "docs/reviews/team/nested.md")
+        _touch(tmp_path, "docs/keep.md")
+
+        results = scan_documents(
+            [tmp_path / "docs"],
+            skip_patterns=["reviews/**"],
+            workspace_root=tmp_path,
+        )
+        names = {p.relative_to(tmp_path.resolve()).as_posix() for p in results}
+        assert names == {"docs/keep.md"}
+
     def test_default_config_scope_excludes_nested_archive(self, tmp_path):
         # End-to-end through the shared scope collector with the shipped
         # default configuration.

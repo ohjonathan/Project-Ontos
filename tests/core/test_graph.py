@@ -935,7 +935,8 @@ class TestBareRootFileDependencies:
     def test_bare_ambiguous_candidates_fail_closed(self, tmp_path):
         # Same bare name exists at workspace root AND next to the declaring
         # doc as two different files -> fail closed (broken link), never
-        # chosen by ordering accident.
+        # chosen by ordering accident. (PR #182 review) The diagnostic must
+        # name the candidates instead of claiming the file does not exist.
         (tmp_path / "config.toml").write_text("root\n")
         (tmp_path / "docs").mkdir(parents=True, exist_ok=True)
         (tmp_path / "docs/config.toml").write_text("doc-local\n")
@@ -948,7 +949,13 @@ class TestBareRootFileDependencies:
         )
 
         assert len(errors) == 1
-        assert errors[0].error_type.value == "broken_link"
+        error = errors[0]
+        assert error.error_type.value == "broken_link"
+        assert "Ambiguous dependency" in error.message
+        assert "does not exist" not in error.message
+        assert error.context["reason"] == "ambiguous_bare_candidates"
+        assert error.context["candidates"] == ["config.toml", "docs/config.toml"]
+        assert "Disambiguate" in error.fix_suggestion
 
     def test_bare_candidates_same_file_deduplicate(self, tmp_path):
         # Declaring doc at workspace root: both candidate bases name the

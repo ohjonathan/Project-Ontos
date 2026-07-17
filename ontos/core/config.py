@@ -152,8 +152,18 @@ def default_config() -> OntosConfig:
 
 
 def config_to_dict(config: OntosConfig) -> dict:
-    """Convert config dataclass to dict for TOML serialization."""
-    return asdict(config)
+    """Convert config dataclass to dict for TOML serialization.
+
+    (#178, PR #182 review) An empty `[frontmatter]` section is omitted:
+    Ontos <= 5.0.2 hard-rejects unknown config sections, so serializing the
+    section by default would make every newly written config unreadable by
+    older installations even when aliases are unused.
+    """
+    data = asdict(config)
+    frontmatter = data.get("frontmatter")
+    if isinstance(frontmatter, dict) and not any(frontmatter.values()):
+        data.pop("frontmatter", None)
+    return data
 
 
 def _validate_path(path_str: str, repo_root: Path) -> bool:
@@ -312,7 +322,32 @@ def _validate_frontmatter_aliases(data: dict) -> None:
                     f"than once after case normalization"
                 )
             normalized[key] = target
+        _reject_builtin_alias_conflicts(field_name, normalized)
         aliases[field_name] = normalized
+
+
+def _reject_builtin_alias_conflicts(field_name: str, normalized: Dict[str, str]) -> None:
+    """(#178, PR #182 review) Conflicts with built-in mappings fail closed.
+
+    A configured alias that redefines a shipped repair mapping to a
+    DIFFERENT target (e.g. ``in-progress = "complete"``) is a conflict per
+    the issue's acceptance language, not an override. Re-stating a built-in
+    with the same target is a harmless no-op and allowed.
+    """
+    # Runtime import: frontmatter_repair transitively imports io modules;
+    # at dict_to_config call time this module is fully initialized, so no
+    # circular-import hazard exists here.
+    from ontos.core.frontmatter_repair import STATUS_REPAIRS, TYPE_REPAIRS
+
+    builtin = TYPE_REPAIRS if field_name == "type" else STATUS_REPAIRS
+    for key, target in normalized.items():
+        shipped = builtin.get(key)
+        if shipped is not None and shipped != target:
+            raise ConfigError(
+                f"frontmatter.aliases.{field_name} key {key!r} conflicts "
+                f"with the built-in mapping {key!r} -> {shipped!r}; remove "
+                f"the entry or match the built-in target"
+            )
 
 
 

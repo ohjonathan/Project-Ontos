@@ -268,9 +268,9 @@ Rules, all fail-closed at config load:
   valid target), so alias chains and cycles are impossible.
 - Alias keys must not themselves be canonical values, and are matched
   case-insensitively.
-- Project aliases win over the built-in repair tables (for example, the
-  built-in `in-progress -> in_progress` mapping can be overridden, though
-  it rarely should be).
+- An alias that redefines a built-in repair mapping to a different target
+  (for example `in-progress = "complete"`) is a conflict and is rejected;
+  restating a built-in with the same target is a harmless no-op.
 
 Aliases are repair-time mappings, not load-time acceptance: files converge
 to canonical values on `--apply` (the prior spelling is preserved as
@@ -278,10 +278,12 @@ to canonical values on `--apply` (the prior spelling is preserved as
 git. Repair plans report each edit's mapping `source` (`built-in` or
 `config`).
 
-Because older Ontos releases reject unknown configuration sections, a
-repository that adopts `[frontmatter]` should also pin
-`[ontos].required_version` (for example `>=5.1`) so lagging installations
-fail with a clear version message instead of a config error.
+Compatibility: Ontos releases up to 5.0.2 reject any config containing a
+`[frontmatter]` section with an unknown-section error — before evaluating
+`required_version` — so adopting these tables makes the repository's config
+unreadable by older installations. Upgrade every device and CI runner
+first; defaults are unaffected because Ontos never writes an empty
+`[frontmatter]` section into generated configs.
 
 ### Configuration validation and precedence
 

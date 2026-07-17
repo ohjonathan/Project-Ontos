@@ -291,3 +291,36 @@ class TestFrontmatterAliases:
     def test_unknown_frontmatter_key_rejected(self):
         with pytest.raises(ConfigError, match="Unknown config key"):
             dict_to_config({"frontmatter": {"alias": {}}})
+
+    def test_builtin_conflict_rejected(self):
+        # PR #182 review: redefining a built-in mapping to a different
+        # target is a conflict, not an override.
+        with pytest.raises(ConfigError, match="conflicts with the built-in"):
+            dict_to_config({
+                "frontmatter": {"aliases": {"status": {"in-progress": "complete"}}}
+            })
+
+    def test_builtin_restatement_with_same_target_allowed(self):
+        config = dict_to_config({
+            "frontmatter": {"aliases": {"status": {"in-progress": "in_progress"}}}
+        })
+        assert config.frontmatter.aliases["status"] == {"in-progress": "in_progress"}
+
+    def test_default_serialization_omits_empty_frontmatter_section(self):
+        # PR #182 review: Ontos <= 5.0.2 rejects unknown sections, so a
+        # default config must not emit [frontmatter] at all.
+        from ontos.core.config import config_to_dict, default_config
+
+        data = config_to_dict(default_config())
+        assert "frontmatter" not in data
+        # Round trip still yields an equal default config.
+        assert dict_to_config(data) == default_config()
+
+    def test_non_empty_aliases_are_serialized(self):
+        from ontos.core.config import config_to_dict
+
+        config = dict_to_config({
+            "frontmatter": {"aliases": {"type": {"runbook": "reference"}}}
+        })
+        data = config_to_dict(config)
+        assert data["frontmatter"]["aliases"]["type"] == {"runbook": "reference"}

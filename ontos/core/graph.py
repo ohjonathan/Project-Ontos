@@ -105,26 +105,41 @@ class _LoadedPathIndex:
         return None, False
 
 
+@dataclass(frozen=True)
+class _DependencyPathResolution:
+    """Outcome of resolving one `depends_on` entry as a filesystem path.
+
+    Exactly one of the shapes below is populated:
+    - ``resolved_doc_id`` — path matched a loaded doc; treat as graph edge.
+    - ``external_path``/``external_resolved`` — an existing on-disk file
+      inside the workspace that is not a loaded document.
+    - ``ambiguous_candidates`` — (#176, PR #182 review) a bare token matched
+      two different physical entries; the caller must emit an explicit
+      ambiguity diagnostic, never a misleading "does not exist".
+    - all empty — no resolution (missing, containment escape, collision):
+      caller falls back to the plain broken-link contract.
+    """
+
+    resolved_doc_id: Optional[str] = None
+    external_path: Optional[Path] = None
+    external_resolved: Optional[Path] = None
+    ambiguous_candidates: Tuple[Path, ...] = ()
+
+
 def _resolve_depends_on_path(
     dep_id: str,
     doc: DocumentData,
     loaded_paths: _LoadedPathIndex,
     workspace_root: Optional[Path],
     workspace_root_resolved: Optional[Path],
-) -> Tuple[Optional[str], Optional[Path], Optional[Path]]:
+) -> _DependencyPathResolution:
     """Try to resolve a `depends_on` entry as a filesystem path.
 
-    Returns (resolved_doc_id, external_path, external_resolved):
-        (id, None, None) — path resolved to a loaded doc; caller treats as a
-                      graph edge.
-        (None, p, r) — path exists on disk inside the workspace but is not
-                      loaded; caller treats as an out-of-scope dependency
-                      (warning). `p` is the matched candidate (kept for
-                      message stability), `r` its fully resolved form —
-                      allowlist checks must use `r` so symlinked candidates
-                      cannot dodge or false-match patterns (#134).
-        (None, None, None) — no path resolution OR resolved path escapes the
-                       workspace; caller falls back to broken-link.
+    See :class:`_DependencyPathResolution` for the outcome contract. For
+    external files, ``external_path`` is the matched candidate (kept for
+    message stability) and ``external_resolved`` its fully resolved form —
+    allowlist checks must use the resolved form so symlinked candidates
+    cannot dodge or false-match patterns (#134).
 
     Containment: any candidate whose resolved path (with symlinks followed)
     is outside `workspace_root_resolved` is rejected (no fall-through to
@@ -141,7 +156,7 @@ def _resolve_depends_on_path(
     of directories — is unchanged.
     """
     if workspace_root is None:
-        return None, None, None
+        return _DependencyPathResolution()
     explicit_path = _looks_like_path(dep_id)
 
     candidates: List[Path] = []
@@ -150,13 +165,14 @@ def _resolve_depends_on_path(
         if not explicit_path:
             # Unreachable in practice (an absolute path always contains a
             # separator) but kept fail-closed for platform-specific spellings.
-            return None, None, None
+            return _DependencyPathResolution()
         candidates.append(raw)
     else:
         candidates.append(workspace_root / raw)
         doc_dir = doc.filepath.parent if doc.filepath else workspace_root
         candidates.append(doc_dir / raw)
 
+    doc_matches: List[str] = []
     bare_matches: List[Tuple[Path, Path]] = []
     bare_seen: Set[object] = set()
     for candidate in candidates:
@@ -170,17 +186,26 @@ def _resolve_depends_on_path(
             except ValueError:
                 continue
         resolved_doc_id, ambiguous = loaded_paths.resolve(candidate, resolved)
-        if resolved_doc_id is not None:
-            return resolved_doc_id, None, None
         if ambiguous:
             # A case-only or physical-file collision cannot be resolved
             # safely.  Fall through to a broken dependency rather than
             # selecting an arbitrary document or misclassifying it as an
             # out-of-scope file.
-            return None, None, None
+            return _DependencyPathResolution()
+        if resolved_doc_id is not None:
+            if explicit_path:
+                return _DependencyPathResolution(resolved_doc_id=resolved_doc_id)
+            # (PR #182 review) Bare tokens evaluate BOTH candidate bases
+            # before deciding, so a loaded-doc match cannot shadow a
+            # different file at the other base.
+            if resolved_doc_id not in doc_matches:
+                doc_matches.append(resolved_doc_id)
+            continue
         if explicit_path:
             if candidate.exists():
-                return None, candidate, resolved
+                return _DependencyPathResolution(
+                    external_path=candidate, external_resolved=resolved
+                )
             continue
         # Bare-token probe: regular files only. A bare token matching a
         # directory (e.g. 'docs') stays a broken link — it is far more
@@ -196,12 +221,29 @@ def _resolve_depends_on_path(
                 bare_seen.add(identity)
                 bare_matches.append((candidate, resolved))
 
-    if not explicit_path and len(bare_matches) == 1:
+    if explicit_path:
+        return _DependencyPathResolution()
+    if len(doc_matches) == 1 and not bare_matches:
+        return _DependencyPathResolution(resolved_doc_id=doc_matches[0])
+    if not doc_matches and len(bare_matches) == 1:
         candidate, resolved = bare_matches[0]
-        return None, candidate, resolved
-    # Zero bare matches -> broken link; two distinct files for the same bare
-    # token -> fail-closed ambiguity (also broken link) per #176.
-    return None, None, None
+        return _DependencyPathResolution(
+            external_path=candidate, external_resolved=resolved
+        )
+    if not doc_matches and not bare_matches:
+        return _DependencyPathResolution()
+    # Two distinct physical entries (files and/or a loaded doc plus a
+    # different file) match the same bare token: fail closed WITH an
+    # explicit ambiguity payload (#176 step 8, PR #182 review).
+    ambiguous: List[Path] = [resolved for _, resolved in bare_matches]
+    for doc_id in doc_matches:
+        # Ambiguity candidates are reported as paths; surface the loaded
+        # doc's file so the diagnostic lists every physical match.
+        for known, mapped_id in loaded_paths.exact.items():
+            if mapped_id == doc_id:
+                ambiguous.append(known)
+                break
+    return _DependencyPathResolution(ambiguous_candidates=tuple(ambiguous))
 
 
 @dataclass
@@ -299,11 +341,50 @@ def build_graph(
                 resolved_depends_on.append(dep_id)
                 continue
 
-            resolved_id, external_path, external_resolved = _resolve_depends_on_path(
+            resolution = _resolve_depends_on_path(
                 dep_id, doc, loaded_paths, workspace_root, workspace_root_resolved
             )
+            resolved_id = resolution.resolved_doc_id
+            external_path = resolution.external_path
+            external_resolved = resolution.external_resolved
             if resolved_id is not None:
                 resolved_depends_on.append(resolved_id)
+                continue
+            if resolution.ambiguous_candidates:
+                # (#176, PR #182 review) Two different physical entries match
+                # the same bare token. Saying the dependency "does not exist"
+                # would be false; name the candidates and how to disambiguate.
+                rel_candidates: List[str] = []
+                for candidate in resolution.ambiguous_candidates:
+                    rel_text = str(candidate)
+                    if workspace_root_resolved is not None:
+                        try:
+                            rel_text = candidate.relative_to(
+                                workspace_root_resolved
+                            ).as_posix()
+                        except ValueError:
+                            pass
+                    rel_candidates.append(rel_text)
+                candidate_list = ", ".join(f"'{item}'" for item in sorted(rel_candidates))
+                errors.append(ValidationError(
+                    error_type=ValidationErrorType.BROKEN_LINK,
+                    doc_id=doc_id,
+                    filepath=str(doc.filepath),
+                    message=(
+                        f"Ambiguous dependency: '{dep_id}' (declared in "
+                        f"{doc_id}) matches multiple files: {candidate_list}."
+                    ),
+                    fix_suggestion=(
+                        "Disambiguate with an explicit workspace-relative "
+                        f"path, e.g. './{sorted(rel_candidates)[0]}'."
+                    ),
+                    severity=depends_on_severity,
+                    context={
+                        "dep_value": dep_id,
+                        "reason": "ambiguous_bare_candidates",
+                        "candidates": sorted(rel_candidates),
+                    },
+                ))
                 continue
             if external_path is not None:
                 rel_posix: Optional[str] = None

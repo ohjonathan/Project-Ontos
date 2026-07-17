@@ -125,10 +125,14 @@ def build_enum_repair_plan(
     Args:
         paths: Documents to diagnose.
         type_aliases: (#178) Workspace alias table for ``type`` values from
-            ``[frontmatter.aliases.type]``; wins over the built-in table.
+            ``[frontmatter.aliases.type]``. Config loading rejects tables
+            that conflict with the built-ins, so at this layer a workspace
+            entry can only restate a built-in or add a new mapping;
+            programmatic callers passing their own tables get
+            workspace-wins precedence.
         status_aliases: (#178) Workspace alias table for ``status`` values
-            from ``[frontmatter.aliases.status]``; wins over the built-in
-            table.
+            from ``[frontmatter.aliases.status]``; same contract as
+            ``type_aliases``.
     """
     load_result = load_documents(list(paths), parse_frontmatter_content)
     diagnostics = [issue for issue in load_result.issues if issue.code == "invalid_enum"]
@@ -245,14 +249,66 @@ def _apply_file_edits(path: Path, edits: Sequence[EnumRepairEdit]) -> str:
         if edit.new_value is None:
             continue
         if edit.original_field not in parsed:
-            match = re.search(
-                rf"(?m)^[ \t]*{re.escape(edit.field)}[ \t]*:[ \t]*([^#\r\n]*?)"
-                rf"[ \t]*(?:#[^\r\n]*)?\r?$",
-                original,
+            updates[edit.original_field] = _extract_raw_scalar(
+                original, edit.field, edit.old_value
             )
-            raw_value = match.group(1).strip() if match else edit.old_value
-            if len(raw_value) >= 2 and raw_value[0] == raw_value[-1] and raw_value[0] in {'\"', "'"}:
-                raw_value = raw_value[1:-1]
-            updates[edit.original_field] = raw_value
         updates[edit.field] = edit.new_value
     return patch_frontmatter_fields(original, updates) if updates else original
+
+
+def _strip_trailing_comment(text: str) -> str:
+    """Remove a trailing YAML comment, honoring quotes and the space rule.
+
+    (PR #182 review) A ``#`` inside a quoted scalar is content, and an
+    unquoted ``#`` only opens a comment when preceded by whitespace (or at
+    the start of the value) — ``qa#blocked`` has no comment at all.
+    """
+    quote: Optional[str] = None
+    escaped = False
+    for index, char in enumerate(text):
+        if escaped:
+            escaped = False
+            continue
+        if quote == '"' and char == "\\":
+            escaped = True
+            continue
+        if quote is not None:
+            if char == quote:
+                quote = None
+            continue
+        if char in {"'", '"'}:
+            quote = char
+            continue
+        if char == "#" and (index == 0 or text[index - 1] in " \t"):
+            return text[:index]
+    return text
+
+
+def _extract_raw_scalar(original: str, field: str, fallback: str) -> str:
+    """Recover the spelled value of a one-line ``field:`` entry.
+
+    Used to preserve the pre-repair spelling as ``original_<field>``.
+    Quote-aware (PR #182 review): ``status: "qa#blocked"`` must yield
+    ``qa#blocked``, not a truncated ``"qa``. Anything the lexical scan
+    cannot interpret unambiguously falls back to the YAML-parsed value.
+    """
+    match = re.search(
+        rf"(?m)^[ \t]*{re.escape(field)}[ \t]*:[ \t]*(.*?)[ \t]*\r?$",
+        original,
+    )
+    if not match:
+        return fallback
+    raw_value = _strip_trailing_comment(match.group(1)).strip()
+    if not raw_value:
+        return fallback
+    if raw_value[0] in {'"', "'"}:
+        quote = raw_value[0]
+        if len(raw_value) < 2 or raw_value[-1] != quote:
+            # Unterminated or otherwise malformed quoting — trust the
+            # parser, not the lexical scan.
+            return fallback
+        inner = raw_value[1:-1]
+        if quote == "'":
+            return inner.replace("''", "'")
+        return inner.replace('\\"', '"').replace("\\\\", "\\")
+    return raw_value
