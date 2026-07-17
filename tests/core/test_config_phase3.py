@@ -222,3 +222,105 @@ def test_allowed_external_dependency_paths_round_trips():
     assert config.validation.allowed_external_dependency_paths == [
         "apps/**", "manifests/**",
     ]
+
+
+class TestFrontmatterAliases:
+    """(#178) [frontmatter.aliases.*] tables: fail-closed validation and
+    lowercase key normalization."""
+
+    def test_valid_alias_tables_load_and_normalize_keys(self):
+        config = dict_to_config({
+            "frontmatter": {
+                "aliases": {
+                    "status": {"In-Progress": "in_progress", "provider_done": "complete"},
+                    "type": {"runbook": "reference"},
+                }
+            }
+        })
+        assert config.frontmatter.aliases["status"] == {
+            "in-progress": "in_progress",
+            "provider_done": "complete",
+        }
+        assert config.frontmatter.aliases["type"] == {"runbook": "reference"}
+
+    def test_missing_section_defaults_to_empty(self):
+        config = dict_to_config({})
+        assert config.frontmatter.aliases == {}
+
+    def test_unknown_alias_table_rejected(self):
+        with pytest.raises(ConfigError, match="frontmatter.aliases.severity"):
+            dict_to_config({
+                "frontmatter": {"aliases": {"severity": {"hi": "active"}}}
+            })
+
+    def test_non_canonical_target_rejected(self):
+        with pytest.raises(ConfigError, match="not a canonical status value"):
+            dict_to_config({
+                "frontmatter": {"aliases": {"status": {"waiting": "on-hold"}}}
+            })
+
+    def test_unknown_target_rejected(self):
+        # 'unknown' is an enum member but never a valid repair target.
+        with pytest.raises(ConfigError, match="not a canonical type value"):
+            dict_to_config({
+                "frontmatter": {"aliases": {"type": {"mystery": "unknown"}}}
+            })
+
+    def test_canonical_key_cannot_be_remapped(self):
+        with pytest.raises(ConfigError, match="already a canonical"):
+            dict_to_config({
+                "frontmatter": {"aliases": {"status": {"draft": "active"}}}
+            })
+
+    def test_case_normalized_duplicate_rejected(self):
+        with pytest.raises(ConfigError, match="more than once"):
+            dict_to_config({
+                "frontmatter": {
+                    "aliases": {
+                        "status": {"WIP": "in_progress", "wip": "active"},
+                    }
+                }
+            })
+
+    def test_non_string_target_rejected(self):
+        with pytest.raises(ConfigError, match="must be str"):
+            dict_to_config({
+                "frontmatter": {"aliases": {"status": {"wip": 3}}}
+            })
+
+    def test_unknown_frontmatter_key_rejected(self):
+        with pytest.raises(ConfigError, match="Unknown config key"):
+            dict_to_config({"frontmatter": {"alias": {}}})
+
+    def test_builtin_conflict_rejected(self):
+        # PR #182 review: redefining a built-in mapping to a different
+        # target is a conflict, not an override.
+        with pytest.raises(ConfigError, match="conflicts with the built-in"):
+            dict_to_config({
+                "frontmatter": {"aliases": {"status": {"in-progress": "complete"}}}
+            })
+
+    def test_builtin_restatement_with_same_target_allowed(self):
+        config = dict_to_config({
+            "frontmatter": {"aliases": {"status": {"in-progress": "in_progress"}}}
+        })
+        assert config.frontmatter.aliases["status"] == {"in-progress": "in_progress"}
+
+    def test_default_serialization_omits_empty_frontmatter_section(self):
+        # PR #182 review: Ontos <= 5.0.2 rejects unknown sections, so a
+        # default config must not emit [frontmatter] at all.
+        from ontos.core.config import config_to_dict, default_config
+
+        data = config_to_dict(default_config())
+        assert "frontmatter" not in data
+        # Round trip still yields an equal default config.
+        assert dict_to_config(data) == default_config()
+
+    def test_non_empty_aliases_are_serialized(self):
+        from ontos.core.config import config_to_dict
+
+        config = dict_to_config({
+            "frontmatter": {"aliases": {"type": {"runbook": "reference"}}}
+        })
+        data = config_to_dict(config)
+        assert data["frontmatter"]["aliases"]["type"] == {"runbook": "reference"}

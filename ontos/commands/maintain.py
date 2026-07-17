@@ -269,38 +269,38 @@ def _condition_auto_consolidate(_ctx: MaintainContext) -> Tuple[bool, str]:
 
 
 def _condition_agents_stale(ctx: MaintainContext) -> Tuple[bool, str]:
-    """Check AGENTS.md staleness using the same repo root as maintain."""
+    """(#173) Content-based AGENTS.md staleness with an ownership guard.
+
+    The previous mtime comparison was reproducibly wrong across clones,
+    worktrees, and touch-only changes — and, worse, it triggered a forced
+    regeneration that overwrote hand-authored AGENTS.md files. Ownership is
+    checked first so a file Ontos did not generate is never implicitly
+    rewritten; staleness itself is decided by semantic content comparison.
+    """
+    from ontos.core.instruction_artifacts import (
+        OWNERSHIP_MISSING,
+        OWNERSHIP_ONTOS_OWNED,
+        classify_instruction_ownership,
+        is_agents_semantically_stale,
+    )
+
     agents_path = ctx.repo_root / "AGENTS.md"
-    if not agents_path.exists():
+    ownership = classify_instruction_ownership(agents_path)
+    if ownership == OWNERSHIP_MISSING:
         return False, "AGENTS.md not found"
+    if ownership != OWNERSHIP_ONTOS_OWNED:
+        return False, (
+            f"AGENTS.md is not Ontos-managed ({ownership}); "
+            "run `ontos agents --force` to adopt it"
+        )
 
     try:
-        agents_mtime = agents_path.stat().st_mtime
-    except OSError:
-        return False, "Could not read AGENTS.md metadata"
+        stale = is_agents_semantically_stale(ctx.repo_root, scope=ctx.options.scope)
+    except Exception as exc:
+        return False, f"Cannot determine AGENTS.md staleness: {exc}"
 
-    source_mtimes: List[float] = []
-
-    context_map = ctx.repo_root / ctx.config.paths.context_map
-    if context_map.exists():
-        source_mtimes.append(context_map.stat().st_mtime)
-
-    config_path = ctx.repo_root / ".ontos.toml"
-    if config_path.exists():
-        source_mtimes.append(config_path.stat().st_mtime)
-
-    logs_dir = ctx.repo_root / ctx.config.paths.logs_dir
-    if logs_dir.exists():
-        log_files = list(logs_dir.glob("*.md"))
-        if log_files:
-            source_mtimes.append(max(path.stat().st_mtime for path in log_files))
-
-    if not source_mtimes:
-        return False, "Cannot determine AGENTS.md staleness"
-
-    if agents_mtime < max(source_mtimes):
-        return True, "AGENTS.md may be stale"
-
+    if stale:
+        return True, "AGENTS.md content is stale relative to project state"
     return False, "AGENTS.md is up to date"
 
 
@@ -772,7 +772,21 @@ def _task_sync_agents(ctx: MaintainContext) -> TaskResult:
     if ctx.options.dry_run:
         return _ok("Would run `ontos agents --force`.")
 
-    from ontos.core.instruction_artifacts import generate_agents_files
+    from ontos.core.instruction_artifacts import (
+        OWNERSHIP_ONTOS_OWNED,
+        classify_instruction_ownership,
+        generate_agents_files,
+    )
+
+    # (#173) Defense in depth: the condition already gates on ownership,
+    # but a forced regeneration must never fire on a file Ontos does not
+    # own, regardless of how this task was reached.
+    ownership = classify_instruction_ownership(ctx.repo_root / "AGENTS.md")
+    if ownership != OWNERSHIP_ONTOS_OWNED:
+        return _ok(
+            f"AGENTS.md is not Ontos-managed ({ownership}); skipped. "
+            "Run `ontos agents --force` to adopt it."
+        )
 
     exit_code, message = generate_agents_files(
         repo_root=ctx.repo_root,
@@ -1055,7 +1069,12 @@ def _run_frontmatter_enum_repair(ctx: MaintainContext) -> int:
     )
 
     files = _scan_docs(ctx)
-    plan = build_enum_repair_plan(files)
+    aliases = ctx.config.frontmatter.aliases
+    plan = build_enum_repair_plan(
+        files,
+        type_aliases=aliases.get("type"),
+        status_aliases=aliases.get("status"),
+    )
     mode = "apply" if ctx.options.apply else "dry-run"
     payload = plan.to_dict(root=ctx.repo_root)
     payload["mode"] = mode

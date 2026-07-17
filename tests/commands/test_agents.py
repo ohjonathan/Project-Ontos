@@ -519,15 +519,21 @@ class TestGatherStats:
         # Only 'docs/file1.md' should be counted
         assert doc_count == "1"
 
-    def test_counts_archive_logs(self, tmp_path, monkeypatch):
-        """Library scope should count .md files in .ontos-internal/archive/logs."""
+    def test_library_scope_counts_internal_docs_but_not_archives(self, tmp_path, monkeypatch):
+        """(#181) Library scope adds .ontos-internal, but archive/ subtrees —
+        including the nested archive/logs layout consolidate writes — are
+        excluded by the default skip patterns like every other scope."""
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'\n[paths]\ndocs_dir = 'docs'")
-        
+
         docs = tmp_path / "docs"
         docs.mkdir()
         (docs / "file1.md").write_text("# Doc 1")
-        
+
+        internal = tmp_path / ".ontos-internal" / "reference"
+        internal.mkdir(parents=True)
+        (internal / "internal_doc.md").write_text("# Internal")
+
         archive = tmp_path / ".ontos-internal" / "archive" / "logs"
         archive.mkdir(parents=True)
         (archive / "old_log.md").write_text("# Old Log")
@@ -535,7 +541,8 @@ class TestGatherStats:
         stats = gather_stats(tmp_path, scope="library")
         doc_count = stats["doc_count"]
 
-        # 1 doc + 1 archive log = 2
+        # docs/file1.md + .ontos-internal/reference/internal_doc.md;
+        # the archived log is cold storage, not live graph.
         assert doc_count == "2"
 
     def test_returns_unknown_on_error(self, tmp_path, monkeypatch):

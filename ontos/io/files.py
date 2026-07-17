@@ -149,8 +149,13 @@ def scan_documents(
             # Check skip patterns against full path for robust matching
             skip = False
             path_str = str(md_file)
+            rel_parts = _relative_segments(md_file, workspace_root, dir_path)
             for pattern in skip_patterns:
-                if fnmatch(path_str, pattern) or md_file.match(pattern):
+                if (
+                    fnmatch(path_str, pattern)
+                    or md_file.match(pattern)
+                    or _matches_segment_run(rel_parts, pattern)
+                ):
                     skip = True
                     break
             if not skip:
@@ -160,6 +165,73 @@ def scan_documents(
                 results.add(resolved)
 
     return sorted(list(results))
+
+
+def _relative_segments(
+    md_file: Path,
+    workspace_root: Optional[Path],
+    scan_root: Path,
+) -> Tuple[str, ...]:
+    """Return md_file's path segments relative to the workspace (or scan) root.
+
+    Skip-pattern matching must never see ancestor directories OUTSIDE the
+    repository: a checkout under ``…/archive/project/`` must not have the
+    default ``archive/*`` pattern wipe out the whole scan.
+    """
+    for base in (workspace_root, scan_root):
+        if base is None:
+            continue
+        try:
+            return md_file.relative_to(base).parts
+        except ValueError:
+            continue
+    return (md_file.name,)
+
+
+def _matches_segment_run(rel_parts: Tuple[str, ...], pattern: str) -> bool:
+    """Match a skip pattern against contiguous runs of relative path segments.
+
+    (#181) ``Path.match`` is right-anchored, so a directory pattern such as
+    the default ``archive/*`` only matched files DIRECTLY under an
+    ``archive/`` directory — the nested layout that ``ontos consolidate``
+    itself writes (``docs/archive/logs/…``) was scanned straight back into
+    the live graph, as was every nested file under ``node_modules/*``.
+
+    Semantics: the pattern's segments are matched segment-by-segment
+    (``*`` never crosses ``/``) against every contiguous run of the file's
+    workspace-relative segments. Because a run may end at a directory,
+    ``archive/*`` excludes the whole subtree under any ``archive/``
+    directory, while ``reviews/*.md`` only excludes entries whose own name
+    matches ``*.md`` directly inside a ``reviews/`` directory — it does NOT
+    become recursive. A trailing ``/**`` explicitly matches everything at
+    any depth below the preceding segments.
+    """
+    normalized = pattern.replace("\\", "/").strip("/")
+    if not normalized:
+        return False
+    pattern_parts = normalized.split("/")
+    subtree = pattern_parts[-1] == "**"
+    if subtree:
+        pattern_parts = pattern_parts[:-1]
+        if not pattern_parts:
+            return False
+    width = len(pattern_parts)
+    if width == 0 or width > len(rel_parts):
+        return False
+    for start in range(len(rel_parts) - width + 1):
+        window = rel_parts[start:start + width]
+        if all(
+            fnmatch(segment, pattern_segment)
+            for segment, pattern_segment in zip(window, pattern_parts)
+        ):
+            if subtree:
+                # `dir/**` means strictly BELOW dir: the matched run must
+                # leave at least one segment (the file) after it.
+                if start + width < len(rel_parts):
+                    return True
+                continue
+            return True
+    return False
 
 
 def _is_transient_markdown_candidate(path: Path) -> bool:

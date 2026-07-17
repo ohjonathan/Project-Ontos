@@ -243,6 +243,48 @@ workspace-relative roots to both scopes. Library scope adds
 workspace-relative glob patterns. An allowed external dependency is reported
 as informational rather than as a broken link.
 
+`skip_patterns` directory patterns such as `archive/*` exclude the whole
+subtree (including nested layouts like `docs/archive/logs/`), while basename
+patterns like `_template.md` match exact names only.
+
+### Frontmatter enum aliases
+
+The optional `[frontmatter.aliases.type]` and `[frontmatter.aliases.status]`
+tables declare explicit project mappings consumed by
+`ontos maintain --fix-frontmatter-enums` and `ontos doctor --frontmatter`:
+
+```toml
+[frontmatter.aliases.type]
+runbook = "reference"
+meta-orchestrator-report = "report"
+
+[frontmatter.aliases.status]
+provider_limited_fallback_complete = "complete"
+```
+
+Rules, all fail-closed at config load:
+
+- Targets must be canonical Ontos type/status values (`unknown` is never a
+  valid target), so alias chains and cycles are impossible.
+- Alias keys must not themselves be canonical values, and are matched
+  case-insensitively.
+- An alias that redefines a built-in repair mapping to a different target
+  (for example `in-progress = "complete"`) is a conflict and is rejected;
+  restating a built-in with the same target is a harmless no-op.
+
+Aliases are repair-time mappings, not load-time acceptance: files converge
+to canonical values on `--apply` (the prior spelling is preserved as
+`original_type`/`original_status`), and the canonical values then travel via
+git. Repair plans report each edit's mapping `source` (`built-in` or
+`config`).
+
+Compatibility: Ontos releases up to 5.0.2 reject any config containing a
+`[frontmatter]` section with an unknown-section error — before evaluating
+`required_version` — so adopting these tables makes the repository's config
+unreadable by older installations. Upgrade every device and CI runner
+first; defaults are unaffected because Ontos never writes an empty
+`[frontmatter]` section into generated configs.
+
 ### Configuration validation and precedence
 
 Root discovery walks upward from the current directory. At each directory it
