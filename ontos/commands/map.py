@@ -1087,22 +1087,36 @@ def map_command(options: MapOptions) -> int:
             repo_root = find_project_root()
             agents_path = repo_root / "AGENTS.md"
             if agents_path.exists():
-                if not options.quiet:
-                    print("Syncing AGENTS.md...")
-                from ontos.core.instruction_artifacts import generate_agents_files
-
-                code, msg = generate_agents_files(
-                    repo_root=repo_root,
-                    output_path=agents_path,
-                    force=True,
-                    format="agents",
-                    all_formats=False,
-                    scope=options.scope,
+                from ontos.core.instruction_artifacts import (
+                    OWNERSHIP_ONTOS_OWNED,
+                    classify_instruction_ownership,
+                    generate_agents_files,
                 )
-                if code != 0 and not options.quiet:
-                    print(f"⚠ AGENTS.md sync warning: {msg}")
-                if not options.quiet:
-                    print("✓ AGENTS.md synced")
+
+                # (#173) A file Ontos did not generate must never be
+                # force-overwritten by an implicit sync.
+                ownership = classify_instruction_ownership(agents_path)
+                if ownership != OWNERSHIP_ONTOS_OWNED:
+                    if not options.quiet:
+                        print(
+                            f"⚠ AGENTS.md is not Ontos-managed ({ownership}); "
+                            "skipping sync. Run 'ontos agents --force' to adopt it."
+                        )
+                else:
+                    if not options.quiet:
+                        print("Syncing AGENTS.md...")
+                    code, msg = generate_agents_files(
+                        repo_root=repo_root,
+                        output_path=agents_path,
+                        force=True,
+                        format="agents",
+                        all_formats=False,
+                        scope=options.scope,
+                    )
+                    if code != 0 and not options.quiet:
+                        print(f"⚠ AGENTS.md sync warning: {msg}")
+                    if not options.quiet:
+                        print("✓ AGENTS.md synced")
             else:
                 if not options.quiet:
                     print("⚠ AGENTS.md not found. Run 'ontos agents' to create.")

@@ -315,55 +315,68 @@ class TestCheckAgentsStaleness:
         assert result.status == "warning"
         assert "not found" in result.message.lower()
 
-    def test_passes_when_agents_up_to_date(self, tmp_path, monkeypatch):
-        """Should pass when AGENTS.md is newer than source files."""
-        import time
+    def test_passes_when_generated_content_is_fresh(self, tmp_path, monkeypatch):
+        """(#173) Ontos-owned AGENTS.md with current content passes even when
+        every source file has a newer mtime (the clone case)."""
+        import os
         monkeypatch.chdir(tmp_path)
-        
-        # Create source files
+
         (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
         (tmp_path / "Ontos_Context_Map.md").write_text("# Map")
-        
-        # Wait and create AGENTS.md (newer)
-        time.sleep(0.1)
-        (tmp_path / "AGENTS.md").write_text("# AGENTS.md")
-        
+
+        from ontos.core.instruction_artifacts import generate_agents_content
+
+        agents_path = tmp_path / "AGENTS.md"
+        agents_path.write_text(generate_agents_content(), encoding="utf-8")
+        # Force AGENTS.md to be the OLDEST file — mtime must not matter.
+        os.utime(agents_path, (100, 100))
+
         from ontos.commands.doctor import check_agents_staleness
         result = check_agents_staleness()
-        
+
         assert result.status == "success"
         assert "up to date" in result.message.lower()
 
-    def test_warns_when_agents_stale(self, tmp_path, monkeypatch):
-        """Should warn when AGENTS.md is older than source files."""
-        import time
+    def test_warns_when_generated_content_is_stale(self, tmp_path, monkeypatch):
+        """(#173) Ontos-owned AGENTS.md whose content no longer matches the
+        project state warns, even when it has the newest mtime."""
         monkeypatch.chdir(tmp_path)
-        
-        # Create AGENTS.md first
-        (tmp_path / "AGENTS.md").write_text("# AGENTS.md")
-        
-        # Wait and create source files (newer)
-        time.sleep(0.1)
+
         (tmp_path / ".ontos.toml").write_text("[ontos]\nversion = '3.0'")
-        
+
+        from ontos.core.instruction_artifacts import generate_agents_content
+
+        agents_path = tmp_path / "AGENTS.md"
+        agents_path.write_text(generate_agents_content(), encoding="utf-8")
+
+        # Change project state AFTER generation: add a doc so the stats
+        # section (doc count) drifts.
+        docs = tmp_path / "docs"
+        docs.mkdir()
+        (docs / "new.md").write_text(
+            "---\nid: new_doc\ntype: atom\nstatus: active\n---\n"
+        )
+        agents_path.touch()  # newest mtime; content is still stale
+
         from ontos.commands.doctor import check_agents_staleness
         result = check_agents_staleness()
-        
+
         assert result.status == "warning"
         assert "stale" in result.message.lower()
 
-    def test_warns_when_no_source_files(self, tmp_path, monkeypatch):
-        """Should warn when no source files can be found."""
+    def test_user_managed_agents_reports_ownership_not_staleness(self, tmp_path, monkeypatch):
+        """(#173) A hand-authored AGENTS.md is reported by ownership and is
+        never declared stale."""
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".ontos").mkdir()
-        # Only AGENTS.md, no config or context map
-        (tmp_path / "AGENTS.md").write_text("# AGENTS.md")
-        
+        (tmp_path / "AGENTS.md").write_text("# My own instructions")
+
         from ontos.commands.doctor import check_agents_staleness
         result = check_agents_staleness()
-        
-        assert result.status == "warning"
-        assert "no source files" in result.message.lower()
+
+        assert result.status == "success"
+        assert "user-managed" in result.message.lower()
+        assert "ontos agents --force" in (result.details or "")
 
 
 class TestCheckAntigravityMCP:

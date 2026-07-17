@@ -738,7 +738,22 @@ def _extract_cli_version(stdout: str, stderr: str) -> Optional[str]:
 
 
 def check_agents_staleness(repo_root: Optional[Path] = None) -> CheckResult:
-    """Check 8: AGENTS.md is not stale relative to source files."""
+    """Check 8: AGENTS.md ownership and content-based staleness.
+
+    (#173) Replaces the old mtime comparison, which reported opposite
+    freshness for identical trees across clones/worktrees and drove forced
+    regeneration over hand-authored files. A file without Ontos provenance
+    is reported by ownership — never as "stale" — and Ontos-owned content
+    is compared semantically against what would be generated now.
+    """
+    from ontos.core.instruction_artifacts import (
+        OWNERSHIP_MANAGED_BLOCK,
+        OWNERSHIP_MISSING,
+        OWNERSHIP_USER_MANAGED,
+        classify_instruction_ownership,
+        is_agents_semantically_stale,
+    )
+
     try:
         root = resolve_project_root(repo_root=repo_root)
     except Exception as e:
@@ -748,76 +763,54 @@ def check_agents_staleness(repo_root: Optional[Path] = None) -> CheckResult:
             message="Cannot determine AGENTS.md staleness",
             details=str(e),
         )
-    
+
     agents_path = root / "AGENTS.md"
-    
-    if not agents_path.exists():
+    ownership = classify_instruction_ownership(agents_path)
+
+    if ownership == OWNERSHIP_MISSING:
         return CheckResult(
             name="agents_staleness",
             status="warning",
             message="AGENTS.md not found",
             details="Run 'ontos agents' to generate"
         )
-    
+
+    if ownership == OWNERSHIP_USER_MANAGED:
+        return CheckResult(
+            name="agents_staleness",
+            status="success",
+            message="AGENTS.md is user-managed; Ontos will not regenerate it",
+            details="Run 'ontos agents --force' to adopt it as Ontos-managed",
+        )
+
+    if ownership == OWNERSHIP_MANAGED_BLOCK:
+        return CheckResult(
+            name="agents_staleness",
+            status="success",
+            message=(
+                "AGENTS.md embeds a USER CUSTOM block but has no Ontos "
+                "generation header; not auto-synced"
+            ),
+            details="Run 'ontos agents --force' to adopt it as Ontos-managed",
+        )
+
     try:
-        agents_mtime = agents_path.stat().st_mtime
-        
-        # Get source file paths
-        source_paths = []
-        
-        # Context map
-        try:
-            from ontos.io.config import load_project_config
-            config = load_project_config(repo_root=root)
-            context_map = root / config.paths.context_map
-            logs_dir = root / config.paths.logs_dir
-        except Exception:
-            context_map = root / "Ontos_Context_Map.md"
-            logs_dir = root / ".ontos-internal" / "logs"
-        
-        config_path = root / ".ontos.toml"
-        
-        # Collect existing source file mtimes
-        source_mtimes = []
-        
-        if context_map.exists():
-            source_mtimes.append(context_map.stat().st_mtime)
-            source_paths.append(context_map.name)
-        
-        if config_path.exists():
-            source_mtimes.append(config_path.stat().st_mtime)
-            source_paths.append(config_path.name)
-        
-        if logs_dir.exists():
-            # M5 fix: Use max() for O(n) instead of sorted() O(n log n)
-            log_files = list(logs_dir.glob("*.md"))
-            if log_files:
-                max_log_mtime = max(f.stat().st_mtime for f in log_files)
-                source_mtimes.append(max_log_mtime)
-                source_paths.append(f"{logs_dir.name}/")
-        
-        if not source_mtimes:
+        if is_agents_semantically_stale(root):
             return CheckResult(
                 name="agents_staleness",
                 status="warning",
-                message="Cannot determine AGENTS.md staleness - no source files found"
+                message=(
+                    "AGENTS.md content is stale relative to project state. "
+                    "Run 'ontos map --sync-agents' to regenerate."
+                ),
             )
-        
-        max_source_mtime = max(source_mtimes)
-        
-        if agents_mtime < max_source_mtime:
-            return CheckResult(
-                name="agents_staleness",
-                status="warning",
-                message="AGENTS.md may be stale. Run 'ontos agents' to regenerate."
-            )
-        
+
         return CheckResult(
             name="agents_staleness",
             status="success",
             message="AGENTS.md up to date"
         )
-    
+
     except Exception as e:
         return CheckResult(
             name="agents_staleness",
